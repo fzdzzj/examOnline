@@ -16,7 +16,7 @@ AND 与标准答案精确比对
 
 ### Requirement: 客观题判分
 WHEN 系统判客观题,
-系统 SHALL 单选/判断精确匹配，多选漏选 SHALL 给部分分、错选或多选 SHALL 给 0 分。
+系统 SHALL 单选/判断精确匹配，多选漏选 SHALL 给部分分、错选或多选 SHALL 给 0 分；部分分系数 SHALL 采用全局默认 1.0。
 
 #### Scenario: 单选正确
 GIVEN 学生答案与标准答案一致
@@ -27,7 +27,7 @@ THEN 判满分
 GIVEN 多选标准答案为 A、B、C
 AND 学生只选 A、B
 WHEN 判分
-THEN 按配置比例给部分分
+THEN 按全局默认部分分系数 1.0 给部分分
 
 #### Scenario: 多选错选零分
 GIVEN 学生答案含非标准选项
