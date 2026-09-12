@@ -120,8 +120,21 @@ public class TokenStoreService {
         redis.opsForValue().set(PREFIX_RESET_CODE + email, code, ttl);
     }
 
-    /** 取出并删除验证码（GETDEL 保证单次使用；并发下仅一个请求能取到）。 */
+    /**
+     * 取出并删除验证码（GETDEL 的 Lua 等价实现）：
+     * 老版本 Redis（< 6.2）无 GETDEL 命令，脚本在所有版本上都保持"取出即删除"的原子性
+     * （单次使用语义，并发下仅一个请求能取到）。
+     */
+    private static final DefaultRedisScript<String> CONSUME_RESET_CODE_SCRIPT = new DefaultRedisScript<>(
+            "local v = redis.call('GET', KEYS[1]) " +
+                    "if v == false then return '' end " +
+                    "redis.call('DEL', KEYS[1]) " +
+                    "return v",
+            String.class);
+
+    /** 取出并删除验证码（原子消费保证单次使用）。 */
     public String consumeResetCode(String email) {
-        return redis.opsForValue().getAndDelete(PREFIX_RESET_CODE + email);
+        String value = redis.execute(CONSUME_RESET_CODE_SCRIPT, List.of(PREFIX_RESET_CODE + email));
+        return value == null || value.isEmpty() ? null : value;
     }
 }
