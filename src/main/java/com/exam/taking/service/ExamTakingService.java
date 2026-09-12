@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.auth.security.SecurityUtil;
+import com.exam.monitoring.service.OnlinePresenceService;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.exam.dto.ExamSnapshotResponse;
@@ -56,11 +57,12 @@ public class ExamTakingService {
     private final ExamDraftService draftService;
     private final BehaviorEventCollectService eventCollectService;
     private final ExamSubmitService submitService;
+    private final OnlinePresenceService presenceService;
 
     public ExamTakingService(ExamMapper examMapper, ExamSubmissionMapper submissionMapper,
                              ExamSnapshotService examSnapshotService, PersonalPaperService personalPaperService,
                              ExamDraftService draftService, BehaviorEventCollectService eventCollectService,
-                             ExamSubmitService submitService) {
+                             ExamSubmitService submitService, OnlinePresenceService presenceService) {
         this.examMapper = examMapper;
         this.submissionMapper = submissionMapper;
         this.examSnapshotService = examSnapshotService;
@@ -68,11 +70,13 @@ public class ExamTakingService {
         this.draftService = draftService;
         this.eventCollectService = eventCollectService;
         this.submitService = submitService;
+        this.presenceService = presenceService;
     }
 
     /**
      * 进入考试（学生点击"进入并开始"，也服务于刷新/断线重进）：
      * 首次进入创建答卷行（个人快照 + 开始时间 + 个人截止），重复进入幂等返回同一快照。
+     * 进入即刷新监考在线心跳（阶段 7 监考大屏的实时数据源）。
      */
     public EnterExamResponse enter(Long examId) {
         Long studentId = requireStudent();
@@ -82,12 +86,14 @@ public class ExamTakingService {
         if (submission == null) {
             submission = createSubmission(exam, studentId);
         }
+        presenceService.touch(examId, studentId);
         return buildAnsweringContext(exam, submission, studentId);
     }
 
     /**
      * 答题数据（刷新页面/断线重连后拉取）：必须已进入考试；
      * 与 enter 共用上下文组装，题目与顺序与首次进入完全一致（spec「刷新不换题」场景）。
+     * 拉题同样刷新在线心跳（断线重连即刻恢复在线）。
      */
     public EnterExamResponse current(Long examId) {
         Long studentId = requireStudent();
@@ -96,6 +102,7 @@ public class ExamTakingService {
         if (submission == null) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "尚未进入考试，请先开始作答");
         }
+        presenceService.touch(examId, studentId);
         return buildAnsweringContext(exam, submission, studentId);
     }
 

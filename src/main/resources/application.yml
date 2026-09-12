@@ -110,6 +110,9 @@ exam:
       # 0 表示关闭对应档位升级。只警告 + 记录，绝不强制交卷（决策记录 §3.1）
       medium-threshold: 3
       high-threshold: 5
+  monitor:
+    # 监考在线心跳窗口（秒）：大于自动保存周期（30s）的合理超时，过期即离线（add-anti-cheat）
+    online-ttl-seconds: 60
 
 management:
   endpoints:

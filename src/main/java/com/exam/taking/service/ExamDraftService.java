@@ -4,6 +4,8 @@ import com.exam.anticheat.collector.BehaviorEventTypes;
 import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.monitoring.service.OnlinePresenceService;
+import com.exam.common.ResponseCode;
 import com.exam.taking.dto.AutoSaveRequest;
 import com.exam.taking.dto.AutoSaveResponse;
 import com.exam.submission.entity.ExamSubmission;
@@ -43,16 +45,19 @@ public class ExamDraftService {
     private final ObjectMapper objectMapper;
     private final BehaviorEventCollectService eventCollectService;
     private final ExamSubmissionMapper submissionMapper;
+    private final OnlinePresenceService presenceService;
 
     @Value("${exam.taking.draft.ttl-hours:2}")
     private int ttlHours;
 
     public ExamDraftService(StringRedisTemplate redisTemplate, ObjectMapper objectMapper,
-                            BehaviorEventCollectService eventCollectService, ExamSubmissionMapper submissionMapper) {
+                            BehaviorEventCollectService eventCollectService, ExamSubmissionMapper submissionMapper,
+                            OnlinePresenceService presenceService) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.eventCollectService = eventCollectService;
         this.submissionMapper = submissionMapper;
+        this.presenceService = presenceService;
     }
 
     /**
@@ -95,6 +100,8 @@ public class ExamDraftService {
         root.put("savedTime", now.toString());
 
         redisTemplate.opsForValue().set(key(examId, studentId), root.toString(), ttlOf(submission));
+        // 30s 自动保存即监考在线心跳（阶段 7：大屏在线/离线判定的数据源）
+        presenceService.touch(examId, studentId);
         return new AutoSaveResponse(true, acceptedVersion, now);
     }
 
