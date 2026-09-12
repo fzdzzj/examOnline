@@ -4,6 +4,7 @@ import com.exam.auth.security.LoginUser;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.config.ReadYourWriteMark;
 import com.exam.submission.dto.SubmitMessage;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.entity.ExamSubmitDedup;
@@ -76,7 +77,7 @@ class ExamSubmitServiceTest {
     @BeforeEach
     void setUp() {
         submitService = new ExamSubmitService(submissionService, dedupMapper, draftService,
-                sender, redisTemplate, objectMapper, eventCollectService);
+                sender, redisTemplate, objectMapper, eventCollectService, new ReadYourWriteMark(5000));
         ReflectionTestUtils.setField(submitService, "lockTtlSeconds", 30);
 
         // submit 走 SecurityUtil 取当前学生（ThreadLocal），单测中手工注入

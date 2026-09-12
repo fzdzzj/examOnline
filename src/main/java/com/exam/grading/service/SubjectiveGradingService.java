@@ -3,6 +3,7 @@ package com.exam.grading.service;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.config.ReadYourWriteMark;
 import com.exam.grading.dto.SubjectiveGradeRow;
 import com.exam.grading.dto.SubjectiveQuestionItem;
 import com.exam.grading.dto.SubjectiveScoreRequest;
@@ -43,15 +44,18 @@ public class SubjectiveGradingService {
     private final GradingPaperReader paperReader;
     private final SubjectiveGradeMapper subjectiveGradeMapper;
     private final GradingSubmissionMapper gradingSubmissionMapper;
+    private final ReadYourWriteMark readYourWriteMark;
 
     public SubjectiveGradingService(GradingQueryService gradingQueryService,
                                     GradingPaperReader paperReader,
                                     SubjectiveGradeMapper subjectiveGradeMapper,
-                                    GradingSubmissionMapper gradingSubmissionMapper) {
+                                    GradingSubmissionMapper gradingSubmissionMapper,
+                                    ReadYourWriteMark readYourWriteMark) {
         this.gradingQueryService = gradingQueryService;
         this.paperReader = paperReader;
         this.subjectiveGradeMapper = subjectiveGradeMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
+        this.readYourWriteMark = readYourWriteMark;
     }
 
     /** 待批题目清单：快照简答题 + 各题批改进度（判分未运行时进度为 0）。 */
@@ -152,6 +156,9 @@ public class SubjectiveGradingService {
         }
 
         refreshSubmissionSubjectiveScore(request.getSubmissionId());
+        // 读己之写（add-performance-deepening task4）：人工批改是写操作，成功打点，
+        // 教师随即刷新工作台（返回结果本身即主库回读）与本线程其他读不因从库延迟失真
+        readYourWriteMark.mark();
         return subjectiveGradeMapper.selectWorkbenchRows(examId, request.getQuestionId()).stream()
                 .filter(candidate -> candidate.getSubmissionId().equals(request.getSubmissionId()))
                 .findFirst()

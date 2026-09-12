@@ -7,6 +7,7 @@ import com.exam.auth.security.RoleHierarchy;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.config.ReadYourWriteMark;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.grading.entity.GradingSubmission;
@@ -59,6 +60,7 @@ public class ScoreService {
     private final UserMapper userMapper;
     private final ScoreAuditLogMapper auditLogMapper;
     private final RankCalculator rankCalculator;
+    private final ReadYourWriteMark readYourWriteMark;
 
     public ScoreService(ExamMapper examMapper,
                         GradingSubmissionMapper gradingSubmissionMapper,
@@ -66,7 +68,8 @@ public class ScoreService {
                         GradingPaperReader paperReader,
                         UserMapper userMapper,
                         ScoreAuditLogMapper auditLogMapper,
-                        RankCalculator rankCalculator) {
+                        RankCalculator rankCalculator,
+                        ReadYourWriteMark readYourWriteMark) {
         this.examMapper = examMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
         this.subjectiveGradeMapper = subjectiveGradeMapper;
@@ -74,6 +77,7 @@ public class ScoreService {
         this.userMapper = userMapper;
         this.auditLogMapper = auditLogMapper;
         this.rankCalculator = rankCalculator;
+        this.readYourWriteMark = readYourWriteMark;
     }
 
     // ==================== 汇总 ====================
@@ -130,6 +134,9 @@ public class ScoreService {
             examGraded = latest.getStatus() == Exam.STATUS_GRADED;
         }
         log.info("成绩汇总完成: exam={} 汇总={} 跳过={} 考试已批改={}", examId, summarized, skipped, examGraded);
+        // 读己之写（add-performance-deepening task4）：成绩汇总是写操作，成功打点，
+        // 短窗口内本线程的非强一致读（如判分进度）强制转主库，贴合"刚批改立刻看"
+        readYourWriteMark.mark();
         return new SummarizeStats(summarized, skipped, examGraded);
     }
 
@@ -214,7 +221,13 @@ public class ScoreService {
         return response;
     }
 
-    /** 学生查自己成绩（spec「学生仅见自己成绩」）：成绩未发布时一律拒绝，不泄露任何分数。 */
+    /**
+     * 学生查自己成绩（spec「学生仅见自己成绩」）：成绩未发布时一律拒绝，不泄露任何分数。
+     *
+     * <p>读写分离（add-performance-deepening task3）：成绩查询是<b>强一致读</b>——
+     * 发布/批改后立即查必须是最新分数，主从延迟会查到旧分/查不到，因此<b>不加
+     * {@code @DS("slave")}</b>、默认走主库（primary=master）。
+     */
     public MyScoreResponse myScore(Long examId) {
         Long studentId = SecurityUtil.getUserId();
         if (studentId == null) {
@@ -304,6 +317,9 @@ public class ScoreService {
                         .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_GRADED));
         writeAudit(examId, ScoreAuditLog.ACTION_PUBLISH, null, "发布成绩 " + summarized + " 人");
         log.info("成绩发布: exam={} 操作人={}", examId, SecurityUtil.getUserId());
+        // 读己之写（add-performance-deepening task4）：发布成绩是写操作，成功打点——
+        // 学生/教师随即查成绩是强一致读（本就走主库），此处标记同时兜底同线程其他非强一致读
+        readYourWriteMark.mark();
         return new ScoreActionItem(examId, true, "发布成功");
     }
 
@@ -345,6 +361,8 @@ public class ScoreService {
         }
         writeAudit(examId, ScoreAuditLog.ACTION_REVOKE, reason, "撤回成绩，学生端隐藏");
         log.info("成绩撤回: exam={} 操作人={} 原因={}", examId, SecurityUtil.getUserId(), reason);
+        // 读己之写（add-performance-deepening task4）：撤回是状态写，成功打点
+        readYourWriteMark.mark();
         return new ScoreActionItem(examId, true, "撤回成功");
     }
 

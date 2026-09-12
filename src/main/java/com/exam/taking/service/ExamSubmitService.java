@@ -5,6 +5,7 @@ import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.auth.security.SecurityUtil;
+import com.exam.config.ReadYourWriteMark;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.entity.ExamSubmitDedup;
 import com.exam.submission.mapper.ExamSubmitDedupMapper;
@@ -59,6 +60,7 @@ public class ExamSubmitService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final BehaviorEventCollectService eventCollectService;
+    private final ReadYourWriteMark readYourWriteMark;
 
     @Value("${exam.taking.submit.lock-ttl-seconds:30}")
     private int lockTtlSeconds;
@@ -66,7 +68,8 @@ public class ExamSubmitService {
     public ExamSubmitService(ExamSubmissionService submissionService, ExamSubmitDedupMapper dedupMapper,
                              ExamDraftService draftService, ExamSubmitSender sender,
                              StringRedisTemplate redisTemplate, ObjectMapper objectMapper,
-                             BehaviorEventCollectService eventCollectService) {
+                             BehaviorEventCollectService eventCollectService,
+                             ReadYourWriteMark readYourWriteMark) {
         this.submissionService = submissionService;
         this.dedupMapper = dedupMapper;
         this.draftService = draftService;
@@ -74,6 +77,7 @@ public class ExamSubmitService {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.eventCollectService = eventCollectService;
+        this.readYourWriteMark = readYourWriteMark;
     }
 
     /** 学生侧交卷入口：手动交卷与前端倒计时归零强制提交共用。 */
@@ -145,6 +149,9 @@ public class ExamSubmitService {
 
             log.info("学生 {} 交卷成功: exam={} submission={} type={} 答案字节={}",
                     studentId, examId, submission.getId(), submitType, answersJson.length());
+            // 读己之写（add-performance-deepening task4）：交卷是写操作，成功后给当前线程打点，
+            // 短窗口内本线程的 @DS("slave") 读（快照等）会被强制转主库，避免从库复制滞后读到旧状态
+            readYourWriteMark.mark();
             return new SubmitResponse(submission.getId(), examId, studentId,
                     ExamSubmission.STATUS_SUBMITTED, now, submitType);
         } finally {
