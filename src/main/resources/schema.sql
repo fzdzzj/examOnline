@@ -220,11 +220,58 @@ CREATE TABLE IF NOT EXISTS exam_submissions (
     answers        LONGTEXT              DEFAULT NULL,  -- 最终答案 JSON（questionId→答案）；NULL=尚未落库（补发扫描依据）
     status         TINYINT  NOT NULL DEFAULT 1,  -- 答卷状态：1进行中 2已交卷 3已批改（判分阶段消费）
     version        INT      NOT NULL DEFAULT 0,  -- 乐观锁版本号：状态 CAS 护栏
+    -- ===== 判分与成绩字段（add-grading-score, W7）=====
+    objective_score DECIMAL(5,1) DEFAULT NULL, -- 客观题得分：判分引擎按考试快照自动判分写入
+    subjective_score DECIMAL(5,1) DEFAULT NULL, -- 主观题得分：教师批改分数之和（批改保存/汇总时刷新）
+    total_score     DECIMAL(5,1) DEFAULT NULL, -- 总分 = 客观 + 主观（汇总时写入；未批简答按 0 分计入，§7.5）
+    grading_status  TINYINT  NOT NULL DEFAULT 0, -- 判分状态：0未判分 1判分成功 2判分失败（失败可重判/手动给分，§9.8）
+    grading_error   VARCHAR(512)         DEFAULT NULL, -- 判分失败原因（判分成功时置 NULL）
+    partial_graded  TINYINT  NOT NULL DEFAULT 0, -- 1=部分批改：存在未批简答（允许发布，未批按 0 分，§7.5）
     created_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_exam_student UNIQUE (exam_id, student_id),  -- 三重幂等之一：一人一场至多一条答卷
     KEY idx_submissions_sweep (status, deadline_time),        -- 兜底扫描：按状态筛进行中/已交卷未落库
-    KEY idx_submissions_exam_submit (exam_id, submit_time)
+    KEY idx_submissions_exam_submit (exam_id, submit_time),
+    KEY idx_submissions_grading (exam_id, grading_status)     -- 判分扫描：按考试筛待判/失败答卷
+);
+
+-- =============================================================
+-- 判分与成绩（add-grading-score, W7）
+-- =============================================================
+
+-- 主观题批改表：判分引擎为简答题建行（含关键词初判提示分），教师逐题批改回填终分
+-- 并发批改防覆盖：version 乐观锁（两教师同批一份卷仅一个成功，spec「并发批改防覆盖」场景）
+CREATE TABLE IF NOT EXISTS subjective_grades (
+    id               BIGINT       NOT NULL AUTO_INCREMENT,
+    submission_id    BIGINT       NOT NULL,     -- 答卷 ID（uk 与 question_id 联合唯一：一卷一题一条批改）
+    exam_id          BIGINT       NOT NULL,
+    student_id       BIGINT       NOT NULL,
+    question_id      BIGINT       NOT NULL,     -- 题目真实主键（个人快照题序可能不同，跨生对齐靠它）
+    question_number  INT          NOT NULL,     -- 考试快照内题号（工作台展示用，与个人题序无关）
+    student_answer   TEXT                  DEFAULT NULL, -- 学生答案快照（判分时从 answers JSON 摘出，工作台展示）
+    suggested_score  DECIMAL(5,1)          DEFAULT NULL, -- 关键词初判提示分：仅供教师参考，不自动定分
+    suggested_detail VARCHAR(512)          DEFAULT NULL, -- 初判依据（命中关键词 x/y），教师复核初判误伤
+    score            DECIMAL(5,1)          DEFAULT NULL, -- 教师终分：NULL=未批（计 0 分，§7.5）；重判不动终分（§7.2）
+    comment          VARCHAR(1024)         DEFAULT NULL, -- 评语留痕
+    grader_id        BIGINT                DEFAULT NULL, -- 批改人
+    graded_time      DATETIME              DEFAULT NULL, -- 批改时间
+    version          INT          NOT NULL DEFAULT 0, -- 乐观锁版本号：并发批改 CAS 护栏
+    created_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_subjective_grades UNIQUE (submission_id, question_id),
+    KEY idx_subjective_exam_question (exam_id, question_id)   -- 工作台：同题列出全部学生
+);
+
+-- 成绩发布/撤回审计日志（spec「成绩撤回」场景：谁/何时/做了什么/原因）
+CREATE TABLE IF NOT EXISTS score_audit_logs (
+    id           BIGINT       NOT NULL AUTO_INCREMENT,
+    exam_id      BIGINT       NOT NULL,
+    action       VARCHAR(16)  NOT NULL,      -- PUBLISH=发布 REVOKE=撤回
+    operator_id  BIGINT       NOT NULL,      -- 操作人
+    reason       VARCHAR(512)          DEFAULT NULL, -- 撤回原因（撤回必填）
+    detail       VARCHAR(512)          DEFAULT NULL, -- 摘要（如发布人数/失败跳过明细）
+    created_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_score_audit_exam (exam_id)
 );
 
 -- 交卷防重表：提交请求先查后插（uk 兜底并发插入），是三重幂等的第一道持久化闸；并发进入/重试路径据此快速幂等返回
