@@ -9,6 +9,7 @@ import com.exam.auth.security.RoleHierarchy;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.exam.service.ExamPaperLockService;
 import com.exam.question.dto.QuestionCreateRequest;
 import com.exam.question.entity.Question;
 import com.exam.question.entity.QuestionTag;
@@ -47,13 +48,16 @@ public class QuestionService {
     private final QuestionMapper questionMapper;
     private final QuestionTagMapper questionTagMapper;
     private final TagMapper tagMapper;
+    private final ExamPaperLockService examPaperLockService;
     private final ObjectMapper objectMapper;
 
     public QuestionService(QuestionMapper questionMapper, QuestionTagMapper questionTagMapper,
-                           TagMapper tagMapper, ObjectMapper objectMapper) {
+                           TagMapper tagMapper, ExamPaperLockService examPaperLockService,
+                           ObjectMapper objectMapper) {
         this.questionMapper = questionMapper;
         this.questionTagMapper = questionTagMapper;
         this.tagMapper = tagMapper;
+        this.examPaperLockService = examPaperLockService;
         this.objectMapper = objectMapper;
     }
 
@@ -87,6 +91,8 @@ public class QuestionService {
     @Transactional
     public Question update(Long id, QuestionCreateRequest request) {
         Question question = getOwnedQuestion(id);
+        // 考试进行中锁定（§4.1）：被进行中考试试卷引用的题目现场不可改，走错题补偿流程
+        examPaperLockService.assertQuestionEditable(id);
         QuestionType type = parseType(request.getType());
         List<String> choices = validateChoices(type, request.getChoices());
 
@@ -114,6 +120,8 @@ public class QuestionService {
     @Transactional
     public void softDelete(Long id) {
         Question question = getOwnedQuestion(id);
+        // 考试进行中锁定（§4.1）：被进行中考试试卷引用的题目不可软删（快照副本虽隔离，引用完整性仍须保证）
+        examPaperLockService.assertQuestionEditable(id);
         questionMapper.deleteById(question.getId());
         log.info("题目软删除: id={}", id);
     }

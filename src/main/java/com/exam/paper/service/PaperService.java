@@ -9,6 +9,7 @@ import com.exam.auth.security.RoleHierarchy;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.exam.service.ExamPaperLockService;
 import com.exam.paper.dto.PaperCreateRequest;
 import com.exam.paper.dto.PaperDetailResponse;
 import com.exam.paper.dto.PaperQuestionItemResponse;
@@ -48,6 +49,7 @@ import java.util.stream.Collectors;
  *   <li>试卷内分值（paper_questions.score）覆盖题目默认分，两边互不影响（spec §11.1 决策）；</li>
  *   <li>总分一致性强校验：各题分值之和必须等于试卷申报总分（保存元信息与生成快照两处校验）；</li>
  *   <li>抽题先取候选 id 再内存 shuffle（避免 DB 端 ORDER BY RAND() 全表扫描）；</li>
+ *   <li>两层锁：快照锁定（status=已锁定）+ 考试进行中锁定（被进行中考试绑定的试卷只读，§4.1）；</li>
  *   <li>数据隔离：写操作经 {@link #getOwnedPaper} owner 校验（assertTeacherOwnsPaper 模式）。</li>
  * </ul>
  */
@@ -59,13 +61,16 @@ public class PaperService {
     private final PaperQuestionMapper paperQuestionMapper;
     private final QuestionMapper questionMapper;
     private final QuestionService questionService;
+    private final ExamPaperLockService examPaperLockService;
 
     public PaperService(PaperMapper paperMapper, PaperQuestionMapper paperQuestionMapper,
-                        QuestionMapper questionMapper, QuestionService questionService) {
+                        QuestionMapper questionMapper, QuestionService questionService,
+                        ExamPaperLockService examPaperLockService) {
         this.paperMapper = paperMapper;
         this.paperQuestionMapper = paperQuestionMapper;
         this.questionMapper = questionMapper;
         this.questionService = questionService;
+        this.examPaperLockService = examPaperLockService;
     }
 
     /** 创建试卷（草稿）。 */
@@ -114,6 +119,7 @@ public class PaperService {
     public PaperDetailResponse updateMeta(Long id, PaperUpdateRequest request) {
         Paper paper = getOwnedPaper(id);
         assertNotLocked(paper);
+        examPaperLockService.assertPaperEditable(paper.getId());
         if (request.getTotalScore() != null && paper.getQuestionCount() > 0) {
             BigDecimal sum = sumScores(paper.getId());
             if (sum.compareTo(request.getTotalScore()) != 0) {
@@ -135,10 +141,11 @@ public class PaperService {
         return detail(id);
     }
 
-    /** 删除试卷（草稿期）：已锁定（生成过快照）的试卷不允许删除，保护历史组卷结果。 */
+    /** 删除试卷（草稿期）：已锁定（生成过快照）或被进行中考试绑定的试卷不允许删除，保护历史组卷结果。 */
     @Transactional
     public void delete(Long id) {
         Paper paper = getOwnedPaper(id);
+        examPaperLockService.assertPaperEditable(paper.getId());
         if (paper.getStatus() == Paper.STATUS_LOCKED) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "试卷已锁定（已生成快照），不允许删除");
         }
@@ -155,6 +162,7 @@ public class PaperService {
     public PaperQuestionItemResponse addQuestion(Long paperId, Long questionId, BigDecimal score) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);
+        examPaperLockService.assertPaperEditable(paper.getId());
         PaperQuestion row = addQuestionInternal(paper, loadLiveQuestion(questionId), score);
         return toItem(row, questionMapper.selectById(questionId));
     }
@@ -164,6 +172,7 @@ public class PaperService {
     public void removeQuestion(Long paperId, Long questionId) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);
+        examPaperLockService.assertPaperEditable(paper.getId());
         int removed = paperQuestionMapper.delete(Wrappers.<PaperQuestion>lambdaQuery()
                 .eq(PaperQuestion::getPaperId, paperId)
                 .eq(PaperQuestion::getQuestionId, questionId));
@@ -180,6 +189,7 @@ public class PaperService {
     public void updateQuestionScore(Long paperId, Long questionId, BigDecimal score) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);
+        examPaperLockService.assertPaperEditable(paper.getId());
         PaperQuestion row = paperQuestionMapper.selectOne(Wrappers.<PaperQuestion>lambdaQuery()
                 .eq(PaperQuestion::getPaperId, paperId)
                 .eq(PaperQuestion::getQuestionId, questionId));
@@ -198,6 +208,7 @@ public class PaperService {
     public PaperDetailResponse updateOrder(Long paperId, List<Long> orderedQuestionIds) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);
+        examPaperLockService.assertPaperEditable(paper.getId());
         List<PaperQuestion> rows = listRows(paperId);
         Set<Long> currentIds = rows.stream().map(PaperQuestion::getQuestionId).collect(Collectors.toSet());
         if (orderedQuestionIds.size() != rows.size()
@@ -236,6 +247,7 @@ public class PaperService {
     public PaperDetailResponse commitRandomDraw(Long paperId, RandomDrawRequest request) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);
+        examPaperLockService.assertPaperEditable(paper.getId());
         Set<Long> existing = paperQuestionMapper.selectList(Wrappers.<PaperQuestion>lambdaQuery()
                         .eq(PaperQuestion::getPaperId, paperId)).stream()
                 .map(PaperQuestion::getQuestionId)

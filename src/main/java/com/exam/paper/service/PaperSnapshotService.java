@@ -3,6 +3,7 @@ package com.exam.paper.service;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.exam.service.ExamPaperLockService;
 import com.exam.paper.dto.PaperSnapshotResponse;
 import com.exam.paper.entity.Paper;
 import com.exam.paper.entity.PaperQuestion;
@@ -48,12 +49,14 @@ public class PaperSnapshotService {
     private final PaperSnapshotMapper paperSnapshotMapper;
     private final QuestionMapper questionMapper;
     private final QuestionService questionService;
+    private final ExamPaperLockService examPaperLockService;
     private final ObjectMapper objectMapper;
 
     public PaperSnapshotService(PaperService paperService, PaperMapper paperMapper,
                                 PaperQuestionMapper paperQuestionMapper,
                                 PaperSnapshotMapper paperSnapshotMapper,
                                 QuestionMapper questionMapper, QuestionService questionService,
+                                ExamPaperLockService examPaperLockService,
                                 ObjectMapper objectMapper) {
         this.paperService = paperService;
         this.paperMapper = paperMapper;
@@ -61,6 +64,7 @@ public class PaperSnapshotService {
         this.paperSnapshotMapper = paperSnapshotMapper;
         this.questionMapper = questionMapper;
         this.questionService = questionService;
+        this.examPaperLockService = examPaperLockService;
         this.objectMapper = objectMapper;
     }
 
@@ -74,6 +78,8 @@ public class PaperSnapshotService {
         if (paper.getStatus() == Paper.STATUS_LOCKED) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "试卷已锁定，快照已存在，不允许重复生成");
         }
+        // 生成快照属于组卷动作：被进行中考试绑定的试卷同样禁止（§4.1 试卷锁定）
+        examPaperLockService.assertPaperEditable(paperId);
         List<PaperQuestion> rows = paperQuestionMapper.selectList(Wrappers.<PaperQuestion>lambdaQuery()
                 .eq(PaperQuestion::getPaperId, paperId)
                 .orderByAsc(PaperQuestion::getNumber));
