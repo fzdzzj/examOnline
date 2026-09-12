@@ -12,8 +12,9 @@ spring:
       continue-on-error: false
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
+      host: ${REDIS_HOST:127.0.0.1}
+      # 端口可注入：本机 6379 被其他项目占用时，用临时 Redis 跑测试（REDIS_PORT=6390）
+      port: ${REDIS_PORT:6379}
       database: 15
       timeout: 3s
   rabbitmq:
@@ -46,11 +47,20 @@ exam:
     reset-code:
       ttl-minutes: 5
       length: 6
+  taking:
+    sweep:
+      # 测试环境禁用定时兜底（间隔拉到 1h）：需要兜底的用例直接调用 sweepService.sweep()，
+      # 避免定时 tick 干扰 MQ 发送次数断言
+      fixed-delay-ms: 3600000
+      initial-delay-ms: 3600000
 
 # SMTP 未配置时禁用 mail 健康检查，避免 /actuator/health 恒为 DOWN
 management:
   health:
     mail:
+      enabled: false
+    rabbit:
+      # 测试环境无 broker：禁用 rabbit 健康检查（add-exam-taking 引入 amqp 后默认启用）
       enabled: false
 
 mybatis-plus:
