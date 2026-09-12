@@ -33,7 +33,13 @@ public class ExamSubmissionService {
         this.sqlSessionFactory = sqlSessionFactory;
     }
 
-    /** 按 (考试, 学生) 定位答卷。 */
+    /**
+     * 按 (考试, 学生) 定位答卷。
+     *
+     * <p>读写分离（add-performance-deepening task3）：答卷详情是<b>强一致读</b>——
+     * 刚交卷/兜底收卷后立即回读必须是最新状态，主从复制滞后会导致"查不到刚交的答卷"，
+     * 因此<b>不加 {@code @DS("slave")}</b>、默认走主库（primary=master）。
+     */
     public ExamSubmission getByExamStudent(Long examId, Long studentId) {
         return submissionMapper.selectByExamStudent(examId, studentId);
     }

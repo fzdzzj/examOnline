@@ -113,6 +113,12 @@ exam:
   monitor:
     # 监考在线心跳窗口（秒）：大于自动保存周期（30s）的合理超时，过期即离线（add-anti-cheat）
     online-ttl-seconds: 60
+  datasource:
+    # 读写分离读己之写窗口（add-performance-deepening task3+4，ReadYourWriteMark 消费）：
+    # 写操作（交卷/发布/批改）完成后在当前线程置 ThreadLocal 标记，窗口(ms)内非强一致读强制转主库。
+    # 为什么是"短窗口"而非永久路由主库：主从同步通常毫秒~秒级，
+    # 永久走主库会让从库形同虚设、丢失读写分离收益；窗口恰好覆盖 GTID 复制延迟峰值。
+    read-your-write-window-ms: ${READ_YOUR_WRITE_WINDOW_MS:5000}
   cache:
     # 缓存三防配置（add-performance-deepening 阶段 8，CacheConfig/CacheMutexLoader 消费）：
     # 穿透=空值缓存（NOT_FOUND 短 TTL 空标记）、击穿=Redis SETNX 互斥锁重建、雪崩=TTL 随机抖动

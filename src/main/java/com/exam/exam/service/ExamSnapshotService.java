@@ -1,6 +1,7 @@
 package com.exam.exam.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.common.cache.CacheMutexLoader;
@@ -128,7 +129,12 @@ public class ExamSnapshotService {
      * 可用长 TTL 且无需失效逻辑；key 用 examId（一场考试仅一份快照，与快照行一一对应）。
      * 未命中进入方法体后经 CacheMutexLoader 互斥回源：防击穿（开考 5000 人并发拉卷仅一个线程查 DB），
      * 查无结果（未发布/不存在）写短 TTL 空标记防穿透。
+     *
+     * <p>读写分离（add-performance-deepening task3）：快照<b>只读不可变</b>，属非强一致读
+     * （开考拉卷高并发、可容忍秒级延迟）——{@code @DS("slave")} 走从库卸热读压力；
+     * 写后窗口内命中由 ReadYourWriteRouter 临时转主库。
      */
+    @DS("slave")
     @Cacheable(cacheNames = CacheConfig.CACHE_EXAM_SNAPSHOT, key = "#examId")
     public ExamSnapshotResponse getCurrent(Long examId) {
         return cacheMutexLoader.load(CacheConfig.CACHE_EXAM_SNAPSHOT, examId, () -> {

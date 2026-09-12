@@ -1,6 +1,7 @@
 package com.exam.grading.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.exam.auth.security.OwnershipGuard;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
@@ -38,7 +39,12 @@ public class GradingQueryService {
     /**
      * 判分进度总览：客观判分按答卷 grading_status 统计；
      * 主观批改按 subjective_grades 是否有终分统计（未运行判分时两列均为 0）。
+     *
+     * <p>读写分离（add-performance-deepening task3）：进度总览是<b>非强一致读</b>
+     * （统计数字滞后一瞬无碍，前端会刷新）——{@code @DS("slave")} 走从库卸读压力。
+     * 注意：判分/批改的<b>写</b>不经此服务（教师批改走 SubjectiveGradingService，明文走主库）。
      */
+    @DS("slave")
     public GradingProgressResponse progress(Long examId) {
         requireOwnedExam(examId);
         GradingProgressResponse response = new GradingProgressResponse();

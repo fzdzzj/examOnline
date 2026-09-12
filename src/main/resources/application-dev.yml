@@ -9,6 +9,33 @@ spring:
       maximum-pool-size: ${DB_POOL_MAX:20}
       minimum-idle: 5
       connection-timeout: 30000
+    # ===== 读写分离（add-performance-deepening task3+4）=====
+    # 接入 dynamic-datasource：master=主库(3306)、slave=从库(3307)，primary 指向 master。
+    # 语义：默认(不加 @DS)所有写与强一致读走 master；非强一致读接口加 @DS("slave") 走从库。
+    # master 配置保留原 spring.datasource 同款连接（primary 接管默认路由，原块兜底保留）
+    dynamic:
+      primary: master
+      strict: false
+      datasource:
+        master:
+          url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true}
+          username: ${DB_USERNAME:root}
+          password: ${DB_PASSWORD:root}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          hikari:
+            maximum-pool-size: ${DB_POOL_MAX:20}
+            minimum-idle: 5
+            connection-timeout: 30000
+        slave:
+          # 从库：docker-compose 部署的 GTID 复制节点（127.0.0.1:3307），默认读写密码与主库一致
+          url: ${SLAVE_DB_URL:jdbc:mysql://127.0.0.1:3307/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true}
+          username: ${SLAVE_DB_USERNAME:root}
+          password: ${SLAVE_DB_PASSWORD:root}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          hikari:
+            maximum-pool-size: ${SLAVE_DB_POOL_MAX:10}
+            minimum-idle: 2
+            connection-timeout: 30000
   data:
     redis:
       host: ${REDIS_HOST:127.0.0.1}
