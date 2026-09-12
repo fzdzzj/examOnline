@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+    <!--
+      本机 Maven 全局 settings.xml 将 localRepository 指向不可写的
+      D:\develop\Maven\apache-maven-3.9.4\mvn_repo，导致构建失败。
+      此处覆盖为工程内可写的 .m2-repo（由 .mvn/maven.config 的 -s 引入）。
+    -->
+    <localRepository>D:\code\examOnline\.m2-repo</localRepository>
+</settings>

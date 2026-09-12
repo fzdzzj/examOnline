@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    # H2 MySQL 兼容模式：与 schema.sql 语法对齐
+    url: jdbc:h2:mem:exam;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: false
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 15
+      timeout: 3s
+  mail:
+    host:
+
+# 认证测试配置：固定 JWT 密钥（>=32 字节），锁定阈值调低便于测试
+exam:
+  auth:
+    jwt:
+      secret: test-only-jwt-secret-0123456789-abcdefghijklmnopqrstuvwxyz
+      access-expire-minutes: 30
+      refresh-expire-days: 7
+    admin:
+      username: admin
+      password: admin123
+    lock:
+      max-failures: 5
+      lock-minutes: 15
+    rate-limit:
+      per-minute: 10
+    reset-code:
+      ttl-minutes: 5
+      length: 6
+
+# SMTP 未配置时禁用 mail 健康检查，避免 /actuator/health 恒为 DOWN
+management:
+  health:
+    mail:
+      enabled: false
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
