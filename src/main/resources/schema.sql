@@ -153,3 +153,48 @@ CREATE TABLE IF NOT EXISTS paper_snapshots (
     created_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_paper_snapshots_paper (paper_id)
 );
+
+-- =============================================================
+-- 考试管理两表（add-exam-management）
+-- 状态机：0未开始 → 1进行中 → 2已结束 → 3已批改 → 4已发布（docs/需求决策记录.md §4.3）
+-- 状态流转一律走乐观锁 CAS（UPDATE ... WHERE status=? AND version=?），保证并发安全
+-- =============================================================
+
+-- 考试表：绑定试卷/课程/班级，设定时间窗与个人时长；发布后学生可见，到点自动进入进行中
+CREATE TABLE IF NOT EXISTS exams (
+    id                 BIGINT       NOT NULL AUTO_INCREMENT,
+    title              VARCHAR(128) NOT NULL,
+    description        VARCHAR(512)          DEFAULT '',
+    paper_id           BIGINT       NOT NULL,            -- 绑定试卷（发布时生成考试快照，快照与试卷从此解耦）
+    course_id          BIGINT                DEFAULT NULL, -- 课程 ID（课程实体后续阶段提供，先存 ID）
+    class_id           BIGINT                DEFAULT NULL, -- 班级 ID（同上）
+    start_time         DATETIME     NOT NULL,            -- 时间窗起点：定时发布的触发点（服务端时间为准，§1.1）
+    end_time           DATETIME     NOT NULL,            -- 时间窗终点：到达即自然结束
+    duration_minutes   INT          NOT NULL,            -- 个人答题时长：学生点击"开始考试"后倒计时（§7.9，阶段 5 消费）
+    allow_late_minutes INT          NOT NULL DEFAULT 0,  -- 允许迟到分钟数（超过开始时间多久仍可进入）
+    status             TINYINT      NOT NULL DEFAULT 0,  -- 0未开始 1进行中 2已结束 3已批改 4已发布
+    published          TINYINT      NOT NULL DEFAULT 0,  -- 0=未发布（学生不可见） 1=已发布（发布即生成考试快照）
+    force_end          TINYINT      NOT NULL DEFAULT 0,  -- 1=教师提前结束标记（强制交卷在阶段 5 按最后自动保存处理，§1.5）
+    anti_cheat_config  TEXT,                             -- 防作弊配置 JSON（切屏检测/禁复制等开关，阶段 5 消费）
+    snapshot_id        BIGINT                DEFAULT NULL, -- 考试快照 ID（发布时回填）
+    version            INT          NOT NULL DEFAULT 0,  -- 乐观锁版本号：CAS 状态流转的并发护栏
+    created_by         BIGINT       NOT NULL,            -- 创建教师 ID（owner 校验依据）
+    created_time       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted         TINYINT      NOT NULL DEFAULT 0,  -- 软删（§7.7：仅未开始可删，历史可追溯）
+    KEY idx_exams_created_by (created_by),               -- 教师考试列表
+    KEY idx_exams_status (status)                        -- 定时任务扫表：按状态 + 时间窗筛选待推进考试
+);
+
+-- 考试快照：发布时一次性序列化"考试配置 + 完整试卷内容"（题目/归一化答案/试卷内分值/题号顺序），只写不改
+-- 之后答题/判分/回看一律读快照，试卷或题目再怎么改都不污染历史场次（§10.10）
+CREATE TABLE IF NOT EXISTS exam_snapshots (
+    id           BIGINT   NOT NULL AUTO_INCREMENT,
+    exam_id      BIGINT   NOT NULL,
+    exam_json    LONGTEXT NOT NULL,   -- 考试配置副本（时间窗/时长/迟到容忍/防作弊配置）
+    paper_json   LONGTEXT NOT NULL,   -- 试卷内容副本（结构与 paper_snapshots.paper_json 一致，复用同一序列化）
+    version      INT      NOT NULL DEFAULT 1,  -- 一场考试只生成一次快照，当前固定 1
+    created_by   BIGINT   NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_exam_snapshots_exam UNIQUE (exam_id)  -- exam_id 唯一：发布是快照生成的唯一时机
+);
