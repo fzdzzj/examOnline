@@ -14,7 +14,9 @@ import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.taking.dto.AutoSaveRequest;
 import com.exam.taking.dto.AutoSaveResponse;
+import com.exam.anticheat.model.EventVerdict;
 import com.exam.taking.dto.BehaviorReportRequest;
+import com.exam.taking.dto.BehaviorReportResponse;
 import com.exam.taking.dto.EnterExamResponse;
 import com.exam.taking.dto.ExamListItem;
 import com.exam.taking.dto.QuestionView;
@@ -103,8 +105,12 @@ public class ExamTakingService {
     }
 
     /** 切屏/失焦行为上报：校验在考（已进入且未交卷）后落行为日志，不强制交卷。 */
-    /** 切屏/失焦行为上报：校验在考（已进入且未交卷）后交由防作弊采集核心落行为日志，不强制交卷。 */
-    public void reportBehavior(Long examId, BehaviorReportRequest request) {
+    /**
+     * 切屏/失焦行为上报：校验在考（已进入且未交卷）后交由防作弊采集核心落行为日志。
+     * 返回策略判定结果（是否警告/严重度/切屏次数）供前端弹提醒——
+     * 只警告 + 记录，绝不强制交卷（spec「切屏警告不交卷」场景）。
+     */
+    public BehaviorReportResponse reportBehavior(Long examId, BehaviorReportRequest request) {
         Long studentId = requireStudent();
         ExamSubmission submission = submissionMapper.selectByExamStudent(examId, studentId);
         if (submission == null) {
@@ -114,9 +120,10 @@ public class ExamTakingService {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "答卷已提交，无需上报行为");
         }
         // 阶段 7 防作弊：事件经统一采集核心（策略模式）判定严重度后落库——
-        // 严重度由服务端策略决定，客户端不再自带；切屏只警告+记录，绝不强制交卷
-        eventCollectService.collect(examId, studentId, request.getEventType(),
+        // 严重度由服务端策略决定，客户端不再自带
+        EventVerdict verdict = eventCollectService.collect(examId, studentId, request.getEventType(),
                 request.getEventData(), request.getOccurredTime());
+        return BehaviorReportResponse.from(request.getEventType(), verdict);
     }
 
     /**

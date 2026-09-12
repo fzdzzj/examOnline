@@ -102,6 +102,14 @@ exam:
       initial-delay-ms: 10000
       batch-size: 500
       max-rounds: 10
+  anticheat:
+    # 行为事件计数器 TTL（小时）：需大于最长考试时长，保证整场考试计数窗口完整（add-anti-cheat）
+    counter-ttl-hours: 12
+    switch-screen:
+      # 切屏次数阈值（可配置）：累计切屏达到 medium-threshold 升"中"、达到 high-threshold 升"高"；
+      # 0 表示关闭对应档位升级。只警告 + 记录，绝不强制交卷（决策记录 §3.1）
+      medium-threshold: 3
+      high-threshold: 5
 
 management:
   endpoints:

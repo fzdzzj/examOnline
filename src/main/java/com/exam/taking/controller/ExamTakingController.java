@@ -5,6 +5,7 @@ import com.exam.common.ApiResponse;
 import com.exam.taking.dto.AutoSaveRequest;
 import com.exam.taking.dto.AutoSaveResponse;
 import com.exam.taking.dto.BehaviorReportRequest;
+import com.exam.taking.dto.BehaviorReportResponse;
 import com.exam.taking.dto.EnterExamResponse;
 import com.exam.taking.dto.ExamListItem;
 import com.exam.taking.dto.SubmitRequest;
@@ -73,12 +74,15 @@ public class ExamTakingController {
         return ApiResponse.success(takingService.saveDraft(examId, request));
     }
 
-    /** 切屏/失焦行为上报：落行为日志，只记录不强制交卷 */
+    /**
+     * 切屏/失焦行为上报：经防作弊采集核心（策略模式）判定严重度并落行为日志。
+     * 响应携带警告信息（是否弹提醒/严重度/切屏次数）——只警告不强制交卷，
+     * 处置由教师事后依行为日志判定。
+     */
     @PostMapping("/exams/{examId}/behavior")
-    public ApiResponse<Void> reportBehavior(@PathVariable Long examId,
-                                            @Valid @RequestBody BehaviorReportRequest request) {
-        takingService.reportBehavior(examId, request);
-        return ApiResponse.success();
+    public ApiResponse<BehaviorReportResponse> reportBehavior(@PathVariable Long examId,
+                                                              @Valid @RequestBody BehaviorReportRequest request) {
+        return ApiResponse.success(takingService.reportBehavior(examId, request));
     }
 
     /**

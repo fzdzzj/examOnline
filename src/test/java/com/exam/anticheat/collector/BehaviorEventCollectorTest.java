@@ -31,9 +31,14 @@ class BehaviorEventCollectorTest {
 
     private final UnknownEventCollector fallback = new UnknownEventCollector();
 
+    private com.exam.anticheat.service.BehaviorCounterService mockCounter() {
+        return org.mockito.Mockito.mock(com.exam.anticheat.service.BehaviorCounterService.class);
+    }
+
     private BehaviorEventRegistry registry() {
+        // 未打桩的计数 mock increment 返回 0L → 走基础严重度，不影响本类分派验证
         return new BehaviorEventRegistry(
-                List.of(new SwitchScreenEventCollector(), new WindowBlurEventCollector(),
+                List.of(new SwitchScreenEventCollector(mockCounter()), new WindowBlurEventCollector(),
                         new PageRefreshEventCollector(), new SubmitAnomalyEventCollector(),
                         new DraftConflictEventCollector()),
                 fallback);
@@ -68,7 +73,7 @@ class BehaviorEventCollectorTest {
     void duplicateRegistrationFails() {
         assertThrows(IllegalStateException.class,
                 () -> new BehaviorEventRegistry(
-                        List.of(new SwitchScreenEventCollector(), new SwitchScreenEventCollector()), fallback));
+                        List.of(new SwitchScreenEventCollector(mockCounter()), new SwitchScreenEventCollector(mockCounter())), fallback));
     }
 
     // ==================== 新增事件不动核心 ====================
@@ -89,7 +94,7 @@ class BehaviorEventCollectorTest {
             }
         };
         BehaviorEventRegistry registry = new BehaviorEventRegistry(
-                List.of(new SwitchScreenEventCollector(), newEvent), fallback);
+                List.of(new SwitchScreenEventCollector(mockCounter()), newEvent), fallback);
         assertInstanceOf(newEvent.getClass(), registry.dispatch("CAMERA_COVER"));
 
         // 采集核心对新事件照常完成"判定 → 落库"全流程
