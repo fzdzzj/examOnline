@@ -24,6 +24,8 @@
 
         <!-- 版本矩阵集中锁定（dependencyManagement 引用，防依赖冲突） -->
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
+        <!-- 3.5.9 起分页插件拆分至独立 artifact（依赖 jsqlparser 实现 LIMIT 方言） -->
+        <mybatis-plus-jsqlparser.version>3.5.9</mybatis-plus-jsqlparser.version>
         <jjwt.version>0.11.5</jjwt.version>
         <jbcrypt.version>0.4</jbcrypt.version>
         <mysql.version>9.3.0</mysql.version>
@@ -36,6 +38,11 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser</artifactId>
+                <version>${mybatis-plus-jsqlparser.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -101,6 +108,11 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+        <!-- 分页插件（3.5.9 起拆分，题目/试卷分页依赖） -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>

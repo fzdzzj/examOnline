@@ -68,3 +68,88 @@ CREATE TABLE IF NOT EXISTS invite_codes (
     is_deleted   TINYINT     NOT NULL DEFAULT 0,
     CONSTRAINT uk_invite_codes_code UNIQUE (code)
 );
+
+-- =============================================================
+-- 题库与组卷六表（add-question-bank）
+-- 题型仅 4 类：1单选 2多选 3判断 4简答（其余题型已裁剪，见 docs/面试版实施方案.md §2.3）
+-- =============================================================
+
+-- 题目表：软删除（is_deleted），被组卷/快照引用后删除不影响历史
+CREATE TABLE IF NOT EXISTS questions (
+    id             BIGINT       NOT NULL AUTO_INCREMENT,
+    type           TINYINT      NOT NULL,            -- 1单选 2多选 3判断 4简答
+    content        TEXT         NOT NULL,            -- 题干
+    choices        TEXT,                             -- 客观题选项 JSON 数组，如 ["选项A","选项B"]；判断/简答为 NULL
+    correct_answer VARCHAR(512) NOT NULL,            -- 归一化答案：单选字母/多选升序字母列表/判断 T-F/简答参考答案
+    score          DECIMAL(5,1) NOT NULL DEFAULT 5,  -- 默认分值（组卷可在试卷内覆盖，互不影响）
+    difficulty     TINYINT      NOT NULL DEFAULT 1,  -- 1易 2中 3难
+    analysis       TEXT,                             -- 答案解析
+    created_by     BIGINT       NOT NULL,            -- 创建教师 ID（owner 校验依据）
+    created_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted     TINYINT      NOT NULL DEFAULT 0,
+    KEY idx_questions_created_by (created_by)         -- 教师个人题库列表
+);
+
+-- 标签表：扁平四类（学科/难度/题型/自定义），预留扩展 parent_id 升级树形
+-- 不设 (name,type) 唯一键：软删后同名标签可重建，避免唯一键冲突，查重在 Service 层做
+CREATE TABLE IF NOT EXISTS tags (
+    id           BIGINT      NOT NULL AUTO_INCREMENT,
+    name         VARCHAR(64) NOT NULL,
+    type         VARCHAR(16) NOT NULL,               -- SUBJECT/DIFFICULTY/QUESTION_TYPE/CUSTOM
+    created_by   BIGINT      NOT NULL DEFAULT 0,
+    created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted   TINYINT     NOT NULL DEFAULT 0,
+    KEY idx_tags_type (type)
+);
+
+-- 题目-标签多选关联
+CREATE TABLE IF NOT EXISTS question_tags (
+    id          BIGINT NOT NULL AUTO_INCREMENT,
+    question_id BIGINT NOT NULL,
+    tag_id      BIGINT NOT NULL,
+    CONSTRAINT uk_question_tags UNIQUE (question_id, tag_id),
+    KEY idx_question_tags_tag (tag_id)              -- 按标签筛题目
+);
+
+-- 试卷表：total_score 为教师申报总分，保存/生成快照时与各题分值之和校验一致
+CREATE TABLE IF NOT EXISTS papers (
+    id             BIGINT        NOT NULL AUTO_INCREMENT,
+    title          VARCHAR(128)  NOT NULL,
+    description    VARCHAR(512)           DEFAULT '',
+    total_score    DECIMAL(5,1)  NOT NULL DEFAULT 0,
+    question_count INT           NOT NULL DEFAULT 0, -- 题目数量（随组卷操作维护）
+    status         TINYINT       NOT NULL DEFAULT 0, -- 0=草稿 1=已锁定（快照已生成）
+    snapshot_id    BIGINT                 DEFAULT NULL, -- 当前生效快照 ID
+    created_by     BIGINT        NOT NULL,
+    created_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted     TINYINT       NOT NULL DEFAULT 0,
+    KEY idx_papers_created_by (created_by)
+);
+
+-- 试卷-题目关联：number 试卷内题号（1 起连续）；score 试卷内分值（覆盖题目默认分，互不影响）
+CREATE TABLE IF NOT EXISTS paper_questions (
+    id          BIGINT       NOT NULL AUTO_INCREMENT,
+    paper_id    BIGINT       NOT NULL,
+    question_id BIGINT       NOT NULL,
+    number      INT          NOT NULL,
+    score       DECIMAL(5,1) NOT NULL,
+    CONSTRAINT uk_paper_question UNIQUE (paper_id, question_id),
+    CONSTRAINT uk_paper_number UNIQUE (paper_id, number),
+    KEY idx_paper_questions_question (question_id)
+);
+
+-- 试卷快照：组卷/抽题结果锁定后的序列化副本（题目/答案/分值/顺序），只写不改
+CREATE TABLE IF NOT EXISTS paper_snapshots (
+    id             BIGINT       NOT NULL AUTO_INCREMENT,
+    paper_id       BIGINT       NOT NULL,
+    paper_json     LONGTEXT     NOT NULL,           -- 快照 JSON（含题目内容/归一化答案/分值/题号顺序）
+    question_count INT          NOT NULL DEFAULT 0,
+    total_score    DECIMAL(5,1) NOT NULL DEFAULT 0,
+    version        INT          NOT NULL DEFAULT 1, -- 预留版本号：同一试卷不重复生成，当前固定 1
+    created_by     BIGINT       NOT NULL,
+    created_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_paper_snapshots_paper (paper_id)
+);
