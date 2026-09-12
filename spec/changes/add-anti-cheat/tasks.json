@@ -1,0 +1,58 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：事件体系（W8）",
+    "task": "行为事件采集（策略模式）",
+    "steps": [
+      { "step": "实现行为事件采集接口（BehaviorEvent）与事件策略注册（切屏/失焦/刷新/交卷异常等）", "completed": false },
+      { "step": "实现各事件采集实现类（复用阶段 5 已埋的切屏/失焦事件，补齐刷新等）", "completed": false },
+      { "step": "实现事件落库 exam_behavior_logs（event_type/event_data/severity/event_time）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 1：事件体系（W8）",
+    "task": "严重度分级",
+    "steps": [
+      { "step": "实现事件 severity 分级（低/中/高）", "completed": false },
+      { "step": "实现切屏次数阈值可配置（达到阈值升严重度）", "completed": false },
+      { "step": "实现切屏警告提示（前端弹提醒，不强制交卷）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 2：教师查看（W8）",
+    "task": "行为日志时间线（仅教师可见）",
+    "steps": [
+      { "step": "实现行为日志查询接口（按考试/学生/事件类型/严重度筛选，分页）", "completed": false },
+      { "step": "实现时间线视图（按 event_time 排序展示学生行为）", "completed": false },
+      { "step": "实现权限控制（仅教师/管理员可见，学生不可见）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 4,
+    "category": "阶段 2：教师查看（W8）",
+    "task": "监考大屏",
+    "steps": [
+      { "step": "实现实时在线/离线/已交卷人数统计（Redis 实时计数）", "completed": false },
+      { "step": "实现答题进度展示（各学生进度条）", "completed": false },
+      { "step": "实现异常高亮（切屏等事件标记）与点击查看学生时间线", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 5,
+    "category": "阶段 3：验收（W8）",
+    "task": "防作弊验收",
+    "steps": [
+      { "step": "编写事件策略单元测试（新增事件不动核心）", "completed": false },
+      { "step": "编写行为日志查询/权限/严重度集成测试", "completed": false },
+      { "step": "验证监考大屏数据准确、异常高亮正确", "completed": false },
+      { "step": "端到端验收：切屏→落库→教师时间线查看→监考大屏异常高亮", "completed": false }
+    ],
+    "passes": false
+  }
+]
