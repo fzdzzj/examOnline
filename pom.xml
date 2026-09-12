@@ -111,6 +111,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        <!-- Spring Cache 抽象（add-performance-deepening 阶段 8）：@Cacheable 注解式缓存，
+             底层接入 RedisCacheManager（JSON 序列化 + TTL 随机抖动），以后可整体更换缓存实现 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
         <!-- RabbitMQ（交卷削峰：生产者 confirm + 消费者手动 ack + 死信重试，add-exam-taking） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

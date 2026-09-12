@@ -53,6 +53,10 @@ exam:
       # 避免定时 tick 干扰 MQ 发送次数断言
       fixed-delay-ms: 3600000
       initial-delay-ms: 3600000
+  cache:
+    # 缓存三防测试参数：等待轮数放宽到 2s（击穿用例慢回源 300ms，等待线程须在兜底回源前读到回填值）
+    wait-interval-ms: 25
+    wait-max-rounds: 80
 
 # SMTP 未配置时禁用 mail 健康检查，避免 /actuator/health 恒为 DOWN
 management:

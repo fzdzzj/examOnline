@@ -113,6 +113,23 @@ exam:
   monitor:
     # 监考在线心跳窗口（秒）：大于自动保存周期（30s）的合理超时，过期即离线（add-anti-cheat）
     online-ttl-seconds: 60
+  cache:
+    # 缓存三防配置（add-performance-deepening 阶段 8，CacheConfig/CacheMutexLoader 消费）：
+    # 穿透=空值缓存（NOT_FOUND 短 TTL 空标记）、击穿=Redis SETNX 互斥锁重建、雪崩=TTL 随机抖动
+    # 快照类缓存（考试/试卷快照）：发布后只读不可变，缓存与 DB 天然一致，可用长 TTL
+    snapshot-base-ttl: 2h
+    snapshot-jitter: 20m
+    # 考试详情缓存：有更新路径（create/update/publish/forceEnd），短 TTL 兜底 + 写路径显式 @CacheEvict
+    detail-base-ttl: 5m
+    detail-jitter: 1m
+    # 防击穿互斥锁：SETNX 持有时长上限，防持锁线程崩溃后死锁（正常在 finally 主动释放）
+    lock-ttl-seconds: 10
+    # 未抢到锁的等待节奏：每轮间隔与最大轮数（总等待 = interval × rounds，超时后兜底直接回源）
+    wait-interval-ms: 50
+    wait-max-rounds: 20
+    # 防穿透空值缓存开关与短 TTL：查无结果写入空标记，期间同 key 查询不再直击 DB
+    null-cache-enabled: true
+    null-ttl-seconds: 30
 
 management:
   endpoints:
