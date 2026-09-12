@@ -16,6 +16,15 @@ spring:
       port: 6379
       database: 15
       timeout: 3s
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: exam
+    password: exam123
+    listener:
+      simple:
+        # 测试环境无 broker：监听容器不启动，交卷发送在各用例中 Mock 断言
+        auto-startup: false
   mail:
     host:
 

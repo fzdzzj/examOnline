@@ -1,0 +1,121 @@
+# 规范差异：exam-taking
+
+本文件包含对 `spec/specs/exam-taking/spec.md` 的规范变更（在线考试与交卷能力，全部为新增）。
+
+## ADDED Requirements
+
+### Requirement: 进入考试
+WHEN 学生进入考试,
+系统 SHALL 校验考试处于进行中，生成个人快照锁定题目与顺序，并 SHALL 以点击开始时间启动个人倒计时。
+
+#### Scenario: 进入考试成功
+GIVEN 考试处于进行中
+AND 学生尚未开始该考试
+WHEN 学生点击进入并开始
+THEN 系统生成个人快照（锁定题目与选项顺序）
+AND 记录 start_time 启动个人倒计时
+
+#### Scenario: 刷新不换题
+GIVEN 学生已进入考试并锁定快照
+WHEN 学生刷新或重新进入
+THEN 系统返回与首次一致的题目与顺序
+AND 不重新抽题
+
+#### Scenario: 非进行中禁止进入
+GIVEN 考试未开始或已结束
+WHEN 学生尝试进入考试
+THEN 系统拒绝进入并返回对应错误
+
+### Requirement: 答题导航与采集
+WHEN 学生作答,
+系统 SHALL 提供题目导航（已答/未答/标记），并 SHALL 采集切屏/失焦事件落行为日志且不强制交卷。
+
+#### Scenario: 导航状态标识
+GIVEN 学生已答部分题目
+WHEN 学生查看导航面板
+THEN 系统以三色标识已答/未答/标记状态
+AND 支持跳转
+
+#### Scenario: 切屏仅记录
+GIVEN 学生考试中切出页面
+WHEN 系统检测到切屏/失焦事件
+THEN 记录行为日志
+AND 不强制交卷
+
+### Requirement: 交卷幂等
+WHEN 学生交卷,
+系统 SHALL 以三重幂等（防重表 + 唯一索引 + 分布式锁）保证同一考试同一学生只提交一次，重复提交 SHALL 返回首次结果。
+
+#### Scenario: 首次交卷成功
+GIVEN 学生答卷处于进行中
+WHEN 学生提交交卷
+THEN 答卷状态迁至已交卷
+AND 答案落库
+
+#### Scenario: 重复交卷幂等
+GIVEN 答卷已交卷
+WHEN 学生再次提交交卷请求
+THEN 系统返回首次提交结果
+AND 不产生第二条记录
+
+### Requirement: 交卷削峰落库
+WHEN 交卷发生,
+系统 SHALL 经消息队列异步批量落库，并在失败时重试，重复投递 SHALL 不重复入库。
+
+#### Scenario: 消息可靠落库
+GIVEN 学生提交交卷消息
+WHEN 消费者处理
+THEN 批量写入答卷
+AND 落库成功后才确认消息
+
+#### Scenario: 重复投递幂等
+GIVEN 相同交卷消息被重复投递
+WHEN 消费者处理
+THEN 唯一索引拒绝第二次写入
+AND 业务仅执行一次
+
+#### Scenario: 失败进死信
+GIVEN 消费失败达到重试阈值
+WHEN 消费者无法处理
+THEN 消息进入死信队列
+AND 可人工排查
+
+### Requirement: 超时交卷
+WHEN 个人倒计时归零或系统检测到超时,
+系统 SHALL 强制交卷，且 SHALL 与手动交卷共享锁保证只提交一次。
+
+#### Scenario: 前端归零强制提交
+GIVEN 学生答卷倒计时归零
+WHEN 前端触发自动提交
+THEN 答卷被强制交卷
+
+#### Scenario: 后端兜底
+GIVEN 学生超时未交卷且前端未提交
+WHEN 后端定时扫描发现超时未交卷答卷
+THEN 后端自动强制交卷（服务端时间为准）
+
+#### Scenario: 三路竞态仅一次
+GIVEN 手动交卷、前端归零、后端兜底同时发生
+WHEN 三者竞争提交
+THEN 仅一个成功
+AND 其余幂等返回
+
+### Requirement: 自动保存与断线恢复
+WHEN 学生作答,
+系统 SHALL 每 30 秒自动保存答案；断线重连 SHALL 恢复已保存答案，冲突 SHALL 以最新版本为准。
+
+#### Scenario: 自动保存
+GIVEN 学生处于考试中
+WHEN 到达 30 秒周期
+THEN 系统保存当前答案到草稿
+
+#### Scenario: 断线恢复
+GIVEN 学生断线后重新进入考试
+WHEN 系统检测到草稿
+THEN 恢复已保存的答案
+
+#### Scenario: 多端冲突以最新为准
+GIVEN 存在不同版本的答案草稿
+WHEN 系统合并
+THEN 以版本号与时间戳最新者为准
+AND 记录冲突日志

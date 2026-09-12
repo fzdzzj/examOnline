@@ -17,6 +17,24 @@ spring:
       max-request-size: 50MB
   mvc:
     throw-exception-if-no-handler-found: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:exam}
+    password: ${RABBITMQ_PASSWORD:exam123}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    # 生产者 confirm：交卷消息到达 broker 才算发送成功（削峰链路可靠性的第一环）
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        # 消费者手动 ack：批量落库成功才确认，未确认消息断连后自动重投
+        acknowledge-mode: manual
+        prefetch: ${RABBIT_PREFETCH:200}
+        concurrency: ${RABBIT_CONCURRENCY:2}
+        auto-startup: ${RABBIT_LISTENER_AUTOSTARTUP:true}
 
 mybatis-plus:
   configuration:
@@ -62,6 +80,28 @@ exam:
   schedule:
     # 考试状态机扫表间隔（定时发布/自然结束推进），毫秒；不依赖外部调度中间件
     fixed-delay-ms: 10000
+  taking:
+    # 交卷链路（add-exam-taking）
+    submit:
+      # SETNX 一次性锁 TTL（秒）：防持有者崩溃后死锁，正常在 finally 中主动释放
+      lock-ttl-seconds: 30
+      # 交卷消息等待 broker confirm 的超时（毫秒），超时视为发送失败走草稿兜底
+      mq-confirm-timeout-ms: 5000
+    mq:
+      # 消费者单批拉取消息数（DB 批量落库按此分批，rewriteBatchedStatements 生效前提）
+      batch-size: 100
+      prefetch: 200
+      # 消费失败重试阈值：重发计数超过该值进死信队列
+      retry-max: 3
+    draft:
+      # Redis 草稿 TTL 基数（小时）：在个人截止时间基础上叠加，供断线恢复与超时兜底取答案
+      ttl-hours: 2
+    sweep:
+      # 超时兜底/答案补发扫描间隔（毫秒）与单轮上限（500/批）
+      fixed-delay-ms: 10000
+      initial-delay-ms: 10000
+      batch-size: 500
+      max-rounds: 10
 
 management:
   endpoints:

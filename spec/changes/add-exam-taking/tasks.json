@@ -1,0 +1,94 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：答卷数据模型（W4）",
+    "task": "exam_submissions / exam_behavior_logs 建表与实体",
+    "steps": [
+      { "step": "设计 exam_submissions 表（exam_id/student_id/start_time/submit_time/answers JSON/status/version + uk_exam_student 唯一索引）", "completed": false },
+      { "step": "设计 exam_behavior_logs 表（exam_id/student_id/event_type/event_data/severity/event_time）", "completed": false },
+      { "step": "编写幂等建表 SQL 与索引（exam_id+student_id 唯一、exam_id+submit_time）", "completed": false },
+      { "step": "定义实体类、Mapper 与 DAO", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：进入考试与答题（W4-W5）",
+    "task": "进入考试（个人快照 + 倒计时）",
+    "steps": [
+      { "step": "实现进入考试：校验考试状态为进行中，生成个人快照（锁定抽题/选项乱序）", "completed": false },
+      { "step": "实现个人倒计时启动：点击开始才计时，服务端记录 start_time", "completed": false },
+      { "step": "实现个人快照读取：刷新/重进返回同一快照（不换题）", "completed": false },
+      { "step": "开发考试列表（状态分组：待考/进行中/已完成）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 2：进入考试与答题（W4-W5）",
+    "task": "答题界面（导航 + 答案提交）",
+    "steps": [
+      { "step": "实现答题数据接口：按快照返回题目（不含答案）", "completed": false },
+      { "step": "实现答题导航面板（已答/未答/标记三色 + 跳转）", "completed": false },
+      { "step": "实现切屏/失焦事件采集埋点，落 exam_behavior_logs（只记录不强制交卷）", "completed": false },
+      { "step": "实现前端倒计时（服务端时间为准，前端仅展示）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 4,
+    "category": "阶段 3：交卷链路（W5-W6）",
+    "task": "交卷幂等（三重保障）",
+    "steps": [
+      { "step": "实现交卷接口：防重表先查后插 + uk_exam_student 唯一索引 + SETNX 一次性锁", "completed": false },
+      { "step": "实现三路竞态单次提交：手动/前端归零/后端兜底共享状态机 CAS（进行中→已交卷仅一次）", "completed": false },
+      { "step": "实现重复交卷返回首次结果（幂等）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 5,
+    "category": "阶段 3：交卷链路（W5-W6）",
+    "task": "MQ 削峰落库",
+    "steps": [
+      { "step": "配置 RabbitMQ：交卷提交发消息（生产者 confirm）", "completed": false },
+      { "step": "实现消费者：批量落库（rewriteBatchedStatements，500/批）+ 手动 ack（落库成功才 ack）", "completed": false },
+      { "step": "实现消费端幂等（唯一索引拒绝重复）+ 死信重试队列", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 6,
+    "category": "阶段 3：交卷链路（W5-W6）",
+    "task": "超时三重兜底",
+    "steps": [
+      { "step": "实现前端倒计时归零强制提交（本地锁定 + 提交）", "completed": false },
+      { "step": "实现后端定时任务扫描超时未交卷答卷，自动强制交卷（服务端时间为准）", "completed": false },
+      { "step": "与手动交卷共享 SETNX 锁保证只提交一次", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 7,
+    "category": "阶段 4：自动保存与断线恢复（W6）",
+    "task": "自动保存 + 断线恢复",
+    "steps": [
+      { "step": "实现 30s 自动保存：答案落 Redis 草稿（key: exam:student:draft）", "completed": false },
+      { "step": "实现断线恢复：重进考试从 Redis 草稿取回答案 + version 合并", "completed": false },
+      { "step": "实现多端冲突：version + 时间戳合并，以最新为准并记录日志", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 8,
+    "category": "阶段 5：验收与压测（W6）",
+    "task": "交卷链路测试与 JMeter 压测",
+    "steps": [
+      { "step": "编写交卷幂等/三路竞态单元测试（并发提交仅一次）", "completed": false },
+      { "step": "编写答题/交卷/自动保存/断线恢复集成测试", "completed": false },
+      { "step": "JMeter 模拟 5000 并发交卷，产出压测报告", "completed": false },
+      { "step": "验收硬指标：P99 < 2s、0 丢单、批量落库 < 30s", "completed": false }
+    ],
+    "passes": false
+  }
+]

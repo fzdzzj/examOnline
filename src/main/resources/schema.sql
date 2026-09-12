@@ -198,3 +198,56 @@ CREATE TABLE IF NOT EXISTS exam_snapshots (
     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_exam_snapshots_exam UNIQUE (exam_id)  -- exam_id 唯一：发布是快照生成的唯一时机
 );
+
+-- =============================================================
+-- 在线考试与交卷三表（add-exam-taking）
+-- 交卷可靠性（docs/需求决策记录.md §1.1-§2.3）：
+--   三重幂等 = 防重表(exam_submit_dedups) + uk_exam_student 唯一索引 + SETNX 分布式锁；
+--   三路竞态 = 手动 / 前端倒计时归零 / 后端定时兜底，共享答卷状态机 CAS（进行中→已交卷仅一次）；
+--   削峰落库 = 交卷发 MQ 消息，消费者批量落库（rewriteBatchedStatements），落库成功才 ack。
+-- =============================================================
+
+-- 答卷表：学生进入考试即建行（个人快照/开始时间随行锁定），交卷只做状态 CAS 迁移，答案由 MQ 消费者异步落库
+CREATE TABLE IF NOT EXISTS exam_submissions (
+    id             BIGINT   NOT NULL AUTO_INCREMENT,
+    exam_id        BIGINT   NOT NULL,
+    student_id     BIGINT   NOT NULL,
+    start_time     DATETIME NOT NULL,            -- 个人开始时间：点击"开始考试"才计时（§7.9，服务端记录）
+    deadline_time  DATETIME NOT NULL,            -- 个人截止：min(开始+时长, 考试 end_time)；后端兜底扫描依据
+    submit_time    DATETIME              DEFAULT NULL,
+    submit_type    TINYINT               DEFAULT NULL,  -- 提交来源：1手动 2前端归零 3后端兜底
+    paper_json     LONGTEXT              DEFAULT NULL,  -- 个人快照：题序/选项乱序进入时锁定，刷新/重进不换题（§3.4）
+    answers        LONGTEXT              DEFAULT NULL,  -- 最终答案 JSON（questionId→答案）；NULL=尚未落库（补发扫描依据）
+    status         TINYINT  NOT NULL DEFAULT 1,  -- 答卷状态：1进行中 2已交卷 3已批改（判分阶段消费）
+    version        INT      NOT NULL DEFAULT 0,  -- 乐观锁版本号：状态 CAS 护栏
+    created_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_exam_student UNIQUE (exam_id, student_id),  -- 三重幂等之一：一人一场至多一条答卷
+    KEY idx_submissions_sweep (status, deadline_time),        -- 兜底扫描：按状态筛进行中/已交卷未落库
+    KEY idx_submissions_exam_submit (exam_id, submit_time)
+);
+
+-- 交卷防重表：提交请求先查后插（uk 兜底并发插入），是三重幂等的第一道持久化闸；并发进入/重试路径据此快速幂等返回
+CREATE TABLE IF NOT EXISTS exam_submit_dedups (
+    id            BIGINT   NOT NULL AUTO_INCREMENT,
+    exam_id       BIGINT   NOT NULL,
+    student_id    BIGINT   NOT NULL,
+    submission_id BIGINT   NOT NULL,
+    submit_type   TINYINT  NOT NULL DEFAULT 1,
+    created_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_submit_dedup UNIQUE (exam_id, student_id)  -- 同一场考试同一学生仅记录首次提交
+);
+
+-- 考试行为日志表：切屏/失焦/草稿冲突等事件只记录不处置（完整防作弊在阶段 7）
+CREATE TABLE IF NOT EXISTS exam_behavior_logs (
+    id           BIGINT      NOT NULL AUTO_INCREMENT,
+    exam_id      BIGINT      NOT NULL,
+    student_id   BIGINT      NOT NULL,
+    event_type   VARCHAR(32) NOT NULL,           -- SWITCH_SCREEN / WINDOW_BLUR / DRAFT_CONFLICT ...
+    event_data   TEXT                DEFAULT NULL,  -- 事件明细 JSON（离开时长/客户端时间等）
+    severity     TINYINT     NOT NULL DEFAULT 1, -- 1提示 2警告 3严重
+    event_time   DATETIME    NOT NULL,
+    created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_behavior_exam_student (exam_id, student_id),
+    KEY idx_behavior_exam_time (exam_id, event_time)
+);
