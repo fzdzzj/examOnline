@@ -21,6 +21,10 @@ spec/
 | 能力域 | 状态 | 来源变更 |
 |---|---|---|
 | `authentication`（工程基础 + 认证能力） | 已合入 | `add-project-skeleton`（阶段 1/2）、`add-authentication`（阶段 2/2） |
+| `question-bank`（题库 + 组卷，覆盖 paper-assembly 范围） | 已合入 | `add-question-bank`（阶段 3） |
+| `exam-management`（考试管理） | 已合入 | `add-exam-management`（阶段 4） |
+| `grading`（判分） | 已合入 | `add-grading-score`（阶段 6） |
+| `score-management`（成绩管理） | 已合入 | `add-grading-score`（阶段 6） |
 
 - 已归档变更（`spec/changes/archive/`）：
 
@@ -29,7 +33,10 @@ spec/
 | `add-project-skeleton` | 阶段 1/2 | 工程骨架（单体工程/统一响应/数据模型/中间件编排） | W1 |
 | `add-authentication` | 阶段 2/2 | 用户认证与鉴权（注册/登录/双 Token/黑名单/RBAC/越权/锁定限流/找回/初始化） | W1-W2 |
 
-- 进行中变更：无（下一阶段待创建提案 `add-question-bank`）。
+- 进行中变更：
+  - `add-exam-taking`（阶段 5）：任务清单已全部勾选，压测验收留 W6 收口后合入规范；
+  - `add-anti-cheat`（阶段 7）：提案与规范差异已建，待实施；
+  - `add-grading-score`（阶段 6）：已实施并验收，规范已合入（变更目录留待统一归档）。
 
 ## 能力地图（8 个能力域，作为规范组织单位）
 
