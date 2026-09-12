@@ -52,16 +52,19 @@ public class ExamTakingService {
     private final PersonalPaperService personalPaperService;
     private final ExamDraftService draftService;
     private final ExamBehaviorLogService behaviorLogService;
+    private final ExamSubmitService submitService;
 
     public ExamTakingService(ExamMapper examMapper, ExamSubmissionMapper submissionMapper,
                              ExamSnapshotService examSnapshotService, PersonalPaperService personalPaperService,
-                             ExamDraftService draftService, ExamBehaviorLogService behaviorLogService) {
+                             ExamDraftService draftService, ExamBehaviorLogService behaviorLogService,
+                             ExamSubmitService submitService) {
         this.examMapper = examMapper;
         this.submissionMapper = submissionMapper;
         this.examSnapshotService = examSnapshotService;
         this.personalPaperService = personalPaperService;
         this.draftService = draftService;
         this.behaviorLogService = behaviorLogService;
+        this.submitService = submitService;
     }
 
     /**
@@ -169,8 +172,11 @@ public class ExamTakingService {
         LocalDateTime now = LocalDateTime.now();
         boolean submitted = submission.getStatus() == ExamSubmission.STATUS_SUBMITTED;
         if (!submitted && now.isAfter(submission.getDeadlineTime())) {
-            // 已过个人截止（扫描间隔内的窗口期）：暂以业务错误提示，交卷链路就绪后改为就地兜底强制交卷
-            throw new BusinessException(ResponseCode.BAD_REQUEST, "已超过个人作答截止时间，请等待系统自动收卷");
+            // 已过个人截止仍未交卷（兜底扫描间隔内的窗口期）：就地兜底强制交卷——
+            // 与手动/前端归零共享 SETNX 锁与状态机 CAS（三路竞态仅一次），服务端时间为准
+            submitService.forceSubmitByBackend(exam.getId(), studentId);
+            submission = submissionMapper.selectByExamStudent(exam.getId(), studentId);
+            submitted = submission.getStatus() == ExamSubmission.STATUS_SUBMITTED;
         }
 
         List<QuestionView> questions = submitted

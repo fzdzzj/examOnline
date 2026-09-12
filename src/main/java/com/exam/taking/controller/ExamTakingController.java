@@ -7,6 +7,9 @@ import com.exam.taking.dto.AutoSaveResponse;
 import com.exam.taking.dto.BehaviorReportRequest;
 import com.exam.taking.dto.EnterExamResponse;
 import com.exam.taking.dto.ExamListItem;
+import com.exam.taking.dto.SubmitRequest;
+import com.exam.taking.dto.SubmitResponse;
+import com.exam.taking.service.ExamSubmitService;
 import com.exam.taking.service.ExamTakingService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,7 +30,8 @@ import java.util.List;
  *       重复进入/刷新返回同一快照与草稿（不换题、断线恢复）；</li>
  *   <li>答题数据——题目不含答案，倒计时以服务端时间为准（前端仅展示）；</li>
  *   <li>自动保存——30s 周期推送 Redis 草稿（版本合并，多端冲突以最新为准）；</li>
- *   <li>行为上报——切屏/失焦事件只记录不强制交卷。</li>
+ *   <li>行为上报——切屏/失焦事件只记录不强制交卷；</li>
+ *   <li>交卷——手动/前端归零共用入口，三重幂等 + MQ 削峰，重复提交返回首次结果。</li>
  * </ul>
  * 类级 {@code @RequirePermission("exam:take")}（权限点已预置：STUDENT/ADMIN 均有）。
  */
@@ -37,9 +41,11 @@ import java.util.List;
 public class ExamTakingController {
 
     private final ExamTakingService takingService;
+    private final ExamSubmitService submitService;
 
-    public ExamTakingController(ExamTakingService takingService) {
+    public ExamTakingController(ExamTakingService takingService, ExamSubmitService submitService) {
         this.takingService = takingService;
+        this.submitService = submitService;
     }
 
     /** 我的考试列表：待考 / 进行中（可续答）/ 已完成 三组 */
@@ -73,5 +79,16 @@ public class ExamTakingController {
                                             @Valid @RequestBody BehaviorReportRequest request) {
         takingService.reportBehavior(examId, request);
         return ApiResponse.success();
+    }
+
+    /**
+     * 交卷：手动交卷与前端倒计时归零强制提交共用（submitType 区分来源）。
+     * 三重幂等（SETNX 锁 + 防重表 + 状态机 CAS）保证只提交一次；重复提交返回首次结果；
+     * 答案经 MQ 削峰异步批量落库，本接口返回即代表交卷成功（落库最终一致）。
+     */
+    @PostMapping("/exams/{examId}/submit")
+    public ApiResponse<SubmitResponse> submit(@PathVariable Long examId,
+                                              @RequestBody(required = false) SubmitRequest request) {
+        return ApiResponse.success(submitService.submit(examId, request));
     }
 }
