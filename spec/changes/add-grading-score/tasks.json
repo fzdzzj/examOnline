@@ -4,70 +4,70 @@
     "category": "阶段 1：判分引擎（W7）",
     "task": "判分策略框架 + 客观题判分",
     "steps": [
-      { "step": "实现判分策略接口（GradingStrategy）与策略注册（单选/多选/判断/简答四实现）", "completed": false },
-      { "step": "实现单选/判断精确判分（复用作阶段 3 归一化答案）", "completed": false },
-      { "step": "实现多选判分：漏选部分分（比例可配置）、错选/多选 0 分", "completed": false },
-      { "step": "实现判分读考试快照标准答案，结果落 exam_submissions.objective_score", "completed": false }
+      { "step": "实现判分策略接口（GradingStrategy）与策略注册（单选/多选/判断/简答四实现）", "completed": true },
+      { "step": "实现单选/判断精确判分（复用作阶段 3 归一化答案）", "completed": true },
+      { "step": "实现多选判分：漏选部分分（比例可配置）、错选/多选 0 分", "completed": true },
+      { "step": "实现判分读考试快照标准答案，结果落 exam_submissions.objective_score", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 2,
     "category": "阶段 1：判分引擎（W7）",
     "task": "判分失败处理",
     "steps": [
-      { "step": "实现判分失败标记（submission 状态 + 失败原因）", "completed": false },
-      { "step": "实现重判接口与手动给分接口", "completed": false },
-      { "step": "验证判分失败不影响其他学生（隔离）", "completed": false }
+      { "step": "实现判分失败标记（submission 状态 + 失败原因）", "completed": true },
+      { "step": "实现重判接口与手动给分接口", "completed": true },
+      { "step": "验证判分失败不影响其他学生（隔离）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 3,
     "category": "阶段 2：简答批改（W7）",
     "task": "简答批改工作台",
     "steps": [
-      { "step": "实现简答关键词初判（提示分，不自动定分）", "completed": false },
-      { "step": "实现主观题批改表 subjective_grades（分数/评语/批改人/时间留痕）", "completed": false },
-      { "step": "实现逐题批改工作台接口（列出全部学生同题、打回重批）", "completed": false },
-      { "step": "实现并发批改乐观锁防覆盖（version）", "completed": false }
+      { "step": "实现简答关键词初判（提示分，不自动定分）", "completed": true },
+      { "step": "实现主观题批改表 subjective_grades（分数/评语/批改人/时间留痕）", "completed": true },
+      { "step": "实现逐题批改工作台接口（列出全部学生同题、打回重批）", "completed": true },
+      { "step": "实现并发批改乐观锁防覆盖（version）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 4,
     "category": "阶段 3：成绩汇总与发布（W7）",
     "task": "成绩汇总 + 发布/撤回",
     "steps": [
-      { "step": "实现成绩汇总：客观 + 主观 = total_score，加权计算", "completed": false },
-      { "step": "实现成绩发布：已批改→已发布，发布前预览", "completed": false },
-      { "step": "实现批量发布/撤回（撤回需管理员 + 审计日志）", "completed": false },
-      { "step": "实现排名（并列同名次：1,2,2,4）", "completed": false }
+      { "step": "实现成绩汇总：客观 + 主观 = total_score，加权计算", "completed": true },
+      { "step": "实现成绩发布：已批改→已发布，发布前预览", "completed": true },
+      { "step": "实现批量发布/撤回（撤回需管理员 + 审计日志）", "completed": true },
+      { "step": "实现排名（并列同名次：1,2,2,4）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 5,
     "category": "阶段 4：成绩导出（W7）",
     "task": "成绩导出 Excel/PDF",
     "steps": [
-      { "step": "实现全班成绩单导出（SXSSF 流式写，防 OOM）", "completed": false },
-      { "step": "实现逐题得分明细导出", "completed": false },
-      { "step": "实现题目统计表导出（答对率/难度/区分度）", "completed": false },
-      { "step": "实现个人成绩单导出（含打印版 PDF）", "completed": false }
+      { "step": "实现全班成绩单导出（SXSSF 流式写，防 OOM）", "completed": true },
+      { "step": "实现逐题得分明细导出", "completed": true },
+      { "step": "实现题目统计表导出（答对率/难度/区分度）", "completed": true },
+      { "step": "实现个人成绩单导出（含打印版 PDF）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 6,
     "category": "阶段 5：验收（W7）",
     "task": "判分成绩验收",
     "steps": [
-      { "step": "编写判分策略单元测试（单选/多选漏选部分分/判断/简答）", "completed": false },
-      { "step": "编写简答批改并发覆盖测试（乐观锁）", "completed": false },
-      { "step": "编写成绩汇总/发布/撤回/导出集成测试", "completed": false },
-      { "step": "端到端验收：交卷→判分→批改→汇总→发布→导出", "completed": false }
+      { "step": "编写判分策略单元测试（单选/多选漏选部分分/判断/简答）", "completed": true },
+      { "step": "编写简答批改并发覆盖测试（乐观锁）", "completed": true },
+      { "step": "编写成绩汇总/发布/撤回/导出集成测试", "completed": true },
+      { "step": "端到端验收：交卷→判分→批改→汇总→发布→导出", "completed": true }
     ],
-    "passes": false
+    "passes": true
   }
 ]
