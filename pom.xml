@@ -29,6 +29,9 @@
         <jjwt.version>0.11.5</jjwt.version>
         <jbcrypt.version>0.4</jbcrypt.version>
         <mysql.version>9.3.0</mysql.version>
+        <!-- 成绩导出（add-grading-score）：SXSSF 流式 Excel + 个人成绩单 PDF -->
+        <poi.version>5.4.0</poi.version>
+        <openpdf.version>1.3.43</openpdf.version>
     </properties>
 
     <!-- 依赖版本集中锁定：子模块/依赖引入时不写版本，继承此处锁定值 -->
@@ -68,6 +71,21 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.librepdf</groupId>
+                <artifactId>openpdf</artifactId>
+                <version>${openpdf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.librepdf</groupId>
+                <artifactId>openpdf-fonts-extra</artifactId>
+                <version>${openpdf.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -145,6 +163,22 @@
         <dependency>
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
+        </dependency>
+
+        <!-- 成绩导出（add-grading-score, W7）：
+             poi-ooxml 提供 SXSSF 流式写（滑动窗口 + 临时文件落盘，防大班级导出 OOM）；
+             openpdf + fonts-extra 提供个人成绩单打印 PDF（STSong-Light 中文字体，fonts-extra 为其 CJK 映射包） -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf-fonts-extra</artifactId>
         </dependency>
 
         <!-- Lombok -->
