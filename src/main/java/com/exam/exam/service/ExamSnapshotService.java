@@ -3,6 +3,8 @@ package com.exam.exam.service;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.common.cache.CacheMutexLoader;
+import com.exam.config.CacheConfig;
 import com.exam.exam.dto.ExamSnapshotResponse;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.entity.ExamSnapshot;
@@ -19,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,16 +48,19 @@ public class ExamSnapshotService {
     private final PaperQuestionMapper paperQuestionMapper;
     private final QuestionMapper questionMapper;
     private final PaperSnapshotService paperSnapshotService;
+    private final CacheMutexLoader cacheMutexLoader;
     private final ObjectMapper objectMapper;
 
     public ExamSnapshotService(ExamSnapshotMapper examSnapshotMapper, PaperMapper paperMapper,
                                PaperQuestionMapper paperQuestionMapper, QuestionMapper questionMapper,
-                               PaperSnapshotService paperSnapshotService, ObjectMapper objectMapper) {
+                               PaperSnapshotService paperSnapshotService,
+                               CacheMutexLoader cacheMutexLoader, ObjectMapper objectMapper) {
         this.examSnapshotMapper = examSnapshotMapper;
         this.paperMapper = paperMapper;
         this.paperQuestionMapper = paperQuestionMapper;
         this.questionMapper = questionMapper;
         this.paperSnapshotService = paperSnapshotService;
+        this.cacheMutexLoader = cacheMutexLoader;
         this.objectMapper = objectMapper;
     }
 
@@ -106,6 +112,9 @@ public class ExamSnapshotService {
         snapshot.setVersion(1);
         snapshot.setCreatedBy(exam.getCreatedBy());
         examSnapshotMapper.insert(snapshot);
+        // 快照已生成：清除此前"未发布"探测留下的 404 空标记（防穿透空值缓存），
+        // 避免发布后短 TTL 窗口内拉卷被旧空标记误挡为 404
+        cacheMutexLoader.clearEmptyMarker(CacheConfig.CACHE_EXAM_SNAPSHOT, exam.getId());
         log.info("考试 {} 发布生成快照 id={}（{} 题）", exam.getId(), snapshot.getId(), rows.size());
         return snapshot;
     }
@@ -113,14 +122,23 @@ public class ExamSnapshotService {
     /**
      * 读取考试快照（答题/判分/回看的统一入口）：
      * 每次读取都命中同一行记录，内容与发布时完全一致。
+     *
+     * <p>缓存设计（add-performance-deepening 阶段 8）：
+     * 快照发布后<b>只读不更新</b>（试卷/题目再修改均不影响已生成副本）——缓存内容与 DB 天然一致，
+     * 可用长 TTL 且无需失效逻辑；key 用 examId（一场考试仅一份快照，与快照行一一对应）。
+     * 未命中进入方法体后经 CacheMutexLoader 互斥回源：防击穿（开考 5000 人并发拉卷仅一个线程查 DB），
+     * 查无结果（未发布/不存在）写短 TTL 空标记防穿透。
      */
+    @Cacheable(cacheNames = CacheConfig.CACHE_EXAM_SNAPSHOT, key = "#examId")
     public ExamSnapshotResponse getCurrent(Long examId) {
-        ExamSnapshot snapshot = examSnapshotMapper.selectOne(Wrappers.<ExamSnapshot>lambdaQuery()
-                .eq(ExamSnapshot::getExamId, examId));
-        if (snapshot == null) {
-            throw new BusinessException(ResponseCode.NOT_FOUND, "考试尚未发布或快照不存在");
-        }
-        return toResponse(snapshot);
+        return cacheMutexLoader.load(CacheConfig.CACHE_EXAM_SNAPSHOT, examId, () -> {
+            ExamSnapshot snapshot = examSnapshotMapper.selectOne(Wrappers.<ExamSnapshot>lambdaQuery()
+                    .eq(ExamSnapshot::getExamId, examId));
+            if (snapshot == null) {
+                throw new BusinessException(ResponseCode.NOT_FOUND, "考试尚未发布或快照不存在");
+            }
+            return toResponse(snapshot);
+        });
     }
 
     /** 考试配置序列化：时间窗/时长/迟到容忍/防作弊配置的完整副本。 */

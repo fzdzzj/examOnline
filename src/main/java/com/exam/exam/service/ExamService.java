@@ -8,6 +8,7 @@ import com.exam.auth.security.RoleHierarchy;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.config.CacheConfig;
 import com.exam.exam.dto.ExamCreateRequest;
 import com.exam.exam.dto.ExamDetailResponse;
 import com.exam.exam.dto.ExamUpdateRequest;
@@ -20,6 +21,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,17 +103,39 @@ public class ExamService {
                         .orderByDesc(Exam::getId));
     }
 
-    /** 考试详情（含绑定试卷标题与防作弊配置）。 */
+    /**
+     * 考试详情（含绑定试卷标题与防作弊配置）。
+     *
+     * <p>缓存设计（add-performance-deepening 阶段 8）：Exam 有更新路径（update/publish/forceEnd），
+     * 用<b>短 TTL</b> 兜底（缓存层到期自愈）+ 写路径 @CacheEvict 显式失效，与只读快照缓存区分。
+     * key = id + 请求者 ID（{@link #detailCacheKey}）：归属校验（getOwnedExam）在方法体内，
+     * 缓存命中时被切面跳过，key 必须带上请求者，防止命中他人缓存绕过水平越权校验。
+     */
+    @Cacheable(cacheNames = CacheConfig.CACHE_EXAM_DETAIL,
+            key = "T(com.exam.exam.service.ExamService).detailCacheKey(#id)")
     public ExamDetailResponse detail(Long id) {
         Exam exam = getOwnedExam(id);
         return toDetail(exam);
     }
 
     /**
+     * 考试详情缓存 key（@Cacheable SpEL 引用，保证 key 口径单点维护）：
+     * id + ':' + 请求者 ID——归属校验在方法体内、缓存命中会跳过方法体，
+     * 不带请求者会让教师 A 命中教师 B 的缓存、绕过水平越权校验。
+     */
+    public static String detailCacheKey(Long id) {
+        return id + ":" + SecurityUtil.getUserId();
+    }
+
+    /**
      * 更新考试（部分更新）：仅"未发布且未开始"允许修改——
      * 已发布考试学生已可见、快照已生成，改配置会与快照不一致，须先撤回（后续阶段提供）。
      * null 字段保留原值，时间窗/时长按合并后的最终值整体校验。
+     *
+     * <p>写路径显式失效 examDetail 缓存：缓存 key 带请求者（每人各一份），这里 allEntries 清全缓存，
+     * 保证其他用户（如 ADMIN）已缓存的详情不被旧值污染——考试写少读多，清全量代价可忽略。
      */
+    @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
     @Transactional
     public ExamDetailResponse update(Long id, ExamUpdateRequest request) {
         Exam exam = getOwnedExam(id);
@@ -154,6 +179,7 @@ public class ExamService {
      * 删除考试（软删，§7.7）：仅"未发布且未开始"可删——
      * 已发布考试学生已可见须先撤回；进行中/已结束考试承载历史答卷，不可删。
      */
+    @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
     @Transactional
     public void delete(Long id) {
         Exam exam = getOwnedExam(id);
@@ -167,7 +193,9 @@ public class ExamService {
      * 到达 start_time 由定时任务自动开考（定时发布场景）。
      * 发布是考试快照生成的唯一时机（§10.10）：同一事务内先校验并生成快照，再回填 snapshotId；
      * 试卷题目为空/被删/总分不一致会在发布时被拒绝，快照因此始终完整可信。
+     * （快照侧的 404 空标记清除在 generateForPublish 内完成；末尾 detail(id) 为自调用不经缓存，恒为新值）
      */
+    @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
     @Transactional
     public ExamDetailResponse publish(Long id) {
         Exam exam = getOwnedExam(id);
@@ -190,6 +218,7 @@ public class ExamService {
      * 并置位 force_end 标记——阶段 5 交卷链路据此对未交卷学生按最后自动保存强制交卷。
      * 状态迁移经乐观锁 CAS：并发重复提前结束仅一次成功，另一次收到 409 状态冲突。
      */
+    @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
     @Transactional
     public ExamDetailResponse forceEnd(Long id) {
         Exam exam = getOwnedExam(id);

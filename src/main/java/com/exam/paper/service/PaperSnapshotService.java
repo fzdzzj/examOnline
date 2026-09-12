@@ -1,8 +1,11 @@
 package com.exam.paper.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.common.cache.CacheMutexLoader;
+import com.exam.config.CacheConfig;
 import com.exam.exam.service.ExamPaperLockService;
 import com.exam.paper.dto.PaperSnapshotResponse;
 import com.exam.paper.entity.Paper;
@@ -20,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +54,7 @@ public class PaperSnapshotService {
     private final QuestionMapper questionMapper;
     private final QuestionService questionService;
     private final ExamPaperLockService examPaperLockService;
+    private final CacheMutexLoader cacheMutexLoader;
     private final ObjectMapper objectMapper;
 
     public PaperSnapshotService(PaperService paperService, PaperMapper paperMapper,
@@ -57,7 +62,7 @@ public class PaperSnapshotService {
                                 PaperSnapshotMapper paperSnapshotMapper,
                                 QuestionMapper questionMapper, QuestionService questionService,
                                 ExamPaperLockService examPaperLockService,
-                                ObjectMapper objectMapper) {
+                                CacheMutexLoader cacheMutexLoader, ObjectMapper objectMapper) {
         this.paperService = paperService;
         this.paperMapper = paperMapper;
         this.paperQuestionMapper = paperQuestionMapper;
@@ -65,6 +70,7 @@ public class PaperSnapshotService {
         this.questionMapper = questionMapper;
         this.questionService = questionService;
         this.examPaperLockService = examPaperLockService;
+        this.cacheMutexLoader = cacheMutexLoader;
         this.objectMapper = objectMapper;
     }
 
@@ -123,6 +129,10 @@ public class PaperSnapshotService {
         paper.setSnapshotId(snapshot.getId());
         paperMapper.updateById(paper);
 
+        // 快照已生成：清除此前"尚未生成快照"探测留下的 404 空标记（防穿透空值缓存），
+        // 避免生成后短 TTL 窗口内读取被旧空标记误挡为 404
+        cacheMutexLoader.clearEmptyMarker(CacheConfig.CACHE_PAPER_SNAPSHOT, paperId);
+
         log.info("试卷 {} 生成快照 id={}（{} 题，总分 {}）", paperId, snapshot.getId(), rows.size(), sum);
         return toResponse(snapshot);
     }
@@ -130,17 +140,36 @@ public class PaperSnapshotService {
     /**
      * 读取当前生效快照（考试/答题/判分/回看的统一入口）：
      * 每次读取都命中同一行记录，内容与首次生成完全一致。
+     *
+     * <p>缓存设计（add-performance-deepening 阶段 8）：快照生成后<b>只读不可变</b>
+     * （题目/试卷再修改均不影响已生成副本），缓存与 DB 天然一致，可用长 TTL 且无需失效逻辑。
+     * key = paperId + 请求者 ID（{@link #snapshotCacheKey}）：方法体内的归属校验（getOwnedPaper）
+     * 在缓存命中时会被切面跳过，key 必须带上请求者，防止命中他人缓存绕过水平越权校验；
+     * 未命中经 CacheMutexLoader 互斥回源（防击穿），查无结果写短 TTL 空标记（防穿透）。
      */
+    @Cacheable(cacheNames = CacheConfig.CACHE_PAPER_SNAPSHOT,
+            key = "T(com.exam.paper.service.PaperSnapshotService).snapshotCacheKey(#paperId)")
     public PaperSnapshotResponse getCurrent(Long paperId) {
-        Paper paper = paperService.getOwnedPaper(paperId);
-        if (paper.getSnapshotId() == null) {
-            throw new BusinessException(ResponseCode.NOT_FOUND, "试卷尚未生成快照");
-        }
-        PaperSnapshot snapshot = paperSnapshotMapper.selectById(paper.getSnapshotId());
-        if (snapshot == null) {
-            throw new BusinessException(ResponseCode.NOT_FOUND, "试卷快照不存在");
-        }
-        return toResponse(snapshot);
+        return cacheMutexLoader.load(CacheConfig.CACHE_PAPER_SNAPSHOT, snapshotCacheKey(paperId), () -> {
+            Paper paper = paperService.getOwnedPaper(paperId);
+            if (paper.getSnapshotId() == null) {
+                throw new BusinessException(ResponseCode.NOT_FOUND, "试卷尚未生成快照");
+            }
+            PaperSnapshot snapshot = paperSnapshotMapper.selectById(paper.getSnapshotId());
+            if (snapshot == null) {
+                throw new BusinessException(ResponseCode.NOT_FOUND, "试卷快照不存在");
+            }
+            return toResponse(snapshot);
+        });
+    }
+
+    /**
+     * 试卷快照缓存 key（@Cacheable SpEL 与互斥回源共用此方法，保证两处 key 口径一致）：
+     * paperId + ':' + 请求者 ID。归属校验在方法体内、缓存命中会跳过方法体，
+     * 不带请求者会让教师 A 命中教师 B 的缓存、绕过水平越权校验。
+     */
+    public static String snapshotCacheKey(Long paperId) {
+        return paperId + ":" + SecurityUtil.getUserId();
     }
 
     /**
