@@ -137,8 +137,12 @@ public class PaperSnapshotService {
         return toResponse(snapshot);
     }
 
-    /** 序列化快照：题目内容/选项/归一化答案/试卷内分值/题号顺序的完整副本。 */
-    private String serialize(Paper paper, List<PaperQuestion> rows, Map<Long, Question> questionMap) {
+    /**
+     * 序列化快照：题目内容/选项/归一化答案/试卷内分值/题号顺序的完整副本。
+     * 开放给考试快照复用（add-exam-management）：exam_snapshots.paper_json 与本结构保持一致，
+     * 保证答题/判分/回看消费方对两种快照的解析口径统一。
+     */
+    public String serialize(Paper paper, List<PaperQuestion> rows, Map<Long, Question> questionMap) {
         ObjectNode root = objectMapper.createObjectNode();
         root.put("paperId", paper.getId());
         root.put("title", paper.getTitle());

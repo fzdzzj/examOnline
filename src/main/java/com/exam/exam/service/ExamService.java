@@ -44,15 +44,17 @@ public class ExamService {
     private final PaperService paperService;
     private final PaperMapper paperMapper;
     private final ExamStateMachineService stateMachineService;
+    private final ExamSnapshotService snapshotService;
     private final ObjectMapper objectMapper;
 
     public ExamService(ExamMapper examMapper, PaperService paperService,
                        PaperMapper paperMapper, ExamStateMachineService stateMachineService,
-                       ObjectMapper objectMapper) {
+                       ExamSnapshotService snapshotService, ObjectMapper objectMapper) {
         this.examMapper = examMapper;
         this.paperService = paperService;
         this.paperMapper = paperMapper;
         this.stateMachineService = stateMachineService;
+        this.snapshotService = snapshotService;
         this.objectMapper = objectMapper;
     }
 
@@ -158,6 +160,29 @@ public class ExamService {
         assertEditable(exam);
         examMapper.deleteById(id);
         log.info("考试删除: id={}", id);
+    }
+
+    /**
+     * 发布考试（spec「考试发布」需求）：published=1 学生可见，状态仍为未开始——
+     * 到达 start_time 由定时任务自动开考（定时发布场景）。
+     * 发布是考试快照生成的唯一时机（§10.10）：同一事务内先校验并生成快照，再回填 snapshotId；
+     * 试卷题目为空/被删/总分不一致会在发布时被拒绝，快照因此始终完整可信。
+     */
+    @Transactional
+    public ExamDetailResponse publish(Long id) {
+        Exam exam = getOwnedExam(id);
+        if (exam.getPublished() != null && exam.getPublished() == 1) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "考试已发布，不允许重复发布");
+        }
+        if (exam.getStatus() != Exam.STATUS_NOT_STARTED) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "考试已开始或结束，不允许发布");
+        }
+        Long snapshotId = snapshotService.generateForPublish(exam).getId();
+        exam.setPublished(1);
+        exam.setSnapshotId(snapshotId);
+        examMapper.updateById(exam);
+        log.info("考试 {} 发布（学生可见），等待定时开考", id);
+        return detail(id);
     }
 
     /**
