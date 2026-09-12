@@ -2,6 +2,7 @@ package com.exam.taking.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
@@ -51,19 +52,19 @@ public class ExamTakingService {
     private final ExamSnapshotService examSnapshotService;
     private final PersonalPaperService personalPaperService;
     private final ExamDraftService draftService;
-    private final ExamBehaviorLogService behaviorLogService;
+    private final BehaviorEventCollectService eventCollectService;
     private final ExamSubmitService submitService;
 
     public ExamTakingService(ExamMapper examMapper, ExamSubmissionMapper submissionMapper,
                              ExamSnapshotService examSnapshotService, PersonalPaperService personalPaperService,
-                             ExamDraftService draftService, ExamBehaviorLogService behaviorLogService,
+                             ExamDraftService draftService, BehaviorEventCollectService eventCollectService,
                              ExamSubmitService submitService) {
         this.examMapper = examMapper;
         this.submissionMapper = submissionMapper;
         this.examSnapshotService = examSnapshotService;
         this.personalPaperService = personalPaperService;
         this.draftService = draftService;
-        this.behaviorLogService = behaviorLogService;
+        this.eventCollectService = eventCollectService;
         this.submitService = submitService;
     }
 
@@ -102,6 +103,7 @@ public class ExamTakingService {
     }
 
     /** 切屏/失焦行为上报：校验在考（已进入且未交卷）后落行为日志，不强制交卷。 */
+    /** 切屏/失焦行为上报：校验在考（已进入且未交卷）后交由防作弊采集核心落行为日志，不强制交卷。 */
     public void reportBehavior(Long examId, BehaviorReportRequest request) {
         Long studentId = requireStudent();
         ExamSubmission submission = submissionMapper.selectByExamStudent(examId, studentId);
@@ -111,8 +113,10 @@ public class ExamTakingService {
         if (submission.getStatus() != ExamSubmission.STATUS_IN_PROGRESS) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "答卷已提交，无需上报行为");
         }
-        behaviorLogService.record(examId, studentId, request.getEventType(), request.getEventData(),
-                request.getSeverity(), request.getOccurredTime());
+        // 阶段 7 防作弊：事件经统一采集核心（策略模式）判定严重度后落库——
+        // 严重度由服务端策略决定，客户端不再自带；切屏只警告+记录，绝不强制交卷
+        eventCollectService.collect(examId, studentId, request.getEventType(),
+                request.getEventData(), request.getOccurredTime());
     }
 
     /**

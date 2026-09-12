@@ -1,5 +1,7 @@
 package com.exam.taking.service;
 
+import com.exam.anticheat.collector.BehaviorEventTypes;
+import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.taking.dto.AutoSaveRequest;
@@ -39,17 +41,17 @@ public class ExamDraftService {
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
-    private final ExamBehaviorLogService behaviorLogService;
+    private final BehaviorEventCollectService eventCollectService;
     private final ExamSubmissionMapper submissionMapper;
 
     @Value("${exam.taking.draft.ttl-hours:2}")
     private int ttlHours;
 
     public ExamDraftService(StringRedisTemplate redisTemplate, ObjectMapper objectMapper,
-                            ExamBehaviorLogService behaviorLogService, ExamSubmissionMapper submissionMapper) {
+                            BehaviorEventCollectService eventCollectService, ExamSubmissionMapper submissionMapper) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
-        this.behaviorLogService = behaviorLogService;
+        this.eventCollectService = eventCollectService;
         this.submissionMapper = submissionMapper;
     }
 
@@ -72,9 +74,12 @@ public class ExamDraftService {
             // 多端冲突：以版本号最新者为准，旧端写入被拒并记录冲突日志（spec 场景）
             log.warn("草稿版本冲突: exam={} student={} incoming={} stored={}（拒绝旧版本写入）",
                     examId, studentId, incoming, stored.version());
-            behaviorLogService.record(examId, studentId, "DRAFT_CONFLICT",
-                    "{\"incomingVersion\":" + incoming + ",\"storedVersion\":" + stored.version() + "}",
-                    1, LocalDateTime.now());
+            // 阶段 7：冲突事件交由防作弊采集核心（策略模式）统一判定严重度并落库
+            ObjectNode conflictData = objectMapper.createObjectNode();
+            conflictData.put("incomingVersion", incoming);
+            conflictData.put("storedVersion", stored.version());
+            eventCollectService.collect(examId, studentId, BehaviorEventTypes.DRAFT_CONFLICT,
+                    conflictData, LocalDateTime.now());
             return new AutoSaveResponse(false, stored.version(), stored.savedTime());
         }
 

@@ -1,5 +1,7 @@
 package com.exam.taking.service;
 
+import com.exam.anticheat.collector.BehaviorEventTypes;
+import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.auth.security.SecurityUtil;
@@ -12,6 +14,7 @@ import com.exam.taking.dto.SubmitRequest;
 import com.exam.taking.dto.SubmitResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
@@ -55,19 +58,22 @@ public class ExamSubmitService {
     private final ExamSubmitSender sender;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final BehaviorEventCollectService eventCollectService;
 
     @Value("${exam.taking.submit.lock-ttl-seconds:30}")
     private int lockTtlSeconds;
 
     public ExamSubmitService(ExamSubmissionService submissionService, ExamSubmitDedupMapper dedupMapper,
                              ExamDraftService draftService, ExamSubmitSender sender,
-                             StringRedisTemplate redisTemplate, ObjectMapper objectMapper) {
+                             StringRedisTemplate redisTemplate, ObjectMapper objectMapper,
+                             BehaviorEventCollectService eventCollectService) {
         this.submissionService = submissionService;
         this.dedupMapper = dedupMapper;
         this.draftService = draftService;
         this.sender = sender;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
+        this.eventCollectService = eventCollectService;
     }
 
     /** 学生侧交卷入口：手动交卷与前端倒计时归零强制提交共用。 */
@@ -130,6 +136,8 @@ public class ExamSubmitService {
             } catch (Exception e) {
                 log.error("交卷消息发送失败，答案暂存草稿等待补发: submission={} exam={} student={}",
                         submission.getId(), examId, studentId, e);
+                // 阶段 7 防作弊：交卷异常事件采集（策略判定严重度为"高"），旁路不改变原有兜底流程
+                recordSubmitAnomaly(examId, studentId, e);
                 draftService.overwriteAnswers(examId, studentId, answersJson);
                 throw new BusinessException(ResponseCode.INTERNAL_ERROR,
                         "系统繁忙，答卷已锁定，答案将自动补交，请勿重复提交");
@@ -142,6 +150,22 @@ public class ExamSubmitService {
         } finally {
             // 主动释放锁（TTL 兜底防持有者崩溃后死锁）
             redisTemplate.delete(lockKey);
+        }
+    }
+
+    /**
+     * 交卷异常事件采集（spec add-anti-cheat「补齐交卷异常事件」）：经统一采集核心落库，
+     * 严重度由 SUBMIT_ANOMALY 策略判定为"高"。事件采集是旁路——内部已消化异常，
+     * 此处再兜一层，保证绝不影响交卷主链路的草稿兜底与异常抛出。
+     */
+    private void recordSubmitAnomaly(Long examId, Long studentId, Exception cause) {
+        try {
+            ObjectNode data = objectMapper.createObjectNode();
+            data.put("stage", "MQ_SEND");
+            data.put("reason", cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage());
+            eventCollectService.collect(examId, studentId, BehaviorEventTypes.SUBMIT_ANOMALY, data, null);
+        } catch (Exception e) {
+            log.warn("交卷异常事件采集失败（旁路忽略）: exam={} student={}", examId, studentId, e);
         }
     }
 
