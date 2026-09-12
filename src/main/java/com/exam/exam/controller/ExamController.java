@@ -76,6 +76,12 @@ public class ExamController {
         return ApiResponse.success();
     }
 
+    /** 教师提前结束：进行中 → 已结束并留强制交卷标记；状态迁移经乐观锁 CAS，并发仅一次成功 */
+    @PostMapping("/{id}/force-end")
+    public ApiResponse<ExamDetailResponse> forceEnd(@PathVariable Long id) {
+        return ApiResponse.success(examService.forceEnd(id));
+    }
+
     private ExamResponse toResponse(Exam exam) {
         return new ExamResponse(exam.getId(), exam.getTitle(), exam.getPaperId(),
                 exam.getCourseId(), exam.getClassId(),

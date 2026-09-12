@@ -59,6 +59,9 @@ exam:
       # 找回密码验证码：有效分钟数与长度
       ttl-minutes: 5
       length: 6
+  schedule:
+    # 考试状态机扫表间隔（定时发布/自然结束推进），毫秒；不依赖外部调度中间件
+    fixed-delay-ms: 10000
 
 management:
   endpoints:

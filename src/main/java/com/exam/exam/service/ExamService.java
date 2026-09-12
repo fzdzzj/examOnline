@@ -33,7 +33,7 @@ import java.time.LocalDateTime;
  *   <li>创建/换绑试卷必须存在且属于当前教师（ADMIN 放行），复用 assertTeacherOwnsPaper 模式；</li>
  *   <li>时间窗校验 end_time &gt; start_time、时长校验 duration_minutes &gt; 0（spec「时间窗非法/时长非法」场景）；</li>
  *   <li>修改/删除仅限"未发布且未开始"：已发布考试学生已可见，须走撤回流程（后续阶段提供）；</li>
- *   <li>发布/提前结束/状态机流转见 {@link ExamStateMachineService} 与本类发布方法（后续提交）。</li>
+ *   <li>状态流转一律经 {@link ExamStateMachineService} 的乐观锁 CAS；发布与考试快照见 ExamSnapshotService。</li>
  * </ul>
  */
 @Slf4j
@@ -43,13 +43,16 @@ public class ExamService {
     private final ExamMapper examMapper;
     private final PaperService paperService;
     private final PaperMapper paperMapper;
+    private final ExamStateMachineService stateMachineService;
     private final ObjectMapper objectMapper;
 
     public ExamService(ExamMapper examMapper, PaperService paperService,
-                       PaperMapper paperMapper, ObjectMapper objectMapper) {
+                       PaperMapper paperMapper, ExamStateMachineService stateMachineService,
+                       ObjectMapper objectMapper) {
         this.examMapper = examMapper;
         this.paperService = paperService;
         this.paperMapper = paperMapper;
+        this.stateMachineService = stateMachineService;
         this.objectMapper = objectMapper;
     }
 
@@ -155,6 +158,26 @@ public class ExamService {
         assertEditable(exam);
         examMapper.deleteById(id);
         log.info("考试删除: id={}", id);
+    }
+
+    /**
+     * 教师提前结束（spec「教师提前结束」需求，§1.5）：进行中 → 已结束，
+     * 并置位 force_end 标记——阶段 5 交卷链路据此对未交卷学生按最后自动保存强制交卷。
+     * 状态迁移经乐观锁 CAS：并发重复提前结束仅一次成功，另一次收到 409 状态冲突。
+     */
+    @Transactional
+    public ExamDetailResponse forceEnd(Long id) {
+        Exam exam = getOwnedExam(id);
+        if (exam.getStatus() != Exam.STATUS_IN_PROGRESS) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "仅进行中的考试允许提前结束");
+        }
+        stateMachineService.casTransition(id, Exam.STATUS_IN_PROGRESS, Exam.STATUS_ENDED);
+        // CAS SQL 只负责状态与版本；force_end 标记单独置位，避免状态迁移 SQL 被附加语义
+        examMapper.update(null, Wrappers.<Exam>lambdaUpdate()
+                .eq(Exam::getId, id)
+                .set(Exam::getForceEnd, 1));
+        log.info("考试 {} 教师提前结束（force_end=1），强制交卷由阶段 5 交卷链路处理", id);
+        return detail(id);
     }
 
     /**

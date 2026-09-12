@@ -38,7 +38,11 @@ public enum ResponseCode {
     /** 找回密码：验证码错误或已过期 */
     RESET_CODE_INVALID(1010, "验证码无效或已过期", 400),
     /** 修改密码：原密码错误 */
-    OLD_PASSWORD_ERROR(1011, "原密码错误", 400);
+    OLD_PASSWORD_ERROR(1011, "原密码错误", 400),
+
+    // ---- 考试管理（add-exam-management, W3-W4）----
+    /** 状态机乐观锁 CAS 影响 0 行：考试状态已被并发请求迁移，调用方应重读后重试 */
+    STATE_CONFLICT(1012, "考试状态已变化，请刷新后重试", 409);
 
     private final int code;
     private final String message;
