@@ -51,6 +51,9 @@ spec/
 | 6 | grading | 客观题判分、简答批改、策略模式 |
 | 7 | score-management | 成绩汇总/发布/导出 |
 | 8 | anti-cheat | 切屏检测、行为日志、随机抽题/选项乱序 |
+| 9 | performance | 缓存三防、慢查询识别 |
+| 10 | data-access | 读写分离、读己之写 |
+| 11 | observability | 指标导出、自定义指标、慢 SQL |
 
 ## 开发阶段 → 变更映射（规划）
 
@@ -63,7 +66,7 @@ spec/
 | 5 | add-exam-taking | exam-taking | W4-W6 |
 | 6 | add-grading-score | grading + score-management | W7 |
 | 7 | add-anti-cheat | anti-cheat | W8 |
-| 8 | add-observability | 跨能力（性能/可观测） | W9-W10 |
+| 8 | add-performance-deepening | performance + data-access + observability | W9-W10 |
 
 ## 工作流
 
