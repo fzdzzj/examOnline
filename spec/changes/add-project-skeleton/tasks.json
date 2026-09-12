@@ -1,0 +1,47 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：工程骨架（W1）",
+    "task": "单体工程与依赖锁定",
+    "steps": [
+      { "step": "初始化 Spring Boot 3.5.5 单体工程，父 POM dependencyManagement 锁定版本矩阵（web/jjwt/redis/mysql/mybatis-plus/lombok/mail）", "completed": true },
+      { "step": "配置 application.yml 多环境（dev/prod，含 Redis/MySQL/SMTP 连接）", "completed": true },
+      { "step": "验证 mvn clean install 全量编译通过", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 1：工程骨架（W1）",
+    "task": "统一响应、全局异常与日志",
+    "steps": [
+      { "step": "实现统一响应体 ApiResponse<T>（code/message/data）", "completed": true },
+      { "step": "实现 GlobalExceptionHandler 与错误码枚举", "completed": true },
+      { "step": "实现 RequestId 过滤器 + 结构化日志", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 2：数据模型（W1）",
+    "task": "RBAC 五表建表与预置数据",
+    "steps": [
+      { "step": "设计 users/roles/permissions/user_roles/role_permissions 五表结构（users.username 唯一：学生=学号、教师=工号）", "completed": true },
+      { "step": "编写幂等建表 SQL 与索引（username 唯一、外键关系）", "completed": true },
+      { "step": "预置角色（ADMIN/TEACHER/STUDENT）与初始权限点数据", "completed": true },
+      { "step": "定义实体类、Mapper 接口与基础 DAO", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 2：数据模型（W1）",
+    "task": "Docker Compose 中间件编排",
+    "steps": [
+      { "step": "编写 docker-compose.yml：MySQL 主从 + Redis + RabbitMQ", "completed": true },
+      { "step": "配置依赖顺序与健康检查（healthcheck）", "completed": true },
+      { "step": "验证 docker compose up 一键启动全部中间件", "completed": true }
+    ],
+    "passes": true
+  }
+]

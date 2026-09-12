@@ -1,0 +1,82 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：数据模型与题库（W2）",
+    "task": "题库六表建表与实体",
+    "steps": [
+      { "step": "设计 questions/tags/question_tags/papers/paper_questions/paper_snapshots 六表结构与索引", "completed": false },
+      { "step": "编写幂等建表 SQL（questions.is_deleted 软删、papers 分值字段、paper_questions 题号/分值）", "completed": false },
+      { "step": "定义实体类、Mapper 接口与 DAO", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 1：数据模型与题库（W2）",
+    "task": "题目 CRUD + 答案归一化",
+    "steps": [
+      { "step": "实现题目创建/查询/更新/软删除（单选/多选/判断/简答四类型）", "completed": false },
+      { "step": "实现答案归一化工具（判断 T/F、多选有序选项、选择题标准选项）", "completed": false },
+      { "step": "实现题目列表分页 + 按类型/难度/标签筛选", "completed": false },
+      { "step": "开发题目 CRUD 端点并接入教师 owner 校验（assertTeacherOwnsQuestion）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 1：数据模型与题库（W2）",
+    "task": "扁平标签体系",
+    "steps": [
+      { "step": "实现标签 CRUD（学科/难度/题型/自定义四类）", "completed": false },
+      { "step": "实现题目-标签多选关联（question_tags）", "completed": false },
+      { "step": "开发标签管理端点与按标签筛选题目", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 4,
+    "category": "阶段 2：组卷（W3）",
+    "task": "手动组卷（排序 + 分值覆盖）",
+    "steps": [
+      { "step": "实现试卷 CRUD（papers 表，含总分/题目数）", "completed": false },
+      { "step": "实现手动选题：题目加入试卷（paper_questions 题号排序、分值覆盖题目默认分）", "completed": false },
+      { "step": "实现试卷总分校验（各题分值之和 = total_score）", "completed": false },
+      { "step": "开发组卷端点并接入教师 owner 校验（assertTeacherOwnsPaper）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 5,
+    "category": "阶段 2：组卷（W3）",
+    "task": "标签随机抽题",
+    "steps": [
+      { "step": "实现按标签/难度/题型比例随机抽 N 题（先取 id 再内存 shuffle，避免 ORDER BY RAND()）", "completed": false },
+      { "step": "实现抽题不足时提示教师调整（题库容量校验）", "completed": false },
+      { "step": "开发随机抽题预览端点，支持教师确认或重抽", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 6,
+    "category": "阶段 2：组卷（W3）",
+    "task": "抽题锁定与试卷快照",
+    "steps": [
+      { "step": "实现 paper_snapshots 快照生成：序列化试卷（题目/答案/分值/乱序）落库", "completed": false },
+      { "step": "实现抽题结果锁定：快照生成后题目/乱序不再变，刷新读取同一快照", "completed": false },
+      { "step": "实现快照读取接口（后续考试/答题/判分/回看统一读快照）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 7,
+    "category": "阶段 3：验收（W3）",
+    "task": "题库组卷验收",
+    "steps": [
+      { "step": "编写题目归一化单元测试（判断 T/F、多选有序）", "completed": false },
+      { "step": "编写组卷/抽题/快照集成测试（MockMvc）", "completed": false },
+      { "step": "验证软删题目不影响已生成快照、抽题锁定刷新不换题", "completed": false },
+      { "step": "端到端验收：建题→打标签→手动组卷/随机抽题→生成快照", "completed": false }
+    ],
+    "passes": false
+  }
+]

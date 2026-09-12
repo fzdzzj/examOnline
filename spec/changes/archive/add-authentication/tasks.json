@@ -1,0 +1,97 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：账号与登录（W1-W2）",
+    "task": "用户注册（学号/工号 + 邀请码）",
+    "steps": [
+      { "step": "实现学生自助注册（学号+密码，默认 STUDENT 角色，校验学号唯一/格式/密码强度）", "completed": true },
+      { "step": "实现教师注册邀请码校验（工号+密码+邀请码，邀请码有效才授予 TEACHER 角色）", "completed": true },
+      { "step": "实现管理员生成/作废教师邀请码接口", "completed": true },
+      { "step": "开发 POST /api/auth/register 端点与参数校验", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 1：账号与登录（W1-W2）",
+    "task": "用户登录（学号/工号 + 密码）",
+    "steps": [
+      { "step": "实现密码不可逆哈希工具（注册加密、登录校验）", "completed": true },
+      { "step": "实现登录 Service（查询用户 → 校验密码 → 校验账号状态）", "completed": true },
+      { "step": "开发 POST /api/auth/login 端点", "completed": true },
+      { "step": "处理登录失败场景（账号不存在/密码错误/账号禁用，统一错误提示防账号枚举）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 2：令牌与会话（W1-W2）",
+    "task": "双 Token 签发与刷新（Access 30min + Refresh 7d + 轮换）",
+    "steps": [
+      { "step": "实现 JwtUtil：签发 Access Token（含 jti/角色/权限，30min）与 Refresh Token（7d）", "completed": true },
+      { "step": "实现 POST /api/auth/refresh：校验 Refresh → 轮换（旧 Refresh 作废）→ 签发新双 Token", "completed": true },
+      { "step": "实现 Refresh 复用检测（发现已作废 Refresh 被复用即全端下线）", "completed": true },
+      { "step": "实现登录响应返回双 Token 结构", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 2：令牌与会话（W1-W2）",
+    "task": "主动失效（Redis 黑名单）",
+    "steps": [
+      { "step": "实现 Redis 黑名单写入（jti → 过期时间，登出/踢人/改密码时写入）", "completed": true },
+      { "step": "实现 AuthenticationInterceptor：校验 Access Token + 查询黑名单", "completed": true },
+      { "step": "实现 POST /api/auth/logout 端点（当前 Token 入黑名单）", "completed": true },
+      { "step": "实现改密码/踢人触发 Token 失效逻辑", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 2：令牌与会话（W1-W2）",
+    "task": "邮箱找回密码 + 管理员初始化",
+    "steps": [
+      { "step": "配置 SMTP 邮件服务，实现发送单次重置验证码（Redis 5 分钟有效）", "completed": true },
+      { "step": "实现验证码校验与重置密码接口，重置后使旧 Token 全失效", "completed": true },
+      { "step": "实现 AdminInitializer：启动时检测无 admin 则创建并绑定 ADMIN 角色与全量权限", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 6,
+    "category": "阶段 3：授权与防护（W2）",
+    "task": "RBAC 授权（角色/权限注解 + AOP）",
+    "steps": [
+      { "step": "实现 @RequireRole 与 @RequirePermission 注解", "completed": true },
+      { "step": "实现 RoleValidationAspect 切面：从 SecurityUtil 取当前用户，校验角色层级与权限点", "completed": true },
+      { "step": "实现 SecurityUtil（ThreadLocal 存取当前用户上下文）", "completed": true },
+      { "step": "在示例接口加注解验证授权链路", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 7,
+    "category": "阶段 3：授权与防护（W2）",
+    "task": "水平越权防护 + 登录锁定限流",
+    "steps": [
+      { "step": "实现通用 owner 校验断言（如 assertTeacherOwnsExam），在教师类写操作 Service 接入", "completed": true },
+      { "step": "实现登录锁定（Redis 计数，连续 5 次失败锁 15 分钟）", "completed": true },
+      { "step": "实现登录接口限流（令牌桶，如 10 次/分钟/账号+IP）", "completed": true },
+      { "step": "集成测试验证：非 owner 访问返回 403、锁定/限流触发", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 8,
+    "category": "阶段 4：验收（W2）",
+    "task": "认证核心链路测试与验收",
+    "steps": [
+      { "step": "编写 JwtUtil 单元测试（签发/过期/篡改/黑名单）", "completed": true },
+      { "step": "编写登录/注册/刷新/登出/找回集成测试（MockMvc）", "completed": true },
+      { "step": "验证 Refresh 复用检测、黑名单失效、越权拦截（水平/垂直）", "completed": true },
+      { "step": "端到端验收：注册→登录→刷新→登出→失效，三角色可演示", "completed": true }
+    ],
+    "passes": true
+  }
+]
