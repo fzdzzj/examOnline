@@ -1,0 +1,72 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：考试数据模型（W3）",
+    "task": "exams / exam_snapshots 建表与实体",
+    "steps": [
+      { "step": "设计 exams 表（title/paper_id/course_id/class_id/start_time/end_time/duration_minutes/status/anti_cheat_config/allow_late_minutes/version）", "completed": true },
+      { "step": "设计 exam_snapshots 表（exam_id/paper_json/exam_json/version/created_time）", "completed": true },
+      { "step": "编写幂等建表 SQL 与索引（exam_id 唯一、status 索引）", "completed": true },
+      { "step": "定义实体类、Mapper 与 DAO", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 1：考试数据模型（W3）",
+    "task": "考试创建（绑定试卷/班级/时间窗）",
+    "steps": [
+      { "step": "实现考试创建 Service：校验试卷存在、时间窗合法（end_time > start_time）、duration_minutes > 0", "completed": true },
+      { "step": "实现绑定课程/班级（course_id/class_id）与防作弊配置（anti_cheat_config JSON）", "completed": true },
+      { "step": "开发考试 CRUD 端点，接入教师 owner 校验", "completed": true },
+      { "step": "考试创建后的状态初始化为未开始", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 2：状态机（W4）",
+    "task": "考试状态机（未开始→进行中→已结束）",
+    "steps": [
+      { "step": "实现状态流转 Service：乐观锁 CAS（UPDATE ... WHERE status=? AND version=?，影响 0 行重试或报错）", "completed": true },
+      { "step": "实现定时发布：到达 start_time 自动 未开始→进行中（启动扫表 + 定时任务推进）", "completed": true },
+      { "step": "实现自然结束：到达 end_time 自动 进行中→已结束", "completed": true },
+      { "step": "实现教师提前结束：force_end 迁移 进行中→已结束 并留标记", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 2：状态机（W4）",
+    "task": "考试快照（发布时生成）",
+    "steps": [
+      { "step": "实现发布考试：生成 exam_snapshots 快照（序列化考试 + 试卷快照含题目/答案/分值/乱序）", "completed": true },
+      { "step": "实现快照读取接口：后续答题/判分/回看统一读快照", "completed": true },
+      { "step": "验证发布后快照固化，后续试卷/题目变更不影响快照", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 3：试卷锁定（W4）",
+    "task": "考试开始后锁定试卷",
+    "steps": [
+      { "step": "实现锁定逻辑：考试进入进行中后，禁止修改/删除试卷与题目、禁止改分值", "completed": true },
+      { "step": "在组卷/题目修改接口接入锁定校验（考试进行中返回业务错误）", "completed": true },
+      { "step": "验证锁定生效：进行中考试的绑定试卷不可改，未开始/已结束不受影响", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 6,
+    "category": "阶段 4：验收（W4）",
+    "task": "考试管理验收",
+    "steps": [
+      { "step": "编写状态机 CAS 单元测试（并发流转仅成功一次）", "completed": true },
+      { "step": "编写考试创建/发布/快照/锁定集成测试（MockMvc）", "completed": true },
+      { "step": "验证定时发布、自然结束、提前结束状态流转正确", "completed": true },
+      { "step": "端到端验收：组卷→创建考试→发布→快照生成→状态流转→试卷锁定", "completed": true }
+    ],
+    "passes": true
+  }
+]
