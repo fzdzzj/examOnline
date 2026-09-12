@@ -9,12 +9,15 @@ import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.grading.entity.GradingSubmission;
 import com.exam.grading.mapper.GradingSubmissionMapper;
+import com.exam.grading.model.GradingConfig;
 import com.exam.grading.model.GradingPaper;
 import com.exam.grading.support.GradingPaperReader;
 import com.exam.submission.entity.ExamSubmission;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,6 +99,41 @@ public class ExamGradingService {
         }
         GradingPaper paper = paperReader.readByExamId(examId);
         return objectiveGradingService.gradeSafely(submission, paper);
+    }
+
+    /**
+     * 手动给分（spec「判分失败处理」场景的兜底通道）：
+     * 判分反复失败（如答案数据损坏无法解析）时，教师可按纸质卷/人工核对结果直接裁定客观题总分。
+     * 与重判的差异：重判走判分引擎重算，手动给分完全绕过引擎——教师裁定即终局。
+     */
+    public void manualScore(Long examId, Long submissionId, BigDecimal objectiveScore) {
+        Exam exam = requireOperableExam(examId);
+        OwnershipGuard.assertOwner(exam.getCreatedBy(), SecurityUtil.getCurrentUser(), "考试");
+
+        GradingSubmission submission = gradingSubmissionMapper.selectById(submissionId);
+        if (submission == null || !submission.getExamId().equals(examId)) {
+            throw new BusinessException(ResponseCode.NOT_FOUND, "答卷不存在或不属于该考试");
+        }
+        if (submission.getStatus() == ExamSubmission.STATUS_IN_PROGRESS) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "答卷尚未交卷，不能给分");
+        }
+        // 上限校验：手动给分不得超过快照客观题满分（防止超出卷面结构的成绩）
+        GradingPaper paper = paperReader.readByExamId(examId);
+        BigDecimal objectiveTotal = paper.objectiveTotalScore();
+        if (objectiveScore.compareTo(objectiveTotal) > 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "手动给分不得超过客观题满分 " + objectiveTotal.stripTrailingZeros().toPlainString());
+        }
+
+        gradingSubmissionMapper.update(null, Wrappers.<GradingSubmission>lambdaUpdate()
+                .eq(GradingSubmission::getId, submissionId)
+                .in(GradingSubmission::getStatus, ExamSubmission.STATUS_SUBMITTED, ExamSubmission.STATUS_GRADED)
+                .set(GradingSubmission::getObjectiveScore, GradingConfig.scale(objectiveScore))
+                .set(GradingSubmission::getGradingStatus, ObjectiveGradingService.GRADING_OK)
+                .set(GradingSubmission::getGradingError, null)
+                .set(GradingSubmission::getUpdatedTime, LocalDateTime.now()));
+        log.info("答卷手动给分: exam={} submission={} objective={} 操作人={}",
+                examId, submissionId, objectiveScore, SecurityUtil.getUserId());
     }
 
     /** 校验考试存在且当前状态可判分（已结束/已批改；已发布须先撤回，未结束不可判）。 */

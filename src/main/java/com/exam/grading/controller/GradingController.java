@@ -4,11 +4,14 @@ import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
 import com.exam.grading.dto.GradingProgressResponse;
 import com.exam.grading.dto.GradingRunResponse;
+import com.exam.grading.dto.ManualScoreRequest;
 import com.exam.grading.service.ExamGradingService;
 import com.exam.grading.service.GradingQueryService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,7 +22,9 @@ import java.util.List;
  * <ul>
  *   <li>整场判分——按考试快照标准答案自动判客观题（单选/多选/判断），
  *       简答建批改行（关键词初判提示分）；失败答卷就地标记不中断整场；</li>
- *   <li>判分进度——客观判分与主观批改两个维度的完成度总览。</li>
+ *   <li>判分进度——客观判分与主观批改两个维度的完成度总览；</li>
+ *   <li>失败处理——单份重判（引擎重算）与手动给分（教师裁定兜底），
+ *       对应 spec「标记失败可重判」场景。</li>
  * </ul>
  * 类级 {@code @RequirePermission("exam:manage")}（TEACHER/ADMIN）；教师只能操作本人考试
  * （Service 内 OwnershipGuard 校验考试归属）。
@@ -55,5 +60,28 @@ public class GradingController {
     @GetMapping("/progress")
     public ApiResponse<GradingProgressResponse> progress(@PathVariable Long examId) {
         return ApiResponse.success(gradingQueryService.progress(examId));
+    }
+
+    /**
+     * 单份重判：对判分失败或需要重算的答卷重跑判分引擎（幂等，主观批改结果不动）。
+     * 重判仍失败时返回失败原因（grading_status=2 已落库）。
+     */
+    @PostMapping("/submissions/{submissionId}/rejudge")
+    public ApiResponse<GradingRunResponse.FailureItem> rejudge(@PathVariable Long examId,
+                                                               @PathVariable Long submissionId) {
+        var outcome = examGradingService.rejudge(examId, submissionId);
+        return ApiResponse.success(new GradingRunResponse.FailureItem(
+                outcome.submissionId(), outcome.studentId(), outcome.error()));
+    }
+
+    /**
+     * 手动给分：判分引擎反复失败的答卷，教师直接裁定客观题总分（不得超过客观题满分）。
+     */
+    @PostMapping("/submissions/{submissionId}/manual-score")
+    public ApiResponse<Void> manualScore(@PathVariable Long examId,
+                                         @PathVariable Long submissionId,
+                                         @Valid @RequestBody ManualScoreRequest request) {
+        examGradingService.manualScore(examId, submissionId, request.getObjectiveScore());
+        return ApiResponse.success();
     }
 }
