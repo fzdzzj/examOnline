@@ -25,6 +25,7 @@ spec/
 | `exam-management`（考试管理） | 已合入 | `add-exam-management`（阶段 4） |
 | `grading`（判分） | 已合入 | `add-grading-score`（阶段 6） |
 | `score-management`（成绩管理） | 已合入 | `add-grading-score`（阶段 6） |
+| `anti-cheat`（防作弊） | 已合入 | `add-anti-cheat`（阶段 7） |
 
 - 已归档变更（`spec/changes/archive/`）：
 
@@ -35,7 +36,7 @@ spec/
 
 - 进行中变更：
   - `add-exam-taking`（阶段 5）：任务清单已全部勾选，压测验收留 W6 收口后合入规范；
-  - `add-anti-cheat`（阶段 7）：提案与规范差异已建，待实施；
+  - `add-anti-cheat`（阶段 7）：已实施并验收（全量 118 例测试通过），规范已合入（变更目录留待统一归档）；
   - `add-grading-score`（阶段 6）：已实施并验收，规范已合入（变更目录留待统一归档）。
 
 ## 能力地图（8 个能力域，作为规范组织单位）
