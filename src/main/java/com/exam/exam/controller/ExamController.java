@@ -3,12 +3,14 @@ package com.exam.exam.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
+import com.exam.exam.dto.AbsenceItemResponse;
 import com.exam.exam.dto.ExamCreateRequest;
 import com.exam.exam.dto.ExamDetailResponse;
 import com.exam.exam.dto.ExamResponse;
 import com.exam.exam.dto.ExamSnapshotResponse;
 import com.exam.exam.dto.ExamUpdateRequest;
 import com.exam.exam.entity.Exam;
+import com.exam.exam.service.AbsenceService;
 import com.exam.exam.service.ExamService;
 import com.exam.exam.service.ExamSnapshotService;
 import jakarta.validation.Valid;
@@ -41,10 +43,13 @@ public class ExamController {
 
     private final ExamService examService;
     private final ExamSnapshotService examSnapshotService;
+    private final AbsenceService absenceService;
 
-    public ExamController(ExamService examService, ExamSnapshotService examSnapshotService) {
+    public ExamController(ExamService examService, ExamSnapshotService examSnapshotService,
+                          AbsenceService absenceService) {
         this.examService = examService;
         this.examSnapshotService = examSnapshotService;
+        this.absenceService = absenceService;
     }
 
     /** 创建考试：绑定试卷/课程班级，设定时间窗与个人时长；初始状态未开始 */
@@ -97,6 +102,13 @@ public class ExamController {
     @GetMapping("/{id}/snapshot")
     public ApiResponse<ExamSnapshotResponse> getSnapshot(@PathVariable Long id) {
         return ApiResponse.success(examSnapshotService.getCurrent(id));
+    }
+
+    /** 教师按考试查缺考学生名单（占位入口，勾选进入补考名单：spec「缺考名单可筛选」场景）。
+     *  越权校验在 AbsenceService 内：仅归属教师（ADMIN 放行）。 */
+    @GetMapping("/{id}/absences")
+    public ApiResponse<List<AbsenceItemResponse>> absences(@PathVariable Long id) {
+        return ApiResponse.success(absenceService.listAbsences(id));
     }
 
     private ExamResponse toResponse(Exam exam) {

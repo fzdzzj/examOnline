@@ -42,9 +42,11 @@ public class ExamStateMachineService {
             Exam.STATUS_GRADED, Set.of(Exam.STATUS_PUBLISHED));
 
     private final ExamMapper examMapper;
+    private final AbsenceService absenceService;
 
-    public ExamStateMachineService(ExamMapper examMapper) {
+    public ExamStateMachineService(ExamMapper examMapper, AbsenceService absenceService) {
         this.examMapper = examMapper;
+        this.absenceService = absenceService;
     }
 
     /**
@@ -104,7 +106,14 @@ public class ExamStateMachineService {
                 .eq(Exam::getStatus, Exam.STATUS_IN_PROGRESS)
                 .le(Exam::getEndTime, now));
         for (Exam exam : toEnd) {
-            moved += casAdvanceQuietly(exam, Exam.STATUS_ENDED);
+            int rows = casAdvanceQuietly(exam, Exam.STATUS_ENDED);
+            if (rows > 0) {
+                // 缺考标记锚定"进行中→已结束"这一刻（§8.10）：时间窗彻底关闭、迟到窗口结束，
+                // 此刻"应考 − 有答卷"才是终局缺考判定（迟到学生可能已赶在窗口内交卷，不当误判）。
+                // 幂等：markAbsence 内部 INSERT IGNORE + 唯一索引，多次扫表不重复写。
+                absenceService.markAbsence(exam.getId());
+            }
+            moved += rows;
         }
         return moved;
     }
