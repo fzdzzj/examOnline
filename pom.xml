@@ -135,6 +135,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- Prometheus 指标导出（add-performance-deepening 阶段8 可观测性 task5）：
+             Micrometer 的 Prometheus 注册表，为 actuator 提供 /actuator/prometheus 端点，
+             业务自定义指标（交卷 QPS/耗时、MQ 队列深度、防作弊事件）经它暴露给采集端（Prometheus/Grafana）。
+             版本由 spring-boot-starter-parent 的 BOM 统一锁定，无需写版本号 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
 
         <!-- ORM -->
         <dependency>

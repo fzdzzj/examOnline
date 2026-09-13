@@ -67,6 +67,8 @@ class ExamSubmitServiceTest {
     private ValueOperations<String, String> valueOperations;
     @Mock
     private com.exam.anticheat.service.BehaviorEventCollectService eventCollectService;
+    @Mock
+    private com.exam.monitoring.metrics.BusinessMetrics businessMetrics;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -77,7 +79,8 @@ class ExamSubmitServiceTest {
     @BeforeEach
     void setUp() {
         submitService = new ExamSubmitService(submissionService, dedupMapper, draftService,
-                sender, redisTemplate, objectMapper, eventCollectService, new ReadYourWriteMark(5000));
+                sender, redisTemplate, objectMapper, eventCollectService, new ReadYourWriteMark(5000),
+                businessMetrics);
         ReflectionTestUtils.setField(submitService, "lockTtlSeconds", 30);
 
         // submit 走 SecurityUtil 取当前学生（ThreadLocal），单测中手工注入

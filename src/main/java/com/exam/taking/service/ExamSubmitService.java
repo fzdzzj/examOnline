@@ -6,6 +6,7 @@ import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.config.ReadYourWriteMark;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.entity.ExamSubmitDedup;
 import com.exam.submission.mapper.ExamSubmitDedupMapper;
@@ -16,6 +17,7 @@ import com.exam.taking.dto.SubmitResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
@@ -61,6 +63,7 @@ public class ExamSubmitService {
     private final ObjectMapper objectMapper;
     private final BehaviorEventCollectService eventCollectService;
     private final ReadYourWriteMark readYourWriteMark;
+    private final BusinessMetrics metrics;
 
     @Value("${exam.taking.submit.lock-ttl-seconds:30}")
     private int lockTtlSeconds;
@@ -69,7 +72,8 @@ public class ExamSubmitService {
                              ExamDraftService draftService, ExamSubmitSender sender,
                              StringRedisTemplate redisTemplate, ObjectMapper objectMapper,
                              BehaviorEventCollectService eventCollectService,
-                             ReadYourWriteMark readYourWriteMark) {
+                             ReadYourWriteMark readYourWriteMark,
+                             BusinessMetrics metrics) {
         this.submissionService = submissionService;
         this.dedupMapper = dedupMapper;
         this.draftService = draftService;
@@ -78,6 +82,7 @@ public class ExamSubmitService {
         this.objectMapper = objectMapper;
         this.eventCollectService = eventCollectService;
         this.readYourWriteMark = readYourWriteMark;
+        this.metrics = metrics;
     }
 
     /** 学生侧交卷入口：手动交卷与前端倒计时归零强制提交共用。 */
@@ -95,6 +100,8 @@ public class ExamSubmitService {
 
     /** 三路竞态共用核心：幂等快速路径 → SETNX 锁 → 防重表 → 状态机 CAS → MQ 削峰。 */
     private SubmitResponse doSubmit(Long examId, Long studentId, int submitType, JsonNode payloadAnswers) {
+        // 可观测性打点：计时覆盖整个交卷流程（含 MQ confirm），成功/失败在唯一出口记录
+        Timer.Sample sample = metrics.startSubmit();
         // 幂等快速路径：已交卷直接返回首次结果（spec「重复交卷幂等」场景），不抢锁不发消息
         ExamSubmission submission = submissionService.getByExamStudent(examId, studentId);
         if (submission == null) {
@@ -140,6 +147,8 @@ public class ExamSubmitService {
             } catch (Exception e) {
                 log.error("交卷消息发送失败，答案暂存草稿等待补发: submission={} exam={} student={}",
                         submission.getId(), examId, studentId, e);
+                // 可观测性打点：交卷失败（MQ confirm 失败），记录耗时 + 失败计数
+                metrics.recordSubmitFailure(sample);
                 // 阶段 7 防作弊：交卷异常事件采集（策略判定严重度为"高"），旁路不改变原有兜底流程
                 recordSubmitAnomaly(examId, studentId, e);
                 draftService.overwriteAnswers(examId, studentId, answersJson);
@@ -152,6 +161,8 @@ public class ExamSubmitService {
             // 读己之写（add-performance-deepening task4）：交卷是写操作，成功后给当前线程打点，
             // 短窗口内本线程的 @DS("slave") 读（快照等）会被强制转主库，避免从库复制滞后读到旧状态
             readYourWriteMark.mark();
+            // 可观测性打点：真正的成功出口（幂等/并发路径不算新交卷），记录耗时 + 成功计数
+            metrics.recordSubmitSuccess(sample);
             return new SubmitResponse(submission.getId(), examId, studentId,
                     ExamSubmission.STATUS_SUBMITTED, now, submitType);
         } finally {

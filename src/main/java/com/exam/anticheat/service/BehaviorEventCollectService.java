@@ -5,6 +5,7 @@ import com.exam.anticheat.collector.BehaviorEventRegistry;
 import com.exam.anticheat.model.BehaviorEventContext;
 import com.exam.anticheat.model.EventVerdict;
 import com.exam.anticheat.model.SeverityLevel;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.taking.service.ExamBehaviorLogService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -38,10 +39,13 @@ public class BehaviorEventCollectService {
 
     private final BehaviorEventRegistry registry;
     private final ExamBehaviorLogService behaviorLogService;
+    private final BusinessMetrics metrics;
 
-    public BehaviorEventCollectService(BehaviorEventRegistry registry, ExamBehaviorLogService behaviorLogService) {
+    public BehaviorEventCollectService(BehaviorEventRegistry registry, ExamBehaviorLogService behaviorLogService,
+                                       BusinessMetrics metrics) {
         this.registry = registry;
         this.behaviorLogService = behaviorLogService;
+        this.metrics = metrics;
     }
 
     /**
@@ -73,6 +77,8 @@ public class BehaviorEventCollectService {
 
         behaviorLogService.record(examId, studentId, eventType,
                 merge(eventData, verdict.extraData()), verdict.severity().code(), eventTime);
+        // 可观测性打点：在此统一通道按事件类型计数（新增事件类型自动纳管，核心零改动）
+        metrics.countAntiCheatEvent(eventType);
         return verdict;
     }
 

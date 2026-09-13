@@ -35,6 +35,11 @@ class BehaviorEventCollectorTest {
         return org.mockito.Mockito.mock(com.exam.anticheat.service.BehaviorCounterService.class);
     }
 
+    /** 业务指标打点为旁路统计，单测中传一个不做事的内存 mock，不影响采集核心判定 */
+    private com.exam.monitoring.metrics.BusinessMetrics mockMetrics() {
+        return org.mockito.Mockito.mock(com.exam.monitoring.metrics.BusinessMetrics.class);
+    }
+
     private BehaviorEventRegistry registry() {
         // 未打桩的计数 mock increment 返回 0L → 走基础严重度，不影响本类分派验证
         return new BehaviorEventRegistry(
@@ -99,7 +104,7 @@ class BehaviorEventCollectorTest {
 
         // 采集核心对新事件照常完成"判定 → 落库"全流程
         ExamBehaviorLogService logService = mock(ExamBehaviorLogService.class);
-        BehaviorEventCollectService core = new BehaviorEventCollectService(registry, logService);
+        BehaviorEventCollectService core = new BehaviorEventCollectService(registry, logService, mockMetrics());
         EventVerdict verdict = core.collect(1L, 2L, "CAMERA_COVER", null, LocalDateTime.now());
 
         assertEquals(SeverityLevel.MEDIUM, verdict.severity());
@@ -153,7 +158,7 @@ class BehaviorEventCollectorTest {
         };
         BehaviorEventRegistry registry = new BehaviorEventRegistry(List.of(exploding), fallback);
         ExamBehaviorLogService logService = mock(ExamBehaviorLogService.class);
-        BehaviorEventCollectService core = new BehaviorEventCollectService(registry, logService);
+        BehaviorEventCollectService core = new BehaviorEventCollectService(registry, logService, mockMetrics());
 
         EventVerdict verdict = core.collect(1L, 2L, "EXPLODING_EVENT", null, null);
 

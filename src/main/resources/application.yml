@@ -113,6 +113,9 @@ exam:
   monitor:
     # 监考在线心跳窗口（秒）：大于自动保存周期（30s）的合理超时，过期即离线（add-anti-cheat）
     online-ttl-seconds: 60
+    # 慢 SQL 阈值（毫秒）（add-performance-deepening 阶段8 可观测性 task6）：
+    # MyBatis 拦截器按此判断，单条 SQL 执行超过该值输出 WARN 日志（含耗时/SQL/requestId）
+    slow-sql-threshold-ms: ${SLOW_SQL_THRESHOLD_MS:1000}
   datasource:
     # 读写分离读己之写窗口（add-performance-deepening task3+4，ReadYourWriteMark 消费）：
     # 写操作（交卷/发布/批改）完成后在当前线程置 ThreadLocal 标记，窗口(ms)内非强一致读强制转主库。
@@ -141,7 +144,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
