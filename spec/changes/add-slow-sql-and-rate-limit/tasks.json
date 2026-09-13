@@ -1,0 +1,48 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：慢 SQL 识别（W10）",
+    "task": "慢 SQL 拦截器",
+    "steps": [
+      { "step": "实现 SlowSqlInterceptor（MyBatis Interceptor，@Intercepts 拦截 Executor.query/update）", "completed": false },
+      { "step": "可配阈值（默认 1000ms），超阈值打 WARN 含耗时/SQL/参数/requestId", "completed": false },
+      { "step": "注册进 MybatisPlusConfig 的 MybatisPlusInterceptor", "completed": false },
+      { "step": "配置阈值（application.yml exam.observability.slow-sql-threshold-ms）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：接口限流（W10）",
+    "task": "限流注解与拦截器骨架",
+    "steps": [
+      { "step": "实现 @RateLimit 注解（qps/capacity 参数，挂 Controller 方法）", "completed": false },
+      { "step": "实现 RateLimitInterceptor（HandlerInterceptor，读注解）复用 RequestIdFilter 的 MDC", "completed": false },
+      { "step": "超限抛 429（复用 ResponseCode.RATE_LIMITED）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 2：接口限流（W10）",
+    "task": "Redis 令牌桶（Lua 原子性）",
+    "steps": [
+      { "step": "实现 Redis 令牌桶（Lua 脚本原子 GET+DECR+续期，分布式一致）", "completed": false },
+      { "step": "令牌桶 key 按接口维度，容量/速率可配", "completed": false },
+      { "step": "给交卷、拉卷、抽题三个核心接口加 @RateLimit（独立阈值）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 4,
+    "category": "阶段 3：验收（W10）",
+    "task": "慢 SQL + 限流验收",
+    "steps": [
+      { "step": "慢 SQL 拦截器单测（超阈值 WARN、requestId 关联）", "completed": false },
+      { "step": "令牌桶 Lua 单测（并发原子性、桶再生）", "completed": false },
+      { "step": "限流集成测试（超限返回 429）", "completed": false },
+      { "step": "端到端验收：慢 SQL 日志含 requestId、限流生效", "completed": false }
+    ],
+    "passes": false
+  }
+]
