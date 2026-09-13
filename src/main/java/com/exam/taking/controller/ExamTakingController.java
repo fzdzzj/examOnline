@@ -2,6 +2,7 @@ package com.exam.taking.controller;
 
 import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
+import com.exam.common.ratelimit.RateLimit;
 import com.exam.taking.dto.AutoSaveRequest;
 import com.exam.taking.dto.AutoSaveResponse;
 import com.exam.taking.dto.BehaviorReportRequest;
@@ -55,7 +56,10 @@ public class ExamTakingController {
         return ApiResponse.success(takingService.myExams());
     }
 
-    /** 进入考试并开始：首次创建答卷（个人快照 + 开始计时），重复进入幂等返回同一快照 */
+    /** 进入考试并开始：首次创建答卷（个人快照 + 开始计时），重复进入幂等返回同一快照。
+     *  拉卷限流（capacity=5000, qps=2000）——5000 人开考瞬间尖峰拉卷，容量等于最大同时拉卷人数，
+     *  一秒内可全部放行；此后按 2000/s 平滑整流（快照/考试详情已走缓存三防兜底，此处限流再加一层入口保护）。 */
+    @RateLimit(qps = 2000, capacity = 5000, key = "pull-paper")
     @PostMapping("/exams/{examId}/enter")
     public ApiResponse<EnterExamResponse> enter(@PathVariable Long examId) {
         return ApiResponse.success(takingService.enter(examId));
@@ -89,7 +93,10 @@ public class ExamTakingController {
      * 交卷：手动交卷与前端倒计时归零强制提交共用（submitType 区分来源）。
      * 三重幂等（SETNX 锁 + 防重表 + 状态机 CAS）保证只提交一次；重复提交返回首次结果；
      * 答案经 MQ 削峰异步批量落库，本接口返回即代表交卷成功（落库最终一致）。
+     * 交卷限流（capacity=2000, qps=500）——峰值较缓但单次重（每笔都走三重幂等 + MQ 削峰），
+     * 桶容量 2000 吸收整场瞬时交卷，500/s 平滑整流，保障答案不因瞬时并发打垮 MQ/DB。
      */
+    @RateLimit(qps = 500, capacity = 2000, key = "submit")
     @PostMapping("/exams/{examId}/submit")
     public ApiResponse<SubmitResponse> submit(@PathVariable Long examId,
                                               @RequestBody(required = false) SubmitRequest request) {

@@ -139,6 +139,12 @@ exam:
     # 防穿透空值缓存开关与短 TTL：查无结果写入空标记，期间同 key 查询不再直击 DB
     null-cache-enabled: true
     null-ttl-seconds: 30
+  ratelimit:
+    # 接口限流（add-slow-sql-and-rate-limit task3，RedisTokenBucket 消费）：
+    # 令牌桶按接口维度，桶容量/速率在各 Controller 方法的 @RateLimit 注解声明（交卷/拉卷/抽题各独立阈值）；
+    # 此处仅配置桶 key 的 TTL：接口连续被访问即续期，长时间无请求后桶自动过期、下次重建满桶，
+    # 避免闲置桶残留占用内存。各接口具体 capacity/qps 取值见对应 Controller 方法上的中文注释依据。
+    key-ttl-seconds: ${RATELIMIT_KEY_TTL:120}
 
 management:
   endpoints:
