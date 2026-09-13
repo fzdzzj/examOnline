@@ -27,6 +27,8 @@ import java.util.Set;
  *
  * <p>定时推进不依赖外部调度中间件：Spring @Scheduled 固定间隔扫表 +
  * 启动时（ApplicationReadyEvent）补偿扫表，服务重启后停机期间错过的迁移自动补齐。
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -51,7 +53,7 @@ public class ExamStateMachineService {
      *
      * @return 迁移后的考试（status 已更新，version 已 +1）
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Exam casTransition(Long examId, int expectedStatus, int newStatus) {
         if (!LEGAL_TRANSITIONS.getOrDefault(expectedStatus, Set.of()).contains(newStatus)) {
             throw new BusinessException(ResponseCode.BAD_REQUEST,
@@ -85,7 +87,7 @@ public class ExamStateMachineService {
      *
      * @return 本轮实际迁移的考试数
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int autoAdvance() {
         LocalDateTime now = LocalDateTime.now();
         int moved = 0;

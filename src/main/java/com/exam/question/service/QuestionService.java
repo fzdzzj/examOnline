@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
  * <p>数据隔离：写操作前经 {@link #getOwnedQuestion} 做 owner 校验
  * （复用阶段 2 的 {@link OwnershipGuard}，即 assertTeacherOwnsQuestion 模式）——
  * 教师只能操作自己的题目，ADMIN 越级放行；分页查询教师仅见个人题库。
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -62,7 +64,7 @@ public class QuestionService {
     }
 
     /** 创建题目：答案先归一化再入库，选项序列化为 JSON 数组。 */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Question create(QuestionCreateRequest request) {
         LoginUser operator = requireLogin();
         QuestionType type = parseType(request.getType());
@@ -88,7 +90,7 @@ public class QuestionService {
      * 更新题目（全量覆盖）：owner 校验后重走归一化，保证存储口径不因编辑破坏。
      * tagIds 为 null 表示保留原标签关联。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Question update(Long id, QuestionCreateRequest request) {
         Question question = getOwnedQuestion(id);
         // 考试进行中锁定（§4.1）：被进行中考试试卷引用的题目现场不可改，走错题补偿流程
@@ -117,7 +119,7 @@ public class QuestionService {
      * 已被引用的题目不影响历史试卷/快照，且不再参与后续组卷与抽题
      * （逻辑删除使 selectById/selectBatchIds 自动过滤）。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void softDelete(Long id) {
         Question question = getOwnedQuestion(id);
         // 考试进行中锁定（§4.1）：被进行中考试试卷引用的题目不可软删（快照副本虽隔离，引用完整性仍须保证）

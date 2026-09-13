@@ -48,6 +48,8 @@ import java.util.stream.Collectors;
  *   <li>撤回：仅管理员（§5.3），已发布→已批改，学生端立即不可见，原因必填 + 审计留痕；</li>
  *   <li>发布/撤回全部落 score_audit_logs（谁/何时/做了什么/原因），append-only。</li>
  * </ul>
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -91,7 +93,7 @@ public class ScoreService {
      * 逐份答卷 CAS 写入 subjective_score/total_score/partial_graded 并迁至"已批改"，
      * 全部处理完后再把考试状态推到"已批改"（乐观锁 CAS，并发汇总仅一次生效）。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SummarizeStats summarize(Long examId) {
         Exam exam = requireOwnedExam(examId);
         if (exam.getStatus() == Exam.STATUS_PUBLISHED) {
@@ -285,7 +287,7 @@ public class ScoreService {
      * 批量发布（spec「批量发布」场景）：已批改→已发布，学生端立即可见。
      * 单场失败不影响其余（部分成功语义），逐场返回结果；每场成功均落 PUBLISH 审计。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public List<ScoreActionItem> publish(List<Long> examIds) {
         List<ScoreActionItem> results = new ArrayList<>(examIds.size());
         for (Long examId : examIds) {
@@ -327,7 +329,7 @@ public class ScoreService {
      * 批量撤回（spec「成绩撤回」场景）：仅管理员；已发布→已批改，
      * 学生端立即不可见（显示"成绩待发布"）；原因必填，逐场落 REVOKE 审计。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public List<ScoreActionItem> revoke(List<Long> examIds, String reason) {
         // 双重校验：注解 @RequireRole 拦截层 + Service 内断言（防绕过直调）
         LoginRoleCheck.assertAdmin();

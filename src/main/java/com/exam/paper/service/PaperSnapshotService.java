@@ -43,6 +43,8 @@ import java.util.stream.Collectors;
  *   <li>不可变：快照是副本，之后题目被修改或软删除均不影响历史快照（spec「题目变更不影响快照」场景）；</li>
  *   <li>读取：供后续考试/答题/判分/回看统一消费。</li>
  * </ul>
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -79,7 +81,7 @@ public class PaperSnapshotService {
      * 生成快照并锁定试卷（一卷一快照，不允许重复生成/重抽）：
      * 前置校验——试卷非空、所有题目未被软删、各题分值之和等于申报总分。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public PaperSnapshotResponse generate(Long paperId) {
         Paper paper = paperService.getOwnedPaper(paperId);
         if (paper.getStatus() == Paper.STATUS_LOCKED) {

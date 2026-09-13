@@ -52,6 +52,8 @@ import java.util.stream.Collectors;
  *   <li>两层锁：快照锁定（status=已锁定）+ 考试进行中锁定（被进行中考试绑定的试卷只读，§4.1）；</li>
  *   <li>数据隔离：写操作经 {@link #getOwnedPaper} owner 校验（assertTeacherOwnsPaper 模式）。</li>
  * </ul>
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -74,7 +76,7 @@ public class PaperService {
     }
 
     /** 创建试卷（草稿）。 */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Paper create(PaperCreateRequest request) {
         LoginUser operator = requireLogin();
         Paper paper = new Paper();
@@ -115,7 +117,7 @@ public class PaperService {
      * 更新试卷元信息：已有题目时若更新 totalScore，则校验"各题分值之和 = 总分"
      * （spec「总分校验」场景：不一致则保存失败并提示调整）。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public PaperDetailResponse updateMeta(Long id, PaperUpdateRequest request) {
         Paper paper = getOwnedPaper(id);
         assertNotLocked(paper);
@@ -142,7 +144,7 @@ public class PaperService {
     }
 
     /** 删除试卷（草稿期）：已锁定（生成过快照）或被进行中考试绑定的试卷不允许删除，保护历史组卷结果。 */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         Paper paper = getOwnedPaper(id);
         examPaperLockService.assertPaperEditable(paper.getId());
@@ -158,7 +160,7 @@ public class PaperService {
     // ==================== 手动组卷 ====================
 
     /** 手动加题入卷：score 不传时用题目默认分（分值覆盖场景显式传入）。 */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public PaperQuestionItemResponse addQuestion(Long paperId, Long questionId, BigDecimal score) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);
@@ -168,7 +170,7 @@ public class PaperService {
     }
 
     /** 移出题目并重排剩余题号，保持 1..n 连续。 */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void removeQuestion(Long paperId, Long questionId) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);
@@ -185,7 +187,7 @@ public class PaperService {
     }
 
     /** 调整试卷内单题分值（覆盖题目默认分；题库默认分不动）。 */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateQuestionScore(Long paperId, Long questionId, BigDecimal score) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);
@@ -204,7 +206,7 @@ public class PaperService {
      * 调整题目顺序：按传入的题目 ID 顺序重排题号 1..n。
      * 传入列表必须与试卷现有题目一一对应（多/少/不匹配均拒绝），防止静默丢题。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public PaperDetailResponse updateOrder(Long paperId, List<Long> orderedQuestionIds) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);
@@ -243,7 +245,7 @@ public class PaperService {
     /**
      * 抽题入卷：按规则抽取后追加到试卷（使用题目默认分），已有题目自动排除在候选之外。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public PaperDetailResponse commitRandomDraw(Long paperId, RandomDrawRequest request) {
         Paper paper = getOwnedPaper(paperId);
         assertNotLocked(paper);

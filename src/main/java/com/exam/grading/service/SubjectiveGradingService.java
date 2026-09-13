@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
  *   <li>并发防覆盖：两教师同时批改同一答卷同题，以 version 乐观锁 CAS 裁决——
  *       仅一个成功，另一个收到 409 冲突重载（spec「并发批改防覆盖」场景）。</li>
  * </ul>
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Service
 public class SubjectiveGradingService {
@@ -101,7 +103,7 @@ public class SubjectiveGradingService {
      * <p>保存成功后同步刷新该答卷的主观分合计与部分批改标记（汇总时还会
      * 以同样口径权威重算，这里刷新只为工作台进度实时可见）。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SubjectiveGradeRow saveScore(Long examId, SubjectiveScoreRequest request) {
         gradingQueryService.requireOwnedExam(examId);
 

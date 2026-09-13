@@ -38,6 +38,8 @@ import java.time.LocalDateTime;
  *   <li>修改/删除仅限"未发布且未开始"：已发布考试学生已可见，须走撤回流程（后续阶段提供）；</li>
  *   <li>状态流转一律经 {@link ExamStateMachineService} 的乐观锁 CAS；发布与考试快照见 ExamSnapshotService。</li>
  * </ul>
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -62,7 +64,7 @@ public class ExamService {
     }
 
     /** 创建考试：初始状态未开始、未发布，等待教师发布与定时开考。 */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Exam create(ExamCreateRequest request) {
         LoginUser operator = requireLogin();
         // 绑定试卷须存在且属于当前教师（教师不能拿别人的卷子开考；ADMIN 越级放行）
@@ -136,7 +138,7 @@ public class ExamService {
      * 保证其他用户（如 ADMIN）已缓存的详情不被旧值污染——考试写少读多，清全量代价可忽略。
      */
     @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ExamDetailResponse update(Long id, ExamUpdateRequest request) {
         Exam exam = getOwnedExam(id);
         assertEditable(exam);
@@ -180,7 +182,7 @@ public class ExamService {
      * 已发布考试学生已可见须先撤回；进行中/已结束考试承载历史答卷，不可删。
      */
     @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         Exam exam = getOwnedExam(id);
         assertEditable(exam);
@@ -196,7 +198,7 @@ public class ExamService {
      * （快照侧的 404 空标记清除在 generateForPublish 内完成；末尾 detail(id) 为自调用不经缓存，恒为新值）
      */
     @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ExamDetailResponse publish(Long id) {
         Exam exam = getOwnedExam(id);
         if (exam.getPublished() != null && exam.getPublished() == 1) {
@@ -219,7 +221,7 @@ public class ExamService {
      * 状态迁移经乐观锁 CAS：并发重复提前结束仅一次成功，另一次收到 409 状态冲突。
      */
     @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ExamDetailResponse forceEnd(Long id) {
         Exam exam = getOwnedExam(id);
         if (exam.getStatus() != Exam.STATUS_IN_PROGRESS) {

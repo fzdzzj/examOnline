@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
  * <p>发布是快照生成的唯一时机（exam_id 唯一约束兜底）——发布时把考试配置与
  * 绑定试卷的完整内容（题目/选项/归一化答案/试卷内分值/题号顺序）序列化落库；
  * 之后试卷或题目被修改均不影响快照（副本隔离），答题/判分/回看一律读快照（§10.10）。
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -72,7 +74,7 @@ public class ExamSnapshotService {
      * <p>注意：不要求试卷先生成自己的试卷快照——考试快照自带完整试卷内容，
      * 是独立且自洽的副本；试卷侧快照是组卷锁定的手段，两者互不依赖。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ExamSnapshot generateForPublish(Exam exam) {
         Paper paper = paperMapper.selectById(exam.getPaperId());
         if (paper == null) {
