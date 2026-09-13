@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import com.exam.common.slow_sql.SlowSqlInterceptor;
 import org.apache.ibatis.reflection.MetaObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -41,5 +43,16 @@ public class MybatisPlusConfig {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
         return interceptor;
+    }
+
+    /**
+     * 注册慢 SQL 拦截器（add-performance-deepening 阶段8 可观测性 task6，只加注册行）：
+     * 作为 MyBatis {@code Interceptor} Bean 声明后，MyBatis-Plus 自动装配会把本 Bean
+     * 加入 SqlSessionFactory 的拦截器链，与分页插件互不干扰。阈值经构造注入（application.yml）。
+     */
+    @Bean
+    public SlowSqlInterceptor slowSqlInterceptor(
+            @Value("${exam.monitor.slow-sql-threshold-ms:1000}") long thresholdMs) {
+        return new SlowSqlInterceptor(thresholdMs);
     }
 }
