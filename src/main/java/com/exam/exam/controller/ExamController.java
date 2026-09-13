@@ -9,10 +9,14 @@ import com.exam.exam.dto.ExamDetailResponse;
 import com.exam.exam.dto.ExamResponse;
 import com.exam.exam.dto.ExamSnapshotResponse;
 import com.exam.exam.dto.ExamUpdateRequest;
+import com.exam.exam.dto.MakeupCandidateItem;
+import com.exam.exam.dto.MakeupCreateRequest;
+import com.exam.exam.dto.MakeupCreateResponse;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.service.AbsenceService;
 import com.exam.exam.service.ExamService;
 import com.exam.exam.service.ExamSnapshotService;
+import com.exam.exam.service.MakeupService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -44,12 +49,14 @@ public class ExamController {
     private final ExamService examService;
     private final ExamSnapshotService examSnapshotService;
     private final AbsenceService absenceService;
+    private final MakeupService makeupService;
 
     public ExamController(ExamService examService, ExamSnapshotService examSnapshotService,
-                          AbsenceService absenceService) {
+                          AbsenceService absenceService, MakeupService makeupService) {
         this.examService = examService;
         this.examSnapshotService = examSnapshotService;
         this.absenceService = absenceService;
+        this.makeupService = makeupService;
     }
 
     /** 创建考试：绑定试卷/课程班级，设定时间窗与个人时长；初始状态未开始 */
@@ -109,6 +116,21 @@ public class ExamController {
     @GetMapping("/{id}/absences")
     public ApiResponse<List<AbsenceItemResponse>> absences(@PathVariable Long id) {
         return ApiResponse.success(absenceService.listAbsences(id));
+    }
+
+    /** 教师组织补考前查询可筛选学生（缺考 ∪ 低于分数线的有成绩者），供勾选（spec §8.2）。 */
+    @GetMapping("/{id}/makeup-eligible")
+    public ApiResponse<List<MakeupCandidateItem>> makeupEligible(
+            @PathVariable Long id,
+            @RequestParam(required = false) BigDecimal passLine) {
+        return ApiResponse.success(makeupService.listEligibleStudents(id, passLine));
+    }
+
+    /** 创建补考：独立考试记录（parent_exam_id 指向主考，§12.5）+ 名单限制进入（exam_candidates）。 */
+    @PostMapping("/{id}/makeups")
+    public ApiResponse<MakeupCreateResponse> createMakeup(@PathVariable Long id,
+                                                          @Valid @RequestBody MakeupCreateRequest request) {
+        return ApiResponse.success(makeupService.createMakeup(id, request));
     }
 
     private ExamResponse toResponse(Exam exam) {

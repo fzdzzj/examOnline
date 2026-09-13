@@ -11,6 +11,7 @@ import com.exam.exam.dto.ExamSnapshotResponse;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.exam.service.ExamSnapshotService;
+import com.exam.exam.service.MakeupService;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.taking.dto.AutoSaveRequest;
@@ -58,11 +59,13 @@ public class ExamTakingService {
     private final BehaviorEventCollectService eventCollectService;
     private final ExamSubmitService submitService;
     private final OnlinePresenceService presenceService;
+    private final MakeupService makeupService;
 
     public ExamTakingService(ExamMapper examMapper, ExamSubmissionMapper submissionMapper,
                              ExamSnapshotService examSnapshotService, PersonalPaperService personalPaperService,
                              ExamDraftService draftService, BehaviorEventCollectService eventCollectService,
-                             ExamSubmitService submitService, OnlinePresenceService presenceService) {
+                             ExamSubmitService submitService, OnlinePresenceService presenceService,
+                             MakeupService makeupService) {
         this.examMapper = examMapper;
         this.submissionMapper = submissionMapper;
         this.examSnapshotService = examSnapshotService;
@@ -71,6 +74,7 @@ public class ExamTakingService {
         this.eventCollectService = eventCollectService;
         this.submitService = submitService;
         this.presenceService = presenceService;
+        this.makeupService = makeupService;
     }
 
     /**
@@ -81,6 +85,10 @@ public class ExamTakingService {
     public EnterExamResponse enter(Long examId) {
         Long studentId = requireStudent();
         Exam exam = requireEnterableExam(examId);
+
+        // 补考名单限制（仅补考生效，§12.5「名单限制进入」场景）：名单外学生拒绝进入，
+        // 不影响既有进入逻辑主体。非补考考试（parent_exam_id=null）此处直接放行。
+        makeupService.assertCanEnter(exam, studentId);
 
         ExamSubmission submission = submissionMapper.selectByExamStudent(examId, studentId);
         if (submission == null) {

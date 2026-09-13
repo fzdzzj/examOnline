@@ -168,6 +168,8 @@ CREATE TABLE IF NOT EXISTS exams (
     paper_id           BIGINT       NOT NULL,            -- 绑定试卷（发布时生成考试快照，快照与试卷从此解耦）
     course_id          BIGINT                DEFAULT NULL, -- 课程 ID（课程实体后续阶段提供，先存 ID）
     class_id           BIGINT                DEFAULT NULL, -- 班级 ID（同上）
+    parent_exam_id     BIGINT                DEFAULT NULL, -- 关联主考 ID（§12.5 补考独立记录：非补考为 NULL）
+    makeup_score_rule  VARCHAR(20)           DEFAULT NULL, -- 补考成绩规则（takeHighest/takeLatest/takeAverage，非补考 NULL）
     start_time         DATETIME     NOT NULL,            -- 时间窗起点：定时发布的触发点（服务端时间为准，§1.1）
     end_time           DATETIME     NOT NULL,            -- 时间窗终点：到达即自然结束
     duration_minutes   INT          NOT NULL,            -- 个人答题时长：学生点击"开始考试"后倒计时（§7.9，阶段 5 消费）
@@ -297,4 +299,33 @@ CREATE TABLE IF NOT EXISTS exam_behavior_logs (
     created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_behavior_exam_student (exam_id, student_id),
     KEY idx_behavior_exam_time (exam_id, event_time)
+);
+
+-- =============================================================
+-- 考后闭环：缺考 + 补考（add-class-and-post-exam-closure, W10）
+-- 与迁移文件 docker/mysql/migrations/2026-W10-add-absence-makeup.sql 对齐
+-- 注：本脚本在 exams 表上方已补 parent_exam_id / makeup_score_rule 两列
+-- =============================================================
+
+-- 缺考表：考试结束时 应考名单 − 有答卷者 = 缺考，唯一索引 + INSERT IGNORE 幂等
+CREATE TABLE IF NOT EXISTS exam_absence (
+    id           BIGINT   NOT NULL AUTO_INCREMENT,
+    exam_id      BIGINT   NOT NULL,
+    student_id   BIGINT   NOT NULL,
+    status       TINYINT  NOT NULL DEFAULT 0,    -- 0=已标记缺考（预留扩展）
+    marked_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- 一处一场一条缺考（幂等）；与迁移文件同名，避免与 exam_submissions 的 uk_exam_student 在 H2 全局约束名碰撞
+    CONSTRAINT uk_absence_exam_student UNIQUE (exam_id, student_id),
+    KEY idx_exam (exam_id)
+);
+
+-- 补考名单表：限制仅名单内学生可进入补考，独立于答卷（进入前准入闸）
+CREATE TABLE IF NOT EXISTS exam_candidates (
+    id           BIGINT   NOT NULL AUTO_INCREMENT,
+    exam_id      BIGINT   NOT NULL,
+    student_id   BIGINT   NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_candidate_exam_student UNIQUE (exam_id, student_id),
+    KEY idx_candidates_exam (exam_id)
 );

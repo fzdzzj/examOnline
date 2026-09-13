@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 /**
  * 考试：绑定试卷/课程/班级的考试实体，是连接"组卷"与"在线答题"的枢纽。
@@ -43,6 +44,24 @@ public class Exam {
     /** 成绩已发布：学生可查成绩（阶段 5+ 消费） */
     public static final int STATUS_PUBLISHED = 4;
 
+    // ===== 补考成绩规则（makeup_score_rule，§5.1，考后闭环补考阶段）=====
+
+    /** 取最高分：主考与各次补考成绩取最高者为该生最终成绩 */
+    public static final String MAKEUP_TAKE_HIGHEST = "takeHighest";
+
+    /** 取最近一次：按答卷时间（submit_time）最晚的成绩作为最终成绩 */
+    public static final String MAKEUP_TAKE_LATEST = "takeLatest";
+
+    /** 取平均分：主考与各次补考成绩的平均作为最终成绩 */
+    public static final String MAKEUP_TAKE_AVERAGE = "takeAverage";
+
+    /** 补考成绩默认规则：未显式配置时取最高分（对学生最有利，也是 §5.1 的默认语义） */
+    public static final String MAKEUP_DEFAULT_RULE = MAKEUP_TAKE_HIGHEST;
+
+    /** 补考成绩规则取值集合（创建补考时校验） */
+    public static final Set<String> MAKEUP_RULES = Set.of(
+            MAKEUP_TAKE_HIGHEST, MAKEUP_TAKE_LATEST, MAKEUP_TAKE_AVERAGE);
+
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -58,6 +77,15 @@ public class Exam {
 
     /** 班级 ID（同上） */
     private Long classId;
+
+    /**
+     * 关联的主考考试 ID（§12.5）：补考是独立考试记录，本字段指向其主考；
+     * 非补考考试为 NULL（向后兼容，旧考试不受影响）。
+     */
+    private Long parentExamId;
+
+    /** 补考成绩规则（takeHighest/takeLatest/takeAverage，见 MAKEUP_* 常量）；非补考为 NULL */
+    private String makeupScoreRule;
 
     /** 时间窗起点：定时发布的触发点（服务端时间为准） */
     private LocalDateTime startTime;

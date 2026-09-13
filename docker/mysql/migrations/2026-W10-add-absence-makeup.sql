@@ -20,7 +20,9 @@ CREATE TABLE IF NOT EXISTS exam_absence (
     status       TINYINT  NOT NULL DEFAULT 0,    -- 缺考状态：0=已标记缺考（预留扩展）
     marked_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 缺考标记时间（考试结束时服务端写入）
     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_exam_student UNIQUE (exam_id, student_id),  -- 一场一学生一条缺考（幂等兜底）
+    -- 唯一键作用仍是「一场一学生一条缺考」；取名 uk_absence_exam_student 而非沿用 exam_submissions 的
+    -- uk_exam_student——MySQL 索引名按表隔离可同名，但 H2(MySQL 模式) 约束名全局可见，同名会碰撞报错。
+    CONSTRAINT uk_absence_exam_student UNIQUE (exam_id, student_id),  -- 一场一学生一条缺考（幂等兜底）
     KEY idx_exam (exam_id)                       -- 教师按考试查缺考名单
 );
 
@@ -31,7 +33,7 @@ CREATE TABLE IF NOT EXISTS exam_candidates (
     exam_id      BIGINT   NOT NULL,              -- 补考考试（exams 中 parent_exam_id 指向主考的独立记录）
     student_id   BIGINT   NOT NULL,              -- 被指定补考的学生（user id）
     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_exam_student UNIQUE (exam_id, student_id),  -- 一人一场一条名单（幂等）
+    CONSTRAINT uk_candidate_exam_student UNIQUE (exam_id, student_id),  -- 一人一场一条名单（幂等）
     KEY idx_candidates_exam (exam_id)            -- 进入时校验名单、教师查名单
 );
 
