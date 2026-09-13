@@ -63,6 +63,7 @@ public class ScoreService {
     private final ScoreAuditLogMapper auditLogMapper;
     private final RankCalculator rankCalculator;
     private final ReadYourWriteMark readYourWriteMark;
+    private final ScoreReviewService scoreReviewService;
 
     public ScoreService(ExamMapper examMapper,
                         GradingSubmissionMapper gradingSubmissionMapper,
@@ -71,7 +72,8 @@ public class ScoreService {
                         UserMapper userMapper,
                         ScoreAuditLogMapper auditLogMapper,
                         RankCalculator rankCalculator,
-                        ReadYourWriteMark readYourWriteMark) {
+                        ReadYourWriteMark readYourWriteMark,
+                        ScoreReviewService scoreReviewService) {
         this.examMapper = examMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
         this.subjectiveGradeMapper = subjectiveGradeMapper;
@@ -80,6 +82,7 @@ public class ScoreService {
         this.auditLogMapper = auditLogMapper;
         this.rankCalculator = rankCalculator;
         this.readYourWriteMark = readYourWriteMark;
+        this.scoreReviewService = scoreReviewService;
     }
 
     // ==================== 汇总 ====================
@@ -273,6 +276,20 @@ public class ScoreService {
         MyScoreResponse response = new MyScoreResponse();
         response.setExamId(examId);
         response.setExamTitle(exam.getTitle());
+
+        // 复核中隐藏成绩（§5.4，spec score-review）：学生存在进行中的复核申请时，
+        // 不返回分数，置 reviewing=true 供前端显示"复核中"——防止学生先看分数再申请复核。
+        // 复核状态与成绩发布状态机正交：只读"是否有进行中复核申请"决定显示与否，不改动发布状态。
+        if (scoreReviewService.hasPendingReview(examId, studentId)) {
+            response.setReviewing(true);
+            response.setObjectiveScore(null);
+            response.setSubjectiveScore(null);
+            response.setTotalScore(null);
+            response.setRank(0);
+            return response;
+        }
+
+        response.setReviewing(false);
         response.setObjectiveScore(submission.getObjectiveScore());
         response.setSubjectiveScore(submission.getSubjectiveScore());
         response.setTotalScore(submission.getTotalScore());

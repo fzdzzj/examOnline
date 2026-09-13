@@ -329,3 +329,21 @@ CREATE TABLE IF NOT EXISTS exam_candidates (
     CONSTRAINT uk_candidate_exam_student UNIQUE (exam_id, student_id),
     KEY idx_candidates_exam (exam_id)
 );
+
+-- 成绩复核表（spec score-review §5.4/§10.7；与迁移文件 docker/mysql/migrations/2026-W10-add-score-review.sql 对齐）：
+-- status 0待处理 1处理中 2已同意 3已驳回（0/1 视为"进行中"，隐藏成绩期间命中）；
+-- 唯一索引 uk_review_exam_student 一场一学生限 1 次（幂等兜底，索引名规避与 exam_submissions 的
+-- uk_exam_student 在 H2 全局约束名碰撞）；idx_review_exam_status 支撑教师按考试/状态查复核清单。
+CREATE TABLE IF NOT EXISTS score_review (
+    id          BIGINT       NOT NULL AUTO_INCREMENT,
+    exam_id     BIGINT       NOT NULL,
+    student_id  BIGINT       NOT NULL,
+    status      TINYINT      NOT NULL DEFAULT 0,
+    reason      VARCHAR(512)          DEFAULT NULL,
+    result      VARCHAR(512)          DEFAULT NULL,
+    apply_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    handle_time DATETIME              DEFAULT NULL,
+    handler_id  BIGINT                DEFAULT NULL,
+    CONSTRAINT uk_review_exam_student UNIQUE (exam_id, student_id),
+    KEY idx_review_exam_status (exam_id, status)
+);
