@@ -1,0 +1,51 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：修复 SETNX 锁解锁未校验持有者（W14）",
+    "task": "让锁的释放与 CacheMutexLoader 对齐",
+    "steps": [
+      { "step": "新增 src/main/java/com/exam/common/cache/RedisLockHelper.java：把 CacheMutexLoader 里那段 Lua（if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end）抽成共享助手，暴露 unlock(key, token)（可再加 tryLock(key, token, ttl) 以统一加锁写法）", "completed": false },
+      { "step": "CacheMutexLoader 改为调用 RedisLockHelper.unlock(...)，删除其内联 Lua 与私有 unlock 方法——行为必须逐字不变", "completed": false },
+      { "step": "ExamSubmitService.doSubmit 的 finally 从 redisTemplate.delete(lockKey) 改为按 token 解锁（该 token 在 setIfAbsent 时已生成，此前从未被使用）", "completed": false },
+      { "step": "补注释写明为什么必须校验 token：TTL 到期后锁可能已易主，无条件 del 会删掉别人的锁，单飞语义直接被破坏；并指出 TTL=exam.taking.submit.lock-ttl-seconds(默认 30)", "completed": false },
+      { "step": "确认 CacheThreeDefensesTest 与 CacheWiringIntegrationTest 全绿（证明抽出助手未改变缓存三防行为）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：并发扫描只生效一次的证据（W14）",
+    "task": "用两线程同构模拟双实例",
+    "steps": [
+      { "step": "新增 src/test/java/com/exam/taking/MultiInstanceSweepSafetyTest.java，继承 IntegrationTestBase；@MockitoBean RabbitTemplate；用 CountDownLatch 让两线程同时起跑（照抄 ExamTakingIntegrationTest.threeWayRaceSubmitsOnlyOnce 的起跑模式，不用 Thread.sleep 凑时序）", "completed": false },
+      { "step": "用例 concurrentSweepForcesSubmitOnce：造一份超时答卷 → 两线程同时执行 sweepService.sweep() → 断言该 (examId, studentId) 只有一条已交卷答卷、submit_type 唯一、且 MQ 只发了 1 条属于它的消息（按 examId+studentId 过滤 ArgumentCaptor，勿用全局计数——H2 数据跨用例保留会污染）", "completed": false },
+      { "step": "用例 concurrentSweepRepublishesWithoutDuplicating：造一份「已交卷但 answers 为 NULL」的答卷 → 两线程同时 sweep() → 断言消息可被重复投递但驱动消费者落库后 answers 只写一次（消费端 casFillAnswers 幂等），且最终 answers 与草稿一致", "completed": false },
+      { "step": "用例 concurrentEndMarksAbsenceOnce：同一场已结束考试，两线程分别触发 force-end 与 autoAdvance()（或都被 markAbsence 命中）→ 断言 exam_absence 在该考试下每个 student 恰好一行（uk_absence_exam_student + INSERT IGNORE 生效）", "completed": false },
+      { "step": "用例 concurrentAutoAdvanceAdvancesOnce：同一场到期考试，两线程同时 autoAdvance() → 断言状态只迁移一次（另一路 CAS 0 行静默跳过），version 只 +1", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：多实例策略显式化 + 重复扫描可观测（W14）",
+    "task": "把取舍写下来，并把重复扫描变成数字",
+    "steps": [
+      { "step": "ExamSweepService 与 ExamStateMachineService 的类注释补写多实例策略：刻意不加分布式调度锁，正确性由下游幂等（CAS + 唯一索引 + INSERT IGNORE）保证并有测试证明；代价是 N 实例重复扫描；换来定时兜底不依赖 Redis 可用性", "completed": false },
+      { "step": "注释里同时写明「将来若要省资源的可选路径」：Redis 调度锁必须 fail-open（抢不到锁或 Redis 异常时照常执行，退化回重复扫但幂等），禁止加 fail-close 的锁把兜底能力锁死", "completed": false },
+      { "step": "BusinessMetrics 新增重复扫描计数（如 exam.sweep.duplicate_detected，Counter，tag task 区分 sweep/state-advance），仿既有 countAntiCheatEvent 的 ConcurrentHashMap + computeIfAbsent 写法", "completed": false },
+      { "step": "在「下行已处理」的两个位置埋点：forceSubmitOverdue 里 forceSubmitByBackend 因业务竞态跳过的分支、以及消费者 0 行（filled == 0）被幂等跳过的分支——单实例下该计数应≈0，持续增长即说明多实例在重复扫", "completed": false },
+      { "step": "不新增任何告警规则（该指标是诊断用而非故障信号），也确认未新增依赖（pom.xml 不出现 shedlock/quartz/redisson）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：回归（W14）",
+    "task": "全量回归与一致性确认",
+    "steps": [
+      { "step": "跑 mvn 全量回归，测试只增不减，须全绿（基线以开工时的实际数字为准，开工前先跑一次记下来）", "completed": false },
+      { "step": "确认 CacheMutexLoader 行为未变（缓存三防相关用例全绿），且 ExamSubmitService 的交卷幂等用例（含 threeWayRaceSubmitsOnlyOnce）仍全绿", "completed": false }
+    ],
+    "passes": false
+  }
+]

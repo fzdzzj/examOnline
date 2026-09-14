@@ -16,11 +16,14 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，阶段 12，**待实施**）：
+- 进行中变更（`spec/changes/`，阶段 12、13、14、15，**均待实施**）：
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 |
 |---|---|---|---|
 | `add-post-exam-closure-e2e` | 12 | 考后闭环端到端串联验收（两条结束路径）+ 修复 force-end 缺考漏标记 + 删除 `@Sql` 死代码 + 闭环覆盖率收口 | absence-makeup |
+| `add-multi-instance-sweep-safety` | 13 | 修复 SETNX 锁解锁未校验持有者 + 并发扫描只生效一次的证据 + 多实例策略显式化 + 重复扫描可观测 | reliability |
+| `add-dlq-observability-and-replay` | 14 | 死信队列深度指标 + 重试/进死信计数 + 2 条告警规则与面板 + 有界可审计的死信重投入口（先留档再重投） | reliability + observability |
+| `add-data-retention` | 15 | 按考试生命周期的数据保留策略（默认关闭 + 默认只试算 + 分批有界删除 + 只用既有索引） | data-access |
 
 - 已合入规范（`spec/specs/`，共 15 个能力域）：
 
@@ -69,6 +72,10 @@ spec/
 4. **观测栈动态行为未验证**（`add-alerting-and-dashboards` task 4）——`docker/observability/` 的**配置资产静态正确性**已由 `AlertAssetsTest` 守住（文件可解析、规则结构完整、指标名与 `BusinessMetrics` 常量对齐、面板 uid 与数据源一致，并已做变异验证证明断言非空转），但 **Docker 未运行**，「抓取是否 `UP`、告警是否真的 `firing`、面板是否真的出图」**未在本机验证**，需按 `docker/observability/README.md` 的人工验收步骤确认。**不得声称「已验证告警可用」。**
 5. **补考成绩规则已合入规范但从未接线**（阶段 12 取证时发现）——`MakeupScoreService.finalScore(examId, studentId)` **全仓库零调用**，`mergeFinalScore(...)` 只被纯函数单测调用，也没有任何暴露"补考最终成绩"的接口。而 `spec/specs/absence-makeup/spec.md` 的 `Requirement: 补考成绩规则`（取最高分/取最近一次/取平均分）**已合入并验收**——属"已验收但未接线"的需求。修复需新增接口/查询路径（功能变更），建议单独立项 `add-makeup-final-score`，**不要在本清单里当成已完成**。
 
+6. **死信队列的"真 broker 往返"未验证**（阶段 14 取证时发现）——`exam.submit.dead.queue` 已声明且绑定正确、`basicNack(requeue=false)` 投递路径已存在，但**无消费者、无指标、无告警、无重投**（P3 的 7 条规则一条都没覆盖它）。已立项 `add-dlq-observability-and-replay`（阶段 14）；但**本机 Docker 未运行、集成测试用 `@MockitoBean RabbitTemplate`**，该变更能证明的只是「重投逻辑正确 + 留档表写入正确 + 规则/面板资产静态正确」，**「真发一条坏消息 → 真进 DLQ → 真重投回来」仍无法在本机验证**。**不得声称死信链路端到端已验证。**
+7. **磁盘空间回收不在任何提案范围内**（阶段 15 取证时发现）——MySQL InnoDB 的 `DELETE` 只把页标记为可复用，**文件大小不会变小**；真正回收需 `OPTIMIZE TABLE` 或 `ALTER TABLE ... ENGINE=InnoDB`（离线重写整表、期间锁表），在在线考试系统上属高风险窗口操作。`add-data-retention`（阶段 15）的目标是**控制行数与查询代价**（避免全表扫描与索引膨胀），**不是腾磁盘**。**不得声称"清理后磁盘释放"。**
+8. **`exams` 表没有 `ended_time` 列**（阶段 15 取证时发现）——实际结束时刻无字段记录，`updated_time` 会被任意更新刷新（表达的不是结束时刻）。`add-data-retention` 因此改用 `end_time`（时间窗终点）作为"考试已终结"的代理，误差方向是**晚删而非早删**（`force-end` 提前结束的考试其 `end_time` 仍在未来），属安全选择。若要精确化需新增列（= 迁移），当前不值得。
+
 **已收口（从遗留清单移出）**：
 
 1. **限流器对 Redis 异常的兜底** 已由 `add-rate-limit-resilience`（阶段 10）实现——默认 fail-open 放行以保核心链路可用，同时打 ERROR 日志并递增 `exam.ratelimit.degraded` 计数（可按接口维度区分）；另留 `exam.ratelimit.fail-open=false` 切回 fail-close。
@@ -86,7 +93,7 @@ spec/
 | 6 | score-management | 成绩汇总/发布/撤回/导出 |
 | 7 | anti-cheat | 切屏检测、行为日志、随机抽题/选项乱序 |
 | 8 | performance | 缓存三防（穿透/击穿/雪崩）、热点只读缓存 |
-| 9 | data-access | 读写分离、读己之写 |
+| 9 | data-access | 读写分离、读己之写、数据生命周期（保留与清理） |
 | 10 | observability | 指标导出、自定义业务指标、慢 SQL 识别与请求关联、异步链路请求关联、指标驱动的告警、观测面板 |
 | 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度、限流器降级与可观测 |
 | 12 | data-consistency | 事务显式回滚、受检异常转换 |
@@ -113,6 +120,9 @@ spec/
 | 10 | add-rate-limit-resilience | reliability（限流器降级与可观测） | W12 | 已归档 |
 | 11 | add-alerting-and-dashboards | observability（告警与面板） | W13 | 已归档（动态验收遗留） |
 | 12 | add-post-exam-closure-e2e | absence-makeup（闭环端到端验收 + 缺考路径修复） | W13-W14 | 进行中 |
+| 13 | add-multi-instance-sweep-safety | reliability（定时扫描多实例安全 + 锁解锁修正） | W14 | 已提案，待实施 |
+| 14 | add-dlq-observability-and-replay | reliability + observability（死信可见性、告警与重投） | W14-W15 | 已提案，待实施 |
+| 15 | add-data-retention | data-access（数据保留与清理） | W15 | 已提案，待实施 |
 
 ## 工作流
 

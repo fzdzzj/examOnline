@@ -1,0 +1,56 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：按考试生命周期定位可清理数据（W15）",
+    "task": "候选查询 + 分批删除（只用既有索引）",
+    "steps": [
+      { "step": "ExamMapper 新增 selectRetentionCandidateExamIds(cutoff, limit)：SELECT id FROM exams WHERE status >= 2 AND end_time < #{cutoff} LIMIT #{limit}——status>=2 即已结束/已批改/已发布，进行中的考试（status=1）一律不碰，哪怕其 end_time 已过", "completed": false },
+      { "step": "ExamBehaviorLogMapper 新增 countByExamId(examId) 与 deleteByExamIdBatch(examId, limit)；删除条件只带 exam_id，从而命中既有 idx_behavior_exam_time (exam_id, event_time) 的最左前缀——不要写 WHERE created_time < ?，该列无索引且是全表扫描", "completed": false },
+      { "step": "ExamSubmitDedupMapper 新增同样的两个方法，命中既有 uk_submit_dedup (exam_id, student_id) 的最左前缀", "completed": false },
+      { "step": "ScoreAuditLogMapper 新增同样的两个方法，命中既有 idx_score_audit_exam (exam_id)", "completed": false },
+      { "step": "确认本阶段未改 schema.sql、未新增索引、未新增迁移文件（这是本提案的核心设计成果：零 DDL）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：清理服务与两道安全闸（W15）",
+    "task": "默认关闭 + 默认只报告",
+    "steps": [
+      { "step": "新增 RetentionReport record（每表 candidates/deleted、处理考试数、是否 dry-run）", "completed": false },
+      { "step": "新增 RetentionService.purgeOnce()：先取候选考试 → 逐个考试对三张表分批删（每批 exam.retention.batch-size 默认 1000，每表每次运行最多 max-batches-per-run 默认 20 批）→ 返回 RetentionReport；任一张表删除抛异常不中断整个任务（记 ERROR + 计数，继续下一个考试）", "completed": false },
+      { "step": "RetentionService 加薄 @Scheduled(cron = \"${exam.retention.cron:0 30 3 * * *}\")，定时方法只调 purgeOnce()——业务逻辑不写在定时方法里，便于测试直接调方法而不必等 cron（与 ExamSweepService 结构一致）", "completed": false },
+      { "step": "两道安全闸：exam.retention.enabled 默认 false（任务是否运行）、exam.retention.dry-run 默认 true（即使启用也只统计不删除）；retention-days 默认 180", "completed": false },
+      { "step": "启动时若 enabled=true 且 dry-run=false，打 WARN 日志（含保留天数与批次上限），使「这个实例会真的删数据」不可能被静默开启", "completed": false },
+      { "step": "application.yml 新增 exam.retention.* 键（均带默认值，不改既有键）；类注释写明取舍：这是运维决策而非业务需求，默认必须是「什么都不做」，且「先 dry-run 看数字再决定」本身就是本能力的一部分", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：候选量与删除量可观测（W15）",
+    "task": "dry-run 也要有产出",
+    "steps": [
+      { "step": "BusinessMetrics 新增 exam.retention.rows（Counter，tag table + action），action=candidate 记命中候选行数、action=deleted 记实际删除行数（dry-run=true 时 deleted 恒不递增）", "completed": false },
+      { "step": "purgeOnce() 按要求埋点，并按 INFO 打一行汇总日志（每表 candidates/deleted + 处理考试数 + 是否 dry-run）", "completed": false },
+      { "step": "确认 BusinessMetricsTest 既有断言未被破坏；若该测试断言指标集合，需同步新增指标名", "completed": false },
+      { "step": "类注释明确写出「不清理业务事实」清单与理由：答卷/成绩有可追溯义务（复核窗口、补考取分规则要回看）、快照是只读历史、关系表是当前归属（清掉会改变应考名单口径，属业务破坏）", "completed": false },
+      { "step": "条件纳入 exam_dlq_messages：若 add-dlq-observability-and-replay 已归档则一并纳入清理目标，实施前先 grep 确认该表存在，不引用不存在的表", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：真跑表的证据 + 回归（W15）",
+    "task": "用真表证明边界，而不是靠 mock",
+    "steps": [
+      { "step": "新增 DataRetentionIntegrationTest，继承 IntegrationTestBase（H2 + schema.sql 唯一来源，禁用 @Sql 自建表）：造三组数据——(a) 已结束且 end_time 很旧的考试 + 三张表各有若干行，(b) 已结束但 end_time 很新的考试（行须保留），(c) status=1（进行中）但 end_time 很旧的考试（异常状态，行须保留）", "completed": false },
+      { "step": "用例 dryRunDeletesNothing：dry-run=true 下调 purgeOnce() → 断言报告 candidates 命中 (a) 的行数、deleted 全为 0，且四张表行数逐条与调用前一致", "completed": false },
+      { "step": "用例 purgeRemovesOnlyTerminalOldExams：dry-run=false 下调 purgeOnce() → 断言 (a) 的辅助行全部消失、(b) 与 (c) 的行一行未删（这条用例同时证明「按考试生命周期」与「进行中不动」两条边界）", "completed": false },
+      { "step": "用例 batchBoundIsRespected：把 batch-size 调小、造超过一批的行数 → 断言单次运行的删除量受批数上限约束（不会一次删光），并断言报告里的数字与实际行数变化一致", "completed": false },
+      { "step": "跑 mvn 全量回归，测试只增不减，须全绿（基线以开工时的实际数字为准，开工前先跑一次记下来）", "completed": false },
+      { "step": "在 spec/README.md 的遗留事项登记：磁盘空间回收需 OPTIMIZE TABLE / ALTER TABLE ... ENGINE=InnoDB（离线重写、锁表），不在本提案范围——不得声称「清理后磁盘释放」", "completed": false }
+    ],
+    "passes": false
+  }
+]
