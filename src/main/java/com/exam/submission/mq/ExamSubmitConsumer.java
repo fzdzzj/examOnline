@@ -1,11 +1,13 @@
 package com.exam.submission.mq;
 
+import com.exam.common.RequestIdFilter;
 import com.exam.submission.dto.SubmitMessage;
 import com.exam.submission.service.ExamSubmissionService;
 import com.exam.taking.config.RabbitMqConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -28,6 +30,11 @@ import java.util.List;
  *   <li>失败重试 + 死信：逐条失败先带 x-retry-count 重发回原队列，超过阈值 basicNack 进死信队列，
  *       人工排查（spec「失败进死信」场景）。</li>
  * </ul>
+ *
+ * <p>请求链路透传（为什么）：交卷消息由 HTTP 线程经 ExamSubmitSender 发出、此处消费，MQ 边界两侧是不同线程；
+ * SlowSqlInterceptor 与落库日志都读 MDC 的 requestId，若消费端不按消息头恢复 MDC，
+ * 交卷离开 HTTP 线程后即丢失链路 id——无法从「某学生交卷」逐单追到「答案落库/慢 SQL」。
+ * 因此本类在批次入口按首条消息的 x-request-id 头恢复 MDC，finally 必清理（容器线程复用防串味）。
  */
 @Slf4j
 @Component
@@ -47,31 +54,54 @@ public class ExamSubmitConsumer {
         this.retryMax = retryMax;
     }
 
-    /** 批量消费入口：先整批落库，失败降级逐条处理。 */
+    /**
+     * 批量消费入口：先整批落库，失败降级逐条处理。
+     *
+     * <p>MDC 恢复与清理：按批次首条消息头恢复 requestId，finally 必清理——批量容器线程会被复用，
+     * 不清理则下一批日志/慢 SQL 会继承上一批的 requestId，串味后比没有更糟（指向错误请求）。
+     * 首条无 header（存量消息/非 HTTP 发送）则不写入，MDC 保持无值。
+     */
     @RabbitListener(queues = RabbitMqConfig.SUBMIT_QUEUE, containerFactory = "batchContainerFactory")
     public void onBatch(List<Message> messages, Channel channel) throws IOException {
-        try {
-            List<SubmitMessage> parsed = new ArrayList<>(messages.size());
-            for (Message message : messages) {
-                parsed.add(parse(message));
-            }
-            ExamSubmissionService.FillStats stats = submissionService.fillAnswersBatch(parsed);
-            for (Message message : messages) {
-                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-            }
-            log.info("交卷批量落库: 批次={} 落库={} 幂等跳过={}", messages.size(), stats.filled(), stats.skipped());
-            return;
-        } catch (Exception e) {
-            log.warn("交卷批量落库失败，降级逐条处理: 批次={} 原因={}", messages.size(), e.getMessage());
+        String firstRequestId = requestIdOf(messages.get(0));
+        if (firstRequestId != null) {
+            MDC.put(RequestIdFilter.MDC_KEY, firstRequestId);
         }
-        for (Message message : messages) {
-            handleOne(message, channel);
+        try {
+            try {
+                List<SubmitMessage> parsed = new ArrayList<>(messages.size());
+                for (Message message : messages) {
+                    parsed.add(parse(message));
+                }
+                ExamSubmissionService.FillStats stats = submissionService.fillAnswersBatch(parsed);
+                for (Message message : messages) {
+                    channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                }
+                log.info("交卷批量落库: 批次={} 落库={} 幂等跳过={}", messages.size(), stats.filled(), stats.skipped());
+                return;
+            } catch (Exception e) {
+                log.warn("交卷批量落库失败，降级逐条处理: 批次={} 原因={}", messages.size(), e.getMessage());
+            }
+            for (Message message : messages) {
+                handleOne(message, channel);
+            }
+        } finally {
+            // 批量容器线程复用：本批处理完必须清理，否则下一批会继承上一批的 requestId（串味比没有更糟）
+            MDC.remove(RequestIdFilter.MDC_KEY);
         }
     }
 
     /** 逐条处理：成功即 ack；失败带计数重发（未超阈值）或 nack 进死信（重试耗尽）。 */
     private void handleOne(Message message, Channel channel) throws IOException {
         long tag = message.getMessageProperties().getDeliveryTag();
+        // 逐条降级：批次粒度的一次性 MDC 已不可信（同批来自多个请求），按该条自己的 requestId 覆盖；
+        // 无 header 的旧消息被覆盖为空，属预期——该条本就无链路 id 可追溯。
+        String ownRequestId = requestIdOf(message);
+        if (ownRequestId != null) {
+            MDC.put(RequestIdFilter.MDC_KEY, ownRequestId);
+        } else {
+            MDC.remove(RequestIdFilter.MDC_KEY);
+        }
         try {
             SubmitMessage msg = parse(message);
             ExamSubmissionService.FillStats stats = submissionService.fillAnswersBatch(List.of(msg));
@@ -98,6 +128,12 @@ public class ExamSubmitConsumer {
     private void republishWithRetryCount(Message message, int nextRetry) {
         message.getMessageProperties().setHeader(RabbitMqConfig.RETRY_HEADER, nextRetry);
         rabbitTemplate.send(RabbitMqConfig.SUBMIT_EXCHANGE, RabbitMqConfig.SUBMIT_ROUTING_KEY, message);
+    }
+
+    /** 读消息头里的请求链路 id；无头（存量消息）返回 null，调用方不得写入空值。 */
+    private String requestIdOf(Message message) {
+        Object requestId = message.getMessageProperties().getHeader(RabbitMqConfig.REQUEST_ID_HEADER);
+        return requestId instanceof String s ? s : null;
     }
 
     private int retryCountOf(Message message) {

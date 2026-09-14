@@ -30,6 +30,9 @@ public class ExamSubmitSender {
     /** 发送交卷消息并等待 confirm；任何失败以运行时异常抛出。 */
     public void send(SubmitMessage message) {
         try {
+            // requestId 头由 RabbitMqConfig 注册在共享模板上的 beforePublishPostProcessors 统一写入（为空不写）；
+            // 为什么在模板级而非本方法内 4 参 convertAndSend 重载：冻结的集成测试验证 3 参调用，
+            // 4 参重载在 mock 上被视为不同方法（详见 RabbitMqConfig.submitRequestIdPostProcessor 注释）。
             rabbitTemplate.convertAndSend(RabbitMqConfig.SUBMIT_EXCHANGE,
                     RabbitMqConfig.SUBMIT_ROUTING_KEY, message);
             // correlated confirm 模式：同步等待 broker 落队确认（等待的是本连接待确认集合，偏保守但可靠）

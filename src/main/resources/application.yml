@@ -91,6 +91,10 @@ exam:
       # 消费者单批拉取消息数（DB 批量落库按此分批，rewriteBatchedStatements 生效前提）
       batch-size: 100
       prefetch: 200
+      # 批量容器并发（batchContainerFactory 消费）：默认 1 与改动前实际行为一致（此前手工 new 工厂、从未设并发，
+      # 实际并发=1），不借"修配置"之名隐式提速；容量模型见 RabbitMqConfig.batchContainerFactory 注释。
+      # 注意：spring.rabbitmq.listener.simple.concurrency 只作用于 Boot 自动装配的工厂，对交卷消费者无效。
+      concurrency: ${RABBIT_BATCH_CONCURRENCY:1}
       # 消费失败重试阈值：重发计数超过该值进死信队列
       retry-max: 3
     draft:
