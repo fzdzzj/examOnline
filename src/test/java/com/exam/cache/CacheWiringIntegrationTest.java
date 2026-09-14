@@ -1,6 +1,5 @@
 package com.exam.cache;
 
-import com.exam.config.CacheConfig;
 import com.exam.exam.mapper.ExamSnapshotMapper;
 import com.exam.paper.mapper.PaperSnapshotMapper;
 import com.exam.support.IntegrationTestBase;

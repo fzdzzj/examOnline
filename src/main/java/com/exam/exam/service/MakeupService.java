@@ -18,6 +18,7 @@ import com.exam.grading.entity.GradingSubmission;
 import com.exam.grading.mapper.GradingSubmissionMapper;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +28,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -98,7 +98,7 @@ public class MakeupService {
         makeup.setStartTime(request.getStartTime());
         makeup.setEndTime(request.getEndTime());
         makeup.setDurationMinutes(request.getDurationMinutes());
-        makeup.setAllowLateMinutes(request.getAllowLateMinutes() == null ? 0 : request.getAllowLateMinutes());
+        makeup.setAllowLateMinutes(Objects.requireNonNullElse(request.getAllowLateMinutes(), 0));
         makeup.setStatus(Exam.STATUS_NOT_STARTED);
         makeup.setPublished(0);
         makeup.setForceEnd(0);

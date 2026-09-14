@@ -5,7 +5,6 @@ import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.monitoring.service.OnlinePresenceService;
-import com.exam.common.ResponseCode;
 import com.exam.taking.dto.AutoSaveRequest;
 import com.exam.taking.dto.AutoSaveResponse;
 import com.exam.submission.entity.ExamSubmission;
@@ -88,7 +87,7 @@ public class ExamDraftService {
             return new AutoSaveResponse(false, stored.version(), stored.savedTime());
         }
 
-        int acceptedVersion = stored == null ? incoming : incoming;
+        int acceptedVersion = incoming;
         LocalDateTime now = LocalDateTime.now();
         ObjectNode root = objectMapper.createObjectNode();
         root.put("version", acceptedVersion);

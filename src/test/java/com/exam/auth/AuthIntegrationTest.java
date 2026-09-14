@@ -1,7 +1,6 @@
 package com.exam.auth;
 
 import com.exam.auth.dto.ChangePasswordRequest;
-import com.exam.auth.dto.InviteCodeCreateRequest;
 import com.exam.auth.dto.LoginRequest;
 import com.exam.auth.dto.RefreshRequest;
 import com.exam.auth.dto.RegisterRequest;

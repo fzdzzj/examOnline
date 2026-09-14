@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 补考最终成绩合并服务（spec「补考成绩规则」，§5.1，独立类避免污染 ScoreService）：

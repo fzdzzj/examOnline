@@ -16,7 +16,6 @@ import com.exam.paper.dto.RandomDrawPreviewResponse;
 import com.exam.paper.dto.RandomDrawRequest;
 import com.exam.paper.dto.UpdatePaperQuestionScoreRequest;
 import com.exam.paper.entity.Paper;
-import com.exam.paper.entity.PaperQuestion;
 import com.exam.paper.service.PaperService;
 import com.exam.paper.service.PaperSnapshotService;
 import jakarta.validation.Valid;

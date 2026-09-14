@@ -14,7 +14,6 @@ import com.exam.user.mapper.RolePermissionMapper;
 import com.exam.user.mapper.UserMapper;
 import com.exam.user.mapper.UserRoleMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;

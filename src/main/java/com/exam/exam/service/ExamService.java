@@ -20,6 +20,7 @@ import com.exam.paper.service.PaperService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -81,7 +82,7 @@ public class ExamService {
         exam.setStartTime(request.getStartTime());
         exam.setEndTime(request.getEndTime());
         exam.setDurationMinutes(request.getDurationMinutes());
-        exam.setAllowLateMinutes(request.getAllowLateMinutes() == null ? 0 : request.getAllowLateMinutes());
+        exam.setAllowLateMinutes(Objects.requireNonNullElse(request.getAllowLateMinutes(), 0));
         exam.setStatus(Exam.STATUS_NOT_STARTED);
         exam.setPublished(0);
         exam.setForceEnd(0);

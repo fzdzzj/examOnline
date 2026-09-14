@@ -3,7 +3,6 @@ package com.exam.taking;
 import com.exam.auth.security.LoginUser;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.auth.service.JwtUtil;
-import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.exam.service.ExamStateMachineService;
 import com.exam.submission.entity.ExamSubmission;

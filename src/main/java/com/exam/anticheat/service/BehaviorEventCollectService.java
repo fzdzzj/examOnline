@@ -4,7 +4,6 @@ import com.exam.anticheat.collector.BehaviorEventCollector;
 import com.exam.anticheat.collector.BehaviorEventRegistry;
 import com.exam.anticheat.model.BehaviorEventContext;
 import com.exam.anticheat.model.EventVerdict;
-import com.exam.anticheat.model.SeverityLevel;
 import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.taking.service.ExamBehaviorLogService;
 import com.fasterxml.jackson.databind.JsonNode;

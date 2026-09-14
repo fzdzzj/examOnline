@@ -181,7 +181,8 @@ public class ScoreReviewService {
 
     /** 教师按考试查复核清单（含状态与处理结果，支撑处理动作的定位）。 */
     public List<ScoreReview> listByExam(Long examId) {
-        Exam exam = requireOwnedExam(examId);
+        // 只取归属校验的副作用：后续按 examId 过滤查询，无需考试实体本身
+        requireOwnedExam(examId);
         return reviewMapper.selectList(Wrappers.<ScoreReview>lambdaQuery()
                 .eq(ScoreReview::getExamId, examId)
                 .orderByAsc(ScoreReview::getApplyTime));

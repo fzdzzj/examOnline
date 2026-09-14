@@ -10,7 +10,6 @@ import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.support.IntegrationTestBase;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +20,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -36,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * </ul>
  * 嵌套 {@code @TestConfiguration} 注册 @DS("slave") 探针，由 @SpringBootTest 自动探测。
  */
-class ReaddWriteSoSeperationIntegrationTest extends IntegrationTestBase {
+class ReadWriteSeparationIntegrationTest extends IntegrationTestBase {
 
     @MockitoBean
     private RabbitTemplate rabbitTemplate;

@@ -4,7 +4,7 @@ import com.exam.submission.dto.SubmitMessage;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.submission.mq.ExamSubmitSender;
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -115,8 +115,7 @@ public class ExamSweepService {
             try {
                 sender.send(new SubmitMessage(
                         submission.getId(), submission.getExamId(), submission.getStudentId(),
-                        submission.getSubmitType() == null ? ExamSubmission.SUBMIT_TYPE_BACKEND
-                                : submission.getSubmitType(),
+                        Objects.requireNonNullElse(submission.getSubmitType(), ExamSubmission.SUBMIT_TYPE_BACKEND),
                         submission.getSubmitTime() == null ? LocalDateTime.now() : submission.getSubmitTime(),
                         draftAnswersOrEmpty(submission)));
                 republished++;

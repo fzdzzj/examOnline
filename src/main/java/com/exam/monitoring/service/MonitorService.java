@@ -10,7 +10,6 @@ import com.exam.exam.mapper.ExamMapper;
 import com.exam.monitoring.dto.MonitorOverviewResponse;
 import com.exam.monitoring.dto.MonitorStudentItem;
 import com.exam.submission.dto.AbnormalBehaviorStat;
-import com.exam.submission.entity.ExamBehaviorLog;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamBehaviorLogMapper;
 import com.exam.submission.mapper.ExamSubmissionMapper;
@@ -19,6 +18,7 @@ import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -121,7 +121,7 @@ public class MonitorService {
         // 大屏排序：异常优先（最高严重度降序 → 异常次数降序），其余按进度降序、学生号升序
         students.sort(Comparator
                 .comparing(MonitorStudentItem::isAbnormal).reversed()
-                .thenComparing(item -> item.getMaxSeverity() == null ? 0 : item.getMaxSeverity(),
+                .thenComparing(item -> Objects.requireNonNullElse(item.getMaxSeverity(), 0),
                         Comparator.reverseOrder())
                 .thenComparing(MonitorStudentItem::getAbnormalEventCount, Comparator.reverseOrder())
                 .thenComparing(MonitorStudentItem::getProgressPercent, Comparator.reverseOrder())
