@@ -1,0 +1,37 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：traceId 跨 MQ 透传（W12）",
+    "task": "requestId 从生产端透传到消费端",
+    "steps": [
+      { "step": "RabbitMqConfig 新增 REQUEST_ID_HEADER 常量（值 x-request-id，与 HTTP 头同名便于对照）", "completed": true },
+      { "step": "把 MDC.get(RequestIdFilter.MDC_KEY) 写入消息头，为空则不写（兼容存量消息）——实施方案校正：不改 Sender 的 3 参 convertAndSend，改为 RabbitMqConfig 注册模板级 MessagePostProcessor + RabbitTemplateCustomizer#addBeforePublishPostProcessors（冻结的集成测试用 Mockito 校验 3 参重载，换 4 参会失配；机制意图不变，仅接线位置不同）", "completed": true },
+      { "step": "ExamSubmitConsumer.onBatch 入口按批次首条消息恢复 MDC，finally 中 remove；逐条降级路径按该条自己的 requestId 覆盖", "completed": true },
+      { "step": "类注释补「为什么透传」——SlowSqlInterceptor 与落库日志都读 MDC，透传后单笔交卷可逐单追溯", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：消费容量显式化（W12）",
+    "task": "批量消费并发参数真实生效 + 容量模型",
+    "steps": [
+      { "step": "batchContainerFactory 显式 setConcurrentConsumers/setMaxConcurrentConsumers，参数化 exam.taking.mq.concurrency", "completed": true },
+      { "step": "application.yml 补 exam.taking.mq.concurrency，默认值与改动前实际行为一致（防借修配置隐式提速）", "completed": true },
+      { "step": "在批量工厂类注释写清：spring.rabbitmq.listener.simple.* 对手工构造的批量工厂无效，RABBIT_CONCURRENCY/RABBIT_PREFETCH 对交卷消费者无效", "completed": true },
+      { "step": "产出容量模型：吞吐≈并发×batchSize/单批落库耗时，给出 5000 交卷场次的积压-时效推算表与调参建议（含与连接池 dev 主20/从10 的联动上限）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：验收（W12）",
+    "task": "透传与并发配置回归",
+    "steps": [
+      { "step": "单测：消息头带 requestId 时消费端 MDC 可见；无 header 时 MDC 不残留（线程复用场景）", "completed": true },
+      { "step": "单测：batchContainerFactory 的并发/批量/prefetch 取值与配置一致（防配置漂移）", "completed": true },
+      { "step": "跑 mvn 全量回归，确认无行为变化（测试只增不减）——171/171 通过", "completed": true }
+    ],
+    "passes": true
+  }
+]

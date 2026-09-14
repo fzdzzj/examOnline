@@ -1,7 +1,7 @@
 # observability 规范
 
 > 能力域：可观测性（阶段 8，W10）。
-> 来源：`spec/changes/archive/add-performance-deepening` 合入（指标导出、自定义业务指标、指标与请求关联）+ `spec/changes/archive/add-slow-sql-and-rate-limit` 合入（慢 SQL 识别、慢 SQL 与请求关联）。
+> 来源：`spec/changes/archive/add-performance-deepening` 合入（指标导出、自定义业务指标、指标与请求关联）+ `spec/changes/archive/add-slow-sql-and-rate-limit` 合入（慢 SQL 识别、慢 SQL 与请求关联）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（异步链路请求关联）。
 > 实施注记：慢 SQL 阈值 key 为 `exam.monitor.slow-sql-threshold-ms`（默认 1000）；拆解思路是「指标定方向、日志定个案」——指标发现异常，再用 requestId 到日志里定位具体那一条。
 
 ## Requirements
@@ -111,3 +111,31 @@ WHEN 排查
 THEN 可经 requestId 关联指标方向与日志个案
 
 AND 定位具体慢 SQL
+
+---
+
+### Requirement: 异步链路请求关联
+
+WHEN 请求经消息队列异步处理,
+
+系统 SHALL 使生产者线程的 requestId 透传到消费者线程，使消费端日志与慢 SQL 日志仍可关联到原始请求。
+
+#### Scenario: 交卷请求可逐单追溯
+
+GIVEN 学生发起交卷且该 HTTP 请求已生成 requestId
+
+WHEN 交卷消息被消费者批量落库
+
+THEN 落库日志携带同一 requestId
+
+AND 该批次内的慢 SQL 日志同样携带该 requestId
+
+#### Scenario: 无 requestId 消息不污染日志
+
+GIVEN 消息头不含 requestId（存量消息或手工投递）
+
+WHEN 消费者处理
+
+THEN 消费端不写入上一批次残留的 requestId
+
+AND 处理完成后 MDC 被清理
