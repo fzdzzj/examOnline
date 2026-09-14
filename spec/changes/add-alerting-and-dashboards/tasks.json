@@ -1,0 +1,54 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：Prometheus 抓取与告警规则（W13）",
+    "task": "抓取配置与指标驱动的告警规则",
+    "steps": [
+      { "step": "新建 docker/observability/prometheus/prometheus.yml：scrape job 名 exam-online，target 用 host.docker.internal:8080，metrics_path 为 /actuator/prometheus，并加载 rules/ 目录", "completed": false },
+      { "step": "新建 docker/observability/prometheus/rules/exam-online-alerts.yml：7 条规则 ExamOnlineDown / SubmitFailureRatioHigh / SubmitLatencyP99High / MqSubmitQueueBacklog / RateLimitDegraded / Http5xxRatioHigh / AntiCheatEventSpike，每条含 alert、expr、for、labels.severity、annotations.summary 与 description", "completed": false },
+      { "step": "指标名只取可确定性推导的集合：BusinessMetrics 的 6 个常量（exam.submit.duration→exam_submit_duration_seconds、exam.submit.success→exam_submit_success_total、exam.submit.failure→exam_submit_failure_total、exam.mq.submit.queue.depth→exam_mq_submit_queue_depth、exam.anticheat.events→exam_anticheat_events_total、exam.ratelimit.degraded→exam_ratelimit_degraded_total）加 up 与 http_server_requests_seconds_count；不写 hikaricp_connections_*（dynamic-datasource 下能否自动绑定未经实测，禁止凭印象）", "completed": false },
+      { "step": "MqSubmitQueueBacklog 的 expr 必须带 `>= 0 and` 前置条件，排除该 Gauge 在无 RabbitAdmin 时返回的 -1 哨兵值（否则误报或漏报真实积压）", "completed": false },
+      { "step": "SubmitLatencyP99High 阈值对齐既有目标 P99 < 2s；SubmitFailureRatioHigh 用 clamp_min 防除零", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：Grafana 数据源与面板（W13）",
+    "task": "provisioning 与总览面板",
+    "steps": [
+      { "step": "新建 grafana/provisioning/datasources/prometheus.yml：固定 uid（如 prometheus），url 指向 http://prometheus:9090，默认数据源", "completed": false },
+      { "step": "新建 grafana/provisioning/dashboards/dashboards.yml：file provider，路径 /var/lib/grafana/dashboards", "completed": false },
+      { "step": "新建 grafana/dashboards/exam-online-overview.json：分组覆盖交卷（QPS / 成功率 / P50-P95-P99）、MQ 队列积压、限流降级（按 endpoint）、HTTP 5xx、JVM 内存与 GC、防作弊事件（按 type）", "completed": false },
+      { "step": "面板加 job 模板变量；面板 JSON 中引用的 datasource uid 必须与数据源 provisioning 的 uid 完全一致（否则面板打开全是 No data）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：本地编排与文档（W13）",
+    "task": "可启动的观测栈片段与人工验收说明",
+    "steps": [
+      { "step": "新建 docker/observability/docker-compose.observability.yml：prometheus(9090) 与 grafana(3000) 两个服务，挂载 prometheus/ 与 grafana/ 配置；独立文件，不改主 docker-compose.yml", "completed": false },
+      { "step": "抓取字符串用 host.docker.internal:8080 并配 extra_hosts 的 host.docker.internal:host-gateway（Linux 上不配解析不到宿主）", "completed": false },
+      { "step": "Grafana 管理员密码用 ${GRAFANA_ADMIN_PASSWORD:-admin} 形式，不硬编码任何密码；镜像 tag 用具体版本号而非 latest", "completed": false },
+      { "step": "新建 docker/observability/README.md：启动命令、人工验收步骤（抓取是否 up / 告警规则是否 loaded / 面板是否出图），并显式标注「动态行为未在本机验证（Docker 未运行）」", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：静态校验（W13）",
+    "task": "配置资产正确性由测试守住",
+    "steps": [
+      { "step": "新增 src/test/java/com/exam/observability/AlertAssetsTest.java：用 org.yaml.snakeyaml（Boot 自带）解析 YAML、Jackson 解析 JSON，不新增任何依赖", "completed": false },
+      { "step": "断言各资产文件存在且语法可解析", "completed": false },
+      { "step": "断言每条告警规则含 alert / expr / for / labels.severity / annotations.summary", "completed": false },
+      { "step": "断言规则与面板中出现的每个指标名都命中已知集合：exam_* 必须能对应到 BusinessMetrics 的常量；非 exam_* 必须命中测试内显式白名单（白名单外一律失败，防拼写漂移）", "completed": false },
+      { "step": "断言 Grafana 数据源 uid 与面板 JSON 引用的 uid 一致", "completed": false },
+      { "step": "断言每个 panel 都有非空 targets 且 expr 非空", "completed": false },
+      { "step": "跑 mvn 全量回归（测试只增不减，当前基线 175）", "completed": false }
+    ],
+    "passes": false
+  }
+]

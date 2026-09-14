@@ -16,7 +16,11 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`）：**无**（阶段 10 的两个提案均已归档）。
+- 进行中变更（`spec/changes/`，阶段 11，**待实施**）：
+
+| 变更 ID | 阶段 | 内容 | 目标能力域 |
+|---|---|---|---|
+| `add-alerting-and-dashboards` | 11 | Prometheus 抓取与告警规则 + Grafana provisioning 与面板 + 配置资产静态校验 | observability |
 
 - 已合入规范（`spec/specs/`，共 15 个能力域）：
 
