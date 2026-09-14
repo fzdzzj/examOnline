@@ -75,6 +75,7 @@ docker/observability/
 1. 各资产文件存在且可解析（YAML / JSON 语法合法）；
 2. 每条告警规则含 `alert` / `expr` / `for` / `labels.severity` / `annotations.summary`；
 3. **规则与面板里出现的每个指标名都命中「已知指标集合」**——`exam_*` 的交集必须能对应到 `BusinessMetrics` 的常量（防拼写漂移）；非 `exam_*` 的（actuator 标准指标）必须在测试内显式白名单里，白名单外的名字一律失败；
+   - （**实施时按提案优先原则扩充白名单**：面板需覆盖 JVM 内存与 GC，故白名单除 `up`、`http_server_requests_seconds_count` 外补入 Boot 自动配置的 `jvm_memory_used_bytes`、`jvm_gc_pause_seconds_sum|count`。这三者属 actuator/Boot 自动配置必暴露项，风险与「自造指标名」不同。**`hikaricp_*` 仍未写入任何规则或面板**，原排除理由不变。）
 4. Grafana 数据源 `uid` 与面板 JSON 中引用的 uid 一致；
 5. 每个 panel 都有非空 `targets` 且 `expr` 非空。
 
@@ -98,6 +99,13 @@ docker/observability/
 ## 时间线评估
 
 小到中：约 1 天（W13）。
+
+## 实施结果（收尾时补记）
+
+- 交付 8 个新文件：`docker/observability/`（7 个配置/文档）+ `AlertAssetsTest.java`（7 个用例）。全量测试 **182/182 通过**（基线 175 + 新增 7），无既有文件被修改（写入边界守住）。
+- **偏差**：白名单补入 3 个 Boot 自动配置的 JVM 指标（见上文第 5 节第 3 条），其余按提案字面执行；`application.yml` 未被触碰。
+- **额外证据（收尾方独立补做，非子 agent 自证）**：对静态校验做了**变异验证**——分别把面板 JSON 与规则 YAML 中各改错一个指标名（`exam_submit_success_total`→`...succes...`、`exam_ratelimit_degraded_total`→`...degrade...`），`AlertAssetsTest` **两次均如期失败**；恢复后工作区无残留。这证明断言不是空转，且 YAML（规则）与 JSON（面板）两路扫描都真实生效——直接回应「`no data` 不等于健康」的风险。
+- **未验证（诚实边界）**：动态行为全部未验证——真抓取、告警真 `firing`、面板真出图。Docker 未运行，已在 `docker/observability/README.md` 与 `spec/README.md` 遗留清单第 4 条显式声明。**不得声称「已验证告警可用」。**
 
 ## 风险
 
