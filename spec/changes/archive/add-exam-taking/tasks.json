@@ -86,8 +86,8 @@
     "steps": [
       { "step": "编写交卷幂等/三路竞态单元测试（并发提交仅一次）", "completed": true },
       { "step": "编写答题/交卷/自动保存/断线恢复集成测试", "completed": true },
-      { "step": "JMeter 模拟 5000 并发交卷，产出压测报告", "completed": false },
-      { "step": "验收硬指标：P99 < 2s、0 丢单、批量落库 < 30s", "completed": false }
+      { "step": "JMeter 模拟 5000 并发交卷，产出压测报告（遗留：仓库内无任何 .jmx 或压测报告）", "completed": false },
+      { "step": "验收硬指标：P99 < 2s、0 丢单、批量落库 < 30s（遗留：依赖上一步压测数据；前置瓶颈为 MQ 消费并发 concurrency=2）", "completed": false }
     ],
     "passes": false
   }

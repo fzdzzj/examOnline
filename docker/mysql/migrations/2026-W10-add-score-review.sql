@@ -15,7 +15,7 @@
 -- 唯一索引 uk_review_exam_student(exam_id,student_id)：一场一学生限申请 1 次（§10.7），
 --   是并发的最终幂等护栏——并发重复申请时唯一索引冲突转友好提示"已申请"。
 --   索引名规避与 exam_submissions 的 uk_exam_student 在 H2(MySQL 模式) 全局约束名碰撞
---   （同前 absence/candidate 两表约定，见 2026-W10-add-class-onwards）。
+--   （同前 absence/candidate 两表约定，见 2026-W10-add-absence-makeup.sql）。
 -- idx_review_exam_status(exam_id,status)：教师按考试+状态查待处理复核清单。
 CREATE TABLE IF NOT EXISTS score_review (
     id          BIGINT       NOT NULL AUTO_INCREMENT,

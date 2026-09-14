@@ -28,7 +28,7 @@
   - `@RateLimit` 注解（挂 Controller 方法）；
   - `RateLimitInterceptor`（HandlerInterceptor）读注解，按「接口」维度令牌桶限流；
   - Lua 脚本原子令牌桶（GET + DECR + 续期），分布式一致；
-  - 超限抛 429（复用 `ResponseCode.RATE_LIMITED`）。
+  - 超限抛 429（复用 `ResponseCode.TOO_MANY_REQUESTS`，1008/429）。
 
 ## Impact
 
@@ -43,7 +43,7 @@
 - 无功能变化；高并发下核心接口受保护。
 
 ### API 变更
-- 超限时返回 429（已有错误码 `RATE_LIMITED`）；无破坏性变更。
+- 超限时返回 429（已有错误码 `TOO_MANY_REQUESTS`，1008）；无破坏性变更。
 
 ### 需要迁移
 - [ ] 数据库迁移（无新表）
@@ -61,3 +61,14 @@
 - **令牌桶分布式一致性** —— 缓解：令牌桶计数放 Redis，Lua 脚本原子 GET+DECR，多实例共享一桶。
 - **限流过严误伤** —— 缓解：桶容量与速率按接口可配，交卷/拉卷/抽题分别设独立阈值。
 - **限流维度** —— 缓解：按接口粒度（非用户粒度），峰值保护而非惩罚单用户。
+
+## 实施校正（2026-09-13 收尾时核实）
+
+提案原文有两处与代码不符，已按实际实现更正，理由留档以免后人照抄错误值：
+
+1. **限流错误码**：原文写 `ResponseCode.RATE_LIMITED`，但该枚举**不存在**；实际实现为 `ResponseCode.TOO_MANY_REQUESTS(1008, "请求过于频繁，请稍后重试", 429)`（`RateLimitInterceptor:49`）。全文已更正。
+2. **慢 SQL 阈值 key**：原文写 `exam.observability.slow-sql-threshold-ms`，实际 key 在 `exam.monitor` 命名空间下——`exam.monitor.slow-sql-threshold-ms`（`SlowSqlInterceptor:56`、`MybatisPlusConfig:55`、`application.yml:118` 三处一致）。`tasks.json` 已加校正注记。
+
+## 遗留（未在本变更内解决）
+
+`RateLimitInterceptor` 当前对 Redis 异常**无兜底**：Redis 不可用时 `preHandle` 直接抛出 → 请求 500，限流器反而成为可用性单点。语义取舍（fail-open 放行 + 告警 vs fail-close 快速失败）需单独立项，本变更不做。
