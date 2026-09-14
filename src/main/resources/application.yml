@@ -149,6 +149,9 @@ exam:
     # 此处仅配置桶 key 的 TTL：接口连续被访问即续期，长时间无请求后桶自动过期、下次重建满桶，
     # 避免闲置桶残留占用内存。各接口具体 capacity/qps 取值见对应 Controller 方法上的中文注释依据。
     key-ttl-seconds: ${RATELIMIT_KEY_TTL:120}
+    # 默认放行以保核心链路可用（fail-open）：Redis 异常时核心接口仍可用，降级计数 exam.ratelimit.degraded 暴露给告警；
+    # 置 false 则异常上抛（fail-close），Redis 故障时核心链路快速失败。
+    fail-open: ${RATE_LIMIT_FAIL_OPEN:true}
 
 management:
   endpoints:

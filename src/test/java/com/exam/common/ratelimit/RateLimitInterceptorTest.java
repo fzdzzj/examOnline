@@ -2,6 +2,7 @@ package com.exam.common.ratelimit;
 
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.method.HandlerMethod;
@@ -9,10 +10,13 @@ import org.springframework.web.method.HandlerMethod;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -53,7 +57,7 @@ class RateLimitInterceptorTest {
     void throws429WhenLimited() throws Exception {
         RedisTokenBucket bucket = mock(RedisTokenBucket.class);
         when(bucket.tryAcquire(anyString(), anyInt(), anyDouble())).thenReturn(false);
-        RateLimitInterceptor interceptor = new RateLimitInterceptor(bucket);
+        RateLimitInterceptor interceptor = new RateLimitInterceptor(bucket, mock(BusinessMetrics.class), true);
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> interceptor.preHandle(null, null, annotatedHandler()));
@@ -67,7 +71,7 @@ class RateLimitInterceptorTest {
     void allowsWhenPassed() throws Exception {
         RedisTokenBucket bucket = mock(RedisTokenBucket.class);
         when(bucket.tryAcquire(anyString(), anyInt(), anyDouble())).thenReturn(true);
-        RateLimitInterceptor interceptor = new RateLimitInterceptor(bucket);
+        RateLimitInterceptor interceptor = new RateLimitInterceptor(bucket, mock(BusinessMetrics.class), true);
 
         assertTrue(interceptor.preHandle(null, null, annotatedHandler()),
                 "令牌足够时应放行（返回 true）");
@@ -77,11 +81,53 @@ class RateLimitInterceptorTest {
     @DisplayName("未打注解的方法或非 HandlerMethod → 不进入限流直接放行")
     void skipsUnannotated() throws Exception {
         RedisTokenBucket bucket = mock(RedisTokenBucket.class);
-        RateLimitInterceptor interceptor = new RateLimitInterceptor(bucket);
+        RateLimitInterceptor interceptor = new RateLimitInterceptor(bucket, mock(BusinessMetrics.class), true);
 
         HandlerMethod plain = handler(UnannotatedController.class, "plain");
         assertTrue(interceptor.preHandle(null, null, plain), "未打 @RateLimit 的方法应放行");
         // 非 HandlerMethod（如静态资源）也应放行
         assertTrue(interceptor.preHandle(null, null, new Object()), "非 HandlerMethod 应放行");
+    }
+
+    @Test
+    @DisplayName("Redis 故障 + fail-open=true → 放行（返回 true）且记录一次降级")
+    void degradesOpenWhenRedisFails() throws Exception {
+        RedisTokenBucket bucket = mock(RedisTokenBucket.class);
+        when(bucket.tryAcquire(anyString(), anyInt(), anyDouble())).thenThrow(new RuntimeException("redis down"));
+        BusinessMetrics metrics = mock(BusinessMetrics.class);
+        RateLimitInterceptor interceptor = new RateLimitInterceptor(bucket, metrics, true);
+
+        assertTrue(interceptor.preHandle(null, null, annotatedHandler()),
+                "fail-open 时 Redis 异常应放行以保核心接口可用");
+        verify(metrics).countRateLimitDegraded(anyString());
+    }
+
+    @Test
+    @DisplayName("Redis 故障 + fail-open=false → 异常上抛（fail-close 分支有效）")
+    void throwsWhenFailClose() {
+        RedisTokenBucket bucket = mock(RedisTokenBucket.class);
+        RuntimeException cause = new RuntimeException("redis down");
+        when(bucket.tryAcquire(anyString(), anyInt(), anyDouble())).thenThrow(cause);
+        BusinessMetrics metrics = mock(BusinessMetrics.class);
+        RateLimitInterceptor interceptor = new RateLimitInterceptor(bucket, metrics, false);
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> interceptor.preHandle(null, null, annotatedHandler()));
+        assertEquals(cause, ex, "fail-close 应原样上抛异常，且已先记日志/埋点");
+        verify(metrics).countRateLimitDegraded(anyString());
+    }
+
+    @Test
+    @DisplayName("桶空（返回 false）→ 仍抛 429 且不记为降级（业务超限不是 Redis 故障）")
+    void bucketEmptyNotCountedAsDegraded() throws Exception {
+        RedisTokenBucket bucket = mock(RedisTokenBucket.class);
+        when(bucket.tryAcquire(anyString(), anyInt(), anyDouble())).thenReturn(false);
+        BusinessMetrics metrics = mock(BusinessMetrics.class);
+        RateLimitInterceptor interceptor = new RateLimitInterceptor(bucket, metrics, true);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> interceptor.preHandle(null, null, annotatedHandler()));
+        assertEquals(ResponseCode.TOO_MANY_REQUESTS.getCode(), ex.getCode(), "桶空仍应抛 429 业务异常");
+        verify(metrics, never()).countRateLimitDegraded(any());
     }
 }

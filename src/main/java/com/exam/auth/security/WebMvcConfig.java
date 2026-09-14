@@ -4,7 +4,9 @@ import com.exam.auth.service.JwtUtil;
 import com.exam.auth.service.TokenStoreService;
 import com.exam.common.ratelimit.RateLimitInterceptor;
 import com.exam.common.ratelimit.RedisTokenBucket;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -20,13 +22,18 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private final TokenStoreService tokenStore;
     private final ObjectMapper objectMapper;
     private final RedisTokenBucket redisTokenBucket;
+    private final BusinessMetrics businessMetrics;
+    private final boolean failOpen;
 
     public WebMvcConfig(JwtUtil jwtUtil, TokenStoreService tokenStore, ObjectMapper objectMapper,
-                        RedisTokenBucket redisTokenBucket) {
+                        RedisTokenBucket redisTokenBucket, BusinessMetrics businessMetrics,
+                        @Value("${exam.ratelimit.fail-open:true}") boolean failOpen) {
         this.jwtUtil = jwtUtil;
         this.tokenStore = tokenStore;
         this.objectMapper = objectMapper;
         this.redisTokenBucket = redisTokenBucket;
+        this.businessMetrics = businessMetrics;
+        this.failOpen = failOpen;
     }
 
     @Override
@@ -43,7 +50,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/actuator/**"
                 );
         // 限流拦截器排在鉴权之后注册（先鉴权再限流）：拦截 /api/**，只对有 @RateLimit 的核心接口生效
-        registry.addInterceptor(new RateLimitInterceptor(redisTokenBucket))
+        registry.addInterceptor(new RateLimitInterceptor(redisTokenBucket, businessMetrics, failOpen))
                 .addPathPatterns("/api/**");
     }
 }

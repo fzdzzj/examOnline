@@ -50,6 +50,8 @@ public class BusinessMetrics {
     private static final String SUBMIT_QUEUE_DEPTH = "exam.mq.submit.queue.depth";
     /** 指标名：防作弊事件计数（Counter，按事件类型打 tag） */
     private static final String ANTICHEAT_EVENTS = "exam.anticheat.events";
+    /** 指标名：限流器降级计数（Counter，按接口打 tag endpoint；Redis 故障被 fail-open 放行时递增） */
+    private static final String RATE_LIMIT_DEGRADED = "exam.ratelimit.degraded";
     /** 交卷队列名：与 RabbitMqConfig.SUBMIT_QUEUE 保持一致（避免依赖具体实现类） */
     private static final String SUBMIT_QUEUE = "exam.submit.queue";
 
@@ -61,6 +63,8 @@ public class BusinessMetrics {
     private final Counter submitFailureCounter;
     /** 防作弊事件计数按事件类型缓存：不同 eventType 各自注册一个 Counter（tag=type） */
     private final Map<String, Counter> anticheatEventCounters = new ConcurrentHashMap<>();
+    /** 限流器降级计数按接口缓存：不同 endpoint 各自注册一个 Counter（tag=endpoint） */
+    private final Map<String, Counter> rateLimitDegradedCounters = new ConcurrentHashMap<>();
 
     public BusinessMetrics(MeterRegistry registry, ObjectProvider<RabbitAdmin> rabbitAdmin) {
         this.registry = registry;
@@ -105,6 +109,15 @@ public class BusinessMetrics {
         anticheatEventCounters.computeIfAbsent(eventType, type -> Counter.builder(ANTICHEAT_EVENTS)
                 .tag("type", type)
                 .description("防作弊事件计数，按事件类型")
+                .register(registry))
+                .increment();
+    }
+
+    /** 限流器降级计数：按接口标识各自的 Counter 加一（endpoint 口径与 RedisTokenBucket.key 派生的接口标识一致）。 */
+    public void countRateLimitDegraded(String endpoint) {
+        rateLimitDegradedCounters.computeIfAbsent(endpoint, ep -> Counter.builder(RATE_LIMIT_DEGRADED)
+                .tag("endpoint", ep)
+                .description("限流器因 Redis 故障降级（fail-open 放行）的计数，按接口维度")
                 .register(registry))
                 .increment();
     }
