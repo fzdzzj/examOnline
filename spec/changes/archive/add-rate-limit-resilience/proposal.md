@@ -22,7 +22,8 @@
 ## What Changes
 
 ### 1. `RateLimitInterceptor`（`common/ratelimit/`）
-- 把 `tokenBucket.tryAcquire(...)` 包进 `try-catch(Throwable|Exception)`，并**严格区分两条路径**：
+- 把 `tokenBucket.tryAcquire(...)` 包进 `try-catch (Exception)`，并**严格区分两条路径**：
+  - （**只捕 `Exception`、不捕 `Throwable`**：`Throwable` 会连 `OutOfMemoryError`/`StackOverflowError` 一起当成"降级"放行，属误用——那些是进程级故障，放行只会让问题扩大。）
   - **正常返回 `false`（桶空 = 业务超限）→ 保持抛 `BusinessException(ResponseCode.TOO_MANY_REQUESTS)`（429），绝不被 catch 吞掉**。因此「取返回值」必须在 try 内、「判 false 抛 429」必须在 try 外（或 catch 只捕获异常、不捕获 false）。
   - **抛异常（Redis 侧故障）→ fail-open 分支**：打 ERROR 日志（含接口标识、异常摘要、以及 MDC 里的 requestId）→ 埋降级计数 → `return true` 放行。
 - **构造器签名改为** `RateLimitInterceptor(RedisTokenBucket tokenBucket, BusinessMetrics businessMetrics, boolean failOpen)`（原为单参）。

@@ -16,11 +16,7 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，2026-09-14 提出，**待实施**）：
-
-| 变更 ID | 阶段 | 内容 | 目标能力域 |
-|---|---|---|---|
-| `add-rate-limit-resilience` | 10 | 限流器 Redis 异常降级放行（fail-open）+ 降级可观测 | reliability |
+- 进行中变更（`spec/changes/`）：**无**（阶段 10 的两个提案均已归档）。
 
 - 已合入规范（`spec/specs/`，共 15 个能力域）：
 
@@ -36,13 +32,13 @@ spec/
 | 8 | `performance` | `add-performance-deepening` | 8 |
 | 9 | `data-access` | `add-performance-deepening` | 8 |
 | 10 | `observability` | `add-performance-deepening`、`add-slow-sql-and-rate-limit`、`add-mq-trace-and-capacity` | 8、8.1、10 |
-| 11 | `reliability` | `add-slow-sql-and-rate-limit` | 8.1 |
+| 11 | `reliability` | `add-slow-sql-and-rate-limit`、`add-rate-limit-resilience` | 8.1、10 |
 | 12 | `data-consistency` | `add-tx-rollback-consistency` | 8.2 |
 | 13 | `class-management` | `add-class-and-post-exam-closure` | 9 |
 | 14 | `absence-makeup` | `add-class-and-post-exam-closure` | 9 |
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 
-- 已归档变更（`spec/changes/archive/`，共 12 个，阶段 1–9 已全部收尾，阶段 10 起陆续归档）：
+- 已归档变更（`spec/changes/archive/`，共 13 个，阶段 1–9 已全部收尾，阶段 10 起陆续归档）：
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
@@ -58,14 +54,16 @@ spec/
 | `add-tx-rollback-consistency` | 8.2 | 统一 26 处裸 `@Transactional` 为显式 `rollbackFor` | W10 |
 | `add-class-and-post-exam-closure` | 9 | 班级体系、缺考标记、补考、成绩复核 | W10-W11 |
 | `add-mq-trace-and-capacity` | 10 | 交卷 MQ 链路 traceId 透传 + 消费并发显式化 + 容量模型 | W12 |
+| `add-rate-limit-resilience` | 10 | 限流器 Redis 异常降级（fail-open）+ 降级可观测 | W12 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
 1. **交卷链路压测未做**（`add-exam-taking` task 8）——JMeter 5000 并发交卷压测与硬指标验收（P99 < 2s / 0 丢单 / 批量落库 < 30s）**未执行**，仓库内无任何 `.jmx` 或压测报告。前置瓶颈已由 `add-mq-trace-and-capacity` 消除：消费并发原先实际为 **1**（手工构造的 `batchContainerFactory` 从未设并发，`RABBIT_CONCURRENCY:2` 对它不生效），现已显式化并可经 `exam.taking.mq.concurrency` 调整；**具体数值仍须真跑压测定稿**，该变更只给可复算的容量模型，不替代实测。
 2. **考后闭环缺端到端串联验收**（`add-class-and-post-exam-closure` task 6 step 5）——各环节有独立测试，但没有一条「建班→入班→考试结束→缺考标记→指定补考→复核申请→处理」的串联用例。
 3. **缺考/补考的真实链路只有 Mockito 单测覆盖**——`AbsenceServiceTest`、`MakeupServiceCandidateLimitTest` 都 mock 掉了 `ClassService`，`user_class → listStudentIds` 的真实接入在集成层无用例（这正是 `schema.sql` 缺 `classes`/`user_class` 两表而测试全绿的原因）。
-4. **限流器对 Redis 异常无兜底**（`RateLimitInterceptor`）——Redis 不可用时直接 500，限流器成为可用性单点；fail-open 放行 + 告警的取舍待单独立项（进行中：`add-rate-limit-resilience`）。
-5. **有指标无告警**——`BusinessMetrics` 指标齐备，但没有 alert rules / Grafana 面板。
+4. **有指标无告警**——`BusinessMetrics` 指标齐备，但没有 alert rules / Grafana 面板。限流降级指标 `exam.ratelimit.degraded` 同理：埋点有了，但**无人值守**（无告警规则），Redis 故障期间 fail-open 放行会长期潜伏。
+
+**已收口（从遗留清单移出）**：**限流器对 Redis 异常的兜底**（原遗留 #4）已由 `add-rate-limit-resilience`（阶段 10）实现——默认 fail-open 放行以保核心链路可用，同时打 ERROR 日志并递增 `exam.ratelimit.degraded` 计数（可按接口维度区分）；另留 `exam.ratelimit.fail-open=false` 切回 fail-close。
 
 ## 能力地图（15 个能力域，作为规范组织单位）
 
@@ -81,7 +79,7 @@ spec/
 | 8 | performance | 缓存三防（穿透/击穿/雪崩）、热点只读缓存 |
 | 9 | data-access | 读写分离、读己之写 |
 | 10 | observability | 指标导出、自定义业务指标、慢 SQL 识别与请求关联、异步链路请求关联 |
-| 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度 |
+| 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度、限流器降级与可观测 |
 | 12 | data-consistency | 事务显式回滚、受检异常转换 |
 | 13 | class-management | 班级 CRUD、学生入班/转班、班级学生列表 |
 | 14 | absence-makeup | 缺考标记、补考独立记录、补考成绩规则合并 |
@@ -99,10 +97,11 @@ spec/
 | 6 | add-grading-score | grading + score-management | W7 | 已归档 |
 | 7 | add-anti-cheat | anti-cheat | W8 | 已归档 |
 | 8 | add-performance-deepening | performance + data-access + observability | W9-W10 | 已归档 |
-| 8.1 | add-slow-sql-and-rate-limit | reliability + observability（慢 SQL） | W10 | 已归档（限流兜底遗留） |
+| 8.1 | add-slow-sql-and-rate-limit | reliability + observability（慢 SQL） | W10 | 已归档 |
 | 8.2 | add-tx-rollback-consistency | data-consistency | W10 | 已归档 |
 | 9 | add-class-and-post-exam-closure | class-management + absence-makeup + score-review | W10-W11 | 已归档（端到端验收遗留） |
 | 10 | add-mq-trace-and-capacity | observability + exam-taking（落库容量与时延） | W12 | 已归档（压测仍遗留） |
+| 10 | add-rate-limit-resilience | reliability（限流器降级与可观测） | W12 | 已归档 |
 
 ## 工作流
 
