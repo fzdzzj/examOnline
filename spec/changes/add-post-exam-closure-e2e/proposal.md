@@ -54,9 +54,43 @@ ExamStateMachineService.autoAdvance()     → casAdvanceQuietly(已结束) + abs
 
 **5）实锤缺陷二（超出本提案范围，见下节）**：`MakeupScoreService` 无任何调用方。
 
+**6）实锤缺陷三：`score_review` 表缺 `created_time` 列 → 复核申请接口 100% 失败（实施期由新用例挖出）。**
+
+新串联用例一跑，**复核相关的 3 个用例全部 500**。从 surefire 报告取到根因（非推测）：
+
+```
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Column "created_time" not found; SQL statement:
+INSERT INTO score_review ( exam_id, student_id, status, reason, apply_time, created_time ) VALUES ( ... )
+```
+
+对照取证：
+
+| 位置 | 事实 |
+|---|---|
+| `score/entity/ScoreReview.java:66-67` | `@TableField(fill = FieldFill.INSERT) private LocalDateTime createdTime;` |
+| `config/MybatisPlusConfig.java:22-25` | 存在全局 `MetaObjectHandler.insertFill`，项目统一自动填充 `createdTime` |
+| `schema.sql:369-382` | `score_review` 建表语句里**没有** `created_time`（只有 `apply_time`） |
+| `docker/mysql/migrations/2026-W10-add-score-review.sql` | 同样**没有** `created_time` |
+
+即：**新建库与存量库都缺这一列**，MyBatis-Plus 的 insert 带上了实体字段 → 该 INSERT 在任何环境都必失败。**复核申请接口从未成功执行过一次**。
+
+**全库扫描确认这是孤立缺陷**（脚本比对 19 个含 `createdTime` 的实体的 `@TableName` 与 `schema.sql` 对应建表语句）：
+
+```
+OK  classes / exam_absence / exam_behavior_logs / exam_candidates / exam_snapshots
+OK  exam_submissions / exam_submit_dedups / exams / invite_codes / paper_snapshots
+OK  papers / permissions / questions / roles / score_audit_logs / subjective_grades
+OK  tags / users
+MISS score_review          ← 唯一一处
+```
+
+**这正是遗留 #3 的同型问题**：闭环四个端点零集成覆盖，所以"代码与 schema 不一致"可以一直不被发现——`ScoreReviewService`/`Controller` 在 JaCoCo 里只有 22.2%，因为没有任何用例真的走到 INSERT。
+
+**为什么必须并入本提案而不是单独立项**：本提案的验收标准就是「复核申请 → 复核处理」这段链路跑通；不修这一列，主用例与两个复核边界用例**永远红**。修它是本提案的**前置条件**，不是可选项。
+
 ### 期望状态
 
-一条真实链路的端到端用例（建班 → 入班 → 建卷 → 建考试 → 结束 → 缺考标记 → 筛补考名单 → 建补考 → 名单限制 → 批改 → 汇总 → 发布 → 复核申请 → 复核处理），**两条结束路径（自然到点 / 教师提前结束）都覆盖**，全程**不使用 `@Sql`**，从而同时证明「schema.sql 足以建起整条链所要的表」。
+一条真实链路的端到端用例（建班 → 入班 → 建卷 → 建考试 → 结束 → 缺考标记 → 筛补考名单 → 建补考 → 名单限制 → 批改 → 汇总 → 发布 → 复核申请 → 复核处理），**两条结束路径（自然到点 / 教师提前结束）都覆盖**，全程**不使用 `@Sql`**，从而同时证明「schema.sql 足以建起整条链所要的表」。过程中挖出的两个真缺陷（`force-end` 漏标记缺考、`score_review` 缺列致复核申请必失败）一并修掉——**它们正是"零集成覆盖"这个状态长期存在的产物**。
 
 ## What Changes
 
@@ -112,6 +146,17 @@ ExamStateMachineService.autoAdvance()     → casAdvanceQuietly(已结束) + abs
 
 以"走真实链路 + 真实 SQL"达成，而非堆 mock 单测。`MakeupScoreService` **不在本目标内**（它需要先被接入，见下节）。
 
+### 5. 修复 `score_review` 缺 `created_time`（缺陷三，实施期挖出）
+
+- `src/main/resources/schema.sql`：「新建库一次建全」的 `score_review` 建表语句补上
+  `created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`（与 `score_audit_logs` 等 18 张表的既有写法一致），位置紧接 `handler_id` 之后、约束之前。
+- 新增 `docker/mysql/migrations/2026-W15-add-score-review-created-time.sql`：存量库手工执行
+  `ALTER TABLE score_review ADD COLUMN created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;`
+  （幂等性说明写在脚本头：MySQL 8 重复执行报 Duplicate column name，可忽略——与既有迁移文件的约定一致。）
+- **为什么是补列而不是删实体的 `createdTime` 字段**：`MybatisPlusConfig` 的全局 `MetaObjectHandler` 自动填充 `createdTime`，全库 19 个实体、18 张表都按此约定；`score_review` 是**唯一**例外。补列让它与全库一致，改实体则会引入"这一张表为什么特殊"的额外解释成本。
+- **修复的验证方式**：三个此前 500 的用例（`fullClosureChainEndToEnd`、`reviewOncePerExamAndOwnerOnly`、`reviewAlreadyHandledRejected`）转绿，即证明该 INSERT 真的能执行。**不接受"改了 schema 但没跑用例"作为完成**。
+- **注意**：本步骤改的是 `schema.sql`——本提案**原先把它列为"不要触碰"**，现据实测证据放开（原假设"闭环所需表已齐"被证伪）。这是提案在实施期被证据修正的正常情况，如实记录在此。
+
 ## 核验中发现、但**不属本提案范围**的问题
 
 **`MakeupScoreService` 无任何调用方 → 规范「补考成绩规则」从未生效。**
@@ -132,11 +177,13 @@ ExamStateMachineService.autoAdvance()     → casAdvanceQuietly(已结束) + abs
 - 新增 `src/test/java/com/exam/closure/PostExamClosureIntegrationTest.java`
 - 修改 `src/main/java/com/exam/exam/service/ExamService.java`（仅 `forceEnd` + 构造器注入 `AbsenceService`）
 - 修改 `src/test/java/com/exam/clazz/ClassManagementIntegrationTest.java`（删 `@Sql` + 改 javadoc）
+- 修改 `src/main/resources/schema.sql`（**仅**给 `score_review` 补 `created_time` 一列，不动其他 23 张表）
+- 新增 `docker/mysql/migrations/2026-W15-add-score-review-created-time.sql`
 
-**不要触碰**：`schema.sql`（闭环所需表已齐，本次只证明它够用，不改它）、`AbsenceService` / `MakeupService` / `ScoreReviewService` 的业务逻辑（本次只覆盖与验证）、`MakeupScoreService`（属另一立项）、`application-test.yml`、`pom.xml`。
+**不要触碰**：`AbsenceService` / `MakeupService` / `ScoreReviewService` 的业务逻辑（本次只覆盖与验证）、`MakeupScoreService`（属另一立项）、`application-test.yml`、`pom.xml`。
 
 ### 需要迁移
-- [ ] 数据库迁移（无）
+- [x] 数据库迁移：**给存量库补 `score_review.created_time`**（`docker/mysql/migrations/2026-W15-add-score-review-created-time.sql`）；新库由 `schema.sql` 建全
 - [ ] 配置变更（无）
 - [x] 文档更新（本提案 + 规范 delta + `spec/README.md` 遗留 #2/#3 收口、新登记 `MakeupScoreService` 未接线）
 
@@ -151,3 +198,6 @@ ExamStateMachineService.autoAdvance()     → casAdvanceQuietly(已结束) + abs
 - **端到端用例易碎** —— 12 步链路对时间窗口/状态敏感。缓解：用例内不复用其他用例的数据（`unique()` 造唯一名）；时间窗用 `now()` 相对量；各步显式断言 HTTP 状态便于定位；`application-test.yml` 已把定时扫描间隔拉到 1h，不会与手工驱动冲突。
 - **覆盖率目标可能达不到** —— 若 `MakeupService` 的某些分支在真实链路下确实不可达（如 `validateWindowAndDuration` 的负值分支已由单测覆盖），则不硬凑：在任务里写明实际值与未达原因，**不为了数字写假测试**。
 - **"删 `@Sql` 后测试仍绿"不等于"schema 永远够用"** —— 它只证明**这次**够用。真正的保障是让 `@Sql` 归零后，任何缺表都会让测试立刻红。故删除本身即是修复。
+- **该预测已被验证（实施期）** —— 上文风险里写过"凡是首次真跑都可能翻出新问题"，结果第一次跑串联用例就翻出了缺陷三（`score_review` 缺 `created_time`）。这恰好说明了本提案的价值：**不是测试写得漂亮，而是它让一个从未被执行过的 INSERT 第一次被执行**。
+- **改 `schema.sql` 后，存量库必须手工跑迁移** —— 否则 dev/prod 仍会在复核申请上 500。这条要写进 `spec/README.md` 工作流或迁移脚本头注释（新库 `CREATE TABLE IF NOT EXISTS` **不会**为已存在的表补列，这是本仓库的既有坑，与 `classes`/`user_class` 那次同源）。
+- **已交付的用例里 4 个红，其中 3 个红在缺陷三、1 个红在缺陷一** —— 这两个红都是**预期的红**（先红后绿才能证明用例有效）。收尾时必须确认：修完之后这 4 个全部转绿，且**不是因为放宽断言而转绿**。

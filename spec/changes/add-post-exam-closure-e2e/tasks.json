@@ -38,7 +38,8 @@
       { "step": "makeupRequiresEndedMainExam：主考未结束时创建补考 → 400（不能提前组织补考）", "completed": false },
       { "step": "makeupCannotChain：以补考再开补考 → 400", "completed": false },
       { "step": "reviewOncePerExamAndOwnerOnly：复核限 1 次（重复申请 → DATA_ALREADY_EXISTS 1001）；非归属教师处理 → 403", "completed": false },
-      { "step": "reviewAlreadyHandledRejected：已处理的复核再次处理 → 400", "completed": false }
+      { "step": "reviewAlreadyHandledRejected：已处理的复核再次处理 → 400", "completed": false },
+      { "step": "【实施期实测记录】首次运行时本阶段 4 个用例红：forceEndAlsoMarksAbsence（缺陷一，expected 1 but was 0）+ fullClosureChainEndToEnd / reviewOncePerExamAndOwnerOnly / reviewAlreadyHandledRejected（3 处 500，根因均为缺陷三 score_review 缺 created_time）。修完阶段 1 与阶段 5 后这 4 个必须转绿，且不得靠放宽断言转绿", "completed": false }
     ],
     "passes": false
   },
@@ -51,7 +52,20 @@
       { "step": "同步修正该测试类 javadoc 中已不成立的那句「测试库（H2）只加载 schema.sql，classes/user_class 由本类用 @Sql 幂等补建」，改为「由 schema.sql 建全，本类不自行建表」", "completed": false },
       { "step": "确认 grep -rn '@Sql' src/test 结果为空（此后任何缺表都会让测试立刻红，而不是被自建表掩盖）", "completed": false },
       { "step": "跑 JaCoCo 核对覆盖率目标：MakeupService ≥70%、AbsenceService ≥85%、ScoreReviewController ≥80%；未达标的类写明实际值与原因，不为了数字写假测试", "completed": false },
-      { "step": "跑 mvn 全量回归（测试只增不减，当前基线 182）——须全绿；特别确认既有 force-end 用例未被阶段 1 的行为变化影响", "completed": false }
+      { "step": "跑 mvn 全量回归（测试只增不减，基线以开工时实测为准）——须全绿；特别确认既有 force-end 用例未被阶段 1 的行为变化影响", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：修复 score_review 缺 created_time（缺陷三，实施期挖出，W14）",
+    "task": "让复核申请接口第一次真正跑通",
+    "steps": [
+      { "step": "schema.sql 的 score_review 建表语句补 created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP（位置紧接 handler_id 之后、约束之前），与 score_audit_logs 等 18 张表的既有写法一致", "completed": false },
+      { "step": "新增 docker/mysql/migrations/2026-W15-add-score-review-created-time.sql：ALTER TABLE score_review ADD COLUMN created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;——脚本头写明存量库必须手工执行、重复执行报 Duplicate column name 可忽略（新库 CREATE TABLE IF NOT EXISTS 不会为已存在的表补列）", "completed": false },
+      { "step": "注释写明为什么补列而不是删实体的 createdTime：MybatisPlusConfig 有全局 MetaObjectHandler.insertFill 自动填充 createdTime，全库 19 个实体 / 18 张表都依此约定，score_review 是唯一例外", "completed": false },
+      { "step": "重跑三个此前 500 的用例，确认全绿——即证明该 INSERT 真的能执行（不接受「改了 schema 但没跑用例」作为完成）", "completed": false },
+      { "step": "复核全库一致性：脚本比对含 createdTime 的实体的 @TableName 与 schema.sql 建表语句，确认 score_review 修复后零 MISS（此检查是本次发现该缺陷的手法，值得保留为一次性核查而非测试）", "completed": false }
     ],
     "passes": false
   }

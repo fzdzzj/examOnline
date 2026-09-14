@@ -20,7 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 |
 |---|---|---|---|
-| `add-post-exam-closure-e2e` | 12 | 考后闭环端到端串联验收（两条结束路径）+ 修复 force-end 缺考漏标记 + 删除 `@Sql` 死代码 + 闭环覆盖率收口 | absence-makeup |
+| `add-post-exam-closure-e2e` | 12 | 考后闭环端到端串联验收（两条结束路径）+ 修 force-end 缺考漏标记 + 修 `score_review` 缺 `created_time`（复核申请必失败）+ 删除 `@Sql` 死代码 + 闭环覆盖率收口 | absence-makeup |
 | `add-multi-instance-sweep-safety` | 13 | 修复 SETNX 锁解锁未校验持有者 + 并发扫描只生效一次的证据 + 多实例策略显式化 + 重复扫描可观测 | reliability |
 | `add-dlq-observability-and-replay` | 14 | 死信队列深度指标 + 重试/进死信计数 + 2 条告警规则与面板 + 有界可审计的死信重投入口（先留档再重投） | reliability + observability |
 | `add-data-retention` | 15 | 按考试生命周期的数据保留策略（默认关闭 + 默认只试算 + 分批有界删除 + 只用既有索引） | data-access |
@@ -68,7 +68,7 @@ spec/
 
 1. **交卷链路压测未做**（`add-exam-taking` task 8）——JMeter 5000 并发交卷压测与硬指标验收（P99 < 2s / 0 丢单 / 批量落库 < 30s）**未执行**，仓库内无任何 `.jmx` 或压测报告。前置瓶颈已由 `add-mq-trace-and-capacity` 消除：消费并发原先实际为 **1**（手工构造的 `batchContainerFactory` 从未设并发，`RABBIT_CONCURRENCY:2` 对它不生效），现已显式化并可经 `exam.taking.mq.concurrency` 调整；**具体数值仍须真跑压测定稿**，该变更只给可复算的容量模型，不替代实测。
 2. **考后闭环缺端到端串联验收**（`add-class-and-post-exam-closure` task 6 step 5）——各环节有独立测试，但没有一条「建班→入班→考试结束→缺考标记→指定补考→复核申请→处理」的串联用例。**进行中变更 `add-post-exam-closure-e2e`（阶段 12）正在收口**。
-3. **缺考/补考的真实链路只有 Mockito 单测覆盖**——`AbsenceServiceTest`、`MakeupServiceCandidateLimitTest` 都 mock 掉了 `ClassService`，`user_class → listStudentIds` 的真实接入在集成层无用例（这正是 `schema.sql` 缺 `classes`/`user_class` 两表而测试全绿的原因）。**进行中变更 `add-post-exam-closure-e2e` 正在收口**；同变更会删除 `ClassManagementIntegrationTest` 里那段仍在掩盖同类回归的 `@Sql` 自建表（已实测其冗余）。
+3. **缺考/补考的真实链路只有 Mockito 单测覆盖**——`AbsenceServiceTest`、`MakeupServiceCandidateLimitTest` 都 mock 掉了 `ClassService`，`user_class → listStudentIds` 的真实接入在集成层无用例（这正是 `schema.sql` 缺 `classes`/`user_class` 两表而测试全绿的原因）。**进行中变更 `add-post-exam-closure-e2e` 正在收口**；同变更会删除 `ClassManagementIntegrationTest` 里那段仍在掩盖同类回归的 `@Sql` 自建表（已实测其冗余）。**该变更在实施期已用新用例挖出第二个真缺陷**：`score_review` 表缺 `created_time` 列（实体有 `@TableField(fill = INSERT) createdTime`、全局 `MetaObjectHandler` 会填充，而 `schema.sql` 与 `2026-W10-add-score-review.sql` **都没有这一列**）→ **复核申请接口的 INSERT 在任何环境都必失败，该接口从未成功执行过一次**；全库比对 19 个含 `createdTime` 的实体，`score_review` 是唯一不一致的一处。已并入同变更修复。
 4. **观测栈动态行为未验证**（`add-alerting-and-dashboards` task 4）——`docker/observability/` 的**配置资产静态正确性**已由 `AlertAssetsTest` 守住（文件可解析、规则结构完整、指标名与 `BusinessMetrics` 常量对齐、面板 uid 与数据源一致，并已做变异验证证明断言非空转），但 **Docker 未运行**，「抓取是否 `UP`、告警是否真的 `firing`、面板是否真的出图」**未在本机验证**，需按 `docker/observability/README.md` 的人工验收步骤确认。**不得声称「已验证告警可用」。**
 5. **补考成绩规则已合入规范但从未接线**（阶段 12 取证时发现）——`MakeupScoreService.finalScore(examId, studentId)` **全仓库零调用**，`mergeFinalScore(...)` 只被纯函数单测调用，也没有任何暴露"补考最终成绩"的接口。而 `spec/specs/absence-makeup/spec.md` 的 `Requirement: 补考成绩规则`（取最高分/取最近一次/取平均分）**已合入并验收**——属"已验收但未接线"的需求。修复需新增接口/查询路径（功能变更），建议单独立项 `add-makeup-final-score`，**不要在本清单里当成已完成**。
 
@@ -131,6 +131,7 @@ spec/
 3. 阶段完成并验收后，`spec-delta.md` 的需求合入 `specs/{capability}/spec.md`，变更目录移入 `changes/archive/`。
 4. 收尾五步（本项目约定）：spec-delta 合入 specs → 变更目录移入 archive → 回勾 `tasks.json`（**按代码实际完成度回查，不得凭印象勾满**）→ 更新本 README → commit。
 5. **集成测试不得用 `@Sql` 自建表**（本项目硬约定）：测试库建表只以 `src/main/resources/schema.sql` 为唯一来源（`application-test.yml` 已配 `mode: always` + `continue-on-error: false`）。自建表会让「新库/新环境建不起来」被测试掩盖——`schema.sql` 曾缺 `classes`/`user_class` 两表而 CI 全绿，就是这么发生的。目标：`grep -rn '@Sql' src/test` 保持为空。
+6. **实体字段与建表定义必须双向一致**（本项目硬约定）：MyBatis-Plus 按实体字段生成 INSERT，**实体有、表里没有的列会让该写入在任何环境都失败**——`score_review` 缺 `created_time` 而 `ScoreReview` 实体有 `@TableField(fill = INSERT) createdTime`（全局 `MetaObjectHandler` 会填充），导致复核申请接口从未成功执行过一次（阶段 12 挖出）。核对手法：用脚本比对每个含 `createdTime` 的实体的 `@TableName` 与 `schema.sql` 中对应建表语句，双方都必须齐。**新增表/实体时必须双向核对**，且优先靠「走真实链路的集成用例」暴露，而不是靠人肉比对。
 
 ## 参考资料（非 openspec 资产）
 
