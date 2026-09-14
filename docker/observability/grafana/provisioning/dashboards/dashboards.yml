@@ -1,0 +1,12 @@
+# Grafana 面板 provider：从容器内目录自动加载面板 JSON
+apiVersion: 1
+providers:
+  - name: exam-online
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards

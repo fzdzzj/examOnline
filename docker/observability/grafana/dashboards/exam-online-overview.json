@@ -1,0 +1,148 @@
+{
+  "uid": "exam-online-overview",
+  "title": "Exam Online 总览",
+  "tags": ["exam", "observability"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "query",
+        "label": "Job",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": { "query": "label_values(up, job)", "refId": "A" },
+        "current": { "text": "exam-online", "value": "exam-online" },
+        "includeAll": false,
+        "multi": false,
+        "refresh": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "交卷 QPS",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(rate(exam_submit_duration_seconds_count{job=\"$job\"}[$__rate_interval]))", "legendFormat": "交卷 QPS" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "交卷成功率",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100 }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(increase(exam_submit_success_total{job=\"$job\"}[$__range])) / clamp_min(sum(increase(exam_submit_success_total{job=\"$job\"}[$__range])) + sum(increase(exam_submit_failure_total{job=\"$job\"}[$__range])), 1) * 100", "legendFormat": "成功率" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "MQ 队列积压",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(exam_mq_submit_queue_depth{job=\"$job\"})", "legendFormat": "队列积压" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "交卷耗时 P50",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(exam_submit_duration_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))", "legendFormat": "P50" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "交卷耗时 P95",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(exam_submit_duration_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))", "legendFormat": "P95" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "交卷耗时 P99",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum(rate(exam_submit_duration_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))", "legendFormat": "P99" }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "限流降级（按 endpoint）",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum by (endpoint) (increase(exam_ratelimit_degraded_total{job=\"$job\"}[$__range]))", "legendFormat": "{{endpoint}}" }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "HTTP 5xx",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[$__rate_interval]))", "legendFormat": "5xx" }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "JVM 内存",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 21 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum by (area) (jvm_memory_used_bytes{job=\"$job\"})", "legendFormat": "{{area}}" }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "JVM GC 暂停时间",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 21 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[$__rate_interval]))", "legendFormat": "GC 暂停时间" }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "防作弊事件（按 type）",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum by (type) (increase(exam_anticheat_events_total{job=\"$job\"}[$__range]))", "legendFormat": "{{type}}" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+# 观测栈独立编排片段：可选依赖，与 docker/mysql/（必需运行依赖）分离，
+# 只想跑业务的人不必拉起监控。镜像 tag 用具体版本号，不用 latest。
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: exam-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+    extra_hosts:
+      # Linux 上容器内解析不到宿主，需显式把 host.docker.internal 指向 host-gateway
+      - "host.docker.internal:host-gateway"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: exam-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      # 管理员密码不硬编码：默认 admin，可通过环境变量覆盖
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/exam-online-overview.json
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro

@@ -1,0 +1,74 @@
+# 告警规则：7 条，指标名只取能从 BusinessMetrics 常量确定性推导的 Prometheus 名
+# + actuator 标准指标（up、http_server_requests_seconds_count）。
+# 指标名与代码对齐由 src/test/java/com/exam/observability/AlertAssetsTest.java 守住。
+groups:
+  - name: exam-online-alerts
+    rules:
+      - alert: ExamOnlineDown
+        expr: up{job="exam-online"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "exam-online 应用不可达"
+          description: "Prometheus 已持续 1 分钟抓不到 job=exam-online 目标（up==0），应用可能宕机或 /actuator/prometheus 不可访问。"
+
+      - alert: SubmitFailureRatioHigh
+        # clamp_min 保证分母非零：无交卷流量时比率为 0，不会误报
+        expr: sum(increase(exam_submit_failure_total[5m])) / clamp_min(sum(increase(exam_submit_failure_total[5m])) + sum(increase(exam_submit_success_total[5m])), 1) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "交卷失败率超过 10%"
+          description: "近 5 分钟交卷失败数占（成功+失败）比例超过 10%（当前 {{ $value | humanizePercentage }}），可能为 MQ confirm 异常或下游故障。"
+
+      - alert: SubmitLatencyP99High
+        # 对齐既有「交卷 P99 < 2s」目标；histogram_quantile 必须先 sum(rate(...)) by (le)
+        expr: histogram_quantile(0.99, sum(rate(exam_submit_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "交卷 P99 耗时超过 2s"
+          description: "交卷链路 P99 耗时近 5 分钟持续超过 2 秒（当前 {{ $value }}s），违反既有性能目标。"
+
+      - alert: MqSubmitQueueBacklog
+        # `>= 0 and` 前置条件：该 Gauge 在无 RabbitAdmin 时返回 -1 哨兵值（BusinessMetrics.submitQueueDepthProvider），
+        # 不排除会把「不可用」误判成「无积压」，或把真实积压静默吞掉
+        expr: exam_mq_submit_queue_depth >= 0 and exam_mq_submit_queue_depth > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "交卷 MQ 队列积压超过 1000"
+          description: "exam.submit.queue 积压消息数持续超过 1000（当前 {{ $value }}），5000 并发交卷的典型征兆。"
+
+      - alert: RateLimitDegraded
+        # 盯增量：Redis 故障期间 fail-open 放行必须被人知道，否则降级等于没做
+        expr: sum(increase(exam_ratelimit_degraded_total[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "限流器降级（fail-open 放行）"
+          description: "近 5 分钟存在限流器因 Redis 故障降级放行的请求，当前处于 fail-open 模式，需人工关注 Redis 与限流器状态。"
+
+      - alert: Http5xxRatioHigh
+        expr: sum(increase(http_server_requests_seconds_count{status=~"5.."}[5m])) / clamp_min(sum(increase(http_server_requests_seconds_count[5m])), 1) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP 5xx 占比超过 5%"
+          description: "近 5 分钟 HTTP 5xx 响应占比超过 5%（当前 {{ $value | humanizePercentage }}）。"
+
+      - alert: AntiCheatEventSpike
+        # severity: info —— 业务信号而非故障，考试场景下值得看一眼
+        expr: sum(increase(exam_anticheat_events_total[5m])) > 50
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "防作弊事件突增"
+          description: "近 5 分钟防作弊事件超过 50 次（当前 {{ $value }}），建议人工核查是否存在异常行为模式。"
