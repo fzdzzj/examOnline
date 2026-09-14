@@ -1,0 +1,40 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：限流降级（W12）",
+    "task": "RateLimitInterceptor 的 Redis 异常兜底 + 接线",
+    "steps": [
+      { "step": "RateLimitInterceptor 构造器改签名为 (RedisTokenBucket, BusinessMetrics, boolean failOpen)", "completed": false },
+      { "step": "preHandle 把 tokenBucket.tryAcquire 调用包进 try-catch：`false`（桶空）的判定放在 try 外仍抛 TOO_MANY_REQUESTS，异常才走降级分支（false 绝不能被降级吞掉）", "completed": false },
+      { "step": "降级分支：打 ERROR 日志（接口标识 + 异常摘要 + MDC 里的 requestId）并放行 return true", "completed": false },
+      { "step": "fail-open=false 时先记日志/埋点、再把异常原样上抛（fail-close 分支）", "completed": false },
+      { "step": "WebMvcConfig 构造器新增 BusinessMetrics + @Value(\"${exam.ratelimit.fail-open:true}\") boolean，改为 new RateLimitInterceptor(bucket, metrics, failOpen)；不动 AuthenticationInterceptor 的注册", "completed": false },
+      { "step": "类注释写明取舍理由：限流是保护手段而非业务约束，Redis 故障时优先保核心链路可用", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：降级可观测（W12）",
+    "task": "降级指标与配置",
+    "steps": [
+      { "step": "BusinessMetrics 新增 countRateLimitDegraded(String endpoint)：Counter exam.ratelimit.degraded、tag 键 endpoint，仿既有 countAntiCheatEvent 的 computeIfAbsent 写法", "completed": false },
+      { "step": "降级分支埋点，使「限流器降级中」可被 Prometheus 采集（按接口维度区分）", "completed": false },
+      { "step": "application.yml 的 exam.ratelimit 段新增 fail-open: ${RATE_LIMIT_FAIL_OPEN:true} 并补一行说明", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：验收（W12）",
+    "task": "降级语义回归",
+    "steps": [
+      { "step": "RateLimitInterceptorTest 因构造器签名变化，补 3 处 new 的实参（如 mock(BusinessMetrics.class) + true）——只补参数、不改既有断言", "completed": false },
+      { "step": "单测：tokenBucket 抛异常 + failOpen=true → preHandle 返回 true（放行）且 countRateLimitDegraded 被调用一次", "completed": false },
+      { "step": "单测：tokenBucket 抛异常 + failOpen=false → 异常上抛（fail-close 分支有效）", "completed": false },
+      { "step": "单测：桶空（false）→ 仍抛 TOO_MANY_REQUESTS 且不记降级（verify never）", "completed": false },
+      { "step": "跑 mvn 全量回归，确认无行为变化（测试只增不减）", "completed": false }
+    ],
+    "passes": false
+  }
+]
