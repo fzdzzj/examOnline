@@ -16,7 +16,11 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`）：**无**（阶段 11 的 `add-alerting-and-dashboards` 已实施、验收并归档）。
+- 进行中变更（`spec/changes/`，阶段 12，**待实施**）：
+
+| 变更 ID | 阶段 | 内容 | 目标能力域 |
+|---|---|---|---|
+| `add-post-exam-closure-e2e` | 12 | 考后闭环端到端串联验收（两条结束路径）+ 修复 force-end 缺考漏标记 + 删除 `@Sql` 死代码 + 闭环覆盖率收口 | absence-makeup |
 
 - 已合入规范（`spec/specs/`，共 15 个能力域）：
 
@@ -60,9 +64,10 @@ spec/
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
 1. **交卷链路压测未做**（`add-exam-taking` task 8）——JMeter 5000 并发交卷压测与硬指标验收（P99 < 2s / 0 丢单 / 批量落库 < 30s）**未执行**，仓库内无任何 `.jmx` 或压测报告。前置瓶颈已由 `add-mq-trace-and-capacity` 消除：消费并发原先实际为 **1**（手工构造的 `batchContainerFactory` 从未设并发，`RABBIT_CONCURRENCY:2` 对它不生效），现已显式化并可经 `exam.taking.mq.concurrency` 调整；**具体数值仍须真跑压测定稿**，该变更只给可复算的容量模型，不替代实测。
-2. **考后闭环缺端到端串联验收**（`add-class-and-post-exam-closure` task 6 step 5）——各环节有独立测试，但没有一条「建班→入班→考试结束→缺考标记→指定补考→复核申请→处理」的串联用例。
-3. **缺考/补考的真实链路只有 Mockito 单测覆盖**——`AbsenceServiceTest`、`MakeupServiceCandidateLimitTest` 都 mock 掉了 `ClassService`，`user_class → listStudentIds` 的真实接入在集成层无用例（这正是 `schema.sql` 缺 `classes`/`user_class` 两表而测试全绿的原因）。
+2. **考后闭环缺端到端串联验收**（`add-class-and-post-exam-closure` task 6 step 5）——各环节有独立测试，但没有一条「建班→入班→考试结束→缺考标记→指定补考→复核申请→处理」的串联用例。**进行中变更 `add-post-exam-closure-e2e`（阶段 12）正在收口**。
+3. **缺考/补考的真实链路只有 Mockito 单测覆盖**——`AbsenceServiceTest`、`MakeupServiceCandidateLimitTest` 都 mock 掉了 `ClassService`，`user_class → listStudentIds` 的真实接入在集成层无用例（这正是 `schema.sql` 缺 `classes`/`user_class` 两表而测试全绿的原因）。**进行中变更 `add-post-exam-closure-e2e` 正在收口**；同变更会删除 `ClassManagementIntegrationTest` 里那段仍在掩盖同类回归的 `@Sql` 自建表（已实测其冗余）。
 4. **观测栈动态行为未验证**（`add-alerting-and-dashboards` task 4）——`docker/observability/` 的**配置资产静态正确性**已由 `AlertAssetsTest` 守住（文件可解析、规则结构完整、指标名与 `BusinessMetrics` 常量对齐、面板 uid 与数据源一致，并已做变异验证证明断言非空转），但 **Docker 未运行**，「抓取是否 `UP`、告警是否真的 `firing`、面板是否真的出图」**未在本机验证**，需按 `docker/observability/README.md` 的人工验收步骤确认。**不得声称「已验证告警可用」。**
+5. **补考成绩规则已合入规范但从未接线**（阶段 12 取证时发现）——`MakeupScoreService.finalScore(examId, studentId)` **全仓库零调用**，`mergeFinalScore(...)` 只被纯函数单测调用，也没有任何暴露"补考最终成绩"的接口。而 `spec/specs/absence-makeup/spec.md` 的 `Requirement: 补考成绩规则`（取最高分/取最近一次/取平均分）**已合入并验收**——属"已验收但未接线"的需求。修复需新增接口/查询路径（功能变更），建议单独立项 `add-makeup-final-score`，**不要在本清单里当成已完成**。
 
 **已收口（从遗留清单移出）**：
 
@@ -107,6 +112,7 @@ spec/
 | 10 | add-mq-trace-and-capacity | observability + exam-taking（落库容量与时延） | W12 | 已归档（压测仍遗留） |
 | 10 | add-rate-limit-resilience | reliability（限流器降级与可观测） | W12 | 已归档 |
 | 11 | add-alerting-and-dashboards | observability（告警与面板） | W13 | 已归档（动态验收遗留） |
+| 12 | add-post-exam-closure-e2e | absence-makeup（闭环端到端验收 + 缺考路径修复） | W13-W14 | 进行中 |
 
 ## 工作流
 
@@ -114,6 +120,7 @@ spec/
 2. 提案审批后按 `tasks.json` 逐步实施（每次处理一个 step）。
 3. 阶段完成并验收后，`spec-delta.md` 的需求合入 `specs/{capability}/spec.md`，变更目录移入 `changes/archive/`。
 4. 收尾五步（本项目约定）：spec-delta 合入 specs → 变更目录移入 archive → 回勾 `tasks.json`（**按代码实际完成度回查，不得凭印象勾满**）→ 更新本 README → commit。
+5. **集成测试不得用 `@Sql` 自建表**（本项目硬约定）：测试库建表只以 `src/main/resources/schema.sql` 为唯一来源（`application-test.yml` 已配 `mode: always` + `continue-on-error: false`）。自建表会让「新库/新环境建不起来」被测试掩盖——`schema.sql` 曾缺 `classes`/`user_class` 两表而 CI 全绿，就是这么发生的。目标：`grep -rn '@Sql' src/test` 保持为空。
 
 ## 参考资料（非 openspec 资产）
 
