@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  examOnline SpotBugs 排除规则（代码质量治理）
+
+  原则：**只排除"框架既定模式"导致的必然误报**，不排除任何需要人判断的真实缺陷。
+  每一条排除都写明理由，便于后人复核——若理由不再成立，应当删掉该条而不是续命。
+-->
+<FindBugsFilter>
+
+    <!--
+      EI_EXPOSE_REP2：构造器把外部可变对象存进字段。
+      Spring 依赖注入的全部意义就是"把容器管理的协作对象交给构造器保存"——
+      ObjectMapper / RabbitTemplate / StringRedisTemplate 这些都是容器单例，
+      不是调用方可变状态的泄漏。此模式下该检测必然全量误报（本工程 63 处），
+      保留它只会把真问题淹没在噪音里。
+    -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!--
+      EI_EXPOSE_REP：访问器返回内部可变对象。
+      仅对本工程的**只读模型**放宽：
+      - DTO / record（Dto/Response/Request/State/Item/Report/Stats 命名），承载的是从
+        Redis JSON 或试卷快照反序列化出来、随后只读消费的数据；
+      - GradingPaper / GradingQuestion：判分引擎读取试卷快照的模型，questions()/choices()
+        位于判分热点路径、会被逐题反复调用，返回防御性拷贝会带来无谓的复制开销，
+        而快照发布后内容不再变更，不存在"外部修改穿透到对象内部状态"的语义。
+      **不对 entity / service 放宽**——那两类出现该告警时，应先反思是否真的需要暴露内部集合。
+    -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Class name="~com\.exam\..*(Dto|Response|Request|State|Item|Report|Stats)"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Class name="com.exam.grading.model.GradingPaper"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Class name="com.exam.grading.model.GradingQuestion"/>
+    </Match>
+
+    <!--
+      CT_CONSTRUCTOR_THROW：构造器抛异常。
+      本工程用于**启动期配置校验**（JWT secret 长度不足、部分分系数不在 (0,1]、
+      判分策略题型重复注册），属于有意的 fail-fast——宁可启动失败也不要带着
+      错误配置跑到运行期。至于该检测附带的 FINALIZER 攻击路径，需要类可被外部
+      继承且攻击者能构造子类，而这些类均为 Spring 管理的单例、无 finalizer，
+      不构成实际暴露面。
+    -->
+    <Match>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
+    <!--
+      REC_CATCH_EXCEPTION：捕获的异常类型比 try 块显式抛出的更宽。
+      仅对 ScoreExportService 的 PDF 导出放宽：OpenPDF 的排版、字体加载与文档关闭链路
+      会抛出 DocumentException、IOException 及其多个实现类，逐一列举会让 catch 列表
+      比业务逻辑本身更长。此处统一转 BusinessException，且原始异常由 log.error 带栈完整
+      记录，不存在"吞异常、丢现场"的问题——这与用 catch (Exception) 掩盖未知故障有本质区别。
+    -->
+    <Match>
+        <Bug pattern="REC_CATCH_EXCEPTION"/>
+        <Class name="com.exam.score.service.ScoreExportService"/>
+    </Match>
+
+</FindBugsFilter>

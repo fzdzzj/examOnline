@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+  examOnline Checkstyle 规则集（代码质量治理）
+
+  设计取向：**不套 Sun/Google 全量规范**。
+  理由：本工程是有明确业务语义的后端服务，注释习惯是写"为什么"而非"做了什么"，
+  全量规范会把大量与工程质量无关的风格偏好变成噪音（JavadocMethod / MagicNumber /
+  HiddenField / FinalParameters 等），噪音一多，门禁就会被无视。
+
+  因此这里只保留两类规则：
+    1) 命名与 import 卫生 —— 影响可读性且有唯一正确答案；
+    2) 健壮性 —— 空块/吞异常/等值约定/字面量比较等，属于"真会出 bug"的类别。
+
+  渐进模式：pom 中 failOnViolation=false，违规只列出、不阻断构建，供逐步收敛。
+-->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <!-- 只报 warning 及以上（info 级别的纯风格建议不输出） -->
+    <property name="severity" value="warning"/>
+    <property name="fileExtensions" value="java"/>
+
+    <!-- 缩进一致性：禁用 Tab。混用 Tab/空格会让 diff 与多人协作频繁产生假变更 -->
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
+    </module>
+
+    <!-- 行长上限放宽到 200：本项目注释为中文且常带 spec 场景引用，
+         一个中文字符占 1 列但视觉宽度约 2 列，用 100/120 会产生大量无意义告警 -->
+    <module name="LineLength">
+        <property name="max" value="200"/>
+        <property name="ignorePattern"
+                  value="^package.*|^import.*|a href|href|http://|https://"/>
+    </module>
+
+    <module name="TreeWalker">
+
+        <!-- ===== 命名规范：与工程既有风格一致 ===== -->
+        <module name="PackageName"/>
+        <module name="TypeName"/>
+        <module name="MethodName"/>
+        <!-- 常量命名放宽到允许 log：SLF4J 生态约定 logger 字段名为 log（小写），
+             Lombok @Slf4j 生成的也正是 log。若强制 LOG，项目内会出现"@Slf4j 的 log"
+             与"手写 Logger 的 LOG"两种风格并存，反而更乱 -->
+        <module name="ConstantName">
+            <property name="format" value="^log$|^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
+        <module name="StaticVariableName"/>
+        <module name="MemberName"/>
+        <module name="LocalVariableName"/>
+        <module name="ParameterName"/>
+        <!-- JDK17 record 与模式匹配变量：新语法也要纳入命名约束 -->
+        <module name="RecordComponentName"/>
+        <module name="PatternVariableName"/>
+
+        <!-- ===== import 卫生 ===== -->
+        <module name="UnusedImports"/>
+        <module name="RedundantImport"/>
+        <!-- 禁止星号导入：避免"这个类到底来自哪个包"的阅读成本与隐性重名 -->
+        <module name="AvoidStarImport"/>
+
+        <!-- ===== 健壮性：真正会出 bug 的类别 ===== -->
+        <!-- 空块（尤其 catch）：本项目基线为 0 空 catch，此规则用于守住这条线 -->
+        <module name="EmptyBlock"/>
+        <!-- 允许以 expected/ignored 命名的异常变量表示"有意忽略"，其余空 catch 一律报出 -->
+        <module name="EmptyCatchBlock">
+            <property name="exceptionVariableName" value="expected|ignored"/>
+        </module>
+        <module name="NeedBraces"/>
+        <!-- equals/hashCode 必须成对覆盖，否则集合类行为诡异 -->
+        <module name="EqualsHashCode"/>
+        <!-- 用 == 比较字符串（经典 bug） -->
+        <module name="StringLiteralEquality"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <!-- 有意不启用 MissingSwitchDefault：本项目 switch 均为 arrow 形式的穷举 enum 分支
+             （如 SeverityLevel 全覆盖）。给穷举 switch 补 default 会**吞掉编译器对新增枚举值的
+             漏分支检查**——将来枚举加一个值，原本会在编译期报错，加了 default 就静默走默认分支。
+             这条规则的收益为负，故不引入 -->
+        <module name="FallThrough"/>
+
+        <!-- ===== 类型安全 ===== -->
+        <!-- 有意不启用 IllegalThrows：Spring AOP 的 @Around 增强方法**必须**声明 throws Throwable
+             （切面可拦截任意被代理方法的异常签名），本工程 RoleValidationAspect/ReadYourWriteRouter
+             均属此列，启用后必然误报 -->
+        <!-- 禁止 catch Throwable 与 Error：Error 代表 JVM 级故障（OOM/栈溢出），
+             业务代码捕获并"处理"它属于掩盖故障，且这条不受框架签名约束、无正当例外 -->
+        <module name="IllegalCatch">
+            <property name="illegalClassNames" value="java.lang.Throwable,java.lang.Error"/>
+        </module>
+
+        <!-- ===== 修饰符与字面量 ===== -->
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier"/>
+        <!-- 小写 l 作 long 后缀极易与数字 1 混淆 -->
+        <module name="UpperEll"/>
+    </module>
+</module>

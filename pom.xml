@@ -35,6 +35,14 @@
         <!-- 成绩导出（add-grading-score）：SXSSF 流式 Excel + 个人成绩单 PDF -->
         <poi.version>5.4.0</poi.version>
         <openpdf.version>1.3.43</openpdf.version>
+
+        <!-- 质量门禁（代码质量治理）：Spring Boot parent 不托管这三个插件，须显式锁定版本。
+             渐进策略——三件套只产出报告与基线数据，均不阻断构建（failOnViolation/failOnError=false），
+             目的是让"质量"从主观判断变成可量化、可跟踪的数字，而非给现有代码加一道会红的墙 -->
+        <jacoco.version>0.8.12</jacoco.version>
+        <spotbugs.plugin.version>4.10.4.1</spotbugs.plugin.version>
+        <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
+        <checkstyle.version>10.26.1</checkstyle.version>
     </properties>
 
     <!-- 依赖版本集中锁定：子模块/依赖引入时不写版本，继承此处锁定值 -->
@@ -241,6 +249,103 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+
+            <!-- 质量门禁 1/3：JaCoCo 覆盖率。
+                 prepare-agent 在 test 阶段挂字节码探针（自动写 surefire 的 argLine），report 生成
+                 target/site/jacoco/index.html + jacoco.csv。不配 check 规则 → 覆盖率只被度量、不被拦截，
+                 这样"核心链路覆盖率 X%"是可长期跟踪的数字，而不是某天突然变红的门 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <!-- 只排除无业务逻辑的样板代码（启动类 + 纯数据载体），
+                         不排除 service/controller —— 那会把真正要度量的东西藏起来 -->
+                    <excludes>
+                        <exclude>com/exam/ExamOnlineApplication.class</exclude>
+                        <exclude>com/exam/**/dto/**</exclude>
+                        <exclude>com/exam/**/entity/**</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 质量门禁 2/3：SpotBugs 静态缺陷检测（空指针、资源泄漏、并发误用、等值约定破坏等）。
+                 failOnError=false 是渐进策略的核心：查出缺陷仍然 BUILD SUCCESS，缺陷只进报告不算账，
+                 避免一次性给既有代码戴上会红的枷锁 -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.plugin.version}</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Medium</threshold>
+                    <failOnError>false</failOnError>
+                    <xmlOutput>true</xmlOutput>
+                    <htmlOutput>true</htmlOutput>
+                    <!-- 排除 Spring DI 等框架既定模式导致的必然误报，每条排除都写明理由；
+                         真实缺陷（无用赋值/重复分支/响应头注入/装箱拆箱）一律不排除 -->
+                    <excludeFilterFile>config/spotbugs/exclude.xml</excludeFilterFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>spotbugs-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 质量门禁 3/3：Checkstyle 编码规范（命名/import 卫生/空块/花括号等）。
+                 规则集见 config/checkstyle/checkstyle.xml —— 按本工程既有风格裁剪，
+                 不套 Sun/Google 全量规范（那在本项目会产生海量与风格无关的噪音）。
+                 failOnViolation=false：违规列出但不阻断，供逐步收敛 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle.plugin.version}</version>
+                <configuration>
+                    <configLocation>config/checkstyle/checkstyle.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failOnViolation>false</failOnViolation>
+                    <violationSeverity>warning</violationSeverity>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <linkXRef>false</linkXRef>
+                </configuration>
+                <dependencies>
+                    <!-- 插件默认绑定的 checkstyle 版本较旧，显式抬到 10.x（支持 JDK17 语法与 record） -->
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>checkstyle-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
