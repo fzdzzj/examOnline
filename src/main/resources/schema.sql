@@ -385,3 +385,22 @@ CREATE TABLE IF NOT EXISTS score_review (
     CONSTRAINT uk_review_exam_student UNIQUE (exam_id, student_id),
     KEY idx_review_exam_status (exam_id, status)
 );
+
+
+-- =============================================================
+-- 死信消息留档表（add-dlq-observability-and-replay, W15）：
+-- 重投前先落档，status=REPLAYED|PARKED；idx_dlq_status_time 支撑按状态/时间排查。
+-- 存量库手工执行 docker/mysql/migrations/2026-W15-add-dlq-messages.sql。
+-- =============================================================
+CREATE TABLE IF NOT EXISTS exam_dlq_messages (
+    id            BIGINT       NOT NULL AUTO_INCREMENT,
+    queue         VARCHAR(128) NOT NULL,
+    payload       LONGTEXT     NOT NULL,
+    headers_json  TEXT                  DEFAULT NULL,
+    retry_count   INT          NOT NULL DEFAULT 0,
+    replay_count  INT          NOT NULL DEFAULT 0,
+    status        VARCHAR(16)  NOT NULL,
+    error_message VARCHAR(512)          DEFAULT NULL,
+    created_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_dlq_status_time (status, created_time)
+);

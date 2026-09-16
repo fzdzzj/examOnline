@@ -124,9 +124,13 @@ public class ExamSubmitConsumer {
             if (retried < retryMax) {
                 republishWithRetryCount(message, retried + 1);
                 channel.basicAck(tag, false);   // 原消息确认，由重发消息继续重试
+                metrics.recordMqRetry("retried");
                 log.warn("交卷消息处理失败，第 {}/{} 次重试: tag={} 原因={}",
                         retried + 1, retryMax, tag, e.getMessage());
             } else {
+                // 进死信前先计数：exhausted 与 entered 都要有，告警看 entered，劣化看 retried
+                metrics.recordMqRetry("exhausted");
+                metrics.countDlqEntered();
                 channel.basicNack(tag, false, false);   // 重试耗尽 → 经 DLX 进死信队列，人工排查
                 log.error("交卷消息重试耗尽，进入死信队列: tag={} retry={}", tag, retried, e);
             }

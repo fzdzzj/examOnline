@@ -63,10 +63,11 @@ class AlertAssetsTest {
             "by", "le", "and", "or", "unless", "on", "ignoring", "offset", "bool",
             "label_values", "job", "status", "type", "endpoint", "area");
 
-    /** 期望的 7 条告警规则名（与提案一致，防止规则被误删/误改） */
+    /** 期望的 9 条告警规则名（P3 七条 + DLQ 两条，防止规则被误删/误改） */
     private static final Set<String> EXPECTED_ALERTS = Set.of(
             "ExamOnlineDown", "SubmitFailureRatioHigh", "SubmitLatencyP99High",
-            "MqSubmitQueueBacklog", "RateLimitDegraded", "Http5xxRatioHigh", "AntiCheatEventSpike");
+            "MqSubmitQueueBacklog", "RateLimitDegraded", "Http5xxRatioHigh", "AntiCheatEventSpike",
+            "MqDlqBacklog", "MqSubmitRetryExhausted");
 
     // ---------- 断言 1：资产文件存在且语法可解析 ----------
 
@@ -86,7 +87,7 @@ class AlertAssetsTest {
     // ---------- 断言 2：每条告警规则结构完整 ----------
 
     @Test
-    @DisplayName("7 条告警规则结构完整（alert/expr/for/severity/summary/description）")
+    @DisplayName("9 条告警规则结构完整（alert/expr/for/severity/summary/description）")
     void alertRulesAreComplete() throws IOException {
         List<Map<String, Object>> rules = alertRules();
         Set<String> names = new HashSet<>();
@@ -122,6 +123,10 @@ class AlertAssetsTest {
                 "SubmitLatencyP99High 必须用 histogram_quantile(0.99, ...)");
         assertTrue(exprs.get("SubmitFailureRatioHigh").contains("clamp_min"),
                 "SubmitFailureRatioHigh 必须用 clamp_min 防除零");
+        assertTrue(exprs.get("MqDlqBacklog").contains(">= 0 and"),
+                "MqDlqBacklog 必须带 `>= 0 and` 前置条件排除 -1 哨兵值");
+        assertTrue(exprs.get("MqSubmitRetryExhausted").contains("exam_mq_dlq_entered_total"),
+                "MqSubmitRetryExhausted 必须盯 exam_mq_dlq_entered_total");
     }
 
     // ---------- 断言 3：规则与面板中的指标名全部命中已知集合 ----------
@@ -139,6 +144,9 @@ class AlertAssetsTest {
         assertTrue(known.contains("exam_mq_submit_queue_depth"));
         assertTrue(known.contains("exam_anticheat_events_total"));
         assertTrue(known.contains("exam_ratelimit_degraded_total"));
+        assertTrue(known.contains("exam_mq_dlq_depth"));
+        assertTrue(known.contains("exam_mq_retry_total"));
+        assertTrue(known.contains("exam_mq_dlq_entered_total"));
 
         List<String> exprs = allExpressions();
         assertFalse(exprs.isEmpty(), "未提取到任何表达式，说明资产文件可能为空");

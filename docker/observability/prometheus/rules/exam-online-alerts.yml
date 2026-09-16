@@ -1,4 +1,4 @@
-# 告警规则：7 条，指标名只取能从 BusinessMetrics 常量确定性推导的 Prometheus 名
+# 告警规则：9 条，指标名只取能从 BusinessMetrics 常量确定性推导的 Prometheus 名
 # + actuator 标准指标（up、http_server_requests_seconds_count）。
 # 指标名与代码对齐由 src/test/java/com/exam/observability/AlertAssetsTest.java 守住。
 groups:
@@ -72,3 +72,25 @@ groups:
         annotations:
           summary: "防作弊事件突增"
           description: "近 5 分钟防作弊事件超过 50 次（当前 {{ $value }}），建议人工核查是否存在异常行为模式。"
+
+      - alert: MqDlqBacklog
+        # `>= 0 and` 前置条件：该 Gauge 在无 RabbitAdmin 时返回 -1 哨兵值，必须排除（照抄 MqSubmitQueueBacklog）
+        # 稳态深度应为 0，任何持续非 0 都是真实缺陷
+        expr: exam_mq_dlq_depth >= 0 and exam_mq_dlq_depth > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "交卷死信队列非空"
+          description: "exam.submit.dead.queue 持续 5 分钟深度大于 0（当前 {{ $value }}）。死信稳态应为 0，需查明交卷消费失败原因并考虑有界重投，而非清空队列。"
+
+      - alert: MqSubmitRetryExhausted
+        # 有消息进死信就报（稳态应为 0）；不要等积压很多才报
+        expr: increase(exam_mq_dlq_entered_total[10m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "交卷消息重试耗尽进入死信"
+          description: "近 10 分钟存在交卷消息因重试耗尽进入死信（exam_mq_dlq_entered_total 增量 {{ $value }}），需排查消费失败根因。"
+

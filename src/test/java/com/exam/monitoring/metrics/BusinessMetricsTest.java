@@ -99,4 +99,28 @@ class BusinessMetricsTest {
         assertTrue(text.contains("exam_sweep_duplicate_detected_total{task=\"state-advance\"} 1.0"),
                 "state-advance 重复扫描计数=1 应按 task tag 导出");
     }
+
+    @Test
+    @DisplayName("死信指标：深度 Gauge(-1) + retry/entered Counter 正确导出")
+    void dlqMetricsExported() {
+        PrometheusMeterRegistry registry = registry();
+        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+
+        metrics.recordMqRetry("retried");
+        metrics.recordMqRetry("retried");
+        metrics.recordMqRetry("exhausted");
+        metrics.countDlqEntered();
+
+        String text = registry.scrape();
+        assertTrue(text.contains("exam_mq_dlq_depth -1.0"),
+                "无 RabbitAdmin 时死信深度应导出 -1");
+        assertTrue(text.contains("exam_mq_retry_total{outcome=\"retried\"} 2.0")
+                        || text.contains("exam_mq_retry_total{outcome=\"retried\",} 2.0"),
+                "retried 计数=2 应导出");
+        assertTrue(text.contains("exam_mq_retry_total{outcome=\"exhausted\"} 1.0")
+                        || text.contains("exam_mq_retry_total{outcome=\"exhausted\",} 1.0"),
+                "exhausted 计数=1 应导出");
+        assertTrue(text.contains("exam_mq_dlq_entered_total 1.0"),
+                "进入死信计数=1 应导出");
+    }
 }

@@ -32,7 +32,8 @@ import org.springframework.context.annotation.Configuration;
  *   <li>生产者 confirm（application.yml publisher-confirm-type=correlated）——消息确认到达 broker 才算发送成功；</li>
  *   <li>消费者手动 ack——批量落库成功后才确认，未确认消息断连后自动重投；</li>
  *   <li>消费端幂等——casFillAnswers 仅在 answers 为 NULL 时写入，重复投递业务只执行一次；</li>
- *   <li>死信兜底——重试超过阈值进死信队列，可人工排查（spec「失败进死信」场景）。</li>
+ *   <li>死信兜底——重试超过阈值进死信队列；死信队列不设 TTL/max-length（不以过期代替兜底），
+ *       稳态深度应为 0；可观测与有界重投见 DlqReplayService / BusinessMetrics（add-dlq-observability-and-replay）。</li>
  * </ul>
  */
 @Configuration

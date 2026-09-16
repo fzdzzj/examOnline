@@ -54,8 +54,16 @@ public class BusinessMetrics {
     private static final String RATE_LIMIT_DEGRADED = "exam.ratelimit.degraded";
     /** 指标名：重复扫描检测到下游已处理（Counter，按 task tag 区分 sweep / state-advance） */
     private static final String SWEEP_DUPLICATE_DETECTED = "exam.sweep.duplicate_detected";
+    /** 指标名：交卷死信队列积压深度（Gauge） */
+    private static final String DLQ_DEPTH = "exam.mq.dlq.depth";
+    /** 指标名：交卷 MQ 重试结果计数（Counter，tag outcome=retried/exhausted） */
+    private static final String MQ_RETRY = "exam.mq.retry";
+    /** 指标名：交卷消息进入死信次数（Counter） */
+    private static final String DLQ_ENTERED = "exam.mq.dlq.entered";
     /** 交卷队列名：与 RabbitMqConfig.SUBMIT_QUEUE 保持一致（避免依赖具体实现类） */
     private static final String SUBMIT_QUEUE = "exam.submit.queue";
+    /** 交卷死信队列名：与 RabbitMqConfig.SUBMIT_DLQ 保持一致 */
+    private static final String SUBMIT_DLQ = "exam.submit.dead.queue";
 
     private final MeterRegistry registry;
     private final ObjectProvider<RabbitAdmin> rabbitAdmin;
@@ -69,6 +77,9 @@ public class BusinessMetrics {
     private final Map<String, Counter> rateLimitDegradedCounters = new ConcurrentHashMap<>();
     /** 重复扫描计数按 task 缓存：sweep / state-advance 各自一个 Counter */
     private final Map<String, Counter> sweepDuplicateCounters = new ConcurrentHashMap<>();
+    /** MQ 重试结果计数按 outcome 缓存：retried / exhausted 各自一个 Counter */
+    private final Map<String, Counter> mqRetryCounters = new ConcurrentHashMap<>();
+    private final Counter dlqEnteredCounter;
 
     public BusinessMetrics(MeterRegistry registry, ObjectProvider<RabbitAdmin> rabbitAdmin) {
         this.registry = registry;
@@ -86,8 +97,15 @@ public class BusinessMetrics {
                 .register(registry);
 
         // Gauge：供外部采集端实时读取当前队列积压深度（Prometheus 抓取时才调用 provider）
-        Gauge.builder(SUBMIT_QUEUE_DEPTH, this::submitQueueDepthProvider)
+        Gauge.builder(SUBMIT_QUEUE_DEPTH, () -> queueDepthOf(SUBMIT_QUEUE))
                 .description("交卷 MQ 队列当前积压消息数，经 RabbitAdmin 实时查询；-1 表示查询失败/无 RabbitMQ")
+                .register(registry);
+        Gauge.builder(DLQ_DEPTH, () -> queueDepthOf(SUBMIT_DLQ))
+                .description("交卷死信队列当前积压消息数，经 RabbitAdmin 实时查询；-1 表示查询失败/无 RabbitMQ")
+                .register(registry);
+
+        this.dlqEnteredCounter = Counter.builder(DLQ_ENTERED)
+                .description("交卷消息因重试耗尽进入死信队列的次数")
                 .register(registry);
     }
 
@@ -126,7 +144,7 @@ public class BusinessMetrics {
                 .increment();
     }
 
-/**
+    /**
      * 重复扫描计数：扫描命中但下游已处理（业务竞态跳过 / CAS 0 行 / filled==0）时递增。
      * tag task 取值：{@code sweep}（交卷兜底扫描）、{@code state-advance}（状态机推进）。
      * 诊断用指标，不是故障信号——单实例下应≈0；持续增长说明多实例在重复扫。
@@ -139,14 +157,31 @@ public class BusinessMetrics {
                 .increment();
     }
 
+    /**
+     * 记录一次交卷 MQ 重试结果。
+     * @param outcome {@code retried}（重发回原队列）或 {@code exhausted}（重试耗尽即将进死信）
+     */
+    public void recordMqRetry(String outcome) {
+        mqRetryCounters.computeIfAbsent(outcome, o -> Counter.builder(MQ_RETRY)
+                .tag("outcome", o)
+                .description("交卷 MQ 重试结果计数：retried=重发成功，exhausted=重试耗尽")
+                .register(registry))
+                .increment();
+    }
+
+    /** 交卷消息进入死信队列计数：在 basicNack 前调用，使「进死信」成为可聚合事件而非仅 ERROR 日志。 */
+    public void countDlqEntered() {
+        dlqEnteredCounter.increment();
+    }
+
     /** Gauge 数据源：查 RabbitAdmin 队列信息取消息数；无 RabbitAdmin 或查询异常返回 -1（表示不可用，而非 0 积压）。 */
-    private double submitQueueDepthProvider() {
+    private double queueDepthOf(String queue) {
         RabbitAdmin admin = rabbitAdmin.getIfAvailable();
         if (admin == null) {
             return -1;
         }
         try {
-            var info = admin.getQueueInfo(SUBMIT_QUEUE);
+            var info = admin.getQueueInfo(queue);
             return info == null ? 0 : info.getMessageCount();
         } catch (Exception e) {
             return -1;
