@@ -51,16 +51,19 @@ public class ExamService {
     private final PaperMapper paperMapper;
     private final ExamStateMachineService stateMachineService;
     private final ExamSnapshotService snapshotService;
+    private final AbsenceService absenceService;
     private final ObjectMapper objectMapper;
 
     public ExamService(ExamMapper examMapper, PaperService paperService,
                        PaperMapper paperMapper, ExamStateMachineService stateMachineService,
-                       ExamSnapshotService snapshotService, ObjectMapper objectMapper) {
+                       ExamSnapshotService snapshotService, AbsenceService absenceService,
+                       ObjectMapper objectMapper) {
         this.examMapper = examMapper;
         this.paperService = paperService;
         this.paperMapper = paperMapper;
         this.stateMachineService = stateMachineService;
         this.snapshotService = snapshotService;
+        this.absenceService = absenceService;
         this.objectMapper = objectMapper;
     }
 
@@ -220,6 +223,12 @@ public class ExamService {
      * 教师提前结束（spec「教师提前结束」需求，§1.5）：进行中 → 已结束，
      * 并置位 force_end 标记——阶段 5 交卷链路据此对未交卷学生按最后自动保存强制交卷。
      * 状态迁移经乐观锁 CAS：并发重复提前结束仅一次成功，另一次收到 409 状态冲突。
+     *
+     * <p>缺考标记锚定「进行中→已结束」这一迁移：全仓库两条结束路径（自然到点 autoAdvance
+     * 与教师提前结束 forceEnd）都必须触发 {@link AbsenceService#markAbsence}——
+     * 必须先 CAS 迁状态、再标记缺考（应考名单 = 班级当前学生 − 有答卷者）。
+     * 漏标路径不可自愈：autoAdvance 只扫 status=IN_PROGRESS 的考试，被 force-end 置为
+     * ENDED 后永远不会再被扫到，故此处必须显式标记；INSERT IGNORE 幂等，重复触发不产生重复行。
      */
     @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
     @Transactional(rollbackFor = Exception.class)
@@ -229,6 +238,8 @@ public class ExamService {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "仅进行中的考试允许提前结束");
         }
         stateMachineService.casTransition(id, Exam.STATUS_IN_PROGRESS, Exam.STATUS_ENDED);
+        // 先迁状态再标记缺考：缺考标记锚定「进行中→已结束」迁移，与自然结束分支同语义
+        absenceService.markAbsence(id);
         // CAS SQL 只负责状态与版本；force_end 标记单独置位，避免状态迁移 SQL 被附加语义
         examMapper.update(null, Wrappers.<Exam>lambdaUpdate()
                 .eq(Exam::getId, id)
