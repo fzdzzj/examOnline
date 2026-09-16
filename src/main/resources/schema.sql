@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_time         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted           TINYINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     CONSTRAINT uk_users_username UNIQUE (username)
 );
 
@@ -25,6 +26,7 @@ CREATE TABLE IF NOT EXISTS roles (
     level      INT         NOT NULL,
     created_time DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted TINYINT     NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     CONSTRAINT uk_roles_code UNIQUE (code)
 );
 
@@ -34,6 +36,7 @@ CREATE TABLE IF NOT EXISTS permissions (
     name       VARCHAR(64) NOT NULL,
     created_time DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted TINYINT     NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     CONSTRAINT uk_permissions_code UNIQUE (code)
 );
 
@@ -41,6 +44,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
     id      BIGINT NOT NULL AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
     CONSTRAINT uk_user_roles UNIQUE (user_id, role_id),
     CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_user_roles_role FOREIGN KEY (role_id) REFERENCES roles (id)
@@ -50,6 +54,7 @@ CREATE TABLE IF NOT EXISTS role_permissions (
     id            BIGINT NOT NULL AUTO_INCREMENT,
     role_id       BIGINT NOT NULL,
     permission_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
     CONSTRAINT uk_role_permissions UNIQUE (role_id, permission_id),
     CONSTRAINT fk_role_permissions_role FOREIGN KEY (role_id) REFERENCES roles (id),
     CONSTRAINT fk_role_permissions_perm FOREIGN KEY (permission_id) REFERENCES permissions (id)
@@ -66,6 +71,7 @@ CREATE TABLE IF NOT EXISTS invite_codes (
     created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted   TINYINT     NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     CONSTRAINT uk_invite_codes_code UNIQUE (code)
 );
 
@@ -88,6 +94,7 @@ CREATE TABLE IF NOT EXISTS questions (
     created_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted     TINYINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     KEY idx_questions_created_by (created_by)         -- 教师个人题库列表
 );
 
@@ -101,6 +108,7 @@ CREATE TABLE IF NOT EXISTS tags (
     created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted   TINYINT     NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     KEY idx_tags_type (type)
 );
 
@@ -109,6 +117,7 @@ CREATE TABLE IF NOT EXISTS question_tags (
     id          BIGINT NOT NULL AUTO_INCREMENT,
     question_id BIGINT NOT NULL,
     tag_id      BIGINT NOT NULL,
+    PRIMARY KEY (id),
     CONSTRAINT uk_question_tags UNIQUE (question_id, tag_id),
     KEY idx_question_tags_tag (tag_id)              -- 按标签筛题目
 );
@@ -126,6 +135,7 @@ CREATE TABLE IF NOT EXISTS papers (
     created_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted     TINYINT       NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     KEY idx_papers_created_by (created_by)
 );
 
@@ -136,6 +146,7 @@ CREATE TABLE IF NOT EXISTS paper_questions (
     question_id BIGINT       NOT NULL,
     number      INT          NOT NULL,
     score       DECIMAL(5,1) NOT NULL,
+    PRIMARY KEY (id),
     CONSTRAINT uk_paper_question UNIQUE (paper_id, question_id),
     CONSTRAINT uk_paper_number UNIQUE (paper_id, number),
     KEY idx_paper_questions_question (question_id)
@@ -151,6 +162,7 @@ CREATE TABLE IF NOT EXISTS paper_snapshots (
     version        INT          NOT NULL DEFAULT 1, -- 预留版本号：同一试卷不重复生成，当前固定 1
     created_by     BIGINT       NOT NULL,
     created_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     KEY idx_paper_snapshots_paper (paper_id)
 );
 
@@ -184,6 +196,7 @@ CREATE TABLE IF NOT EXISTS exams (
     created_time       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted         TINYINT      NOT NULL DEFAULT 0,  -- 软删（§7.7：仅未开始可删，历史可追溯）
+    PRIMARY KEY (id),
     KEY idx_exams_created_by (created_by),               -- 教师考试列表
     KEY idx_exams_status (status)                        -- 定时任务扫表：按状态 + 时间窗筛选待推进考试
 );
@@ -198,6 +211,7 @@ CREATE TABLE IF NOT EXISTS exam_snapshots (
     version      INT      NOT NULL DEFAULT 1,  -- 一场考试只生成一次快照，当前固定 1
     created_by   BIGINT   NOT NULL,
     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_exam_snapshots_exam UNIQUE (exam_id)  -- exam_id 唯一：发布是快照生成的唯一时机
 );
 
@@ -231,6 +245,7 @@ CREATE TABLE IF NOT EXISTS exam_submissions (
     partial_graded  TINYINT  NOT NULL DEFAULT 0, -- 1=部分批改：存在未批简答（允许发布，未批按 0 分，§7.5）
     created_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_exam_student UNIQUE (exam_id, student_id),  -- 三重幂等之一：一人一场至多一条答卷
     KEY idx_submissions_sweep (status, deadline_time),        -- 兜底扫描：按状态筛进行中/已交卷未落库
     KEY idx_submissions_exam_submit (exam_id, submit_time),
@@ -260,6 +275,7 @@ CREATE TABLE IF NOT EXISTS subjective_grades (
     version          INT          NOT NULL DEFAULT 0, -- 乐观锁版本号：并发批改 CAS 护栏
     created_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_subjective_grades UNIQUE (submission_id, question_id),
     KEY idx_subjective_exam_question (exam_id, question_id)   -- 工作台：同题列出全部学生
 );
@@ -273,6 +289,7 @@ CREATE TABLE IF NOT EXISTS score_audit_logs (
     reason       VARCHAR(512)          DEFAULT NULL, -- 撤回原因（撤回必填）
     detail       VARCHAR(512)          DEFAULT NULL, -- 摘要（如发布人数/失败跳过明细）
     created_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     KEY idx_score_audit_exam (exam_id)
 );
 
@@ -284,6 +301,7 @@ CREATE TABLE IF NOT EXISTS exam_submit_dedups (
     submission_id BIGINT   NOT NULL,
     submit_type   TINYINT  NOT NULL DEFAULT 1,
     created_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_submit_dedup UNIQUE (exam_id, student_id)  -- 同一场考试同一学生仅记录首次提交
 );
 
@@ -297,6 +315,7 @@ CREATE TABLE IF NOT EXISTS exam_behavior_logs (
     severity     TINYINT     NOT NULL DEFAULT 1, -- 1提示 2警告 3严重
     event_time   DATETIME    NOT NULL,
     created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     KEY idx_behavior_exam_student (exam_id, student_id),
     KEY idx_behavior_exam_time (exam_id, event_time)
 );
@@ -324,6 +343,7 @@ CREATE TABLE IF NOT EXISTS classes (
     created_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted   TINYINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     KEY idx_classes_teacher (teacher_id)             -- 教师班级列表
 );
 
@@ -335,6 +355,7 @@ CREATE TABLE IF NOT EXISTS user_class (
     user_id     BIGINT   NOT NULL,
     class_id    BIGINT   NOT NULL,
     joined_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 入班时间（转班时刷新为转班时间）
+    PRIMARY KEY (id),
     CONSTRAINT uk_user_class UNIQUE (user_id, class_id),
     KEY idx_class_id (class_id)
 );
@@ -347,6 +368,7 @@ CREATE TABLE IF NOT EXISTS exam_absence (
     status       TINYINT  NOT NULL DEFAULT 0,    -- 0=已标记缺考（预留扩展）
     marked_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     -- 一处一场一条缺考（幂等）；与迁移文件同名，避免与 exam_submissions 的 uk_exam_student 在 H2 全局约束名碰撞
     CONSTRAINT uk_absence_exam_student UNIQUE (exam_id, student_id),
     KEY idx_exam (exam_id)
@@ -358,6 +380,7 @@ CREATE TABLE IF NOT EXISTS exam_candidates (
     exam_id      BIGINT   NOT NULL,
     student_id   BIGINT   NOT NULL,
     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_candidate_exam_student UNIQUE (exam_id, student_id),
     KEY idx_candidates_exam (exam_id)
 );
@@ -382,6 +405,7 @@ CREATE TABLE IF NOT EXISTS score_review (
     handle_time DATETIME              DEFAULT NULL,
     handler_id  BIGINT                DEFAULT NULL,
     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_review_exam_student UNIQUE (exam_id, student_id),
     KEY idx_review_exam_status (exam_id, status)
 );
@@ -402,5 +426,6 @@ CREATE TABLE IF NOT EXISTS exam_dlq_messages (
     status        VARCHAR(16)  NOT NULL,
     error_message VARCHAR(512)          DEFAULT NULL,
     created_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     KEY idx_dlq_status_time (status, created_time)
 );
