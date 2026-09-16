@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.ObjectProvider;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -122,5 +123,32 @@ class BusinessMetricsTest {
                 "exhausted 计数=1 应导出");
         assertTrue(text.contains("exam_mq_dlq_entered_total 1.0"),
                 "进入死信计数=1 应导出");
+    }
+
+    @Test
+    @DisplayName("数据保留行数：按 table+action tag 的 Counter 正确导出")
+    void retentionRowsCounterExported() {
+        PrometheusMeterRegistry registry = registry();
+        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+
+        metrics.countRetentionRows("exam_behavior_logs", "candidate", 5);
+        metrics.countRetentionRows("exam_behavior_logs", "candidate", 2);
+        metrics.countRetentionRows("exam_behavior_logs", "deleted", 3);
+        metrics.countRetentionRows("exam_submit_dedups", "candidate", 1);
+        // dry-run 语义：amount<=0 不打点
+        metrics.countRetentionRows("score_audit_logs", "deleted", 0);
+
+        String text = registry.scrape();
+        assertTrue(text.contains("exam_retention_rows_total{action=\"candidate\",table=\"exam_behavior_logs\"} 7.0")
+                        || text.contains("exam_retention_rows_total{table=\"exam_behavior_logs\",action=\"candidate\"} 7.0"),
+                "behavior candidate 计数=7 应导出");
+        assertTrue(text.contains("exam_retention_rows_total{action=\"deleted\",table=\"exam_behavior_logs\"} 3.0")
+                        || text.contains("exam_retention_rows_total{table=\"exam_behavior_logs\",action=\"deleted\"} 3.0"),
+                "behavior deleted 计数=3 应导出");
+        assertTrue(text.contains("exam_retention_rows_total{action=\"candidate\",table=\"exam_submit_dedups\"} 1.0")
+                        || text.contains("exam_retention_rows_total{table=\"exam_submit_dedups\",action=\"candidate\"} 1.0"),
+                "dedup candidate 计数=1 应导出");
+        assertFalse(text.contains("score_audit_logs"),
+                "amount=0 时不应注册 score_audit_logs 指标");
     }
 }

@@ -60,6 +60,8 @@ public class BusinessMetrics {
     private static final String MQ_RETRY = "exam.mq.retry";
     /** 指标名：交卷消息进入死信次数（Counter） */
     private static final String DLQ_ENTERED = "exam.mq.dlq.entered";
+    /** 指标名：数据保留候选/删除行数（Counter，tag table + action） */
+    private static final String RETENTION_ROWS = "exam.retention.rows";
     /** 交卷队列名：与 RabbitMqConfig.SUBMIT_QUEUE 保持一致（避免依赖具体实现类） */
     private static final String SUBMIT_QUEUE = "exam.submit.queue";
     /** 交卷死信队列名：与 RabbitMqConfig.SUBMIT_DLQ 保持一致 */
@@ -80,6 +82,8 @@ public class BusinessMetrics {
     /** MQ 重试结果计数按 outcome 缓存：retried / exhausted 各自一个 Counter */
     private final Map<String, Counter> mqRetryCounters = new ConcurrentHashMap<>();
     private final Counter dlqEnteredCounter;
+    /** 保留策略行数计数：key = table|action */
+    private final Map<String, Counter> retentionRowCounters = new ConcurrentHashMap<>();
 
     public BusinessMetrics(MeterRegistry registry, ObjectProvider<RabbitAdmin> rabbitAdmin) {
         this.registry = registry;
@@ -172,6 +176,24 @@ public class BusinessMetrics {
     /** 交卷消息进入死信队列计数：在 basicNack 前调用，使「进死信」成为可聚合事件而非仅 ERROR 日志。 */
     public void countDlqEntered() {
         dlqEnteredCounter.increment();
+    }
+
+    /**
+     * 数据保留行数：按 table + action 打点。
+     * action=candidate 记候选行数；action=deleted 记实际删除行数（dry-run 下不应调用 deleted）。
+     * @param amount 本次递增的行数（<=0 时忽略）
+     */
+    public void countRetentionRows(String table, String action, long amount) {
+        if (amount <= 0 || table == null || action == null) {
+            return;
+        }
+        String key = table + "|" + action;
+        retentionRowCounters.computeIfAbsent(key, k -> Counter.builder(RETENTION_ROWS)
+                        .tag("table", table)
+                        .tag("action", action)
+                        .description("数据保留策略候选/删除行数，按 table 与 action")
+                        .register(registry))
+                .increment(amount);
     }
 
     /** Gauge 数据源：查 RabbitAdmin 队列信息取消息数；无 RabbitAdmin 或查询异常返回 -1（表示不可用，而非 0 积压）。 */

@@ -3,6 +3,7 @@ package com.exam.submission.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.exam.submission.dto.AbnormalBehaviorStat;
 import com.exam.submission.entity.ExamBehaviorLog;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -27,4 +28,19 @@ public interface ExamBehaviorLogMapper extends BaseMapper<ExamBehaviorLog> {
             + "GROUP BY student_id")
     List<AbnormalBehaviorStat> selectAbnormalStats(@Param("examId") Long examId,
                                                    @Param("minSeverity") int minSeverity);
+
+    /**
+     * 按考试统计行为日志行数（保留策略试算）。
+     * WHERE 只带 exam_id，命中 idx_behavior_exam_student / idx_behavior_exam_time 最左前缀。
+     */
+    @Select("SELECT COUNT(*) FROM exam_behavior_logs WHERE exam_id = #{examId}")
+    long countByExamId(@Param("examId") Long examId);
+
+    /**
+     * 按考试分批删除行为日志（保留策略）。
+     * <p>WHERE 只带 exam_id（命中 idx_behavior_exam_time (exam_id, event_time) 最左前缀），
+     * 故意不用 created_time：该列无索引，WHERE created_time &lt; ? 会全表扫描。
+     */
+    @Delete("DELETE FROM exam_behavior_logs WHERE exam_id = #{examId} LIMIT #{limit}")
+    int deleteByExamIdBatch(@Param("examId") Long examId, @Param("limit") int limit);
 }

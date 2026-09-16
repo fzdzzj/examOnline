@@ -153,6 +153,19 @@ exam:
     # 置 false 则异常上抛（fail-close），Redis 故障时核心链路快速失败。
     fail-open: ${RATE_LIMIT_FAIL_OPEN:true}
 
+  retention:
+    # 数据保留策略（add-data-retention）：按考试生命周期清理三张辅助表。
+    # 硬口径「宁可不删，不可错删」——默认关闭 + 默认 dry-run，真删须显式双开并会打启动 WARN。
+    # 目标表：exam_behavior_logs / exam_submit_dedups / score_audit_logs（仅按 exam_id 删，命中既有索引）。
+    # 不清理业务事实；不纳入 exam_dlq_messages（无 exam_id）。不声称磁盘释放。
+    enabled: false
+    dry-run: true
+    retention-days: 180
+    batch-size: 1000
+    max-batches-per-run: 20
+    max-exams-per-run: 100
+    cron: "0 30 3 * * *"
+
 management:
   endpoints:
     web:
