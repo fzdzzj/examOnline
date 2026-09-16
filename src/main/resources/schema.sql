@@ -366,6 +366,11 @@ CREATE TABLE IF NOT EXISTS exam_candidates (
 -- status 0待处理 1处理中 2已同意 3已驳回（0/1 视为"进行中"，隐藏成绩期间命中）；
 -- 唯一索引 uk_review_exam_student 一场一学生限 1 次（幂等兜底，索引名规避与 exam_submissions 的
 -- uk_exam_student 在 H2 全局约束名碰撞）；idx_review_exam_status 支撑教师按考试/状态查复核清单。
+-- created_time 必须保留：补列而不是删实体字段。
+-- MybatisPlusConfig 全局 MetaObjectHandler.insertFill 自动填充 createdTime，
+-- 全库 19 个实体 / 18 张表都依此约定，score_review 不能成为唯一例外。
+-- 存量库另需执行 docker/mysql/migrations/2026-W15-add-score-review-created-time.sql
+-- （CREATE TABLE IF NOT EXISTS 不会为已存在的表补列）。
 CREATE TABLE IF NOT EXISTS score_review (
     id          BIGINT       NOT NULL AUTO_INCREMENT,
     exam_id     BIGINT       NOT NULL,
@@ -376,6 +381,7 @@ CREATE TABLE IF NOT EXISTS score_review (
     apply_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     handle_time DATETIME              DEFAULT NULL,
     handler_id  BIGINT                DEFAULT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_review_exam_student UNIQUE (exam_id, student_id),
     KEY idx_review_exam_status (exam_id, status)
 );

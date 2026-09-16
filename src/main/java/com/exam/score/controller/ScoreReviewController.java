@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -44,7 +43,7 @@ public class ScoreReviewController {
     /** 教师按考试查复核清单（含状态与处理结果）。 */
     @GetMapping("/api/exams/{examId}/score-reviews")
     @RequirePermission("exam:manage")
-    public ApiResponse<List<ScoreReview>> listByExam(@RequestParam Long examId) {
+    public ApiResponse<List<ScoreReview>> listByExam(@PathVariable Long examId) {
         return ApiResponse.success(scoreReviewService.listByExam(examId));
     }
 
