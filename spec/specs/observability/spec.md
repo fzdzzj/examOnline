@@ -1,9 +1,10 @@
 # observability 规范
 
-> 能力域：可观测性（阶段 8，W10；阶段 11，W13 补告警与面板）。
-> 来源：`spec/changes/archive/add-performance-deepening` 合入（指标导出、自定义业务指标、指标与请求关联）+ `spec/changes/archive/add-slow-sql-and-rate-limit` 合入（慢 SQL 识别、慢 SQL 与请求关联）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（异步链路请求关联）+ `spec/changes/archive/add-alerting-and-dashboards` 合入（指标驱动的告警、观测面板）。
+> 能力域：可观测性（阶段 8，W10；阶段 11，W13 补告警与面板；阶段 14 补死信指标与告警）。
+> 来源：`spec/changes/archive/add-performance-deepening` 合入（指标导出、自定义业务指标、指标与请求关联）+ `spec/changes/archive/add-slow-sql-and-rate-limit` 合入（慢 SQL 识别、慢 SQL 与请求关联）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（异步链路请求关联）+ `spec/changes/archive/add-alerting-and-dashboards` 合入（指标驱动的告警、观测面板）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信队列的指标与告警覆盖）。
 > 实施注记：慢 SQL 阈值 key 为 `exam.monitor.slow-sql-threshold-ms`（默认 1000）；拆解思路是「指标定方向、日志定个案」——指标发现异常，再用 requestId 到日志里定位具体那一条。
 > 观测栈注记：抓取配置与告警规则在 `docker/observability/`（独立编排片段，**不并入主 `docker-compose.yml`**）；规则只使用能从 `BusinessMetrics` 常量确定性推导的指标名，刻意不写 `hikaricp_connections_*`（dynamic-datasource 下未实测）。**静态正确性由 `AlertAssetsTest` 守住；动态行为（抓取成功、告警 firing、面板出图）需 Docker 运行后人工验收**。
+> 实施注记（阶段 14）：规则名 `MqDlqBacklog` / `MqSubmitRetryExhausted`；指标 `exam.mq.dlq.depth` / `exam.mq.retry` / `exam.mq.dlq.entered`；静态由 `AlertAssetsTest` 守住，动态仍属遗留 #4/#6。
 
 ## Requirements
 
@@ -214,3 +215,52 @@ WHEN 查看总览
 THEN 可看到交卷量与成功率、交卷时延分位、MQ 队列积压、限流降级、HTTP 5xx 与 JVM 资源
 
 AND 可按应用维度筛选
+
+---
+
+### Requirement: 死信队列的指标与告警覆盖
+
+WHEN 系统为异步链路配置指标与告警,
+
+系统 SHALL 覆盖消息的**最终去处**（死信队列），而不仅覆盖其入队处，且 SHALL 保证新增告警所用的指标名可从代码常量确定性推导。
+
+#### Scenario: 最终去处有指标
+
+GIVEN 交卷消息经主队列进入死信队列
+
+WHEN 指标采集端抓取
+
+THEN 主队列与死信队列各有独立的深度指标
+
+AND 消息离开主队列进入死信后，死信深度指标反映该事实
+
+#### Scenario: 规则引用的指标名必须可推导
+
+GIVEN 新增一条告警规则
+
+WHEN 校验其表达式引用的指标名
+
+THEN 每个自定义业务指标名都能在指标常量定义处找到
+
+AND 该一致性由自动化测试守住
+
+#### Scenario: 指标不可用时告警不误报
+
+GIVEN 死信队列深度指标在队列不可查询时返回哨兵值
+
+WHEN 告警规则求值
+
+THEN 规则排除该哨兵值
+
+AND 不因指标不可用而产生误报
+
+#### Scenario: 观测面板覆盖死信
+
+GIVEN 观测面板展示交卷异步链路
+
+WHEN 查看面板
+
+THEN 死信队列深度有独立展示格
+
+AND 面板引用的数据源与数据源配置一致
+
