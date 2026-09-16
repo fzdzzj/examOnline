@@ -4,6 +4,18 @@
 
 ---
 
+## 现状（2026-09-16 指导 agent 复核，覆盖提案里过时的句子）
+
+- HEAD：`7df48ac762a002af062f371ba22677360d088109`。工作分支 `feature/add-performance-deepening-readwrite`。
+- **阶段 12 已归档**（`force-end` 会 `markAbsence`）。阶段 2 的 `concurrentEndMarksAbsenceOnce` **必须**走「一线程 `force-end` + 一线程 `autoAdvance()`」，**禁止**再用「两条都走 autoAdvance」的替代路径。
+- 锁洞仍在，且比提案措辞更紧：`ExamSubmitService.java:119` 是 `.setIfAbsent(lockKey, UUID.randomUUID().toString(), ...)`，**token 没有赋给局部变量**；`:170` 仍是 `redisTemplate.delete(lockKey)`。修法必须先 `String token = UUID.randomUUID().toString()` 再 `setIfAbsent(lockKey, token, ...)`，`finally` 才能按 token 解锁。不要假设已经有名为 `token` 的变量。
+- `CacheMutexLoader` 的 Lua compare-and-delete 仍在（约 L48-50、L159-160）。`RedisLockHelper` **尚不存在**。
+- 最多修复尝试 **1 次**：新用例按预期红了就修产品代码一次；再红就停，把红因写进回报，不要放宽断言。
+- **不要改** `spec/**`（含本变更的 `tasks.json` 勾选、阶段 12 archive、13/14/15 提案正文）。勾选与归档是下一轮收口的事。
+- **不要改** `schema.sql` / `pom.xml` / `docker/` / `docs/`。
+
+---
+
 ## 任务
 
 在 `D:\code\examOnline` 这个 Java 17 + Spring Boot 3.5.5 单体项目上，实施已审批的变更提案 `spec/changes/add-multi-instance-sweep-safety/`。
@@ -22,7 +34,7 @@
 2. **不新增任何依赖**。`pom.xml` 不得出现 shedlock / quartz / redisson / curator。本提案明确"刻意不加分布式调度锁"，引入调度中间件等于推翻提案。
 3. **不要用 `Thread.sleep` 凑时序**。并发用例用 `CountDownLatch` 让两线程同时起跑，照抄既有 `ExamTakingIntegrationTest.threeWayRaceSubmitsOnlyOnce` 的起跑模式。
 4. **断言不要用全局计数**。H2 数据跨用例保留，`ArgumentCaptor` 捕获消息后必须按 `(examId, studentId)` 过滤，只用本用例新建的数据做断言。
-5. **`ExamSubmitService` 只改 `finally` 一处**（锁释放），不改幂等主流程、不改 `doSubmit` 的 CAS/MQ 顺序。
+5. **`ExamSubmitService` 只允许两处**：① `setIfAbsent` 前把 UUID 赋给局部变量 `token`；② `finally` 按 token 解锁。不改幂等主流程、不改 `doSubmit` 的 CAS/MQ 顺序。
 6. **`CacheMutexLoader` 的行为必须逐字不变**（它是缓存击穿保护，属性能路径）。只把内联 Lua 换成共享助手。
 7. **`@Transactional(rollbackFor = Exception.class)`** 是本项目统一写法，新增的事务方法照此写。
 8. 包/表命名坑：`class` 是关键字 → 包 `com.exam.clazz`、实体 `ClassEntity`、表 `classes`。
@@ -38,7 +50,7 @@
 
 **允许修改**：
 - `src/main/java/com/exam/common/cache/CacheMutexLoader.java`（改调共享助手，行为不变）
-- `src/main/java/com/exam/taking/service/ExamSubmitService.java`（仅 `finally` 的锁释放）
+- `src/main/java/com/exam/taking/service/ExamSubmitService.java`（捕获 lock token + `finally` 按 token 解锁）
 - `src/main/java/com/exam/monitoring/metrics/BusinessMetrics.java`（新增重复扫描计数）
 - `src/main/java/com/exam/taking/service/ExamSweepService.java`（仅类注释 + 埋点）
 - `src/main/java/com/exam/exam/service/ExamStateMachineService.java`（仅类注释 + 埋点）
@@ -71,7 +83,7 @@ cd /d/code/examOnline
 **阶段 1 — 锁**
 - 从 `CacheMutexLoader` 抽出那段 Lua：`if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end`，放进 `RedisLockHelper.unlock(key, token)`；可再加 `tryLock(key, token, ttl)` 统一加锁写法。
 - `CacheMutexLoader` 改为调用助手，删掉内联 Lua 与私有 unlock 方法。
-- `ExamSubmitService.doSubmit` 的 `finally`：`redisTemplate.delete(lockKey)` → 按 token 解锁（token 在 `setIfAbsent` 时已生成，此前从未被使用）。TTL = `exam.taking.submit.lock-ttl-seconds`（默认 30）。
+- `ExamSubmitService.doSubmit`：先 `String token = UUID.randomUUID().toString()`，再 `setIfAbsent(lockKey, token, ...)`；`finally` 从 `redisTemplate.delete(lockKey)` 改为按 token 解锁。TTL = `exam.taking.submit.lock-ttl-seconds`（默认 30）。
 - **必须写明注释**：TTL 到期后锁可能已易主，无条件 `del` 会删掉别人的锁，单飞语义直接被破坏。
 - 定性要诚实：这**不构成数据错误**（CAS + 唯一索引仍保证一次交卷），修它是为了让"三路竞态收敛为一个执行流"这层语义名副其实、并避免 TTL 过期后多线程同时进锁区打 DB/MQ。
 
@@ -79,8 +91,7 @@ cd /d/code/examOnline
 `MultiInstanceSweepSafetyTest` 继承 `IntegrationTestBase`（`@SpringBootTest` + MockMvc + H2 + 真实 Redis db15），`@MockitoBean RabbitTemplate`，用两个线程同构模拟双实例：
 - `concurrentSweepForcesSubmitOnce`：造一份超时答卷 → 两线程同时 `sweepService.sweep()` → 该 `(examId, studentId)` 只有一条已交卷、`submit_type` 唯一、MQ 只发 1 条属于它的消息。
 - `concurrentSweepRepublishesWithoutDuplicating`：造"已交卷但 `answers` 为 NULL"的答卷 → 两线程同时 `sweep()` → 消息可被重复投递，但驱动消费者落库后 `answers` 只写一次（消费端 `casFillAnswers` 幂等），最终与草稿一致。
-- `concurrentEndMarksAbsenceOnce`：同一场已结束考试，两线程分别走 `force-end` 与 `autoAdvance()` → `exam_absence` 该考试下每个 student 恰好一行（`uk_absence_exam_student` + `INSERT IGNORE`）。
-  - 注意：本用例依赖"`force-end` 也会标记缺考"。**若阶段 12 的 `add-post-exam-closure-e2e` 尚未落地，这条路径就是当前缺陷**——此时请把该用例改成"两条都会标记的路径并发"（例如两个线程都走 `autoAdvance`），并在回报里说明你做了这个替代，不要假装 `force-end` 已修。
+- `concurrentEndMarksAbsenceOnce`：同一场绑定班级的考试，两线程分别走 `force-end` 与 `autoAdvance()` → `exam_absence` 该考试下每个 student 恰好一行（`uk_absence_exam_student` + `INSERT IGNORE`）。阶段 12 已落地，**禁止**改成两条都走 `autoAdvance`。
 - `concurrentAutoAdvanceAdvancesOnce`：同一场到期考试，两线程同时 `autoAdvance()` → 状态只迁一次（另一路 CAS 0 行静默跳过）、`version` 只 +1。
 
 **阶段 3 — 策略显式化 + 可观测**

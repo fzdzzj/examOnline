@@ -16,11 +16,10 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，阶段 13、14、15，**均待实施**）：
+- 进行中变更（`spec/changes/`，阶段 14、15，**均待实施**）：
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 |
 |---|---|---|---|
-| `add-multi-instance-sweep-safety` | 13 | 修复 SETNX 锁解锁未校验持有者 + 并发扫描只生效一次的证据 + 多实例策略显式化 + 重复扫描可观测 | reliability |
 | `add-dlq-observability-and-replay` | 14 | 死信队列深度指标 + 重试/进死信计数 + 2 条告警规则与面板 + 有界可审计的死信重投入口（先留档再重投） | reliability + observability |
 | `add-data-retention` | 15 | 按考试生命周期的数据保留策略（默认关闭 + 默认只试算 + 分批有界删除 + 只用既有索引） | data-access |
 
@@ -38,13 +37,13 @@ spec/
 | 8 | `performance` | `add-performance-deepening` | 8 |
 | 9 | `data-access` | `add-performance-deepening` | 8 |
 | 10 | `observability` | `add-performance-deepening`、`add-slow-sql-and-rate-limit`、`add-mq-trace-and-capacity`、`add-alerting-and-dashboards` | 8、8.1、10、11 |
-| 11 | `reliability` | `add-slow-sql-and-rate-limit`、`add-rate-limit-resilience` | 8.1、10 |
+| 11 | `reliability` | `add-slow-sql-and-rate-limit`、`add-rate-limit-resilience`、`add-multi-instance-sweep-safety` | 8.1、10、13 |
 | 12 | `data-consistency` | `add-tx-rollback-consistency` | 8.2 |
 | 13 | `class-management` | `add-class-and-post-exam-closure` | 9 |
 | 14 | `absence-makeup` | `add-class-and-post-exam-closure`、`add-post-exam-closure-e2e` | 9、12 |
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 
-- 已归档变更（`spec/changes/archive/`，共 15 个，阶段 1–9、12 已收尾，阶段 10–11 已归档；13–15 仍进行中）：
+- 已归档变更（`spec/changes/archive/`，共 16 个，阶段 1–9、12–13 已收尾，阶段 10–11 已归档；14–15 仍进行中）：
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
@@ -63,6 +62,7 @@ spec/
 | `add-rate-limit-resilience` | 10 | 限流器 Redis 异常降级（fail-open）+ 降级可观测 | W12 |
 | `add-alerting-and-dashboards` | 11 | Prometheus 抓取与告警规则 + Grafana provisioning 与面板 + 配置资产静态校验 | W13 |
 | `add-post-exam-closure-e2e` | 12 | 考后闭环端到端验收 + force-end 漏标缺考修复 + `score_review.created_time` 补列 + 删除 `@Sql` 自建表 + `listByExam` 的 `@PathVariable` 修正 | W13-W14 |
+| `add-multi-instance-sweep-safety` | 13 | 交卷锁按 token 解锁 + 两线程并发扫描只生效一次证据 + 刻意不加调度锁 + `exam.sweep.duplicate_detected`（含消费者 filled==0） | W14 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
@@ -96,7 +96,7 @@ spec/
 | 8 | performance | 缓存三防（穿透/击穿/雪崩）、热点只读缓存 |
 | 9 | data-access | 读写分离、读己之写、数据生命周期（保留与清理） |
 | 10 | observability | 指标导出、自定义业务指标、慢 SQL 识别与请求关联、异步链路请求关联、指标驱动的告警、观测面板 |
-| 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度、限流器降级与可观测 |
+| 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度、限流器降级与可观测、定时扫描多实例幂等、交卷锁按持有者解锁 |
 | 12 | data-consistency | 事务显式回滚、受检异常转换 |
 | 13 | class-management | 班级 CRUD、学生入班/转班、班级学生列表 |
 | 14 | absence-makeup | 缺考标记（含自然到点与 force-end 两条结束路径）、补考独立记录、补考成绩规则合并、考后闭环端到端一致性 |
@@ -121,7 +121,7 @@ spec/
 | 10 | add-rate-limit-resilience | reliability（限流器降级与可观测） | W12 | 已归档 |
 | 11 | add-alerting-and-dashboards | observability（告警与面板） | W13 | 已归档（动态验收遗留） |
 | 12 | add-post-exam-closure-e2e | absence-makeup（闭环端到端验收 + 缺考路径修复） | W13-W14 | 已归档 |
-| 13 | add-multi-instance-sweep-safety | reliability（定时扫描多实例安全 + 锁解锁修正） | W14 | 已提案，待实施 |
+| 13 | add-multi-instance-sweep-safety | reliability（定时扫描多实例安全 + 锁解锁修正） | W14 | 已归档 |
 | 14 | add-dlq-observability-and-replay | reliability + observability（死信可见性、告警与重投） | W14-W15 | 已提案，待实施 |
 | 15 | add-data-retention | data-access（数据保留与清理） | W15 | 已提案，待实施 |
 
@@ -140,3 +140,4 @@ spec/
 - `docs/需求决策记录.md` — 80+ 项场景决策（开发逐条对照）
 - `docs/面试版实施方案.md` — v3 大厂面试级实施方案（开发蓝本）
 - `docs/指导Agent交接文档.md` — 交接说明（注意：其中「阶段 8.1/8.2/9 已完成归档」的描述直到 2026-09-14 才真正成立）
+
