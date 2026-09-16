@@ -1,0 +1,49 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：把观测栈真跑起来（W16）",
+    "task": "主栈 + 应用 + Prometheus/Grafana，抓取 UP，9 条规则 loaded",
+    "steps": [
+      { "step": "docker compose up -d（主栈 MySQL/Redis/RabbitMQ）+ docker compose -f docker/observability/docker-compose.observability.yml up -d — 证据：docs/observability-runtime-evidence.md 环境表（exam-mysql/redis/rabbitmq + exam-prometheus:9090 / exam-grafana:3000）", "completed": true },
+      { "step": "宿主 8080 启动 examOnline（dev profile）；确认 GET /actuator/prometheus 200 且含 exam_ 前缀指标 — 证据：同文件阶段 1，actuator 200 且含 exam_*", "completed": true },
+      { "step": "Prometheus Targets 中 job=exam-online 为 UP（curl localhost:9090/api/v1/targets） — 证据：health=up，scrapeUrl=host.docker.internal:8080/actuator/prometheus", "completed": true },
+      { "step": "Prometheus Rules 组 exam-online-alerts 含 9 个 alert 且健康（含 MqDlqBacklog / MqSubmitRetryExhausted） — 证据：rules_loaded=9，每条 health=ok", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：能点着的规则必须 firing（W16）",
+    "task": "禁止改 YAML 阈值；点不着就留 PromQL 反证",
+    "steps": [
+      { "step": "ExamOnlineDown：停应用 ≥1m 后 /api/v1/alerts 出现 firing，再拉起应用 — 证据：2026-09-16T14:11:26.074Z ExamOnlineDown=firing；up{job=\"exam-online\"}=0", "completed": true },
+      { "step": "RateLimitDegraded：停 Redis / 等价写失败路径，打带 @RateLimit 的接口，等 for 1m，确认 firing 后恢复 — 证据：maxmemory 逼写失败；exam_ratelimit_degraded_total{endpoint=\"pull-paper\"}→65；RateLimitDegraded=firing", "completed": true },
+      { "step": "对其余 7 条：按 proposal 点亮策略尝试真实流量/运维动作；成功则贴 firing 摘要；失败则贴 PromQL 即时查询结果 + 原因（禁止改 expr/for） — 另 3 条真实 firing：MqSubmitRetryExhausted / MqDlqBacklog / AntiCheatEventSpike；未点着（已记 PromQL 反证，未改阈值）：Http5xxRatioHigh / SubmitFailureRatioHigh / MqSubmitQueueBacklog / SubmitLatencyP99High。详见 docs/observability-runtime-evidence.md", "completed": true },
+      { "step": "等待期间不要用 Thread.sleep 写进产品代码；用 PromQL 或人工等待 for 窗口 — 证据：未改 Java；SubmitLatencyP99High 未用 sleep 凑绿", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：面板出图（W16）",
+    "task": "总览面板在真实数据源下不是整页 No data",
+    "steps": [
+      { "step": "Grafana 3000 打开 Exam Online 总览（uid 与 provisioning 一致） — 证据：面板 uid=exam-online-overview，datasource uid=prometheus", "completed": true },
+      { "step": "至少 up/JVM/HTTP 相关格有时间序列；交卷格在无流量时可以是 0，但不能是数据源错误 — 证据：up/JVM/HTTP/限流/防作弊/死信有序列；交卷相关可为 0 而非 No data", "completed": true },
+      { "step": "用 Grafana API 或截图/查询证明 datasource uid=prometheus 且 query 成功 — 证据：同文件阶段 3 查询表（up≈1、jvm_memory_used_bytes、http rate、exam_mq_dlq_depth）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：证据落盘（W16）",
+    "task": "把「见过它响」写成可复查文件",
+    "steps": [
+      { "step": "新增 docs/observability-runtime-evidence.md：环境、9 条规则逐条 firing 或未点着原因、面板结论、明确未声称 DLQ 端到端 — 证据：ff7e981 与该文件；5 firing / 4 未点着", "completed": true },
+      { "step": "更新 docker/observability/README.md：9 条规则、启动顺序、动态已验证/未点着的诚实边界；删掉过时的「7 条」「6 个指标」 — 证据：README「告警规则（9 条）」与「动态已验证 / 诚实边界」表", "completed": true },
+      { "step": "可选 scripts/observability-runtime-check.ps1：只读检查 targets/alerts，不改规则 — 证据：scripts/observability-runtime-check.ps1 存在", "completed": true },
+      { "step": "不改告警 YAML 的 expr/for、不改面板 PromQL、不改 Java — 证据：证据文件「明确没有声称的事」；实施 commit 仅为 docs(observability)", "completed": true }
+    ],
+    "passes": true
+  }
+]

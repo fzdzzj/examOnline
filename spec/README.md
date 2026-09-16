@@ -16,11 +16,11 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，阶段 16，已提案待实施）：
+- 进行中变更（`spec/changes/`，阶段 17，已提案待实施）：
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 |
 |---|---|---|---|
-| `add-observability-runtime-evidence` | 16 | 观测栈运行时证据（告警/面板/真 broker 等动态验收，补齐静态资产之后的运行时闭环） | observability |
+| `fix-schema-mysql-pk` | 17 | schema.sql 为 AUTO_INCREMENT 补主键（MySQL 8 可建库；存量迁移脚本；约定测试） | data-access |
 
 - 已合入规范（`spec/specs/`，共 15 个能力域）：
 
@@ -35,14 +35,14 @@ spec/
 | 7 | `anti-cheat` | `add-anti-cheat` | 7 |
 | 8 | `performance` | `add-performance-deepening` | 8 |
 | 9 | `data-access` | `add-performance-deepening`、`add-data-retention` | 8、15 |
-| 10 | `observability` | `add-performance-deepening`、`add-slow-sql-and-rate-limit`、`add-mq-trace-and-capacity`、`add-alerting-and-dashboards`、`add-dlq-observability-and-replay` | 8、8.1、10、11、14 |
+| 10 | `observability` | `add-performance-deepening`、`add-slow-sql-and-rate-limit`、`add-mq-trace-and-capacity`、`add-alerting-and-dashboards`、`add-dlq-observability-and-replay`、`add-observability-runtime-evidence` | 8、8.1、10、11、14、16 |
 | 11 | `reliability` | `add-slow-sql-and-rate-limit`、`add-rate-limit-resilience`、`add-multi-instance-sweep-safety`、`add-dlq-observability-and-replay` | 8.1、10、13、14 |
 | 12 | `data-consistency` | `add-tx-rollback-consistency` | 8.2 |
 | 13 | `class-management` | `add-class-and-post-exam-closure` | 9 |
 | 14 | `absence-makeup` | `add-class-and-post-exam-closure`、`add-post-exam-closure-e2e` | 9、12 |
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 
-- 已归档变更（`spec/changes/archive/`，共 18 个，阶段 1–9、12–15 已收尾，阶段 10–11 已归档；16 进行中）：
+- 已归档变更（`spec/changes/archive/`，共 19 个，阶段 1–9、12–16 已收尾，阶段 10–11 已归档；17 进行中）：
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
@@ -64,11 +64,11 @@ spec/
 | `add-multi-instance-sweep-safety` | 13 | 交卷锁按 token 解锁 + 两线程并发扫描只生效一次证据 + 刻意不加调度锁 + `exam.sweep.duplicate_detected`（含消费者 filled==0） | W14 |
 | `add-dlq-observability-and-replay` | 14 | DLQ 深度/进死信/重试计数 + 2 条告警（`MqDlqBacklog`/`MqSubmitRetryExhausted`）+ 面板一格 + 有界留档重投（ADMIN）；**未做真 broker 端到端** | W14-W15 |
 | `add-data-retention` | 15 | 按考试生命周期清理三张辅助表（默认关闭 + dry-run、零 DDL、按 exam_id 有界删除）；**不纳入** `exam_dlq_messages`；不声称磁盘释放 | W15 |
+| `add-observability-runtime-evidence` | 16 | 观测栈动态验证：Targets UP、9 条 loaded、**5 firing / 4 未点着**、面板出图；证据 `docs/observability-runtime-evidence.md`；**未改阈值**；**未声称** DLQ 端到端 | W16 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
 1. **交卷链路压测未做**（`add-exam-taking` task 8）——JMeter 5000 并发交卷压测与硬指标验收（P99 < 2s / 0 丢单 / 批量落库 < 30s）**未执行**，仓库内无任何 `.jmx` 或压测报告。前置瓶颈已由 `add-mq-trace-and-capacity` 消除：消费并发原先实际为 **1**（手工构造的 `batchContainerFactory` 从未设并发，`RABBIT_CONCURRENCY:2` 对它不生效），现已显式化并可经 `exam.taking.mq.concurrency` 调整；**具体数值仍须真跑压测定稿**，该变更只给可复算的容量模型，不替代实测。
-4. **观测栈动态行为未验证**（`add-alerting-and-dashboards` task 4）——`docker/observability/` 的**配置资产静态正确性**已由 `AlertAssetsTest` 守住（文件可解析、规则结构完整、指标名与 `BusinessMetrics` 常量对齐、面板 uid 与数据源一致，并已做变异验证证明断言非空转），但 **Docker 未运行**，「抓取是否 `UP`、告警是否真的 `firing`、面板是否真的出图」**未在本机验证**，需按 `docker/observability/README.md` 的人工验收步骤确认。**不得声称「已验证告警可用」。**
 5. **补考成绩规则已合入规范但从未接线**（阶段 12 取证时发现）——`MakeupScoreService.finalScore(examId, studentId)` **全仓库零调用**，`mergeFinalScore(...)` 只被纯函数单测调用，也没有任何暴露"补考最终成绩"的接口。而 `spec/specs/absence-makeup/spec.md` 的 `Requirement: 补考成绩规则`（取最高分/取最近一次/取平均分）**已合入并验收**——属"已验收但未接线"的需求。修复需新增接口/查询路径（功能变更），建议单独立项 `add-makeup-final-score`，**不要在本清单里当成已完成**。
 
 6. **死信队列的"真 broker 往返"未验证**（阶段 14 取证时发现）——阶段 14 已补指标/告警/mock 重投（`exam.mq.dlq.depth` / `exam.mq.retry` / `exam.mq.dlq.entered`、告警 `MqDlqBacklog`/`MqSubmitRetryExhausted`、面板「交卷死信队列深度」、`DlqReplayService` 先留档再重投），但**本机 Docker 未运行、集成测试用 mock `RabbitTemplate`**，**「真发一条坏消息 → 真进 DLQ → 真重投回来」仍未验证**。**不得声称死信链路端到端已验证。**
@@ -78,10 +78,11 @@ spec/
 **已收口（从遗留清单移出）**：
 
 1. **限流器对 Redis 异常的兜底** 已由 `add-rate-limit-resilience`（阶段 10）实现——默认 fail-open 放行以保核心链路可用，同时打 ERROR 日志并递增 `exam.ratelimit.degraded` 计数（可按接口维度区分）；另留 `exam.ratelimit.fail-open=false` 切回 fail-close。
-2. **有指标无告警、无面板** 已由 `add-alerting-and-dashboards`（阶段 11）实现——7 条告警规则（含 `RateLimitDegraded`，使 `exam.ratelimit.degraded` 从「埋了没人看」变为「有告警值守」）+ Grafana 数据源与总览面板；规则只使用能从 `BusinessMetrics` 常量确定性推导的指标名，刻意不写 `hikaricp_connections_*`（dynamic-datasource 下未实测，写错会让规则因 `no data` 永久静默）。其**动态验证**转为上述遗留第 4 条。
+2. **有指标无告警、无面板** 已由 `add-alerting-and-dashboards`（阶段 11）实现——7 条告警规则（含 `RateLimitDegraded`，使 `exam.ratelimit.degraded` 从「埋了没人看」变为「有告警值守」）+ Grafana 数据源与总览面板；规则只使用能从 `BusinessMetrics` 常量确定性推导的指标名，刻意不写 `hikaricp_connections_*`（dynamic-datasource 下未实测，写错会让规则因 `no data` 永久静默）。其**动态验证**已由阶段 16 收口（见下条）。
 
 3. **考后闭环缺端到端串联验收** 已由 `add-post-exam-closure-e2e`（阶段 12）收口——曾是真问题：阶段 9 各环节有独立测试，但没有「建班→结束→缺考→补考→批改发布→复核」整链；且 `force-end` 曾漏标缺考（状态已 ENDED 后定时扫描无法自愈）。现由 `PostExamClosureIntegrationTest` 9 条用例覆盖，两条结束路径均 `markAbsence`。
 4. **缺考/补考真实链路仅 Mockito、以及 `@Sql` 掩盖缺表 / `score_review` 缺列** 已由阶段 12 收口——曾是真问题：`ClassManagementIntegrationTest` 的 `@Sql` 自建表掩盖过缺表回归；`score_review` 缺 `created_time` 曾使复核申请 INSERT 在任何环境必失败。现 `src/test` 无 `@Sql`，schema/migration 已补列，`listByExam` 同步改为 `@PathVariable`。
+5. **观测栈动态行为** 已由 `add-observability-runtime-evidence`（阶段 16）收口——Targets `UP`、9 条规则 loaded、**5 条真实 firing**（ExamOnlineDown / RateLimitDegraded / MqSubmitRetryExhausted / MqDlqBacklog / AntiCheatEventSpike）、面板出图；另 **4 条流量/性能阈值未在本机点着**（Http5xxRatioHigh / SubmitFailureRatioHigh / MqSubmitQueueBacklog / SubmitLatencyP99High）且**未改规则凑绿**，已留 PromQL 反证。详见 `docs/observability-runtime-evidence.md`。**不得据此声称遗留 #6（DLQ 真 broker 端到端）已完成**（firing ≠ 重投闭环）。
 
 ## 能力地图（15 个能力域，作为规范组织单位）
 
@@ -96,7 +97,7 @@ spec/
 | 7 | anti-cheat | 切屏检测、行为日志、随机抽题/选项乱序 |
 | 8 | performance | 缓存三防（穿透/击穿/雪崩）、热点只读缓存 |
 | 9 | data-access | 读写分离、读己之写、数据保留与有界清理（三张辅助表 / 零 DDL / 默认双关） |
-| 10 | observability | 指标导出、自定义业务指标、慢 SQL 识别与请求关联、异步链路请求关联、指标驱动的告警、观测面板、死信队列指标与告警 |
+| 10 | observability | 指标导出、自定义业务指标、慢 SQL 识别与请求关联、异步链路请求关联、指标驱动的告警、观测面板、死信队列指标与告警、观测栈动态可验证性 |
 | 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度、限流器降级与可观测、定时扫描多实例幂等、交卷锁按持有者解锁、死信可见性与有界重投 |
 | 12 | data-consistency | 事务显式回滚、受检异常转换 |
 | 13 | class-management | 班级 CRUD、学生入班/转班、班级学生列表 |
@@ -125,6 +126,7 @@ spec/
 | 13 | add-multi-instance-sweep-safety | reliability（定时扫描多实例安全 + 锁解锁修正） | W14 | 已归档 |
 | 14 | add-dlq-observability-and-replay | reliability + observability（死信可见性、告警与重投） | W14-W15 | 已归档（真 broker 往返仍遗留） |
 | 15 | add-data-retention | data-access（数据保留与清理） | W15 | 已归档 |
+| 16 | add-observability-runtime-evidence | observability（观测栈动态可验证性） | W16 | 已归档（5 firing / 4 未点着；#6 仍遗留） |
 
 ## 工作流
 
