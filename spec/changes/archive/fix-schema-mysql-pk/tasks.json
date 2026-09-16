@@ -1,0 +1,34 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：schema.sql 25 张表补 PRIMARY KEY（W16）",
+    "task": "新库 MySQL 8 能建全",
+    "steps": [
+      { "step": "schema.sql 每一张含 AUTO_INCREMENT 的表补 PRIMARY KEY (id)，保留既有 UNIQUE/KEY，不删约束、不加列 — 证据：83bc9ca；grep 计数 AUTO_INCREMENT=25 / PRIMARY KEY (id)=25，一表一键，主键行置于 UNIQUE 之前", "completed": true },
+      { "step": "exam_dlq_messages 与 2026-W15 迁移脚本对齐（那边已有 PRIMARY KEY） — 证据：schema.sql L429 与 2026-W15-add-dlq-messages.sql 均为 PRIMARY KEY (id)，W16 脚本头注明重复执行报 1068 可忽略", "completed": true },
+      { "step": "不引入 COMMENT 等 H2 吃不了的语法 — 证据：diff 仅新增 PRIMARY KEY (id) 行，无 COMMENT；H2 全量 210 全绿", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：存量库迁移（W16）",
+    "task": "已建库可手工补主键",
+    "steps": [
+      { "step": "新增 docker/mysql/migrations/2026-W16-add-primary-keys.sql，对 25 张表 ALTER TABLE ADD PRIMARY KEY (id) — 证据：83bc9ca 新增该文件，25 条 ALTER", "completed": true },
+      { "step": "脚本头写明：新库走 schema.sql；存量库必须手工执行；CREATE TABLE IF NOT EXISTS 不会补主键；重复执行报 Multiple primary key 可忽略 — 证据：脚本头注释含全部四点，另含 1146 预期说明与「不要包在存储过程里掩盖数据库真实状态」", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：约定测试 + 回归（W16）",
+    "task": "H2 全绿，且文本护栏防止再漏主键",
+    "steps": [
+      { "step": "新增测试：读取 classpath:schema.sql，每个含 AUTO_INCREMENT 的 CREATE TABLE 块必须含 PRIMARY KEY；缺一张就红 — 证据：SchemaSqlMysqlCompatibilityTest（com.exam.support，纯 JUnit 无 Spring）；子 agent 做过反向验证（摘掉 exam_dlq_messages 主键变红打印表名后还原）；指导 agent 独立核：grep src/test @Sql 唯一命中为 javadoc 文字，非注解", "completed": true },
+      { "step": "全量测试只增不减全绿（H2）；禁止 @Sql 自建表 — 证据：基线 209 → 收尾 210（+1 即该约定测试），BUILD SUCCESS；指导 agent 独立重跑复核 210 全绿；src/test 无 @Sql 注解", "completed": true },
+      { "step": "不改 Java 实体/Mapper/业务 SQL、不改 pom.xml — 证据：83bc9ca 仅 3 文件（schema.sql / W16 迁移 / 新测试类），161 行纯新增，无 Java 主代码与 pom 改动", "completed": true }
+    ],
+    "passes": true
+  }
+]

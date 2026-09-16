@@ -1,8 +1,9 @@
 # data-access 规范
 
-> 能力域：数据访问（阶段 8 + 15，W9-W10 / W15）。
+> 能力域：数据访问（阶段 8 + 15 + 17，W9-W10 / W15 / W16）。
 > 来源：`spec/changes/archive/add-performance-deepening` 合入（读写分离、读己之写）；
-> `spec/changes/archive/add-data-retention` 合入（数据保留策略与清理边界）。
+> `spec/changes/archive/add-data-retention` 合入（数据保留策略与清理边界）；
+> `spec/changes/archive/fix-schema-mysql-pk` 合入（新库建表 MySQL 8 兼容、AUTO_INCREMENT 必须有主键，83bc9ca）。
 > 实施注记：
 > - 强一致读（答卷详情、成绩查询）**不标** `@DS("slave")`，走默认主库；`@DS("slave")` 只挂在可容忍主从延迟的快照类读上（`PaperSnapshotService`/`ExamSnapshotService`/`GradingQueryService`/`ScoreService` 等）。
 > - 数据保留（`RetentionService`，f42adba）：仅三张辅助表 `exam_behavior_logs` / `exam_submit_dedups` / `score_audit_logs`；删除条件只带 `exam_id`（命中既有索引最左前缀）；**零 DDL**；默认 `enabled=false` + `dry-run=true`；**不纳入** `exam_dlq_messages`（表存在但无 `exam_id`）；用 `end_time` 不用 `updated_time`；**不声称磁盘释放**。单次运行另有 `max-exams-per-run`（默认 100）与候选 `ORDER BY end_time ASC, id ASC` 有界。
@@ -174,3 +175,57 @@ WHEN 选择删除条件
 THEN 不以无索引的时间列作为全局删除条件
 
 AND 该取舍被记录在案
+
+---
+
+### Requirement: 新库建表可在 MySQL 8 执行
+
+WHEN 用正式建表脚本在空的 MySQL 8 实例初始化数据库,
+
+系统 SHALL 使脚本执行成功并建出全部业务表，且 SHALL 与测试所用建表脚本为同一份。
+
+#### Scenario: 空库可建全
+
+GIVEN 一份空的 MySQL 8 库
+
+WHEN 执行 schema.sql
+
+THEN 全部表创建成功
+
+AND 不因 AUTO_INCREMENT 未定义为 key 而失败
+
+#### Scenario: 测试与新库同源
+
+GIVEN 集成测试通过加载 schema.sql 建表
+
+WHEN 新环境使用同一文件
+
+THEN 不会出现「测试绿、MySQL 空库建不起来」
+
+---
+
+### Requirement: AUTO_INCREMENT 列必须有主键
+
+WHEN 在建表定义中使用 AUTO_INCREMENT,
+
+系统 SHALL 同时声明 PRIMARY KEY（或等价的 key），且 SHALL 用自动化手段防止回归。
+
+#### Scenario: 每张自增表都有主键
+
+GIVEN schema.sql 中任意一张含 AUTO_INCREMENT 的表
+
+WHEN 检查其建表块
+
+THEN 同一块内存在 PRIMARY KEY
+
+AND 该性质由测试守住
+
+#### Scenario: 存量库可补主键
+
+GIVEN 已存在但缺少主键的表
+
+WHEN 执行对应迁移脚本
+
+THEN 为 id 补上 PRIMARY KEY
+
+AND 若主键已存在，重复执行失败可忽略且不改业务数据

@@ -16,11 +16,7 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，阶段 17，已提案待实施）：
-
-| 变更 ID | 阶段 | 内容 | 目标能力域 |
-|---|---|---|---|
-| `fix-schema-mysql-pk` | 17 | schema.sql 为 AUTO_INCREMENT 补主键（MySQL 8 可建库；存量迁移脚本；约定测试） | data-access |
+- 进行中变更（`spec/changes/`）：**无**（阶段 17 `fix-schema-mysql-pk` 已实施验收并归档）。
 
 - 已合入规范（`spec/specs/`，共 15 个能力域）：
 
@@ -34,7 +30,7 @@ spec/
 | 6 | `score-management` | `add-grading-score` | 6 |
 | 7 | `anti-cheat` | `add-anti-cheat` | 7 |
 | 8 | `performance` | `add-performance-deepening` | 8 |
-| 9 | `data-access` | `add-performance-deepening`、`add-data-retention` | 8、15 |
+| 9 | `data-access` | `add-performance-deepening`、`add-data-retention`、`fix-schema-mysql-pk` | 8、15、17 |
 | 10 | `observability` | `add-performance-deepening`、`add-slow-sql-and-rate-limit`、`add-mq-trace-and-capacity`、`add-alerting-and-dashboards`、`add-dlq-observability-and-replay`、`add-observability-runtime-evidence` | 8、8.1、10、11、14、16 |
 | 11 | `reliability` | `add-slow-sql-and-rate-limit`、`add-rate-limit-resilience`、`add-multi-instance-sweep-safety`、`add-dlq-observability-and-replay` | 8.1、10、13、14 |
 | 12 | `data-consistency` | `add-tx-rollback-consistency` | 8.2 |
@@ -42,7 +38,7 @@ spec/
 | 14 | `absence-makeup` | `add-class-and-post-exam-closure`、`add-post-exam-closure-e2e` | 9、12 |
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 
-- 已归档变更（`spec/changes/archive/`，共 19 个，阶段 1–9、12–16 已收尾，阶段 10–11 已归档；17 进行中）：
+- 已归档变更（`spec/changes/archive/`，共 20 个，阶段 1–9、12–17 已收尾，阶段 10–11 已归档）：
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
@@ -65,6 +61,7 @@ spec/
 | `add-dlq-observability-and-replay` | 14 | DLQ 深度/进死信/重试计数 + 2 条告警（`MqDlqBacklog`/`MqSubmitRetryExhausted`）+ 面板一格 + 有界留档重投（ADMIN）；**未做真 broker 端到端** | W14-W15 |
 | `add-data-retention` | 15 | 按考试生命周期清理三张辅助表（默认关闭 + dry-run、零 DDL、按 exam_id 有界删除）；**不纳入** `exam_dlq_messages`；不声称磁盘释放 | W15 |
 | `add-observability-runtime-evidence` | 16 | 观测栈动态验证：Targets UP、9 条 loaded、**5 firing / 4 未点着**、面板出图；证据 `docs/observability-runtime-evidence.md`；**未改阈值**；**未声称** DLQ 端到端 | W16 |
+| `fix-schema-mysql-pk` | 17 | schema.sql 25 张表为 AUTO_INCREMENT 补 `PRIMARY KEY (id)`（MySQL 8 空库可建）；存量迁移 `2026-W16-add-primary-keys.sql`；约定测试 `SchemaSqlMysqlCompatibilityTest`；**MySQL 空库真机初始化仍未实测**（证据止于文本护栏 + H2 210 全绿） | W16 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
@@ -74,6 +71,7 @@ spec/
 6. **死信队列的"真 broker 往返"未验证**（阶段 14 取证时发现）——阶段 14 已补指标/告警/mock 重投（`exam.mq.dlq.depth` / `exam.mq.retry` / `exam.mq.dlq.entered`、告警 `MqDlqBacklog`/`MqSubmitRetryExhausted`、面板「交卷死信队列深度」、`DlqReplayService` 先留档再重投），但**本机 Docker 未运行、集成测试用 mock `RabbitTemplate`**，**「真发一条坏消息 → 真进 DLQ → 真重投回来」仍未验证**。**不得声称死信链路端到端已验证。**
 7. **磁盘空间回收不在任何提案范围内**（阶段 15 取证时发现）——MySQL InnoDB 的 `DELETE` 只把页标记为可复用，**文件大小不会变小**；真正回收需 `OPTIMIZE TABLE` 或 `ALTER TABLE ... ENGINE=InnoDB`（离线重写整表、期间锁表），在在线考试系统上属高风险窗口操作。`add-data-retention`（阶段 15）的目标是**控制行数与查询代价**（避免全表扫描与索引膨胀），**不是腾磁盘**。**不得声称"清理后磁盘释放"。**
 8. **`exams` 表没有 `ended_time` 列**（阶段 15 取证时发现）——实际结束时刻无字段记录，`updated_time` 会被任意更新刷新（表达的不是结束时刻）。`add-data-retention` 因此改用 `end_time`（时间窗终点）作为"考试已终结"的代理，误差方向是**晚删而非早删**（`force-end` 提前结束的考试其 `end_time` 仍在未来），属安全选择。若要精确化需新增列（= 迁移），当前不值得。
+9. **MySQL 8 空库真机初始化未实测**（阶段 17 验收时确认）——`fix-schema-mysql-pk` 的证据止于：文本约定测试（`SchemaSqlMysqlCompatibilityTest`，凡 AUTO_INCREMENT 必有 PRIMARY KEY）+ H2 全量 210 全绿。**尚未**在真实空 MySQL 8 实例上执行过 `schema.sql` 并建全 25 张表；`2026-W16-add-primary-keys.sql` 存量迁移也**未在真实存量库跑过**。**不得据此声称「MySQL 8 新环境可启动」已端到端验证**。
 
 **已收口（从遗留清单移出）**：
 
@@ -96,7 +94,7 @@ spec/
 | 6 | score-management | 成绩汇总/发布/撤回/导出 |
 | 7 | anti-cheat | 切屏检测、行为日志、随机抽题/选项乱序 |
 | 8 | performance | 缓存三防（穿透/击穿/雪崩）、热点只读缓存 |
-| 9 | data-access | 读写分离、读己之写、数据保留与有界清理（三张辅助表 / 零 DDL / 默认双关） |
+| 9 | data-access | 读写分离、读己之写、数据保留与有界清理（三张辅助表 / 零 DDL / 默认双关）、新库建表 MySQL 8 兼容（AUTO_INCREMENT 必须有主键） |
 | 10 | observability | 指标导出、自定义业务指标、慢 SQL 识别与请求关联、异步链路请求关联、指标驱动的告警、观测面板、死信队列指标与告警、观测栈动态可验证性 |
 | 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度、限流器降级与可观测、定时扫描多实例幂等、交卷锁按持有者解锁、死信可见性与有界重投 |
 | 12 | data-consistency | 事务显式回滚、受检异常转换 |
@@ -127,6 +125,7 @@ spec/
 | 14 | add-dlq-observability-and-replay | reliability + observability（死信可见性、告警与重投） | W14-W15 | 已归档（真 broker 往返仍遗留） |
 | 15 | add-data-retention | data-access（数据保留与清理） | W15 | 已归档 |
 | 16 | add-observability-runtime-evidence | observability（观测栈动态可验证性） | W16 | 已归档（5 firing / 4 未点着；#6 仍遗留） |
+| 17 | fix-schema-mysql-pk | data-access（新库建表 MySQL 8 兼容） | W16 | 已归档（MySQL 空库真机初始化未实测） |
 
 ## 工作流
 
