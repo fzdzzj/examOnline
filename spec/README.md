@@ -16,11 +16,11 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，阶段 15，待实施）：
+- 进行中变更（`spec/changes/`，阶段 16，已提案待实施）：
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 |
 |---|---|---|---|
-| `add-data-retention` | 15 | 按考试生命周期的数据保留策略（默认关闭 + 默认只试算 + 分批有界删除 + 只用既有索引） | data-access |
+| `add-observability-runtime-evidence` | 16 | 观测栈运行时证据（告警/面板/真 broker 等动态验收，补齐静态资产之后的运行时闭环） | observability |
 
 - 已合入规范（`spec/specs/`，共 15 个能力域）：
 
@@ -34,7 +34,7 @@ spec/
 | 6 | `score-management` | `add-grading-score` | 6 |
 | 7 | `anti-cheat` | `add-anti-cheat` | 7 |
 | 8 | `performance` | `add-performance-deepening` | 8 |
-| 9 | `data-access` | `add-performance-deepening` | 8 |
+| 9 | `data-access` | `add-performance-deepening`、`add-data-retention` | 8、15 |
 | 10 | `observability` | `add-performance-deepening`、`add-slow-sql-and-rate-limit`、`add-mq-trace-and-capacity`、`add-alerting-and-dashboards`、`add-dlq-observability-and-replay` | 8、8.1、10、11、14 |
 | 11 | `reliability` | `add-slow-sql-and-rate-limit`、`add-rate-limit-resilience`、`add-multi-instance-sweep-safety`、`add-dlq-observability-and-replay` | 8.1、10、13、14 |
 | 12 | `data-consistency` | `add-tx-rollback-consistency` | 8.2 |
@@ -42,7 +42,7 @@ spec/
 | 14 | `absence-makeup` | `add-class-and-post-exam-closure`、`add-post-exam-closure-e2e` | 9、12 |
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 
-- 已归档变更（`spec/changes/archive/`，共 17 个，阶段 1–9、12–14 已收尾，阶段 10–11 已归档；15 仍进行中）：
+- 已归档变更（`spec/changes/archive/`，共 18 个，阶段 1–9、12–15 已收尾，阶段 10–11 已归档；16 进行中）：
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
@@ -63,6 +63,7 @@ spec/
 | `add-post-exam-closure-e2e` | 12 | 考后闭环端到端验收 + force-end 漏标缺考修复 + `score_review.created_time` 补列 + 删除 `@Sql` 自建表 + `listByExam` 的 `@PathVariable` 修正 | W13-W14 |
 | `add-multi-instance-sweep-safety` | 13 | 交卷锁按 token 解锁 + 两线程并发扫描只生效一次证据 + 刻意不加调度锁 + `exam.sweep.duplicate_detected`（含消费者 filled==0） | W14 |
 | `add-dlq-observability-and-replay` | 14 | DLQ 深度/进死信/重试计数 + 2 条告警（`MqDlqBacklog`/`MqSubmitRetryExhausted`）+ 面板一格 + 有界留档重投（ADMIN）；**未做真 broker 端到端** | W14-W15 |
+| `add-data-retention` | 15 | 按考试生命周期清理三张辅助表（默认关闭 + dry-run、零 DDL、按 exam_id 有界删除）；**不纳入** `exam_dlq_messages`；不声称磁盘释放 | W15 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
@@ -94,7 +95,7 @@ spec/
 | 6 | score-management | 成绩汇总/发布/撤回/导出 |
 | 7 | anti-cheat | 切屏检测、行为日志、随机抽题/选项乱序 |
 | 8 | performance | 缓存三防（穿透/击穿/雪崩）、热点只读缓存 |
-| 9 | data-access | 读写分离、读己之写、数据生命周期（保留与清理） |
+| 9 | data-access | 读写分离、读己之写、数据保留与有界清理（三张辅助表 / 零 DDL / 默认双关） |
 | 10 | observability | 指标导出、自定义业务指标、慢 SQL 识别与请求关联、异步链路请求关联、指标驱动的告警、观测面板、死信队列指标与告警 |
 | 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度、限流器降级与可观测、定时扫描多实例幂等、交卷锁按持有者解锁、死信可见性与有界重投 |
 | 12 | data-consistency | 事务显式回滚、受检异常转换 |
@@ -123,7 +124,7 @@ spec/
 | 12 | add-post-exam-closure-e2e | absence-makeup（闭环端到端验收 + 缺考路径修复） | W13-W14 | 已归档 |
 | 13 | add-multi-instance-sweep-safety | reliability（定时扫描多实例安全 + 锁解锁修正） | W14 | 已归档 |
 | 14 | add-dlq-observability-and-replay | reliability + observability（死信可见性、告警与重投） | W14-W15 | 已归档（真 broker 往返仍遗留） |
-| 15 | add-data-retention | data-access（数据保留与清理） | W15 | 已提案，待实施 |
+| 15 | add-data-retention | data-access（数据保留与清理） | W15 | 已归档 |
 
 ## 工作流
 

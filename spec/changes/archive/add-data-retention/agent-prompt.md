@@ -4,6 +4,18 @@
 
 ---
 
+## 现状（2026-09-16 指导 agent 复核）
+
+- HEAD：`625f2b8f0b87912e8301e1841b9996dd658e9737`。分支 `feature/add-performance-deepening-readwrite`。
+- 阶段 12–14 **已归档**。进行中只剩本变更。
+- **`exam_dlq_messages` 已存在，但没有 `exam_id`**，索引是 `idx_dlq_status_time (status, created_time)`。按 `exam_id` 删会全表扫描或要加列——都违反「零 DDL + 按考试生命周期」。**本轮不要把它纳入清理目标**。tasks 阶段 3「条件纳入」记为：grep 确认存在后因无 exam_id **明确不纳入**，回报写原因。不要为它写 DELETE。
+- README 遗留 **#7 磁盘回收 / #8 ended_time 已在**。本轮 **不要改 `spec/**`**（含不要勾 tasks.json、不要改 README）。归档时再动。
+- 最多修复尝试 **1 次**。
+- **你必须自己 commit**（一次 `feat`）。提交后 `git rev-parse HEAD`；HEAD 变 unborn 则补 ref，不要 `git update-ref`。
+- `BusinessMetrics` 已有 sweep/DLQ 指标，本轮只加 `exam.retention.rows`，不要动既有计数。
+
+---
+
 ## 任务
 
 在 `D:\code\examOnline` 这个 Java 17 + Spring Boot 3.5.5 单体项目上，实施已审批的变更提案 `spec/changes/add-data-retention/`。
@@ -114,7 +126,7 @@ cd /d/code/examOnline
   - `action=deleted`：实际删除行数（`dry-run=true` 时**恒不递增**）。
 - `purgeOnce()` 按要求埋点，并按 INFO 打一行汇总日志。
 - 类注释明确写出「不清理业务事实」清单与理由（成绩/答卷的可追溯义务、快照只读、关系表是当前归属）。
-- **条件纳入 `exam_dlq_messages`**：若 `spec/changes/archive/` 下已有 `add-dlq-observability-and-replay`（说明阶段 14 已归档、该表已存在），把它一并纳入清理目标；实施前**先 `grep` 确认该表存在**，不存在就不要引用（**不要引用不存在的表**）。
+- **`exam_dlq_messages` 不纳入**：表已存在但无 `exam_id`。按考试删做不到且会违反零 DDL。回报写明「grep 到了、因无 exam_id 不纳入」。
 
 **阶段 4 — 真跑表的证据**
 `DataRetentionIntegrationTest` 继承 `IntegrationTestBase`（H2 + `schema.sql` 唯一来源），造三组数据：
@@ -127,7 +139,7 @@ cd /d/code/examOnline
 - `purgeRemovesOnlyTerminalOldExams`：`dry-run=false` 下调 `purgeOnce()` → (a) 的辅助行全消失、(b) 与 (c) **一行未删**（这条用例同时证明两条边界）。
 - `batchBoundIsRespected`：把 `batch-size` 调小、造超过一批的行数 → 断言单次运行删除量受批数上限约束（不会一次删光），报告数字与实际行数变化一致。
 
-最后：全量回归全绿，与基线对齐；并在 `spec/README.md` 遗留事项登记「磁盘空间回收需 `OPTIMIZE TABLE` / `ALTER TABLE ... ENGINE=InnoDB`（离线重写、锁表），不在本提案范围」。
+最后：全量回归全绿，与基线对齐。遗留 #7 已在 README，**本轮不要改 spec/README.md**。不得声称清理后磁盘释放。
 
 ---
 
