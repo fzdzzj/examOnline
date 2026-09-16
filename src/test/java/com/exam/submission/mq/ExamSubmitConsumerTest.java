@@ -1,6 +1,7 @@
 package com.exam.submission.mq;
 
 import com.exam.common.RequestIdFilter;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.submission.dto.SubmitMessage;
 import com.exam.submission.service.ExamSubmissionService;
 import com.exam.taking.config.RabbitMqConfig;
@@ -55,6 +56,8 @@ class ExamSubmitConsumerTest {
     private ExamSubmissionService submissionService;
     @Mock
     private RabbitTemplate rabbitTemplate;
+    @Mock
+    private BusinessMetrics metrics;
 
     /** 与生产口径一致：Spring 的 ObjectMapper 注册了 JavaTimeModule（支持 LocalDateTime 往返）。 */
     private final ObjectMapper objectMapper = new ObjectMapper()
@@ -66,7 +69,7 @@ class ExamSubmitConsumerTest {
 
     @BeforeEach
     void setUp() {
-        consumer = new ExamSubmitConsumer(submissionService, objectMapper, rabbitTemplate, 3);
+        consumer = new ExamSubmitConsumer(submissionService, objectMapper, rabbitTemplate, metrics, 3);
         channel = mock(Channel.class);
     }
 
@@ -88,6 +91,7 @@ class ExamSubmitConsumerTest {
         verify(channel).basicAck(eq(2L), eq(false));
         verify(channel, never()).basicNack(anyLong(), eq(false), eq(false));
         verify(rabbitTemplate, never()).send(anyString(), anyString(), any(Message.class));
+        verify(metrics, never()).countSweepDuplicateDetected(anyString());
     }
 
     /** 批量失败降级逐条：单条成功照常 ack。 */
@@ -101,6 +105,7 @@ class ExamSubmitConsumerTest {
 
         verify(channel).basicAck(eq(7L), eq(false));
         verify(channel, never()).basicNack(anyLong(), eq(false), eq(false));
+        verify(metrics, never()).countSweepDuplicateDetected(anyString());
     }
 
     /** 单条失败未超阈值：带 x-retry-count 重发回原队列并 ack 原消息。 */
@@ -187,6 +192,32 @@ class ExamSubmitConsumerTest {
         assertNull(MDC.get(RequestIdFilter.MDC_KEY));
     }
 
+
+    /** 整批 filled==0（幂等跳过）：计入 exam.sweep.duplicate_detected(task=sweep)，不是故障。 */
+    @Test
+    void batchIdempotentSkipCountsSweepDuplicate() throws Exception {
+        when(submissionService.fillAnswersBatch(anyList()))
+                .thenReturn(new ExamSubmissionService.FillStats(0, 1));
+
+        consumer.onBatch(List.of(message(3)), channel);
+
+        verify(channel).basicAck(eq(3L), eq(false));
+        verify(metrics).countSweepDuplicateDetected("sweep");
+        verify(channel, never()).basicNack(anyLong(), eq(false), eq(false));
+    }
+
+    /** 逐条降级路径 filled==0：同样计入 sweep 重复扫描信号。 */
+    @Test
+    void perMessageIdempotentSkipCountsSweepDuplicate() throws Exception {
+        when(submissionService.fillAnswersBatch(anyList()))
+                .thenThrow(new RuntimeException("batch failed"))
+                .thenReturn(new ExamSubmissionService.FillStats(0, 1));
+
+        consumer.onBatch(List.of(message(5)), channel);
+
+        verify(channel).basicAck(eq(5L), eq(false));
+        verify(metrics).countSweepDuplicateDetected("sweep");
+    }
     /** 工厂并发/批量/prefetch 取值真实落到工厂字段上，与配置一致（防配置漂移：改错参数被压测才暴露）。
      *  Factory 无 getter，配置是私有字段；直接反射断言（容器对象无消息监听器无法创建，故不断言容器）。 */
     @Test

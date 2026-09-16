@@ -3,6 +3,7 @@ package com.exam.taking.service;
 import com.exam.auth.security.LoginUser;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
+import com.exam.common.cache.RedisLockHelper;
 import com.exam.common.ResponseCode;
 import com.exam.config.ReadYourWriteMark;
 import com.exam.submission.dto.SubmitMessage;
@@ -67,6 +68,8 @@ class ExamSubmitServiceTest {
     private com.exam.anticheat.service.BehaviorEventCollectService eventCollectService;
     @Mock
     private com.exam.monitoring.metrics.BusinessMetrics businessMetrics;
+    @Mock
+    private RedisLockHelper lockHelper;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -78,7 +81,7 @@ class ExamSubmitServiceTest {
     void setUp() {
         submitService = new ExamSubmitService(submissionService, dedupMapper, draftService,
                 sender, redisTemplate, objectMapper, eventCollectService, new ReadYourWriteMark(5000),
-                businessMetrics);
+                businessMetrics, lockHelper);
         ReflectionTestUtils.setField(submitService, "lockTtlSeconds", 30);
 
         // submit 走 SecurityUtil 取当前学生（ThreadLocal），单测中手工注入

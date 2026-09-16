@@ -5,6 +5,7 @@ import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -28,6 +29,16 @@ import java.util.Set;
  * <p>定时推进不依赖外部调度中间件：Spring @Scheduled 固定间隔扫表 +
  * 启动时（ApplicationReadyEvent）补偿扫表，服务重启后停机期间错过的迁移自动补齐。
  *
+ * <p><b>多实例策略（刻意不加分布式调度锁）</b>：多实例下每个实例都会各扫一遍，正确性由下游幂等
+ * （状态 CAS + {@code INSERT IGNORE} + 唯一索引）保证，并有 {@code MultiInstanceSweepSafetyTest} 证明。
+ * 代价是 N 实例重复扫描；换来的是<b>定时兜底不依赖 Redis 可用性</b>——若加调度锁，Redis 故障会让
+ * 状态推进整体停摆，那比重复扫描严重得多。重复扫描可通过
+ * {@code exam.sweep.duplicate_detected}（task=state-advance）观测。
+ *
+ * <p>将来若要省资源的可选路径：Redis 调度锁必须 <b>fail-open</b>
+ * （抢不到锁或 Redis 异常时照常执行，退化回"重复扫但幂等"），
+ * <b>禁止</b>加 fail-close 的锁把兜底能力锁死。
+ *
  * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
@@ -43,10 +54,13 @@ public class ExamStateMachineService {
 
     private final ExamMapper examMapper;
     private final AbsenceService absenceService;
+    private final BusinessMetrics metrics;
 
-    public ExamStateMachineService(ExamMapper examMapper, AbsenceService absenceService) {
+    public ExamStateMachineService(ExamMapper examMapper, AbsenceService absenceService,
+                                   BusinessMetrics metrics) {
         this.examMapper = examMapper;
         this.absenceService = absenceService;
+        this.metrics = metrics;
     }
 
     /**
@@ -124,6 +138,8 @@ public class ExamStateMachineService {
         if (rows > 0) {
             log.info("考试 {} 定时迁移 {} -> {}", exam.getId(), exam.getStatus(), newStatus);
         } else {
+            // 重复扫描可观测：扫描命中但下游 CAS 已处理
+            metrics.countSweepDuplicateDetected("state-advance");
             log.debug("考试 {} 状态已被并发迁移，本轮跳过", exam.getId());
         }
         return rows;

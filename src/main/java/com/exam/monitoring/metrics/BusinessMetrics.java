@@ -52,6 +52,8 @@ public class BusinessMetrics {
     private static final String ANTICHEAT_EVENTS = "exam.anticheat.events";
     /** 指标名：限流器降级计数（Counter，按接口打 tag endpoint；Redis 故障被 fail-open 放行时递增） */
     private static final String RATE_LIMIT_DEGRADED = "exam.ratelimit.degraded";
+    /** 指标名：重复扫描检测到下游已处理（Counter，按 task tag 区分 sweep / state-advance） */
+    private static final String SWEEP_DUPLICATE_DETECTED = "exam.sweep.duplicate_detected";
     /** 交卷队列名：与 RabbitMqConfig.SUBMIT_QUEUE 保持一致（避免依赖具体实现类） */
     private static final String SUBMIT_QUEUE = "exam.submit.queue";
 
@@ -65,6 +67,8 @@ public class BusinessMetrics {
     private final Map<String, Counter> anticheatEventCounters = new ConcurrentHashMap<>();
     /** 限流器降级计数按接口缓存：不同 endpoint 各自注册一个 Counter（tag=endpoint） */
     private final Map<String, Counter> rateLimitDegradedCounters = new ConcurrentHashMap<>();
+    /** 重复扫描计数按 task 缓存：sweep / state-advance 各自一个 Counter */
+    private final Map<String, Counter> sweepDuplicateCounters = new ConcurrentHashMap<>();
 
     public BusinessMetrics(MeterRegistry registry, ObjectProvider<RabbitAdmin> rabbitAdmin) {
         this.registry = registry;
@@ -118,6 +122,19 @@ public class BusinessMetrics {
         rateLimitDegradedCounters.computeIfAbsent(endpoint, ep -> Counter.builder(RATE_LIMIT_DEGRADED)
                 .tag("endpoint", ep)
                 .description("限流器因 Redis 故障降级（fail-open 放行）的计数，按接口维度")
+                .register(registry))
+                .increment();
+    }
+
+/**
+     * 重复扫描计数：扫描命中但下游已处理（业务竞态跳过 / CAS 0 行 / filled==0）时递增。
+     * tag task 取值：{@code sweep}（交卷兜底扫描）、{@code state-advance}（状态机推进）。
+     * 诊断用指标，不是故障信号——单实例下应≈0；持续增长说明多实例在重复扫。
+     */
+    public void countSweepDuplicateDetected(String task) {
+        sweepDuplicateCounters.computeIfAbsent(task, t -> Counter.builder(SWEEP_DUPLICATE_DETECTED)
+                .tag("task", t)
+                .description("重复扫描检测到下游已处理（诊断用，非故障信号），按 task 区分")
                 .register(registry))
                 .increment();
     }

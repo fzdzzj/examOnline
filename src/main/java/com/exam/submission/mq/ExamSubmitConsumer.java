@@ -1,6 +1,7 @@
 package com.exam.submission.mq;
 
 import com.exam.common.RequestIdFilter;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.submission.dto.SubmitMessage;
 import com.exam.submission.service.ExamSubmissionService;
 import com.exam.taking.config.RabbitMqConfig;
@@ -43,14 +44,16 @@ public class ExamSubmitConsumer {
     private final ExamSubmissionService submissionService;
     private final ObjectMapper objectMapper;
     private final RabbitTemplate rabbitTemplate;
+    private final BusinessMetrics metrics;
     private final int retryMax;
 
     public ExamSubmitConsumer(ExamSubmissionService submissionService, ObjectMapper objectMapper,
-                              RabbitTemplate rabbitTemplate,
+                              RabbitTemplate rabbitTemplate, BusinessMetrics metrics,
                               @Value("${exam.taking.mq.retry-max:3}") int retryMax) {
         this.submissionService = submissionService;
         this.objectMapper = objectMapper;
         this.rabbitTemplate = rabbitTemplate;
+        this.metrics = metrics;
         this.retryMax = retryMax;
     }
 
@@ -76,6 +79,10 @@ public class ExamSubmitConsumer {
                 ExamSubmissionService.FillStats stats = submissionService.fillAnswersBatch(parsed);
                 for (Message message : messages) {
                     channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                }
+                // 整批 filled==0：重复投递被消费端幂等跳过（或多实例/补发扫描的可见信号），不是故障
+                if (stats.filled() == 0) {
+                    metrics.countSweepDuplicateDetected("sweep");
                 }
                 log.info("交卷批量落库: 批次={} 落库={} 幂等跳过={}", messages.size(), stats.filled(), stats.skipped());
                 return;
@@ -106,7 +113,9 @@ public class ExamSubmitConsumer {
             SubmitMessage msg = parse(message);
             ExamSubmissionService.FillStats stats = submissionService.fillAnswersBatch(List.of(msg));
             if (stats.filled() == 0) {
-                // 0 行 = 重复投递（已落库，幂等跳过）或答卷缺失（重试无意义）：均不再重试
+                // 0 行 = 重复投递（已落库，幂等跳过）或答卷缺失（重试无意义）：均不再重试。
+                // 重复投递被消费端幂等跳过 = 多实例/补发扫描的可见信号（不是故障）
+                metrics.countSweepDuplicateDetected("sweep");
                 log.warn("交卷消息落库 0 行（重复投递或答卷缺失）: submission={}", msg.getSubmissionId());
             }
             channel.basicAck(tag, false);

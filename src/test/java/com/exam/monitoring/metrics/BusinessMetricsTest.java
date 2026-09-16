@@ -82,4 +82,21 @@ class BusinessMetricsTest {
         assertTrue(text.contains("exam_mq_submit_queue_depth -1.0"),
                 "无 RabbitAdmin 时队列深度应导出 -1（表示不可用而非 0 积压）");
     }
+
+    @Test
+    @DisplayName("重复扫描计数：按 task tag 的 Counter 正确导出")
+    void duplicateSweepCounterExported() {
+        PrometheusMeterRegistry registry = registry();
+        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+
+        metrics.countSweepDuplicateDetected("sweep");
+        metrics.countSweepDuplicateDetected("sweep");
+        metrics.countSweepDuplicateDetected("state-advance");
+
+        String text = registry.scrape();
+        assertTrue(text.contains("exam_sweep_duplicate_detected_total{task=\"sweep\"} 2.0"),
+                "sweep 重复扫描计数=2 应按 task tag 导出");
+        assertTrue(text.contains("exam_sweep_duplicate_detected_total{task=\"state-advance\"} 1.0"),
+                "state-advance 重复扫描计数=1 应按 task tag 导出");
+    }
 }

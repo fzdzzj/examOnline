@@ -2,6 +2,7 @@ package com.exam.taking.service;
 
 import com.exam.anticheat.collector.BehaviorEventTypes;
 import com.exam.anticheat.service.BehaviorEventCollectService;
+import com.exam.common.cache.RedisLockHelper;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.auth.security.SecurityUtil;
@@ -64,6 +65,7 @@ public class ExamSubmitService {
     private final BehaviorEventCollectService eventCollectService;
     private final ReadYourWriteMark readYourWriteMark;
     private final BusinessMetrics metrics;
+    private final RedisLockHelper lockHelper;
 
     @Value("${exam.taking.submit.lock-ttl-seconds:30}")
     private int lockTtlSeconds;
@@ -73,7 +75,8 @@ public class ExamSubmitService {
                              StringRedisTemplate redisTemplate, ObjectMapper objectMapper,
                              BehaviorEventCollectService eventCollectService,
                              ReadYourWriteMark readYourWriteMark,
-                             BusinessMetrics metrics) {
+                             BusinessMetrics metrics,
+                             RedisLockHelper lockHelper) {
         this.submissionService = submissionService;
         this.dedupMapper = dedupMapper;
         this.draftService = draftService;
@@ -83,6 +86,7 @@ public class ExamSubmitService {
         this.eventCollectService = eventCollectService;
         this.readYourWriteMark = readYourWriteMark;
         this.metrics = metrics;
+        this.lockHelper = lockHelper;
     }
 
     /** 学生侧交卷入口：手动交卷与前端倒计时归零强制提交共用。 */
@@ -112,11 +116,15 @@ public class ExamSubmitService {
         }
 
         String answersJson = resolveAnswers(examId, studentId, payloadAnswers);
-
-        // 第一重：SETNX 一次性锁（单飞）——三路竞态并发提交在此收敛为一个执行流
+// 第一重：SETNX 一次性锁（单飞）——三路竞态并发提交在此收敛为一个执行流。
+        // token 必须先赋给局部变量：finally 按 token 解锁；TTL=exam.taking.submit.lock-ttl-seconds（默认 30）。
+        // 为何必须校验 token：TTL 到期后锁可能已易主，无条件 del 会删掉别人的锁，单飞语义直接被破坏。
+        // 诚实定性：误删锁不构成数据错误（CAS + 唯一索引仍保证一次交卷），修它是为了让单飞名副其实、
+        // 并避免 TTL 过期后多线程同时进锁区打 DB/MQ。
         String lockKey = LOCK_PREFIX + examId + ":" + studentId;
+        String token = UUID.randomUUID().toString();
         Boolean locked = redisTemplate.opsForValue()
-                .setIfAbsent(lockKey, UUID.randomUUID().toString(), Duration.ofSeconds(lockTtlSeconds));
+                .setIfAbsent(lockKey, token, Duration.ofSeconds(lockTtlSeconds));
         if (!Boolean.TRUE.equals(locked)) {
             return waitForConcurrentSubmit(examId, studentId);
         }
@@ -166,8 +174,8 @@ public class ExamSubmitService {
             return new SubmitResponse(submission.getId(), examId, studentId,
                     ExamSubmission.STATUS_SUBMITTED, now, submitType);
         } finally {
-            // 主动释放锁（TTL 兜底防持有者崩溃后死锁）
-            redisTemplate.delete(lockKey);
+            // 按 token 安全解锁（TTL 到期后锁可能已易主；无条件 del 会删掉别人的锁）
+            lockHelper.unlock(lockKey, token);
         }
     }
 
