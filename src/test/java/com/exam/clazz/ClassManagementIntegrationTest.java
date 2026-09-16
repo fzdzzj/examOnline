@@ -5,7 +5,6 @@ import com.exam.support.IntegrationTestBase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.jdbc.Sql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,8 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * 班级管理集成测试（spec「班级管理」：班级实体 + 学生入班/转班 + 班级学生列表）。
  *
- * <p>测试库（H2）只加载 schema.sql，classes/user_class 由本类用 @Sql 幂等补建
- * （DDL 与迁移文件 docker/mysql/migrations/2026-W10-add-class.sql 对齐，仅测试环境自举用）。
+ * <p>测试库（H2）由 schema.sql 建全（含 classes/user_class），本类不自行建表。
  *
  * <p>覆盖：
  * <ul>
@@ -27,17 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>班级学生列表（含学号/姓名/入班时间）。</li>
  * </ul>
  */
-@Sql(statements = {
-        // 与迁移文件 2026-W10-add-class.sql 的建表定义一致（H2 单行书写以兼容 @Sql 解析）
-        "CREATE TABLE IF NOT EXISTS classes (id BIGINT NOT NULL AUTO_INCREMENT, name VARCHAR(64) NOT NULL, "
-                + "course_id BIGINT DEFAULT NULL, teacher_id BIGINT NOT NULL, created_by BIGINT NOT NULL, "
-                + "created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "
-                + "updated_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, is_deleted TINYINT NOT NULL DEFAULT 0, "
-                + "KEY idx_classes_teacher (teacher_id))",
-        "CREATE TABLE IF NOT EXISTS user_class (id BIGINT NOT NULL AUTO_INCREMENT, user_id BIGINT NOT NULL, "
-                + "class_id BIGINT NOT NULL, joined_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "
-                + "CONSTRAINT uk_user_class UNIQUE (user_id, class_id), KEY idx_class_id (class_id))"
-})
 class ClassManagementIntegrationTest extends IntegrationTestBase {
 
     @Autowired
