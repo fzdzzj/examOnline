@@ -17,7 +17,7 @@
 1. **工程骨架**：Vite + Vue3 + TS，pnpm；tsconfig 分层（app/config/node）；`@` → `src` 别名；eslint + prettier + vue-tsc type-check + vitest 可跑；
 2. **dev 代理**：`/api` → `http://localhost:8080`。**注意与 CRM 的差异：examOnline 后端路径本身带 `/api` 前缀，代理不得 rewrite 掉 `/api`**（CRM 的 `rewrite: path.replace(/^\/api/,'')` 在此会 404）；
 3. **API 层**：`gen:api` 从 `openapi.yaml` 生成到 `src/api/axios`（@hey-api/client-axios + sdk + typescript）；手写薄封装：请求拦截注入 Bearer、响应拦截统一解包 `ApiResponse`、401 触发 refresh 单飞（并发请求只刷一次）、refresh 失败登出；
-4. **Token 存储与会话**：Access/Refresh 落 localStorage；vuex store 持当前用户与角色；登出调后端黑名单接口并清本地；`must_change_password` 为真时强制跳改密页；
+4. **Token 存储与会话**：Access/Refresh 落 localStorage；vuex store 持当前用户与角色；登出调后端黑名单接口并清本地；
 5. **文件路由 + 布局**：`src/pages` 约定路由；按角色（ADMIN > TEACHER > STUDENT）渲染菜单与路由守卫，越权路由跳 403 页；
 6. **认证页面**：登录、注册（含邀请码）、找回密码（发码 + 重置）、修改密码；错误提示覆盖锁定/限流降级/黑名单等业务错误码；
 7. **冒烟 e2e**：playwright 一条「登录 → 进入首页 → 登出」链路。

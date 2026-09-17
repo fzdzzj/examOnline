@@ -16,11 +16,12 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，共 5 个，**必须按阶段顺序串行执行**，后一个以前一个已合入为前置）：
+- 进行中变更（`spec/changes/`，共 6 个。前端五阶段 19→23 **必须串行**；`add-auth-must-change-password` 是**后端并行轨**，与前端文件零冲突，可插队做也可排在前端系列之后）：
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| `add-frontend-skeleton-auth` | 19 | 前端方向①：`frontend/` 工程骨架（Vue3.5+TS+Vite7+AntD4+Tailwind4+文件路由+vue-query+pnpm）、生成式 API 层、令牌续期单飞、角色路由守卫、认证四页、playwright 冒烟 | frontend（新） | 18（已合入） |
+| `add-auth-must-change-password` | 后端小阶段 | 接通死列 `must_change_password`：`CurrentUserResponse` 暴露 + `AdminInitializer` 仅首次创建置 1 + 改密成功置 0 + 重导契约；零 DDL、不追溯存量、不入 JWT claim、不改拦截器 | authentication | 18（已合入） |
+| `add-frontend-skeleton-auth` | 19 | 前端方向①：`frontend/` 工程骨架（Vue3.5+TS+Vite7+AntD4+Tailwind4+文件路由+vue-query+pnpm）、生成式 API 层、令牌续期单飞、角色路由守卫、认证四页、playwright 冒烟。**原「强制改密前置」Requirement 已移出**（后端语义不可判定，见上一行变更） | frontend（新） | 18（已合入） |
 | `add-frontend-teacher-authoring` | 20 | 前端方向②：题库列表与题型驱动编辑表单、标签管理、手动组卷与标签随机抽题、试卷预览 | frontend | 19 |
 | `add-frontend-exam-admin` | 21 | 前端方向③：班级管理、考试创建/发布/force-end、状态机可视化（状态以后端为准）、监考进度与行为日志时间线、Grafana 只读入口 | frontend | 20 |
 | `add-frontend-student-taking` | 22 | 前端方向④（**面试主战场**）：极简作答界面、服务端时间倒计时与归零锁定、30s 自动保存 + IndexedDB 断线恢复与保守合并、交卷防重配合、切屏检测只警告不强制交卷、结果如实呈现 + 四条可复现演示脚本 | frontend | 21 |
@@ -85,6 +86,7 @@ spec/
 8. **`exams` 表没有 `ended_time` 列**（阶段 15 取证时发现）——实际结束时刻无字段记录，`updated_time` 会被任意更新刷新（表达的不是结束时刻）。`add-data-retention` 因此改用 `end_time`（时间窗终点）作为"考试已终结"的代理，误差方向是**晚删而非早删**（`force-end` 提前结束的考试其 `end_time` 仍在未来），属安全选择。若要精确化需新增列（= 迁移），当前不值得。
 9. **MySQL 8 空库真机初始化未实测**（阶段 17 验收时确认）——`fix-schema-mysql-pk` 的证据止于：文本约定测试（`SchemaSqlMysqlCompatibilityTest`，凡 AUTO_INCREMENT 必有 PRIMARY KEY）+ H2 全量 210 全绿。**尚未**在真实空 MySQL 8 实例上执行过 `schema.sql` 并建全 25 张表；`2026-W16-add-primary-keys.sql` 存量迁移也**未在真实存量库跑过**。**不得据此声称「MySQL 8 新环境可启动」已端到端验证**。
 10. **启动期「答案补发对账」在真 broker 下抛异常**（阶段 18 验收时由指导 agent 实测发现）——用真 dev 实例（`exam-mysql-master` 13306 + `exam-rabbitmq` 5672 + 宿主 Redis 6379）启动时，`ExamSubmitSender.send` 调 `RabbitTemplate.waitForConfirmsOrDie` 抛 `IllegalStateException: This operation is only available within the scope of an invoke operation`，调用栈经 `SpringApplicationRunListeners.ready` → `ExamSweepService`；同批日志为 `答案补发对账: 待补=2 已补=0`。**根因**：`waitForConfirmsOrDie` 只能在 `RabbitTemplate.invoke()` 作用域内调用，而测试环境 RabbitMQ 是 mock 且 `auto-startup: false`，**这条路径从未在真 broker 下跑过**（与遗留 #6 同源）。应用仍能 `/actuator/health` = UP，**非致命**，但启动对账实际未补发成功。**未修**（不属阶段 18 范围，已明令子 agent 不得顺手修）。修复需改 `ExamSubmitSender` 的 confirm 用法，建议单独立项。
+11. **`must_change_password` 是完全死掉的列**（阶段 19 开工时由子 agent 发现、指导 agent 核实）——`src/main` 中该字段**仅 2 处命中**：`schema.sql` L14 建列、`User.java` L39 实体字段。**无读路径**（零 getter 调用、无 DTO 装载、`JwtUtil` claim 不含它）、**无写路径**（`AdminInitializer` 与 `AuthService` 根本没引用该字段，插入靠列默认值 0，**永不置 1**），`CurrentUserResponse` 与 `openapi.yaml` 均无该字段。后果：`AdminInitializer` 用配置的初始密码创建 admin，**该初始密码永远不被强制更换**，属真实安全缺口。已立项 `add-auth-must-change-password` 收口；阶段 19 的「强制改密前置」Requirement 因此**已移出前端变更**（否则前端守卫是永不触发的死代码、e2e 无法验证）。**在该项目合入前，不得声称「初始密码强制修改」能力存在。**
 
 **已收口（从遗留清单移出）**：
 

@@ -140,26 +140,6 @@ THEN 后端角色校验仍然拒绝
 
 AND 前端代码中明确记录该取舍
 
-### Requirement: 强制改密前置
+---
 
-WHEN 用户账号被标记为必须修改密码,
-
-系统 SHALL 在用户完成改密前阻止其进入业务页面。
-
-#### Scenario: 未改密不得进入业务页
-
-GIVEN 账号的必须改密标记为真
-
-WHEN 用户登录成功
-
-THEN 跳转修改密码页
-
-AND 访问任意业务路由仍被重定向回改密页
-
-#### Scenario: 改密后放行
-
-GIVEN 用户完成密码修改
-
-WHEN 重新进入应用
-
-THEN 可正常访问其角色对应页面
+> **已移出本变更**：原「强制改密前置」Requirement（含 2 个 Scenario）经核实**后端语义上不可判定**——`must_change_password` 列在 `src/main` 中仅有建列与实体字段两处命中，**无任何读路径（零 getter 调用、无 DTO 装载、无 JWT claim）、无任何写路径（永不置 1）**，`CurrentUserResponse` 亦不含该字段。该 Requirement 已移至独立后端变更 `add-auth-must-change-password`；待其暴露契约后，再以前端变更补回守卫与相应 Scenario。本变更不含任何强制改密相关实现。
