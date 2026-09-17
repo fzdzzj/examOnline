@@ -265,3 +265,54 @@
 - W16 存量迁移脚本在真实存量库的行为——无真机执行记录；
 - DLQ 真 broker 往返重投是否成功——仍未验证（遗留 #6）；
 - 5000 并发交卷的 P99、丢单、批量落库时延——仍未实测（遗留 #1）。
+
+---
+
+## 十一、前端（`frontend/`，阶段 19 起）
+
+技术栈照抄参考项目 `D:\code\crm\font\crm-front`：Vue 3.5 + TS + Vite 7 + ant-design-vue 4.2 + tailwindcss 4 + unplugin-vue-router 文件路由 + `@tanstack/vue-query` 5 + axios/`@hey-api/client-axios` + vuex 4 + vitest + Playwright，包管理器 **pnpm**。
+
+### 启动
+
+```powershell
+# 1) 先起后端依赖（仓库根的 docker-compose.yml：mysql / redis / rabbitmq）
+docker compose up -d
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
+
+# 2) 另开终端起前端
+cd frontend
+pnpm install
+pnpm dev            # http://localhost:5173，hash 路由
+```
+
+管理员账号取 `application.yml` 的 `exam.auth.admin`（默认 `admin` / `admin123`，仅 dev 库）。
+
+### 三条必须记住的约定
+
+1. **代理不得 rewrite `/api`**。后端 14 个 Controller 的路径本身就带 `/api` 前缀，而参考项目的网关会剥掉它、所以 crm-front 写了 `rewrite: path.replace(/^\/api/, '')`。这里照抄会把所有接口变成 404。`vite.config.ts` 里已就地写了警示注释，并由 `e2e/auth-smoke.spec.ts` 断言请求 URL 仍含 `/api`。
+2. **API 客户端只能由 `pnpm gen:api` 生成**（契约 = 根目录 `openapi.yaml`，或 `VITE_CONTRACT_URL` 指向运行中的 `/v3/api-docs`）。手写只允许 `src/api/` 下的薄封装；`src/api/axios/**` 已在 eslint / prettier 里整体豁免，不要人工改、也不要为通过 formatter 去动它。
+3. **前端守卫不是安全边界**，只是体验层。`src/router/access.ts#decideNavigation` 是**唯一**导航裁决入口——日后接入 `must_change_password` 强制改密前置（另行立项 `add-auth-must-change-password`）时只改这一个函数。登录态一律以后端 `/api/auth/me` 的结果为准，绝不用「本地有 token」当代替。
+
+### Refresh 单飞（硬约束，勿退化）
+
+`src/api/sessionRefresh.ts` 把并发 401 收敛成一次刷新，其余请求排队等同一个 promise 再重放。后端是 **Refresh Rotation + 复用检测**：两个请求各刷各的会被判定为 token 重放、导致全端下线。该行为由 `src/api/__tests__/apiClient.spec.ts`（并发两个 401 只刷一次）与 `sessionRefresh.spec.ts`（inflight 释放后允许第二轮、且用新 refresh）锁定，改动前务必先看这两组用例。
+
+改密 / 重置密码成功后后端会让全部会话失效，因此**前端这两个页面不得再调 logout**，直接清本地 token 跳登录页。
+
+### 质量门禁
+
+```powershell
+cd frontend
+pnpm type-check:check   # vue-tsc(app) + tsc(config)，两个工程都要 0
+pnpm lint:check
+pnpm test               # vitest 单测，不依赖后端
+pnpm test:e2e           # 需要后端在跑 + pnpm exec playwright install
+```
+
+前端测试基线与后端 `mvn test` **相互独立**：未往 `pom.xml` 挂任何前端插件，CI 分工是后端归 maven、前端归 pnpm。
+
+### 已知缺口（不要误报成已完成）
+
+- `pnpm test:e2e` **未实跑**：本机 Playwright 要求的 chromium build 与已安装版本不一致（缺 `chromium_headless_shell-1243`）。用例已能通过收集与转译，卡在浏览器启动。首次执行需 `pnpm exec playwright install chromium`（会下载浏览器，属需授权动作）。
+- e2e 冒烟只覆盖「登录 → 首页 → 越权重定向 → 登出」，注册 / 找回密码有验证码与邮件依赖，未编入用例。
+- 阶段 19 只有认证四页 + 首页骨架；`/admin`、`/teacher`、`/student` 三个分区菜单项是 `disabled` 占位，属阶段 20+。
