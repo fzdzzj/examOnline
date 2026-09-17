@@ -4,6 +4,11 @@
 > 先读 `spec/changes/add-frontend-student-taking/proposal.md`、`tasks.json`、`specs/frontend/spec-delta.md`。
 > **本阶段是整个前端最重的一块，也是面试深水区 1 的可视化证明。宁慢勿糙，不许为了「看起来完成」而绕过任何一条硬约定。**
 
+> **⚠️ 基线与环境更正（以此为准，覆盖下文旧内容）**：
+> 1. 后端全量基线现为 `Tests run: 213, Failures: 0, Errors: 0, Skipped: 1` → BUILD SUCCESS。下文所有「210」一律读作 **213**；`Skipped: 1` 是契约导出方法受 `exportContract` 开关控制，**属设计使然，不要试图消除**。
+> 2. **dev 环境启动方式见 `docs/指导Agent交接文档.md` §6.2**，不要自己摸索：MySQL 容器 `exam-mysql-master` 在宿主 **13306**（不是 3306）、口令 **root123**（不是 root）；`application-dev.yml` 的默认值指向 Windows MySQL80 服务，**会拒绝 root/root**；Redis 用宿主 6379，**不要启 `exam-redis` 容器**（端口冲突）；启动前必须设 `DB_URL`/`DB_PASSWORD`/`SLAVE_DB_URL`/`SLAVE_DB_PASSWORD` 四个环境变量。
+> 3. 启动日志中 `ExamSubmitSender` → `waitForConfirmsOrDie` 的 `IllegalStateException` 是**遗留 #10**，真 broker 下才暴露、非致命；`/actuator/health` 返回 UP 即视为启动成功，**不要顺手修**。本阶段的「断网续答」演示需要真 RabbitMQ，环境按 §6.2 起即可。
+
 ---
 
 ## 现状

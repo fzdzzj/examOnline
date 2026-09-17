@@ -3,6 +3,8 @@
 > 用法：整份复制发给子 agent。自包含。
 > 先读 `spec/changes/add-frontend-skeleton-auth/proposal.md`、`tasks.json`、`specs/frontend/spec-delta.md`。
 
+> **⚠️ 基线更正（以此为准，覆盖下文所有旧数字）**：阶段 18 已归档，后端全量基线现为 `Tests run: 213, Failures: 0, Errors: 0, Skipped: 1` → BUILD SUCCESS。下文出现的「210」一律读作 **213**；`Skipped: 1` 是契约导出方法受 `exportContract` 开关控制，**属设计使然，不是被禁用的断言，不要试图消除它**。本阶段结束时后端必须仍是 213 全绿。
+
 ---
 
 ## 现状
@@ -50,7 +52,7 @@
 
 1. **环境自检先行**：`node -v`、`pnpm -v`。**若 pnpm 不存在，停下回报**，不要擅自 `npm i -g pnpm` 或改用 npm/yarn（会产出错误的 lockfile，且安装全局包需用户授权）。若需要装依赖而离线不可达，同样停下回报。
 2. **脚手架**：按参考项目的配置文件逐一对齐（Vite7 + Vue3.5 + TS + AntD4 + Tailwind4 + 文件路由）。`@` → `src` 别名。`package.json` scripts 至少含：`dev`、`build`、`preview`、`gen:api`、`lint`、`lint:check`、`format`、`type-check`、`type-check:check`、`test`（vitest）、`test:e2e`（playwright）。
-3. **代理**：`/api` → `http://localhost:8080`，**不 rewrite**。写完立刻用真实后端验证一次登录（后端需以 dev profile 跑在宿主 8080；本机 MySQL80 占 3306、Windows Redis 占 6379，**不要改端口、不要停这些服务**；若后端起不来，停下回报，不要用 mock server 假装通过）。
+3. **代理**：`/api` → `http://localhost:8080`，**不 rewrite**。写完立刻用真实后端验证一次登录。**后端启动方式见下面「本机 dev 环境（已实测）」，不要自己摸索**；若照做仍起不来，停下回报，**不要用 mock server 假装通过**。
 4. **API 层**：`gen:api` 生成到 `src/api/axios`（`@hey-api/client-axios` + `sdk` + `typescript`，对齐参考项目的 `openapi-ts.config.ts`）。手写薄封装：
    - 请求拦截：注入 `Authorization: Bearer <access>`；
    - 响应拦截：统一解包后端 `ApiResponse`（`code`/`message`/`data` 结构，按生成类型来），业务错误码映射成可读提示（含登录锁定、限流降级、令牌黑名单等）；
@@ -63,6 +65,36 @@
    - playwright：一条 `登录 → 首页 → 登出` 冒烟。**若 playwright 浏览器未安装导致跑不起来，停下回报**，不要擅自执行 `playwright install` 下载（涉及网络与磁盘，需授权）；此时改为交付用例代码 + 说明未执行原因，**并在回报里明确标注「e2e 未实跑」，不得声称通过**。
 9. **质量门禁**：`lint:check`、`type-check:check`、`vitest` 三者全绿再提交。
 10. **回归确认**：跑一次后端全量（命令见下），确认仍是 **210 全绿**——证明你没碰后端。
+
+## 本机 dev 环境（指导 agent 已实测可用，照做即可）
+
+**`application-dev.yml` 的默认值连不上**：默认 `127.0.0.1:3306` + `root/root` 指向 Windows `MySQL80` 服务，该服务**拒绝 root/root**（阶段 18 第 1 轮子 agent 就卡在这里，误报成「环境坏了」）。真实可用的是 Docker 容器：
+
+| 组件 | 宿主端口 | 凭证 |
+|---|---|---|
+| `exam-mysql-master` | **13306** | `root/root123`，库 `exam_online` |
+| `exam-mysql-slave` | **3307** | `root/root123` |
+| `exam-rabbitmq` | 5672 | — |
+| Redis | 6379 | 宿主 Windows Redis 服务；**不要启 `exam-redis` 容器，会端口冲突** |
+
+容器若 exited：`docker start exam-mysql-master exam-mysql-slave exam-rabbitmq`（**不要启 `exam-redis`**）。启动应用（PowerShell，必须先设环境变量，java 参数必须数组 splatting）：
+
+```powershell
+$env:DB_URL='jdbc:mysql://127.0.0.1:13306/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true'
+$env:DB_USERNAME='root'
+$env:DB_PASSWORD='root123'
+$env:SLAVE_DB_URL='jdbc:mysql://127.0.0.1:3307/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true'
+$env:SLAVE_DB_USERNAME='root'
+$env:SLAVE_DB_PASSWORD='root123'
+$jargs = @('-classpath','D:\develop\Maven\apache-maven-3.9.4\boot\plexus-classworlds-2.7.0.jar','-Dclassworlds.conf=D:\develop\Maven\apache-maven-3.9.4\bin\m2.conf','-Dmaven.home=D:\develop\Maven\apache-maven-3.9.4','-Dmaven.multiModuleProjectDirectory=D:\code\examOnline','org.codehaus.plexus.classworlds.launcher.Launcher','-o','spring-boot:run','-Dspring-boot.run.profiles=dev')
+& 'D:\develop\jdk177\bin\java.exe' @jargs
+```
+
+启动成功的判据是 `Invoke-WebRequest http://localhost:8080/actuator/health` 返回 200 且 `status":"UP"`（db / rabbit 3.13.7 / redis 全 UP）。
+
+**启动日志里的已知异常，不要误判为启动失败、更不要顺手修**：`ExamSubmitSender.send` → `RabbitTemplate.waitForConfirmsOrDie` 抛 `IllegalStateException: This operation is only available within the scope of an invoke operation`，伴随 `答案补发对账: 待补=2 已补=0`。这是遗留 #10（真 broker 下才暴露、非致命），health UP 即视为启动成功。
+
+登录验证可用的账号：dev 库 `exam_online` 已有历史数据（26 张表，含垃圾表 `rep_test`，**不要删表、不要动数据**）。若没有可用测试账号，用 `/api/auth/register` + 管理员邀请码正常注册一个，**不要直接改数据库**。
 
 ## 本机 Maven 命令（用于确认后端基线未被破坏，必须照抄）
 
