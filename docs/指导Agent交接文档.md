@@ -3,8 +3,9 @@
 > **交接对象**：下一位项目指导 Agent
 > **文档时点**：2026-09-17
 > **当前分支**：`feature/add-performance-deepening-readwrite`
-> **当前性质**：阶段 1–17 已归档；无进行中变更。
-> **实施 HEAD**：`83bc9ca73ba254cc1f5a6922b3912a3ab71a6399`（阶段 17 代码 commit）；本归档 docs commit 紧随其后。
+> **当前性质**：阶段 1–18 已归档；阶段 19–23（前端五方向）已立项待实施。
+> **代码 HEAD**：`47d42f85613418a663a89a2656532249c7e5d1e9`（阶段 18 补提交 springdoc 配置）；其前为 `000bbf0`（阶段 18 主体）、`ef1c455`（前端系列立项）。
+> **后端测试基线**：`Tests run: 213, Failures: 0, Errors: 0, Skipped: 1`（Skipped 为受 `exportContract` 开关控制的契约导出方法，属设计使然）。
 >
 > 本文档只记录当前已核实事实、已知未知和下一步边界。子 agent 的回报不是事实；每轮交付必须独立查看 `git status`、`git diff`、关键代码和测试报告。
 
@@ -115,6 +116,8 @@
 | 15 | `add-data-retention` | 已归档 | 默认关闭 + dry-run；按考试生命周期清理三张辅助表；零 DDL；不纳入 DLQ 表 |
 | 16 | `add-observability-runtime-evidence` | 已归档 | 9 条规则 loaded；5 条真实 firing；4 条留反证；面板出图 |
 | 17 | `fix-schema-mysql-pk` | 已归档 | 25 张表补 `PRIMARY KEY (id)`；W16 存量迁移脚本；文本约定测试；210 全绿；**MySQL 空库真机初始化未实测** |
+| 18 | `add-backend-openapi` | 已归档 | springdoc 2.8.13；`openapi.yaml` 65 paths / 3.1.0 / 覆盖 14 Controller；5 个公开端点标 `security: []`；契约冒烟测试；**返修 1 轮**（pom 格式被压成 3 行、测试写仓库文件 + 方法顺序依赖、免鉴权未标注、未 commit） |
+| 19–23 | 前端五方向 | **已立项待实施** | 骨架+认证 / 题库组卷 / 考试管理 / 学生端考试 / 考后闭环；串行执行，提示词见各变更目录 `agent-prompt.md` |
 
 ### 4.1 阶段 17 资产位置（已归档）
 
@@ -177,6 +180,21 @@
 
 单类：末尾追加 `-Dtest=ClassName -DfailIfNoTests=false`。
 
+### 6.2 本机 dev 启动环境（已实测可用）
+
+**`application-dev.yml` 的默认值连不上**：默认 `127.0.0.1:3306` + `root/root` 指向 Windows `MySQL80` 服务，该服务**拒绝 root/root**。真实可用的是 Docker 容器：
+
+| 组件 | 宿主端口 | 凭证 | 说明 |
+|---|---|---|---|
+| `exam-mysql-master` | **13306** | `root/root123`，库 `exam_online` | 26 张表（含历史垃圾表 `rep_test`，**不要删**） |
+| `exam-mysql-slave` | **3307** | `root/root123` | |
+| `exam-rabbitmq` | 5672 / 15672 | — | 3.13.7 |
+| Redis | 6379 | — | 宿主 Windows Redis 服务（3.0.504）；**不要启 `exam-redis` 容器，会端口冲突** |
+
+容器若 exited：`docker start exam-mysql-master exam-mysql-slave exam-rabbitmq`。启动应用前必须设 `DB_URL`（13306）、`DB_PASSWORD=root123`、`SLAVE_DB_URL`（3307）、`SLAVE_DB_PASSWORD=root123`，完整命令见 `spec/changes/archive/add-backend-openapi/agent-prompt-round2.md` 修 4 节。
+
+**启动日志里的已知异常（不要误判为启动失败）**：`ExamSubmitSender.send` → `RabbitTemplate.waitForConfirmsOrDie` 抛 `IllegalStateException: This operation is only available within the scope of an invoke operation`，伴随 `答案补发对账: 待补=2 已补=0`。这是遗留 #10，真 broker 下才暴露、非致命，`/actuator/health` 返回 UP 即视为启动成功。**不要顺手修**。
+
 ---
 
 ## 七、指导 Agent 协作纪律
@@ -212,15 +230,20 @@
 
 ### 立即下一步
 
-**无进行中变更。** 从下列候选中选题立项，一个阶段一个 OpenSpec 变更，不混做：
+**实施阶段 19 `add-frontend-skeleton-auth`**（前端方向①：工程骨架 + 认证）。提示词已落盘：`spec/changes/add-frontend-skeleton-auth/agent-prompt.md`。阶段 18 已交付 `openapi.yaml`（65 paths），前置条件满足。
 
-1. **MySQL 8 空库真机初始化验证**（遗留 #9 的直接收口）——在真实空 MySQL 8 实例执行 `schema.sql`，记录建全 25 张表的真机证据；顺手在存量库跑一次 W16 迁移记录 1068 预期行为。成本极低，证据价值高。
-2. **JMeter 5000 并发交卷真实数据**（遗留 #1）——P99 / 丢单 / 批量落库硬指标；
-3. **HTTP → MQ → 落库 requestId 日志串联证据**——观测链路可回答性深化；
-4. **DLQ 真 broker 往返**（遗留 #6）——需要本机 Docker 与真实 RabbitMQ；
-5. **补考成绩接线**（遗留 #5）——`MakeupScoreService.finalScore` 全仓库零调用，需新增接口，属功能变更。
+前端系列（19→20→21→22→23）**必须串行**，每个阶段验收并归档后才发下一个。各阶段提示词均已写好，位于各自变更目录。
 
-1 与 2/3 是「我能证明它有」路线；4 依赖本机 Docker 环境；5 是功能补全，优先级由用户定。
+### 阶段 19 之后的候选（不要与前端系列混做）
+
+1. **`ExamSubmitSender` 真 broker 启动异常修复**（遗留 #10）——`waitForConfirmsOrDie` 须在 `invoke()` 作用域内调用；启动对账当前实际未补发成功；
+2. **MySQL 8 空库真机初始化验证**（遗留 #9）——成本极低，证据价值高；
+3. **JMeter 5000 并发交卷真实数据**（遗留 #1）——P99 / 丢单 / 批量落库硬指标；
+4. **HTTP → MQ → 落库 requestId 日志串联证据**——观测链路可回答性深化；
+5. **DLQ 真 broker 往返**（遗留 #6）——本机 Docker 环境已确认可用（见 §6.2）；
+6. **补考成绩接线**（遗留 #5）——`MakeupScoreService.finalScore` 全仓库零调用，需新增接口，属功能变更。
+
+1 与 6 是缺陷/缺口修复；2/3/4 是「我能证明它有」路线。优先级由用户定。
 
 ---
 

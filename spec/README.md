@@ -16,12 +16,11 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，共 6 个，**必须按阶段顺序串行执行**，后一个以前一个已合入为前置）：
+- 进行中变更（`spec/changes/`，共 5 个，**必须按阶段顺序串行执行**，后一个以前一个已合入为前置）：
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| `add-backend-openapi` | 18 | 后端暴露 OpenAPI 契约（springdoc + BearerAuth scheme + 导出 openapi.yaml + 契约冒烟测试），作为前端客户端生成的唯一来源 | api-contract（新） | 无 |
-| `add-frontend-skeleton-auth` | 19 | 前端方向①：`frontend/` 工程骨架（Vue3.5+TS+Vite7+AntD4+Tailwind4+文件路由+vue-query+pnpm）、生成式 API 层、令牌续期单飞、角色路由守卫、认证四页、playwright 冒烟 | frontend（新） | 18 |
+| `add-frontend-skeleton-auth` | 19 | 前端方向①：`frontend/` 工程骨架（Vue3.5+TS+Vite7+AntD4+Tailwind4+文件路由+vue-query+pnpm）、生成式 API 层、令牌续期单飞、角色路由守卫、认证四页、playwright 冒烟 | frontend（新） | 18（已合入） |
 | `add-frontend-teacher-authoring` | 20 | 前端方向②：题库列表与题型驱动编辑表单、标签管理、手动组卷与标签随机抽题、试卷预览 | frontend | 19 |
 | `add-frontend-exam-admin` | 21 | 前端方向③：班级管理、考试创建/发布/force-end、状态机可视化（状态以后端为准）、监考进度与行为日志时间线、Grafana 只读入口 | frontend | 20 |
 | `add-frontend-student-taking` | 22 | 前端方向④（**面试主战场**）：极简作答界面、服务端时间倒计时与归零锁定、30s 自动保存 + IndexedDB 断线恢复与保守合并、交卷防重配合、切屏检测只警告不强制交卷、结果如实呈现 + 四条可复现演示脚本 | frontend | 21 |
@@ -29,7 +28,7 @@ spec/
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 基线**不并入** Maven surefire 计数（后端 210 基线独立）。
 
-- 已合入规范（`spec/specs/`，共 15 个能力域）：
+- 已合入规范（`spec/specs/`，共 16 个能力域）：
 
 | # | 能力域 | 来源变更 | 阶段 |
 |---|---|---|---|
@@ -48,8 +47,9 @@ spec/
 | 13 | `class-management` | `add-class-and-post-exam-closure` | 9 |
 | 14 | `absence-makeup` | `add-class-and-post-exam-closure`、`add-post-exam-closure-e2e` | 9、12 |
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
+| 16 | `api-contract` | `add-backend-openapi` | 18 |
 
-- 已归档变更（`spec/changes/archive/`，共 20 个，阶段 1–9、12–17 已收尾，阶段 10–11 已归档）：
+- 已归档变更（`spec/changes/archive/`，共 21 个，阶段 1–9、12–18 已收尾，阶段 10–11 已归档）：
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
@@ -73,6 +73,7 @@ spec/
 | `add-data-retention` | 15 | 按考试生命周期清理三张辅助表（默认关闭 + dry-run、零 DDL、按 exam_id 有界删除）；**不纳入** `exam_dlq_messages`；不声称磁盘释放 | W15 |
 | `add-observability-runtime-evidence` | 16 | 观测栈动态验证：Targets UP、9 条 loaded、**5 firing / 4 未点着**、面板出图；证据 `docs/observability-runtime-evidence.md`；**未改阈值**；**未声称** DLQ 端到端 | W16 |
 | `fix-schema-mysql-pk` | 17 | schema.sql 25 张表为 AUTO_INCREMENT 补 `PRIMARY KEY (id)`（MySQL 8 空库可建）；存量迁移 `2026-W16-add-primary-keys.sql`；约定测试 `SchemaSqlMysqlCompatibilityTest`；**MySQL 空库真机初始化仍未实测**（证据止于文本护栏 + H2 210 全绿） | W16 |
+| `add-backend-openapi` | 18 | springdoc 2.8.13 暴露 `/v3/api-docs`（65 paths、`openapi: 3.1.0`、覆盖 14 个 Controller）；导出 `openapi.yaml` 为前端客户端唯一契约来源；5 个公开端点由 `OpenApiCustomizer` 显式标 `security: []`（清单常量须与 `WebMvcConfig` 白名单同步）；契约冒烟测试 + 导出受 `exportContract` 开关控制（CI 基线 `Skipped: 1` 属设计使然）；prod 关 swagger-ui | W17 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
@@ -83,6 +84,7 @@ spec/
 7. **磁盘空间回收不在任何提案范围内**（阶段 15 取证时发现）——MySQL InnoDB 的 `DELETE` 只把页标记为可复用，**文件大小不会变小**；真正回收需 `OPTIMIZE TABLE` 或 `ALTER TABLE ... ENGINE=InnoDB`（离线重写整表、期间锁表），在在线考试系统上属高风险窗口操作。`add-data-retention`（阶段 15）的目标是**控制行数与查询代价**（避免全表扫描与索引膨胀），**不是腾磁盘**。**不得声称"清理后磁盘释放"。**
 8. **`exams` 表没有 `ended_time` 列**（阶段 15 取证时发现）——实际结束时刻无字段记录，`updated_time` 会被任意更新刷新（表达的不是结束时刻）。`add-data-retention` 因此改用 `end_time`（时间窗终点）作为"考试已终结"的代理，误差方向是**晚删而非早删**（`force-end` 提前结束的考试其 `end_time` 仍在未来），属安全选择。若要精确化需新增列（= 迁移），当前不值得。
 9. **MySQL 8 空库真机初始化未实测**（阶段 17 验收时确认）——`fix-schema-mysql-pk` 的证据止于：文本约定测试（`SchemaSqlMysqlCompatibilityTest`，凡 AUTO_INCREMENT 必有 PRIMARY KEY）+ H2 全量 210 全绿。**尚未**在真实空 MySQL 8 实例上执行过 `schema.sql` 并建全 25 张表；`2026-W16-add-primary-keys.sql` 存量迁移也**未在真实存量库跑过**。**不得据此声称「MySQL 8 新环境可启动」已端到端验证**。
+10. **启动期「答案补发对账」在真 broker 下抛异常**（阶段 18 验收时由指导 agent 实测发现）——用真 dev 实例（`exam-mysql-master` 13306 + `exam-rabbitmq` 5672 + 宿主 Redis 6379）启动时，`ExamSubmitSender.send` 调 `RabbitTemplate.waitForConfirmsOrDie` 抛 `IllegalStateException: This operation is only available within the scope of an invoke operation`，调用栈经 `SpringApplicationRunListeners.ready` → `ExamSweepService`；同批日志为 `答案补发对账: 待补=2 已补=0`。**根因**：`waitForConfirmsOrDie` 只能在 `RabbitTemplate.invoke()` 作用域内调用，而测试环境 RabbitMQ 是 mock 且 `auto-startup: false`，**这条路径从未在真 broker 下跑过**（与遗留 #6 同源）。应用仍能 `/actuator/health` = UP，**非致命**，但启动对账实际未补发成功。**未修**（不属阶段 18 范围，已明令子 agent 不得顺手修）。修复需改 `ExamSubmitSender` 的 confirm 用法，建议单独立项。
 
 **已收口（从遗留清单移出）**：
 
@@ -93,7 +95,7 @@ spec/
 4. **缺考/补考真实链路仅 Mockito、以及 `@Sql` 掩盖缺表 / `score_review` 缺列** 已由阶段 12 收口——曾是真问题：`ClassManagementIntegrationTest` 的 `@Sql` 自建表掩盖过缺表回归；`score_review` 缺 `created_time` 曾使复核申请 INSERT 在任何环境必失败。现 `src/test` 无 `@Sql`，schema/migration 已补列，`listByExam` 同步改为 `@PathVariable`。
 5. **观测栈动态行为** 已由 `add-observability-runtime-evidence`（阶段 16）收口——Targets `UP`、9 条规则 loaded、**5 条真实 firing**（ExamOnlineDown / RateLimitDegraded / MqSubmitRetryExhausted / MqDlqBacklog / AntiCheatEventSpike）、面板出图；另 **4 条流量/性能阈值未在本机点着**（Http5xxRatioHigh / SubmitFailureRatioHigh / MqSubmitQueueBacklog / SubmitLatencyP99High）且**未改规则凑绿**，已留 PromQL 反证。详见 `docs/observability-runtime-evidence.md`。**不得据此声称遗留 #6（DLQ 真 broker 端到端）已完成**（firing ≠ 重投闭环）。
 
-## 能力地图（15 个能力域，作为规范组织单位）
+## 能力地图（16 个能力域，作为规范组织单位）
 
 | # | 能力（capability） | 范围 |
 |---|---|---|
@@ -112,6 +114,7 @@ spec/
 | 13 | class-management | 班级 CRUD、学生入班/转班、班级学生列表 |
 | 14 | absence-makeup | 缺考标记（含自然到点与 force-end 两条结束路径）、补考独立记录、补考成绩规则合并、考后闭环端到端一致性 |
 | 15 | score-review | 复核申请限次限时、复核中隐藏成绩、复核处理 |
+| 16 | api-contract | OpenAPI 契约暴露、鉴权语义标注、契约导出复现、契约冒烟护栏 |
 
 ## 开发阶段 → 变更映射
 
@@ -137,6 +140,7 @@ spec/
 | 15 | add-data-retention | data-access（数据保留与清理） | W15 | 已归档 |
 | 16 | add-observability-runtime-evidence | observability（观测栈动态可验证性） | W16 | 已归档（5 firing / 4 未点着；#6 仍遗留） |
 | 17 | fix-schema-mysql-pk | data-access（新库建表 MySQL 8 兼容） | W16 | 已归档（MySQL 空库真机初始化未实测） |
+| 18 | add-backend-openapi | api-contract（OpenAPI 契约暴露） | W17 | 已归档（返修 1 轮：pom 格式 / 测试副作用 / 免鉴权标注） |
 
 ## 工作流
 
