@@ -35,3 +35,21 @@ application-local.yml
 # .workbuddy/ 是 WorkBuddy 的项目记忆（MEMORY.md + 每日工作日志），属工具产物而非
 # 项目代码：它随开发者的机器与工具走，入库只会给协作者制造无意义的 diff。
 .workbuddy/
+
+# ==== 前端（frontend/，阶段 19 起）====
+# 依赖与构建产物一律不入库：体积大、跨平台二进制不一致，且都能由 pnpm install / build 复原。
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+# 测试与工具的临时产物
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/.vite/
+# vite 插件生成的类型声明：由 dev/build 产出，不入库以免与路由文件频繁冲突
+frontend/typed-router.d.ts
+frontend/auto-imports.d.ts
+frontend/components.d.ts
+# e2e 账号凭据（frontend/e2e/.env 含明文口令，只提交 .env.example）
+# 注：上方 `.env` 规则已覆盖，这里显式写出以防后续规则被改动
+frontend/e2e/.env
