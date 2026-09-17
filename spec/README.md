@@ -16,7 +16,18 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`）：**无**（阶段 17 `fix-schema-mysql-pk` 已实施验收并归档）。
+- 进行中变更（`spec/changes/`，共 6 个，**必须按阶段顺序串行执行**，后一个以前一个已合入为前置）：
+
+| 变更 ID | 阶段 | 内容 | 目标能力域 | 前置 |
+|---|---|---|---|---|
+| `add-backend-openapi` | 18 | 后端暴露 OpenAPI 契约（springdoc + BearerAuth scheme + 导出 openapi.yaml + 契约冒烟测试），作为前端客户端生成的唯一来源 | api-contract（新） | 无 |
+| `add-frontend-skeleton-auth` | 19 | 前端方向①：`frontend/` 工程骨架（Vue3.5+TS+Vite7+AntD4+Tailwind4+文件路由+vue-query+pnpm）、生成式 API 层、令牌续期单飞、角色路由守卫、认证四页、playwright 冒烟 | frontend（新） | 18 |
+| `add-frontend-teacher-authoring` | 20 | 前端方向②：题库列表与题型驱动编辑表单、标签管理、手动组卷与标签随机抽题、试卷预览 | frontend | 19 |
+| `add-frontend-exam-admin` | 21 | 前端方向③：班级管理、考试创建/发布/force-end、状态机可视化（状态以后端为准）、监考进度与行为日志时间线、Grafana 只读入口 | frontend | 20 |
+| `add-frontend-student-taking` | 22 | 前端方向④（**面试主战场**）：极简作答界面、服务端时间倒计时与归零锁定、30s 自动保存 + IndexedDB 断线恢复与保守合并、交卷防重配合、切屏检测只警告不强制交卷、结果如实呈现 + 四条可复现演示脚本 | frontend | 21 |
+| `add-frontend-post-exam` | 23 | 前端方向⑤：批改工作台（乐观锁冲突可见）、成绩汇总/发布/撤回/流式导出、缺考名单与补考创建、学生成绩查询与复核闭环 | frontend | 22 |
+
+**前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 基线**不并入** Maven surefire 计数（后端 210 基线独立）。
 
 - 已合入规范（`spec/specs/`，共 15 个能力域）：
 

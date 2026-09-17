@@ -1,0 +1,74 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：进入考试与作答（W20-W21）",
+    "task": "学生能进入并答题",
+    "steps": [
+      { "step": "考试列表三态（待考/进行中/已完成）；迟到窗口可用性按后端返回渲染", "completed": false },
+      { "step": "进入考试拉取个人快照；「一个进行中会话」语义按后端错误码提示，前端不自行加锁", "completed": false },
+      { "step": "极简答题界面：题目导航（已答/未答/当前）+ 上一题/下一题 + 四种题型作答控件；不做计算器与标记备注", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：倒计时与超时锁定（W21）",
+    "task": "时间以服务端为准，归零只锁定不越权判定",
+    "steps": [
+      { "step": "剩余时长基于服务端时间计算；不用本地 Date.now() 作为交卷判定依据", "completed": false },
+      { "step": "本地归零 → 锁定答题界面 + 标记「待同步」；网络恢复后按锁定状态提交；服务端仍兜底校验", "completed": false },
+      { "step": "最后 5 分钟警告", "completed": false },
+      { "step": "倒计时 hook 有 vitest 单测（含服务端时间偏移场景）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：自动保存与断线恢复（W21-W22）",
+    "task": "宕机期间作答不丢失",
+    "steps": [
+      { "step": "30s 定时保存草稿到后端；输入防抖，防抖间隔不小于后端设计假设；不做「每次按键即保存」", "completed": false },
+      { "step": "同步写 IndexedDB 本地缓存", "completed": false },
+      { "step": "重进考试：先拉后端草稿，与本地缓存按时间戳/version 合并，冲突以较新为准且不静默覆盖", "completed": false },
+      { "step": "合并逻辑有 vitest 单测（后端较新 / 本地较新 / 二者相同三种分支）", "completed": false },
+      { "step": "不声称离线考试模式（无 Service Worker 完整离线作答）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：交卷防重配合（W22）",
+    "task": "双击/弱网重试不产生重复提交",
+    "steps": [
+      { "step": "手动交卷二次确认并提示未答题数", "completed": false },
+      { "step": "点击提交后按钮立即 pending 并禁用；超时自动交卷走同一提交路径", "completed": false },
+      { "step": "交卷结果以后端返回为权威；不用前端本地标记代替后端结果", "completed": false },
+      { "step": "交卷失败保留答案并允许重试，不静默丢弃", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：切屏检测与结果页（W22）",
+    "task": "可疑事件被记录，成绩如实呈现",
+    "steps": [
+      { "step": "visibilitychange + blur 记录次数与时长并上报后端行为日志接口", "completed": false },
+      { "step": "只弹警告 + 记录，不强制交卷", "completed": false },
+      { "step": "只记录能确证的事件，不虚报事件类型或严重度", "completed": false },
+      { "step": "交卷结果页：客观题即时出分（后端支持时）、主观题待批改如实展示、不猜分", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 6,
+    "category": "阶段 6：演示证据与质量（W22-W23）",
+    "task": "深水区可演示、可复现",
+    "steps": [
+      { "step": "可复现手动演示脚本四条：双击交卷 / 断网续答 / 归零锁定 / 切屏记录", "completed": false },
+      { "step": "lint + type-check + vitest 全绿；关键 hook 均有单测", "completed": false },
+      { "step": "不改后端；发现接口缺口停下回报并建议单独立项", "completed": false },
+      { "step": "未夹带离线模式 / 人脸识别 / 设备指纹 / 浏览器锁定 / IP 白名单 / 草稿画板", "completed": false }
+    ],
+    "passes": false
+  }
+]
