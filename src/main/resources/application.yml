@@ -174,3 +174,20 @@ management:
   endpoint:
     health:
       show-details: always
+
+# OpenAPI 契约暴露（add-backend-openapi）：springdoc 配置
+# 仅追加，不改既有 spring 配置语义
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    # 按字母排序操作，便于前端查阅契约
+    operationsSorter: alpha
+  # 只扫描 exam 包下的 Controller
+  packages-to-scan: com.exam
+  # 匹配 /api/** 路径
+  paths-to-match: /api/**
+  # 安全 scheme 已在 SpringDocConfig 中定义

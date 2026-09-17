@@ -64,3 +64,8 @@ management:
     mail:
       # 本地未配置 SMTP 时禁用 mail 健康检查（生产 profile 保持启用，SMTP 为必需）
       enabled: ${MAIL_HEALTH_ENABLED:false}
+
+# OpenAPI 契约暴露（add-backend-openapi）：springdoc 配置（继承主配置，开发时启用 UI）
+springdoc:
+  swagger-ui:
+    enabled: true

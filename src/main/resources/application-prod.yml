@@ -49,3 +49,10 @@ spring:
     init:
       # 生产用独立 DDL 迁移脚本管理（此处关闭应用内自动建表）
       mode: never
+
+# OpenAPI 契约暴露（add-backend-openapi）：生产环境默认关闭 swagger-ui（可通过配置覆盖）
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: true
