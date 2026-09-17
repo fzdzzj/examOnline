@@ -233,6 +233,14 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- OpenAPI 契约暴露（add-backend-openapi 阶段18）：springdoc-openapi 为 Spring Boot 3
+             提供 /v3/api-docs 与 swagger-ui，是前端 @hey-api/openapi-ts 生成类型化客户端的唯一契约来源。
+             仅追加此依赖，不改现有依赖版本与配置；2.8.13 已在本地 .m2-repo 离线可用 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.13</version>
+        </dependency>
     </dependencies>
 
     <build>
