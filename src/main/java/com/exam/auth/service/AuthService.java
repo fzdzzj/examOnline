@@ -1,5 +1,6 @@
 package com.exam.auth.service;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.exam.auth.dto.ChangePasswordRequest;
 import com.exam.auth.dto.CurrentUserResponse;
 import com.exam.auth.dto.RegisterRequest;
@@ -15,6 +16,7 @@ import com.exam.common.ResponseCode;
 import com.exam.config.AuthProperties;
 import com.exam.user.entity.Role;
 import com.exam.user.entity.User;
+import com.exam.user.mapper.UserMapper;
 import com.exam.user.service.UserService;
 import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,7 @@ public class AuthService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UserService userService;
+    private final UserMapper userMapper;
     private final JwtUtil jwtUtil;
     private final TokenStoreService tokenStore;
     private final LoginGuardService loginGuard;
@@ -50,10 +53,11 @@ public class AuthService {
     private final MailService mailService;
     private final AuthProperties props;
 
-    public AuthService(UserService userService, JwtUtil jwtUtil, TokenStoreService tokenStore,
+    public AuthService(UserService userService, UserMapper userMapper, JwtUtil jwtUtil, TokenStoreService tokenStore,
                        LoginGuardService loginGuard, InviteCodeService inviteCodeService,
                        MailService mailService, AuthProperties props) {
         this.userService = userService;
+        this.userMapper = userMapper;
         this.jwtUtil = jwtUtil;
         this.tokenStore = tokenStore;
         this.loginGuard = loginGuard;
@@ -209,7 +213,7 @@ public class AuthService {
     // ==================== 修改密码 / 找回密码 ====================
 
     /**
-     * 修改密码：校验原密码 → 更新哈希 → 全端下线（会话版本递增 + 当前 jti 入黑名单 + 删 Refresh 会话）。
+     * 修改密码：校验原密码 → 更新哈希 → 解除强制改密标记 → 全端下线（会话版本递增 + 当前 jti 入黑名单 + 删 Refresh 会话）。
      *
      * @param accessToken 当前请求的 Access Token（用于把其 jti 写入黑名单）
      */
@@ -219,6 +223,11 @@ public class AuthService {
             throw new BusinessException(ResponseCode.OLD_PASSWORD_ERROR);
         }
         userService.updatePassword(user.getId(), BCrypt.hashpw(req.getNewPassword(), BCrypt.gensalt()));
+        // 密码已不再是初始密码 → 解除强制改密标记（紧接改密成功之后、会话失效之前落库）。
+        // 直接走 UserMapper 定向更新：UserService 未暴露该字段的更新方法，跨模块注入 UserMapper 与既有惯例一致。
+        userMapper.update(null, Wrappers.<User>lambdaUpdate()
+                .eq(User::getId, user.getId())
+                .set(User::getMustChangePassword, 0));
         tokenStore.blacklistAccessToken(operator.getJti(), jwtUtil.getRemainingTtlSeconds(accessToken));
         invalidateAllSessions(user.getId());
         log.info("用户 {} 修改密码，旧会话已全部失效", user.getUsername());
@@ -272,8 +281,13 @@ public class AuthService {
         if (u == null) {
             throw new BusinessException(ResponseCode.TOKEN_INVALID);
         }
+        // 强制改密标记实时读库（不落 JWT claim：可变状态入无状态 token 会产生「已改密仍被要求改密」的窗口）。
+        // 账号已被删除等查不到情形按「不强制改密」处理，不抛异常。
+        User user = userService.getById(u.getId());
+        Integer flag = user == null ? null : user.getMustChangePassword();
+        boolean mustChangePassword = flag != null && flag != 0;
         return new CurrentUserResponse(u.getId(), u.getUsername(), u.getName(), u.getEmail(),
-                u.getRoles(), u.getPermissions());
+                u.getRoles(), u.getPermissions(), mustChangePassword);
     }
 
     // ==================== 私有 ====================

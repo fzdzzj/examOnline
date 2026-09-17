@@ -48,7 +48,10 @@ public class AdminInitializer implements CommandLineRunner {
         admin.setPassword(BCrypt.hashpw(props.getAdmin().getPassword(), BCrypt.gensalt()));
         admin.setName("系统管理员");
         admin.setStatus(0);
-        admin.setMustChangePassword(0);
+        // 首次创建才置 1：系统自带的初始密码是公开已知值，必须强制更换（需求规格 §1.4 / §4.1）。
+        // 上面两个提前 return 的分支（已存在 ADMIN 账号 / 账号名被占用）绝不改写该字段，
+        // 否则每次重启都会把已改过密码的管理员打回强制改密，形成死循环。
+        admin.setMustChangePassword(1);
         userService.insert(admin);
         userService.bindRole(admin.getId(), userService.getRoleByCode(RoleHierarchy.ADMIN).getId());
 
