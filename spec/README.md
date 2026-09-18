@@ -16,12 +16,11 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，共 6 个。前端五阶段 19→23 **必须串行**；`add-auth-must-change-password` 是**后端并行轨**，与前端文件零冲突，可插队做也可排在前端系列之后）：
+- 进行中变更（`spec/changes/`，共 5 个，**必须按阶段顺序串行执行**，后一个以前一个已合入为前置；**同一工作树不得并行跑两个子 agent**）：
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| `add-auth-must-change-password` | 后端小阶段 | 接通死列 `must_change_password`：`CurrentUserResponse` 暴露 + `AdminInitializer` 仅首次创建置 1 + 改密成功置 0 + 重导契约；零 DDL、不追溯存量、不入 JWT claim、不改拦截器 | authentication | 18（已合入） |
-| `add-frontend-skeleton-auth` | 19 | 前端方向①：`frontend/` 工程骨架（Vue3.5+TS+Vite7+AntD4+Tailwind4+文件路由+vue-query+pnpm）、生成式 API 层、令牌续期单飞、角色路由守卫、认证四页、playwright 冒烟。**原「强制改密前置」Requirement 已移出**（后端语义不可判定，见上一行变更） | frontend（新） | 18（已合入） |
+| `add-frontend-skeleton-auth` | 19 | 前端方向①：`frontend/` 工程骨架（Vue3.5+TS+Vite7+AntD4+Tailwind4+文件路由+vue-query+pnpm）、生成式 API 层、令牌续期单飞、角色路由守卫、认证四页、playwright 冒烟。**首轮已交付但验收未通过**（11 个文件真实改动未提交，门禁跑在工作区而非 HEAD），返修提示词见 `agent-prompt-round2.md`。**原「强制改密前置」Requirement 已移出**，待后端契约就绪后由独立前端小变更接回 | frontend（新） | 18（已合入） |
 | `add-frontend-teacher-authoring` | 20 | 前端方向②：题库列表与题型驱动编辑表单、标签管理、手动组卷与标签随机抽题、试卷预览 | frontend | 19 |
 | `add-frontend-exam-admin` | 21 | 前端方向③：班级管理、考试创建/发布/force-end、状态机可视化（状态以后端为准）、监考进度与行为日志时间线、Grafana 只读入口 | frontend | 20 |
 | `add-frontend-student-taking` | 22 | 前端方向④（**面试主战场**）：极简作答界面、服务端时间倒计时与归零锁定、30s 自动保存 + IndexedDB 断线恢复与保守合并、交卷防重配合、切屏检测只警告不强制交卷、结果如实呈现 + 四条可复现演示脚本 | frontend | 21 |
@@ -33,7 +32,7 @@ spec/
 
 | # | 能力域 | 来源变更 | 阶段 |
 |---|---|---|---|
-| 1 | `authentication` | `add-project-skeleton`、`add-authentication` | 1、2 |
+| 1 | `authentication` | `add-project-skeleton`、`add-authentication`、`add-auth-must-change-password` | 1、2、18+ |
 | 2 | `question-bank`（覆盖 paper-assembly 范围） | `add-question-bank` | 3 |
 | 3 | `exam-management` | `add-exam-management` | 4 |
 | 4 | `exam-taking` | `add-exam-taking`、`add-mq-trace-and-capacity` | 5、10 |
@@ -50,7 +49,7 @@ spec/
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 | 16 | `api-contract` | `add-backend-openapi` | 18 |
 
-- 已归档变更（`spec/changes/archive/`，共 21 个，阶段 1–9、12–18 已收尾，阶段 10–11 已归档）：
+- 已归档变更（`spec/changes/archive/`，共 22 个，阶段 1–9、12–18 及 18 后小阶段已收尾，阶段 10–11 已归档）：
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
@@ -74,6 +73,7 @@ spec/
 | `add-data-retention` | 15 | 按考试生命周期清理三张辅助表（默认关闭 + dry-run、零 DDL、按 exam_id 有界删除）；**不纳入** `exam_dlq_messages`；不声称磁盘释放 | W15 |
 | `add-observability-runtime-evidence` | 16 | 观测栈动态验证：Targets UP、9 条 loaded、**5 firing / 4 未点着**、面板出图；证据 `docs/observability-runtime-evidence.md`；**未改阈值**；**未声称** DLQ 端到端 | W16 |
 | `fix-schema-mysql-pk` | 17 | schema.sql 25 张表为 AUTO_INCREMENT 补 `PRIMARY KEY (id)`（MySQL 8 空库可建）；存量迁移 `2026-W16-add-primary-keys.sql`；约定测试 `SchemaSqlMysqlCompatibilityTest`；**MySQL 空库真机初始化仍未实测**（证据止于文本护栏 + H2 210 全绿） | W16 |
+| `add-auth-must-change-password` | 18+ | 接通恒 0 的死标记 `must_change_password`：`CurrentUserResponse` 暴露 + `AdminInitializer` **仅首次创建**置 1（两道提前 return 在构造 `User` 之前）+ 改密成功置 0 + 重导契约（+2 行）；**刻意不入 JWT claim**、**不改鉴权拦截器**、零 DDL、不追溯存量 admin；`MustChangePasswordIntegrationTest` 5 例（含连续两次 `run()` 不打回已改密 admin）；基线 213 → **218**。**前端守卫未接**，见遗留 #11 | W18 |
 | `add-backend-openapi` | 18 | springdoc 2.8.13 暴露 `/v3/api-docs`（65 paths、`openapi: 3.1.0`、覆盖 14 个 Controller）；导出 `openapi.yaml` 为前端客户端唯一契约来源；5 个公开端点由 `OpenApiCustomizer` 显式标 `security: []`（清单常量须与 `WebMvcConfig` 白名单同步）；契约冒烟测试 + 导出受 `exportContract` 开关控制（CI 基线 `Skipped: 1` 属设计使然）；prod 关 swagger-ui | W17 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
@@ -86,10 +86,10 @@ spec/
 8. **`exams` 表没有 `ended_time` 列**（阶段 15 取证时发现）——实际结束时刻无字段记录，`updated_time` 会被任意更新刷新（表达的不是结束时刻）。`add-data-retention` 因此改用 `end_time`（时间窗终点）作为"考试已终结"的代理，误差方向是**晚删而非早删**（`force-end` 提前结束的考试其 `end_time` 仍在未来），属安全选择。若要精确化需新增列（= 迁移），当前不值得。
 9. **MySQL 8 空库真机初始化未实测**（阶段 17 验收时确认）——`fix-schema-mysql-pk` 的证据止于：文本约定测试（`SchemaSqlMysqlCompatibilityTest`，凡 AUTO_INCREMENT 必有 PRIMARY KEY）+ H2 全量 210 全绿。**尚未**在真实空 MySQL 8 实例上执行过 `schema.sql` 并建全 25 张表；`2026-W16-add-primary-keys.sql` 存量迁移也**未在真实存量库跑过**。**不得据此声称「MySQL 8 新环境可启动」已端到端验证**。
 10. **启动期「答案补发对账」在真 broker 下抛异常**（阶段 18 验收时由指导 agent 实测发现）——用真 dev 实例（`exam-mysql-master` 13306 + `exam-rabbitmq` 5672 + 宿主 Redis 6379）启动时，`ExamSubmitSender.send` 调 `RabbitTemplate.waitForConfirmsOrDie` 抛 `IllegalStateException: This operation is only available within the scope of an invoke operation`，调用栈经 `SpringApplicationRunListeners.ready` → `ExamSweepService`；同批日志为 `答案补发对账: 待补=2 已补=0`。**根因**：`waitForConfirmsOrDie` 只能在 `RabbitTemplate.invoke()` 作用域内调用，而测试环境 RabbitMQ 是 mock 且 `auto-startup: false`，**这条路径从未在真 broker 下跑过**（与遗留 #6 同源）。应用仍能 `/actuator/health` = UP，**非致命**，但启动对账实际未补发成功。**未修**（不属阶段 18 范围，已明令子 agent 不得顺手修）。修复需改 `ExamSubmitSender` 的 confirm 用法，建议单独立项。
-11. **`must_change_password` 曾是恒 0 的死标记**（阶段 19 开工时由子 agent 发现、指导 agent 核实；**已由 `0fb56b9` 实现，待归档**）——原状态：`src/main` 中该字段仅 `schema.sql` L14 建列与 `User.java` L39 实体字段两处**声明**，**无读路径**（零 getter 调用、无 DTO 装载、`JwtUtil` claim 不含它，`CurrentUserResponse` 与 `openapi.yaml` 均无该字段）；写路径虽有但**恒写 0**（`AdminInitializer` 创建分支与 `AuthService` 各有一处 `setMustChangePassword(0)`）。后果：`AdminInitializer` 用配置的初始密码创建 admin，**该初始密码永远不被强制更换**，属真实安全缺口。
+11. **初始密码强制修改：后端已接通，前端守卫仍未接**（阶段 19 开工时由子 agent 发现缺口、指导 agent 核实；后端已由 `0fb56b9` 实现并归档为 `add-auth-must-change-password`，**本条因前端未接而保留在遗留清单**）——原状态：`src/main` 中该字段仅 `schema.sql` L14 建列与 `User.java` L39 实体字段两处**声明**，**无读路径**（零 getter 调用、无 DTO 装载、`JwtUtil` claim 不含它，`CurrentUserResponse` 与 `openapi.yaml` 均无该字段）；写路径虽有但**恒写 0**（`AdminInitializer` 创建分支与 `AuthService` 各有一处 `setMustChangePassword(0)`）。后果：`AdminInitializer` 用配置的初始密码创建 admin，**该初始密码永远不被强制更换**，属真实安全缺口。
     > 指导 agent 取证更正：最初 grep 用小写 `mustChangePassword`，匹配不到 `setMustChangePassword`（大写 M），因此一度误判为「`AdminInitializer` 与 `AuthService` 根本没引用该字段」。正确表述是**有写路径但恒写 0**。「永不置 1、外部读不到」的结论不变。**教训：grep 实体字段时必须同时匹配 `setXxx` / `getXxx` 大小写变体，或用 `-i`。**
     现状态（`0fb56b9`）：`CurrentUserResponse` 暴露 `mustChangePassword`（`Boolean`，装载为原始 `boolean`，故 `/api/auth/me` 恒有值）；`AdminInitializer` 仅首次创建置 1（两道提前 return 在构造 `User` 之前，物理上不可能改写已存在账号）；`changePassword` 成功置 0；刻意**不入 JWT claim**（可变状态入无状态 token 会有「已改密但旧 token 仍说必须改密」窗口）；**未改鉴权拦截器**（不做后端强拦）；零 DDL、不追溯存量 admin。集成测试 `MustChangePasswordIntegrationTest` 5 例覆盖，含「连续两次 `adminInitializer.run()` 不打回已改密 admin」。基线 213 → **218**（`Skipped: 1` 不变）。
-    **前端守卫尚未接**：阶段 19 已把「强制改密前置」Requirement 移出（当时契约无该字段）。契约现已就绪，需另立前端小变更把守卫接回（守卫入口已收敛为 `frontend/src/router/access.ts` 的单一函数 `decideNavigation`）。
+    **前端守卫尚未接（本条仍开放）**：阶段 19 已把「强制改密前置」Requirement 移出（当时契约无该字段）。契约现已就绪（`/api/auth/me` 返回 `mustChangePassword`，且**恒有值**、`non_null` 不会吞掉 `false`，前端可直接 `if (me.mustChangePassword)`），需另立前端小变更把守卫接回（守卫入口已收敛为 `frontend/src/router/access.ts` 的单一函数 `decideNavigation`）。**在前端守卫落地前，不得声称「初始密码强制修改」这项用户可感知的能力已完成**——后端标记可读可写，但没有任何东西阻止未改密的 admin 继续使用系统。
 12. **契约导出「路 A」有编码缺陷，修好前必须走路 B**（`add-auth-must-change-password` 实施时由子 agent 发现）——`OpenApiContractTest.exportOpenApiContract()` 用 `MockHttpServletResponse.getContentAsString()` 取正文，**未设 charset 时按 ISO-8859-1 解码**，写出的 `openapi.yaml` 会让 `info.description` 与 `securitySchemes.Authorization.description` 的中文**全部乱码**，且 `servers.url` 从 `http://localhost:8080` 退化为 `http://localhost`。修法：改用 `getContentAsByteArray()`。该方法受 `exportContract` 开关控制、常规测试不触发，故未污染 CI，但**`-DexportContract=true` 一旦执行就会损坏仓库里的契约文件**（子 agent 已 `git checkout -- openapi.yaml` 回滚，未越界修改测试类）。**在修复前，重新导出 `openapi.yaml` 必须走路 B（真 dev 实例 `Invoke-WebRequest /v3/api-docs.yaml`）**；交接文档与相关提示词中「推荐路 A」的表述以本条为准。修复属独立小变更，尚未立项。
 
 **已收口（从遗留清单移出）**：
@@ -147,6 +147,7 @@ spec/
 | 16 | add-observability-runtime-evidence | observability（观测栈动态可验证性） | W16 | 已归档（5 firing / 4 未点着；#6 仍遗留） |
 | 17 | fix-schema-mysql-pk | data-access（新库建表 MySQL 8 兼容） | W16 | 已归档（MySQL 空库真机初始化未实测） |
 | 18 | add-backend-openapi | api-contract（OpenAPI 契约暴露） | W17 | 已归档（返修 1 轮：pom 格式 / 测试副作用 / 免鉴权标注） |
+| 18+ | add-auth-must-change-password | authentication（初始密码强制修改标记） | W18 | 已归档（前端守卫未接，遗留 #11） |
 
 ## 工作流
 

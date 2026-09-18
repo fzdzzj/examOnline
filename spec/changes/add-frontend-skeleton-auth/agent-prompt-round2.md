@@ -91,18 +91,24 @@ fix(frontend): 补齐首轮遗漏未提交的守卫与认证页改动
 
 跑一次后端全量，确认仍是 **`Tests run: 218, Failures: 0, Errors: 0, Skipped: 1`** → BUILD SUCCESS（**基线已从 213 变为 218**，因为 `add-auth-must-change-password` 已合入并带了 5 条用例；`Skipped: 1` 属设计使然）。命令见下。
 
-### 6. e2e 缺口：**本轮仍不要自行安装浏览器**
+### 6. e2e：**用户已授权安装浏览器，本轮必须实跑**
 
-第 1 轮你正确判断了「不擅自执行 `playwright install`」，**本轮继续保持**。本机 `ms-playwright` 只有 `chromium_headless_shell-1234`，而 `@playwright/test@1.56.1` 要求 `-1243`。是否授权下载由用户决定，指导 agent 会另行处理。
+第 1 轮你正确判断了「不擅自执行 `playwright install`」。**现在用户已明确授权**，本轮请：
 
-你只需在回报里写明：用例已被正确收集（3 条）、未实跑、原因、补齐命令（`cd frontend; pnpm exec playwright install chromium`）。**不得声称 e2e 已通过。**
+1. `cd frontend; pnpm exec playwright install chromium`（**只装 chromium，不要装 firefox/webkit，不要加 `--with-deps`**）；
+2. 装完实跑 `pnpm test:e2e`，三条用例（登录 → 首页 → 登出 等）**必须真实通过**；
+3. e2e 需要后端在 8080 可用：按 `docs/指导Agent交接文档.md` §6.2 起 dev 实例（MySQL 容器 **13306** + `root123`，不是默认 3306/root/root；不要启 `exam-redis`），跑完**必须停掉应用**并确认 8080 无监听（曾有残留实例导致后续验证失真）；
+4. **不要为了让 e2e 通过而放宽断言**、不要改成对 mock server 跑、不要跳过代理断言（`expect(loginRes.url()).toContain('/api/auth/login')` 必须保留，它是「代理不 rewrite」的回归护栏）；
+5. 若安装或实跑失败，**停下回报**并贴完整原始报错，**不要声称通过**。
+
+`@playwright/test` 版本**仍不要改**（`package.json` 依赖版本冻结）；只装浏览器。若装完仍报版本不匹配，停下回报。
 
 ---
 
 ## 硬约定（与第 1 轮一致，重申关键点）
 
 1. **不改后端**：`src/main/**`、`src/test/**`、`pom.xml`、`openapi.yaml`、`docker/**`、`spec/**` 零改动。
-2. **不引入新依赖**（含不装 playwright 浏览器、不改 `package.json` 依赖版本）。若你认为 `@playwright/test` 版本需要调整以匹配本机浏览器，**停下回报**，不要自己改。
+2. **不引入新依赖**（不改 `package.json` 依赖版本）。**唯一例外**：用户已授权执行 `pnpm exec playwright install chromium` 下载浏览器（这不改依赖声明）。
 3. **不放宽门禁**：不得大面积 `any`、不得关 `vue-tsc` 严格项、不得批量 `eslint-disable`。第 1 轮你只在 `e2e/**` 关了 `no-explicit-any` 并写了理由，这是可接受的；**不要扩大豁免范围**。
 4. **不对生成物跑 prettier**（你自己在踩坑记录里写过的，遵守它）。
 5. **不夹带阶段 20–23 的业务页面**、不引入 `echarts`。
@@ -141,15 +147,16 @@ $jargs = @('-classpath','D:\develop\Maven\apache-maven-3.9.4\boot\plexus-classwo
 3. **本轮 commit**：message、`git add` 的文件清单、`git rev-parse HEAD`、`git status --short`（应为空或只剩指导 agent 的文档改动）
 4. **已提交状态上的四项门禁**：`type-check:check` / `lint:check` / `test`（files + passed 数字）/ `build` 各自输出摘要
 5. **后端回归三数字 + Skipped 数**（应为 218 / 1）
-6. **e2e 状态**：未实跑 + 原因 + 补齐命令；以及**意外发现**
+6. **e2e 实跑结果**：安装命令与输出摘要、`pnpm test:e2e` 的通过数字、后端 dev 实例起停证据（起时 health UP、停后 8080 无监听）；以及**意外发现**
 
 ## 禁止
 
 - 禁止在没搞清「HEAD 版本 vs 工作区版本哪个正确」之前就提交或丢弃任何一方；
 - 禁止 `git reset --hard` / `git checkout -- .` / `git clean` 等丢弃工作的操作；
 - 禁止 `git add -A` / `git add .`；
-- 禁止安装 playwright 浏览器或改其版本；
+- 禁止改 `@playwright/test` 版本或安装 chromium 以外的浏览器；
 - 禁止改后端任何文件；
 - 禁止放宽 lint / type-check / 断言来转绿；
-- 禁止声称 e2e 已通过；
+- 禁止对 mock server 跑 e2e 冒充联调；
+- 禁止在 e2e 未实跑或未通过时声称已通过；
 - 禁止勾 `tasks.json` 或归档 `spec/`。

@@ -1,7 +1,8 @@
 # authentication 规范
 
-> 能力域：认证与鉴权（含工程基础能力，阶段 1/2 W1）。
-> 来源：`spec/changes/add-project-skeleton` 合入（工程骨架阶段）。
+> 能力域：认证与鉴权（含工程基础能力，阶段 1/2 W1 + 阶段 18 后小阶段 W18）。
+> 来源：`spec/changes/add-project-skeleton` 合入（工程骨架阶段）；
+> `spec/changes/archive/add-auth-must-change-password` 合入（初始密码强制修改标记，0fb56b9）。
 
 ## Requirements
 
@@ -344,3 +345,53 @@ AND 授予其 ADMIN 角色与全部权限
 GIVEN 数据库中已存在 ADMIN 角色账号
 WHEN 系统启动
 THEN 系统不重复创建管理员账号
+
+---
+
+### Requirement: 初始密码强制修改标记
+
+WHEN 系统自行创建带初始密码的特权账号,
+系统 SHALL 标记该账号必须修改密码，且 SHALL 使该标记可被客户端实时读取、在密码修改成功后解除。
+
+实施注记（0fb56b9）：标记落在 `CurrentUserResponse.mustChangePassword`（`Boolean`），由 `/api/auth/me` 实时读库装载（`Integer → boolean`，`null` 视为 `false`，故该字段恒有值）；**刻意不入 JWT claim**——它是可变状态，入无状态 token 会产生「已改密但旧 token 仍说必须改密」的窗口，只能靠黑名单 / `sessionVersion` 兜，语义不正确。`AdminInitializer` 仅在**首次创建**分支置 1（两道提前 return 在构造 `User` 之前，物理上不可能改写已存在账号）；`changePassword` 成功后置 0。**未改鉴权拦截器**：本能力只暴露标记，不在后端强拦「未改密却调业务接口」（那会波及全部既有集成测试且属行为变更，若要强拦需单独立项）。零 DDL、零数据迁移，**不追溯**把存量 admin 置 1。前端守卫接入属独立前端变更（守卫入口已收敛为 `frontend/src/router/access.ts` 的 `decideNavigation`）。
+
+#### Scenario: 首次创建的 admin 被标记
+
+GIVEN 系统首次启动并自动创建 admin 账号
+WHEN 该账号查询当前用户信息
+THEN 返回的必须改密标记为真
+
+#### Scenario: 标记可被客户端读取
+
+GIVEN 一个被标记为必须改密的账号
+WHEN 客户端请求当前用户信息接口
+THEN 响应体含该标记
+AND 该标记出现在对外契约中，可被类型化客户端生成
+
+#### Scenario: 改密成功后解除
+
+GIVEN 一个被标记为必须改密的账号
+WHEN 该账号成功修改密码
+THEN 标记被解除
+AND 再次查询当前用户信息返回假
+
+#### Scenario: 重复启动不打回已改密账号
+
+GIVEN 一个 admin 账号已完成密码修改
+WHEN 系统再次启动并执行初始化
+THEN 不重新置该账号的必须改密标记
+AND 该账号不会被反复要求改密
+
+#### Scenario: 标记不入无状态令牌
+
+GIVEN 必须改密标记属可变状态
+WHEN 系统签发访问令牌
+THEN 该标记不作为令牌声明携带
+AND 客户端通过实时查询获取其当前值
+
+#### Scenario: 存量账号不被追溯
+
+GIVEN 一个在标记能力上线前已存在的账号
+WHEN 系统升级后启动
+THEN 不追溯修改其必须改密标记
+AND 不因此把既有部署的管理员突然锁入强制改密
