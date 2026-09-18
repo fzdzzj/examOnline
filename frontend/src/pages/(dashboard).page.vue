@@ -75,19 +75,33 @@ const roleLabel = (role: string): string => {
 
 /**
  * 菜单按角色过滤。⚠️ 这只是「看不看得到」的体验层（硬约定 4）：
- * 手输 URL 依然会被后端 @RequireRole 拒绝，前端不声称这里是权限边界。
+ * 手输 URL 依然会被后端 @RequirePermission 拒绝，前端不声称这里是权限边界。
+ *
+ * 教师端（阶段 20）：题库 / 标签 / 组卷三个页面挂在 /teacher 前缀下，
+ * 角色限定与后端 RBAC 一致（ADMIN + TEACHER 均有 question:manage、paper:manage）。
+ * /admin、/student 分区仍是阶段 21+ 的 disabled 占位。
  */
 const menuItems = computed<MenuProps['items']>(() => {
   const loggedIn = isAuthenticatedOf(user.value);
   const role = highestRoleOf(user.value);
-  const items: Array<{ key: string; label: string; disabled: boolean }> = [
+  const items: MenuProps['items'] = [
     { key: '/', label: '首页', disabled: !loggedIn },
     { key: '/change-password', label: '修改密码', disabled: !loggedIn },
   ];
+  if (canAccess(role, '/teacher/')) {
+    items.push({
+      key: 'teacher-section',
+      label: '教师端',
+      children: [
+        { key: '/teacher/questions', label: '题库管理' },
+        { key: '/teacher/tags', label: '标签管理' },
+        { key: '/teacher/papers', label: '组卷管理' },
+      ],
+    });
+  }
   const sections: Array<{ prefix: string; label: string }> = [
-    { prefix: '/admin', label: '管理端（阶段 20+ 开放）' },
-    { prefix: '/teacher', label: '教师端（阶段 20+ 开放）' },
-    { prefix: '/student', label: '学生端（阶段 20+ 开放）' },
+    { prefix: '/admin', label: '管理端（阶段 21+ 开放）' },
+    { prefix: '/student', label: '学生端（阶段 22+ 开放）' },
   ];
   for (const section of sections) {
     if (canAccess(role, `${section.prefix}/`)) {
@@ -99,10 +113,18 @@ const menuItems = computed<MenuProps['items']>(() => {
 
 const selectedKeys = computed(() => [route.path]);
 
-// 只跳转本阶段真实存在的页面；角色分区项是 disabled 的占位，点了也不会跳出 404。
+// 只跳转本阶段真实存在的页面；管理端/学生端分区项是 disabled 的占位，点了也不会跳出 404。
+const NAVIGABLE_PATHS: readonly string[] = [
+  '/',
+  '/change-password',
+  '/teacher/questions',
+  '/teacher/tags',
+  '/teacher/papers',
+];
+
 const onMenuClick: MenuProps['onClick'] = ({ key }) => {
   const path = String(key);
-  if (path === '/' || path === '/change-password') {
+  if (NAVIGABLE_PATHS.includes(path)) {
     void router.push(path);
   }
 };
