@@ -48,33 +48,34 @@
 
 特别指出：`frontend/src/router/access.ts`（+12/−2）与其单测 `access.spec.ts`（+3/−3）是**守卫核心**，`frontend/src/api/apiClient.ts`（+13/−18）是**拦截器核心**。这两处若有未提交改动，等于第 1 轮回报里「refresh 单飞」「角色守卫」的结论都建立在未入库的代码上。请明确说明。
 
-### 2. 判定 HEAD 上的版本是否可用
+### 2. **先把工作区改动提交进去，再评估**（本轮已改用无风险流程）
 
-在**不动工作区**的前提下，先确认 commit 里的版本是什么状态。推荐做法：
+> **重要变更**：上一版提示词让你用 `git stash` 在纯净 HEAD 上跑门禁。**已发生过一次事故**：stash 之后没有 pop，反而执行了 `git reset`，11 个文件的改动全部从工作区消失，指导 agent 是靠 `git fsck` 找到 dangling stash commit（`caa96bc`，message `round2-reconcile`）才 `git stash apply` 恢复回来。**本轮禁止再用 stash，也禁止任何 reset。**
+
+新流程（零丢失风险）：
+
+1. **立即先提交**这 11 个文件，把改动固化进 git 对象库，之后无论怎么操作都丢不了：
 
 ```powershell
-git stash push -u -m round2-reconcile
+git add frontend/src/api/__tests__/apiClient.spec.ts frontend/src/api/apiClient.ts "frontend/src/pages/(dashboard).page.vue" "frontend/src/pages/(dashboard)/index.page.vue" frontend/src/pages/change-password.page.vue frontend/src/pages/forgot-password.page.vue frontend/src/pages/login.page.vue frontend/src/pages/register.page.vue frontend/src/router/__tests__/access.spec.ts frontend/src/router/access.ts frontend/src/store/index.ts
+git commit -m "fix(frontend): 补齐首轮遗漏未提交的守卫与认证页改动"
 ```
 
-然后在**纯净 HEAD** 上跑一遍门禁（`pnpm type-check:check`、`pnpm lint:check`、`pnpm test`、`pnpm build`），**记录结果**。跑完 `git stash pop` 恢复。
+（**逐个列出，禁止 `git add -A` / `git add .`**。注意 `(dashboard)` 两个路径带括号，PowerShell 下要加引号。若你判断这些改动性质是功能补全而非修复，改用 `feat(frontend)` 并在 message 写清补的是什么。）
 
-- 若纯净 HEAD 门禁**全绿** → 说明未提交改动是后续增量，直接进第 3 步；
-- 若纯净 HEAD 门禁**有红** → **停下回报**，写清红在哪、你打算怎么处理（是把工作区版本作为正确版本提交，还是需要修）。**不要自行决定丢弃任何一方的代码。**
+2. 提交后 `git status --short` 必须**不含任何 frontend 文件**（只可能剩指导 agent 自己的文档改动）。
+3. **在这个已提交状态上跑四项门禁**（见第 4 步）。这次跑的就是 HEAD 上的代码，结论才算数。
+4. **如果你还想知道「首轮 commit（`a6e487f`）里的版本是否本来就是坏的」**，用只读 worktree 检查，**不要动当前工作区**：
 
-> `git stash` 有风险，操作前后都要 `git status --short` 记录，`stash pop` 后必须确认 11 个文件都回来了（再跑一次 `git diff --numstat` 对比上面那张表）。**若 stash pop 冲突或丢改动，立刻停下回报，不要强行 reset/checkout 丢弃工作。**
-
-### 3. 把工作区改动提交进去
-
-确认工作区版本是正确版本后：
-
-- `git add` **逐个列出**这 11 个文件（**禁止 `git add -A` / `git add .`**，仓库里另有指导 agent 的未提交文档改动，不许带走）；
-- 一次提交，message 建议：
-
-```
-fix(frontend): 补齐首轮遗漏未提交的守卫与认证页改动
+```powershell
+git worktree add ..\examonline-headcheck a6e487f
 ```
 
-（若第 2 步显示这些改动性质是功能补全而非修复，用 `feat(frontend)` 并在 message 里写清补的是什么。）
+在那个目录里单独 `pnpm install` + 跑门禁，记录结果，完事 `git worktree remove ..\examonline-headcheck`。**这一步是可选的诊断**，目的是在回报里说清「首轮到底提交了个什么状态」；不做也不影响本轮验收。
+
+### 3. （已并入第 2 步）
+
+提交动作已在第 2 步完成，本步跳过。
 
 ### 4. 在**已提交状态**上重跑全部门禁
 
@@ -143,8 +144,8 @@ $jargs = @('-classpath','D:\develop\Maven\apache-maven-3.9.4\boot\plexus-classwo
 ## 回报格式（按此六段，不要写散文）
 
 1. **11 个文件逐个说明**：改了什么 + 为什么第 1 轮没提交进去（这是本轮重点，不许含糊）
-2. **纯净 HEAD 门禁结果**：stash 后四项各是什么结果；`stash pop` 后 `git diff --numstat` 是否与上面那张表一致（贴输出）
-3. **本轮 commit**：message、`git add` 的文件清单、`git rev-parse HEAD`、`git status --short`（应为空或只剩指导 agent 的文档改动）
+2. **提交结果**：`git add` 的文件清单、commit message、`git rev-parse HEAD`、`git status --short`（应不含任何 frontend 文件）；若做了可选的 worktree 诊断，写明 `a6e487f` 上四项门禁的结果
+3. **首轮遗漏的根因**：为什么第 1 轮 `git add` 漏了这 11 个文件（命令写错？提交后又改？还是别的原因），以及你本轮用了什么做法防止再发生
 4. **已提交状态上的四项门禁**：`type-check:check` / `lint:check` / `test`（files + passed 数字）/ `build` 各自输出摘要
 5. **后端回归三数字 + Skipped 数**（应为 218 / 1）
 6. **e2e 实跑结果**：安装命令与输出摘要、`pnpm test:e2e` 的通过数字、后端 dev 实例起停证据（起时 health UP、停后 8080 无监听）；以及**意外发现**
@@ -152,7 +153,7 @@ $jargs = @('-classpath','D:\develop\Maven\apache-maven-3.9.4\boot\plexus-classwo
 ## 禁止
 
 - 禁止在没搞清「HEAD 版本 vs 工作区版本哪个正确」之前就提交或丢弃任何一方；
-- 禁止 `git reset --hard` / `git checkout -- .` / `git clean` 等丢弃工作的操作；
+- **禁止 `git stash`、禁止 `git reset`（含 `--hard`）、禁止 `git checkout -- .`、禁止 `git clean`**（已因此丢过一次工作，靠 dangling stash 才恢复）；需要检查历史版本只能用 `git worktree add`；
 - 禁止 `git add -A` / `git add .`；
 - 禁止改 `@playwright/test` 版本或安装 chromium 以外的浏览器；
 - 禁止改后端任何文件；

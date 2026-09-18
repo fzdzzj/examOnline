@@ -166,6 +166,9 @@
 | DLQ 证据边界 | 告警 firing 不等于 DLQ broker 往返端到端完成 |
 | 清理磁盘误解 | `DELETE` 不等于释放 InnoDB 文件空间；不得声称磁盘已回收 |
 | 观测告警凑数 | 不改阈值、不用 sleep；点不着就记录 PromQL 反证 |
+| `git stash` + `reset` 丢工作 | 阶段 19 返修时子 agent `stash push` 后未 pop 又执行 `reset`，11 个文件改动从工作区消失；靠 `git fsck --lost-found` 找到 dangling stash commit 再 `git stash apply <sha>` 才恢复。**子 agent 提示词一律禁止 `stash` / `reset` / `checkout -- .` / `clean`**；要检查历史版本只能用 `git worktree add`；要固化未提交改动就**先 commit**，别 stash |
+| 工作区 ≠ 提交 | 子 agent 报「工作区 clean」不可信；每轮验收必须自己跑 `git status --short` **加** `git diff --numstat`（行尾噪音时 `--numstat` 无输出，真实改动才有数字）。门禁若跑在工作区而 HEAD 是旧版本，等于**已提交代码从未被验证** |
+| grep 实体字段漏 setter | 查某字段有没有被用过，必须同时匹配 `setXxx` / `getXxx`（大小写不同）或直接用 `-i`。曾用小写 `mustChangePassword` grep，漏掉 `setMustChangePassword(0)` 两处，得出错误结论 |
 
 ### 6.1 本机 Maven 命令
 
