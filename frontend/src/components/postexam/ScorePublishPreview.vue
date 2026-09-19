@@ -78,10 +78,10 @@ const props = defineProps<{
 }>();
 
 const columns: TableColumnsType = [
-  { title: '排名', key: 'rank', width: 70 },
-  { title: '学生', key: 'studentName', width: 120 },
-  { title: '客观题', key: 'objectiveScore', width: 90 },
-  { title: '主观题', key: 'subjectiveScore', width: 90 },
+  { title: '排名', key: 'rank', dataIndex: 'rank', width: 70 },
+  { title: '学生', key: 'studentName', dataIndex: 'studentName', width: 120 },
+  { title: '客观题', key: 'objectiveScore', dataIndex: 'objectiveScore', width: 90 },
+  { title: '主观题', key: 'subjectiveScore', dataIndex: 'subjectiveScore', width: 90 },
   { title: '总分', key: 'total', width: 130 },
   { title: '个人成绩单', key: 'personal', width: 140 },
 ];

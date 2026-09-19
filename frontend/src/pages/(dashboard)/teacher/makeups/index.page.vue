@@ -151,6 +151,7 @@ import {
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { MAKEUP_RULE_OPTIONS, makeupRuleLabel } from '@/constants/postExam';
+import { toIsoLocalDateTime } from '@/utils/dateTime';
 
 /**
  * 补考管理（阶段 23）：
@@ -163,9 +164,9 @@ const route = useRoute();
 const PAGE_SIZE = 50;
 
 const candidateColumns: TableColumnsType = [
-  { title: '学生 ID', key: 'studentId', width: 100 },
-  { title: '姓名', key: 'studentName', width: 140 },
-  { title: '后端判定原因', key: 'reason' },
+  { title: '学生 ID', key: 'studentId', dataIndex: 'studentId', width: 100 },
+  { title: '姓名', key: 'studentName', dataIndex: 'studentName', width: 140 },
+  { title: '后端判定原因', key: 'reason', dataIndex: 'reason' },
 ];
 
 // ===== 主考考试选择 =====
@@ -281,6 +282,12 @@ async function onCreate(): Promise<void> {
     message.warning('请至少选择一名学生（后端 studentIds 必填）');
     return;
   }
+  const startTime = toIsoLocalDateTime(form.startTime);
+  const endTime = toIsoLocalDateTime(form.endTime);
+  if (!startTime || !endTime) {
+    message.warning('开始 / 结束时间无法解析，请按 2026-09-20 09:00:00 填写');
+    return;
+  }
   creating.value = true;
   try {
     created.value =
@@ -291,8 +298,8 @@ async function onCreate(): Promise<void> {
           path: { id: selectedExamId.value },
           body: {
             title: form.title.trim() || undefined,
-            startTime: form.startTime.trim(),
-            endTime: form.endTime.trim(),
+            startTime,
+            endTime,
             durationMinutes: form.durationMinutes,
             allowLateMinutes: form.allowLateMinutes,
             makeupScoreRule: form.makeupScoreRule,

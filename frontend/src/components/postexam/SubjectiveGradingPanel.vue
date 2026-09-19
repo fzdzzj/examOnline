@@ -35,7 +35,7 @@
       class="mb-3"
       :message="`已保存：${lastSuccess.studentName ?? lastSuccess.studentId ?? ''} 第 ${question.number} 题 ${lastSuccess.score} 分`"
       closable
-      @close="lastSuccess = null"
+      @close="lastSuccessId = null"
     />
 
     <div class="mb-3 flex flex-wrap items-center gap-3">
@@ -243,14 +243,18 @@ const flow = createGradingFlow({
   },
 });
 
-const lastSuccess = ref<SubjectiveGradeRow | null>(null);
+const lastSuccessId = ref<number | null>(null);
+// 成功提示按 submissionId 从最新行取分数：直接存下点击时的 row 会显示保存前的旧分数
+const lastSuccess = computed<SubjectiveGradeRow | undefined>(() =>
+  props.rows.find((r) => r.submissionId === lastSuccessId.value)
+);
 
 async function onSubmit(row: SubjectiveGradeRow): Promise<void> {
   const draft = editingOf(row);
   const ok = await flow.submit(row, draft.score, draft.comment, props.question.score ?? 0);
   if (ok) {
     clearDraft(row);
-    lastSuccess.value = row;
+    lastSuccessId.value = row.submissionId ?? null;
     message.success('批改已保存');
     // 通知父级刷新行列表（拿到新 version / graded 状态），单测断言的是 flow 层行为
     emit('refreshed');
@@ -264,6 +268,8 @@ watch(
   (conflict) => {
     if (!conflict?.latestRow) return;
     clearDraft(conflict.latestRow);
+    // 表格数据来自父级的 rows 查询，不重拉则「见下表」里的他人分数永远显示不出来
+    emit('refreshed');
   }
 );
 

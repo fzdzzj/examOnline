@@ -77,7 +77,7 @@
           :question="selectedQuestion"
           :rows="rows"
           :loading="rowsFetching"
-          @refreshed="refetchRows"
+          @refreshed="onRowRefreshed"
         />
       </Card>
     </template>
@@ -111,9 +111,9 @@ import SubjectiveGradingPanel from '@/components/postexam/SubjectiveGradingPanel
 const PAGE_SIZE = 50;
 
 const questionColumns: TableColumnsType = [
-  { title: '题号', key: 'number', width: 80 },
-  { title: '题干', key: 'content' },
-  { title: '满分', key: 'score', width: 80 },
+  { title: '题号', key: 'number', dataIndex: 'number', width: 80 },
+  { title: '题干', key: 'content', dataIndex: 'content' },
+  { title: '满分', key: 'score', dataIndex: 'score', width: 80 },
   { title: '批改进度', key: 'progress', width: 110 },
   { title: '操作', key: 'actions', width: 100 },
 ];
@@ -225,6 +225,12 @@ const {
 });
 
 const rows = computed<SubjectiveGradeRow[]>(() => rowsData.value ?? []);
+
+// 面板提交成功或冲突后：行列表和题级进度都要重拉，否则同一屏会出现 1/1 与 0/1 并存
+function onRowRefreshed(): void {
+  void refetchRows();
+  void refetchQuestions();
+}
 </script>
 
 <style scoped>

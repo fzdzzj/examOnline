@@ -46,7 +46,10 @@
         size="middle"
       >
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'actions'">
+          <template v-if="column.key === 'markedTime'">
+            {{ formatTime((record as AbsenceItemResponse).markedTime) }}
+          </template>
+          <template v-else-if="column.key === 'actions'">
             <Button
               type="link"
               size="small"
@@ -64,6 +67,7 @@
 
 <script setup lang="ts">
 import { Alert, Button, Card, Select, Table, type TableColumnsType } from 'ant-design-vue';
+import dayjs from 'dayjs';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
@@ -86,11 +90,15 @@ const router = useRouter();
 const PAGE_SIZE = 50;
 
 const columns: TableColumnsType = [
-  { title: '学生 ID', key: 'studentId', width: 100 },
-  { title: '姓名', key: 'studentName', width: 140 },
+  { title: '学生 ID', key: 'studentId', dataIndex: 'studentId', width: 100 },
+  { title: '姓名', key: 'studentName', dataIndex: 'studentName', width: 140 },
   { title: '标记时间', key: 'markedTime', width: 200 },
   { title: '操作', key: 'actions', width: 160 },
 ];
+
+function formatTime(value: string | undefined): string {
+  return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '—';
+}
 
 const examPage = ref(1);
 const { data: examsData, isFetching: examsFetching } = useQuery({

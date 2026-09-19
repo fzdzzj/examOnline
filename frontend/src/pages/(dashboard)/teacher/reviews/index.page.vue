@@ -30,7 +30,10 @@
         size="middle"
       >
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
+          <template v-if="column.key === 'applyTime'">
+            {{ formatTime((record as ScoreReview).applyTime) }}
+          </template>
+          <template v-else-if="column.key === 'status'">
             <Tag :color="getReviewStatusConfig((record as ScoreReview).status ?? -1).color">
               {{ getReviewStatusConfig((record as ScoreReview).status ?? -1).label }}
             </Tag>
@@ -75,6 +78,7 @@ import {
   Tag,
   type TableColumnsType,
 } from 'ant-design-vue';
+import dayjs from 'dayjs';
 import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 
@@ -94,14 +98,18 @@ import ReviewTimeline from '@/components/postexam/ReviewTimeline.vue';
 const PAGE_SIZE = 50;
 
 const columns: TableColumnsType = [
-  { title: '申请 ID', key: 'id', width: 90 },
-  { title: '学生 ID', key: 'studentId', width: 100 },
-  { title: '申请理由', key: 'reason' },
+  { title: '申请 ID', key: 'id', dataIndex: 'id', width: 90 },
+  { title: '学生 ID', key: 'studentId', dataIndex: 'studentId', width: 100 },
+  { title: '申请理由', key: 'reason', dataIndex: 'reason' },
   { title: '状态', key: 'status', width: 100 },
   { title: '申请时间', key: 'applyTime', width: 180 },
-  { title: '处理说明', key: 'result', width: 200 },
+  { title: '处理说明', key: 'result', dataIndex: 'result', width: 200 },
   { title: '操作', key: 'actions', width: 160 },
 ];
+
+function formatTime(value: string | undefined): string {
+  return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '—';
+}
 
 const examPage = ref(1);
 const { data: examsData, isFetching: examsFetching } = useQuery({

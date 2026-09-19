@@ -189,9 +189,9 @@ import ScorePublishPreview from '@/components/postexam/ScorePublishPreview.vue';
 const PAGE_SIZE = 50;
 
 const resultColumns: TableColumnsType = [
-  { title: '考试 ID', key: 'examId', width: 100 },
+  { title: '考试 ID', key: 'examId', dataIndex: 'examId', width: 100 },
   { title: '结果', key: 'success', width: 90 },
-  { title: '后端说明', key: 'message' },
+  { title: '后端说明', key: 'message', dataIndex: 'message' },
 ];
 
 const store = useStore<State>();
