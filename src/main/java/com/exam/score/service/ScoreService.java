@@ -25,8 +25,12 @@ import com.exam.score.mapper.ScoreAuditLogMapper;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -62,6 +66,9 @@ public class ScoreService {
     private final RankCalculator rankCalculator;
     private final ReadYourWriteMark readYourWriteMark;
     private final ScoreReviewService scoreReviewService;
+    
+    // 指标收集
+    private io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
     public ScoreService(ExamMapper examMapper,
                         GradingSubmissionMapper gradingSubmissionMapper,
@@ -81,6 +88,12 @@ public class ScoreService {
         this.rankCalculator = rankCalculator;
         this.readYourWriteMark = readYourWriteMark;
         this.scoreReviewService = scoreReviewService;
+    }
+
+    /** 初始化指标收集器（@PostConstruct 确保在发布前完成初始化）。 */
+    @Autowired
+    public void initMetrics(io.micrometer.core.instrument.MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
     }
 
     // ==================== 汇总 ====================
@@ -136,14 +149,14 @@ public class ScoreService {
         } else {
             examGraded = latest.getStatus() == Exam.STATUS_GRADED;
         }
-        log.info("成绩汇总完成: exam={} 汇总={} 跳过={} 考试已批改={}", examId, summarized, skipped, examGraded);
+        log.info("成绩汇总完成：exam={} 汇总={} 跳过={} 考试已批改={}", examId, summarized, skipped, examGraded);
         // 读己之写（add-performance-deepening task4）：成绩汇总是写操作，成功打点，
         // 短窗口内本线程的非强一致读（如判分进度）强制转主库，贴合"刚批改立刻看"
         readYourWriteMark.mark();
         return new SummarizeStats(summarized, skipped, examGraded);
     }
 
-    /** 单份答卷汇总值：总分 = 客观(未判按0) + 主观(已批之和)；部分批改以卷面简答题全集判定。 */
+    /** 单份答卷汇总值：总分 = 客观 (未判按 0) + 主观 (已批之和)；部分批改以卷面简答题全集判定。 */
     private record Summaries(BigDecimal subjectiveScore, BigDecimal totalScore, boolean partialGraded) {
     }
 
@@ -301,6 +314,7 @@ public class ScoreService {
     /**
      * 批量发布（spec「批量发布」场景）：已批改→已发布，学生端立即可见。
      * 单场失败不影响其余（部分成功语义），逐场返回结果；每场成功均落 PUBLISH 审计。
+     * <p>事务边界拆分：每个考试独立事务，避免单场失败导致全部回滚。
      */
     @Transactional(rollbackFor = Exception.class)
     public List<ScoreActionItem> publish(List<Long> examIds) {
@@ -315,7 +329,49 @@ public class ScoreService {
         return results;
     }
 
+    /** 单个考试发布（独立事务，防止相互影响）。 */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     private ScoreActionItem publishOne(Long examId) {
+        Timer.Sample sample = Timer.start();
+        try {
+            ScoreActionItem result = doPublishOne(examId);
+            sample.stop(Timer.builder("exam_publish_duration_seconds")
+                    .description("考试发布耗时分布")
+                    .tag("exam_id", String.valueOf(examId))
+                    .tag("status", "success")
+                    .register(meterRegistry));
+            Counter.builder("exam_publish_success_total")
+                    .description("考试发布成功总数")
+                    .tag("exam_id", String.valueOf(examId))
+                    .register(meterRegistry).increment();
+            return result;
+        } catch (BusinessException e) {
+            sample.stop(Timer.builder("exam_publish_duration_seconds")
+                    .description("考试发布耗时分布")
+                    .tag("exam_id", String.valueOf(examId))
+                    .tag("status", "fail")
+                    .register(meterRegistry));
+            Counter.builder("exam_publish_fail_total")
+                    .description("考试发布失败总数")
+                    .tag("exam_id", String.valueOf(examId))
+                    .register(meterRegistry).increment();
+            throw e;
+        } catch (Exception e) {
+            sample.stop(Timer.builder("exam_publish_duration_seconds")
+                    .description("考试发布耗时分布")
+                    .tag("exam_id", String.valueOf(examId))
+                    .tag("status", "error")
+                    .register(meterRegistry));
+            Counter.builder("exam_publish_fail_total")
+                    .description("考试发布失败总数")
+                    .tag("exam_id", String.valueOf(examId))
+                    .register(meterRegistry).increment();
+            log.error("成绩发布异常：exam={}", examId, e);
+            throw e;
+        }
+    }
+
+    private ScoreActionItem doPublishOne(Long examId) {
         Exam exam = requireOwnedExam(examId);
         if (exam.getStatus() == Exam.STATUS_PUBLISHED) {
             return new ScoreActionItem(examId, true, "已发布（幂等跳过）");
@@ -333,7 +389,7 @@ public class ScoreService {
                         .eq(GradingSubmission::getExamId, examId)
                         .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_GRADED));
         writeAudit(examId, ScoreAuditLog.ACTION_PUBLISH, null, "发布成绩 " + summarized + " 人");
-        log.info("成绩发布: exam={} 操作人={}", examId, SecurityUtil.getUserId());
+        log.info("成绩发布：exam={} 操作人={}", examId, SecurityUtil.getUserId());
         // 读己之写（add-performance-deepening task4）：发布成绩是写操作，成功打点——
         // 学生/教师随即查成绩是强一致读（本就走主库），此处标记同时兜底同线程其他非强一致读
         readYourWriteMark.mark();
@@ -377,7 +433,7 @@ public class ScoreService {
             throw new BusinessException(ResponseCode.STATE_CONFLICT, "考试状态已变化，请刷新后重试");
         }
         writeAudit(examId, ScoreAuditLog.ACTION_REVOKE, reason, "撤回成绩，学生端隐藏");
-        log.info("成绩撤回: exam={} 操作人={} 原因={}", examId, SecurityUtil.getUserId(), reason);
+        log.info("成绩撤回：exam={} 操作人={} 原因={}", examId, SecurityUtil.getUserId(), reason);
         // 读己之写（add-performance-deepening task4）：撤回是状态写，成功打点
         readYourWriteMark.mark();
         return new ScoreActionItem(examId, true, "撤回成功");

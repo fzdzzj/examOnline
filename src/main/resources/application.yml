@@ -35,6 +35,9 @@ spring:
         prefetch: ${RABBIT_PREFETCH:200}
         concurrency: ${RABBIT_CONCURRENCY:2}
         auto-startup: ${RABBIT_LISTENER_AUTOSTARTUP:true}
+  # 全局默认事务超时（秒），防止长事务占用连接池
+  transaction:
+    default-timeout: 30
 
 mybatis-plus:
   configuration:
