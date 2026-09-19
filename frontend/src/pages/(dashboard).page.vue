@@ -96,12 +96,25 @@ const menuItems = computed<MenuProps['items']>(() => {
         { key: '/teacher/questions', label: '题库管理' },
         { key: '/teacher/tags', label: '标签管理' },
         { key: '/teacher/papers', label: '组卷管理' },
+        { key: '/teacher/classes', label: '班级管理' },
+        { key: '/teacher/exams', label: '考试管理' },
+        { key: '/teacher/grading', label: '批改工作台' },
+        { key: '/teacher/scores', label: '成绩管理与发布' },
+        { key: '/teacher/reviews', label: '成绩复核处理' },
+        { key: '/teacher/absences', label: '缺考名单' },
+        { key: '/teacher/makeups', label: '补考管理' },
       ],
     });
   }
+  if (canAccess(role, '/student/')) {
+    items.push({
+      key: 'student-section',
+      label: '学生端',
+      children: [{ key: '/student/scores', label: '我的成绩与复核' }],
+    });
+  }
   const sections: Array<{ prefix: string; label: string }> = [
-    { prefix: '/admin', label: '管理端（阶段 21+ 开放）' },
-    { prefix: '/student', label: '学生端（阶段 22+ 开放）' },
+    { prefix: '/admin', label: '管理端（未开放）' },
   ];
   for (const section of sections) {
     if (canAccess(role, `${section.prefix}/`)) {
@@ -120,6 +133,14 @@ const NAVIGABLE_PATHS: readonly string[] = [
   '/teacher/questions',
   '/teacher/tags',
   '/teacher/papers',
+  '/teacher/classes',
+  '/teacher/exams',
+  '/teacher/grading',
+  '/teacher/scores',
+  '/teacher/reviews',
+  '/teacher/absences',
+  '/teacher/makeups',
+  '/student/scores',
 ];
 
 const onMenuClick: MenuProps['onClick'] = ({ key }) => {

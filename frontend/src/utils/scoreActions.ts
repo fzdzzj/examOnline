@@ -27,20 +27,31 @@ export interface ScoreActionAvailability {
   canExport: boolean;
 }
 
+const NO_ACTION: ScoreActionAvailability = {
+  canGrade: false,
+  canSummarize: false,
+  canPreview: false,
+  canPublish: false,
+  canRevoke: false,
+  canExport: false,
+};
+
+/** 后端考试状态枚举（Exam.STATUS_*）：不在白名单里的状态一律按未知处理。 */
+const KNOWN_STATUSES: readonly number[] = [
+  EXAM_STATUS.NOT_STARTED,
+  EXAM_STATUS.IN_PROGRESS,
+  EXAM_STATUS.ENDED,
+  EXAM_STATUS.GRADED,
+  EXAM_STATUS.PUBLISHED,
+];
+
 export function resolveScoreActions(
   status: number | undefined,
   isAdmin: boolean
 ): ScoreActionAvailability {
-  // status 未知的考试（列表加载中/异常）一律不给动作
-  if (typeof status !== 'number') {
-    return {
-      canGrade: false,
-      canSummarize: false,
-      canPreview: false,
-      canPublish: false,
-      canRevoke: false,
-      canExport: false,
-    };
+  // status 未知（列表加载中 / 异常 / 后端新增状态）一律不给动作：fail-closed
+  if (typeof status !== 'number' || !KNOWN_STATUSES.includes(status)) {
+    return NO_ACTION;
   }
   const s = status as ExamStatus;
   const ended = s >= EXAM_STATUS.ENDED;
