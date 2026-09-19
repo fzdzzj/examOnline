@@ -189,12 +189,25 @@
 
 | 组件 | 宿主端口 | 凭证 | 说明 |
 |---|---|---|---|
-| `exam-mysql-master` | **13306** | `root/root123`，库 `exam_online` | 26 张表（含历史垃圾表 `rep_test`，**不要删**） |
-| `exam-mysql-slave` | **3307** | `root/root123` | |
+| `exam-mysql-master` | **13316**（历史文档写 13306，以实际为准） | `root/root123`，库 `exam_online` | 26 张表（含历史垃圾表 `rep_test`，**不要删**） |
+| `exam-mysql-slave` | **13317**（历史文档写 3307） | `root/root123` | |
 | `exam-rabbitmq` | 5672 / 15672 | — | 3.13.7 |
 | Redis | 6379 | — | 宿主 Windows Redis 服务（3.0.504）；**不要启 `exam-redis` 容器，会端口冲突** |
 
-容器若 exited：`docker start exam-mysql-master exam-mysql-slave exam-rabbitmq`。启动应用前必须设 `DB_URL`（13306）、`DB_PASSWORD=root123`、`SLAVE_DB_URL`（3307）、`SLAVE_DB_PASSWORD=root123`，完整命令见 `spec/changes/archive/add-backend-openapi/agent-prompt-round2.md` 修 4 节。
+> **端口是容器创建时分配的，宿主占用会导致映射漂移**（本机 3306 被 `MySQL80` 服务占着）。
+> 启动前先读实际映射，别照抄本文档：
+> `docker ps --format "{{.Names}} {{.Ports}}"`。
+
+容器若 exited：`docker start exam-mysql-master exam-mysql-slave exam-rabbitmq`。启动应用前必须设 `DB_URL`（实际主库端口）、`DB_PASSWORD=root123`、`SLAVE_DB_URL`（实际从库端口）、`SLAVE_DB_PASSWORD=root123`，完整命令见 `spec/changes/archive/add-backend-openapi/agent-prompt-round2.md` 修 4 节。
+
+**两条会白白耗掉一轮的工具链约束（2026-09-19 实测）**：
+
+1. **必须显式用 JDK 21**：该机 `PATH` 里默认的 `java` 是 1.8.0_202，直接 `java -jar target/exam-online.jar`
+   会因版本不兼容失败；用 `/d/develop1/jdk21/bin/java`（或设 `JAVA_HOME`）。
+2. **Bash 工具的命令串不能含非 ASCII 字符**（中文提交信息、中文路径都会）：整条命令在
+   `eval` 包装层被打坏，表现为 exit 127 + `.../Temp/qoder-xxxx-cwd: No such file or directory`，
+   极易被误判成"审批未通过 / 目录问题"。中文内容改走 Write/Edit/Grep 工具，或先写进文件再引用
+   （如 `git commit -F msg.txt`）。
 
 **启动日志里的已知异常（不要误判为启动失败）**：`ExamSubmitSender.send` → `RabbitTemplate.waitForConfirmsOrDie` 抛 `IllegalStateException: This operation is only available within the scope of an invoke operation`，伴随 `答案补发对账: 待补=2 已补=0`。这是遗留 #10，真 broker 下才暴露、非致命，`/actuator/health` 返回 UP 即视为启动成功。**不要顺手修**。
 
