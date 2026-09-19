@@ -1,169 +1,166 @@
 # 考后闭环端到端演示脚本（前端阶段 23）
 
-> 本脚本覆盖「交卷 → 批改（含一次并发冲突）→ 汇总预览 → 发布 → 学生查询 → 申请复核 →
-> 教师处理 → 学生看到结果」，另加「force-end → 缺考名单 → 为该生创建补考」。
-> 每步写明：**前置数据 / 操作 / 期望现象 / 它证明了后端哪条能力**。
+> 覆盖「交卷 → 批改（含并发冲突）→ 汇总预览 → 发布 → 学生查询 → 申请复核 → 教师处理 →
+> 学生看到结果」，另加「force-end → 缺考名单 → 为该生创建补考」与「管理员撤回」。
+> 每步写明：**操作 / 实测现象（真实 HTTP 与界面文本）/ 它证明了后端哪条能力**。
 
-## 0. 实跑状态声明（先读这一节）
+## 0. 实跑状态（2026-09-19 真机联调已完成）
 
 | 项目 | 状态 |
 |---|---|
-| 前端门禁（lint / type-check(app+config) / vitest） | ✅ 实跑：0 错误 / 0 错误 / **14 文件 121 用例全通过** |
-| 后端全量回归 | ✅ 实跑：**218 run / 0 fail / 0 error / 1 skipped**（BUILD SUCCESS，本阶段后端零改动） |
-| 前端页面与后端真机联调 | ❌ **未实跑** |
-| 并发批改冲突的真机实跑 | ❌ **未实跑** |
+| 前端门禁（lint / type-check(app+config) / vitest） | ✅ 0 错误 / 0 错误 / **15 文件 125 用例全通过** |
+| 后端全量回归 | ✅ 218 run / 0 fail / 0 error / 1 skipped（后端零改动） |
+| 前端页面与后端真机联调 | ✅ **已实跑**（Chromium 驱动真实页面，三角色独立会话并发在线） |
+| 并发批改冲突 | ✅ **已实跑两次**，真实 `HTTP 409 + code 1012` 已观察到 |
+| 学生答题界面 | ❌ 未实跑：阶段 22 未合入，交卷走后端接口 |
 
-**未实跑原因（如实记录，不作任何"已验证"表述）**：
+上一版把「未实跑」归因于启动命令未获授权。本轮授权后一次跑通，另外补一条环境事实：
+**本机 Bash 工具执行含非 ASCII 字符的命令会直接失败（exit 127）**，之前的启动尝试很可能同时踩到了这一点。
 
-1. 后端 dev 实例需要以 `DB_URL=jdbc:mysql://127.0.0.1:13306/...`、`DB_PASSWORD=root123`（容器
-   `exam-mysql-master`，宿主 13306）+ 从库 3307 的环境变量启动；本轮**启动命令未获执行授权**（审批超时），
-   应用没有起来，因此**没有一次真实的 HTTP 请求发生**；
-2. Docker 容器已手动拉起（`exam-mysql-master` / `exam-mysql-slave` / `exam-rabbitmq` 均 Up），
-   库里存在 3 个历史账号（admin / stuobs1 / t20240876）但**口令未知**，本轮未通过改库的方式重置口令
-   （那会污染 dev 数据，且不属于本阶段写入边界）；
-3. 阶段 22 `add-frontend-student-taking`（学生答题界面）**尚未合入**，因此脚本第 1 步「学生交卷」
-   目前只能走后端接口（`POST /api/exam-taking/exams/{examId}/enter|submit`）或既有数据，没有 UI 可点。
+实跑中发现并修复 **5 个真实缺陷**（详见第 5 节），其中 4 个是「页面渲染不出来 / 提交必失败」级别。
 
-因此下面每一步的「期望现象」是**按后端已核实契约推导的设计预期**，不是本轮观察到的结果；
-重跑时必须逐步核对，跑通的打 ✅ 并贴真实 HTTP 状态与界面表现。
-
-## 1. 前置：环境与账号
+## 1. 环境与账号（实测值）
 
 | 项 | 值 |
 |---|---|
-| 后端 | dev profile，宿主 8080（本机 MySQL80 占 3306、Windows Redis 占 6379，不改端口、不停服务） |
-| 主库 | Docker `exam-mysql-master` 宿主 **13306**，`root/root123`，库 `exam_online` |
-| 从库 | Docker `exam-mysql-slave` 宿主 **3307** |
-| 启动前必设 | `DB_URL` / `DB_PASSWORD` / `SLAVE_DB_URL` / `SLAVE_DB_PASSWORD` |
-| 启动成功判据 | `GET /actuator/health` 返回 UP（日志里 `ExamSubmitSender` 的 `IllegalStateException` 是遗留 #10，非致命，不要顺手修） |
-| 角色 | 教师（TEACHER，建卷 / 批改 / 发布）、学生（STUDENT，答题 / 查分 / 复核）、管理员（ADMIN，撤回） |
+| 后端 | `java -jar target/exam-online.jar`（JDK 21，PATH 默认 java 是 1.8，必须显式指定）+ `SPRING_PROFILES_ACTIVE=dev` |
+| 中间件 | Docker `exam-mysql-master` 宿主 **13316**、`exam-mysql-slave` **13317**（`docker-compose.yml` 写的是 3306/3307，本机 Windows `MySQL80` 服务占着 3306 所以被改过映射），RabbitMQ 5672，Redis 走本机服务 6379 |
+| 启动变量 | `DB_URL`（13316）/ `DB_PASSWORD=root123` / `SLAVE_DB_URL`（13317）/ `SLAVE_DB_PASSWORD=root123` |
+| 启动判据 | `GET /actuator/health` → `{"status":"UP"}`，db/redis/rabbit/ping 全 UP |
+| 前端 | `npm run dev -- --port 5173 --strictPort`；`/api` 代理不 rewrite（未登录访问 `/api/auth/me` 得 401 而非 404，即代理生效） |
+| 账号 | 管理员 `admin/admin123`（`application.yml` 的 `exam.auth.admin`）；教师与学生由 `POST /api/auth/register` 现造（教师需 `POST /api/admin/invite-codes` 换邀请码），口令统一 `DemoPass123` |
 
-## 2. 主链路
+> 本轮造的数据：班级 #1、试卷 #4、考试 #2（主考）、#3/#4（补考）、用户 `pe_t160824` / `pe_s1_160824` / `pe_s2_160824`。
+> 驱动脚本放在 `target/demo/`（被 gitignore），只走 HTTP 接口，未直接改库。
 
-### 步骤 1 — 学生交卷（产生待批改答卷）
+## 2. 主链路实测
 
-- **前置**：一场已发布、已开始的考试；试卷含客观题 + 简答题；该生在 `exam_candidates` 准入内。
-- **操作**：`POST /api/exam-taking/exams/{examId}/enter` → 答题 → `POST /api/exam-taking/exams/{examId}/submit`。
-  （阶段 22 前端未合入，本步走接口或直接复用既有答卷。）
-- **期望现象**：答卷落 `exam_submissions`，状态 = 已提交；客观题由后端自动判分。
-- **证明的能力**：交卷幂等（三重幂等 + 状态机 CAS）、客观题自动判分。
+### 步骤 1 — 学生交卷（接口，非 UI）
 
-### 步骤 2 — 教师批改（逐题打分 + 评语）
+`enter` → `GET paper` → `submit {"answers":{"8":"B","9":"主库负责写入…"},"submitType":"MANUAL"}`。
 
-- **路径**：`/teacher/grading`
-- **操作**：选考试（状态 ≥ 已结束，入口才出现）→ 主观题进度（`GET .../grading/subjective/questions`）
-  → 「去批改」→ 同题学生行（`GET .../grading/subjective?questionId=`）→ 逐人填分数 + 评语 → 提交。
-- **期望现象**：提交成功提示「批改已保存」，该行 `graded` 变已批、`version` 递增；题级进度 +1。
-- **证明的能力**：逐题批改落 `subjective_grade`（`exam:manage` 权限 + 教师归属校验）；
-  打分校验（非负 / 不超满分 / 最多 1 位小数，后端 400「批改分数不得超过本题满分 X」为权威）。
+- 首次 submit 返回 **HTTP 500**「系统繁忙，请稍后重试或检查答题进度自动保存后重新提交」，重试同一幂等键返回
+  **HTTP 200** `{"submissionId":3,"status":2,"submitType":1}`，`exam_submissions` 落库、答案已存。
+- 后端日志同步出现遗留 #10：`交卷消息发送失败，答案暂存草稿等待补发: submission=3` →
+  `AmqpException: 交卷消息未被 broker 确认`。**非致命**，但意味着客观题自动判分不会由消息触发，
+  需 `POST /api/exams/{id}/grading/run` 补偿（本步实测走的就是补偿）。
 
-### 步骤 3 — 制造一次并发批改冲突（本阶段最核心的一步）
+### 步骤 2 — 教师批改（UI）
 
-- **操作**：同一份答卷、同一题，开两个教师会话（或两个浏览器窗口）：
-  1. A 打开该行，读到 `version = v`；
-  2. B 提交一次成功 → 该行 `version` 变 `v+1`；
-  3. A **不改分数**直接提交（仍带 `expectedVersion = v`）。
-- **期望现象（界面）**：
-  - 顶部黄色 Alert：「**该答卷已被他人批改，请查看最新内容后重新打分**」+ 说明「系统不会用你刚才的分数覆盖他人的批改」；
-  - 该行自动刷新为最新内容（他人分数/评语 + 新 `version`），教师重看后重新打分；
-  - **不出现**「已保存 / 批改已保存」成功提示；**不会**自动用 A 的旧分数重试提交。
-- **期望现象（后端）**：`POST /api/exams/{examId}/grading/subjective/save` 返回 **HTTP 409**，
-  业务码 **1012**，消息「批改已被他人更新，请刷新后重试」
-  （`SubjectiveGradingService` 抛 `BusinessException(STATE_CONFLICT, ...)`，
-  `SubjectiveGradeMapper.casSaveScore` 的 `UPDATE ... WHERE id=? AND version=?` 影响 0 行）。
-- **证明的能力**：深水区 3「并发批改不覆盖」——后端 CAS 乐观锁 + 前端把冲突**可见化**而不是吞掉。
-- **自动化兜底**：`src/hooks/__tests__/useGradingFlow.spec.ts`（8 例）断言了
-  「提示文案 + 只调用 saveScore 一次（不重试）+ 不算成功 + 拉取最新行」四件事。
+`/teacher/grading` → 选考试（下拉只出现本人的考试，#2 标「已结束」）→ 主观题进度
+`0 / 1` → 去批改 → 行内 `参考评分建议：0 分`（关键词命中 0/3）+ 未批 → 打分 + 评语 → 提交 **HTTP 200**。
 
-### 步骤 4 — 汇总成绩
+### 步骤 3 — 并发批改冲突（UI，两个真实窗口）
 
-- **路径**：`/teacher/scores`，选考试 → 「汇总成绩」按钮（仅状态为**已结束**且**非已发布**时出现）。
-- **期望现象**：回显 `本次汇总 N 人 / 跳过 M 人 / examGraded=true|false`；
-  若 `examGraded=false`（仍有主观题未批），发布按钮**不会出现**（后端判定）。
-- **证明的能力**：`POST /api/exams/{examId}/scores/summarize` 幂等；汇总门槛由后端裁决（≥ 已结束且 ≠ 已发布，
-  否则 400「考试尚未结束，不能汇总成绩」/「成绩已发布，须先撤回再重新汇总」）。
+窗口 B 先提交 7 分成功（`version` 0→1）；窗口 A 仍持 `expectedVersion:0` 提交：
 
-### 步骤 5 — 发布前预览 → 发布
+```
+POST /api/exams/2/grading/subjective/save
+{"submissionId":3,"questionId":9,"score":9,"comment":"A窗口预填：要点完整","expectedVersion":0}
+-> HTTP 409 {"code":1012,"message":"批改已被他人更新，请刷新后重试"}
+```
 
-- **操作**：「发布前预览」（`GET .../scores/publish-preview`）→ 核对榜单（总分 / 排名 / 部分批改标记）
-  → 「发布成绩」→ 确认弹窗。
-- **期望现象**：结果表按后端 `ScoreActionItem` 逐场展示（本场 success=true）；考试状态变**已发布**；
-  学生端立即可见。重复点发布 → 后端返回「已发布（幂等跳过）」，不报错。
-- **证明的能力**：发布仅 `GRADED → PUBLISHED`（后端 CAS 状态机），批量接口**部分成功语义**
-  （单场失败不影响其余，逐场返回 message）；预览门槛 ≥ 已批改（否则 400「成绩尚未汇总，请先执行汇总」）。
+界面实测：顶部黄色 Alert「**该答卷已被他人批改，请查看最新内容后重新打分**」+「系统不会用你刚才的分数覆盖他人的批改」；
+**没有**任何成功提示；行自动刷新为最新内容（他人 7 分 + 评语）；随后 A 用新版本重提交 → **HTTP 200**，行显示 9 分。
+第二次冲突（A 持 v1、B 提交 6 分）同样 409，界面刷新后显示 6 分。
 
-### 步骤 6 — 学生查询成绩
+### 步骤 4 — 汇总成绩（UI）
 
-- **路径**：`/student/scores`，选考试。
-- **期望现象**：展示客观题 / 主观题 / 总分 / 排名与「已全部批改」标记。
-  - 若考试未发布 → 显示 **「成绩未发布」**（后端 400「成绩待发布」映射而来），**不是**空白也不是 0 分；
-  - 若已提交复核申请且在处理中 → 显示 **「成绩复核中，暂不可见」**（后端 `reviewing=true` 且三处分数置 null）。
-- **证明的能力**：成绩可见性完全由后端裁决（后端 `myScore` 对未发布统一 400，避免泄露批改进度）；
-  复核中隐藏也是后端置空的结果，前端不本地推断。
+`/teacher/scores` 选考试 → 状态标签「已结束」，只有「汇总成绩」可点，导出三个按钮全部 `disabled`，
+无发布按钮（后端门槛）。点汇总 → **HTTP 200**，界面「本次汇总 **1人** / 跳过 **0人** / examGraded=**true**」，
+状态变「已批改」，发布前预览 + 发布成绩按钮出现，导出按钮解禁。
 
-### 步骤 7 — 学生申请复核
+### 步骤 5 — 发布前预览 → 发布（UI）
 
-- **操作**：成绩卡下方「申请成绩复核」→ 填理由 → 提交（`POST /api/exams/{examId}/score-reviews`）。
-- **期望现象**：提示「复核申请已提交（待教师处理）」；
-  **页面不显示「剩余次数 / 剩余天数」**——后端没有资格查询端点，前端不本地计数（硬约定）。
-  超限或重复申请时，界面**原样显示后端拒绝文案**（超时窗 400；重复申请 1001「数据已存在，请勿重复提交」）。
-- **证明的能力**：复核限 1 次 / 7 天窗口由后端在提交时校验；两端规则不漂移。
+预览榜：`1 | 交卷学生 | 客观 5 | 主观 9 | 总分 14 | Excel / PDF`。
+发布 → 确认弹窗「确认发布成绩」→ `POST /api/scores/publish` → 结果表 `2 | 成功 | 发布成功`，状态「已发布」。
+教师视角额外实测：**「当前角色非管理员：撤回入口不可用」** 标签出现，且发布后本页无任何成绩动作。
 
-### 步骤 8 — 教师处理复核
+接口侧门槛实测（同账号）：
 
-- **路径**：`/teacher/reviews`，选考试 → 列表（`GET /api/exams/{examId}/score-reviews`）→ 「处理」。
-- **操作**：选「同意（可调整总分）」或「驳回（维持原成绩）」+ 调整后总分（同意时可选）+ 处理说明
-  → `POST /api/score-reviews/{reviewId}/handle`。
-- **期望现象**：列表状态变「已同意 / 已驳回」，处理说明落在 `result` 字段；
-  只有「待处理 / 处理中」才有处理按钮，已出结论的不给入口。
-- **证明的能力**：教师端复核处理（`exam:manage`），结论与调整说明可追溯。
+| 调用 | 结果 |
+|---|---|
+| 重复发布 | `200 [{"examId":2,"success":true,"message":"已发布（幂等跳过）"}]` |
+| 已发布后再汇总 | `400 {"code":400,"message":"成绩已发布，须先撤回再重新汇总"}` |
 
-### 步骤 9 — 学生看到复核结果
+### 步骤 6 — 学生查询成绩（UI）
 
-- **路径**：`/student/scores` 重新查询。
-- **期望现象**：`reviewing` 变为 false → 成绩重新可见；若教师同意并调分，总分是**后端返回的新总分**
-  （前端不做任何本地合并/计算）。
-- **证明的能力**：复核闭环——处理完成后学生端恢复展示，且展示的是后端权威分数。
+`/student/scores` 选考试 → `GET /api/scores/my?examId=2` →
+`{"objectiveScore":5,"subjectiveScore":9,"totalScore":14,"rank":1,"partialGraded":0,"reviewing":false}` →
+卡片「排名 第 1 名 / 客观题 5 / 主观题 9 / 总分 14 / 批改状态 已全部批改」。
 
-## 3. 附加链路：force-end → 缺考 → 补考
+撤回后同一查询 → **HTTP 400** `{"code":400,"message":"成绩待发布"}` → 界面显示
+「**成绩未发布**」，**不显示 0 分也不显示空白分数**（实测无分数泄露）。
 
-### 步骤 10 — 强制结束考试并标记缺考
+### 步骤 7 — 学生申请复核（UI）
 
-- **操作**：`/teacher/exams` 对**进行中**的考试点「强制结束」（`POST /api/exams/{id}/force-end`）。
-- **期望现象**：状态变已结束；未交卷学生被记缺考（阶段 12 已修复：`ExamService.forceEnd` 调 `markAbsence`）。
-- **证明的能力**：缺考标记的两条路径之一（强制结束），与自然到点共用 `AbsenceService.markAbsence`
-  （`INSERT IGNORE` + 唯一索引，幂等）。
+「申请成绩复核」→ 填理由 → `POST /api/exams/2/score-reviews` → **200**
+`{"id":1,"status":0,"reason":"第 2 题答案含强一致读，希望重新核对给分","applyTime":"..."}`。
 
-### 步骤 11 — 查看缺考名单
+学生重新查询 → `GET /api/scores/my` → `{"rank":0,"reviewing":true}`（**后端已把三处分数置空**）→
+界面「**成绩复核中，暂不可见**」+「复核进行中，处理完成后成绩恢复显示」。
+页面顶部固定声明不显示「剩余次数 / 剩余天数」——后端没有资格查询端点，前端不本地计数（接口事实）。
 
-- **路径**：`/teacher/absences`，选考试。
-- **期望现象**：列出缺考学生（ID / 姓名 / 标记时间）。两条路径（自然到点、force-end）产生的标记**都能看到**。
-- **诚实边界**：后端 `AbsenceItemResponse` 只有 `studentId / studentName / markedTime`，
-  **没有标记来源字段**，因此界面**不区分**「哪条路径产生的标记」——前端不编造来源。
-- **证明的能力**：缺考标记幂等 + 两条结束路径统一入口。
+### 步骤 8 — 教师处理复核（UI）
 
-### 步骤 12 — 为缺考学生创建补考
+`/teacher/reviews` 选考试 → 行 `1 | 5 | 第 2 题答案含强一致读… | 待处理 | 2026-09-19 16:48:28 | 查看 处理`
+→ 处理 → 选「同意（可调整总分）」+ 调整后总分 `13` + 处理说明 →
+`POST /api/score-reviews/1/handle` → **200** → 行变「已同意」，说明落在 `result` 字段，操作列变「已出结论」（无处理入口）。
 
-- **操作**：缺考名单行内「为该生创建补考」→ 跳 `/teacher/makeups`（预填主考与该生）
-  → 需可先「查询补考候选人」（`GET /api/exams/{id}/makeup-eligible?passLine=60`，原因由后端给出）
-  → 勾选学生 → 填标题 / 起止时间 / 时长 / 成绩规则 → 创建。
-- **期望现象**：结果卡片回显 `补考考试 ID / parent_exam_id / 成绩规则 / 准入人数`；
-  补考是**独立考试记录**，可在「考试管理」里看到并单独发布。
-- **诚实边界（界面已明示）**：**不展示「主考 vs 补考合并后的最终成绩」**——
-  `MakeupScoreService.finalScore` 全仓库零调用（遗留 #5），后端没有该接口；
-  需要该展示须先单独立项 `add-makeup-final-score`（后端功能变更）。
-- **证明的能力**：补考独立记录 + `parent_exam_id` 关联 + `exam_candidates` 准入。
+### 步骤 9 — 学生看到复核结果（UI）
 
-## 4. 导出（可穿插在步骤 5 之后）
+`GET /api/scores/my` → `{"objectiveScore":5,"subjectiveScore":9,"totalScore":13,"rank":1,"reviewing":false}` →
+卡片总分 **13**（后端调整值，前端不做任何本地合并），复核中提示消失。
 
-- **路径**：`/teacher/scores`，状态 ≥ 已批改时导出按钮可用。
-- **操作**：全班成绩单 / 逐题得分明细 / 题目统计（三个按钮）；预览表内每行的「Excel / PDF」个人成绩单。
-- **期望现象**：按钮转 loading + 「正在由后端生成文件（SXSSF 流式写）」→ 完成后浏览器自动下载，
-  文件名取后端 `Content-Disposition: filename*=UTF-8''...`；失败时显示后端原因 + 「重试上一次导出」。
-- **证明的能力**：导出由后端 SXSSF 流式生成（窗口 100 行，防 OOM），前端只触发 + blob 保存，
-  **不在前端取全量数据拼表**（未引入 `xlsx` / `exceljs`）。
+## 3. 附加链路实测：force-end → 缺考 → 补考
 
-## 5. 每一步对应的自动化证据
+- **强制结束**：`POST /api/exams/2/force-end` → status 1→2、`forceEnd=1`；`GET /api/exams/2/absences` →
+  `[{"studentId":6,"studentName":"缺考学生","markedTime":"2026-09-19T16:09:11"}]`（未交卷者被标记）。
+- **缺考名单页** `/teacher/absences`：`6 | 缺考学生 | 2026-09-19 16:09:11 | 为该生创建补考`，
+  并固定展示「后端只有 `studentId / studentName / markedTime`，**没有标记来源字段**，因此本页不区分哪条路径」。
+- **补考页** `/teacher/makeups?examId=2&studentIds=6`（从缺考名单跳转时预填生效，候选人已勾选）：
+  `GET /api/exams/2/makeup-eligible?passLine=60` → `6 缺考学生 ABSENT` / `5 交卷学生 BELOW_LINE`（原因由后端给出）；
+  标题留空创建 → `POST /api/exams/2/makeups`
+  `{"startTime":"2026-09-21T14:30:00","endTime":"2026-09-21T15:30:00","durationMinutes":60,"allowLateMinutes":0,"makeupScoreRule":"takeHighest","studentIds":[6]}`
+  → **200** `{"examId":4,"title":"考后闭环演示考 160824-补考","parentExamId":2,"makeupScoreRule":"takeHighest","candidateCount":1}`
+  —— 顺带验证了「标题留空由后端按默认规则生成」。
+- 页面顶部固定声明：**不展示主考 vs 补考合并后的最终成绩**（`MakeupScoreService.finalScore` 全仓零调用，遗留 #5）。
+
+## 4. 导出实测
+
+`/teacher/scores` 状态「已批改」后导出按钮解禁；点「全班成绩单」→ `GET /api/exams/2/scores/export/class-sheet` **200**。
+四个导出接口实测响应（同一教师会话）：
+
+| 接口 | Content-Type | Content-Disposition | 字节 / 魔数 |
+|---|---|---|---|
+| `export/class-sheet` | `...spreadsheetml.sheet` | `attachment; filename*=UTF-8''%E5%85%A8%E7%8F%AD...xlsx` | 3759 / `504b`(PK) |
+| `export/detail` | 同上 | `filename*=UTF-8''%E9%80%90%E9%A2%98...xlsx` | 3697 / `504b` |
+| `export/question-stats` | 同上 | `filename*=UTF-8''%E9%A2%98%E7%9B%AE...xlsx` | 3912 / `504b` |
+| `export/personal/5?format=pdf` | `application/pdf` | `filename*=UTF-8''%E4%B8%AA%E4%BA%BA...pdf` | 1931 / `2550`(%P) |
+
+前端实测 toast：`已下载：逐题得分明细-2-1789806873320.xlsx` —— 文件名取自后端 RFC 5987 头，
+未在前端取全量数据拼表（无 `xlsx` / `exceljs` 依赖）。
+
+## 5. 本轮发现并修复的缺陷（全部由真机联调暴露）
+
+| # | 缺陷 | 根因 | 修复 |
+|---|---|---|---|
+| 1 | **6 处表格列渲染为空**：主观题进度（题号/题干/满分）、成绩发布结果表、缺考名单、补考候选人、复核列表、发布预览榜 | 全仓列定义只写 `key` 不写 `dataIndex`；ant-design-vue 4.2.6 取单元格值用的是 `getPathValue(record, dataIndex)`（`node_modules/ant-design-vue/es/vc-table/Cell/index.js`），`key` 不参与取值，未被 `#bodyCell` 分支命中的列一律空白 | 为纯展示列补 `dataIndex`；`标记时间 / 申请时间` 两个时间列按仓库既有约定加 dayjs 格式化分支 |
+| 2 | 冲突后 Alert 说「最新批改内容见下表」，表格却仍是旧值（显示「未批」，接口已返回 `graded:true, score:7`） | `useGradingFlow` 只把最新行放进 `state.conflict.latestRow`，表格数据源是父级查询，而 `emit('refreshed')` 只在**成功**分支调用 | 冲突分支也 `emit('refreshed')`，实测后表格显示 6 分（服务端真值） |
+| 3 | 保存 9 分后成功提示写成「已保存…6 分」 | `lastSuccess` 存的是**点击时**的行对象（他人旧分数），重拉后未更新引用 | 改为按 `submissionId` 从最新行派生 |
+| 4 | **补考创建必然失败**：`POST /api/exams/{id}/makeups` 返回 `400 请求体格式错误` | 时间以 `2026-09-20 09:00:00` 空格格式发送，后端字段是 `LocalDateTime`，只认带 `T` 的 ISO-8601（`spring.jackson.date-format` 只作用于 `java.util.Date`） | 新增 `utils/dateTime.ts` 的 `toIsoLocalDateTime()`（+4 例单测），不可解析时不发请求并提示 |
+| 5 | 同一屏矛盾：题级进度显示 `0 / 1`，面板却显示「已批 1/1」 | 面板只重拉行列表（`@refreshed="refetchRows"`），题级进度查询未失效 | `onRowRefreshed` 同时重拉 rows 与 questions |
+
+**尚未处理（需要单独决定，均属其他阶段的写入边界）**：
+
+- 阶段 21 的班级 / 考试管理列表命中同一根因（缺陷 1）：班级表 5 列全空、考试表 7 列全空，实测已复现；
+- 阶段 21 的 `teacher/exams/create.page.vue` 用 `value-format="YYYY-MM-DD HH:mm:ss"`，与缺陷 4 同一条序列化路径
+  ——**未实跑**，按接口事实推断考试创建也会 400，需一并改成 ISO；
+- `vitest` 配置未加载 `@vitejs/plugin-vue`，无法 mount `.vue`，因此缺陷 1/2/3/5 这类模板级问题**单测拦不住**，
+  只有缺陷 4 被抽成纯函数后补了单测。建议单独立项补配置 + 组件级测试。
+- 遗留 #10（交卷消息未被 broker 确认）实测复现，未修。
+
+## 6. 每一步对应的自动化证据
 
 | 演示步骤 | 自动化守门 | 文件 |
 |---|---|---|
@@ -171,5 +168,6 @@
 | 步骤 4/5 动作可用性 | 6 例（五状态动作集合 / 非管理员无撤回 / 未知状态 fail-closed） | `src/utils/__tests__/scoreActions.spec.ts` |
 | 步骤 6/9 成绩可见性 | 5 例（三态 + reviewing 时不含分数字段 + 非「成绩待发布」400 不误吞） | `src/utils/__tests__/scoreVisibility.spec.ts` |
 | 步骤 2 打分校验 | 5 例（0/满分/一位小数通过；空值/非数字/负数/超满分/两位小数拦截） | `src/utils/__tests__/gradingValidation.spec.ts` |
-| 步骤 4 导出 | 4 例（文件名解析 / 成功保存 / 失败抛原因 / 同 URL 重试成功） | `src/utils/__tests__/exportDownload.spec.ts` |
+| 步骤 4 时间序列化（本轮新增） | 4 例（空格→ISO / ISO 原样 / 补零秒 / 空值与不可解析返回 null） | `src/utils/__tests__/dateTime.spec.ts` |
+| 步骤 4 导出 | 6 例（文件名解析 / 成功保存 / 失败抛原因 / 同 URL 重试成功等） | `src/utils/__tests__/exportDownload.spec.ts` |
 | 步骤 7/8/11 状态映射 | 5 例（1012/1001 常量 / 复核四态 ongoing 语义 / 补考规则 / 缺考无来源字段） | `src/constants/__tests__/postExam.spec.ts` |
