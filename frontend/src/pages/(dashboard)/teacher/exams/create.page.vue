@@ -51,7 +51,7 @@
             <DatePicker
               v-model:value="form.startTime"
               show-time
-              value-format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DDTHH:mm:ss"
               format="YYYY-MM-DD HH:mm:ss"
               placeholder="选择开始时间"
               style="width: 100%"
@@ -61,7 +61,7 @@
             <DatePicker
               v-model:value="form.endTime"
               show-time
-              value-format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DDTHH:mm:ss"
               format="YYYY-MM-DD HH:mm:ss"
               placeholder="选择结束时间"
               style="width: 100%"
@@ -134,7 +134,10 @@ import { client, unwrap } from '@/api/apiClient';
 /**
  * 考试创建页面（阶段 21 考务，修复版）。
  * 后端契约：POST /api/exams（ExamCreateRequest）；试卷 / 班级下拉取自分页接口。
- * 时间用字符串（value-format）直接对齐后端 LocalDateTime 反序列化，避免时区换算。
+ * 时间用字符串（value-format）直接对齐后端 LocalDateTime 反序列化，避免时区换算；
+ * 但 value-format 必须带字面量 T（YYYY-MM-DDTHH:mm:ss）——空格分隔会被后端判
+ * 400「请求体格式错误」（实测；`spring.jackson.date-format` 只作用于 java.util.Date）。
+ * 展示用的 format 保持人读的 YYYY-MM-DD HH:mm:ss。
  */
 
 const router = useRouter();

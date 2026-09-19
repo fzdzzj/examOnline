@@ -31,7 +31,13 @@
         @change="onTableChange"
       >
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
+          <template v-if="column.key === 'startTime'">
+            {{ formatTime((record as ExamResponse).startTime) }}
+          </template>
+          <template v-else-if="column.key === 'endTime'">
+            {{ formatTime((record as ExamResponse).endTime) }}
+          </template>
+          <template v-else-if="column.key === 'status'">
             <Tag :color="getExamStatusConfig((record as ExamResponse).status as ExamStatus).color">
               {{ getExamStatusConfig((record as ExamResponse).status as ExamStatus).label }}
             </Tag>
@@ -127,6 +133,7 @@ import {
   message,
   type TableColumnsType,
 } from 'ant-design-vue';
+import dayjs from 'dayjs';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
@@ -151,17 +158,21 @@ import { EXAM_STATUS, getExamStatusConfig, type ExamStatus } from '@/constants/e
 const router = useRouter();
 
 const columns: TableColumnsType = [
-  { title: 'ID', key: 'id', width: 70 },
-  { title: '考试标题', key: 'title' },
-  { title: '试卷 ID', key: 'paperId', width: 100 },
-  { title: '班级 ID', key: 'classId', width: 100 },
+  { title: 'ID', key: 'id', dataIndex: 'id', width: 70 },
+  { title: '考试标题', key: 'title', dataIndex: 'title' },
+  { title: '试卷 ID', key: 'paperId', dataIndex: 'paperId', width: 100 },
+  { title: '班级 ID', key: 'classId', dataIndex: 'classId', width: 100 },
   { title: '状态', key: 'status', width: 100 },
   { title: '考试发布', key: 'published', width: 110 },
   { title: '开始时间', key: 'startTime', width: 170 },
   { title: '结束时间', key: 'endTime', width: 170 },
-  { title: '个人时长(分)', key: 'durationMinutes', width: 110 },
+  { title: '个人时长(分)', key: 'durationMinutes', dataIndex: 'durationMinutes', width: 110 },
   { title: '操作', key: 'actions', width: 170 },
 ];
+
+function formatTime(value: string | undefined | null): string {
+  return value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '—';
+}
 
 const statusOptions = [
   { value: EXAM_STATUS.NOT_STARTED, label: '未开始' },

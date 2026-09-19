@@ -60,8 +60,8 @@ const router = useRouter();
 
 const columns: TableColumnsType = [
   { title: '标题', key: 'title', ellipsis: true },
-  { title: '题数', key: 'questionCount', width: 80 },
-  { title: '总分', key: 'totalScore', width: 90 },
+  { title: '题数', key: 'questionCount', dataIndex: 'questionCount', width: 80 },
+  { title: '总分', key: 'totalScore', dataIndex: 'totalScore', width: 90 },
   { title: '状态', key: 'status', width: 90 },
   { title: '创建时间', key: 'createdTime', width: 160 },
   { title: '操作', key: 'actions', width: 140 },

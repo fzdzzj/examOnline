@@ -84,7 +84,7 @@ import { queryClient } from '@/api/queryClient';
 import { TAG_TYPE_OPTIONS, tagTypeLabelOf } from '@/utils/questionTypes';
 
 const columns: TableColumnsType = [
-  { title: '标签名', key: 'name' },
+  { title: '标签名', key: 'name', dataIndex: 'name' },
   { title: '类型', key: 'type', width: 140 },
   { title: '操作', key: 'actions', width: 100 },
 ];

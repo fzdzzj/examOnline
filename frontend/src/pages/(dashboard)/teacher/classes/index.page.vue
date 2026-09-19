@@ -15,7 +15,10 @@
         @change="onTableChange"
       >
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'actions'">
+          <template v-if="column.key === 'createdTime'">
+            {{ formatTime((record as ClassResponse).createdTime) }}
+          </template>
+          <template v-else-if="column.key === 'actions'">
             <Space>
               <Button type="link" size="small" @click="viewClassStudents(record as ClassResponse)">
                 查看学生
@@ -83,7 +86,13 @@
         :pagination="false"
         :row-key="(row: ClassStudentItem) => row.userId as number"
         size="small"
-      />
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'joinedTime'">
+            {{ formatTime((record as ClassStudentItem).joinedTime) }}
+          </template>
+        </template>
+      </Table>
     </Modal>
   </div>
 </template>
@@ -103,6 +112,7 @@ import {
   message,
   type TableColumnsType,
 } from 'ant-design-vue';
+import dayjs from 'dayjs';
 import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 
@@ -125,20 +135,24 @@ import { client, unwrap } from '@/api/apiClient';
  */
 
 const columns: TableColumnsType = [
-  { title: 'ID', key: 'id', width: 80 },
-  { title: '班级名称', key: 'name' },
-  { title: '课程 ID', key: 'courseId', width: 120 },
-  { title: '创建教师 ID', key: 'createdBy', width: 130 },
+  { title: 'ID', key: 'id', dataIndex: 'id', width: 80 },
+  { title: '班级名称', key: 'name', dataIndex: 'name' },
+  { title: '课程 ID', key: 'courseId', dataIndex: 'courseId', width: 120 },
+  { title: '创建教师 ID', key: 'createdBy', dataIndex: 'createdBy', width: 130 },
   { title: '创建时间', key: 'createdTime', width: 180 },
   { title: '操作', key: 'actions', width: 220 },
 ];
 
 const studentColumns: TableColumnsType = [
-  { title: '用户 ID', key: 'userId', width: 100 },
-  { title: '用户名', key: 'username', width: 140 },
-  { title: '姓名', key: 'name', width: 140 },
+  { title: '用户 ID', key: 'userId', dataIndex: 'userId', width: 100 },
+  { title: '用户名', key: 'username', dataIndex: 'username', width: 140 },
+  { title: '姓名', key: 'name', dataIndex: 'name', width: 140 },
   { title: '入班时间', key: 'joinedTime', width: 180 },
 ];
+
+function formatTime(value: string | undefined | null): string {
+  return value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '—';
+}
 
 const pageNum = ref(1);
 const pageSize = ref(10);
