@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -97,6 +98,12 @@ public class ExamSubmitService {
         return doSubmit(examId, studentId, submitType, req.getAnswers());
     }
 
+    /** 异步交卷：使用 submitExecutor 线程池（高优先级低延迟场景） */
+    @Async("submitExecutor")
+    public void submitAsync(Long examId, SubmitRequest request) {
+        submit(examId, request);
+    }
+
     /** 后端兜底入口（定时扫描/重进超时窗口调用）：无登录上下文，答案取 Redis 草稿。 */
     public SubmitResponse forceSubmitByBackend(Long examId, Long studentId) {
         return doSubmit(examId, studentId, ExamSubmission.SUBMIT_TYPE_BACKEND, null);
@@ -123,11 +130,22 @@ public class ExamSubmitService {
         // 并避免 TTL 过期后多线程同时进锁区打 DB/MQ。
         String lockKey = LOCK_PREFIX + examId + ":" + studentId;
         String token = UUID.randomUUID().toString();
+        
+        // 并发监控：记录锁等待时间
+        long lockAcquireStart = System.nanoTime();
         Boolean locked = redisTemplate.opsForValue()
                 .setIfAbsent(lockKey, token, Duration.ofSeconds(lockTtlSeconds));
+        
         if (!Boolean.TRUE.equals(locked)) {
+            // 锁竞争失败
+            metrics.recordLockContention();
             return waitForConcurrentSubmit(examId, studentId);
         }
+        
+        // 锁获取成功，记录等待时间
+        double waitTimeSeconds = (System.nanoTime() - lockAcquireStart) / 1e9;
+        metrics.recordLockWait(waitTimeSeconds);
+        
         try {
             // 锁内二次确认：等锁窗口内可能已被并发路径提交
             submission = submissionService.getByExamStudent(examId, studentId);

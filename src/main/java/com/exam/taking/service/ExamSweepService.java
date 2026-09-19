@@ -5,16 +5,17 @@ import com.exam.submission.dto.SubmitMessage;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.submission.mq.ExamSubmitSender;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 交卷链路兜底扫描（spec「超时交卷」需求，服务端时间为准）：
@@ -70,6 +71,7 @@ public class ExamSweepService {
     }
 
     /** 执行一轮兜底：超时强制交卷 + 答案补发对账。 */
+    @Async("gradeExecutor")
     public int sweep() {
         int forced = forceSubmitOverdue();
         int republished = republishMissingAnswers();
