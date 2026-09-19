@@ -23,6 +23,7 @@ import com.exam.paper.mapper.PaperQuestionMapper;
 import com.exam.question.entity.Question;
 import com.exam.question.entity.QuestionType;
 import com.exam.question.mapper.QuestionMapper;
+import com.exam.question.repository.QuestionTagRepository;
 import com.exam.question.service.QuestionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -64,15 +65,18 @@ public class PaperService {
     private final QuestionMapper questionMapper;
     private final QuestionService questionService;
     private final ExamPaperLockService examPaperLockService;
+    private final QuestionTagRepository questionTagRepository;
 
     public PaperService(PaperMapper paperMapper, PaperQuestionMapper paperQuestionMapper,
                         QuestionMapper questionMapper, QuestionService questionService,
-                        ExamPaperLockService examPaperLockService) {
+                        ExamPaperLockService examPaperLockService,
+                        QuestionTagRepository questionTagRepository) {
         this.paperMapper = paperMapper;
         this.paperQuestionMapper = paperQuestionMapper;
         this.questionMapper = questionMapper;
         this.questionService = questionService;
         this.examPaperLockService = examPaperLockService;
+        this.questionTagRepository = questionTagRepository;
     }
 
     /** 创建试卷（草稿）。 */
@@ -283,12 +287,9 @@ public class PaperService {
                     .eq(rule.getDifficulty() != null, Question::getDifficulty, rule.getDifficulty())
                     .notIn(!excludeQuestionIds.isEmpty(), Question::getId, excludeQuestionIds);
             if (rule.getTagIds() != null && !rule.getTagIds().isEmpty()) {
-                // 规则内多标签 OR 语义：命中任一标签即可
-                String tagIdList = rule.getTagIds().stream()
-                        .map(String::valueOf)
-                        .collect(Collectors.joining(","));
-                wrapper.inSql(Question::getId,
-                        "SELECT question_id FROM question_tags WHERE tag_id IN (" + tagIdList + ")");
+                // 参数化查询：避免 SQL 注入（inSql() 字符串拼接风险）
+                List<Long> questionIds = questionTagRepository.findQuestionIdsByTagIds(rule.getTagIds());
+                wrapper.in(Question::getId, questionIds);
             }
             List<Long> candidateIds = questionMapper.selectList(wrapper).stream()
                     .map(Question::getId)
