@@ -158,7 +158,7 @@ function getExamStatusLabel(status: number | undefined): string {
   return (status !== undefined && map[status]) || '未知';
 }
 
-function examFilterOption(input: string, option: unknown): boolean {
+function examFilterOption(input: string, option?: unknown): boolean {
   const label = (option as { label?: unknown } | undefined)?.label;
   return String(label ?? '')
     .toLowerCase()
