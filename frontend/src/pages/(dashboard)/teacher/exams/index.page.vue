@@ -1,253 +1,89 @@
-<script setup lang="ts">
-import { message, Modal, Table } from 'ant-design-vue';
-import { computed, onMounted, ref, type Ref } from 'vue';
-import type { ExamResponse } from '@/api';
-import { examsApi } from '@/api';
-import { EXAM_STATUS, getExamStatusConfig } from '@/constants/examStatus';
-
-/**
- * 考试列表页面
- * 功能：考试分页、状态标签、可用操作按钮（由后端决定）
- *
- * 后端契约：
- * - GET /api/exams: 考试分页（教师仅见自己的考试）
- * - POST /api/exams: 创建考试
- * - GET /api/exams/{id}: 考试详情
- * - PUT /api/exams/{id}: 更新考试（仅未发布且未开始）
- * - DELETE /api/exams/{id}: 删除考试（仅未发布且未开始）
- * - POST /api/exams/{id}/publish: 发布考试（生成快照）
- * - POST /api/exams/{id}/force-end: 强制结束（触发缺考标记）
- * - GET /api/exams/{id}/snapshot: 读取试卷快照
- */
-
-const examList = ref<ExamResponse[]>([]);
-const loading = ref(false);
-interface Pagination {
-  current: number;
-  pageSize: number;
-  total: number;
-}
-const pagination = ref<Pagination>({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-});
-
-// 筛选条件
-const statusFilter = ref<number | undefined>();
-const searchTitle = ref('');
-
-// 发布确认
-const publishModalVisible = ref(false);
-const publishingExamId = ref<number | undefined>();
-
-// force-end 确认
-const forceEndModalVisible = ref(false);
-const forceEndingExamId = ref<number | undefined>();
-
-// 加载考试列表
-async function loadExams() {
-  loading.value = true;
-  try {
-    const response = await examsApi.examsPageGet({
-      page: pagination.value.current,
-      size: pagination.value.pageSize,
-    });
-
-    if (response.code === 200 && response.data) {
-      examList.value = response.data.list || [];
-      pagination.value.total = response.data.total || 0;
-    } else {
-      message.error(response.message || '加载考试列表失败');
-    }
-  } catch (error) {
-    console.error('加载考试列表失败:', error);
-    message.error('加载考试列表失败');
-  } finally {
-    loading.value = false;
-  }
-}
-
-// 过滤后的列表
-const filteredExamList = computed(() => {
-  let result = examList.value;
-
-  // 按标题搜索
-  if (searchTitle.value) {
-    result = result.filter((e) => e.title?.includes(searchTitle.value));
-  }
-
-  // 按状态筛选
-  if (statusFilter.value !== undefined) {
-    result = result.filter((e) => e.status === statusFilter.value);
-  }
-
-  return result;
-});
-
-// 打开发布确认
-function openPublishConfirm(exam: ExamResponse) {
-  publishingExamId.value = exam.id;
-  publishModalVisible.value = true;
-}
-
-// 确认发布
-async function confirmPublish() {
-  if (!publishingExamId.value) return;
-
-  try {
-    const response = await examsApi.examsIdPublishPost({ id: publishingExamId.value });
-    if (response.code === 200) {
-      message.success('发布考试成功，已生成试卷快照');
-      publishModalVisible.value = false;
-      loadExams();
-    } else {
-      message.error(response.message || '发布考试失败');
-    }
-  } catch (error) {
-    console.error('发布考试失败:', error);
-    message.error('发布考试失败');
-  }
-}
-
-// 打开 force-end 确认
-function openForceEndConfirm(exam: ExamResponse) {
-  forceEndingExamId.value = exam.id;
-  forceEndModalVisible.value = true;
-}
-
-// 确认 force-end
-async function confirmForceEnd() {
-  if (!forceEndingExamId.value) return;
-
-  try {
-    const response = await examsApi.examsIdForceEndPost({ id: forceEndingExamId.value });
-    if (response.code === 200) {
-      message.success('强制结束成功，已触发缺考标记');
-      forceEndModalVisible.value = false;
-      loadExams();
-    } else {
-      message.error(response.message || '强制结束失败');
-    }
-  } catch (error) {
-    console.error('强制结束失败:', error);
-    message.error('强制结束失败');
-  }
-}
-
-// 查看考试详情
-function viewExamDetail(_exam: ExamResponse) {
-  // TODO: 跳转到详情页
-}
-
-onMounted(() => {
-  loadExams();
-});
-</script>
-
 <template>
-  <div class="p-6">
+  <div>
     <Card title="考试管理" class="mb-4">
       <template #extra>
-        <Button type="primary" @click="$router.push('/teacher/exams/create')">+ 新建考试</Button>
+        <Button type="primary" @click="router.push('/teacher/exams/create')">+ 新建考试</Button>
       </template>
 
-      <!-- 筛选区 -->
-      <div class="mb-4 flex gap-4">
+      <div class="mb-3 flex flex-wrap items-center gap-2">
         <Input
           v-model:value="searchTitle"
-          placeholder="搜索考试标题"
+          placeholder="搜索考试标题（当前页）"
           allow-clear
-          style="width: 300px"
-          @change="loadExams"
+          class="w-64"
         />
         <Select
           v-model:value="statusFilter"
+          :options="statusOptions"
           placeholder="全部状态"
           allow-clear
-          style="width: 150px"
-          @change="loadExams"
-        >
-          <SelectOption :value="EXAM_STATUS.NOT_STARTED">未开始</SelectOption>
-          <SelectOption :value="EXAM_STATUS.IN_PROGRESS">进行中</SelectOption>
-          <SelectOption :value="EXAM_STATUS.ENDED">已结束</SelectOption>
-          <SelectOption :value="EXAM_STATUS.GRADED">已批改</SelectOption>
-          <SelectOption :value="EXAM_STATUS.PUBLISHED">已发布</SelectOption>
-        </Select>
+          class="w-36"
+        />
       </div>
 
       <Table
-        :dataSource="filteredExamList"
-        :loading="loading"
-        :pagination="pagination"
-        :scroll="{ x: 1200 }"
-        @change="
-          (page: any, _filters: any) => {
-            if (page && typeof page === 'object') {
-              pagination.current = page.current;
-              pagination.pageSize = page.pageSize;
-              loadExams();
-            }
-          }
-        "
+        :columns="columns"
+        :data-source="filteredRows"
+        :loading="isFetching"
+        :pagination="tablePagination"
+        :row-key="(row: ExamResponse) => row.id as number"
+        size="middle"
+        @change="onTableChange"
       >
-        <Column title="ID" dataIndex="id" width="80" />
-        <Column title="考试标题" dataIndex="title" width="250" />
-        <Column title="试卷 ID" dataIndex="paperId" width="120" />
-        <Column title="班级 ID" dataIndex="classId" width="120" />
-        <Column title="状态" width="120">
-          <template #bodyCell="{ record }">
-            <Tag :color="getExamStatusConfig(record.status!).color">
-              {{ getExamStatusConfig(record.status!).label }}
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'status'">
+            <Tag :color="getExamStatusConfig((record as ExamResponse).status as ExamStatus).color">
+              {{ getExamStatusConfig((record as ExamResponse).status as ExamStatus).label }}
             </Tag>
           </template>
-        </Column>
-        <Column title="开始时间" dataIndex="startTime" width="180" />
-        <Column title="结束时间" dataIndex="endTime" width="180" />
-        <Column title="个人时长 (分钟)" dataIndex="durationMinutes" width="120" />
-        <Column title="发布时间" dataIndex="createdTime" width="180" />
-        <Column title="操作" fixed="right" width="300">
-          <template #bodyCell="{ record }">
+          <template v-else-if="column.key === 'published'">
+            <Tag :color="(record as ExamResponse).published ? 'green' : 'default'">
+              {{ (record as ExamResponse).published ? '已发布考试' : '未发布考试' }}
+            </Tag>
+          </template>
+          <template v-else-if="column.key === 'actions'">
             <Space>
-              <Button type="link" @click="viewExamDetail(record)">详情</Button>
-
-              <!-- 发布按钮：仅未发布的考试可发布 -->
+              <!-- 发布考试：仅「未开始 + 未发布」可发布（后端 ExamController.publish 裁决，
+                   前端只按状态渲染入口，越权点击会被后端拒绝） -->
               <Button
-                v-if="!record.published && record.status === EXAM_STATUS.NOT_STARTED"
+                v-if="
+                  !(record as ExamResponse).published &&
+                  (record as ExamResponse).status === EXAM_STATUS.NOT_STARTED
+                "
                 type="link"
-                @click="openPublishConfirm(record)"
+                size="small"
+                @click="openPublishConfirm(record as ExamResponse)"
               >
-                发布
+                发布考试
               </Button>
-
-              <!-- force-end 按钮：仅进行中的考试可结束 -->
+              <!-- 强制结束：仅进行中可结束（触发缺考标记，不可逆） -->
               <Button
-                v-if="record.status === EXAM_STATUS.IN_PROGRESS"
+                v-if="(record as ExamResponse).status === EXAM_STATUS.IN_PROGRESS"
                 type="link"
+                size="small"
                 danger
-                @click="openForceEndConfirm(record)"
+                @click="openForceEndConfirm(record as ExamResponse)"
               >
                 强制结束
               </Button>
             </Space>
           </template>
-        </Column>
+        </template>
       </Table>
     </Card>
 
     <!-- 发布确认弹窗 -->
     <Modal
-      v-model:visible="publishModalVisible"
-      title="确认发布"
-      :ok-disabled="!publishingExamId"
+      v-model:open="publishModalOpen"
+      title="确认发布考试"
+      :confirm-loading="publishing"
       @ok="confirmPublish"
     >
       <Alert type="info" show-icon>
-        <p class="mb-2">确定要发布该考试吗？</p>
-        <p class="text-gray-600">发布后将会：</p>
-        <ul class="list-disc pl-5 text-gray-600">
+        <p>确定要发布该考试吗？发布后将会：</p>
+        <ul class="list-disc pl-5">
           <li>生成试卷快照（唯一时机），学生侧可见</li>
-          <li>绑定试卷被锁定（只读），禁止改题/删题</li>
+          <li>绑定试卷被锁定（只读），禁止改题 / 删题</li>
           <li>考试状态仍为「未开始」，等待定时开考</li>
         </ul>
       </Alert>
@@ -255,58 +91,189 @@ onMounted(() => {
 
     <!-- force-end 确认弹窗 -->
     <Modal
-      v-model:visible="forceEndModalVisible"
+      v-model:open="forceEndModalOpen"
       title="确认强制结束"
-      :ok-disabled="!forceEndingExamId"
+      :confirm-loading="forceEnding"
+      ok-text="强制结束"
       @ok="confirmForceEnd"
     >
       <Alert type="warning" show-icon>
-        <p class="mb-2 font-semibold">警告：此操作将立即结束考试！</p>
-        <p class="text-gray-700">强制结束会：</p>
-        <ul class="list-disc pl-5 text-gray-700">
-          <li>将考试状态从「进行中」改为「已结束」</li>
+        <p class="font-semibold">警告：此操作将立即结束考试！</p>
+        <ul class="list-disc pl-5">
+          <li>考试状态从「进行中」改为「已结束」</li>
           <li>
-            <strong class="text-red-600">触发缺考标记</strong>
-            （占考名单自动填充）
+            <span class="font-semibold text-red-600">触发缺考标记</span>
+            （未交卷学生自动记缺考）
           </li>
           <li>锁定当前答卷（按最后自动保存）</li>
         </ul>
-        <p class="mt-3 text-sm text-gray-600">⚠️ 这是不可逆操作，请谨慎执行。</p>
+        <p class="mt-2 text-sm">这是不可逆操作，请谨慎执行。</p>
       </Alert>
     </Modal>
   </div>
 </template>
 
-<style scoped>
-.p-6 {
-  padding: 1.5rem;
+<script setup lang="ts">
+import {
+  Alert,
+  Button,
+  Card,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Table,
+  Tag,
+  message,
+  type TableColumnsType,
+} from 'ant-design-vue';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useQuery } from '@tanstack/vue-query';
+
+import {
+  forceEnd as forceEndContract,
+  page2 as pageExams,
+  publish1 as publishExam,
+  type ExamResponse,
+} from '@/api/axios';
+import { client, unwrap } from '@/api/apiClient';
+import { queryClient } from '@/api/queryClient';
+import { EXAM_STATUS, getExamStatusConfig, type ExamStatus } from '@/constants/examStatus';
+
+/**
+ * 考试列表页面（阶段 21 考务，修复版）。
+ * 后端契约：GET /api/exams 分页（教师仅见自己的考试）、
+ * POST /api/exams/{id}/publish（生成快照）、POST /api/exams/{id}/force-end（触发缺考标记）。
+ * 按钮可见性按后端返回的 status/published 渲染，前端不自行推算状态机。
+ */
+
+const router = useRouter();
+
+const columns: TableColumnsType = [
+  { title: 'ID', key: 'id', width: 70 },
+  { title: '考试标题', key: 'title' },
+  { title: '试卷 ID', key: 'paperId', width: 100 },
+  { title: '班级 ID', key: 'classId', width: 100 },
+  { title: '状态', key: 'status', width: 100 },
+  { title: '考试发布', key: 'published', width: 110 },
+  { title: '开始时间', key: 'startTime', width: 170 },
+  { title: '结束时间', key: 'endTime', width: 170 },
+  { title: '个人时长(分)', key: 'durationMinutes', width: 110 },
+  { title: '操作', key: 'actions', width: 170 },
+];
+
+const statusOptions = [
+  { value: EXAM_STATUS.NOT_STARTED, label: '未开始' },
+  { value: EXAM_STATUS.IN_PROGRESS, label: '进行中' },
+  { value: EXAM_STATUS.ENDED, label: '已结束' },
+  { value: EXAM_STATUS.GRADED, label: '已批改' },
+  { value: EXAM_STATUS.PUBLISHED, label: '成绩已发布' },
+];
+
+const pageNum = ref(1);
+const pageSize = ref(10);
+const statusFilter = ref<number | undefined>(undefined);
+const searchTitle = ref('');
+
+const { data, isFetching, refetch } = useQuery({
+  queryKey: computed(() => ['exams', pageNum.value, pageSize.value] as const),
+  queryFn: () =>
+    unwrap<ExamResponse[]>(
+      pageExams({
+        client,
+        throwOnError: true,
+        query: { page: pageNum.value, size: pageSize.value },
+      })
+    ),
+});
+
+const rows = computed<ExamResponse[]>(() => data.value ?? []);
+
+const filteredRows = computed<ExamResponse[]>(() => {
+  let result = rows.value;
+  if (searchTitle.value.trim()) {
+    result = result.filter((e) => e.title?.includes(searchTitle.value.trim()));
+  }
+  if (statusFilter.value !== undefined && statusFilter.value !== null) {
+    result = result.filter((e) => e.status === statusFilter.value);
+  }
+  return result;
+});
+
+const tablePagination = computed(() => ({
+  current: pageNum.value,
+  pageSize: pageSize.value,
+  // GET /api/exams 返回当页数组（无 total 信封）：是否还有下一页以「当页满页」推断，
+  // 只影响分页器显示，不影响数据正确性（越界页后端返回空数组）
+  total: pageNum.value * pageSize.value,
+  showSizeChanger: false,
+}));
+
+function onTableChange(pag: { current?: number; pageSize?: number }): void {
+  if (typeof pag.current === 'number') pageNum.value = pag.current;
+  if (typeof pag.pageSize === 'number') pageSize.value = pag.pageSize;
+  void refetch();
 }
 
+// ===== 发布考试 =====
+const publishModalOpen = ref(false);
+const publishingExamId = ref<number | undefined>(undefined);
+const publishing = ref(false);
+
+function openPublishConfirm(exam: ExamResponse): void {
+  publishingExamId.value = exam.id;
+  publishModalOpen.value = true;
+}
+
+async function confirmPublish(): Promise<void> {
+  if (publishingExamId.value === undefined) return;
+  publishing.value = true;
+  try {
+    await unwrap(publishExam({ client, throwOnError: true, path: { id: publishingExamId.value } }));
+    message.success('考试已发布，试卷快照已生成');
+    publishModalOpen.value = false;
+    void queryClient.invalidateQueries({ queryKey: ['exams'] });
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '发布考试失败，请稍后重试');
+  } finally {
+    publishing.value = false;
+  }
+}
+
+// ===== 强制结束 =====
+const forceEndModalOpen = ref(false);
+const forceEndingExamId = ref<number | undefined>(undefined);
+const forceEnding = ref(false);
+
+function openForceEndConfirm(exam: ExamResponse): void {
+  forceEndingExamId.value = exam.id;
+  forceEndModalOpen.value = true;
+}
+
+async function confirmForceEnd(): Promise<void> {
+  if (forceEndingExamId.value === undefined) return;
+  forceEnding.value = true;
+  try {
+    await unwrap(
+      forceEndContract({ client, throwOnError: true, path: { id: forceEndingExamId.value } })
+    );
+    message.success('考试已强制结束，缺考标记已触发');
+    forceEndModalOpen.value = false;
+    void queryClient.invalidateQueries({ queryKey: ['exams'] });
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '强制结束失败，请稍后重试');
+  } finally {
+    forceEnding.value = false;
+  }
+}
+</script>
+
+<style scoped>
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
 .mb-4 {
   margin-bottom: 1rem;
-}
-
-.flex {
-  display: flex;
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
-.text-gray-600 {
-  color: #6b7280;
-}
-
-.text-gray-700 {
-  color: #374151;
-}
-
-.font-semibold {
-  font-weight: 600;
-}
-
-.text-red-600 {
-  color: #dc2626;
 }
 </style>

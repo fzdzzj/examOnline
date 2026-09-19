@@ -1,266 +1,297 @@
-<script setup lang="ts">
-import { message, Modal, Table } from 'ant-design-vue';
-import { onMounted, ref } from 'vue';
-import type { ClassEntity } from '@/api';
-import { classesApi } from '@/api';
-
-/**
- * 班级管理页面
- * 功能：班级 CRUD、学生入班/转班、班级学生列表
- *
- * 后端契约：
- * - GET /api/classes: 班级分页（教师仅见自己归属的班级）
- * - POST /api/classes: 创建班级
- * - PUT /api/classes/{id}: 更新班级
- * - DELETE /api/classes/{id}: 删除班级（软删）
- * - GET /api/classes/{id}/students: 班级学生列表
- * - POST /api/classes/{id}/students: 学生入班
- * - PUT /api/classes/{id}/students/{userId}/transfer: 学生转班
- */
-
-const classList = ref<ClassEntity[]>([]);
-const loading = ref(false);
-const pagination = ref({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-});
-
-// 新建/编辑班级表单
-const classForm = ref({ name: '', courseId: undefined as number | undefined });
-const isModalVisible = ref(false);
-const isEditing = ref(false);
-const editingClassId = ref<number | undefined>();
-
-// 学生管理
-const studentModalVisible = ref(false);
-const selectedClassId = ref<number | undefined>();
-interface StudentItem {
-  studentId: number;
-  studentName: string;
-  studentNo?: string;
-  joinedTime?: string;
-}
-const studentList = ref<StudentItem[]>([]);
-const studentSearch = ref('');
-
-// 加载班级列表
-async function loadClasses() {
-  loading.value = true;
-  try {
-    const response = await classesApi.classesPageGet({
-      page: pagination.value.current,
-      size: pagination.value.pageSize,
-    });
-
-    if (response.code === 200 && response.data) {
-      classList.value = response.data.list || [];
-      pagination.value.total = response.data.total || 0;
-    } else {
-      message.error(response.message || '加载班级列表失败');
-    }
-  } catch (error) {
-    console.error('加载班级列表失败:', error);
-    message.error('加载班级列表失败');
-  } finally {
-    loading.value = false;
-  }
-}
-
-// 打开新建/编辑 modal
-function openClassModal(classItem?: ClassEntity) {
-  if (classItem) {
-    isEditing.value = true;
-    editingClassId.value = classItem.id;
-    classForm.value = { name: classItem.name, courseId: classItem.courseId };
-  } else {
-    isEditing.value = false;
-    editingClassId.value = undefined;
-    classForm.value = { name: '', courseId: undefined };
-  }
-  isModalVisible.value = true;
-}
-
-// 保存班级
-async function saveClass() {
-  try {
-    if (isEditing.value && editingClassId.value) {
-      await classesApi.classesIdPut({
-        id: editingClassId.value,
-        ClassUpdateRequest: { name: classForm.value.name, courseId: classForm.value.courseId },
-      });
-      message.success('更新班级成功');
-    } else {
-      await classesApi.classesPost({
-        ClassCreateRequest: { name: classForm.value.name, courseId: classForm.value.courseId },
-      });
-      message.success('创建班级成功');
-    }
-    isModalVisible.value = false;
-    loadClasses();
-  } catch (error) {
-    console.error('保存班级失败:', error);
-    message.error(isEditing.value ? '更新班级失败' : '创建班级失败');
-  }
-}
-
-// 删除班级
-async function deleteClass(classItem: ClassEntity) {
-  Modal.confirm({
-    title: '确认删除',
-    content: `确定要删除班级「${classItem.name}」吗？此操作为软删。`,
-    okText: '删除',
-    cancelText: '取消',
-    onOk: async () => {
-      try {
-        await classesApi.classesIdDelete({ id: classItem.id! });
-        message.success('删除班级成功');
-        loadClasses();
-      } catch (error) {
-        console.error('删除班级失败:', error);
-        message.error('删除班级失败');
-      }
-    },
-  });
-}
-
-// 查看班级学生
-async function viewClassStudents(classItem: ClassEntity) {
-  selectedClassId.value = classItem.id;
-  studentModalVisible.value = true;
-
-  try {
-    const response = await classesApi.classesIdStudentsGet({ id: classItem.id! });
-    if (response.code === 200 && response.data) {
-      studentList.value = response.data;
-    } else {
-      studentList.value = [];
-    }
-  } catch (error) {
-    console.error('加载学生列表失败:', error);
-    studentList.value = [];
-  }
-}
-
-// 搜索学生
-const filteredStudentList = computed(() => {
-  if (!studentSearch.value) return studentList.value;
-  const keyword = studentSearch.value.toLowerCase();
-  return studentList.value.filter(
-    (s) =>
-      s.studentName?.toLowerCase().includes(keyword) || s.studentId?.toString().includes(keyword)
-  );
-});
-
-onMounted(() => {
-  loadClasses();
-});
-</script>
-
 <template>
-  <div class="p-6">
+  <div>
     <Card title="班级管理" class="mb-4">
       <template #extra>
-        <Button @click="openClassModal">+ 新建班级</Button>
+        <Button type="primary" @click="openClassModal()">+ 新建班级</Button>
       </template>
 
       <Table
-        :dataSource="classList"
-        :loading="loading"
-        :pagination="pagination"
-        :scroll="{ x: 800 }"
-        @change="
-          (page, filters) => {
-            if (page && typeof page === 'object') {
-              pagination.value.current = page.current;
-              pagination.value.pageSize = page.pageSize;
-              loadClasses();
-            }
-          }
-        "
+        :columns="columns"
+        :data-source="rows"
+        :loading="isFetching"
+        :pagination="tablePagination"
+        :row-key="(row: ClassResponse) => row.id as number"
+        size="middle"
+        @change="onTableChange"
       >
-        <Column title="ID" dataIndex="id" width="80" />
-        <Column title="班级名称" dataIndex="name" width="200" />
-        <Column title="课程 ID" dataIndex="courseId" width="120" />
-        <Column title="创建教师 ID" dataIndex="createdBy" width="120" />
-        <Column title="创建时间" dataIndex="createdTime" width="180" />
-        <Column title="操作" fixed="right" width="250">
-          <template #bodyCell="{ record }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'actions'">
             <Space>
-              <Button type="link" @click="viewClassStudents(record)">查看学生</Button>
-              <Button type="link" @click="openClassModal(record)">编辑</Button>
+              <Button type="link" size="small" @click="viewClassStudents(record as ClassResponse)">
+                查看学生
+              </Button>
+              <Button type="link" size="small" @click="openClassModal(record as ClassResponse)">
+                编辑
+              </Button>
               <Popconfirm
-                title="确认删除"
-                description="确定要删除该班级吗？"
-                okText="确定"
-                cancelText="取消"
-                @confirm="deleteClass(record)"
+                title="删除班级为软删，确认删除？"
+                @confirm="onDeleteClass(record as ClassResponse)"
               >
-                <Button type="link" danger>删除</Button>
+                <Button type="link" size="small" danger>删除</Button>
               </Popconfirm>
             </Space>
           </template>
-        </Column>
+        </template>
       </Table>
+      <!-- 说明：按 ClassController 现有契约实现——分页 / 创建 / 更新 / 删除 / 学生列表，
+           学生入班 / 转班 / 移出在本页不展开（属考务编排，后续阶段接入）。 -->
     </Card>
 
     <!-- 新建/编辑班级 Modal -->
     <Modal
-      v-model:visible="isModalVisible"
+      v-model:open="classModalOpen"
       :title="isEditing ? '编辑班级' : '新建班级'"
-      :ok-disabled="!classForm.name"
+      :confirm-loading="saving"
+      :ok-button-props="{ disabled: !draftName.trim() }"
       @ok="saveClass"
     >
       <Form layout="vertical">
         <FormItem label="班级名称" required>
-          <Input v-model:value="classForm.name" placeholder="请输入班级名称" allow-clear />
+          <Input
+            v-model:value="draftName"
+            :maxlength="64"
+            placeholder="请输入班级名称"
+            allow-clear
+          />
         </FormItem>
         <FormItem label="课程 ID（可选）">
           <InputNumber
-            v-model:value="classForm.courseId"
+            v-model:value="draftCourseId"
+            :min="1"
             placeholder="请输入课程 ID"
             style="width: 100%"
-            min="1"
           />
         </FormItem>
       </Form>
     </Modal>
 
     <!-- 学生列表 Modal -->
-    <Modal v-model:visible="studentModalVisible" title="班级学生列表" width="80%" footer>
-      <template #footer>
-        <Button @click="studentModalVisible = false">关闭</Button>
-      </template>
-
-      <div class="mb-4">
+    <Modal v-model:open="studentModalOpen" title="班级学生列表" width="640px" :footer="null">
+      <div class="mb-3">
         <Input
           v-model:value="studentSearch"
-          placeholder="搜索学生（姓名/学号）"
+          placeholder="搜索学生（姓名 / 用户名）"
           allow-clear
-          style="max-width: 300px"
+          style="max-width: 280px"
         />
       </div>
 
-      <Table :dataSource="filteredStudentList" :loading="false" scroll="{ x: 600 }">
-        <Column title="学生 ID" dataIndex="studentId" width="120" />
-        <Column title="学生姓名" dataIndex="studentName" width="150" />
-        <Column title="学号" dataIndex="studentNo" width="150" />
-        <Column title="入班时间" dataIndex="joinedTime" width="180" />
-      </Table>
+      <Table
+        :columns="studentColumns"
+        :data-source="filteredStudents"
+        :loading="studentsFetching"
+        :pagination="false"
+        :row-key="(row: ClassStudentItem) => row.userId as number"
+        size="small"
+      />
     </Modal>
   </div>
 </template>
 
-<style scoped>
-.p-6 {
-  padding: 1.5rem;
+<script setup lang="ts">
+import {
+  Button,
+  Card,
+  Form,
+  FormItem,
+  Input,
+  InputNumber,
+  Modal,
+  Popconfirm,
+  Space,
+  Table,
+  message,
+  type TableColumnsType,
+} from 'ant-design-vue';
+import { computed, ref } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+
+import {
+  create4 as createClass,
+  delete3 as deleteClass,
+  listStudents,
+  page3 as pageClasses,
+  update3 as updateClass,
+  type ClassPageResponse,
+  type ClassResponse,
+  type ClassStudentItem,
+} from '@/api/axios';
+import { client, unwrap } from '@/api/apiClient';
+
+/**
+ * 班级管理页面（阶段 21 考务，修复版）。
+ * 后端契约：GET/POST /api/classes、PUT/DELETE /api/classes/{id}、
+ * GET /api/classes/{id}/students；教师仅见自己归属的班级（后端裁决）。
+ */
+
+const columns: TableColumnsType = [
+  { title: 'ID', key: 'id', width: 80 },
+  { title: '班级名称', key: 'name' },
+  { title: '课程 ID', key: 'courseId', width: 120 },
+  { title: '创建教师 ID', key: 'createdBy', width: 130 },
+  { title: '创建时间', key: 'createdTime', width: 180 },
+  { title: '操作', key: 'actions', width: 220 },
+];
+
+const studentColumns: TableColumnsType = [
+  { title: '用户 ID', key: 'userId', width: 100 },
+  { title: '用户名', key: 'username', width: 140 },
+  { title: '姓名', key: 'name', width: 140 },
+  { title: '入班时间', key: 'joinedTime', width: 180 },
+];
+
+const pageNum = ref(1);
+const pageSize = ref(10);
+
+const { data, isFetching, refetch } = useQuery({
+  queryKey: computed(() => ['classes', pageNum.value, pageSize.value] as const),
+  queryFn: () =>
+    unwrap<ClassPageResponse>(
+      pageClasses({
+        client,
+        throwOnError: true,
+        query: { page: pageNum.value, size: pageSize.value },
+      })
+    ),
+});
+
+const rows = computed<ClassResponse[]>(() => data.value?.list ?? []);
+
+const tablePagination = computed(() => ({
+  current: pageNum.value,
+  pageSize: pageSize.value,
+  // 后端未返回 total 时退化为「只有当页」的分页器，避免拍脑袋造总数
+  total: data.value?.total ?? data.value?.list?.length ?? 0,
+  showSizeChanger: false,
+}));
+
+function onTableChange(pag: { current?: number; pageSize?: number }): void {
+  if (typeof pag.current === 'number') pageNum.value = pag.current;
+  if (typeof pag.pageSize === 'number') pageSize.value = pag.pageSize;
+  void refetch();
 }
 
+// ===== 新建 / 编辑 =====
+const classModalOpen = ref(false);
+const isEditing = ref(false);
+const editingClassId = ref<number | undefined>(undefined);
+const draftName = ref('');
+const draftCourseId = ref<number | undefined>(undefined);
+const saving = ref(false);
+
+function openClassModal(clazz?: ClassResponse): void {
+  if (clazz) {
+    isEditing.value = true;
+    editingClassId.value = clazz.id;
+    draftName.value = clazz.name ?? '';
+    draftCourseId.value = clazz.courseId;
+  } else {
+    isEditing.value = false;
+    editingClassId.value = undefined;
+    draftName.value = '';
+    draftCourseId.value = undefined;
+  }
+  classModalOpen.value = true;
+}
+
+async function saveClass(): Promise<void> {
+  const name = draftName.value.trim();
+  if (!name) {
+    message.warning('请输入班级名称');
+    return;
+  }
+  saving.value = true;
+  try {
+    if (isEditing.value && editingClassId.value !== undefined) {
+      await unwrap(
+        updateClass({
+          client,
+          throwOnError: true,
+          path: { id: editingClassId.value },
+          body: {
+            name,
+            ...(draftCourseId.value !== undefined ? { courseId: draftCourseId.value } : {}),
+          },
+        })
+      );
+      message.success('班级已更新');
+    } else {
+      await unwrap(
+        createClass({
+          client,
+          throwOnError: true,
+          body: {
+            name,
+            ...(draftCourseId.value !== undefined ? { courseId: draftCourseId.value } : {}),
+          },
+        })
+      );
+      message.success('班级已创建');
+    }
+    classModalOpen.value = false;
+    void refetch();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '保存班级失败，请稍后重试');
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function onDeleteClass(clazz: ClassResponse): Promise<void> {
+  if (clazz.id === undefined) return;
+  try {
+    await unwrap(deleteClass({ client, throwOnError: true, path: { id: clazz.id } }));
+    message.success('班级已删除');
+    void refetch();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '删除班级失败，请稍后重试');
+  }
+}
+
+// ===== 学生列表 =====
+const studentModalOpen = ref(false);
+const studentSearch = ref('');
+const studentsExamKey = ref<number | undefined>(undefined);
+
+const {
+  data: studentsData,
+  isFetching: studentsFetching,
+  refetch: refetchStudents,
+} = useQuery({
+  queryKey: computed(() => ['classes', studentsExamKey.value, 'students'] as const),
+  queryFn: () =>
+    unwrap<ClassStudentItem[]>(
+      listStudents({
+        client,
+        throwOnError: true,
+        path: { id: studentsExamKey.value as number },
+      })
+    ),
+  enabled: computed(() => studentModalOpen.value && studentsExamKey.value !== undefined),
+});
+
+const filteredStudents = computed<ClassStudentItem[]>(() => {
+  const keyword = studentSearch.value.trim().toLowerCase();
+  if (!keyword) return studentsData.value ?? [];
+  return (studentsData.value ?? []).filter(
+    (s) => s.name?.toLowerCase().includes(keyword) || s.username?.toLowerCase().includes(keyword)
+  );
+});
+
+function viewClassStudents(clazz: ClassResponse): void {
+  if (clazz.id === undefined) return;
+  studentsExamKey.value = clazz.id;
+  studentSearch.value = '';
+  studentModalOpen.value = true;
+  void refetchStudents();
+}
+</script>
+
+<style scoped>
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
 .mb-4 {
   margin-bottom: 1rem;
-}
-
-.max-w-xl {
-  max-width: 36rem;
 }
 </style>
