@@ -26,8 +26,8 @@ public class AuthProperties {
     /** JWT 配置 */
     @Data
     public static class Jwt {
-        /** HS256 签名密钥（生产必须通过环境变量 JWT_SECRET 覆盖，长度 >= 32 字节） */
-        private String secret = "examOnline-dev-jwt-secret-please-change-in-prod-0123456789";
+        /** HS256 签名密钥（生产必须通过环境变量 JWT_SECRET 注入，长度 >= 32 字节） */
+        private String secret;
         /** Access Token 有效期（分钟），默认 30 */
         private long accessExpireMinutes = 30;
         /** Refresh Token 有效期（天），默认 7 */

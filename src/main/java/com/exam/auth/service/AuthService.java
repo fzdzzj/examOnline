@@ -14,6 +14,7 @@ import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.config.AuthProperties;
+import com.exam.service.AuditLogService;
 import com.exam.user.entity.Role;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.regex.Pattern;
 
 /**
  * 认证核心服务：注册、登录（双 Token 签发）、刷新（轮换 + 复用检测）、登出（黑名单）、
@@ -43,6 +45,10 @@ import java.time.Duration;
 public class AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    
+    /** 强密码正则：至少包含大小写字母和数字，长度≥8 */
+    private static final Pattern STRONG_PASSWORD_PATTERN = 
+        Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$");
 
     private final UserService userService;
     private final UserMapper userMapper;
@@ -52,10 +58,11 @@ public class AuthService {
     private final InviteCodeService inviteCodeService;
     private final MailService mailService;
     private final AuthProperties props;
+    private final AuditLogService auditLogService;
 
     public AuthService(UserService userService, UserMapper userMapper, JwtUtil jwtUtil, TokenStoreService tokenStore,
                        LoginGuardService loginGuard, InviteCodeService inviteCodeService,
-                       MailService mailService, AuthProperties props) {
+                       MailService mailService, AuthProperties props, AuditLogService auditLogService) {
         this.userService = userService;
         this.userMapper = userMapper;
         this.jwtUtil = jwtUtil;
@@ -64,6 +71,7 @@ public class AuthService {
         this.inviteCodeService = inviteCodeService;
         this.mailService = mailService;
         this.props = props;
+        this.auditLogService = auditLogService;
     }
 
     // ==================== 注册 ====================
@@ -84,9 +92,12 @@ public class AuthService {
             throw new BusinessException(ResponseCode.ACCOUNT_ALREADY_EXISTS);
         }
 
+        // 密码复杂度校验
+        validatePasswordStrength(req.getPassword());
+
         User user = new User();
         user.setUsername(req.getUsername());
-        user.setPassword(BCrypt.hashpw(req.getPassword(), BCrypt.gensalt()));
+        user.setPassword(BCrypt.hashpw(req.getPassword(), BCrypt.gensalt(12)));
         user.setName(req.getName());
         user.setEmail(req.getEmail());
         user.setStatus(0);
@@ -130,12 +141,14 @@ public class AuthService {
         // 统一失败提示：账号不存在与密码错误返回同一条消息，防账号枚举
         if (user == null || !BCrypt.checkpw(password, user.getPassword())) {
             loginGuard.recordFailure(username);
+            auditLogService.logLoginEvent(username, false, ip, "账号或密码错误");
             throw new BusinessException(ResponseCode.ACCOUNT_OR_PASSWORD_ERROR);
         }
         if (user.getStatus() != null && user.getStatus() == 1) {
             throw new BusinessException(ResponseCode.ACCOUNT_DISABLED);
         }
         loginGuard.clearFailures(username);
+        auditLogService.logLoginEvent(username, true, ip, "登录成功");
         return issueTokens(user);
     }
 
@@ -222,7 +235,8 @@ public class AuthService {
         if (!BCrypt.checkpw(req.getOldPassword(), user.getPassword())) {
             throw new BusinessException(ResponseCode.OLD_PASSWORD_ERROR);
         }
-        userService.updatePassword(user.getId(), BCrypt.hashpw(req.getNewPassword(), BCrypt.gensalt()));
+        validatePasswordStrength(req.getNewPassword());
+        userService.updatePassword(user.getId(), BCrypt.hashpw(req.getNewPassword(), BCrypt.gensalt(12)));
         // 密码已不再是初始密码 → 解除强制改密标记（紧接改密成功之后、会话失效之前落库）。
         // 直接走 UserMapper 定向更新：UserService 未暴露该字段的更新方法，跨模块注入 UserMapper 与既有惯例一致。
         userMapper.update(null, Wrappers.<User>lambdaUpdate()
@@ -261,7 +275,8 @@ public class AuthService {
         if (user == null) {
             throw new BusinessException(ResponseCode.RESET_CODE_INVALID);
         }
-        userService.updatePassword(user.getId(), BCrypt.hashpw(req.getNewPassword(), BCrypt.gensalt()));
+        validatePasswordStrength(req.getNewPassword());
+        userService.updatePassword(user.getId(), BCrypt.hashpw(req.getNewPassword(), BCrypt.gensalt(12)));
         invalidateAllSessions(user.getId());
         log.info("用户 {} 通过验证码重置密码成功", user.getUsername());
     }
@@ -296,6 +311,14 @@ public class AuthService {
     private void invalidateAllSessions(Long userId) {
         tokenStore.bumpSessionVersion(userId);
         tokenStore.removeRefresh(userId);
+    }
+
+    /** 密码复杂度校验：至少包含大小写字母和数字，长度≥8 */
+    private void validatePasswordStrength(String password) {
+        if (!STRONG_PASSWORD_PATTERN.matcher(password).matches()) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                "密码需包含大小写字母和数字，长度至少 8 位");
+        }
     }
 
     private String generateResetCode() {

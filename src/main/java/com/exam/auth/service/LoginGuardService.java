@@ -3,6 +3,7 @@ package com.exam.auth.service;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.config.AuthProperties;
+import com.exam.service.AuditLogService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -28,10 +29,12 @@ public class LoginGuardService {
 
     private final StringRedisTemplate redis;
     private final AuthProperties props;
+    private final AuditLogService auditLogService;
 
-    public LoginGuardService(StringRedisTemplate redis, AuthProperties props) {
+    public LoginGuardService(StringRedisTemplate redis, AuthProperties props, AuditLogService auditLogService) {
         this.redis = redis;
         this.props = props;
+        this.auditLogService = auditLogService;
     }
 
     /** 限流检查：超出阈值抛 429（固定窗口计数，窗口内所有尝试均计数）。 */
@@ -70,6 +73,8 @@ public class LoginGuardService {
                     Duration.ofMinutes(props.getLock().getLockMinutes()));
             redis.delete(failKey);
             log.warn("账号 {} 连续失败 {} 次，锁定 {} 分钟", username, max, props.getLock().getLockMinutes());
+            // 记录审计日志
+            auditLogService.logAccountLock(username, "unknown", "连续登录失败 " + max + " 次");
         }
     }
 
