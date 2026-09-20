@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.ObjectProvider;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -150,5 +151,56 @@ class BusinessMetricsTest {
                 "dedup candidate 计数=1 应导出");
         assertFalse(text.contains("score_audit_logs"),
                 "amount=0 时不应注册 score_audit_logs 指标");
+    }
+
+    @Test
+    @DisplayName("锁等待指标：亚秒等待不得被截成 0")
+    void lockWaitRecordsSubSecondDuration() {
+        PrometheusMeterRegistry registry = registry();
+        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+
+        // SETNX 的正常等待本就是毫秒级
+        metrics.recordLockWait(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(5));
+
+        var timer = registry.get("exam.submit.lock.wait").timer();
+        assertEquals(1, timer.count(), "应记到 1 次采样");
+        assertEquals(5000L, timer.totalTime(java.util.concurrent.TimeUnit.MICROSECONDS),
+                "5ms 等待必须累计为 5000µs；此前实现把秒转 long 会把亚秒等待全截成 0，"
+                        + "指标恒 0 却看起来'非常健康'");
+        assertTrue(registry.scrape().contains("exam_submit_lock_wait_seconds_count 1"),
+                "锁等待计数应导出到 Prometheus 文本");
+    }
+
+    @Test
+    @DisplayName("锁等待指标：必须有毫秒级分桶，否则 P95 是跨数量级插值")
+    void lockWaitHasMillisecondBuckets() {
+        PrometheusMeterRegistry registry = registry();
+        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+
+        metrics.recordLockWait(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(5));
+        String text = registry.scrape();
+
+        // Micrometer 默认桶在 10ms 之后直接跳到 8s，锁等待几乎全落在这段空档里；
+        // 验收口径是"P95 < 100ms"，没有 50/100ms 这两个桶该断言怎么都能通过。
+        assertTrue(text.contains("le=\"0.05\""), "应存在 50ms 分桶");
+        assertTrue(text.contains("le=\"0.1\""), "应存在 100ms 分桶");
+    }
+
+    @Test
+    @DisplayName("锁获取/竞争计数：两个 Counter 正确导出")
+    void lockAcquisitionAndContentionCountersExported() {
+        PrometheusMeterRegistry registry = registry();
+        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+
+        metrics.recordLockWait(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(2));
+        metrics.recordLockContention();
+        metrics.recordLockContention();
+
+        String text = registry.scrape();
+        assertTrue(text.contains("exam_submit_lock_acquisitions_total 1.0"),
+                "锁获取成功计数=1 应导出");
+        assertTrue(text.contains("exam_submit_lock_contentions_total 2.0")
+                        || text.contains("exam_submit_lock_contentions_total{} 2.0"),
+                "锁竞争失败计数=2 应导出");
     }
 }

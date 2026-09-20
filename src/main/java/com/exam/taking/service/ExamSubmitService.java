@@ -135,9 +135,8 @@ public class ExamSubmitService {
             return waitForConcurrentSubmit(examId, studentId);
         }
         
-        // 锁获取成功，记录等待时间
-        double waitTimeSeconds = (System.nanoTime() - lockAcquireStart) / 1e9;
-        metrics.recordLockWait(waitTimeSeconds);
+        // 锁获取成功，记录等待时长：纳秒直传给指标，不在这里换算成秒（会截成 0）
+        metrics.recordLockWait(System.nanoTime() - lockAcquireStart);
         
         try {
             // 锁内二次确认：等锁窗口内可能已被并发路径提交

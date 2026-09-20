@@ -126,6 +126,13 @@ public class BusinessMetrics {
         // 锁等待时间监控
         this.submitLockWaitTimer = Timer.builder(SUBMIT_LOCK_WAIT)
                 .description("考试提交锁等待时间，统计获取 Redis 分布式锁的耗时分布")
+                // 显式分桶不可省：Micrometer 默认桶在 10ms 之后直接跳到 8s，
+                // 锁等待几乎全落在这段空档里，算出的 P95 只是跨 3 个数量级的线性插值，
+                // 而验收口径正是"P95 < 100ms"——不铺桶则该断言怎么都能"通过"。
+                .serviceLevelObjectives(
+                        Duration.ofMillis(1), Duration.ofMillis(5), Duration.ofMillis(10),
+                        Duration.ofMillis(25), Duration.ofMillis(50), Duration.ofMillis(100),
+                        Duration.ofMillis(250), Duration.ofMillis(500), Duration.ofSeconds(1))
                 .register(registry);
         this.submitLockAcquisitionsCounter = Counter.builder(SUBMIT_LOCK_ACQUISITIONS)
                 .description("考试提交锁获取成功次数")
@@ -200,9 +207,15 @@ public class BusinessMetrics {
         dlqEnteredCounter.increment();
     }
 
-    /** 记录锁等待时间（获取锁成功后调用）。 */
-    public void recordLockWait(double waitTimeSeconds) {
-        submitLockWaitTimer.record(Duration.ofSeconds((long) waitTimeSeconds));
+    /**
+     * 记录一次锁获取成功的等待时长。
+     *
+     * <p>单位用纳秒直传：这里若收"秒"再 {@code Duration.ofSeconds((long) s)}，
+     * 会把亚秒等待全部截成 0——SETNX 的正常等待本就是毫秒级，那样指标会恒为 0 且
+     * 分位数看起来"极其健康"，属于静默失效。
+     */
+    public void recordLockWait(long waitNanos) {
+        submitLockWaitTimer.record(waitNanos, java.util.concurrent.TimeUnit.NANOSECONDS);
         submitLockAcquisitionsCounter.increment();
     }
 

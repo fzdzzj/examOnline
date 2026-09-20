@@ -6,11 +6,11 @@
 
 ## 全量门禁
 
-| 项 | 结果（第四轮收尾后） |
+| 项 | 结果（复核后修正） |
 |---|---|
-| Tests run | **265**（Failures 0 / Errors 0 / Skipped 1） |
+| Tests run | **268**（Failures 0 / Errors 0 / Skipped 1） |
 | BUILD | **SUCCESS** |
-| 行覆盖率 | **90.1%**（4178/4639） |
+| 行覆盖率 | **90.1%**（4181/4642） |
 | 分支覆盖率 | **71.6%**（1134/1584） |
 | Skipped 说明 | 唯一 1 个 skip 是 `OpenApiContractTest.exportOpenApiContract`，由 `exportContract` 系统属性按需开启，非回归 |
 
@@ -173,12 +173,54 @@ proposal.md 的基线是错的，照它执行会大量重做已完成的事：
 | `BehaviorEventCollectService.collect()` | 同上，`@Async` 加在返回 `EventVerdict` 且契约要求同步返回的方法上 → 行为上报接口全 500。已移除注解。 |
 | 测试夹具 ×35 处 | 密码强度规则（提交 `c063f0a`）上线时未同步夹具：`pass1234/newpass99/resetpass*` 无大写被拒。已改强口令。`admin123` 与 `"short"` 刻意保留（前者走 `AdminInitializer` 不经校验，后者是有意的弱口令负例）。 |
 
-## 遗留缺口（未擅自扩大改动范围）
+## 遗留缺口（截至第五轮，已按实际状态更新）
 
-1. **审计日志只落日志、未落库**：`AuditLogService.logAuditEvent()` 内是
-   `// 实际实现应该写入数据库，这里仅记录日志`，而 `V20260919__create_audit_log.sql` 建了表却没人写。
-   该方法还用反射取 `SecurityUtil.getCurrentUser()`、自造 traceId 而不读 MDC。属提案 3 的未完成部分。
-2. **提案 4 的 Grafana/告警**：需可访问的监控栈。
-3. **提案 1/2/3/6/7 尚未实施**：其中提案 6（add-distributed-tracing）目前只有半成品——
-   `pom.xml` 的 OTel 依赖集在 HEAD 里根本不存在，全是未提交内容，且 starter 2.1.0-alpha
-   与核心 API 版本曾相差两个大版本（已通过 import instrumentation-bom-alpha 对齐到 1.35.0 修好）。
+1. ~~审计日志只落日志、未落库~~ → **已修**（`9d79d73`）：表补进 `schema.sql` +
+   存量迁移脚本，`AuditLogService` 改为构造注入 mapper 真写库，去掉反射取用户与自造
+   traceId。提案 3 剩余部分仍未做：`/audit/logs` 查询接口、密码有效期策略。
+2. ~~提案 1/2/6/7 尚未实施~~ → **状态已变化**：提案 6 的 OTel 依赖集与追踪代码已提交
+   （`d957dad` + `5999b1e`，半成品但可启动）；提案 7 已**整体撤回删除**（`df5f311`）；
+   提案 1 前提证伪并回退（`5a50ff6`）；提案 2 只做了参数化与空集合修复（`1f678d0`），
+   OR→UNION ALL 因未测量而搁置。
+3. **提案 4 的 Grafana Dashboard 与 P95 告警**：仍未做。注意本机其实存在
+   `sport-verify-grafana` 容器（当前 exited），并非"本地无法验证"。
+
+## 第五轮：双轴复核，修掉一个恒 0 指标
+
+复核 `46d7004..HEAD` 时发现标准轴一处严重缺陷，是我自己引入的（`7f104ee`）：
+
+`BusinessMetrics.recordLockWait()` 收 `double 秒` 再
+`Duration.ofSeconds((long) waitTimeSeconds)` —— SETNX 的正常等待本就是毫秒级，
+`(long) 0.05` → `0`，于是**每次采样都被记成 0 秒**，`exam.submit.lock.wait` 的
+P50/P95/P99 恒为 0。而提案 4 的验收口径正是"P95 < 100ms"——该指标会以恒 0 **假通过**。
+
+修法两条：
+1. 接口改收纳秒并 `timer.record(nanos, NANOSECONDS)`，从源头消除有损换算；
+   调用点 `ExamSubmitService` 直接传 `System.nanoTime() - start`。
+2. 补毫秒级分桶。Micrometer 默认桶在 10ms 之后直接跳到 8s，锁等待几乎全落在这段空档里；
+   不铺 50/100ms 桶则"P95 < 100ms"这个断言怎么都能通过。
+
+同时补 3 条测试进**早已存在**的 `BusinessMetricsTest`（这三个指标此前完全没进它的测试）：
+亚秒等待不得截成 0、必须存在 50/100ms 桶、两个计数 Counter 导出。
+两个变异均验证可红：种回 `Duration.ofSeconds(nanos/1e9)` → 仅截断用例红；
+摘掉 `serviceLevelObjectives` → 仅分桶用例红。
+
+全量 **268 tests / 0 失败**（265 + 3 新）。
+
+### 复核同时纠正我此前两条失实说法
+
+1. 我说"本机 3306 是另一实例、凭据不通所以拿不到 EXPLAIN"——**归因错了**。真相是
+   `exam-mysql-master` 容器 `Exited (255)`，而 `docs/指导Agent交接文档.md:192` 早已写明
+   主库在 **13316 / root/root123**。我没读那份文档就下了阻塞结论。"未测量"成立，
+   但只需 `docker start exam-mysql-master` 即可解开。
+2. 我说 Grafana/P95 告警"本地验证不了"——`docker ps -a` 显示存在
+   `sport-verify-grafana` 容器（已退出），且 observability 规范记录过阶段 16 的告警
+   曾真正 firing。这条也下早了。
+
+### 复核查出、尚未处理的规格轴欠账
+
+- 8 个变更目录全都留在 `spec/changes/` 未归档，delta 一次都没合入 `spec/specs/*`，
+  违反本仓库自己的约定（能力域 spec 均带"来源：archive/xxx 合入"溯源行）。
+- 3 个已撤回提案的 spec-delta 仍是待合入形态，**merge 即注入假需求**（全局限流、
+  三池隔离、每场独立事务）；更正横幅只写在 proposal.md，delta 文件本身没有。
+- 前 14 个提交对 `docs/` 零改动，而每个 tasks.json 都含"在需求决策记录.md 添加注记"步骤。
