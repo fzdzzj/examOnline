@@ -72,8 +72,22 @@ public interface ExamSubmissionMapper extends BaseMapper<ExamSubmission> {
     /**
      * 对账补发扫描：已交卷但 answers 尚未落库（MQ 发送失败/消费重试耗尽进死信等极端场景），
      * 定时任务重新投递交卷消息，消费端 casFillAnswers 幂等，不会重复写。
+     *
+     * <p><b>谓词写在 {@code answers_missing} 而不是 {@code answers IS NULL}，是为了索引能定位。</b>
+     * 该列是 {@code schema.sql} 里的虚拟生成列（值由 {@code answers} 算出，两者永不可能不一致，
+     * 也无需任何代码维护），{@code idx_submissions_republish (status, answers_missing)} 建在它上面。
+     * 10 万答卷 / 95k 已交卷 / 3 条真待补（MySQL 8.0.46，EXPLAIN ANALYZE）：
+     * 写 {@code answers IS NULL} 时无索引可用，优化器只能沿 {@code idx_submissions_sweep} 的
+     * {@code status=2} 区间把 95,000 行读穿才敢返回 0 行，实测 <b>411–519ms</b>；
+     * 写 {@code answers_missing = 1} 走新索引，{@code rows=3}、实测 <b>0.05ms</b>。
+     * 而这条扫描每 10 秒就跑一轮（{@code exam.taking.sweep.fixed-delay-ms}），
+     * 且旧写法的成本随交卷总量线性增长——稳态下纯粹是空转。
+     *
+     * <p>为什么不用前缀索引 {@code (status, answers(2))}：MySQL 上同样有效（实测 rows=3），
+     * 但 <b>H2 不认前缀语法</b>（建表直接 42001 语法错，{@code continue-on-error=false}
+     * 会让全部集成测试起不来），而本项目两端共用一份 {@code schema.sql}。
      */
-    @Select("SELECT * FROM exam_submissions WHERE status = 2 AND answers IS NULL LIMIT #{limit}")
+    @Select("SELECT * FROM exam_submissions WHERE status = 2 AND answers_missing = 1 LIMIT #{limit}")
     List<ExamSubmission> selectSubmittedWithoutAnswers(@Param("limit") int limit);
 
     /** 按 (考试, 学生) 定位答卷——幂等进入/交卷/自动保存的统一查询入口。 */

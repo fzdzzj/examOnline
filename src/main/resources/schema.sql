@@ -243,13 +243,19 @@ CREATE TABLE IF NOT EXISTS exam_submissions (
     grading_status  TINYINT  NOT NULL DEFAULT 0, -- 判分状态：0未判分 1判分成功 2判分失败（失败可重判/手动给分，§9.8）
     grading_error   VARCHAR(512)         DEFAULT NULL, -- 判分失败原因（判分成功时置 NULL）
     partial_graded  TINYINT  NOT NULL DEFAULT 0, -- 1=部分批改：存在未批简答（允许发布，未批按 0 分，§7.5）
+    -- 补发对账索引用：answers 是 LONGTEXT，MySQL 只能建前缀索引、H2 直接不认前缀语法，
+    -- 而"是否未落库"是补发扫描唯一的筛选条件，把它物化成一列才能让两端共用一份 DDL。
+    answers_missing TINYINT  AS (CASE WHEN answers IS NULL THEN 1 ELSE 0 END),
     created_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT uk_exam_student UNIQUE (exam_id, student_id),  -- 三重幂等之一：一人一场至多一条答卷
     KEY idx_submissions_sweep (status, deadline_time),        -- 兜底扫描：按状态筛进行中/已交卷未落库
     KEY idx_submissions_exam_submit (exam_id, submit_time),
-    KEY idx_submissions_grading (exam_id, grading_status)     -- 判分扫描：按考试筛待判/失败答卷
+    KEY idx_submissions_grading (exam_id, grading_status),    -- 判分扫描：按考试筛待判/失败答卷
+    -- 补发对账扫描：只找"已交卷但 answers 仍为 NULL"。健康系统里该集合恒空，
+    -- 没有这条索引就要扫完整个 status=2 区间才敢返回 0 行（10 万答卷实测 411–519ms，每 10 秒一次）。
+    KEY idx_submissions_republish (status, answers_missing)
 );
 
 -- =============================================================
