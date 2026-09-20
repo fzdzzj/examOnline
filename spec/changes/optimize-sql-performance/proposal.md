@@ -1,5 +1,25 @@
 # 提案：SQL 性能优化与索引策略（阶段 9，数据库层强化）
 
+> ⚠️ **本提案三项主张里两项经核实不成立，一项无法在本地验证**（见
+> [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md)）。
+>
+> 1. **"SQL 注入风险（CVSS 7.5）"不成立**：`tagIdList` 由 `List<Long>` 经
+>    `String.valueOf` join 而来，取值恒为数字（可带负号），注入不可达。
+>    已改为参数化查询，但定性应为**纵深防御**——该写法离"一旦 DTO 类型改成
+>    String 即可注入"只差一次改类型，且 MyBatis-Plus 本身把 inSql() 标为危险方法。
+>    参数化改造还引入了一个新缺陷：标签命中 0 题时把空集合交给 `wrapper.in()`，
+>    拼出 `id IN ()` 导致 SQL 语法错误、抽题端点返回 500。已修复并加回归测试。
+> 2. **"缺少复合索引、需新建 idx_sweep_candidate"不成立**：`schema.sql` 里
+>    `exam_submissions` 早已有 `KEY idx_submissions_sweep (status, deadline_time)`，
+>    列组合完全相同。而 `src/main/resources/db/migration/V20260919__create_idx_sweep.sql`
+>    要建的正是它的**重复索引**（本项目未接 Flyway，该文件从未执行）。若哪天真接上
+>    Flyway，只会白白多一份写放大与占用，读取零收益——应删除而非执行。
+> 3. **OR 条件改 UNION ALL：未做，因为无法测量**。本机 3306 是另一个 MySQL 实例、
+>    凭据不通，拿不到真实 EXPLAIN；文中那张"1 万 800ms→50ms / 10 万 5.2s→120ms"
+>    的表是撰写时虚构的占位数字，从未实测。在没有执行计划与数据量的情况下盲改
+>    一条被集成测试只做功能校验的兜底查询，风险大于收益。
+>    要做的前提：在预置 10 万级数据的 MySQL 上先取 EXPLAIN 与实测延迟。
+
 ## Why
 
 **当前问题**: 多个核心查询存在**OR 条件导致索引失效**和**IN 拼接 SQL 注入风险**。

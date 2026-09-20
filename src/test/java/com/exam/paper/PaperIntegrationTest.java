@@ -107,6 +107,34 @@ class PaperIntegrationTest extends IntegrationTestBase {
                 rulesJson(null, null, List.of(mathTag), 3)), 400);
     }
 
+    /**
+     * 标签命中 0 题时必须报"题目不足"，不能退化成 500 或静默忽略标签约束。
+     *
+     * <p>参数化改造后候选题 id 是先查 question_tags 再 wrapper.in(...) 得到的，
+     * 于是多出一条空集合路径。MyBatis-Plus 对空 in 的处理在不同版本间不一致：
+     * 有的拼出 {@code IN ()}（MySQL 语法错→500），有的直接跳过该条件
+     * （→标签过滤形同不存在，从整库抽题，属于静默错误结果）。两种都不可接受，
+     * 本用例把"必须是 400 题目不足"钉死。
+     */
+    @Test
+    void randomDrawWithTagMatchingNoQuestionReportsInsufficient() throws Exception {
+        String teacher = registerTeacher();
+        // 同标签下另有一题，确保"能抽到题"不是因为过滤被整体忽略
+        long usedTag = createTag(teacher, unique("有题标签"), "SUBJECT");
+        createQuestion(teacher, 1, "该标签下的唯一题", "A", List.of("甲", "乙"), List.of(usedTag));
+        long emptyTag = createTag(teacher, unique("空标签"), "SUBJECT");
+
+        JsonNode response = perform(jsonPost("/api/papers/random-draw/preview", teacher,
+                rulesJson(null, null, List.of(emptyTag), 1)), 400);
+        assertTrue(response.get("message").asText().contains("不足"),
+                "空标签应报题目不足，实际=" + response.get("message").asText());
+
+        // 对照：同一请求换成有题的标签必须正常抽到，证明上面的 400 来自标签过滤真的生效
+        JsonNode ok = perform(jsonPost("/api/papers/random-draw/preview", teacher,
+                rulesJson(null, null, List.of(usedTag), 1)), 200).get("data");
+        assertEquals(1, ok.get("total").asInt());
+    }
+
     @Test
     void snapshotLocksAndIsImmutable() throws Exception {
         String teacher = registerTeacher();

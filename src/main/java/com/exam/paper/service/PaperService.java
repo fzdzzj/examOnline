@@ -286,14 +286,7 @@ public class PaperService {
                     .eq(rule.getType() != null, Question::getType, rule.getType())
                     .eq(rule.getDifficulty() != null, Question::getDifficulty, rule.getDifficulty())
                     .notIn(!excludeQuestionIds.isEmpty(), Question::getId, excludeQuestionIds);
-            if (rule.getTagIds() != null && !rule.getTagIds().isEmpty()) {
-                // 参数化查询：避免 SQL 注入（inSql() 字符串拼接风险）
-                List<Long> questionIds = questionTagRepository.findQuestionIdsByTagIds(rule.getTagIds());
-                wrapper.in(Question::getId, questionIds);
-            }
-            List<Long> candidateIds = questionMapper.selectList(wrapper).stream()
-                    .map(Question::getId)
-                    .collect(Collectors.toList());
+            List<Long> candidateIds = candidateIdsFor(wrapper, rule.getTagIds());
             if (candidateIds.size() < rule.getCount()) {
                 throw new BusinessException(ResponseCode.BAD_REQUEST,
                         "满足抽题条件的题目不足：第 " + (i + 1) + " 条规则需要 "
@@ -305,6 +298,31 @@ public class PaperService {
             result.add(questionMapper.selectBatchIds(candidateIds.subList(0, rule.getCount())));
         }
         return result;
+    }
+
+    /**
+     * 按规则取候选题 id：有标签约束时先查关联表再按 id 集合过滤（参数化，见
+     * {@link com.exam.question.repository.QuestionTagRepository}）。
+     *
+     * <p>标签一道题都没命中时<b>必须短路</b>，不能把空集合交给 {@code wrapper.in()}：
+     * MyBatis-Plus 会原样拼出 {@code id IN ()}，MySQL 与 H2 都当语法错误抛出，
+     * 端点于是返回 500；而部分版本又会跳过空 in 条件，变成"标签过滤形同不存在"、
+     * 从整个题库抽题的静默错误结果。两种都不可接受，这里直接返回 0 候选，
+     * 交给调用方既有的「题目不足」分支去报错。
+     *
+     * @return 可变列表（调用方要对其 shuffle）
+     */
+    private List<Long> candidateIdsFor(LambdaQueryWrapper<Question> wrapper, List<Long> tagIds) {
+        if (tagIds != null && !tagIds.isEmpty()) {
+            List<Long> tagged = questionTagRepository.findQuestionIdsByTagIds(tagIds);
+            if (tagged.isEmpty()) {
+                return new ArrayList<>();
+            }
+            wrapper.in(Question::getId, tagged);
+        }
+        return questionMapper.selectList(wrapper).stream()
+                .map(Question::getId)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     // ==================== 共用 ====================
