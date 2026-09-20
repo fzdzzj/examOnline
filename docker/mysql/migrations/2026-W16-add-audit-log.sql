@@ -2,8 +2,8 @@
 -- 存量库迁移：新增 audit_log（harden-security-config）
 -- 适用：已建库的 MySQL 环境。新建库由 schema.sql 一次建全，无需本脚本。
 -- 幂等性说明：重复执行时 MySQL 8 报表 already exists，可忽略。
--- 注：本项目未接 Flyway，src/main/resources/db/migration 下的同名 V 文件不会被自动执行，
---     存量库必须由 DBA 手工跑本脚本。
+-- 注：本项目未接 Flyway，建表唯一来源是 src/main/resources/schema.sql；
+--     存量库（schema.sql 之前建的）必须由 DBA 手工跑本脚本。
 -- =============================================================
 
 CREATE TABLE IF NOT EXISTS audit_log (
