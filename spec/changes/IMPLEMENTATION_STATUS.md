@@ -240,3 +240,34 @@ P50/P95/P99 恒为 0。而提案 4 的验收口径正是"P95 < 100ms"——该�
 `@Validated`，`@RequestParam` 上的约束从不触发，实测 `size=1000` 返回 **200**（连 500 都不是）。
 处置顺序是先写失败测试取证（红）→ 补 `@Validated` 与 `ConstraintViolationException`→400 的映射
 → 测试转绿；不是靠读代码下结论。全量 **269 tests / 0 失败**。
+
+> **上段那个 "200" 本身也是失实的**（2026-09-21 复核，见下节）。结论"约束没生效、对客不是 400"
+> 依旧成立，但红的那一次实际是 **500**，机制也不是"从不触发"。
+
+### 审计读接口 + 对上一条"红=200"的再纠错（d2cbde9）
+
+补上 `GET /api/admin/audit-logs`（`AuditLogService.page` + `AuditLogResponse`，
+`AdminAuditLogIntegrationTest` 4 例）。变异验证两条能红：删 `@Validated` → size 用例红、
+`orderByDesc` 改 `orderByAsc` → 排序断言红。全量 **273 tests / 0 失败**（269 + 4），
+行覆盖 89.8%（新增 DTO 的 Lombok 生成方法拉低 0.3pp，分支覆盖 71.6% 持平）。
+
+写这条接口的过程中，删 `@Validated` 的变异给出的不是 200 而是 500，逼回去复现了上一节：
+
+- **复现方式**：把 `GlobalExceptionHandler` 与 `ExamController` 还原成 f740725（b0eb18e 的父提交）
+  的内容，跑当时那条 `oversizedPageSizeIsRejected`。
+- **结果**：`Status expected:<400> but was:<500>`，异常是
+  `org.springframework.web.method.annotation.HandlerMethodValidationException`。
+- **前提核查**：`@Max(100)` 早在 6025550（18:04，未被重写过的对象）就已在 size 参数上，
+  reflog 亦无该提交的改写记录——所以"当时没有 @Max 才会 200"这条退路也被堵死。
+- **正解**：Spring 6.1+ 的**内建方法校验**（`HandlerMethodValidator`，走
+  `InvocableHandlerMethod.invokeForRequest`）在没有类级 `@Validated` 时**照样触发**，
+  只是抛 `HandlerMethodValidationException`；本仓库的 `@ExceptionHandler(Exception.class)`
+  兜底先于 `DefaultHandlerExceptionResolver` 接住它 → 500。挂了 `@Validated` 才改由 AOP 代理
+  抛 `ConstraintViolationException` → 已映射 → 400。
+- **所以 `@Validated` 是"400 还是 500"的开关，不是"校验与否"的开关。**
+  三态（无注解=静默夹紧 200 / 有注解无 @Validated=500 / 齐备=400）已记入
+  `docs/需求决策记录.md` §十九，§十六 的失实表述同步改掉，`ExamController` 的注释也改了。
+- b0eb18e 的提交信息无法再纠正（不改写已提交历史），以此节为准。
+- **遗留（有意不做）**：`HandlerMethodValidationException` 仍未映射。全仓库只有两个控制器带
+  参数约束且都挂了 `@Validated`，该异常无可达路径；将来出现"带约束却不挂 @Validated"的控制器
+  再补这条 400 映射。

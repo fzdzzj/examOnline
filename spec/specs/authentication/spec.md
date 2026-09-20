@@ -3,7 +3,8 @@
 > 能力域：认证与鉴权（含工程基础能力，阶段 1/2 W1 + 阶段 18 后小阶段 W18）。
 > 来源：`spec/changes/add-project-skeleton` 合入（工程骨架阶段）；
 > `spec/changes/archive/add-auth-must-change-password` 合入（初始密码强制修改标记，0fb56b9）；
-> `spec/changes/archive/harden-security-config` 合入（安全事件审计落库、建表来源唯一）。
+> `spec/changes/archive/harden-security-config` 合入（安全事件审计落库、建表来源唯一）；
+> d2cbde9 直补（审计事件查询——非变更提案，见文末注记）。
 
 ## Requirements
 
@@ -448,6 +449,59 @@ AND 不因旁路故障把正常登录变成 500
 
 ---
 
+### Requirement: 审计事件查询
+
+WHEN 管理员排查近期安全事件,
+
+系统 SHALL 提供 `GET /api/admin/audit-logs`，按账号/事件类型过滤、以时间倒序分页返回审计记录。
+
+#### Scenario: 最近的事件排在最前
+
+GIVEN 同一账号存在多条审计记录
+
+WHEN 管理员查询
+
+THEN 记录按时间倒序返回（最新在前）
+
+AND 分页不得把最近的事件埋进末页——那是管理员最想看的部分
+
+#### Scenario: 过滤条件真正生效
+
+GIVEN 库中混有多个账号的审计记录
+
+WHEN 按 `username` 或 `action` 查询
+
+THEN 只返回匹配的记录，无一混入
+
+#### Scenario: 查询结果可跳查链路
+
+GIVEN 一条审计记录
+
+WHEN 管理员读取其响应体
+
+THEN 含完整 32 位 `traceId`，可直接拿去追踪系统定位那次请求
+
+#### Scenario: 非管理员不可读取
+
+GIVEN 教师或学生身份
+
+WHEN 访问该接口
+
+THEN 返回 403
+
+AND 门槛只由类级角色校验承担——不额外挂权限点，因为它只能归属同一批人，
+等于把一道门建两遍并多一处会漏配的初始化数据
+
+#### Scenario: 越界分页被拒而非静默夹紧
+
+GIVEN 请求携带超过上限的 `size`
+
+WHEN 参数校验执行
+
+THEN 返回 400（不是把 101 悄悄夹成 100 后返回 200）
+
+---
+
 ### Requirement: 建表来源唯一
 
 WHEN 新增数据库表,
@@ -470,3 +524,8 @@ AND 应改由 `schema.sql` 承载，避免"表已存在"的错觉
 > JWT 启动期强度校验、密码复杂度规则、连续失败锁定均已在 HEAD 中生效，非本变更新增。
 > **未合入**（提案提出但尚未实现）：`/audit/logs` 查询接口（数据已入库但无读取路径，
 > 审计的追溯价值目前只到"能查库"为止）、密码有效期策略、KMS 托管密钥。
+>
+> 后续（2026-09-20，d2cbde9 直补，非变更提案）：上述"查询接口"一条已实现为
+> `GET /api/admin/audit-logs`，故新增"审计事件查询"Requirement。路径与提案写的
+> `/audit/logs` 不同——审计是管理员专属，放在既有 `/api/admin` 前缀下才吃得到类级
+> `@RequireRole(ADMIN)`，不必再造一套鉴权。剩余未实现：密码有效期策略、KMS 托管密钥。
