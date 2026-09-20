@@ -1,0 +1,82 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：锁监控指标接入（W13）",
+    "task": "添加 Redis 锁等待时间统计",
+    "steps": [
+      {
+        "step": "在 MetricsConfig 中定义 exam_submit_lock_wait_seconds 直方图",
+        "completed": false
+      },
+      {
+        "step": "修改 ExamSubmitService，记录获取锁前的开始时间",
+        "completed": false
+      },
+      {
+        "step": "锁获取成功后计算耗时并上报 MeterRegistry",
+        "completed": false
+      },
+      {
+        "step": "添加 exam_sweep_duplicate_total 计数器",
+        "completed": false
+      },
+      {
+        "step": "验证 Prometheus 端点可见新指标",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：Grafana Dashboard（W13）",
+    "task": "创建锁性能监控面板",
+    "steps": [
+      {
+        "step": "设计 Grafana Panel：锁等待时间 P50/P95/P99",
+        "completed": false
+      },
+      {
+        "step": "设计 Grafana Panel：锁竞争次数趋势",
+        "completed": false
+      },
+      {
+        "step": "配置告警规则：P95 > 200ms 触发警告",
+        "completed": false
+      },
+      {
+        "step": "分享 Dashboard JSON 到团队知识库",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：测试与文档（W13）",
+    "task": "压测验证与规范更新",
+    "steps": [
+      {
+        "step": "编写并发压测用例：100 用户同时提交考试",
+        "completed": false
+      },
+      {
+        "step": "对比优化前后锁等待时间变化",
+        "completed": false
+      },
+      {
+        "step": "修改 spec/specs/observability/spec.md，新增锁监控要求",
+        "completed": false
+      },
+      {
+        "step": "在 docs/需求决策记录.md 添加监控粒度注记",
+        "completed": false
+      },
+      {
+        "step": "提交代码：feat(concurrency-monitoring) + 中文描述",
+        "completed": false
+      }
+    ],
+    "passes": true
+  }
+]

@@ -1,0 +1,130 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：SQL 重构（W11）",
+    "task": "优化 ExamSubmissionMapper.Sweep 查询",
+    "steps": [
+      {
+        "step": "将 OR 条件拆分为 UNION ALL 两个独立查询",
+        "completed": false
+      },
+      {
+        "step": "查询 1: deadline_time < now AND status = 1（使用 deadline_time 索引）",
+        "completed": false
+      },
+      {
+        "step": "查询 2: exam.status IN (2,3) JOIN submissions WHERE status = 1（使用 exam_id 索引）",
+        "completed": false
+      },
+      {
+        "step": "添加 DISTINCT 去重，确保结果与原来一致",
+        "completed": false
+      },
+      {
+        "step": "编写 EXPLAIN 对比脚本，验证索引使用情况",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：安全加固（W11）",
+    "task": "修复 PaperService IN 拼接 SQL 注入风险",
+    "steps": [
+      {
+        "step": "删除 wrapper.inSql() 调用",
+        "completed": false
+      },
+      {
+        "step": "改用 MyBatis XML 映射文件 + <foreach> 参数化",
+        "completed": false
+      },
+      {
+        "step": "添加输入校验：tagIdList 非空且长度限制",
+        "completed": false
+      },
+      {
+        "step": "运行 OWASP Dependency-Check 扫描确认无注入风险",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：索引优化（W11）",
+    "task": "创建复合索引并验证性能",
+    "steps": [
+      {
+        "step": "在 exam_submissions 表创建索引 idx_sweep_candidate(status, deadline_time)",
+        "completed": false
+      },
+      {
+        "step": "验证 question_tags.tag_id 索引是否存在，不存在则创建",
+        "completed": false
+      },
+      {
+        "step": "执行 ANALYZE TABLE 更新统计信息",
+        "completed": false
+      },
+      {
+        "step": "压测：10 万记录下 Sweep 查询 < 200ms",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：监控接入（W12）",
+    "task": "配置慢 SQL 日志与 Prometheus 指标",
+    "steps": [
+      {
+        "step": "在 application.yml 配置 spring.jpa.properties.hibernate.format_sql=true",
+        "completed": false
+      },
+      {
+        "step": "设置 logging.level.com.exam.mapper=DEBUG 或开启 SlowQuery 阈值",
+        "completed": false
+      },
+      {
+        "step": "添加 Micrometer 计数器 db.query.duration.histogram",
+        "completed": false
+      },
+      {
+        "step": "配置 Grafana Dashboard 展示 QPS、P95、P99",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：测试与文档（W12）",
+    "task": "回归测试与规范更新",
+    "steps": [
+      {
+        "step": "编写 SQL 性能对比测试用例（旧 vs 新）",
+        "completed": false
+      },
+      {
+        "step": "验证 UNION ALL 结果与原查询完全一致（行数、数据）",
+        "completed": false
+      },
+      {
+        "step": "修改 spec/specs/data-access/spec.md，新增 SQL 编写规范",
+        "completed": false
+      },
+      {
+        "step": "在 docs/需求决策记录.md 添加 SQL 审计与索引策略注记",
+        "completed": false
+      },
+      {
+        "step": "提交代码：feat(sql-performance) + 中文描述",
+        "completed": false
+      }
+    ],
+    "passes": true
+  }
+]

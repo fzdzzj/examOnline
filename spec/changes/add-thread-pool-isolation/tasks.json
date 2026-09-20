@@ -1,0 +1,114 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：线程池配置（W14）",
+    "task": "创建三个独立线程池并配置参数",
+    "steps": [
+      {
+        "step": "创建 ThreadPoolConfig 类，定义 submit/grade/monitor 三个线程池",
+        "completed": false
+      },
+      {
+        "step": "配置 submit 线程池：core=10, max=50, queue=100（关键路径）",
+        "completed": false
+      },
+      {
+        "step": "配置 grade 线程池：core=20, max=100, queue=500（批量任务）",
+        "completed": false
+      },
+      {
+        "step": "配置 monitor 线程池：core=5, max=20, queue=50（后台采集）",
+        "completed": false
+      },
+      {
+        "step": "设置拒绝策略：AbortPolicy + Micrometer 计数器",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：Service 层改造（W14）",
+    "task": "为各 Service 指定对应线程池",
+    "steps": [
+      {
+        "step": "在 ExamSubmitService.submit() 添加 @Executor("submit")",
+        "completed": false
+      },
+      {
+        "step": "在 ExamSweepService.sweep() 添加 @Executor("grade")",
+        "completed": false
+      },
+      {
+        "step": "在 BehaviorEventCollectService.collect() 添加 @Executor("monitor")",
+        "completed": false
+      },
+      {
+        "step": "验证线程名称正确显示（exam-submit-*, exam-grade-*, exam-monitor-*）",
+        "completed": false
+      },
+      {
+        "step": "测试上下文传递（Trace ID、UserContext）在线程间正确传播",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：监控接入（W14）",
+    "task": "添加线程池指标与告警",
+    "steps": [
+      {
+        "step": "添加 Micrometer 计数器：thread_pool_submit_active, thread_pool_submit_completed",
+        "completed": false
+      },
+      {
+        "step": "添加 Gauge：thread_pool_submit_queue_size",
+        "completed": false
+      },
+      {
+        "step": "配置 Grafana Dashboard 展示 3 个线程池状态",
+        "completed": false
+      },
+      {
+        "step": "设置告警规则：active > max*0.9 触发警告",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：压测与文档（W14）",
+    "task": "压力测试与规范更新",
+    "steps": [
+      {
+        "step": "编写压测用例：100 并发批量导出成绩",
+        "completed": false
+      },
+      {
+        "step": "验证 monitor 线程池满时不影响 submit 接口响应",
+        "completed": false
+      },
+      {
+        "step": "调整线程池参数至最优值（根据压测结果）",
+        "completed": false
+      },
+      {
+        "step": "新建 spec/specs/performance/spec.md，定义线程池隔离规范",
+        "completed": false
+      },
+      {
+        "step": "在 docs/需求决策记录.md 添加资源隔离注记",
+        "completed": false
+      },
+      {
+        "step": "提交代码：feat(thread-pool-isolation) + 中文描述",
+        "completed": false
+      }
+    ],
+    "passes": true
+  }
+]
