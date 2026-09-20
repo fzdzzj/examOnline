@@ -6,12 +6,12 @@
 
 ## 全量门禁
 
-| 项 | 结果（第三轮收尾后） |
+| 项 | 结果（第四轮收尾后） |
 |---|---|
-| Tests run | **269**（Failures 0 / Errors 0 / Skipped 1） |
+| Tests run | **265**（Failures 0 / Errors 0 / Skipped 1） |
 | BUILD | **SUCCESS** |
-| 行覆盖率 | **89.7%**（4232/4717） |
-| 分支覆盖率 | **71.4%**（1134/1588） |
+| 行覆盖率 | **90.1%**（4178/4639） |
+| 分支覆盖率 | **71.6%**（1134/1584） |
 | Skipped 说明 | 唯一 1 个 skip 是 `OpenApiContractTest.exportOpenApiContract`，由 `exportContract` 系统属性按需开启，非回归 |
 
 对比：本轮开始前工作区是**红的**（257 tests / 8 failures + 5 errors），
@@ -47,7 +47,8 @@
 ### 仍未处理（如实记录）
 
 - 提案 4 的 Grafana Dashboard 与 P95 告警仍缺（需可访问的监控栈）。
-- 提案 3 剩余部分、提案 7 的其余资源隔离项未做。
+- 提案 3 剩余部分未做（审计查询接口 `/audit/logs`、密码有效期策略）。
+- 提案 7 已于第四轮整体撤回删除，不在待办内。
 
 ## 第三轮：限流收敛、删 inert 迁移、补回滚证明
 
@@ -86,6 +87,31 @@ Flyway，二者从未执行；后者要建的 `idx_sweep_candidate` 还与 `sche
 从未证明过这件事。
 
 全量 **269 tests / 0 失败**（272 − 5 条随组件删除的限流测试 + 2 条新事务测试）。
+
+## 第四轮：线程池隔离整体撤回删除
+
+`46d7004` 交付的三个线程池经核实是**纯空转**，已全部删除：`ThreadPoolConfig`、
+`ThreadPoolConfigTest`、`ExamSubmitService.submitAsync()`，以及该提交引入的
+`@EnableAsync`。提案文件顶部记了完整理由。
+
+判定依据（都是现场核实，不是推断）：
+1. 上一轮摘掉两处挂错的 `@Async`（`sweep()` 返回 `int`、`collect()` 返回
+   `EventVerdict`，都是"有返回值且调用方要用"的方法，Spring 直接抛非法返回类型异常）后，
+   grade / monitor 两个池失去唯一租户；
+2. `submitAsync()` 用 `grep` 全仓库（含 `src/test`）查得**零调用方**，submit 池同样空转；
+3. 异步交卷本身没有落点：交卷必须把结果同步返回给学生，兜底扫描由 `@Scheduled` 驱动，
+   行为采集被契约要求同步返回。
+
+`ThreadPoolConfigTest` 那 4 条断言（core/max/queue 参数、"三个池不是同一实例"）在零租户下
+依然全绿——这是"全绿不等于能跑"的又一例，故一并删除而非保留。
+
+顺带移除 `@EnableAsync`：它会让 Spring 注册一个默认 `TaskExecutor`，在没有真实异步工作时
+属多余的运行时面。
+
+将来若真有批量重活（成绩导出、判分回填等），应连真实调用方和"能证明隔离起作用的并发测试"
+一起重建，不预先占空池。
+
+全量 **265 tests / 0 失败**（269 − 4 条随组件删除的池参数测试，数目精确对账）。
 
 ---
 

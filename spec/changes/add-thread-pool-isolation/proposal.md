@@ -1,5 +1,31 @@
 # 提案：线程池隔离与资源管控（阶段 9，性能优化）
 
+> ⛔ **本提案已整体撤回并删除实现**（核实见
+> [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md)）。
+> 对应的 `46d7004` 曾交付三个线程池 + `@EnableAsync` + 一个断言池参数的测试，
+> 现已全部移除。
+>
+> 撤回理由（按发现顺序）：
+>
+> 1. **两处 @Async 挂错在"有返回值且返回值被调用方使用"的方法上**，Spring 直接抛
+>    `Invalid return type for async method (only Future and void supported)`：
+>    `ExamSweepService.sweep()` 返回 `int`（且由同 bean 的 `scheduledSweep()` 自调用，
+>    自调用本就绕过代理，注解永远不可能生效）；
+>    `BehaviorEventCollectService.collect()` 返回 `EventVerdict`，其契约明确要求同步返回
+>    判定结果。两处移除后，行为上报接口从全量 500 恢复。
+> 2. **摘掉后三个池一个租户都不剩**：`submitAsync()` 全仓库（含测试）**零调用方**，
+>    grade/monitor 池的唯一候选就是上面那两个挂错的注解。也就是说该提交交付的是
+>    三个空转 Bean，"隔离"实际一件都没发生——而 `ThreadPoolConfigTest` 只断言
+>    core/max/queue 参数与"三个池不是同一实例"，这类断言在零租户下依然全绿。
+> 3. **异步本身不成立**：交卷必须把结果同步返回给学生，包一层异步没有落点；
+>    兜底扫描由 `@Scheduled` 驱动、行为采集被契约要求同步，都没有可腾挪的异步工作。
+>
+> 附带收益：移除了 `@EnableAsync`（同为该提交引入）。它会让 Spring 注册一个
+> 默认 `TaskExecutor`，在没有真实异步工作时纯属多余的运行时面。
+>
+> 将来若真有批量重活（成绩导出、判分回填、跨机构批量通知），应带着真实调用方
+> 和"能证明隔离起作用的并发测试"一起重建，而不是先占三个空池。
+
 ## Why
 
 **当前问题**: 无线程池隔离，不同业务域共享同一线程池，存在资源抢占风险。

@@ -2,12 +2,10 @@ package com.exam;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * examOnline 在线考试系统入口（add-project-skeleton, W1）。
  */
-@EnableAsync
 @SpringBootApplication
 public class ExamOnlineApplication {
 

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -96,12 +95,6 @@ public class ExamSubmitService {
         SubmitRequest req = request == null ? new SubmitRequest() : request;
         int submitType = resolveSubmitType(req.getSubmitType());
         return doSubmit(examId, studentId, submitType, req.getAnswers());
-    }
-
-    /** 异步交卷：使用 submitExecutor 线程池（高优先级低延迟场景） */
-    @Async("submitExecutor")
-    public void submitAsync(Long examId, SubmitRequest request) {
-        submit(examId, request);
     }
 
     /** 后端兜底入口（定时扫描/重进超时窗口调用）：无登录上下文，答案取 Redis 草稿。 */
