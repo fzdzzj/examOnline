@@ -389,4 +389,17 @@ class ExamIntegrationTest extends IntegrationTestBase {
         assertEquals(2, detail.get("status").asInt());
         assertEquals(1, detail.get("forceEnd").asInt());
     }
+
+    /**
+     * 分页上限必须真的生效：size 超过 100 要被拒。
+     *
+     * <p>加这条测试是因为提交信息写过"size=101 直接 400"，而实际并未被验证过：
+     * {@code @RequestParam} 上的约束要靠类级 {@code @Validated} 才会触发，
+     * 缺它时注解只是装饰。
+     */
+    @Test
+    void oversizedPageSizeIsRejected() throws Exception {
+        String teacher = registerTeacher();
+        perform(jsonGet("/api/exams?page=1&size=1000", teacher), 400);
+    }
 }

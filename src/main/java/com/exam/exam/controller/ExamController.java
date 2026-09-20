@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -46,6 +47,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/exams")
 @RequirePermission("exam:manage")
+// 方法入参约束（page/size 上的 @Min/@Max）要靠类级 @Validated 才会触发；
+// 光有注解不会生效——Spring 不会为未标注的控制器做方法参数校验。
+@Validated
 public class ExamController {
 
     private final ExamService examService;

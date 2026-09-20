@@ -42,6 +42,23 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ResponseCode.BAD_REQUEST, msg));
     }
 
+    /**
+     * 方法入参约束失败（@Validated 类上的 {@code @RequestParam}/{@code @PathVariable} 约束）。
+     *
+     * <p>与 {@code @Valid @RequestBody} 的 {@link MethodArgumentNotValidException} 是两条不同路径：
+     * 前者抛 jakarta 的 ConstraintViolationException。不接住它就会落到 Exception 兜底变成 500，
+     * 让"分页上限"这类校验在客户端看到服务器错误。
+     */
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(
+            jakarta.validation.ConstraintViolationException e) {
+        String msg = e.getConstraintViolations().stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .collect(Collectors.joining("; "));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ResponseCode.BAD_REQUEST, msg));
+    }
+
     /** 请求体不可读（JSON 解析失败） */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e) {
