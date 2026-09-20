@@ -45,8 +45,24 @@ public interface ExamSubmissionMapper extends BaseMapper<ExamSubmission> {
      * 兜底扫描（服务端时间为准）：进行中且"个人已超时"或"所属考试已结束/已批改"的答卷，
      * 由定时任务强制交卷（spec「后端兜底」场景；教师提前结束 force_end 后考试态为已结束，同样命中）。
      * 联表判断考试状态——答卷表不冗余考试状态，以 exams 为唯一事实源。
+     *
+     * <p><b>{@code JOIN_INDEX} 提示是必需的，不是装饰。</b>不加时优化器常改从 exams 驱动
+     * （全表扫考试 → 按 {@code idx_submissions_exam_submit} 逐场回表）；钉住
+     * {@code idx_submissions_sweep} 后走 status=1 索引查找 + 主键回查考试。
+     * 10 万答卷 / 4KB paper_json / MySQL 8.0.46 实测（EXPLAIN ANALYZE 各 3–4 轮）：
+     * <ul>
+     *   <li>5k 进行中、4.4k 到期（常态忙轮）：41–50ms → 1.7–2.7ms（≈18×）；</li>
+     *   <li>25k 进行中、一条不命中（空闲轮，每 10 秒一次）：312–366ms → 159–169ms。</li>
+     * </ul>
+     * 写进 SQL 注释而非 {@code FORCE INDEX}，因为 H2（MODE=MySQL，测试库）**不认**
+     * {@code FORCE INDEX}，直接抛语法错误；而注释形态被 H2 当普通注释忽略、被 MySQL 8
+     * 优化器读取，两端同一句 SQL。注意带 {@code @select_1} 查询块限定符的写法会被 MySQL
+     * **静默忽略**（实测计划不变），故这里不加限定符。
+     *
+     * <p><b>耦合代价</b>：索引名进了 SQL，改名/删 {@code idx_submissions_sweep} 会让提示
+     * 失效（不报错，退回上面的慢计划），改 {@code schema.sql} 时需同步这里。
      */
-    @Select("SELECT s.* FROM exam_submissions s "
+    @Select("SELECT /*+ JOIN_INDEX(s idx_submissions_sweep) */ s.* FROM exam_submissions s "
             + "JOIN exams e ON e.id = s.exam_id AND e.is_deleted = 0 "
             + "WHERE s.status = 1 AND (s.deadline_time < #{now} OR e.status IN (2, 3)) "
             + "LIMIT #{limit}")
