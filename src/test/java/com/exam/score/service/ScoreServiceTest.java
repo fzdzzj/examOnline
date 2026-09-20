@@ -211,8 +211,12 @@ class ScoreServiceTest {
         assertEquals("发布成绩 42 人", audit.getDetail());
         assertNull(audit.getReason(), "发布无需原因，仅撤回强制填写");
         verify(readYourWriteMark).mark();
-        assertEquals(1.0, registry.get("exam_publish_success_total")
-                .tag("exam_id", "1").counter().count());
+        var published = registry.get("exam_publish_total")
+                .tag("status", "success").counter();
+        assertEquals(1.0, published.count());
+        // 守指标基数：多一个 tag 维度就多一批时间序列，按 exam_id 打 tag 会让序列数随考试量线性膨胀
+        assertEquals(1, published.getId().getTags().size(),
+                "publish 指标只该有 status 一个 tag，实际=" + published.getId().getTags());
     }
 
     @Test
@@ -241,10 +245,10 @@ class ScoreServiceTest {
         assertEquals(new ScoreActionItem(1L, false, "考试状态已变化，请刷新后重试"), results.get(0));
         assertEquals(new ScoreActionItem(2L, true, "发布成功"), results.get(1));
         verify(auditLogMapper, times(1)).insert(any(ScoreAuditLog.class));
-        assertEquals(1.0, registry.get("exam_publish_fail_total")
-                .tag("exam_id", "1").counter().count());
-        assertEquals(1.0, registry.get("exam_publish_success_total")
-                .tag("exam_id", "2").counter().count());
+        assertEquals(1.0, registry.get("exam_publish_total")
+                .tag("status", "fail").counter().count());
+        assertEquals(1.0, registry.get("exam_publish_total")
+                .tag("status", "success").counter().count());
     }
 
     @Test
@@ -299,8 +303,11 @@ class ScoreServiceTest {
         // 只捕获 BusinessException：基础设施故障必须整体失败，不能让部分考试静默发布
         assertThrows(IllegalStateException.class, () -> scoreService.publish(List.of(1L, 2L)));
         verify(examMapper, never()).selectById(2L);
-        assertEquals(1.0, registry.get("exam_publish_fail_total")
-                .tag("exam_id", "1").counter().count());
+        // 基础设施故障记为 error，与业务性 fail 分开，避免看板把宕机读成"用户操作不当"
+        assertEquals(1.0, registry.get("exam_publish_total")
+                .tag("status", "error").counter().count());
+        assertNull(registry.find("exam_publish_total").tag("status", "fail").counter(),
+                "基础设施故障不该计入业务失败");
     }
 
     // ==================== 批量撤回 ====================

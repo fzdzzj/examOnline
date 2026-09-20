@@ -1,5 +1,22 @@
 # 提案：事务边界细化与原子性保障（阶段 9，数据一致性强化）
 
+> ⚠️ **本提案的核心前提是错的，"拆分事务边界"这条路已按事实回退**（核实见
+> [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md)）。
+>
+> 1. "前 5 个已提交无法回滚"不成立：`publish()` 在循环内捕获 BusinessException，
+>    业务性失败不会污染外层事务；基础设施故障则一路上抛、整批回滚——恰恰是
+>    "部分成功 + 故障不半提交"的期望语义。批量发布本就该是一个原子操作。
+> 2. 曾按本提案加过 `@Transactional(REQUIRES_NEW)` 到 `publishOne()`，但它是 **private
+>    且被同类 publish() 自调用**，Spring 代理两种情形都不增强 → 注解完全空转，
+>    而 Javadoc 却写着"每个考试独立事务"，属误导。现已删除该注解并改注释为真实边界。
+> 3. 真正该修的是当时一并引入的指标：`exam_publish_*` 拿 `exam_id` 当 tag，
+>    考试 ID 基数无上界 → Prometheus 时间序列随业务量线性膨胀。已收敛为单一 status 维度，
+>    并把基础设施故障从 fail 区分为 error。
+> 4. 提案里"补 timeout"一项早已存在：`spring.transaction.default-timeout: 30` 在 HEAD 中。
+>
+> 遗留未验证项：单元测试用 Mockito 打桩 mapper，无法证明"整批回滚"这一 DB 事实；
+> 若要证明需要能在第 2 场注入故障的上下文级测试。
+
 ## Why
 
 **当前问题**: `ScoreService.publish()` 方法存在事务边界过大导致的**部分提交风险**。

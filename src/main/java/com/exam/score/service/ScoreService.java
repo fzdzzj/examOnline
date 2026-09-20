@@ -30,7 +30,6 @@ import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -313,8 +312,13 @@ public class ScoreService {
 
     /**
      * 批量发布（spec「批量发布」场景）：已批改→已发布，学生端立即可见。
-     * 单场失败不影响其余（部分成功语义），逐场返回结果；每场成功均落 PUBLISH 审计。
-     * <p>事务边界拆分：每个考试独立事务，避免单场失败导致全部回滚。
+     * 单场业务性失败不影响其余（部分成功语义），逐场返回结果；每场成功均落 PUBLISH 审计。
+     *
+     * <p><b>整批共用本方法这一个事务</b>，这是有意的：基础设施故障（非 BusinessException）
+     * 会一路抛出、触发整体回滚，不会出现"一半考试已发布、一半没发"的静默不一致；
+     * 而业务性失败在 {@link #publishOne} 内被转成逐场结果。之所以能这么合并，是因为
+     * publishOne 里的 BusinessException 只可能在**尚未产生任何写操作**时抛出
+     * （状态前置校验、CAS 抢输即 0 行），所以"捕获后不回滚"不会留下该场的半截写入。
      */
     @Transactional(rollbackFor = Exception.class)
     public List<ScoreActionItem> publish(List<Long> examIds) {
@@ -329,46 +333,44 @@ public class ScoreService {
         return results;
     }
 
-    /** 单个考试发布（独立事务，防止相互影响）。 */
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    /**
+     * 单场发布 + 打点。
+     *
+     * <p>这里<b>不加</b> {@code @Transactional(REQUIRES_NEW)}：本方法是 private 且由同类
+     * publish() 直接调用，Spring 基于代理的事务增强在两种情形下都不生效（私有方法不被代理、
+     * 自调用绕过代理），写上只会让读代码的人误以为存在"每场独立事务"。
+     * 真实边界见 {@link #publish} 的注释。
+     *
+     * <p>指标<b>不按 exam_id 打 tag</b>：考试 ID 基数无上界，逐考试生成时间序列会让
+     * Prometheus 的时间序列数量随业务量线性膨胀（内存与查询成本失控）；按 status 聚合
+     * 已足够回答"发布成功率与耗时分布"，具体是哪场失败看返回结果与审计表。
+     */
     private ScoreActionItem publishOne(Long examId) {
-        Timer.Sample sample = Timer.start();
+        Timer.Sample sample = Timer.start(meterRegistry);
         try {
             ScoreActionItem result = doPublishOne(examId);
-            sample.stop(Timer.builder("exam_publish_duration_seconds")
-                    .description("考试发布耗时分布")
-                    .tag("exam_id", String.valueOf(examId))
-                    .tag("status", "success")
-                    .register(meterRegistry));
-            Counter.builder("exam_publish_success_total")
-                    .description("考试发布成功总数")
-                    .tag("exam_id", String.valueOf(examId))
-                    .register(meterRegistry).increment();
+            recordPublish(sample, "success");
             return result;
         } catch (BusinessException e) {
-            sample.stop(Timer.builder("exam_publish_duration_seconds")
-                    .description("考试发布耗时分布")
-                    .tag("exam_id", String.valueOf(examId))
-                    .tag("status", "fail")
-                    .register(meterRegistry));
-            Counter.builder("exam_publish_fail_total")
-                    .description("考试发布失败总数")
-                    .tag("exam_id", String.valueOf(examId))
-                    .register(meterRegistry).increment();
+            recordPublish(sample, "fail");
             throw e;
         } catch (Exception e) {
-            sample.stop(Timer.builder("exam_publish_duration_seconds")
-                    .description("考试发布耗时分布")
-                    .tag("exam_id", String.valueOf(examId))
-                    .tag("status", "error")
-                    .register(meterRegistry));
-            Counter.builder("exam_publish_fail_total")
-                    .description("考试发布失败总数")
-                    .tag("exam_id", String.valueOf(examId))
-                    .register(meterRegistry).increment();
+            recordPublish(sample, "error");
             log.error("成绩发布异常：exam={}", examId, e);
             throw e;
         }
+    }
+
+    /** 收尾一次发布打点：耗时直方图 + 按结果分类的计数，tag 只有 status。 */
+    private void recordPublish(Timer.Sample sample, String status) {
+        sample.stop(Timer.builder("exam_publish_duration_seconds")
+                .description("考试发布耗时分布")
+                .tag("status", status)
+                .register(meterRegistry));
+        Counter.builder("exam_publish_total")
+                .description("考试发布次数，按结果分类")
+                .tag("status", status)
+                .register(meterRegistry).increment();
     }
 
     private ScoreActionItem doPublishOne(Long examId) {
