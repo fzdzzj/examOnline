@@ -169,6 +169,14 @@ exam:
     max-exams-per-run: 100
     cron: "0 30 3 * * *"
 
+# API 限流配置（add-api-rate-limiting 提案）：与 exam.ratelimit（@RateLimit 注解 + RedisTokenBucket）
+# 是两套独立机制，此块供 RateLimitConfig 的全局拦截器消费
+rate-limiting:
+  enabled: ${RATE_LIMITING_ENABLED:true}
+  qps: ${RATE_LIMIT_QPS:100}
+  burst: ${RATE_LIMIT_BURST:150}
+  key-prefix: api:ratelimit
+
 management:
   endpoints:
     web:
@@ -194,3 +202,16 @@ springdoc:
   # 匹配 /api/** 路径
   paths-to-match: /api/**
   # 安全 scheme 已在 SpringDocConfig 中定义
+
+# OpenTelemetry 追踪配置（add-distributed-tracing）
+# 全部用扁平点号键：OTel 自动装配按字面属性名读取 otel.*，不走 Spring 的 relaxed binding，
+# 写成 service_name / export.enabled 这类嵌套会被静默忽略。
+otel.service.name: ${OTEL_SERVICE_NAME:exam-online}
+# 链路走 OTLP gRPC -> Jaeger all-in-one:4317；不设 OTEL_TRACES_EXPORTER 时即关闭导出
+otel.traces.exporter: ${OTEL_TRACES_EXPORTER:otlp}
+otel.traces.sampler: parentbased_traceidratio
+# 采样比例：默认全采（dev），prod 用 OTEL_TRACES_SAMPLER_ARG=0.1 降到 10%
+otel.traces.sampler.arg: ${OTEL_TRACES_SAMPLER_ARG:1}
+# 指标仍由 Micrometer/Prometheus 出（actuator），日志仍由 logback 出，两条 exporter 关掉避免重复采集
+otel.metrics.exporter: none
+otel.logs.exporter: none

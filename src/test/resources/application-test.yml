@@ -70,6 +70,12 @@ exam:
     wait-interval-ms: 25
     wait-max-rounds: 80
 
+# 全局 API 限流在测试环境默认关闭：20+ 集成测试类共用 127.0.0.1 这一 clientId，
+# 默认阈值（qps=100/burst=150）下重循环用例会被偶发 429 打断。限流本身由
+# RateLimitInterceptorIntegrationTest 用 @TestPropertySource 单独开启并验证。
+rate-limiting:
+  enabled: false
+
 # SMTP 未配置时禁用 mail 健康检查，避免 /actuator/health 恒为 DOWN
 management:
   health:
@@ -82,3 +88,7 @@ management:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# 测试环境没有 OTLP collector：关掉链路导出，免得 BatchSpanProcessor 在后台刷连接失败日志。
+# 采样器仍照常装配，MybatisTracingInterceptor / TraceIdInterceptor 走的是本地 Span。
+otel.traces.exporter: none

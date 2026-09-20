@@ -1,0 +1,106 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：参数验证（W13）",
+    "task": "为所有分页接口添加 @Max 验证",
+    "steps": [
+      {
+        "step": "grep -r '@RequestParam.*size' *.java 定位所有分页参数",
+        "completed": false
+      },
+      {
+        "step": "为每个 size 参数添加 @Max(100) 注解",
+        "completed": false
+      },
+      {
+        "step": "测试：size=101 返回 400 Bad Request",
+        "completed": false
+      },
+      {
+        "step": "测试：size=100 正常返回",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：限流实现（W13）",
+    "task": "实现 Redis Token Bucket 限流",
+    "steps": [
+      {
+        "step": "创建 RateLimitConfig，定义 Token Bucket 算法",
+        "completed": false
+      },
+      {
+        "step": "使用 Lua 脚本保证原子性（检查 + 扣减 token）",
+        "completed": false
+      },
+      {
+        "step": "配置默认 QPS=100，burst=150",
+        "completed": false
+      },
+      {
+        "step": "添加全局拦截器 AOP 切面",
+        "completed": false
+      },
+      {
+        "step": "测试：1000 并发请求，QPS 稳定在 100",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：异常处理（W13）",
+    "task": "新增限流异常处理",
+    "steps": [
+      {
+        "step": "创建 RateLimitExceededException 异常类",
+        "completed": false
+      },
+      {
+        "step": "在 GlobalExceptionHandler 中添加 @ExceptionHandler",
+        "completed": false
+      },
+      {
+        "step": "返回统一错误码 RATE_LIMIT_EXCEEDED",
+        "completed": false
+      },
+      {
+        "step": "记录限流审计日志",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：监控与文档（W13）",
+    "task": "接入监控指标与规范更新",
+    "steps": [
+      {
+        "step": "添加 Micrometer 计数器 http_request_rate_limited_total",
+        "completed": false
+      },
+      {
+        "step": "设计 Grafana Dashboard 展示 QPS 趋势",
+        "completed": false
+      },
+      {
+        "step": "新建 spec/specs/reliability/spec.md，定义限流规范",
+        "completed": false
+      },
+      {
+        "step": "在 docs/需求决策记录.md 添加 API 安全注记",
+        "completed": false
+      },
+      {
+        "step": "提交代码：feat(rate-limiting) + 中文描述",
+        "completed": false
+      }
+    ],
+    "passes": true
+  }
+]

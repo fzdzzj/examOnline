@@ -18,6 +18,8 @@ import com.exam.exam.service.ExamService;
 import com.exam.exam.service.ExamSnapshotService;
 import com.exam.exam.service.MakeupService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -67,8 +69,9 @@ public class ExamController {
 
     /** 考试分页（教师仅见自己的考试） */
     @GetMapping
-    public ApiResponse<List<ExamResponse>> page(@RequestParam(defaultValue = "1") long page,
-                                                @RequestParam(defaultValue = "10") long size) {
+    public ApiResponse<List<ExamResponse>> page(
+            @RequestParam(defaultValue = "1") @Min(1) long page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) long size) {
         Page<Exam> result = examService.page(page, size);
         return ApiResponse.success(result.getRecords().stream().map(this::toResponse).toList());
     }
