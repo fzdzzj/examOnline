@@ -47,8 +47,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/exams")
 @RequirePermission("exam:manage")
-// 方法入参约束（page/size 上的 @Min/@Max）要靠类级 @Validated 才会触发；
-// 光有注解不会生效——Spring 不会为未标注的控制器做方法参数校验。
+// 类级 @Validated 决定 page/size 上 @Min/@Max 走哪条异常路：有它，方法校验代理抛
+// ConstraintViolationException（GlobalExceptionHandler 已映射 400）；去掉它，Spring 6.1
+// 的内建校验照样拦，但抛 HandlerMethodValidationException——未映射，落到 500 兜底。
+// 故此注解是"400 还是 500"的开关，不是"校验与否"的开关（实测：去掉后 size=101 返回 500）。
 @Validated
 public class ExamController {
 

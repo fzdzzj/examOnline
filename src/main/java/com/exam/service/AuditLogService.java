@@ -1,5 +1,8 @@
 package com.exam.service;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.exam.audit.dto.AuditLogResponse;
 import com.exam.audit.entity.AuditLog;
 import com.exam.audit.mapper.AuditLogMapper;
 import com.exam.common.RequestIdFilter;
@@ -7,6 +10,9 @@ import com.exam.config.TraceIdInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 /**
  * 安全审计日志服务：把登录、账户锁定等安全事件落到 audit_log 表。
@@ -22,6 +28,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class AuditLogService {
+
+    /** 单页上限：控制器用 @Max 拒绝越界请求，这里再夹紧一次兜底。 */
+    private static final long MAX_PAGE_SIZE = 100;
 
     private final AuditLogMapper auditLogMapper;
 
@@ -41,6 +50,38 @@ public class AuditLogService {
     /** 记录账户锁定（连续登录失败触发）。 */
     public void logAccountLock(String username, String ip, String lockReason) {
         record(null, username, AuditLog.ACTION_ACCOUNT_LOCKED, ip, AuditLog.STATUS_WARNING, lockReason);
+    }
+
+    /**
+     * 分页查询审计事件（管理员）。按 id 倒序即"最近优先"，故不提供时间区间参数——
+     * 翻最近若干页已覆盖"查近期事件"这一诉求，加 from/to 只会多两个校验面。
+     *
+     * <p>返回值是页内记录而非 {@code Page} 信封：与 {@code ExamController.page} 同一口径，
+     * 不把 MyBatis-Plus 的分页内部字段（searchCount / orders 等）泄进对外契约。
+     *
+     * <p>size 走 {@code Math.min} 兜底：控制器的 {@code @Max} 负责拒绝，这里负责夹紧，二者互补。
+     */
+    public List<AuditLogResponse> page(long page, long size, String username, String action) {
+        Page<AuditLog> raw = auditLogMapper.selectPage(new Page<>(page, Math.min(size, MAX_PAGE_SIZE)),
+                Wrappers.<AuditLog>lambdaQuery()
+                        .eq(StringUtils.hasText(username), AuditLog::getUsername, username)
+                        .eq(StringUtils.hasText(action), AuditLog::getAction, action)
+                        .orderByDesc(AuditLog::getId));
+        return raw.getRecords().stream().map(AuditLogService::toResponse).toList();
+    }
+
+    private static AuditLogResponse toResponse(AuditLog e) {
+        AuditLogResponse r = new AuditLogResponse();
+        r.setId(e.getId());
+        r.setTraceId(e.getTraceId());
+        r.setUserId(e.getUserId());
+        r.setUsername(e.getUsername());
+        r.setAction(e.getAction());
+        r.setIpAddress(e.getIpAddress());
+        r.setStatus(e.getStatus());
+        r.setDetails(e.getDetails());
+        r.setCreatedTime(e.getCreatedTime());
+        return r;
     }
 
     private void record(Long userId, String username, String action, String ip, String status, String details) {

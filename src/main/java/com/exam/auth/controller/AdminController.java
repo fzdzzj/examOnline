@@ -9,13 +9,19 @@ import com.exam.auth.security.RoleHierarchy;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.auth.service.AuthService;
 import com.exam.auth.service.InviteCodeService;
+import com.exam.audit.dto.AuditLogResponse;
 import com.exam.common.ApiResponse;
+import com.exam.service.AuditLogService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -26,19 +32,24 @@ import java.util.List;
  *   <li>类级 {@code @RequireRole(ADMIN)}：仅 ADMIN 角色可访问（角色层级校验）；</li>
  *   <li>方法级 {@code @RequirePermission}：权限点校验（invite:manage / user:manage）。</li>
  * </ul>
- * 能力：邀请码管理（生成 / 作废 / 列表）、踢人（目标用户全端下线）。
+ * 能力：邀请码管理（生成 / 作废 / 列表）、踢人（目标用户全端下线）、安全审计查询。
  */
 @RestController
 @RequestMapping("/api/admin")
+// 见 ExamController 同款说明：audit-logs 的 @Min/@Max 要有它才映射成 400，否则 500
+@Validated
 @RequireRole(RoleHierarchy.ADMIN)
 public class AdminController {
 
     private final InviteCodeService inviteCodeService;
     private final AuthService authService;
+    private final AuditLogService auditLogService;
 
-    public AdminController(InviteCodeService inviteCodeService, AuthService authService) {
+    public AdminController(InviteCodeService inviteCodeService, AuthService authService,
+                           AuditLogService auditLogService) {
         this.inviteCodeService = inviteCodeService;
         this.authService = authService;
+        this.auditLogService = auditLogService;
     }
 
     /** 生成教师邀请码 */
@@ -66,6 +77,23 @@ public class AdminController {
         return ApiResponse.success(inviteCodeService.listAll().stream()
                 .map(this::toResponse)
                 .toList());
+    }
+
+    /**
+     * 安全审计日志分页：登录成功/失败、账户锁定等事件，按时间倒序。
+     *
+     * <p>刻意不再标注 {@code @RequirePermission}：审计记录的是"谁在尝试进入系统"，属于 ADMIN
+     * 独有的全局视图，类级 {@code @RequireRole(ADMIN)} 已是不可放宽的门槛。若再补一个
+     * {@code audit:read} 权限点，它只能挂在 ADMIN 名下（其他角色根本进不到这个方法），
+     * 等于把同一道门建两遍，还多一处会漏配的初始化数据。
+     */
+    @GetMapping("/audit-logs")
+    public ApiResponse<List<AuditLogResponse>> auditLogs(
+            @RequestParam(defaultValue = "1") @Min(1) long page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) long size,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String action) {
+        return ApiResponse.success(auditLogService.page(page, size, username, action));
     }
 
     /** 踢人：目标用户所有会话立即失效（需重新登录） */

@@ -223,7 +223,8 @@ public abstract class IntegrationTestBase {
         return body.isBlank() ? null : objectMapper.readTree(body);
     }
 
-    private String loginToken(String username, String password) throws Exception {
+    /** 登录取 Access Token（子类用它登录预置 admin，或以任意已注册账号取身份）。 */
+    protected String loginToken(String username, String password) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("username", username);
         body.put("password", password);
