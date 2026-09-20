@@ -171,14 +171,6 @@ exam:
     max-exams-per-run: 100
     cron: "0 30 3 * * *"
 
-# API 限流配置（add-api-rate-limiting 提案）：与 exam.ratelimit（@RateLimit 注解 + RedisTokenBucket）
-# 是两套独立机制，此块供 RateLimitConfig 的全局拦截器消费
-rate-limiting:
-  enabled: ${RATE_LIMITING_ENABLED:true}
-  qps: ${RATE_LIMIT_QPS:100}
-  burst: ${RATE_LIMIT_BURST:150}
-  key-prefix: api:ratelimit
-
 management:
   endpoints:
     web:

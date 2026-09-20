@@ -70,12 +70,6 @@ exam:
     wait-interval-ms: 25
     wait-max-rounds: 80
 
-# 全局 API 限流在测试环境默认关闭：20+ 集成测试类共用 127.0.0.1 这一 clientId，
-# 默认阈值（qps=100/burst=150）下重循环用例会被偶发 429 打断。限流本身由
-# RateLimitInterceptorIntegrationTest 用 @TestPropertySource 单独开启并验证。
-rate-limiting:
-  enabled: false
-
 # SMTP 未配置时禁用 mail 健康检查，避免 /actuator/health 恒为 DOWN
 management:
   health:

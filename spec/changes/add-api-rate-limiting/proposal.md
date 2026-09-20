@@ -1,5 +1,23 @@
 # 提案：API 限流与防抖机制（阶段 9，可靠性增强）
 
+> ⚠️ **本提案的"新建全局限流器"部分已被撤销并收敛到既有机制**（见
+> [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md)）。
+>
+> 项目**早就有**一套按端点声明式限流：`@RateLimit` + `RedisTokenBucket` +
+> `RateLimitInterceptor`，通过 `WebMvcConfig` **刻意注册在鉴权之后**（先鉴权再限流），
+> 且只对打了注解的热点端点生效，预算是按端点实测调过的：
+> `random-draw` 50/200、`submit` 500/2000、`pull-paper` 2000/5000，
+> 另有 Redis 故障 fail-open 的降级计数 `exam.ratelimit.degraded`。
+>
+> 本提案另起的全局拦截器对 `/api/**` 无差别按 100qps 限流，会有两处实质危害：
+> 1. 把 `submit` 压到 500 预算之下——恰好在 5000 人同时交卷这个系统最关键场景上限错；
+> 2. 绕开"先鉴权再限流"的既定顺序，未认证流量也能消耗令牌桶。
+> 两套并存还让故障归因变难（同一个 429 分不清来自哪个桶）。
+>
+> 因此全局拦截器（`RateLimitConfig` 及其测试、`rate-limiting.*` 配置）已删除，
+> 需要限流的新端点一律走 `@RateLimit` 显式声明预算。**保留**的部分是
+> `ExamController.page()` 的 `@Min/@Max` 分页上限——那属于入参校验，与限流无关。
+
 ## Why
 
 **当前问题**: 分页查询无上限限制，存在 DoS 攻击风险。
