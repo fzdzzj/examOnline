@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -71,7 +70,6 @@ public class ExamSweepService {
     }
 
     /** 执行一轮兜底：超时强制交卷 + 答案补发对账。 */
-    @Async("gradeExecutor")
     public int sweep() {
         int forced = forceSubmitOverdue();
         int republished = republishMissingAnswers();

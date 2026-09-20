@@ -2,6 +2,7 @@
 # examOnline —— 中间件一键编排（add-project-skeleton, W1）
 #   docker compose up -d
 # 包含：MySQL 主从（GTID 复制）+ Redis 7 + RabbitMQ(management)
+#       + Jaeger(all-in-one) + Elasticsearch（链路追踪存储，add-distributed-tracing）
 # 健康检查 + depends_on 保证启动依赖顺序
 # =============================================================
 services:
@@ -90,8 +91,38 @@ services:
       retries: 5
       start_period: 30s
 
+  # Elasticsearch（Jaeger 存储后端）
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    container_name: jaeger-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - jaeger-es-data:/usr/share/elasticsearch/data
+
+  # Jaeger All-in-One（add-distributed-tracing）
+  # 应用侧 otel.traces.exporter=otlp 的落点为 4317（OTLP gRPC）
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: exam-jaeger
+    environment:
+      - SPAN_STORAGE_TYPE=elasticsearch
+      - ES_SERVER_URLS=http://elasticsearch:9200
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC（应用上报入口）
+      - "4318:4318"    # OTLP HTTP
+      - "9411:9411"    # Zipkin 兼容端口
+    depends_on:
+      - elasticsearch
+
 volumes:
   master-data:
   slave-data:
   redis-data:
   rabbitmq-data:
+  jaeger-es-data:

@@ -8,6 +8,7 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
@@ -62,6 +63,12 @@ public class BusinessMetrics {
     private static final String DLQ_ENTERED = "exam.mq.dlq.entered";
     /** 指标名：数据保留候选/删除行数（Counter，tag table + action） */
     private static final String RETENTION_ROWS = "exam.retention.rows";
+    /** 指标名：考试提交锁等待时间（Timer，统计获取锁的耗时分布） */
+    private static final String SUBMIT_LOCK_WAIT = "exam.submit.lock.wait";
+    /** 指标名：考试提交锁获取成功次数（Counter） */
+    private static final String SUBMIT_LOCK_ACQUISITIONS = "exam.submit.lock.acquisitions";
+    /** 指标名：考试提交锁竞争失败次数（Counter） */
+    private static final String SUBMIT_LOCK_CONTENTIONS = "exam.submit.lock.contentions";
     /** 交卷队列名：与 RabbitMqConfig.SUBMIT_QUEUE 保持一致（避免依赖具体实现类） */
     private static final String SUBMIT_QUEUE = "exam.submit.queue";
     /** 交卷死信队列名：与 RabbitMqConfig.SUBMIT_DLQ 保持一致 */
@@ -82,6 +89,10 @@ public class BusinessMetrics {
     /** MQ 重试结果计数按 outcome 缓存：retried / exhausted 各自一个 Counter */
     private final Map<String, Counter> mqRetryCounters = new ConcurrentHashMap<>();
     private final Counter dlqEnteredCounter;
+    /** 锁等待时间统计 */
+    private final Timer submitLockWaitTimer;
+    private final Counter submitLockAcquisitionsCounter;
+    private final Counter submitLockContentionsCounter;
     /** 保留策略行数计数：key = table|action */
     private final Map<String, Counter> retentionRowCounters = new ConcurrentHashMap<>();
 
@@ -110,6 +121,17 @@ public class BusinessMetrics {
 
         this.dlqEnteredCounter = Counter.builder(DLQ_ENTERED)
                 .description("交卷消息因重试耗尽进入死信队列的次数")
+                .register(registry);
+
+        // 锁等待时间监控
+        this.submitLockWaitTimer = Timer.builder(SUBMIT_LOCK_WAIT)
+                .description("考试提交锁等待时间，统计获取 Redis 分布式锁的耗时分布")
+                .register(registry);
+        this.submitLockAcquisitionsCounter = Counter.builder(SUBMIT_LOCK_ACQUISITIONS)
+                .description("考试提交锁获取成功次数")
+                .register(registry);
+        this.submitLockContentionsCounter = Counter.builder(SUBMIT_LOCK_CONTENTIONS)
+                .description("考试提交锁竞争失败次数（被其他实例抢占）")
                 .register(registry);
     }
 
@@ -176,6 +198,17 @@ public class BusinessMetrics {
     /** 交卷消息进入死信队列计数：在 basicNack 前调用，使「进死信」成为可聚合事件而非仅 ERROR 日志。 */
     public void countDlqEntered() {
         dlqEnteredCounter.increment();
+    }
+
+    /** 记录锁等待时间（获取锁成功后调用）。 */
+    public void recordLockWait(double waitTimeSeconds) {
+        submitLockWaitTimer.record(Duration.ofSeconds((long) waitTimeSeconds));
+        submitLockAcquisitionsCounter.increment();
+    }
+
+    /** 记录锁竞争失败（获取锁失败时调用）。 */
+    public void recordLockContention() {
+        submitLockContentionsCounter.increment();
     }
 
     /**

@@ -32,7 +32,7 @@ public class AuditLogService {
         try {
             Long userId = null;
             if (success) {
-                User user = userMapper.selectOne(null, username);
+                User user = userMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<User>().eq("username", username));
                 if (user != null) {
                     userId = user.getId();
                 }

@@ -180,7 +180,7 @@ class MustChangePasswordIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(new RegisterRequest() {{
                             setUsername(username);
-                            setPassword("pass1234");
+                            setPassword("Pass1234");
                             setName("自助注册-" + username);
                             setEmail(username + "@test.com");
                             setRoleType("STUDENT");
@@ -189,7 +189,7 @@ class MustChangePasswordIntegrationTest {
 
         assertEquals(0, userService.getByUsername(username).getMustChangePassword(),
                 "自助注册账号不该被要求强制改密（用户自己选的口令）");
-        String access = loginToken(username, "pass1234");
+        String access = loginToken(username, "Pass1234");
         mockMvc.perform(get("/api/auth/me").header("Authorization", bearer(access)))
                 .andExpect(status().isOk())
                 // non_null 序列化下 false 仍会输出，故直接断言布尔值

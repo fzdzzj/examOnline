@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -59,7 +58,6 @@ public class BehaviorEventCollectService {
      * @param occurredTime 事件发生时间（可空，缺省服务端当前时间）
      * @return 判定结果（永不返回 null）；内部已消化全部异常，调用方无需 try-catch
      */
-    @Async("monitorExecutor")
     public EventVerdict collect(Long examId, Long studentId, String eventType,
                                 JsonNode eventData, LocalDateTime occurredTime) {
         LocalDateTime eventTime = occurredTime == null ? LocalDateTime.now() : occurredTime;

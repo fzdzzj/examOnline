@@ -33,7 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 public abstract class IntegrationTestBase {
 
-    protected static final String PASSWORD = "pass1234";
+    /** 须满足 AuthService 的强密码规则（大小写+数字、≥8 位），故不能退化成小写。 */
+    protected static final String PASSWORD = "Pass1234";
 
     @Autowired
     protected MockMvc mockMvc;
