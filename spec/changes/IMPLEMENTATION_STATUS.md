@@ -6,16 +6,54 @@
 
 ## 全量门禁
 
-| 项 | 结果 |
+| 项 | 结果（第二轮收尾后） |
 |---|---|
-| Tests run | **262**（Failures 0 / Errors 0 / Skipped 1） |
+| Tests run | **272**（Failures 0 / Errors 0 / Skipped 1） |
 | BUILD | **SUCCESS** |
+| 行覆盖率 | **89.8%**（4274/4760） |
+| 分支覆盖率 | **71.2%**（1140/1600） |
 | Skipped 说明 | 唯一 1 个 skip 是 `OpenApiContractTest.exportOpenApiContract`，由 `exportContract` 系统属性按需开启，非回归 |
-| 行覆盖率 | **89.5%**（4305/4811） |
-| 分支覆盖率 | **71.0%**（1141/1606） |
 
 对比：本轮开始前工作区是**红的**（257 tests / 8 failures + 5 errors），
 且在这之前 `@SpringBootTest` 全线 101 errors（应用根本无法启动）。
+再往前，HEAD 本身编译不过（见下）。
+
+## 第二轮（同日收尾）：追踪偏差、审计落库、事务前提、抽题 500
+
+对应提交：`fix(tracing)` / `feat(security): 审计落库` / `fix(score)` / `fix(paper)`。
+
+### 修掉的真实缺陷
+
+| 缺陷 | 说明 |
+|---|---|
+| `TraceIdInterceptor` 的 Scope 泄漏 | `Context.current().with(span).makeCurrent()` 从不 close。线程池复用线程，上一条链路的上下文会留给下一条请求。变异验证：种回后 2 failures，且**下一个用例的前置断言**被污染失败，直接演示跨请求泄漏。 |
+| 响应头注入面 | 它读客户端 `X-Trace-ID` 再写回响应头。`RequestIdFilter` 早已用白名单专防此点（HTTP 响应头注入/响应拆分）。现只写服务端 SpanContext 的 hex id。 |
+| MDC key 从未生效 | 它写 `traceId`，而日志 pattern 打的是 `%X{requestId}` → 整个组件对可观测性的实际贡献为零。现 pattern 补 `[%X{traceId:-}]`。 |
+| 审计日志恒缺操作人 | `AuditLogService` 在 `@Async` 线程里用反射读 SecurityContext（恒 null），且反射结果根本没被使用；traceId 还是当场 new 的随机 UUID，拿去 Jaeger 查不到任何链路。改为同步写库、显式传 userId。变异验证：insert 换回 log.info → 4 红；操作人改传 null → 仅该条红。 |
+| `publishOne` 上空转的 `REQUIRES_NEW` | private + 同类自调用，Spring 代理两种情形都不增强 → 注解完全无效，而 Javadoc 声称"每场独立事务"。删除并把注释改回描述真实边界。 |
+| 发布指标基数失控 | `exam_publish_*` 拿 `exam_id` 当 tag，考试 ID 基数无上界 → 时间序列随业务量线性膨胀。收敛为单一 `status` 维度，并把基础设施故障从 fail 区分为 error。基数守卫断言已加（加回多余 tag 即红）。 |
+| 抽题空标签 500 | 上一轮参数化改造把空集合交给 `wrapper.in()` → 拼出 `id IN ()` 语法错误。实测 H2 抛 `JdbcSQLSyntaxErrorException`。现短路为 0 候选，走既有"题目不足"分支。 |
+
+### 经核实不成立、因此**没有**实施的主张
+
+| 提案主张 | 事实 |
+|---|---|
+| 提案 1"前 5 个已提交无法回滚" | 方向反了。`publish()` 循环内捕获 BusinessException，业务失败不污染外层事务；基础设施故障一路上抛 → 整批回滚。当前语义正是期望的，无需拆分。 |
+| 提案 1"补 timeout" | `spring.transaction.default-timeout: 30` 早已在 HEAD 的 application.yml 里。 |
+| 提案 2"SQL 注入 CVSS 7.5" | `tagIds` 是 `List<Long>`，`String.valueOf` 后恒为数字，注入不可达。参数化保留，但定性降为纵深防御。 |
+| 提案 2"需新建 idx_sweep_candidate" | `schema.sql` 已有同列组合的 `idx_submissions_sweep(status, deadline_time)`；那个迁移文件要建的是**重复索引**（且因无 Flyway 从未执行）。 |
+| 提案 2 的性能数字表 | 撰写时虚构，从未实测。本机 3306 是另一 MySQL 实例、凭据不通，拿不到 EXPLAIN，因此 OR→UNION ALL **未实施**。要实施的前提是先有 10 万级数据上的真实执行计划。 |
+
+### 仍未处理（如实记录）
+
+- 提案 1 的"整批回滚"这一 DB 事实**没有任何测试证明过**：`ScoreServiceTest` 是 Mockito 单测，
+  mapper 全打桩，只证明了循环中止，未证明回滚。要证明需能在第 2 场注入故障的上下文级测试。
+- `exam_publish_total` 无 exam_id 后，"具体哪场失败"只能看返回结果与审计表（有意取舍）。
+- 项目里其实**早有**按端点限流的 `@RateLimit` + `RedisTokenBucket`（如 `exam:ratelimit:random-draw`），
+  本轮新增的全局 `RateLimitConfig` 与它并存、职责重叠，尚未收敛为一套。
+- 两个 inert 的 `db/migration/V*.sql` 未删（本项目无 Flyway）。
+- 提案 4 的 Grafana Dashboard 与 P95 告警仍缺（需可访问的监控栈）。
+- 提案 3 剩余部分、提案 7 的其余资源隔离项未做。
 
 ---
 
