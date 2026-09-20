@@ -6,12 +6,12 @@
 
 ## 全量门禁
 
-| 项 | 结果（第二轮收尾后） |
+| 项 | 结果（第三轮收尾后） |
 |---|---|
-| Tests run | **272**（Failures 0 / Errors 0 / Skipped 1） |
+| Tests run | **269**（Failures 0 / Errors 0 / Skipped 1） |
 | BUILD | **SUCCESS** |
-| 行覆盖率 | **89.8%**（4274/4760） |
-| 分支覆盖率 | **71.2%**（1140/1600） |
+| 行覆盖率 | **89.7%**（4232/4717） |
+| 分支覆盖率 | **71.4%**（1134/1588） |
 | Skipped 说明 | 唯一 1 个 skip 是 `OpenApiContractTest.exportOpenApiContract`，由 `exportContract` 系统属性按需开启，非回归 |
 
 对比：本轮开始前工作区是**红的**（257 tests / 8 failures + 5 errors），
@@ -46,14 +46,46 @@
 
 ### 仍未处理（如实记录）
 
-- 提案 1 的"整批回滚"这一 DB 事实**没有任何测试证明过**：`ScoreServiceTest` 是 Mockito 单测，
-  mapper 全打桩，只证明了循环中止，未证明回滚。要证明需能在第 2 场注入故障的上下文级测试。
-- `exam_publish_total` 无 exam_id 后，"具体哪场失败"只能看返回结果与审计表（有意取舍）。
-- 项目里其实**早有**按端点限流的 `@RateLimit` + `RedisTokenBucket`（如 `exam:ratelimit:random-draw`），
-  本轮新增的全局 `RateLimitConfig` 与它并存、职责重叠，尚未收敛为一套。
-- 两个 inert 的 `db/migration/V*.sql` 未删（本项目无 Flyway）。
 - 提案 4 的 Grafana Dashboard 与 P95 告警仍缺（需可访问的监控栈）。
 - 提案 3 剩余部分、提案 7 的其余资源隔离项未做。
+
+## 第三轮：限流收敛、删 inert 迁移、补回滚证明
+
+### 1. 全局限流已撤销，收敛到既有 @RateLimit
+
+上一轮提交的全局 `RateLimitConfig`（对 `/api/**` 无差别 100qps）与项目既有的
+`@RateLimit` + `RedisTokenBucket` 体系重叠，而且更危险：
+
+| | 既有 @RateLimit | 已删的全局限流 |
+|---|---|---|
+| 预算 | 按端点实测：submit 500/2000、pull-paper 2000/5000、random-draw 50/200 | 一律 100/150 |
+| 时机 | 刻意排在鉴权之后（先鉴权再限流） | 绕开鉴权顺序，未认证流量也耗桶 |
+| 范围 | 只作用于显式打注解的热点端点 | 全部 /api/** |
+
+最要紧的是第一条：全局 100qps 会把 submit 压到它自己 500 预算之下，恰好发生在
+"5000 人同时交卷"这个最关键的场景。已删除该组件、其 5 条测试与 `rate-limiting.*` 配置；
+`ExamController.page()` 的 `@Min/@Max` 保留（那是入参校验，不属于限流）。
+
+### 2. 两个从未执行的 Flyway 迁移文件已删除
+
+`V20260919__create_audit_log.sql` 与 `V20260919__create_idx_sweep.sql`。本项目未接
+Flyway，二者从未执行；后者要建的 `idx_sweep_candidate` 还与 `schema.sql` 里既有的
+`idx_submissions_sweep` 列组合完全相同，属重复索引——若将来真接上 Flyway 只会平添写放大。
+（注：这两个删除随 `refactor(ratelimit)` 那个提交一起进去了，因为早先 `git rm` 已入暂存区，
+该提交的 message 未描述它们。）
+
+### 3. "整批回滚"这一数据库事实首次被证明
+
+新增 `ScorePublishTransactionIntegrationTest`（2 用例，真实 H2）：
+- 业务性失败只让那一场失败，兄弟场次的 CAS 更新与审计照常提交；
+- 第 2 场注入非 BusinessException（用 `@MockitoSpyBean` 让 examMapper.selectById 抛
+  IllegalStateException）时，第 1 场已做的状态迁移与审计**全部回滚**。
+
+变异验证：摘掉 `publish()` 上的 `@Transactional` → 仅回滚用例变红，另一条仍绿。
+说明这组断言确实钉在事务边界上，不是恒真。此前 `ScoreServiceTest` 全是 Mockito 打桩，
+从未证明过这件事。
+
+全量 **269 tests / 0 失败**（272 − 5 条随组件删除的限流测试 + 2 条新事务测试）。
 
 ---
 
