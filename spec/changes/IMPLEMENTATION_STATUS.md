@@ -217,10 +217,26 @@ P50/P95/P99 恒为 0。而提案 4 的验收口径正是"P95 < 100ms"——该�
    `sport-verify-grafana` 容器（已退出），且 observability 规范记录过阶段 16 的告警
    曾真正 firing。这条也下早了。
 
-### 复核查出、尚未处理的规格轴欠账
+### 复核查出的规格轴欠账（2026-09-20 同日清完）
 
-- 8 个变更目录全都留在 `spec/changes/` 未归档，delta 一次都没合入 `spec/specs/*`，
-  违反本仓库自己的约定（能力域 spec 均带"来源：archive/xxx 合入"溯源行）。
-- 3 个已撤回提案的 spec-delta 仍是待合入形态，**merge 即注入假需求**（全局限流、
-  三池隔离、每场独立事务）；更正横幅只写在 proposal.md，delta 文件本身没有。
-- 前 14 个提交对 `docs/` 零改动，而每个 tasks.json 都含"在需求决策记录.md 添加注记"步骤。
+- 8 个变更目录已 `git mv` 进 `spec/changes/archive/`；能力域规范按**筛选式合入**
+  （沿用仓库既有惯例：来源行点名合入了哪几条，另以"实施注记/撤回说明"记录偏离）：
+  - `observability` ← 锁竞争可观测、日志与链路标识关联、指标基数有界；
+  - `reliability` ← 分页入参上限；
+  - `data-consistency` ← 批量操作失败分级、声明式增强必须真的生效；
+  - `data-access` ← 动态条件不得拼接、空集合必须短路、索引变更先行核查；
+  - `authentication` ← 安全事件审计落库、建表来源唯一；
+  - `performance` ← **零合入**，只留撤回说明（线程池隔离纯空转已删）。
+- 3 份已撤回 delta 各加防误合入横幅（`add-thread-pool-isolation`、
+  `optimize-transaction-boundary`、`add-api-rate-limiting`），避免有人照 delta 写入不存在的能力。
+- `docs/需求决策记录.md` 补 §十六～§十八：代理型增强必须验证生效、指标口径两条硬规则、
+  建表与迁移唯一事实源。
+- `improve-test-coverage` 未合入任何能力域规范：测试质量属工程实践、不定义运行行为，
+  其结论只进决策记录与本文件。
+
+### 复核又抓出一处我自己的失实声明（已修）
+
+`add-api-rate-limiting` 的提交信息写过"`size=101` 直接 400"——**不实**：控制器缺类级
+`@Validated`，`@RequestParam` 上的约束从不触发，实测 `size=1000` 返回 **200**（连 500 都不是）。
+处置顺序是先写失败测试取证（红）→ 补 `@Validated` 与 `ConstraintViolationException`→400 的映射
+→ 测试转绿；不是靠读代码下结论。全量 **269 tests / 0 失败**。

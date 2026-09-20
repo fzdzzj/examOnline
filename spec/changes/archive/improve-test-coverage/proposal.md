@@ -1,7 +1,7 @@
 # 提案：测试覆盖率提升与质量门禁（阶段 9，研发工程）
 
 > ⚠️ **本提案的基线已过期，请勿据此执行**（核实见
-> [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md)）。
+> [`../../IMPLEMENTATION_STATUS.md`](../../IMPLEMENTATION_STATUS.md)）。
 > 下述"覆盖率仅 14%"、"添加 JaCoCo 配置"、"新建 ExamSubmitServiceTest /
 > application-test.yml"在当时均已完成：实施前实测 85.1% 行 / 66.3% 分支，
 > pom.xml 已有 jacoco 0.8.12。真实缺口只有 ScoreService 一处，且已补齐。

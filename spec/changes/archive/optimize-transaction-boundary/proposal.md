@@ -1,7 +1,7 @@
 # 提案：事务边界细化与原子性保障（阶段 9，数据一致性强化）
 
 > ⚠️ **本提案的核心前提是错的，"拆分事务边界"这条路已按事实回退**（核实见
-> [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md)）。
+> [`../../IMPLEMENTATION_STATUS.md`](../../IMPLEMENTATION_STATUS.md)）。
 >
 > 1. "前 5 个已提交无法回滚"不成立：`publish()` 在循环内捕获 BusinessException，
 >    业务性失败不会污染外层事务；基础设施故障则一路上抛、整批回滚——恰恰是

@@ -1,7 +1,7 @@
 # 提案：API 限流与防抖机制（阶段 9，可靠性增强）
 
 > ⚠️ **本提案的"新建全局限流器"部分已被撤销并收敛到既有机制**（见
-> [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md)）。
+> [`../../IMPLEMENTATION_STATUS.md`](../../IMPLEMENTATION_STATUS.md)）。
 >
 > 项目**早就有**一套按端点声明式限流：`@RateLimit` + `RedisTokenBucket` +
 > `RateLimitInterceptor`，通过 `WebMvcConfig` **刻意注册在鉴权之后**（先鉴权再限流），

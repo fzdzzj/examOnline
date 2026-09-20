@@ -1,5 +1,10 @@
 # 规范差异：reliability（API 限流）
 
+> ⚠️ **本 delta 只有一条该被合入**：实际进入 `spec/specs/reliability/spec.md` 的是
+> 「分页入参上限」。其"全局 QPS 限流/降级/统一限流错误码"描述的组件已实现后**撤回删除**——
+> 与既有 `@RateLimit` + `RedisTokenBucket` 重叠且更危险（一刀切 100 QPS 会把交卷接口压到
+> 其自身 500 预算之下，并绕开"先鉴权再限流"）。按本文件合入会写入一条已不存在的机制。
+
 本文件包含对 `spec/specs/reliability/spec.md` 的规范变更。
 
 ## ADDED Requirements

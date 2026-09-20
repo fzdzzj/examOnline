@@ -1,5 +1,11 @@
 # 规范差异：data-consistency（事务粒度与原子性）
 
+> ⚠️ **本 delta 大部分不应合入**：其"每场独立事务""批量操作事务隔离"主张经核实前提不成立
+> （业务性失败在循环内被捕获、不污染外层事务；基础设施异常整批回滚正是期望语义），
+> 相关实现已回退。实际合入 `spec/specs/data-consistency/spec.md` 的是
+> 「批量操作失败分级」与「声明式增强必须真的生效」两条，与本文件内容不同，勿照搬。
+> 其中"补 `timeout`"亦无需实施——`spring.transaction.default-timeout: 30` 本已在配置中。
+
 本文件包含对 `spec/specs/data-consistency/spec.md` 的规范变更。
 
 ## MODIFIED Requirements

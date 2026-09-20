@@ -1,5 +1,9 @@
 # 规范差异：performance（线程池隔离）
 
+> ⛔ **本 delta 未合入且不应合入**：其描述的三池隔离实现经核实为纯空转，已整体删除
+> （见 `spec/changes/archive/add-thread-pool-isolation/proposal.md` 顶部与
+> `spec/specs/performance/spec.md` 文末撤回说明）。照本文件合入会写入不存在的能力。
+
 本文件包含对 `spec/specs/performance/spec.md` 的规范变更。
 
 ## ADDED Requirements

@@ -1,7 +1,7 @@
 # 提案：SQL 性能优化与索引策略（阶段 9，数据库层强化）
 
 > ⚠️ **本提案三项主张里两项经核实不成立，一项无法在本地验证**（见
-> [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md)）。
+> [`../../IMPLEMENTATION_STATUS.md`](../../IMPLEMENTATION_STATUS.md)）。
 >
 > 1. **"SQL 注入风险（CVSS 7.5）"不成立**：`tagIdList` 由 `List<Long>` 经
 >    `String.valueOf` join 而来，取值恒为数字（可带负号），注入不可达。

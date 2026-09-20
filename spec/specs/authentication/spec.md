@@ -2,7 +2,8 @@
 
 > 能力域：认证与鉴权（含工程基础能力，阶段 1/2 W1 + 阶段 18 后小阶段 W18）。
 > 来源：`spec/changes/add-project-skeleton` 合入（工程骨架阶段）；
-> `spec/changes/archive/add-auth-must-change-password` 合入（初始密码强制修改标记，0fb56b9）。
+> `spec/changes/archive/add-auth-must-change-password` 合入（初始密码强制修改标记，0fb56b9）；
+> `spec/changes/archive/harden-security-config` 合入（安全事件审计落库、建表来源唯一）。
 
 ## Requirements
 
@@ -395,3 +396,77 @@ GIVEN 一个在标记能力上线前已存在的账号
 WHEN 系统升级后启动
 THEN 不追溯修改其必须改密标记
 AND 不因此把既有部署的管理员突然锁入强制改密
+
+---
+
+### Requirement: 安全事件审计落库
+
+WHEN 发生登录、账户锁定等安全事件,
+
+系统 SHALL 把事件持久化到 `audit_log`，含操作人、来源 IP、结果与链路标识。
+
+#### Scenario: 失败登录同样留痕
+
+GIVEN 一次账号不存在或密码错误的登录
+
+WHEN 登录被拒
+
+THEN 写入一条 FAILURE 审计
+
+AND 账号不存在时 `user_id` 为空，但对外提示与密码错误一致（防账号枚举）
+
+#### Scenario: 成功登录记下操作人
+
+GIVEN 一次凭据正确的登录
+
+WHEN 写入审计
+
+THEN `user_id` 为该账号 ID
+
+AND 操作人须由已持有用户对象的调用方显式传入——不得在异步工作线程里读安全上下文
+（那里上下文为空，会让操作人恒为 null 而无人察觉）
+
+#### Scenario: 链路标识可回溯
+
+GIVEN 审计行携带链路标识
+
+WHEN 用该标识去追踪系统查询
+
+THEN 命中的正是产生这次登录的那条链路
+
+AND 该标识取自当次请求的真实链路上下文，不得是当场生成的随机值
+
+#### Scenario: 审计失败不阻断登录
+
+GIVEN 审计存储临时不可用
+
+WHEN 写入抛出异常
+
+THEN 异常被吞并记 ERROR
+
+AND 不因旁路故障把正常登录变成 500
+
+---
+
+### Requirement: 建表来源唯一
+
+WHEN 新增数据库表,
+
+系统 SHALL 把 DDL 落在 `schema.sql`（dev 与测试共用的唯一建表入口），并为存量库另给手工迁移脚本。
+
+#### Scenario: 未接线的迁移目录不产生表
+
+GIVEN 某 DDL 只放在 `db/migration/` 下
+
+WHEN 应用在新库上启动
+
+THEN 该表不会被创建（本项目未接 Flyway，该目录下的脚本从不执行）
+
+AND 应改由 `schema.sql` 承载，避免"表已存在"的错觉
+
+---
+
+> 合入注记（2026-09-20，`harden-security-config`）：本域只合入审计落库与建表来源两条。
+> JWT 启动期强度校验、密码复杂度规则、连续失败锁定均已在 HEAD 中生效，非本变更新增。
+> **未合入**（提案提出但尚未实现）：`/audit/logs` 查询接口（数据已入库但无读取路径，
+> 审计的追溯价值目前只到"能查库"为止）、密码有效期策略、KMS 托管密钥。

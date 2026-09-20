@@ -1,7 +1,7 @@
 # 提案：线程池隔离与资源管控（阶段 9，性能优化）
 
 > ⛔ **本提案已整体撤回并删除实现**（核实见
-> [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md)）。
+> [`../../IMPLEMENTATION_STATUS.md`](../../IMPLEMENTATION_STATUS.md)）。
 > 对应的 `46d7004` 曾交付三个线程池 + `@EnableAsync` + 一个断言池参数的测试，
 > 现已全部移除。
 >

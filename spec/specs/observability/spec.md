@@ -1,7 +1,7 @@
 # observability 规范
 
-> 能力域：可观测性（阶段 8，W10；阶段 11，W13 补告警与面板；阶段 14 补死信指标与告警；阶段 16 补观测栈动态可验证性）。
-> 来源：`spec/changes/archive/add-performance-deepening` 合入（指标导出、自定义业务指标、指标与请求关联）+ `spec/changes/archive/add-slow-sql-and-rate-limit` 合入（慢 SQL 识别、慢 SQL 与请求关联）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（异步链路请求关联）+ `spec/changes/archive/add-alerting-and-dashboards` 合入（指标驱动的告警、观测面板）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信队列的指标与告警覆盖）+ `spec/changes/archive/add-observability-runtime-evidence` 合入（观测栈动态可验证性）。
+> 能力域：可观测性（阶段 8，W10；阶段 11，W13 补告警与面板；阶段 14 补死信指标与告警；阶段 16 补观测栈动态可验证性；2026-09-20 补锁竞争可观测与日志链路关联）。
+> 来源：`spec/changes/archive/add-performance-deepening` 合入（指标导出、自定义业务指标、指标与请求关联）+ `spec/changes/archive/add-slow-sql-and-rate-limit` 合入（慢 SQL 识别、慢 SQL 与请求关联）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（异步链路请求关联）+ `spec/changes/archive/add-alerting-and-dashboards` 合入（指标驱动的告警、观测面板）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信队列的指标与告警覆盖）+ `spec/changes/archive/add-observability-runtime-evidence` 合入（观测栈动态可验证性）+ `spec/changes/archive/add-concurrency-monitoring` 合入（锁竞争可观测）+ `spec/changes/archive/add-distributed-tracing` 合入（日志与链路标识关联）。
 > 实施注记：慢 SQL 阈值 key 为 `exam.monitor.slow-sql-threshold-ms`（默认 1000）；拆解思路是「指标定方向、日志定个案」——指标发现异常，再用 requestId 到日志里定位具体那一条。
 > 观测栈注记：抓取配置与告警规则在 `docker/observability/`（独立编排片段，**不并入主 `docker-compose.yml`**）；规则只使用能从 `BusinessMetrics` 常量确定性推导的指标名，刻意不写 `hikaricp_connections_*`（dynamic-datasource 下未实测）。**静态正确性由 `AlertAssetsTest` 守住；动态行为证据见 `docs/observability-runtime-evidence.md`（Targets UP、9 条 loaded、5 条真实 firing / 4 条未点着并留 PromQL 反证、面板出图；禁止改阈值凑绿；不得声称 DLQ 端到端）。**
 > 实施注记（阶段 14）：规则名 `MqDlqBacklog` / `MqSubmitRetryExhausted`；指标 `exam.mq.dlq.depth` / `exam.mq.retry` / `exam.mq.dlq.entered`；静态由 `AlertAssetsTest` 守住；告警能否响已由阶段 16 证据覆盖，真 broker 往返重投仍属遗留 #6。
@@ -332,3 +332,110 @@ WHEN 查阅仓库中的运行证据
 THEN 能看到每条规则 firing 或未点着的结论
 
 AND 不得据此声称死信链路真 broker 端到端已验收
+
+---
+
+### Requirement: 锁竞争可观测
+
+WHEN 交卷链路获取 Redis 分布式锁,
+
+系统 SHALL 记录本次等待时长、锁获取成功次数与锁竞争失败次数，供外部采集端计算分位。
+
+#### Scenario: 亚秒等待不得丢失
+
+GIVEN SETNX 的正常等待本就是毫秒级
+
+WHEN 上报一次耗时小于 1 秒的锁等待
+
+THEN 该次等待以纳秒精度计入，累计值不得为 0
+
+AND 禁止经"秒→long"的有损换算落点（会把亚秒全部截成 0）
+
+#### Scenario: 分位数可读
+
+GIVEN 验收口径为锁等待 P95 小于 100 毫秒
+
+WHEN 注册该耗时指标
+
+THEN 分桶必须覆盖毫秒到秒段（默认桶在 10ms 之后直接跳到 8s，不足以支撑该判定）
+
+AND 缺该等分桶时不得声称"P95 已可判定"
+
+#### Scenario: 竞争与成功分别计数
+
+GIVEN 多实例并发抢同一把锁
+
+WHEN 一次抢锁失败
+
+THEN 竞争失败计数递增
+
+AND 不叠加到获取成功计数上
+
+---
+
+### Requirement: 日志与链路标识关联
+
+WHEN 请求进入 MVC 处理阶段,
+
+系统 SHALL 把当前 OpenTelemetry Span 的 traceId 写入日志上下文并回写响应头，使日志可跳查链路。
+
+#### Scenario: traceId 取自真实 SpanContext
+
+GIVEN 一次经 starter 装配的 HTTP 请求
+
+WHEN 写入日志上下文
+
+THEN 该 id 等于当前 Span 的 traceId（32 位小写 hex）
+
+AND 不得使用自行生成的随机值（那样拿去追踪后端查不到任何链路）
+
+#### Scenario: 不重复开启服务端 Span
+
+GIVEN starter 的过滤器已为该请求开启 server span
+
+WHEN MVC 拦截器处理同一请求
+
+THEN 拦截器只读取上下文，不再创建 Span
+
+AND 不得留下未关闭的作用域泄漏给同线程的下一次请求
+
+#### Scenario: 不回显客户端追踪头
+
+GIVEN 客户端提交了自己的追踪头
+
+WHEN 构造响应
+
+THEN 响应头只承载服务端产出的 hex traceId
+
+AND 额外头不得因回显客户端串而出现（与请求标识同类的响应头注入面）
+
+---
+
+### Requirement: 指标基数有界
+
+WHEN 为计数器或直方图打标签,
+
+系统 SHALL 只使用取值集合有限的维度（如结果状态），不得用无上限的业务标识作标签。
+
+#### Scenario: 高基数字段被拒作标签
+
+GIVEN 考试 ID 这类取值随业务量无限增长的字段
+
+WHEN 把它作为指标标签
+
+THEN 时间序列数量随业务量线性膨胀，内存与查询成本失控
+
+AND 应改为按有限枚举（如 `status`）聚合，个体明细回到返回值或审计表查
+
+---
+
+> 合入注记（2026-09-20，`add-concurrency-monitoring`）：指标为 `exam.submit.lock.wait`（Timer，
+> 显式 1ms–1s 分桶）/ `exam.submit.lock.acquisitions` / `exam.submit.lock.contentions`；
+> 重复扫描计数 `exam.sweep.duplicate_detected` 早已由阶段 13 提供。**未合入部分**：
+> 原提案的 Grafana 面板与"P95 > 200ms 告警"仍未做（机器上存在 `sport-verify-grafana` 容器，
+> 当前 exited，属可解锁而非不可验证）。
+> 合入注记（2026-09-20，`add-distributed-tracing`）：SDK 与 server span 由
+> `opentelemetry-spring-boot-starter` 单一装配（曾自建 `OpenTelemetry` Bean 顶掉其自动装配，
+> 导致应用无法启动，已删）；日志 pattern 增列 `[%X{traceId:-}]`，非 HTTP 线程无 span 时留空。
+> **未合入部分**：从未对活着的 Jaeger 跑通端到端（测试 profile 置 `otel.traces.exporter=none`），
+> 原提案的"服务依赖拓扑图""Span 层级逐层打点"未实现，故不作为需求写入。

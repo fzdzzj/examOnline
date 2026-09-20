@@ -1,9 +1,10 @@
 # data-access 规范
 
-> 能力域：数据访问（阶段 8 + 15 + 17，W9-W10 / W15 / W16）。
+> 能力域：数据访问（阶段 8 + 15 + 17，W9-W10 / W15 / W16；2026-09-20 补动态条件与索引核查）。
 > 来源：`spec/changes/archive/add-performance-deepening` 合入（读写分离、读己之写）；
 > `spec/changes/archive/add-data-retention` 合入（数据保留策略与清理边界）；
-> `spec/changes/archive/fix-schema-mysql-pk` 合入（新库建表 MySQL 8 兼容、AUTO_INCREMENT 必须有主键，83bc9ca）。
+> `spec/changes/archive/fix-schema-mysql-pk` 合入（新库建表 MySQL 8 兼容、AUTO_INCREMENT 必须有主键，83bc9ca）；
+> `spec/changes/archive/optimize-sql-performance` 合入（动态条件不得拼接、空集合必须短路、索引变更先行核查）。
 > 实施注记：
 > - 强一致读（答卷详情、成绩查询）**不标** `@DS("slave")`，走默认主库；`@DS("slave")` 只挂在可容忍主从延迟的快照类读上（`PaperSnapshotService`/`ExamSnapshotService`/`GradingQueryService`/`ScoreService` 等）。
 > - 数据保留（`RetentionService`，f42adba）：仅三张辅助表 `exam_behavior_logs` / `exam_submit_dedups` / `score_audit_logs`；删除条件只带 `exam_id`（命中既有索引最左前缀）；**零 DDL**；默认 `enabled=false` + `dry-run=true`；**不纳入** `exam_dlq_messages`（表存在但无 `exam_id`）；用 `end_time` 不用 `updated_time`；**不声称磁盘释放**。单次运行另有 `max-exams-per-run`（默认 100）与候选 `ORDER BY end_time ASC, id ASC` 有界。
@@ -229,3 +230,57 @@ WHEN 执行对应迁移脚本
 THEN 为 id 补上 PRIMARY KEY
 
 AND 若主键已存在，重复执行失败可忽略且不改业务数据
+
+---
+
+### Requirement: 动态条件不得拼接 SQL 字面量
+
+WHEN 依据运行时集合构造查询条件,
+
+系统 SHALL 走参数化绑定，不把集合元素拼进 SQL 片段。
+
+#### Scenario: 集合条件参数化
+
+GIVEN 一组标签 ID 用于筛选题目
+
+WHEN 构造"命中任一标签"的条件
+
+THEN 以参数化 `IN` 绑定，不出现字符串拼接的 SQL 片段
+
+#### Scenario: 空集合必须短路
+
+GIVEN 参数化子查询返回空集合
+
+WHEN 该集合要被交给 `in()` 作为条件
+
+THEN 必须先短路为"零候选"并走既有的数据不足分支
+
+AND 不得把空集合交给 `in()`——会拼出 `id IN ()` 触发数据库语法错误（表现为 500）；
+部分 ORM 版本还会跳过该条件，变成"过滤形同不存在"的静默错误结果
+
+---
+
+### Requirement: 索引变更先行核查
+
+WHEN 为查询新增索引,
+
+系统 SHALL 先核对该查询所需列组合是否已被既有索引覆盖，避免新增重复索引。
+
+#### Scenario: 重复索引被拦下
+
+GIVEN 拟新增的复合索引与既有索引列组合完全相同
+
+WHEN 评审该变更
+
+THEN 判定为重复索引，不新增
+
+AND 只记录写放大成本而无读取收益
+
+---
+
+> 合入注记（2026-09-20，`optimize-sql-performance`）：只合入上面两条（抽题标签筛选已参数化，
+> 且空命中短路已修复并有回归测试）。**未合入**其"OR 条件改 UNION ALL"——提案附带的
+> "1 万 800ms→50ms / 10 万 5.2s→120ms"数字系撰写时虚构、从未实测，本机主库容器当前 exited，
+> 拿不到真实执行计划；在无测量证据下改写一条仅有功能校验的兜底查询，风险大于收益。
+> 其"新建 `idx_sweep_candidate`"经核实与既有 `idx_submissions_sweep(status, deadline_time)`
+> 列组合完全相同，属重复索引，对应的一次性迁移脚本已删除（本项目未接 Flyway，该脚本从未执行）。

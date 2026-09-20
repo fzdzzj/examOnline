@@ -1,7 +1,7 @@
 # reliability 规范
 
-> 能力域：可靠性（阶段 8，W10；限流器降级阶段 10；定时扫描多实例安全阶段 13；死信可见性与有界重投阶段 14）。
-> 来源：`spec/changes/archive/add-slow-sql-and-rate-limit` 合入（核心接口限流、分布式一致性、限流粒度）+ `spec/changes/archive/add-rate-limit-resilience` 合入（限流器降级、降级可观测）+ `spec/changes/archive/add-multi-instance-sweep-safety` 合入（定时扫描多实例安全、不引入调度锁的取舍）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信消息的可见性、有界重投、死信队列不设过期与容量上限）。
+> 能力域：可靠性（阶段 8，W10；限流器降级阶段 10；定时扫描多实例安全阶段 13；死信可见性与有界重投阶段 14；2026-09-20 补分页入参上限）。
+> 来源：`spec/changes/archive/add-slow-sql-and-rate-limit` 合入（核心接口限流、分布式一致性、限流粒度）+ `spec/changes/archive/add-rate-limit-resilience` 合入（限流器降级、降级可观测）+ `spec/changes/archive/add-multi-instance-sweep-safety` 合入（定时扫描多实例安全、不引入调度锁的取舍）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信消息的可见性、有界重投、死信队列不设过期与容量上限）+ `spec/changes/archive/add-api-rate-limiting` 合入（分页入参上限；其全局限流器已撤回，见文末注记）。
 > 实施注记：超限返回 `ResponseCode.TOO_MANY_REQUESTS`（1008 → HTTP 429），由 `GlobalExceptionHandler` 统一转换。
 > 实施注记：限流依赖（Redis）异常时默认 **fail-open 放行**（`exam.ratelimit.fail-open`，默认 true），并打 ERROR 日志 + 递增 `exam.ratelimit.degraded` 计数器；置 false 则异常上抛（fail-close）。
 > 实施注记（阶段 13）：定时扫描正确性靠下游幂等（CAS + 唯一索引 + INSERT IGNORE + 消费端 casFillAnswers），**刻意不加分布式调度锁**；重复扫描指标 `exam.sweep.duplicate_detected`（tag `task`=`sweep`/`state-advance`，含消费者 `filled==0`）；交卷锁按 token 解锁（`RedisLockHelper` Lua compare-and-delete，`exam.taking.submit.lock-ttl-seconds` 默认 30）。
@@ -352,4 +352,39 @@ WHEN 其深度持续大于 0
 THEN 视为交卷链路存在真实缺陷
 
 AND 处理方式是查明原因而非清空队列
+
+---
+
+### Requirement: 分页入参上限
+
+WHEN 请求分页列表接口,
+
+系统 SHALL 拒绝超出上限的页码与页大小并返回 400，不因参数越界退化成 500 或放行超大查询。
+
+#### Scenario: 超限页大小被拒
+
+GIVEN 列表接口声明页大小上限为 100
+
+WHEN 客户端请求 `size=1000`
+
+THEN 返回 400 与字段级提示
+
+AND 不触发对数据库的大页扫描
+
+#### Scenario: 入参约束必须真的生效
+
+GIVEN 控制器方法参数上写了 `@Min`/`@Max`
+
+WHEN 校验该接口是否具备约束力
+
+THEN 控制器需带类级 `@Validated`（否则注解只是装饰，请求照常以 200 放行）
+
+AND 参数约束抛出的异常类型与 `@Valid @RequestBody` 不同，须有对应异常处理映射到 400
+
+---
+
+> 合入注记（2026-09-20，`add-api-rate-limiting`）：只合入「分页入参上限」一条。
+> 该提案原拟的**全局 `/api/**` 限流器已实现后撤回**——它与既有 `@RateLimit` 体系重叠且更危险：
+> 一刀切 100 QPS 会把交卷接口压到其自身 500 预算之下（恰是 5000 人交卷场景），
+> 且绕开"先鉴权再限流"的既定顺序。429 的产生方仍是上文的 `@RateLimit` 令牌桶，未新增第二条路径。
 
