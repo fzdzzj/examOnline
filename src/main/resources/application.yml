@@ -55,7 +55,9 @@ logging:
   level:
     com.exam: ${LOG_LEVEL:info}
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] %-5level %logger{40} - %msg%n"
+    # traceId 由 TraceIdInterceptor 从当前 OTel SpanContext 写入 MDC，用于跳 Jaeger 查链路；
+    # 非 HTTP 线程（定时兜底、MQ 消费）无 span，故用 :- 留空而非打印 null。
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] [%X{traceId:-}] %-5level %logger{40} - %msg%n"
 
 # 认证配置（add-authentication）
 exam:
