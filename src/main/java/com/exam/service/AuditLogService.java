@@ -1,114 +1,75 @@
 package com.exam.service;
 
-import com.exam.auth.security.LoginUser;
-import com.exam.common.ResponseCode;
-import com.exam.user.entity.User;
-import com.exam.user.mapper.UserMapper;
+import com.exam.audit.entity.AuditLog;
+import com.exam.audit.mapper.AuditLogMapper;
+import com.exam.common.RequestIdFilter;
+import com.exam.config.TraceIdInterceptor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
- * 安全审计日志服务：异步记录关键安全事件
+ * 安全审计日志服务：把登录、账户锁定等安全事件落到 audit_log 表。
+ *
+ * <p><b>同步写，不用 @Async。</b>异步边界上 MDC 与 SecurityContext 都不传递，旧实现因此在
+ * 两处静默失效：它用反射取当前登录用户（工作线程里 SecurityContext 是空的，取到也从未被使用），
+ * 又当场 new 了一个随机 UUID 当 traceId（与本次请求的链路毫无关系，拿它查不到任何 trace）。
+ * 同步多写一条 insert 换来"审计真的可读可查"，登录路径本就有 BCrypt 与多次查询，不构成瓶颈。
+ *
+ * <p><b>写失败不阻断业务。</b>审计是旁路：持久化异常一律吞掉并打 ERROR，绝不因审计库抖动
+ * 把一次正常登录变成 500。代价是这类缺口只能靠 ERROR 日志发现。
  */
 @Slf4j
 @Service
 public class AuditLogService {
 
-    @Autowired(required = false)
-    private UserMapper userMapper;
+    private final AuditLogMapper auditLogMapper;
 
-    /**
-     * 异步记录登录事件（成功/失败）
-     */
-    @Async
-    @Transactional(rollbackFor = Exception.class)
-    public void logLoginEvent(String username, boolean success, String ip, String reason) {
-        try {
-            Long userId = null;
-            if (success) {
-                User user = userMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<User>().eq("username", username));
-                if (user != null) {
-                    userId = user.getId();
-                }
-            }
-            
-            // TODO: 实际实现需要持久化到 audit_log 表
-            logAuditEvent(userId, username, "LOGIN", ip, success ? "SUCCESS" : "FAILURE", reason);
-        } catch (Exception e) {
-            log.error("记录登录审计日志失败", e);
-        }
+    public AuditLogService(AuditLogMapper auditLogMapper) {
+        this.auditLogMapper = auditLogMapper;
     }
 
     /**
-     * 异步记录权限变更事件
+     * 记录登录事件。userId 由调用方传入——登录处已握有 User，不必为写审计再查一次库；
+     * 账号不存在时传 null（对外与"密码错误"共用同一提示，此处不做区分以防枚举）。
      */
-    @Async
-    @Transactional(rollbackFor = Exception.class)
-    public void logPermissionChange(Long operatorId, String operatorUsername, 
-                                     Long targetUserId, String targetUsername,
-                                     String action, String details, String ip) {
-        try {
-            logAuditEvent(operatorId, operatorUsername, action, ip, "SUCCESS", details);
-        } catch (Exception e) {
-            log.error("记录权限变更审计日志失败", e);
-        }
+    public void logLoginEvent(Long userId, String username, boolean success, String ip, String reason) {
+        record(userId, username, AuditLog.ACTION_LOGIN, ip,
+                success ? AuditLog.STATUS_SUCCESS : AuditLog.STATUS_FAILURE, reason);
     }
 
-    /**
-     * 异步记录账户锁定事件
-     */
-    @Async
-    @Transactional(rollbackFor = Exception.class)
+    /** 记录账户锁定（连续登录失败触发）。 */
     public void logAccountLock(String username, String ip, String lockReason) {
+        record(null, username, AuditLog.ACTION_ACCOUNT_LOCKED, ip, AuditLog.STATUS_WARNING, lockReason);
+    }
+
+    private void record(Long userId, String username, String action, String ip, String status, String details) {
         try {
-            logAuditEvent(null, username, "ACCOUNT_LOCKED", ip, "WARNING", lockReason);
+            AuditLog entry = new AuditLog();
+            entry.setTraceId(currentTraceId());
+            entry.setUserId(userId);
+            entry.setUsername(username);
+            entry.setAction(action);
+            entry.setIpAddress(ip);
+            entry.setStatus(status);
+            entry.setDetails(truncate(details));
+            auditLogMapper.insert(entry);
         } catch (Exception e) {
-            log.error("记录账户锁定审计日志失败", e);
+            log.error("审计写入失败: username={} action={} status={}", username, action, status, e);
         }
     }
 
-    /**
-     * 异步记录密钥校验事件
-     */
-    @Async
-    @Transactional(rollbackFor = Exception.class)
-    public void logJwtValidation(boolean success, String reason) {
-        try {
-            logAuditEvent(null, "SYSTEM", "JWT_VALIDATION", "N/A", 
-                success ? "SUCCESS" : "FAILURE", reason);
-        } catch (Exception e) {
-            log.error("记录 JWT 校验审计日志失败", e);
-        }
+    /** 优先取 OTel traceId（可跳 Jaeger 查链路），无 span 的线程回落 requestId。 */
+    private String currentTraceId() {
+        String traceId = MDC.get(TraceIdInterceptor.MDC_KEY);
+        return traceId != null ? traceId : MDC.get(RequestIdFilter.MDC_KEY);
     }
 
-    /**
-     * 构建审计日志条目
-     */
-    private void logAuditEvent(Long userId, String username, String action, 
-                               String ip, String status, String details) {
-        LoginUser currentUser = null;
-        try {
-            // 尝试获取当前登录用户（可能为系统调用）
-            Class<?> securityUtilClass = Class.forName("com.exam.auth.security.SecurityUtil");
-            java.lang.reflect.Method getCurrentUserMethod = securityUtilClass.getMethod("getCurrentUser");
-            Object result = getCurrentUserMethod.invoke(null);
-            if (result != null) {
-                currentUser = (LoginUser) result;
-            }
-        } catch (Exception e) {
-            // 忽略，使用默认值
+    /** details 列宽 512，超长截断而不是让整条审计写失败。 */
+    private String truncate(String details) {
+        if (details == null || details.length() <= 512) {
+            return details;
         }
-
-        String traceId = UUID.randomUUID().toString().replace("-", "");
-        
-        // 实际实现应该写入数据库，这里仅记录日志
-        log.info("[AUDIT] traceId={}, userId={}, username={}, action={}, ip={}, status={}, details={}",
-            traceId, userId, username, action, ip, status, details);
+        return details.substring(0, 512);
     }
 }

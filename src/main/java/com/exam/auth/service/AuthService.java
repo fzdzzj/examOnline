@@ -141,14 +141,15 @@ public class AuthService {
         // 统一失败提示：账号不存在与密码错误返回同一条消息，防账号枚举
         if (user == null || !BCrypt.checkpw(password, user.getPassword())) {
             loginGuard.recordFailure(username);
-            auditLogService.logLoginEvent(username, false, ip, "账号或密码错误");
+            auditLogService.logLoginEvent(user == null ? null : user.getId(),
+                    username, false, ip, "账号或密码错误");
             throw new BusinessException(ResponseCode.ACCOUNT_OR_PASSWORD_ERROR);
         }
         if (user.getStatus() != null && user.getStatus() == 1) {
             throw new BusinessException(ResponseCode.ACCOUNT_DISABLED);
         }
         loginGuard.clearFailures(username);
-        auditLogService.logLoginEvent(username, true, ip, "登录成功");
+        auditLogService.logLoginEvent(user.getId(), username, true, ip, "登录成功");
         return issueTokens(user);
     }
 

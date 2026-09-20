@@ -429,3 +429,27 @@ CREATE TABLE IF NOT EXISTS exam_dlq_messages (
     PRIMARY KEY (id),
     KEY idx_dlq_status_time (status, created_time)
 );
+
+
+-- =============================================================
+-- 安全审计日志表（harden-security-config）：
+-- 登录成功/失败、账户锁定、权限变更等安全事件落库，满足日志留存与事后追溯。
+-- 注：本项目无 Flyway，建表统一走本脚本（dev 与测试共用）；
+--     存量库需手工执行 docker/mysql/migrations/2026-W16-add-audit-log.sql。
+-- trace_id 取 OTel traceId（无 span 时回落 requestId），便于从日志直接跳 Jaeger。
+-- =============================================================
+CREATE TABLE IF NOT EXISTS audit_log (
+    id           BIGINT      NOT NULL AUTO_INCREMENT,
+    trace_id     VARCHAR(64)          DEFAULT NULL,
+    user_id      BIGINT               DEFAULT NULL,          -- 系统事件为 NULL
+    username     VARCHAR(64) NOT NULL,
+    action       VARCHAR(32) NOT NULL,                       -- LOGIN / LOGIN_LOCKED / PERMISSION_CHANGE ...
+    ip_address   VARCHAR(45)          DEFAULT NULL,          -- 兼容 IPv6
+    status       VARCHAR(16) NOT NULL,                       -- SUCCESS / FAILURE / WARNING
+    details      VARCHAR(512)         DEFAULT NULL,
+    created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_audit_user_time (username, created_time),
+    KEY idx_audit_action_time (action, created_time),
+    KEY idx_audit_trace (trace_id)
+);
