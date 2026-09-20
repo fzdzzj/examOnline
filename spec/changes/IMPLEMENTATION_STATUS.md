@@ -310,3 +310,39 @@ P50/P95/P99 恒为 0。而提案 4 的验收口径正是"P95 < 100ms"——该�
 - **验证边界（要说实话）**：这条提示的效果**没有任何测试能守**——测试跑在 H2，那里它是注释。
   唯一证据是上表；回归手段是"改 SQL 后在 MySQL 上重跑一次 `EXPLAIN ANALYZE`"，
   判别式（裸查询 ~40 ms / 生效 ~2 ms）已写进 mapper 的 Javadoc。全量 **273 tests / 0 失败**。
+
+## 顺带量到更狠的一条：补发对账扫描稳态空转 411–519ms
+
+同一把尺子量到第二条查询（`selectSubmittedWithoutAnswers`，同一个 10 秒任务里的另一半）：
+
+```sql
+SELECT * FROM exam_submissions WHERE status = 2 AND answers IS NULL LIMIT 500
+```
+
+健康系统里这个集合**恒空**，而 `answers IS NULL` 不在任何索引里——MySQL 只能沿
+`idx_submissions_sweep` 的 `status=2` 区间把 **95,000 行读穿**才敢返回 0 行。
+实测 411–519ms（冷启动首跑 1055ms），**每 10 秒一次**，且成本随交卷总量线性增长：
+到 100 万行就是一轮扫一分钟，兜底任务自己的预算先被吃光。这比上一条 OR 查询严重得多，
+而它在提案里一个字都没提。
+
+- **修法**：`answers_missing TINYINT AS (CASE WHEN answers IS NULL THEN 1 ELSE 0 END) VIRTUAL`
+  + `idx_submissions_republish (status, answers_missing)`，谓词改 `answers_missing = 1`。
+  实测 `rows=3`、**0.05ms**，代价只与待补行数相关。
+- **为什么不是前缀索引 `(status, answers(2))`**：MySQL 上实测同样有效（rows=3、0.77ms），
+  但 **H2 不认前缀语法**——建表直接 42001，`continue-on-error=false` 下 4/4 用例 error，
+  全部集成测试起不来。本项目 dev 与测试共用一份 `schema.sql`（§十八），索引必须两端都能建。
+  生成列两端都接受（H2 实测可建可索引），且取值由 `answers` 算出、不可能不一致，
+  也不需要任何代码路径负责维护——比"加一列让业务去写对"更稳。
+- **写代价测不出来**：`casFillAnswers` 逐 1000 行一批，带索引 55/251/108ms，
+  不带索引 125/17/22ms；中位数 108 vs 22 但两组区间完全重叠，这个量级下差异淹在刷盘噪声里。
+  如实记录：**没能把写代价从噪声里分离出来**；收益是 4 个数量级，决策不依赖这个数字。
+- **测试覆盖是真的**：把谓词 `=1` 改成 `=0`，`MultiInstanceSweepRepublishes...` 所在的
+  `MultiInstanceSweepSafetyTest.concurrentSweepRepublishesWithoutDuplicating` 转红（变异验证）。
+  这与上一条 JOIN_INDEX 恰好相反——**那条测试是哑的，这条有测试守着**，因为生成列的取值
+  错误会直接改变查询结果，而执行计划不会。
+- 存量库脚本 `docker/mysql/migrations/2026-W38-add-republish-index.sql`；
+  `schema.sql` 与 data-access 规范同步（新增「周期扫描的代价由结果集决定而非表大小」
+  「两端共用的 DDL 必须落在共同语法子集内」两条）。全量 **273 tests / 0 失败**。
+- **剩余未测的同类风险**：`selectRetentionCandidateExamIds`（exams 表小，量了没意义）、
+  `selectAbnormalStats`（按 exam_id 分组，单场内受限）。判分扫描走 `idx_submissions_grading`。
+  本轮 harness 已就位，下次要量别的直接复用。

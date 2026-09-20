@@ -5,6 +5,8 @@
 > `spec/changes/archive/add-data-retention` 合入（数据保留策略与清理边界）；
 > `spec/changes/archive/fix-schema-mysql-pk` 合入（新库建表 MySQL 8 兼容、AUTO_INCREMENT 必须有主键，83bc9ca）；
 > `spec/changes/archive/optimize-sql-performance` 合入（动态条件不得拼接、空集合必须短路、索引变更先行核查）。
+> 2026-09-21 直补（非变更提案，240c2d2 与其后续）：「周期扫描的代价由结果集决定而非表大小」
+> 「两端共用的 DDL 必须落在共同语法子集内」两条，以及下面 optimize-sql-performance 那条注记的更正。
 > 实施注记：
 > - 强一致读（答卷详情、成绩查询）**不标** `@DS("slave")`，走默认主库；`@DS("slave")` 只挂在可容忍主从延迟的快照类读上（`PaperSnapshotService`/`ExamSnapshotService`/`GradingQueryService`/`ScoreService` 等）。
 > - 数据保留（`RetentionService`，f42adba）：仅三张辅助表 `exam_behavior_logs` / `exam_submit_dedups` / `score_audit_logs`；删除条件只带 `exam_id`（命中既有索引最左前缀）；**零 DDL**；默认 `enabled=false` + `dry-run=true`；**不纳入** `exam_dlq_messages`（表存在但无 `exam_id`）；用 `end_time` 不用 `updated_time`；**不声称磁盘释放**。单次运行另有 `max-exams-per-run`（默认 100）与候选 `ORDER BY end_time ASC, id ASC` 有界。
@@ -278,9 +280,69 @@ AND 只记录写放大成本而无读取收益
 
 ---
 
+### Requirement: 周期扫描的代价由结果集决定而非表大小
+
+WHEN 一条查询被定时任务按秒级周期反复执行,
+
+系统 SHALL 保证其执行代价与**命中行数**相关，而非与被扫描区间行数相关。
+
+#### Scenario: 空结果也要付全表的钱，就不合格
+
+GIVEN 一条稳态下恒返回 0 行的扫描查询（如对账"未落库"行）
+
+WHEN 其谓词无法被任何索引定位
+
+THEN 数据库必须读穿整个候选区间才敢返回空集
+
+AND 该成本随历史数据线性增长，最终吃掉任务自身的调度预算
+
+#### Scenario: 不可索引的谓词物化为生成列
+
+GIVEN 需要索引的判据落在 LONGTEXT 上（如 `answers IS NULL`），MySQL 只能建前缀索引
+
+WHEN 设计该索引
+
+THEN 改用一个由该列推导的生成列并索引它，而不是把判据留在扫描里
+
+AND 生成列的取值由其依赖列算出，与依赖列不可能不一致，也不需要任何代码路径负责维护
+
+### Requirement: 两端共用的 DDL 必须落在共同语法子集内
+
+WHEN 新增的 DDL 需要同时被 MySQL（dev/生产）与 H2（集成测试）执行,
+
+系统 SHALL 只使用两端都能解析的语法；MySQL 专有写法不得进入共用的 `schema.sql`。
+
+#### Scenario: 前缀索引不进共用 DDL
+
+GIVEN 拟写入 `schema.sql` 的索引使用了 `col(n)` 前缀语法
+
+WHEN H2 解析该建表语句
+
+THEN 直接抛语法错误，且因 `continue-on-error=false` 导致全部集成测试无法启动
+
+AND 改用生成列 + 普通索引等等价的可移植写法
+
+#### Scenario: 索引提示用注释形态
+
+GIVEN 需要在 SQL 里钉住执行计划
+
+WHEN 该 SQL 同时跑在两端
+
+THEN 使用优化器提示注释，不使用 `FORCE INDEX`（H2 不认其语法）
+
+---
+
 > 合入注记（2026-09-20，`optimize-sql-performance`）：只合入上面两条（抽题标签筛选已参数化，
 > 且空命中短路已修复并有回归测试）。**未合入**其"OR 条件改 UNION ALL"——提案附带的
 > "1 万 800ms→50ms / 10 万 5.2s→120ms"数字系撰写时虚构、从未实测，本机主库容器当前 exited，
 > 拿不到真实执行计划；在无测量证据下改写一条仅有功能校验的兜底查询，风险大于收益。
 > 其"新建 `idx_sweep_candidate`"经核实与既有 `idx_submissions_sweep(status, deadline_time)`
 > 列组合完全相同，属重复索引，对应的一次性迁移脚本已删除（本项目未接 Flyway，该脚本从未执行）。
+>
+> 更正（2026-09-21，240c2d2 / 本次）：上面"主库容器 exited 拿不到执行计划"的前提已解除
+> （`docker start exam-mysql-master`，端口 13316）。在 10 万答卷的独立 scratch 库上实测后，
+> **UNION ALL 主张被否证**：每个测点都不比现状快、多数慢 2–17 倍（派生表须先物化全部命中行
+> 才套得上 `LIMIT`，恰好摧毁原查询"沿索引边扫边提前停止"的性质），且不写互斥守卫会多返回
+> 36% 重复行。真正的问题是优化器翻驱动表，已由 `JOIN_INDEX` 提示解决（常态忙轮 41–50ms →
+> 1.7–2.7ms）；"周期扫描"与"共用 DDL"两条 Requirement 即由此而来，数字见
+> `spec/changes/IMPLEMENTATION_STATUS.md`。
