@@ -14,11 +14,14 @@
 >    列组合完全相同。而 `src/main/resources/db/migration/V20260919__create_idx_sweep.sql`
 >    要建的正是它的**重复索引**（本项目未接 Flyway，该文件从未执行）。若哪天真接上
 >    Flyway，只会白白多一份写放大与占用，读取零收益——应删除而非执行。
-> 3. **OR 条件改 UNION ALL：未做，因为无法测量**。本机 3306 是另一个 MySQL 实例、
->    凭据不通，拿不到真实 EXPLAIN；文中那张"1 万 800ms→50ms / 10 万 5.2s→120ms"
->    的表是撰写时虚构的占位数字，从未实测。在没有执行计划与数据量的情况下盲改
->    一条被集成测试只做功能校验的兜底查询，风险大于收益。
->    要做的前提：在预置 10 万级数据的 MySQL 上先取 EXPLAIN 与实测延迟。
+> 3. **OR 条件改 UNION ALL：已实测，结论是"方向反了"，不改**。原先挂"无法在本地验证"
+>    是归因错误（主库在 13316，见交接文档 §6.2）。已在 10 万答卷 / 4KB `paper_json` /
+>    MySQL 8.0.46 的独立 scratch 库上逐形态实测：UNION ALL 比现状**慢 2–17 倍**
+>    （派生表必须先物化全部命中行才套得上 `LIMIT`，常态忙轮 53–66ms vs 现状 20–33ms），
+>    且不写去重守卫会多返回 36% 重复行（6000 vs 4400），而其声称的 `DISTINCT` 兜底
+>    在两张 longtext 列上要建去重临时表。真正有效的是钉住扫描索引：
+>    `/*+ JOIN_INDEX(s idx_submissions_sweep) */`，常态忙轮 41–50ms → 1.7–2.7ms。
+>    数字与机制详见 [`../../IMPLEMENTATION_STATUS.md`](../../IMPLEMENTATION_STATUS.md)。
 
 ## Why
 

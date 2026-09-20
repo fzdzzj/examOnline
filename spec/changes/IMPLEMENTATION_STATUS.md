@@ -271,3 +271,42 @@ P50/P95/P99 恒为 0。而提案 4 的验收口径正是"P95 < 100ms"——该�
 - **遗留（有意不做）**：`HandlerMethodValidationException` 仍未映射。全仓库只有两个控制器带
   参数约束且都挂了 `@Validated`，该异常无可达路径；将来出现"带约束却不挂 @Validated"的控制器
   再补这条 400 映射。
+
+## OR→UNION ALL 实测：提案方向反了，真问题是执行计划翻了（da5b579 之后）
+
+`optimize-sql-performance` 唯一挂着"无法本地验证"的一条已闭合。归因也是错的：主库容器
+`exam-mysql-master` 在 **13316 / root/root123**（交接文档 §6.2 早写明），`docker start` 即可。
+测量在独立 scratch 库 `exam_bench` 上做（`CREATE TABLE ... LIKE` 复制真实 DDL 与索引，
+10 万答卷、500 场考试、`paper_json` 填 4KB 以贴近真实行宽，`ANALYZE TABLE` 后跑
+`EXPLAIN ANALYZE`；测完已 `DROP DATABASE`，`exam_online` 全程未写入）。
+
+`selectForceSubmitCandidates`（`status = 1 AND (deadline_time < now OR e.status IN (2,3))` +
+`LIMIT 500`，每 10 秒一轮）三种写法，MySQL 8.0.46：
+
+| 数据形态 | 现状（裸 OR） | 提案的 UNION ALL | 钉住扫描索引 |
+|---|---|---|---|
+| 5k 进行中、4.4k 到期（常态忙轮） | 41–50 ms | **53–66 ms**（另测窄行 7.9 ms vs 现状 0.48 ms） | **1.7–2.7 ms** |
+| 5k 进行中、2k 只由"提前结束"分支命中 | 3.6 ms | 30.8 ms | — |
+| 25k 进行中、10k 只由该分支命中 | 153–184 ms | 98.2 ms（窄行） | 80–94 ms |
+| 25k 进行中、一条不命中（空闲轮） | 312–366 ms | — | 159–169 ms |
+
+- **UNION ALL 在每个测点上都不比现状快、多数时候慢 2–17 倍**：派生表必须先把全部命中行
+  （含 `paper_json`）物化完，外层 `LIMIT 500` 才有意义——它恰好摧毁了现状赖以便宜的一条性质：
+  沿索引边扫边在凑满 500 时提前停止。
+- **而且它先错在对"结果一样"的假设上**：提案原式（两分支无互斥守卫）返回 **6000 行，真值 4400**，
+  36% 重复；其风险表写的兜底"`DISTINCT` 去重"要在两张 longtext 列上建去重临时表，实测 38.5 ms。
+  重复行还有实害：兜底任务会把同一份答卷在同轮里多强制交卷几次。
+- **"OR 导致索引失效"半对半错**：`idx_submissions_sweep` 一直被选中（窄行忙轮 0.48 ms），
+  失效的只是第二列 `deadline_time` 用不上 range（key_len=1 而非 6）。真正的退化来自
+  **优化器翻了驱动表**——改成扫 `exams` 全表再按 `idx_submissions_exam_submit` 逐场回表，
+  10 万行 / 宽行下要取上万行才凑满 500。
+- **落地**：`SELECT /*+ JOIN_INDEX(s idx_submissions_sweep) */ ...`，SQL 文本只多一个注释提示。
+  不用 `FORCE INDEX`：H2（`MODE=MySQL`，测试库）直接语法报错（`MultiInstanceSweepSafetyTest`
+  4/4 error，实测），注释形态才被 H2 当普通注释忽略、MySQL 8 才读。
+  另注：带查询块限定符的 `JOIN_INDEX(s@select_1 ...)` 会被 MySQL **静默忽略**（计划不变、
+  耗时与裸查询一致），必须写不限定的 `JOIN_INDEX(s ...)`。
+- **不做**：不新增 `(exam_id, status)` 索引。它在越界形态（25k 进行中，超出 5000 并发容量模型）
+  把 42 ms 降到 10 ms，但收益点全在设计包络之外，代价是交卷热写路径多一份永久写放大。
+- **验证边界（要说实话）**：这条提示的效果**没有任何测试能守**——测试跑在 H2，那里它是注释。
+  唯一证据是上表；回归手段是"改 SQL 后在 MySQL 上重跑一次 `EXPLAIN ANALYZE`"，
+  判别式（裸查询 ~40 ms / 生效 ~2 ms）已写进 mapper 的 Javadoc。全量 **273 tests / 0 失败**。
