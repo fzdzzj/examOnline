@@ -22,7 +22,7 @@ services:
     container_name: exam-mysql-master
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
       MYSQL_DATABASE: exam_online
       TZ: Asia/Shanghai
     command:
@@ -40,7 +40,7 @@ services:
       - ./docker/mysql/master/init:/docker-entrypoint-initdb.d:ro
       - master-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot123 --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD:-root123} --silent"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -51,7 +51,7 @@ services:
     container_name: exam-mysql-slave
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
       MYSQL_DATABASE: exam_online
       TZ: Asia/Shanghai
     command:
@@ -68,7 +68,7 @@ services:
       mysql-master:
         condition: service_healthy   # 主库健康后再启动从库
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot123 --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD:-root123} --silent"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -98,8 +98,8 @@ services:
     container_name: exam-rabbitmq
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: exam
-      RABBITMQ_DEFAULT_PASS: exam123
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-exam}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-exam123}
     ports:
       - "5672:5672"    # AMQP
       - "15672:15672"  # Management UI
