@@ -88,6 +88,8 @@
 
 ## 九、接手后的前三步
 
-1. 读 `AGENTS.md` → `spec/README.md`（当前状态 + 遗留清单）→ `docs/指导Agent交接文档.md`（环境、禁忌、假阳性）。
+1. 按 `README.md` 开头「新成员 / 新 agent 阅读顺序」那份清单读完（**阅读顺序的唯一出处就是那里**，本文档与 `AGENTS.md` 都只指过去、不各写一份）。
 2. 跑一次第四节的门禁，**把命令、真实输出、当时短 sha 记进你当次变更的 `tasks.json` 证据字段**——这就是你的基线，不是任何文档里的数字。
 3. 领一个遗留项或开放项，按 `spec/README.md` 的"一个阶段 = 一个变更"立项（`spec/changes/<change-id>/{proposal.md,tasks.json,specs/<能力域>/spec-delta.md}`）。
+
+前三步是通用流程；**"这一次具体该接着做哪一片"不在本文档里**——读 `spec/README.md`「当前状态」表定位进行中的变更，再看该变更目录下 `agent-prompt.md` 有没有指导 agent 追加的分片状态小节：有，就以那一节为起点，它声明的完成判据就是该变更 `tasks.json` 里的 step，不要自拟范围。
