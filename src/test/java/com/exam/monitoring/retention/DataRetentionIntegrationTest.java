@@ -5,6 +5,8 @@ import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.mapper.ScoreAuditLogMapper;
+import com.exam.audit.entity.AuditLog;
+import com.exam.audit.mapper.AuditLogMapper;
 import com.exam.submission.entity.ExamBehaviorLog;
 import com.exam.submission.entity.ExamSubmitDedup;
 import com.exam.submission.mapper.ExamBehaviorLogMapper;
@@ -44,6 +46,8 @@ class DataRetentionIntegrationTest extends IntegrationTestBase {
     private ExamSubmitDedupMapper submitDedupMapper;
     @Autowired
     private ScoreAuditLogMapper scoreAuditLogMapper;
+    @Autowired
+    private AuditLogMapper auditLogMapper;
 
     @BeforeEach
     void resetRetentionDefaults() {
@@ -51,13 +55,15 @@ class DataRetentionIntegrationTest extends IntegrationTestBase {
         ReflectionTestUtils.setField(retentionService, "enabled", false);
         ReflectionTestUtils.setField(retentionService, "dryRun", true);
         ReflectionTestUtils.setField(retentionService, "retentionDays", 180);
+        ReflectionTestUtils.setField(retentionService, "auditLogRetentionDays", 365);
         ReflectionTestUtils.setField(retentionService, "batchSize", 1000);
         ReflectionTestUtils.setField(retentionService, "maxBatchesPerRun", 20);
         ReflectionTestUtils.setField(retentionService, "maxExamsPerRun", 100);
-        // H2 跨用例保留：清空三张辅助表，避免历史行污染候选量/删除量断言
+        // H2 跨用例保留：清空三张辅助表与安全审计表，避免历史行污染候选量/删除量断言
         behaviorLogMapper.delete(Wrappers.emptyWrapper());
         submitDedupMapper.delete(Wrappers.emptyWrapper());
         scoreAuditLogMapper.delete(Wrappers.emptyWrapper());
+        auditLogMapper.delete(Wrappers.emptyWrapper());
     }
 
     @Test
@@ -165,6 +171,71 @@ class DataRetentionIntegrationTest extends IntegrationTestBase {
         assertEquals(2, report.auditDeleted());
         assertEquals(2, auditDelta);
         assertEquals(0, auditAfter);
+    }
+
+    @Test
+    @DisplayName("dry-run also spares the security audit table (counts only)")
+    void dryRunSparesSecurityAudit() {
+        insertAuditLogRows("ret_sec_dry", 3, LocalDateTime.now().minusDays(400));
+
+        ReflectionTestUtils.setField(retentionService, "dryRun", true);
+        ReflectionTestUtils.setField(retentionService, "auditLogRetentionDays", 365);
+
+        RetentionReport report = retentionService.purgeOnce();
+
+        assertEquals(3, report.securityAuditCandidates(), "dry-run 也要报出候选量");
+        assertEquals(0, report.securityAuditDeleted());
+        assertEquals(3, countAuditLogRows("ret_sec_dry"), "dry-run 下一行都不许少");
+    }
+
+    @Test
+    @DisplayName("security audit rows are purged by age only: over-window deleted, recent kept")
+    void securityAuditPurgedByAgeOnly() {
+        insertAuditLogRows("ret_sec_old", 3, LocalDateTime.now().minusDays(400));
+        insertAuditLogRows("ret_sec_new", 2, LocalDateTime.now().minusDays(10));
+
+        ReflectionTestUtils.setField(retentionService, "dryRun", false);
+        ReflectionTestUtils.setField(retentionService, "auditLogRetentionDays", 365);
+
+        RetentionReport report = retentionService.purgeOnce();
+
+        assertEquals(3, report.securityAuditCandidates(), "只有 400 天前那 3 行超窗");
+        assertEquals(3, report.securityAuditDeleted());
+        assertEquals(0, countAuditLogRows("ret_sec_old"), "超窗行应被清掉");
+        assertEquals(2, countAuditLogRows("ret_sec_new"), "窗口内的安全审计不得被删");
+    }
+
+    @Test
+    @DisplayName("security audit purge is bounded: one run deletes at most batch-size * max-batches")
+    void securityAuditBatchBound() {
+        insertAuditLogRows("ret_sec_bound", 25, LocalDateTime.now().minusDays(400));
+
+        ReflectionTestUtils.setField(retentionService, "dryRun", false);
+        ReflectionTestUtils.setField(retentionService, "auditLogRetentionDays", 365);
+        ReflectionTestUtils.setField(retentionService, "batchSize", 5);
+        ReflectionTestUtils.setField(retentionService, "maxBatchesPerRun", 2);
+
+        RetentionReport report = retentionService.purgeOnce();
+
+        assertEquals(25, report.securityAuditCandidates());
+        assertEquals(10, report.securityAuditDeleted(), "单次运行封顶 5*2=10 行");
+        assertEquals(15, countAuditLogRows("ret_sec_bound"), "其余留给后续运行，不能一次删穿");
+    }
+
+    private void insertAuditLogRows(String username, int n, LocalDateTime createdTime) {
+        for (int i = 0; i < n; i++) {
+            AuditLog row = new AuditLog();
+            row.setUsername(username);
+            row.setAction(AuditLog.ACTION_LOGIN);
+            row.setStatus(AuditLog.STATUS_SUCCESS);
+            row.setCreatedTime(createdTime);
+            auditLogMapper.insert(row);
+        }
+    }
+
+    private long countAuditLogRows(String username) {
+        return auditLogMapper.selectCount(Wrappers.<AuditLog>lambdaQuery()
+                .eq(AuditLog::getUsername, username));
     }
 
     private SeededExams seedThreeExams(int behaviorPerExam, int dedupPerExam, int auditPerExam) {

@@ -1,5 +1,6 @@
 package com.exam.monitoring.retention;
 
+import com.exam.audit.mapper.AuditLogMapper;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.score.mapper.ScoreAuditLogMapper;
@@ -19,7 +20,8 @@ import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongFunction;
 
 /**
- * 数据保留策略：按<strong>考试生命周期</strong>清理三张只增不减的诊断/幂等辅助表。
+ * 数据保留策略：按<strong>考试生命周期</strong>清理三张只增不减的诊断/幂等辅助表，
+ * 外加按<strong>自身年龄</strong>清理的第四张 {@code audit_log}。
  *
  * <p><b>硬口径：宁可不删，不可错删。</b>
  * <ul>
@@ -28,9 +30,15 @@ import java.util.function.ToLongFunction;
  *   <li>启动时若 enabled=true 且 dry-run=false，打 WARN——真删不可能被静默开启。</li>
  * </ul>
  *
- * <p><b>清理目标（仅此三张）</b>：
+ * <p><b>按考试生命周期清理（仅此三张）</b>：
  * {@code exam_behavior_logs} / {@code exam_submit_dedups} / {@code score_audit_logs}。
- * 删除条件只用 {@code exam_id}，命中既有索引最左前缀；禁止 {@code WHERE created_time < ?}（无索引=全表扫描）。
+ * 删除条件只用 {@code exam_id}，命中既有索引最左前缀。
+ *
+ * <p><b>{@code audit_log} 走另一条路</b>：它是安全审计，没有 exam_id，不参与考试生命周期，
+ * 只按 {@code created_time} 超窗清理，且保留窗口独立配置（{@code audit-log.retention-days}）。
+ * 原先"禁止 {@code WHERE created_time < ?}"的规矩针对的是<strong>无索引</strong>的全表扫描；
+ * 这张表已补 {@code idx_audit_time}，故本条是"先加索引才可按时删"，不是破例。
+ * 缺索引时连"没有东西可删"的稳态都要读穿全表（10 万行实测 34ms，随行数线性增长）。
  *
  * <p><b>绝对不清理的业务事实</b>（写进注释作为边界护栏）：
  * users / roles / permissions / questions / papers / paper_snapshots / exams / exam_snapshots /
@@ -47,7 +55,7 @@ import java.util.function.ToLongFunction;
  * 用 end_time 不用 updated_time；force-end 会晚删，误差方向安全。进行中（status=1）一律不碰。
  *
  * <p><b>有界删除</b>：每批短事务（不把整次 purgeOnce 包成大事务），每批 batch-size 行、
- * 每表每次运行最多 max-batches-per-run 批。多实例不加分布式锁：重复跑第二次 0 行，幂等。
+ * 每张表每次运行最多 max-batches-per-run 批。多实例不加分布式锁：重复跑第二次 0 行，幂等。
  *
  * <p><b>不声称磁盘释放</b>：InnoDB DELETE 只标记页可复用，文件不会变小；真正回收需离线 OPTIMIZE。
  */
@@ -58,11 +66,13 @@ public class RetentionService {
     static final String TABLE_BEHAVIOR = "exam_behavior_logs";
     static final String TABLE_DEDUP = "exam_submit_dedups";
     static final String TABLE_AUDIT = "score_audit_logs";
+    static final String TABLE_SECURITY_AUDIT = "audit_log";
 
     private final ExamMapper examMapper;
     private final ExamBehaviorLogMapper behaviorLogMapper;
     private final ExamSubmitDedupMapper submitDedupMapper;
     private final ScoreAuditLogMapper scoreAuditLogMapper;
+    private final AuditLogMapper auditLogMapper;
     private final BusinessMetrics metrics;
     private final TransactionTemplate transactionTemplate;
 
@@ -74,6 +84,15 @@ public class RetentionService {
 
     @Value("${exam.retention.retention-days:180}")
     private int retentionDays;
+
+    /**
+     * 安全审计（{@code audit_log}）保留窗口，与上面三张辅助表<strong>各自独立</strong>：
+     * 登录事件的取证价值窗口和考试生命周期不是一回事。
+     * 默认 365 天只是"有个上界"的占位口径，<b>真实数值属合规决策，须由业务/安全口径确认后才能改</b>；
+     * 在该口径确认前，{@code enabled=false} + {@code dry-run=true} 的默认闸门保证不会静默删掉审计。
+     */
+    @Value("${exam.retention.audit-log.retention-days:365}")
+    private int auditLogRetentionDays;
 
     @Value("${exam.retention.batch-size:1000}")
     private int batchSize;
@@ -89,12 +108,14 @@ public class RetentionService {
                             ExamBehaviorLogMapper behaviorLogMapper,
                             ExamSubmitDedupMapper submitDedupMapper,
                             ScoreAuditLogMapper scoreAuditLogMapper,
+                            AuditLogMapper auditLogMapper,
                             BusinessMetrics metrics,
                             PlatformTransactionManager transactionManager) {
         this.examMapper = examMapper;
         this.behaviorLogMapper = behaviorLogMapper;
         this.submitDedupMapper = submitDedupMapper;
         this.scoreAuditLogMapper = scoreAuditLogMapper;
+        this.auditLogMapper = auditLogMapper;
         this.metrics = metrics;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
@@ -175,6 +196,34 @@ public class RetentionService {
             }
         }
 
+        long securityAuditCandidates = 0;
+        long securityAuditDeleted = 0;
+        try {
+            LocalDateTime auditCutoff =
+                    LocalDateTime.now().minusDays(Math.max(auditLogRetentionDays, 0));
+            securityAuditCandidates = auditLogMapper.countOlderThan(auditCutoff);
+            metrics.countRetentionRows(TABLE_SECURITY_AUDIT, "candidate", securityAuditCandidates);
+            if (!dryRun && securityAuditCandidates > 0) {
+                for (int i = 0; i < maxBatches; i++) {
+                    Integer n = transactionTemplate.execute(
+                            status -> auditLogMapper.deleteOlderThanBatch(auditCutoff, batch));
+                    int rows = n == null ? 0 : n;
+                    if (rows <= 0) {
+                        break;
+                    }
+                    securityAuditDeleted += rows;
+                    if (rows < batch) {
+                        break;
+                    }
+                }
+                if (securityAuditDeleted > 0) {
+                    metrics.countRetentionRows(TABLE_SECURITY_AUDIT, "deleted", securityAuditDeleted);
+                }
+            }
+        } catch (Exception e) {
+            log.error("保留清理失败 table={}", TABLE_SECURITY_AUDIT, e);
+        }
+
         RetentionReport report = new RetentionReport(
                 dryRun,
                 examIds.size(),
@@ -183,15 +232,19 @@ public class RetentionService {
                 dedupCandidates,
                 dedupDeleted,
                 auditCandidates,
-                auditDeleted);
+                auditDeleted,
+                securityAuditCandidates,
+                securityAuditDeleted);
 
         log.info("保留清理完成 dryRun={} examsProcessed={} "
-                        + "behavior(c/d)={}/{} dedup(c/d)={}/{} audit(c/d)={}/{} total(c/d)={}/{}",
+                        + "behavior(c/d)={}/{} dedup(c/d)={}/{} audit(c/d)={}/{} "
+                        + "securityAudit(c/d)={}/{} total(c/d)={}/{}",
                 report.dryRun(),
                 report.examsProcessed(),
                 report.behaviorCandidates(), report.behaviorDeleted(),
                 report.dedupCandidates(), report.dedupDeleted(),
                 report.auditCandidates(), report.auditDeleted(),
+                report.securityAuditCandidates(), report.securityAuditDeleted(),
                 report.totalCandidates(), report.totalDeleted());
         return report;
     }

@@ -457,5 +457,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
     PRIMARY KEY (id),
     KEY idx_audit_user_time (username, created_time),
     KEY idx_audit_action_time (action, created_time),
-    KEY idx_audit_trace (trace_id)
+    KEY idx_audit_trace (trace_id),
+    -- 保留清理按年龄删（WHERE created_time < ?）。缺这条索引时，"没有东西可删"这一稳态
+    -- 也要把整张表读穿才敢返回 0：10 万行实测 34ms 且随行数线性增长；有索引 0.16-0.7ms 且与表大小无关。
+    KEY idx_audit_time (created_time)
 );

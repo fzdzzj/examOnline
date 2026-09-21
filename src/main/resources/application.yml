@@ -163,9 +163,15 @@ exam:
     # 硬口径「宁可不删，不可错删」——默认关闭 + 默认 dry-run，真删须显式双开并会打启动 WARN。
     # 目标表：exam_behavior_logs / exam_submit_dedups / score_audit_logs（仅按 exam_id 删，命中既有索引）。
     # 不清理业务事实；不纳入 exam_dlq_messages（无 exam_id）。不声称磁盘释放。
+    # 另有第四张 audit_log（安全审计）按自身窗口只按年龄清，见下面 audit-log.*。
     enabled: false
     dry-run: true
     retention-days: 180
+    audit-log:
+      # audit_log 没有 exam_id，不走考试生命周期，只按 created_time 清（走 idx_audit_time）。
+      # 365 只是"给增长一个上界"的占位口径：真实保留期属合规决策，须业务/安全口径确认后才改；
+      # 确认前由 enabled=false + dry-run=true 两道闸保证不会静默删掉审计。
+      retention-days: 365
     batch-size: 1000
     max-batches-per-run: 20
     max-exams-per-run: 100
