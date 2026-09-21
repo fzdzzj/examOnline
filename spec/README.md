@@ -38,7 +38,9 @@ spec/
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。
 
-- 已合入规范（`spec/specs/`，共 16 个能力域）：
+**`frontend` 能力域目录尚未建立**：阶段 19–23 五份变更的 spec-delta 全部指向 `spec/specs/frontend/spec.md`，而该文件目前**不存在**。这是"新能力域在收尾合入时才创建"的正常状态，**不是缺陷**，也不是接口缺口；谁先收尾谁建目录与文件，其余按 Requirement 标题逐个追加——**不要**为了让引用"看起来成立"而先建一个空壳。
+
+- 已合入规范（`spec/specs/`，**能力域数以 `find spec/specs -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数**；下表按合入顺序列出，若与目录不一致即为下表漏登）：
 
 | # | 能力域 | 来源变更 | 阶段 |
 |---|---|---|---|
@@ -58,6 +60,7 @@ spec/
 | 14 | `absence-makeup` | `add-class-and-post-exam-closure`、`add-post-exam-closure-e2e` | 9、12 |
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 | 16 | `api-contract` | `add-backend-openapi` | 18 |
+| 17 | `agent-harness` | `add-agent-context-routing`（工程性 E1，2026-09-21 归档） | 工程性 |
 
 - 已归档变更（`spec/changes/archive/`，**数量以 `find spec/changes/archive -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数**；阶段 1–9、12–18 及 18 后小阶段已收尾，阶段 10–11 已归档）：
 
