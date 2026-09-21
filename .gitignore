@@ -35,6 +35,9 @@ application-local.yml
 # .workbuddy/ 是 WorkBuddy 的项目记忆（MEMORY.md + 每日工作日志），属工具产物而非
 # 项目代码：它随开发者的机器与工具走，入库只会给协作者制造无意义的 diff。
 .workbuddy/
+# .qoder/ 是 Qoder agent 的会话产物（better-harness 报告与画布等），同理不入库。
+# 某份报告确实要留档时，显式 `git add` 那一个文件，不要为此放开整个目录。
+.qoder/
 
 # ==== 前端（frontend/，阶段 19 起）====
 # 依赖与构建产物一律不入库：体积大、跨平台二进制不一致，且都能由 pnpm install / build 复原。
