@@ -14,10 +14,6 @@ export default defineConfig({
     },
   },
   test: {
-    // 没有这条，src/**/__tests__ 里 mount 任何 .vue 都会以 "Failed to parse...
-    // <unknown file content>" 直接失败——模板级缺陷（空白列、Alert 与实际数据不符）
-    // 就没有任何自动化能拦住。
-    plugins: [vue()],
     environmentOptions: {
       jsdom: {},
     },

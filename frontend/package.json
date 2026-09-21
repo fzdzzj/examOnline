@@ -12,15 +12,14 @@
     "type-check:app:check": "vue-tsc --project ./tsconfig.app.json --noEmit",
     "type-check:config": "npm run type-check:config:check -- --watch",
     "type-check:config:check": "tsc --project ./tsconfig.config.json --noEmit",
-    "type-check": "npm run type-check:app & npm run type-check:config",
-    "type-check:check": "npm run type-check:app:check & npm run type-check:config:check",
+    "type-check": "npm run type-check:app && npm run type-check:config",
+    "type-check:check": "npm run type-check:app:check && npm run type-check:config:check",
     "lint": "eslint --fix src e2e *.config.ts",
     "lint:check": "eslint src e2e *.config.ts",
     "format": "prettier --write src e2e *.config.ts *.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "precommit:check": "npm run type-check:check && npm run lint:check"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",

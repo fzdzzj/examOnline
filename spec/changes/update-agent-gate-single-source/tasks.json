@@ -114,18 +114,18 @@
     "steps": [
       {
         "step": "把 :15 的 type-check 与 :16 的 type-check:check 中的单个后台符 & 改为 &&，使 vue-tsc 与 tsc 任一失败都能反映到脚本退出码；不改动其它脚本 — 证据：frontend/package.json:15,16,23",
-        "completed": false
+        "completed": true
       },
       {
         "step": "变异验证：在 frontend/src 临时注入一个类型错误，执行 npm run type-check:check 确认退出码非 0（改前该失败被 & 吞掉），随后撤销并确认 git status 干净 — 证据：本项目既有「变异验证」纪律（spec/changes/IMPLEMENTATION_STATUS.md 记录的「改回旧实现→只对应用例变红」惯例）",
-        "completed": false
+        "completed": true
       },
       {
         "step": "决定 :23 precommit:check 的去留：要么在本能力域判据里明确列为收尾必跑，要么删除。不留「看起来像门禁、实际无调用者」的脚本（当前无任何 tracked 机制调用它） — 证据：git ls-files 对 husky/lint-staged 为 0 命中；.git/hooks 下仅 IDE 自身 tracker 且未被 tracked",
-        "completed": false
+        "completed": true
       }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 7,
