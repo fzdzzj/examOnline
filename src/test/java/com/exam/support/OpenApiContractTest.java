@@ -84,6 +84,12 @@ class OpenApiContractTest {
         String content = Files.readString(Paths.get("openapi.yaml"), StandardCharsets.UTF_8);
         assertTrue(content.contains("openapi:") || content.contains("openapi: 3."),
                 "openapi.yaml 应包含 openapi: 版本行");
+        // 护栏（fix-contract-export-charset）：入库契约不得含乱码替换符、中文关键字段完整、servers.url 不退化
+        assertFalse(content.contains("\uFFFD"), "openapi.yaml 含乱码替换符 U+FFFD（导出编码损坏）");
+        assertTrue(content.contains("在线考试系统后端 API 契约"),
+                "openapi.yaml 的 info.description 中文乱码");
+        assertTrue(content.contains("- url: http://localhost:8080"),
+                "openapi.yaml 的 servers.url 退化为不带端口形态");
     }
 
     @Test
@@ -93,12 +99,33 @@ class OpenApiContractTest {
         // 显式导出动作：仅当 -DexportContract=true 时运行
         // 避免常规 mvn test 污染工作区（CI 每次都会脏）
         // 运行示例：mvn test -DexportContract=true -Dtest=OpenApiContractTest#exportOpenApiContract
-        MvcResult yamlResult = mockMvc.perform(get("/v3/api-docs.yaml"))
+        // 修复（fix-contract-export-charset，遗留 #12）：
+        // 原实现用 getContentAsString() 取正文，未设 charset 时按 ISO-8859-1 解码，中文写出成 mojibake（å¨çº¿…），
+        // 且 Mock 请求无端口使 springdoc 生成的 servers.url 退化为 http://localhost。
+        // 改用 getContentAsByteArray() 按字节写文件（UTF-8 无损），并把 Mock 请求端口固定为 8080，
+        // 使 servers.url 保持 http://localhost:8080 完整形态（与真 dev 实例路 B 产物一致）。
+        MvcResult yamlResult = mockMvc.perform(get("/v3/api-docs.yaml")
+                        .with(request -> {
+                            request.setScheme("http");
+                            request.setServerName("localhost");
+                            request.setServerPort(8080);
+                            return request;
+                        }))
                 .andExpect(status().isOk())
                 .andReturn();
-        String yamlContent = yamlResult.getResponse().getContentAsString();
-        Files.write(Paths.get("openapi.yaml"), yamlContent.getBytes(StandardCharsets.UTF_8));
+        byte[] bytes = yamlResult.getResponse().getContentAsByteArray();
+        String yamlContent = new String(bytes, StandardCharsets.UTF_8);
+        // 护栏：导出产物不得含乱码替换符 U+FFFD（非法 UTF-8 特征）
+        assertFalse(yamlContent.contains("\uFFFD"), "导出契约含乱码替换符 U+FFFD，编码仍损坏");
+        // 护栏：中文关键字段必须原样保留（ISO-8859-1 误解码产生的 mojibake 是合法 UTF-8，
+        // U+FFFD 检查拦不住，必须直接断言中文描述完整）
+        assertTrue(yamlContent.contains("在线考试系统后端 API 契约"),
+                "导出契约的 info.description 中文乱码");
+        assertTrue(yamlContent.contains("JWT Access Token，格式：Bearer <token>"),
+                "导出契约的 securityScheme 描述中文乱码");
+        // 护栏：servers.url 保持完整形态（带端口），不得退化为 http://localhost
+        assertTrue(yamlContent.contains("- url: http://localhost:8080"),
+                "导出契约 servers.url 退化，缺少端口");
+        Files.write(Paths.get("openapi.yaml"), bytes);
     }
 }
-
-

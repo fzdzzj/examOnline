@@ -248,7 +248,7 @@
 
 **启动日志里的已知异常（不要误判为启动失败）**：`ExamSubmitSender.send` → `RabbitTemplate.waitForConfirmsOrDie` 抛 `IllegalStateException: This operation is only available within the scope of an invoke operation`，伴随 `答案补发对账: 待补=2 已补=0`。这是遗留 #10，真 broker 下才暴露、非致命，`/actuator/health` 返回 UP 即视为启动成功。**不要顺手修**。
 
-**契约导出必须走路 B（真 dev 实例），不要走路 A**：`OpenApiContractTest.exportOpenApiContract()`（`-DexportContract=true`）用 `getContentAsString()` 取正文，未设 charset 时按 ISO-8859-1 解码，会写出**中文乱码**的 `openapi.yaml` 且 `servers.url` 退化为 `http://localhost`。详见遗留 #12。正确做法：起 dev 实例后 `Invoke-WebRequest 'http://localhost:8080/v3/api-docs.yaml' -OutFile openapi.yaml`，导出后**必须停掉应用**（曾有残留 dev 实例占 8080 导致导出到旧契约且静默成功）。
+**契约导出推荐走路 A（离线，`-DexportContract=true`）**：`OpenApiContractTest.exportOpenApiContract()` 自 `fix-contract-export-charset` 起改用 `getContentAsByteArray()` 按字节写文件并固定端口 8080，中文无损、`servers.url` 保持 `http://localhost:8080` 完整形态（修复前路 A 用 `getContentAsString()` 取正文、未设 charset 按 ISO-8859-1 解码，会写出**中文乱码**的 `openapi.yaml` 且 `servers.url` 退化为 `http://localhost`——那是损坏操作，不是推荐路径；详见遗留 #12 收口记录）。路 B（真 dev 实例 `Invoke-WebRequest 'http://localhost:8080/v3/api-docs.yaml'`）仍可作真环境校验手段：与路 A 产物比对一致后再入库；用路 B 导出后**必须停掉应用**（曾有残留 dev 实例占 8080 导致导出到旧契约且静默成功）。
 
 ---
 
