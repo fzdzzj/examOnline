@@ -1335,6 +1335,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMyScoreResponse"
+  /api/scores/makeup-final:
+    get:
+      tags:
+      - score-controller
+      operationId: myMakeupFinalScore
+      parameters:
+      - name: examId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMakeupFinalScoreResponse"
   /api/exams/{id}/snapshot:
     get:
       tags:
@@ -1416,6 +1435,31 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseScorePreviewResponse"
+  /api/exams/{examId}/scores/makeup-final/{studentId}:
+    get:
+      tags:
+      - score-controller
+      operationId: makeupFinalScore
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: studentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMakeupFinalScoreResponse"
   /api/exams/{examId}/scores/export/question-stats:
     get:
       tags:
@@ -3224,6 +3268,29 @@ components:
         partialGraded:
           type: integer
           format: int32
+        reviewing:
+          type: boolean
+    ApiResponseMakeupFinalScoreResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/MakeupFinalScoreResponse"
+    MakeupFinalScoreResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        finalScore:
+          type: number
         reviewing:
           type: boolean
     ApiResponseQuestionPageResponse:
