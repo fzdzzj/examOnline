@@ -11,10 +11,16 @@ import { describe, expect, it } from 'vitest';
 import { highestRoleOf, isAuthenticatedOf, type RoleName } from '@/store';
 import { allowedRolesFor, canAccess, decideNavigation, isPublicPath } from '../access';
 
-const asInput = (path: string, loggedIn: boolean, role: RoleName | null) => ({
+const asInput = (
+  path: string,
+  loggedIn: boolean,
+  role: RoleName | null,
+  mustChangePassword = false
+) => ({
   path,
   loggedIn,
   role,
+  mustChangePassword,
 });
 
 describe('highestRoleOf / isAuthenticatedOf', () => {
@@ -146,5 +152,54 @@ describe('decideNavigation', () => {
     ).toEqual({ action: 'allow' });
     // 同一条路径没有 notFound 标记时仍按 fail-closed 处理
     expect(decideNavigation(asInput('/nope', true, 'ADMIN')).action).toBe('forbid');
+  });
+
+  it('未登录：不受 mustChangePassword 影响，仍走登录重定向', () => {
+    expect(decideNavigation(asInput('/admin/users', false, null, true))).toEqual({
+      action: 'redirect',
+      to: '/login',
+      query: { redirect: '/admin/users' },
+    });
+  });
+
+  it('必须改密：业务页被重定向到改密页，不渲染业务功能', () => {
+    expect(decideNavigation(asInput('/admin/users', true, 'ADMIN', true))).toEqual({
+      action: 'redirect',
+      to: '/change-password',
+    });
+    expect(decideNavigation(asInput('/teacher/exams', true, 'TEACHER', true))).toEqual({
+      action: 'redirect',
+      to: '/change-password',
+    });
+    expect(decideNavigation(asInput('/student/papers', true, 'STUDENT', true))).toEqual({
+      action: 'redirect',
+      to: '/change-password',
+    });
+  });
+
+  it('必须改密：仅放行改密页本身', () => {
+    expect(decideNavigation(asInput('/change-password', true, 'ADMIN', true))).toEqual({
+      action: 'allow',
+    });
+  });
+
+  it('必须改密：公开页也被拦（登录态下不回 login/register），一律收口到改密页', () => {
+    expect(decideNavigation(asInput('/login', true, 'ADMIN', true))).toEqual({
+      action: 'redirect',
+      to: '/change-password',
+    });
+    expect(decideNavigation(asInput('/register', true, 'ADMIN', true))).toEqual({
+      action: 'redirect',
+      to: '/change-password',
+    });
+  });
+
+  it('mustChangePassword=false：读到 false 不误拦，正常授权放行', () => {
+    expect(decideNavigation(asInput('/admin/users', true, 'ADMIN', false))).toEqual({
+      action: 'allow',
+    });
+    expect(decideNavigation(asInput('/student/papers', true, 'STUDENT', false))).toEqual({
+      action: 'allow',
+    });
   });
 });
