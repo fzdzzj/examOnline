@@ -110,7 +110,11 @@ const menuItems = computed<MenuProps['items']>(() => {
     items.push({
       key: 'student-section',
       label: '学生端',
-      children: [{ key: '/student/scores', label: '我的成绩与复核' }],
+      children: [
+        // 阶段 22 第 1 片：我的考试（列表 → 进入 → 极简作答 → 倒计时锁定）
+        { key: '/student/exams', label: '我的考试' },
+        { key: '/student/scores', label: '我的成绩与复核' },
+      ],
     });
   }
   const sections: Array<{ prefix: string; label: string }> = [
@@ -140,6 +144,7 @@ const NAVIGABLE_PATHS: readonly string[] = [
   '/teacher/reviews',
   '/teacher/absences',
   '/teacher/makeups',
+  '/student/exams',
   '/student/scores',
 ];
 
