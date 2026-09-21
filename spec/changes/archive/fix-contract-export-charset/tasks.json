@@ -1,0 +1,33 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：导出改字节流",
+    "task": "路 A 导出不再损坏契约文件",
+    "steps": [
+      { "step": "getContentAsString() 改 getContentAsByteArray()，按字节写文件", "completed": true },
+      { "step": "护栏断言：非 ASCII 字段无乱码替换符、servers.url 不退化", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：双路比对与重导出",
+    "task": "契约文件以无损方式更新",
+    "steps": [
+      { "step": "路 A 重导出 openapi.yaml，与真 dev 实例路 B 产物比对一致", "completed": true },
+      { "step": "diff 核对无预期外漂移后入库；前端 gen:api 验证契约无漂移", "completed": true },
+      { "step": "后端门禁回归，基线 Skipped 语义不变", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：表述校正与登记",
+    "task": "文档口径与遗留 #12 对齐",
+    "steps": [
+      { "step": "交接文档/提示词中「推荐路 A」表述校正（修复前路 A 是损坏操作）", "completed": true },
+      { "step": "结果登记回遗留清单（收口 #12）", "completed": true }
+    ],
+    "passes": true
+  }
+]

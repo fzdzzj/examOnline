@@ -27,7 +27,7 @@
 | 本机 dev 该怎么起、有哪些坑 | `docs/指导Agent交接文档.md` 的「本机 dev 启动环境」小节 | 含"哪个容器故意不要起"及其原因 |
 | 表结构 / 建表脚本 | `src/main/resources/schema.sql` | 建表唯一入口，见 `AGENTS.md` 约定 1 |
 | 存量库改表 | `docker/mysql/migrations/README.md` | **放进该目录 ≠ 变更已生效**，该目录无自动执行者 |
-| 后端接口契约 | 仓库根 `openapi.yaml` | 如何再生成、为何不能随手用测试桩导出：见 `spec/specs/api-contract/spec.md` |
+| 后端接口契约 | 仓库根 `openapi.yaml` | 如何再生成（离线导出为推荐路径，护栏断言防编码回归）：见 `spec/specs/api-contract/spec.md` |
 | 项目分成哪些能力域 / 某能力的验收标准 | `spec/README.md` 能力地图 + `spec/specs/*/spec.md` | 条数以目录实际内容为准，本文件不写数 |
 | 为什么这样设计（决策依据） | `docs/需求决策记录.md` | 按主题分节，含被推翻的旧方案 |
 | 产品愿景原文 | `docs/examOnline需求规格说明书.md` | |

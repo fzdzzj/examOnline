@@ -38,7 +38,7 @@ spec/
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。
 
-**`frontend` 能力域目录尚未建立**：阶段 19–23 五份变更的 spec-delta 全部指向 `spec/specs/frontend/spec.md`，而该文件目前**不存在**。这是"新能力域在收尾合入时才创建"的正常状态，**不是缺陷**，也不是接口缺口；谁先收尾谁建目录与文件，其余按 Requirement 标题逐个追加——**不要**为了让引用"看起来成立"而先建一个空壳。
+**`frontend` 能力域已建基线**：`spec/specs/frontend/spec.md` 由首个收尾的前端变更 `add-frontend-must-change-guard`（提案④，2026-09-21）创建，目前仅含「强制改密前端守卫」一条 Requirement；阶段 19–23 五份变更的 spec-delta 按 Requirement 标题逐个追加，待其验收收尾。
 
 - 已合入规范（`spec/specs/`，**能力域数以 `find spec/specs -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数**；下表按合入顺序列出，若与目录不一致即为下表漏登）：
 
@@ -61,6 +61,8 @@ spec/
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 | 16 | `api-contract` | `add-backend-openapi` | 18 |
 | 17 | `agent-harness` | `add-agent-context-routing`（工程性 E1，2026-09-21 归档） | 工程性 |
+| 18 | `frontend` | `add-frontend-must-change-guard`（提案④，2026-09-21 归档） | 前端系列 |
+| 19 | `dev-config` | `parameterize-dev-credentials`（提案⑫，2026-09-21 归档） | 工程性 |
 
 - 已归档变更（`spec/changes/archive/`，**数量以 `find spec/changes/archive -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数**；阶段 1–9、12–18 及 18 后小阶段已收尾，阶段 10–11 已归档）：
 
@@ -89,6 +91,10 @@ spec/
 | `add-auth-must-change-password` | 18+ | 接通恒 0 的死标记 `must_change_password`：`CurrentUserResponse` 暴露 + `AdminInitializer` **仅首次创建**置 1（两道提前 return 在构造 `User` 之前）+ 改密成功置 0 + 重导契约（+2 行）；**刻意不入 JWT claim**、**不改鉴权拦截器**、零 DDL、不追溯存量 admin；`MustChangePasswordIntegrationTest` 5 例（含连续两次 `run()` 不打回已改密 admin）；基线 213 → **218**。**前端守卫未接**，见遗留 #11 | W18 |
 | `add-backend-openapi` | 18 | springdoc 2.8.13 暴露 `/v3/api-docs`（65 paths、`openapi: 3.1.0`、覆盖 14 个 Controller）；导出 `openapi.yaml` 为前端客户端唯一契约来源；5 个公开端点由 `OpenApiCustomizer` 显式标 `security: []`（清单常量须与 `WebMvcConfig` 白名单同步）；契约冒烟测试 + 导出受 `exportContract` 开关控制（CI 基线 `Skipped: 1` 属设计使然）；prod 关 swagger-ui | W17 |
 | `add-agent-context-routing` | 工程性 E1 | **工程性变更（不占业务阶段号）**：`README.md` 去事实化改为路由表（删除端口/口令/工程结构/里程碑四类副本）；新增仓库根 `AGENTS.md`——4 条硬约定按「规则 + canonical 出处 + 可机械执行的自查命令」承载，禁忌只给指针；新增 `docker/mysql/migrations/README.md` 自述该目录无自动执行者；本文件登记 `agent-harness` 能力域并把 3 处硬编码计数换成可复算语句；收尾五步补第 7 步。三条自查各做过变异验证（注入违规→变红→撤销→变绿）。零代码、零构建配置改动 | 2026-09-21 |
+| `add-frontend-must-change-guard` | 提案④ | 强制改密前端守卫（遗留 #11 收口）：`decideNavigation` 单一入口接 `mustChangePassword`（`/api/auth/me` 恒有值字段，缺省按 false 不误拦），未改密仅放行改密与登出（`/login` 也重定向改密页），改密成功走既有会话刷新自动放开；不本地持久化标记、不改鉴权拦截器；access.spec.ts +5 用例；创建 frontend 能力域基线 | 2026-09-21 |
+| `fix-contract-export-charset` | 提案⑧ | 契约导出编码修复（遗留 #12 收口）：`getContentAsByteArray()` 按字节落盘 + Mock 请求固定 8080 端口；护栏断言（无 U+FFFD / 中文描述完整 / servers.url 带端口）；重导 openapi.yaml（+79/-0 仅陈旧契约补齐）与真 dev 实例路 B 产物 SHA256 字节级一致，**路 A 恢复为推荐路径** | 2026-09-21 |
+| `parameterize-dev-credentials` | 提案⑫ | docker-compose.yml 六处裸字面量凭据改 `${ENV:-default}`（默认值一字未改，开箱行为不变）；`application*.yml` 立项复核已达标记为证据基线；新建 `dev-config` 能力域（自查命令已做变异验证） | 2026-09-21 |
+| `audit-concurrency-test-coverage` | 提案⑬ | 三处并发边界「分支×测试名」覆盖盘点（coverage-mapping.md 入库）+ 5 个确定性测试：CacheMutexLoader 败者等待超时兜底直源（轮数驱动）、RedisLockHelper 按 token 解锁三场景（易主由改写 Redis 值模拟）、交卷锁按 token 装配解锁；边界二（状态机 CAS 0 行）既有覆盖如实收窄不重复补；**只补测试，实现零改动** | 2026-09-21 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
@@ -100,12 +106,6 @@ spec/
 8. **`exams` 表没有 `ended_time` 列**（阶段 15 取证时发现）——实际结束时刻无字段记录，`updated_time` 会被任意更新刷新（表达的不是结束时刻）。`add-data-retention` 因此改用 `end_time`（时间窗终点）作为"考试已终结"的代理，误差方向是**晚删而非早删**（`force-end` 提前结束的考试其 `end_time` 仍在未来），属安全选择。若要精确化需新增列（= 迁移），当前不值得。
 9. **MySQL 8 空库真机初始化未实测**（阶段 17 验收时确认）——`fix-schema-mysql-pk` 的证据止于：文本约定测试（`SchemaSqlMysqlCompatibilityTest`，凡 AUTO_INCREMENT 必有 PRIMARY KEY）+ H2 全量 210 全绿。**尚未**在真实空 MySQL 8 实例上执行过 `schema.sql` 并建全 25 张表；`2026-W16-add-primary-keys.sql` 存量迁移也**未在真实存量库跑过**。**不得据此声称「MySQL 8 新环境可启动」已端到端验证**。
 10. **启动期「答案补发对账」在真 broker 下抛异常**（阶段 18 验收时由指导 agent 实测发现）——用真 dev 实例（`exam-mysql-master` 13306 + `exam-rabbitmq` 5672 + 宿主 Redis 6379）启动时，`ExamSubmitSender.send` 调 `RabbitTemplate.waitForConfirmsOrDie` 抛 `IllegalStateException: This operation is only available within the scope of an invoke operation`，调用栈经 `SpringApplicationRunListeners.ready` → `ExamSweepService`；同批日志为 `答案补发对账: 待补=2 已补=0`。**根因**：`waitForConfirmsOrDie` 只能在 `RabbitTemplate.invoke()` 作用域内调用，而测试环境 RabbitMQ 是 mock 且 `auto-startup: false`，**这条路径从未在真 broker 下跑过**（与遗留 #6 同源）。应用仍能 `/actuator/health` = UP，**非致命**，但启动对账实际未补发成功。**未修**（不属阶段 18 范围，已明令子 agent 不得顺手修）。修复需改 `ExamSubmitSender` 的 confirm 用法，建议单独立项。
-11. **初始密码强制修改：后端已接通，前端守卫仍未接**（阶段 19 开工时由子 agent 发现缺口、指导 agent 核实；后端已由 `0fb56b9` 实现并归档为 `add-auth-must-change-password`，**本条因前端未接而保留在遗留清单**）——原状态：`src/main` 中该字段仅 `schema.sql` L14 建列与 `User.java` L39 实体字段两处**声明**，**无读路径**（零 getter 调用、无 DTO 装载、`JwtUtil` claim 不含它，`CurrentUserResponse` 与 `openapi.yaml` 均无该字段）；写路径虽有但**恒写 0**（`AdminInitializer` 创建分支与 `AuthService` 各有一处 `setMustChangePassword(0)`）。后果：`AdminInitializer` 用配置的初始密码创建 admin，**该初始密码永远不被强制更换**，属真实安全缺口。
-    > 指导 agent 取证更正：最初 grep 用小写 `mustChangePassword`，匹配不到 `setMustChangePassword`（大写 M），因此一度误判为「`AdminInitializer` 与 `AuthService` 根本没引用该字段」。正确表述是**有写路径但恒写 0**。「永不置 1、外部读不到」的结论不变。**教训：grep 实体字段时必须同时匹配 `setXxx` / `getXxx` 大小写变体，或用 `-i`。**
-    现状态（`0fb56b9`）：`CurrentUserResponse` 暴露 `mustChangePassword`（`Boolean`，装载为原始 `boolean`，故 `/api/auth/me` 恒有值）；`AdminInitializer` 仅首次创建置 1（两道提前 return 在构造 `User` 之前，物理上不可能改写已存在账号）；`changePassword` 成功置 0；刻意**不入 JWT claim**（可变状态入无状态 token 会有「已改密但旧 token 仍说必须改密」窗口）；**未改鉴权拦截器**（不做后端强拦）；零 DDL、不追溯存量 admin。集成测试 `MustChangePasswordIntegrationTest` 5 例覆盖，含「连续两次 `adminInitializer.run()` 不打回已改密 admin」。基线 213 → **218**（`Skipped: 1` 不变）。
-    **前端守卫尚未接（本条仍开放）**：阶段 19 已把「强制改密前置」Requirement 移出（当时契约无该字段）。契约现已就绪（`/api/auth/me` 返回 `mustChangePassword`，且**恒有值**、`non_null` 不会吞掉 `false`，前端可直接 `if (me.mustChangePassword)`），需另立前端小变更把守卫接回（守卫入口已收敛为 `frontend/src/router/access.ts` 的单一函数 `decideNavigation`）。**在前端守卫落地前，不得声称「初始密码强制修改」这项用户可感知的能力已完成**——后端标记可读可写，但没有任何东西阻止未改密的 admin 继续使用系统。
-12. **契约导出「路 A」有编码缺陷，修好前必须走路 B**（`add-auth-must-change-password` 实施时由子 agent 发现）——`OpenApiContractTest.exportOpenApiContract()` 用 `MockHttpServletResponse.getContentAsString()` 取正文，**未设 charset 时按 ISO-8859-1 解码**，写出的 `openapi.yaml` 会让 `info.description` 与 `securitySchemes.Authorization.description` 的中文**全部乱码**，且 `servers.url` 从 `http://localhost:8080` 退化为 `http://localhost`。修法：改用 `getContentAsByteArray()`。该方法受 `exportContract` 开关控制、常规测试不触发，故未污染 CI，但**`-DexportContract=true` 一旦执行就会损坏仓库里的契约文件**（子 agent 已 `git checkout -- openapi.yaml` 回滚，未越界修改测试类）。**在修复前，重新导出 `openapi.yaml` 必须走路 B（真 dev 实例 `Invoke-WebRequest /v3/api-docs.yaml`）**；交接文档与相关提示词中「推荐路 A」的表述以本条为准。修复属独立小变更，尚未立项。
-
 13. **前端 19–23 从未按"验收"登记，且阶段 22 被跳过**（2026-09-21 实况重同步时发现，四个开放子项 + 一条纪律）——
     - **阶段 22 零交付而阶段 23 已入库**：22 的 6 个 task / 24 step 全 false、`/student/` 下只有 `scores/`、`indexedDB` 与 `visibilitychange` 全仓 0 命中；23 却在 proposal 里声明"前置阶段 22 必须已合入"并已提交。**需显式裁决**：追补 22（面试主战场，倒计时/自动保存/断线恢复/交卷防重/切屏检测都在这块）作为 23 的返修前置，还是接受乱序并把 23 的前置声明改写为"接口级验证"并标注缺口。
     - **阶段 21  incomplete**（2026-09-21 代码与单测已补齐，见进行中表该行的复核结论；**本条仍是开放项，因为验收未做**）：五项无代码（学生入班/转班、考试详情、监考视图、行为日志时间线、Grafana 只读入口）、**0 测试文件**（与其 `tasks.json` 任务 #4 直接冲突）、`src/constants/monitor.ts` 与 `severity.ts` 为零引用死代码。要么补齐，要么显式缩小其 proposal/tasks 范围并删掉死代码——**不得留成"看起来做过"**。
@@ -122,6 +122,8 @@ spec/
 3. **考后闭环缺端到端串联验收** 已由 `add-post-exam-closure-e2e`（阶段 12）收口——曾是真问题：阶段 9 各环节有独立测试，但没有「建班→结束→缺考→补考→批改发布→复核」整链；且 `force-end` 曾漏标缺考（状态已 ENDED 后定时扫描无法自愈）。现由 `PostExamClosureIntegrationTest` 9 条用例覆盖，两条结束路径均 `markAbsence`。
 4. **缺考/补考真实链路仅 Mockito、以及 `@Sql` 掩盖缺表 / `score_review` 缺列** 已由阶段 12 收口——曾是真问题：`ClassManagementIntegrationTest` 的 `@Sql` 自建表掩盖过缺表回归；`score_review` 缺 `created_time` 曾使复核申请 INSERT 在任何环境必失败。现 `src/test` 无 `@Sql`，schema/migration 已补列，`listByExam` 同步改为 `@PathVariable`。
 5. **观测栈动态行为** 已由 `add-observability-runtime-evidence`（阶段 16）收口——Targets `UP`、9 条规则 loaded、**5 条真实 firing**（ExamOnlineDown / RateLimitDegraded / MqSubmitRetryExhausted / MqDlqBacklog / AntiCheatEventSpike）、面板出图；另 **4 条流量/性能阈值未在本机点着**（Http5xxRatioHigh / SubmitFailureRatioHigh / MqSubmitQueueBacklog / SubmitLatencyP99High）且**未改规则凑绿**，已留 PromQL 反证。详见 `docs/observability-runtime-evidence.md`。**不得据此声称遗留 #6（DLQ 真 broker 端到端）已完成**（firing ≠ 重投闭环）。
+6. **初始密码强制修改（前端守卫）** 已由 `add-frontend-must-change-guard`（提案④，2026-09-21）收口——`decideNavigation` 单一入口接 `mustChangePassword`（`/api/auth/me` 恒有值字段，缺省按 false 不误拦），未改密仅放行改密与登出（含 `/login` 重定向改密页），改密成功走既有会话刷新自动放开；不本地持久化标记、不改鉴权拦截器。原遗留 #11 的后端部分早由 `add-auth-must-change-password`（18+）完成，本条收口后「初始密码强制修改」用户可感知能力端到端成立。
+7. **契约导出路 A 编码缺陷** 已由 `fix-contract-export-charset`（提案⑧，2026-09-21）收口——根因：`getContentAsString()` 未设 charset 按 ISO-8859-1 解码 + Mock 请求无端口致 `servers.url` 退化；修法：`getContentAsByteArray()` 按字节落盘 + 固定 8080 端口，护栏断言（无 U+FFFD、中文描述完整、servers.url 带端口）随导出测试入库；修复后路 A 与真 dev 实例路 B 产物 SHA256 字节级一致，**路 A 恢复为推荐路径**（表述已同步 api-contract 基线、交接文档与提示词）。原遗留 #12 关闭。
 
 ## 能力地图（规范组织单位；**已合入基线**的条数以 `find spec/specs -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数；下表允许出现"已立项、基线待收尾时创建"的能力域，由该行自己注明）
 
@@ -144,6 +146,8 @@ spec/
 | 15 | score-review | 复核申请限次限时、复核中隐藏成绩、复核处理 |
 | 16 | api-contract | OpenAPI 契约暴露、鉴权语义标注、契约导出复现、契约冒烟护栏 |
 | 17 | agent-harness | 根入口路由（`README.md` 只指路不承载易变事实）、硬约定的 agent 必经索引（`AGENTS.md`）、无自动执行者的 SQL 目录必须自述触发方式、文档判据优先于文档常量。**基线已合入 `spec/specs/agent-harness/spec.md`**（E1，2026-09-21）；E2 的四条待其 B-2 收口后合入 |
+| 18 | frontend | 前端路由守卫（强制改密前置：可导航范围限制、单一判定入口、恒有值字段直判、改密后自动恢复）；阶段 19–23 各 Requirement 待其验收收尾后追加 |
+| 19 | dev-config | dev 环境凭据参数化（环境变量可覆盖、开箱默认不变、新增凭据不裸写、生产凭据不带默认值，含可机械执行的自查命令） |
 
 ## 开发阶段 → 变更映射
 

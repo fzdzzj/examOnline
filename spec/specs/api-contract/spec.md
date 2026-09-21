@@ -1,7 +1,7 @@
 # api-contract 规范
 
 > 能力域：API 契约（阶段 18，W17）。
-> 来源：`spec/changes/archive/add-backend-openapi` 合入（springdoc 暴露 OpenAPI 契约，000bbf0 + 47d42f8）。
+> 来源：`spec/changes/archive/add-backend-openapi` 合入（springdoc 暴露 OpenAPI 契约，000bbf0 + 47d42f8）；`spec/changes/archive/fix-contract-export-charset` 合入（导出编码无损，提案⑧，2026-09-21）。
 > 实施注记：
 > - 依赖 `springdoc-openapi-starter-webmvc-ui:2.8.13`（本地 `.m2-repo` 离线可解析），配置类 `com.exam.common.config.SpringDocConfig`。
 > - 契约范围由 `springdoc.packages-to-scan: com.exam` + `paths-to-match: /api/**` 限定；**导出实测 65 paths、`openapi: 3.1.0`**，覆盖全部 14 个 Controller。
@@ -9,7 +9,7 @@
 > - 导出是**显式动作**：`OpenApiContractTest.exportOpenApiContract()` 受 `@EnabledIfSystemProperty(named = "exportContract", matches = "true")` 控制，不随常规 `mvn test` 运行，避免 CI 产出脏工作区。常规运行下该方法计入 `Skipped`，**CI 基线因此为 `Skipped: 1`，属设计使然，不是被禁用的断言**。
 > - 生产 profile 关闭 swagger-ui（`springdoc.swagger-ui.enabled: false`），`api-docs` 保持开启以便按需导出。
 > - **契约文件 `openapi.yaml` 位于仓库根，是前端 `@hey-api/openapi-ts` 生成客户端的唯一来源**；后端接口变更后必须重新导出，否则前端类型漂移。
-> - 导出优先用**真 dev 实例**（`/v3/api-docs.yaml`）；test profile 上下文导出经实测与 dev 实例结果一致（65 paths / 3.1.0 / scheme 同），可作为无法启动 dev 时的等价手段。
+> - 导出**推荐路 A（离线测试内导出）**：`mvn -o test -Dtest=OpenApiContractTest#exportOpenApiContract -DexportContract=true`。编码缺陷修复后（fix-contract-export-charset，2026-09-21）路 A 产物与真 dev 实例直接拉取（`/v3/api-docs.yaml`，路 B）SHA256 比对字节级一致；路 B 保留为真环境校验手段。护栏断言（无 U+FFFD、中文描述完整、servers.url 带端口）随导出测试入库防回归。
 
 ## Requirements
 
@@ -17,7 +17,7 @@
 
 WHEN 前端或其他消费方需要与后端 API 集成,
 
-系统 SHALL 暴露与代码实现同步生成的 OpenAPI 3 文档，且 SHALL 提供可入仓库的契约文件作为客户端生成的唯一来源。
+系统 SHALL 暴露与代码实现同步生成的 OpenAPI 3 文档，且 SHALL 提供可入仓库的契约文件作为客户端生成的唯一来源，且导出路径 SHALL 编码无损。
 
 #### Scenario: 文档覆盖全部端点
 
@@ -68,3 +68,15 @@ WHEN 执行全量测试
 THEN 契约导出不发生
 
 AND 仅在显式开启导出开关时才写入 openapi.yaml
+
+#### Scenario: 导出编码无损
+
+GIVEN 导出开关开启且文档含非 ASCII 字段
+
+WHEN 执行测试内导出
+
+THEN 产出文件按字节流写入，中文不乱码
+
+AND servers.url 保持完整形态不退化
+
+AND 与真 dev 实例直接拉取的契约语义一致

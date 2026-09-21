@@ -1,0 +1,33 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：凭据盘点",
+    "task": "全部 dev 凭据载体与形态摸清",
+    "steps": [
+      { "step": "盘点 application*.yml 与 docker-compose*.yml 的全部凭据项及形态（${ENV:fallback} / 裸字面量），产出清单", "completed": true },
+      { "step": "application-dev.yml 与 application.yml 各凭据项现状核实：已是环境变量可覆盖形态，登记为证据基线", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：缺口参数化",
+    "task": "裸字面量凭据获得环境变量覆盖入口",
+    "steps": [
+      { "step": "docker-compose.yml 两处 MYSQL_ROOT_PASSWORD 改为 ${MYSQL_ROOT_PASSWORD:-<现默认值>}，默认值不变", "completed": true },
+      { "step": "盘点若发现其他裸字面量凭据一并参数化；若全部已达标则如实收窄并记录", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：规范固化与验证",
+    "task": "凭据参数化成为被守住的约定",
+    "steps": [
+      { "step": "新建 dev-config 能力域规范：dev 凭据可覆盖、新增凭据不裸写、生产凭据不带默认值 + 可机械执行的自查命令", "completed": true },
+      { "step": "干净环境验证：不设任何环境变量起 dev（compose + 后端）行为不变；设变量可覆盖", "completed": true },
+      { "step": "后端门禁回归（H2 测试 profile 不受影响）", "completed": true }
+    ],
+    "passes": true
+  }
+]
