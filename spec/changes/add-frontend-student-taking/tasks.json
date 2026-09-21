@@ -4,21 +4,21 @@
     "category": "阶段 1：进入考试与作答（W20-W21）",
     "task": "学生能进入并答题",
     "steps": [
-      { "step": "考试列表三态（待考/进行中/已完成）；迟到窗口可用性按后端返回渲染", "completed": false },
-      { "step": "进入考试拉取个人快照；「一个进行中会话」语义按后端错误码提示，前端不自行加锁", "completed": false },
-      { "step": "极简答题界面：题目导航（已答/未答/当前）+ 上一题/下一题 + 四种题型作答控件；不做计算器与标记备注", "completed": false }
+      { "step": "考试列表三态（待考/进行中/已完成）；迟到窗口可用性按后端返回渲染", "completed": true },
+      { "step": "进入考试拉取个人快照；「一个进行中会话」语义按后端错误码提示，前端不自行加锁", "completed": true },
+      { "step": "极简答题界面：题目导航（已答/未答/当前）+ 上一题/下一题 + 四种题型作答控件；不做计算器与标记备注", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 2,
     "category": "阶段 2：倒计时与超时锁定（W21）",
     "task": "时间以服务端为准，归零只锁定不越权判定",
     "steps": [
-      { "step": "剩余时长基于服务端时间计算；不用本地 Date.now() 作为交卷判定依据", "completed": false },
+      { "step": "剩余时长基于服务端时间计算；不用本地 Date.now() 作为交卷判定依据", "completed": true },
       { "step": "本地归零 → 锁定答题界面 + 标记「待同步」；网络恢复后按锁定状态提交；服务端仍兜底校验", "completed": false },
-      { "step": "最后 5 分钟警告", "completed": false },
-      { "step": "倒计时 hook 有 vitest 单测（含服务端时间偏移场景）", "completed": false }
+      { "step": "最后 5 分钟警告", "completed": true },
+      { "step": "倒计时 hook 有 vitest 单测（含服务端时间偏移场景）", "completed": true }
     ],
     "passes": false
   },
