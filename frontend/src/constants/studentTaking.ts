@@ -53,3 +53,26 @@ export const COUNTDOWN_TICK_MS = 1000;
  * 是否超时、能否交卷、锁定作答都仍由后端说了算。
  */
 export const NEAR_END_WARNING_THRESHOLD_SECONDS = 300;
+
+/**
+ * 自动保存周期（阶段 22 第 2 片）。
+ *
+ * 30s 来自**后端设计假设**，不是前端拍脑袋的值：
+ * - `ExamDraftService` javadoc：「前端每 30s 推送一次答案到 Redis」；
+ * - 30s 自动保存同时是监考在线心跳的数据源（`presenceService.touch`）——
+ *   周期拉长会让监考大屏把在线学生误判成离线；
+ * - 5000 并发交卷压测是按这个负载模型做的，缩短周期等于给后端造一个
+ *   它没被压测过的负载模式（硬约定 6）。
+ */
+export const AUTOSAVE_INTERVAL_MS = 30_000;
+
+/**
+ * 输入防抖窗口（阶段 22 第 2 片）。
+ *
+ * 硬约定 6：「输入用防抖，防抖间隔不得小于后端设计假设」——后端假设就是 30s，
+ * 所以防抖窗口与 `AUTOSAVE_INTERVAL_MS` 同值：学生停止输入 30s 后才允许触发
+ * 一次保存请求。两者共同保证**任何两次相邻的后端草稿保存之间至少间隔 30s**：
+ * 防抖挡住「输入触发」的高频路径，定时器兜底「连续输入不断重置防抖」的长尾。
+ * 想改这两个值，先去读后端 `ExamDraftService` 与压测容量模型。
+ */
+export const AUTOSAVE_DEBOUNCE_MS = 30_000;
