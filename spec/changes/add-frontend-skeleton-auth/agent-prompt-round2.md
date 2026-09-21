@@ -133,7 +133,7 @@ git worktree add ..\examonline-headcheck a6e487f
 
 回填前按 `docs/指导Agent交接文档.md` 六（§6.1 上下文）的工具链小节自行拼装：那是**特定 shell / 本机环境下的历史绕行办法**（含仓库外 JDK/Maven 绝对路径），不是被指定的唯一命令，换环境先自检 `mvn -version` 用的是哪个 JDK 再拼。**必须带 `clean`**，并在回报里给出实际执行的命令与原始输出。
 
-后端若需起 dev 实例（本轮**通常不需要**）：环境事实（宿主端口 / 凭据 / 是否要设环境变量）现场读 `docs/指导Agent交接文档.md` §6.2 与 `docker-compose.yml`、`application-dev.yml`，本文件不复制数值；**不要起 compose 里的 Redis 容器**（宿主已有一套 Redis 会抢端口）。**契约导出只能走路 B**，路 A（`-DexportContract=true`）有编码缺陷会损坏 `openapi.yaml`（遗留 #12）——本轮不涉及导出，别去碰它。
+后端若需起 dev 实例（本轮**通常不需要**）：环境事实（宿主端口 / 凭据 / 是否要设环境变量）现场读 `docs/指导Agent交接文档.md` §6.2 与 `docker-compose.yml`、`application-dev.yml`，本文件不复制数值；**不要起 compose 里的 Redis 容器**（宿主已有一套 Redis 会抢端口）。**契约导出推荐路 A（离线 `-DexportContract=true`，`fix-contract-export-charset` 已修复编码与 servers.url 缺陷）**；路 B（真 dev 实例）可作真环境校验——本轮不涉及导出，别去碰它。
 
 前端命令在 `frontend/` 下用 pnpm 跑。
 
