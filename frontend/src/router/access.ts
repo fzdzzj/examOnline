@@ -63,6 +63,11 @@ export interface NavigationInput {
   /** 后端返回的最高角色；无角色时为 null（fail-closed，不给进任何受限页）。 */
   role: RoleName | null;
   /**
+   * 后端 /api/auth/me 返回的 `mustChangePassword`（Boolean 装载、恒有值，false 不会被 non_null 吞掉）。
+   * 直接按布尔值分支；缺省按 false 处理，不误拦正常用户。
+   */
+  mustChangePassword?: boolean;
+  /**
    * 命中了 catch-all 的 404 页。404 页本身不渲染任何业务数据，
    * 所以不参与角色判定——否则未登录用户访问错误链接会被甩到登录页，体验很差。
    */
@@ -72,14 +77,23 @@ export interface NavigationInput {
 /**
  * 守卫决策入口——**唯一**的收敛点。
  *
- * 后续 `add-auth-must-change-password` 立项后要加「强制改密前置」，
- * 只需在这里插一条规则（以及在 pages 里加一个页面），不必改 guard.ts 的调用形状。
+ * 强制改密前置也在这里收敛成一条分支（读 `/api/auth/me` 的权威字段），
+ * 因此既有鉴权拦截器与 guard.ts 的调用形状都不必改。
  */
 export function decideNavigation(input: NavigationInput): NavigationDecision {
-  const { path, loggedIn, role } = input;
+  const { path, loggedIn, role, mustChangePassword } = input;
 
   if (input.notFound) {
     return { action: 'allow' };
+  }
+
+  // 强制改密前置：已登录但 mustChangePassword 为 true 时，仅放行改密页；
+  // 其余路由（含业务页、公开页）一律重定向到改密页。登出走既有 store 复位 → login 路径，不受此限。
+  if (mustChangePassword === true && loggedIn) {
+    if (path === '/change-password') {
+      return { action: 'allow' };
+    }
+    return { action: 'redirect', to: '/change-password' };
   }
 
   if (path === '/login' && loggedIn) {
