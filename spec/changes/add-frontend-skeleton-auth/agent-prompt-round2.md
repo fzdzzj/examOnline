@@ -90,7 +90,7 @@ git worktree add ..\examonline-headcheck a6e487f
 
 ### 5. 后端回归
 
-跑一次后端全量，确认仍是 **`Tests run: 218, Failures: 0, Errors: 0, Skipped: 1`** → BUILD SUCCESS（**基线已从 213 变为 218**，因为 `add-auth-must-change-password` 已合入并带了 5 条用例；`Skipped: 1` 属设计使然）。命令见下。
+跑一次后端全量门禁，按**判据**判定，不对任何写死的数字负责（历史文档里的常量都是过期副本）：收尾那次执行必须 `Failures=0` 且 `Errors=0`、`Skipped` 保持 1（`Skipped: 1` 是契约导出方法受 `exportContract` 开关控制，属设计使然，不要消除）、用例总数不得少于**本轮开工时你自己实测并记录在案的数值**（本轮的开工值就是下面第 2 步之前先跑一次记下的数）。不满足就停下回报，**不得增删用例去凑数**。命令见「后端门禁命令」。
 
 ### 6. e2e：**用户已授权安装浏览器，本轮必须实跑**
 
@@ -98,7 +98,7 @@ git worktree add ..\examonline-headcheck a6e487f
 
 1. `cd frontend; pnpm exec playwright install chromium`（**只装 chromium，不要装 firefox/webkit，不要加 `--with-deps`**）；
 2. 装完实跑 `pnpm test:e2e`，三条用例（登录 → 首页 → 登出 等）**必须真实通过**；
-3. e2e 需要后端在 8080 可用：按 `docs/指导Agent交接文档.md` §6.2 起 dev 实例（MySQL 容器 **13306** + `root123`，不是默认 3306/root/root；不要启 `exam-redis`），跑完**必须停掉应用**并确认 8080 无监听（曾有残留实例导致后续验证失真）；
+3. e2e 需要后端在应用端口可用：按 `docs/指导Agent交接文档.md` §6.2 起 dev 实例（**宿主端口与凭据现场读该节 / `docker-compose.yml` / `application-dev.yml`，本文件不复制数值**；不变的规则是**不要起 compose 里的 Redis 容器**，宿主已有一套 Redis 会抢端口），跑完**必须停掉应用**并确认该端口无监听（停法见 §6.2；曾有残留实例导致后续验证失真）；
 4. **不要为了让 e2e 通过而放宽断言**、不要改成对 mock server 跑、不要跳过代理断言（`expect(loginRes.url()).toContain('/api/auth/login')` 必须保留，它是「代理不 rewrite」的回归护栏）；
 5. 若安装或实跑失败，**停下回报**并贴完整原始报错，**不要声称通过**。
 
@@ -127,15 +127,13 @@ git worktree add ..\examonline-headcheck a6e487f
 
 ---
 
-## 本机命令
+## 后端门禁命令
 
-后端全量（PowerShell **必须数组 splatting**）：
+仓库自有的**唯一门禁命令待 `update-agent-gate-single-source`（E2）B-2 回填**。本文件不再照抄机器绑定的命令行。
 
-```powershell
-$jargs = @('-classpath','D:\develop\Maven\apache-maven-3.9.4\boot\plexus-classworlds-2.7.0.jar','-Dclassworlds.conf=D:\develop\Maven\apache-maven-3.9.4\bin\m2.conf','-Dmaven.home=D:\develop\Maven\apache-maven-3.9.4','-Dmaven.multiModuleProjectDirectory=D:\code\examOnline','org.codehaus.plexus.classworlds.launcher.Launcher','-o','test'); & 'D:\develop\jdk177\bin\java.exe' @jargs
-```
+回填前按 `docs/指导Agent交接文档.md` 六（§6.1 上下文）的工具链小节自行拼装：那是**特定 shell / 本机环境下的历史绕行办法**（含仓库外 JDK/Maven 绝对路径），不是被指定的唯一命令，换环境先自检 `mvn -version` 用的是哪个 JDK 再拼。**必须带 `clean`**，并在回报里给出实际执行的命令与原始输出。
 
-后端若需起 dev 实例（本轮**通常不需要**）：环境事实见 `docs/指导Agent交接文档.md` §6.2（MySQL 容器 **13306** + `root123`，不是默认 3306/root/root；不要启 `exam-redis`）。**契约导出只能走路 B**，路 A（`-DexportContract=true`）有编码缺陷会损坏 `openapi.yaml`（遗留 #12）——本轮不涉及导出，别去碰它。
+后端若需起 dev 实例（本轮**通常不需要**）：环境事实（宿主端口 / 凭据 / 是否要设环境变量）现场读 `docs/指导Agent交接文档.md` §6.2 与 `docker-compose.yml`、`application-dev.yml`，本文件不复制数值；**不要起 compose 里的 Redis 容器**（宿主已有一套 Redis 会抢端口）。**契约导出只能走路 B**，路 A（`-DexportContract=true`）有编码缺陷会损坏 `openapi.yaml`（遗留 #12）——本轮不涉及导出，别去碰它。
 
 前端命令在 `frontend/` 下用 pnpm 跑。
 
@@ -147,8 +145,8 @@ $jargs = @('-classpath','D:\develop\Maven\apache-maven-3.9.4\boot\plexus-classwo
 2. **提交结果**：`git add` 的文件清单、commit message、`git rev-parse HEAD`、`git status --short`（应不含任何 frontend 文件）；若做了可选的 worktree 诊断，写明 `a6e487f` 上四项门禁的结果
 3. **首轮遗漏的根因**：为什么第 1 轮 `git add` 漏了这 11 个文件（命令写错？提交后又改？还是别的原因），以及你本轮用了什么做法防止再发生
 4. **已提交状态上的四项门禁**：`type-check:check` / `lint:check` / `test`（files + passed 数字）/ `build` 各自输出摘要
-5. **后端回归三数字 + Skipped 数**（应为 218 / 1）
-6. **e2e 实跑结果**：安装命令与输出摘要、`pnpm test:e2e` 的通过数字、后端 dev 实例起停证据（起时 health UP、停后 8080 无监听）；以及**意外发现**
+5. **后端回归**：实际执行的命令 + 原始输出 `Tests run / Failures / Errors / Skipped` 四数字 + 当时短 revision，并按判据自评（`Failures=0`、`Errors=0`、`Skipped=1`、总数不少于本轮开工时记录值；不满足即不通过，**不得改测试凑数**）
+6. **e2e 实跑结果**：安装命令与输出摘要、`pnpm test:e2e` 的通过数字、后端 dev 实例起停证据（起时 health UP、停后该端口无监听）；以及**意外发现**
 
 ## 禁止
 

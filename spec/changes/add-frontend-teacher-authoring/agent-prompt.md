@@ -3,19 +3,25 @@
 > 用法：整份复制发给子 agent。自包含。
 > 先读 `spec/changes/add-frontend-teacher-authoring/proposal.md`、`tasks.json`、`specs/frontend/spec-delta.md`。
 
-> **⚠️ 基线与环境更正（以此为准，覆盖下文旧内容）**：
-> 1. 后端全量基线现为 `Tests run: 218, Failures: 0, Errors: 0, Skipped: 1` → BUILD SUCCESS。下文所有「210」一律读作 **218**；`Skipped: 1` 是契约导出方法受 `exportContract` 开关控制，**属设计使然，不要试图消除**。
-> 2. **dev 环境启动方式见 `docs/指导Agent交接文档.md` §6.2**，不要自己摸索：MySQL 容器 `exam-mysql-master` 在宿主 **13306**（不是 3306）、口令 **root123**（不是 root）；`application-dev.yml` 的默认值指向 Windows MySQL80 服务，**会拒绝 root/root**；Redis 用宿主 6379，**不要启 `exam-redis` 容器**（端口冲突）；启动前必须设 `DB_URL`/`DB_PASSWORD`/`SLAVE_DB_URL`/`SLAVE_DB_PASSWORD` 四个环境变量。
-> 3. 启动日志中 `ExamSubmitSender` → `waitForConfirmsOrDie` 的 `IllegalStateException` 是**遗留 #10**，真 broker 下才暴露、非致命；`/actuator/health` 返回 UP 即视为启动成功，**不要顺手修**。
+> **验收判据（不是常量，覆盖下文旧内容）**：本阶段对后端的唯一要求是「跑门禁命令后满足下列条件」，不是「用例数等于某个数」——历史文档里写死过的用例数都是过期副本，看到它按本判据办，**不要去凑它、更不要为了对上它去动测试**。
+> 1. **开工时**跑一次后端全量门禁，把该次 `Tests run / Failures / Errors / Skipped` 连同**实际执行的命令**与当时的短 revision 记录在案（写进回报）；这个数字就是本阶段的基线。
+> 2. **收尾时**再跑同一条命令，必须同时满足：`Failures=0` 且 `Errors=0`、`Skipped` 保持 1、用例总数**不得少于**开工时记录在案的数值。
+> 3. `Skipped: 1` 是契约导出方法受 `exportContract` 开关控制，**属设计使然，不要试图消除**。
+> 4. **门禁命令**：仓库自有的唯一命令待 `update-agent-gate-single-source`（E2）B-2 回填；回填前按 `docs/指导Agent交接文档.md` 六（§6.1 上下文）的工具链小节自行拼装并回报原始输出——该小节是**特定 shell / 本机环境下的历史绕行办法**，不是被指定的命令，换环境先自检再拼，且**必须带 `clean`**（残留报告会让计数虚高）。
+> 5. **基线不绿就停下回报**（`Failures>0` / `Errors>0` / `Skipped≠1` / 总数少于开工记录值），不要在坏底座上继续。
+>
+> **本机 dev 环境只给指针**：宿主端口、凭据、要设哪些环境变量、容器名等事实一律现场读 `docs/指导Agent交接文档.md` §6.2，其真源是 `docker-compose.yml`（端口以其实际映射为准）与 `src/main/resources/application-dev.yml`；本提示词不复制这些值（旧版本里的宿主端口就与 compose 不一致）。不变的规则有三条：**不要改端口、不要停宿主已有的服务、不要起 compose 里的 Redis 容器**（宿主已有一套 Redis，会抢端口）。
+>
+> 启动日志中 `ExamSubmitSender` → `waitForConfirmsOrDie` 的 `IllegalStateException` 是**遗留 #10**，真 broker 下才暴露、非致命；`/actuator/health` 返回 UP 即视为启动成功，**不要顺手修**。
 
 ---
 
 ## 现状
 
 - 仓库 `D:\code\examOnline`，分支 `feature/add-performance-deepening-readwrite`。
-- **前置阶段 19 `add-frontend-skeleton-auth` 必须已合入**：`frontend/` 已存在且可 `dev` / `build` / `lint:check` / `type-check:check` / `vitest` 全绿；API 层已由 `gen:api` 从 `openapi.yaml` 生成；角色布局与守卫、认证四页、令牌续期单飞已就位。**开工前先跑一遍这些门禁确认基线，记录数字**；基线不绿就停下回报，不要在坏底座上继续。
+- **前置阶段 19 `add-frontend-skeleton-auth` 必须已合入**：`frontend/` 已存在且可 `dev` / `build` / `lint:check` / `type-check:check` / `vitest` 全绿；API 层已由 `gen:api` 从 `openapi.yaml` 生成；角色布局与守卫、认证四页、令牌续期单飞已就位。**开工前先跑一遍这些门禁确认基线，把各自结果记录在案**（后端全量按顶部判据记录四数字 + 命令 + revision）；基线不绿就停下回报，不要在坏底座上继续。
 - 本阶段做**教师端题库与组卷**界面，对应后端 `question/QuestionController`、`question/TagController`、`paper/PaperController`。
-- 后端全量测试基线 **210 全绿**，本阶段结束时必须仍是 210。
+- 后端全量测试基线**必须是绿的**，判据见顶部：收尾那次执行 `Failures=0` 且 `Errors=0`、`Skipped` 保持 1、用例总数不得少于开工时记录在案的数值（**不是某个写死的数字**）。
 - 最多修复尝试 **2 次**。第 3 次仍失败停下回报。
 - **你必须自己 commit**（按任务组分次：题库 / 标签 / 组卷 / 测试）。每次提交后立即 `git rev-parse HEAD` 与 `git status --short`；HEAD 若变 unborn，从 `.git/logs/HEAD` 取 sha 按仓库约定补 ref，**不要用 `git update-ref`**。
 - **不要改 `spec/`**（含不要勾 `tasks.json`、不要动 `spec/README.md`）。
@@ -61,7 +67,7 @@
 
 ## 实施
 
-1. **基线自检**：跑 `lint:check`、`type-check:check`、`vitest`、后端全量（命令见下），记录四组数字。
+1. **基线自检**：跑 `lint:check`、`type-check:check`、`vitest`、后端全量门禁（命令见「后端门禁命令」小节），把四组结果**记录在案**——后端那组要记 `Tests run / Failures / Errors / Skipped` + 实际命令 + 短 revision，它就是你本阶段收尾时比较的那个数。
 2. **核实后端契约**（见上「先核实」小节），把核实结论写进回报。
 3. **题库列表页**：分页 + 按题型 / 标签 / 关键词筛选 + 批量选择；列表项展示题型、分值、难度、标签、软删状态；用 `@tanstack/vue-query` 管查询与缓存失效（新增/修改/删除后 invalidate 对应 query key）。
 4. **题目编辑**：配置驱动的题型表单（单选 / 多选 / 判断 / 简答），各自校验：
@@ -82,16 +88,14 @@
     - 题号排序纯函数；
     - 列表筛选参数构造（题型 + 标签 + 关键词 + 分页）；
     - 抽题结果确认 / 重抽的状态流转（用 mock 的生成客户端，**mock 只用于单测，不得用于冒充联调**）。
-11. **联调验证**：后端以 dev profile 跑在宿主 8080（本机 MySQL80 占 3306、Windows Redis 占 6379，**不要改端口、不要停这些服务**；后端起不来就停下回报，不要用 mock server 假装通过）。**至少走通一条真实链路**：登录 → 建标签 → 建 4 种题型各一道 → 手动组卷 → 随机抽题组卷 → 预览试卷。把每一步的真实请求路径与 HTTP 状态记进回报。
-12. **门禁全绿 + 后端回归仍 210** 再提交。
+11. **联调验证**：后端以 dev profile 跑起来（端口与环境事实见顶部指针：`docs/指导Agent交接文档.md` §6.2 + `docker-compose.yml` + `application-dev.yml`；**不要改端口、不要停宿主已有的服务**；后端起不来就停下回报，不要用 mock server 假装通过）。**至少走通一条真实链路**：登录 → 建标签 → 建 4 种题型各一道 → 手动组卷 → 随机抽题组卷 → 预览试卷。把每一步的真实请求路径与 HTTP 状态记进回报。
+12. **门禁全绿 + 后端回归满足顶部判据**（`Failures=0`、`Errors=0`、`Skipped=1`、总数不少于开工记录值）再提交。
 
-## 本机 Maven 命令（必须照抄，别自己拼）
+## 后端门禁命令
 
-PowerShell 下**必须用数组 splatting**，否则 `-Dclassworlds.conf=...` 会被拆坏：
+仓库自有的**唯一门禁命令待 `update-agent-gate-single-source`（E2）B-2 回填**——仓库里对「哪条命令算门禁」现有互斥说法，本提示词不再新增一种，也不再照抄任何机器绑定的命令行。
 
-```powershell
-$jargs = @('-classpath','D:\develop\Maven\apache-maven-3.9.4\boot\plexus-classworlds-2.7.0.jar','-Dclassworlds.conf=D:\develop\Maven\apache-maven-3.9.4\bin\m2.conf','-Dmaven.home=D:\develop\Maven\apache-maven-3.9.4','-Dmaven.multiModuleProjectDirectory=D:\code\examOnline','org.codehaus.plexus.classworlds.launcher.Launcher','-o','test'); & 'D:\develop\jdk177\bin\java.exe' @jargs
-```
+回填前按 `docs/指导Agent交接文档.md` 六（§6.1 上下文）的工具链小节自行拼装：那是**特定 shell / 本机环境下的历史绕行办法**（含仓库外 JDK/Maven 绝对路径），不是被指定的唯一命令，也不意味着别的 shell 非这么拼不可——换环境先自检 `mvn -version` 用的是哪个 JDK，再决定怎么拼，并在回报里给出实际执行的命令与原始输出。**必须带 `clean`**，否则 `target/surefire-reports` 的残留会让计数虚高。
 
 前端命令在 `frontend/` 下用 pnpm 跑（`pnpm lint:check`、`pnpm type-check:check`、`pnpm test`）。
 
@@ -108,12 +112,12 @@ test(frontend): 补题型校验、总分汇总与抽题流转单测
 
 ## 回报格式（按此七段，不要写散文）
 
-1. **基线四数字**：`lint:check` / `type-check:check` / `vitest` / 后端全量（改动前）
+1. **开工基线（四项）**：`lint:check` / `type-check:check` / `vitest` / 后端全量（改动前）——后端那项必须给出**实际执行的命令 + 原始输出四数字 + 当时短 revision**，这就是本阶段收尾时比较的记录值
 2. **后端契约核实结论**：实际支持的题型清单 + 依据文件路径与关键代码行；题目字段清单；软删除语义；`paper_questions` 是否支持分值覆盖；**标签随机抽题的真实入参与返回结构**
 3. **新增页面与组件清单**：路径 + 各自职责一句话；题型表单的配置驱动是怎么做的（贴配置结构骨架）
 4. **真实联调证据**：那条端到端链路每一步的请求路径 + HTTP 状态（不得用 mock 冒充）
 5. **单测清单**：用例名 + 断言什么；`vitest` 收尾三数字
-6. **收尾**：`lint:check` / `type-check:check` 结果、`vitest` 三数字、后端全量三数字（应仍为 210）、每个 commit 的 `git rev-parse HEAD`、`git status --short`、`git diff --stat`（证明后端零改动）
+6. **收尾**：`lint:check` / `type-check:check` 结果、`vitest` 三数字、**后端全量的命令 + 原始输出四数字**，并按判据自评（`Failures=0`、`Errors=0`、`Skipped=1`、总数不少于第 1 项记录值；不满足即为不通过，不得改测试凑数）、每个 commit 的 `git rev-parse HEAD`、`git status --short`、`git diff --stat`（证明后端零改动）
 7. **意外发现 / 接口缺口**：缺什么、你**没有**怎么绕过；以及任何「文档与代码不一致」的地方
 
 ## 禁止

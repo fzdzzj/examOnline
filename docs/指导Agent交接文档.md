@@ -5,7 +5,11 @@
 > **当前分支**：`feature/add-performance-deepening-readwrite`
 > **当前性质**：阶段 1–18 已归档；阶段 19–23（前端五方向）已立项待实施。
 > **代码 HEAD**：`47d42f85613418a663a89a2656532249c7e5d1e9`（阶段 18 补提交 springdoc 配置）；其前为 `000bbf0`（阶段 18 主体）、`ef1c455`（前端系列立项）。
-> **后端测试基线**：`Tests run: 213, Failures: 0, Errors: 0, Skipped: 1`（Skipped 为受 `exportContract` 开关控制的契约导出方法，属设计使然）。
+> **后端验收判据（不是常量）**：某次后端全量门禁算不算绿，只看该次执行是否满足
+> `Failures=0` 且 `Errors=0`、`Skipped` 保持 1（Skipped 为受 `exportContract` 开关控制的契约导出方法，属设计使然，不要消除），
+> 且**用例总数不得少于本阶段开工时实测并记录在案的数值**——记录方式为「命令 + 当次原始输出 + 当时短 revision」写进该阶段的 `tasks.json` 证据字段。
+> **本文档与任何提示词都不再承载"基线 = N 个用例"这类常量**：历史上写在这里的 `213` 只是**描述本文档定稿时点（HEAD `47d42f8`，见上一行）那一次执行**的历史记录，不是当前基线，也不得被用来判定当前交付；照它去"凑数"（删/禁用例）是本仓库最防的行为。
+> 仓库自有的唯一门禁命令待 `update-agent-gate-single-source`（E2）B-2 回填。
 >
 > 本文档只记录当前已核实事实、已知未知和下一步边界。子 agent 的回报不是事实；每轮交付必须独立查看 `git status`、`git diff`、关键代码和测试报告。
 
@@ -156,7 +160,7 @@
 
 | 坑 | 正确做法 |
 |---|---|
-| Maven PATH 版本错误 | 使用 `D:\develop\jdk177\bin\java.exe` + Plexus launcher；必须带 `-o` |
+| Maven PATH 版本错误（**该机该 shell 的历史观察，非普适结论**） | 当时的绕行办法见 §6.1（含仓库外 JDK/Maven 绝对路径，可移植性为零，**不是推荐命令**）；无论怎么拼都**必须带 `clean`**，否则残留报告会抬高用例计数；仓库自有的唯一门禁命令待 `update-agent-gate-single-source`（E2）B-2 回填，本行届时改为指向它 |
 | Git 分支 ref 丢失 | 每次 commit 后立即 `git rev-parse HEAD`；若 unborn，从 `.git/logs/HEAD` 取 sha 并按仓库约定补 ref，不用 `git update-ref` |
 | `@Sql` 掩盖建表缺陷 | `src/test` 中保持 `@Sql` 零命中；schema.sql 是唯一测试建表来源 |
 | MySQL / H2 方言差异 | 不能只看 H2；阶段 17 正在补 MySQL 8 的主键护栏 |
@@ -170,7 +174,12 @@
 | 工作区 ≠ 提交 | 子 agent 报「工作区 clean」不可信；每轮验收必须自己跑 `git status --short` **加** `git diff --numstat`（行尾噪音时 `--numstat` 无输出，真实改动才有数字）。门禁若跑在工作区而 HEAD 是旧版本，等于**已提交代码从未被验证** |
 | grep 实体字段漏 setter | 查某字段有没有被用过，必须同时匹配 `setXxx` / `getXxx`（大小写不同）或直接用 `-i`。曾用小写 `mustChangePassword` grep，漏掉 `setMustChangePassword(0)` 两处，得出错误结论 |
 
-### 6.1 本机 Maven 命令
+### 6.1 本机历史坑与当时的绕行办法（**不是推荐的验证命令**）
+
+> **定性**：本节是**特定 shell + 特定本机环境**下的历史绕行配方，不是仓库自有的门禁命令，也不是"正确的跑法"。仓库唯一的门禁命令待 `update-agent-gate-single-source`（E2）B-2 回填；E2 收口前若确需跑构建，可按本节自行拼装，并在回报里给出**实际执行的命令与原始输出**（不得引用本文档里的任何数字当结果）——这与 `AGENTS.md`「唯一门禁命令」一节的指引同口径。
+> **成因（当时的观察，非推断）**：该机 PowerShell 的 PATH 上 `java` 是 1.8 而 `javac` 是 21，Maven 因此拿不到可用解释器，才有下面这套「用绝对路径直调 Plexus classworlds 启动器」的配方。
+> **两个不许越界的结论**：① 不要因为换一个 shell（PATH / `JAVA_HOME` 已指向 JDK 21）同样跑得通，就判本节"写错了"或删掉它——它记的是当时那个环境；② 也不要反过来在文档里新写一句"以后就用 PATH 里的 mvn"，那会变成第五种门禁命令说法。唯一命令只由 E2 B-2 决定。
+> 命令里的 JDK / Maven 目录与 `multiModuleProjectDirectory` 全是**仓库外的机器路径**，正是 E2 要消除的机器绑定，因此本节的可移植性为零。
 
 ```powershell
 'D:\develop\jdk177\bin\java.exe' `
@@ -183,7 +192,11 @@
 
 单类：末尾追加 `-Dtest=ClassName -DfailIfNoTests=false`。
 
+**任何取数方式都必须带 `clean`**：`target/surefire-reports` 里混有上一轮残留报告时，汇总出的用例总数会明显虚高，那种数不得进入任何验收记录（判据见首屏）。
+
 ### 6.2 本机 dev 启动环境（2026-09-21 实测已修：零环境变量可起）
+
+> **与 §6.1 的关系（注记，勿自行裁决）**：本节"直接 `mvn spring-boot:run` 即可"与 §6.1"PATH 里的 mvn 在该机不可用"**互斥**，二者分属不同 shell / 不同时间点的本机观察，本节不因此成为门禁命令、§6.1 也不因此被证伪。**仓库唯一的门禁命令待 `update-agent-gate-single-source`（E2）B-2 回填**，回填后本节的命令行一并改为指向那条命令的引用，不再就地保留任何一种写法。
 
 `application-dev.yml` 的默认值**已对齐本机实况**，直接 `mvn spring-boot:run`（dev profile）即可，
 不需要再设任何环境变量。历史坑与现状：
@@ -295,7 +308,7 @@
 
 - 阶段 17 实施 commit 为 `83bc9ca`（仅 3 文件，161 行纯新增），归档 docs commit 紧随其后；
 - schema.sql 25 个自增表全部有 `PRIMARY KEY (id)`，与 `AUTO_INCREMENT` 计数一一对齐；
-- 全量测试 210 全绿（指导 Agent 独立重跑，非转述）；
+- 阶段 17 验收时指导 Agent 独立重跑全量为 210 全绿（非转述）——**这条只描述 `83bc9ca` 那一次执行**，不是当前基线；当前是否绿一律按首屏判据现场跑一次判定，本文档不承载跨阶段有效的用例数；
 - 阶段 17 已归档：spec 已合入 data-access、目录已入 archive、tasks 已按证据回勾、README 已更新；
 - 阶段 16 已有 5 条 firing、4 条未点着的运行证据；
 - `exam_dlq_messages` 没有 `exam_id`，阶段 15 因此不纳入清理；
@@ -351,7 +364,7 @@ pnpm test               # vitest 单测，不依赖后端
 pnpm test:e2e           # 需要后端在跑 + pnpm exec playwright install
 ```
 
-前端测试基线与后端 `mvn test` **相互独立**：未往 `pom.xml` 挂任何前端插件，CI 分工是后端归 maven、前端归 pnpm。
+前端测试基线与后端全量门禁**相互独立、口径互不并入**（未往 `pom.xml` 挂任何前端插件，CI 分工是后端归 Maven、前端归 pnpm）：两边各自记自己的数，任何一边都不许拿另一边的数字当判据；后端那侧的**唯一门禁命令待 `update-agent-gate-single-source`（E2）B-2 回填**，本文件此处不预先写死任何一种 Maven 命令行形态。
 
 ### 已知缺口（不要误报成已完成）
 

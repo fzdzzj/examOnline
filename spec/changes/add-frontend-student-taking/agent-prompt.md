@@ -4,17 +4,23 @@
 > 先读 `spec/changes/add-frontend-student-taking/proposal.md`、`tasks.json`、`specs/frontend/spec-delta.md`。
 > **本阶段是整个前端最重的一块，也是面试深水区 1 的可视化证明。宁慢勿糙，不许为了「看起来完成」而绕过任何一条硬约定。**
 
-> **⚠️ 基线与环境更正（以此为准，覆盖下文旧内容）**：
-> 1. 后端全量基线现为 `Tests run: 218, Failures: 0, Errors: 0, Skipped: 1` → BUILD SUCCESS。下文所有「210」一律读作 **218**；`Skipped: 1` 是契约导出方法受 `exportContract` 开关控制，**属设计使然，不要试图消除**。
-> 2. **dev 环境启动方式见 `docs/指导Agent交接文档.md` §6.2**，不要自己摸索：MySQL 容器 `exam-mysql-master` 在宿主 **13306**（不是 3306）、口令 **root123**（不是 root）；`application-dev.yml` 的默认值指向 Windows MySQL80 服务，**会拒绝 root/root**；Redis 用宿主 6379，**不要启 `exam-redis` 容器**（端口冲突）；启动前必须设 `DB_URL`/`DB_PASSWORD`/`SLAVE_DB_URL`/`SLAVE_DB_PASSWORD` 四个环境变量。
-> 3. 启动日志中 `ExamSubmitSender` → `waitForConfirmsOrDie` 的 `IllegalStateException` 是**遗留 #10**，真 broker 下才暴露、非致命；`/actuator/health` 返回 UP 即视为启动成功，**不要顺手修**。本阶段的「断网续答」演示需要真 RabbitMQ，环境按 §6.2 起即可。
+> **验收判据（不是常量，覆盖下文旧内容）**：本阶段对后端的唯一要求是「跑门禁命令后满足下列条件」，不是「用例数等于某个数」——历史文档里写死过的用例数都是过期副本，看到它按本判据办，**不要去凑它、更不要为了对上它去动测试**。
+> 1. **开工时**跑一次后端全量门禁，把该次 `Tests run / Failures / Errors / Skipped` 连同**实际执行的命令**与当时的短 revision 记录在案（写进回报）；这个数字就是本阶段的基线。
+> 2. **收尾时**再跑同一条命令，必须同时满足：`Failures=0` 且 `Errors=0`、`Skipped` 保持 1、用例总数**不得少于**开工时记录在案的数值。
+> 3. `Skipped: 1` 是契约导出方法受 `exportContract` 开关控制，**属设计使然，不要试图消除**。
+> 4. **门禁命令**：仓库自有的唯一命令待 `update-agent-gate-single-source`（E2）B-2 回填；回填前按 `docs/指导Agent交接文档.md` 六（§6.1 上下文）的工具链小节自行拼装并回报原始输出——该小节是**特定 shell / 本机环境下的历史绕行办法**，不是被指定的命令，换环境先自检再拼，且**必须带 `clean`**（残留报告会让计数虚高）。
+> 5. **基线不绿就停下回报**（`Failures>0` / `Errors>0` / `Skipped≠1` / 总数少于开工记录值），不要在坏底座上继续。
+>
+> **本机 dev 环境只给指针**：宿主端口、凭据、要设哪些环境变量、容器名等事实一律现场读 `docs/指导Agent交接文档.md` §6.2，其真源是 `docker-compose.yml`（端口以其实际映射为准）与 `src/main/resources/application-dev.yml`；本提示词不复制这些值（旧版本里的宿主端口就与 compose 不一致）。不变的规则有三条：**不要改端口、不要停宿主已有的服务、不要起 compose 里的 Redis 容器**（宿主已有一套 Redis，会抢端口）。
+>
+> 启动日志中 `ExamSubmitSender` → `waitForConfirmsOrDie` 的 `IllegalStateException` 是**遗留 #10**，真 broker 下才暴露、非致命；`/actuator/health` 返回 UP 即视为启动成功，**不要顺手修**。本阶段的「断网续答」演示需要真 RabbitMQ，环境按 §6.2 起即可。
 
 ---
 
 ## 现状
 
 - 仓库 `D:\code\examOnline`，分支 `feature/add-performance-deepening-readwrite`。
-- **前置阶段 21 `add-frontend-exam-admin` 必须已合入**：考试已能被创建、发布、force-end；班级与考生名单已可维护。**开工前先跑门禁基线（`lint:check` / `type-check:check` / `vitest`）与后端全量（基线 210），记录数字**；基线不绿停下回报。
+- **前置阶段 21 `add-frontend-exam-admin` 必须已合入**：考试已能被创建、发布、force-end；班级与考生名单已可维护。**开工前先跑门禁基线（`lint:check` / `type-check:check` / `vitest`）与后端全量门禁（判据见顶部：记录四数字 + 命令 + revision）**；基线不绿停下回报。
 - 本阶段做**学生端在线考试**：考试列表 → 进入（个人快照）→ 极简作答 → 服务端时间倒计时与归零锁定 → 30s 自动保存 + IndexedDB 断线恢复 → 交卷（手动 / 超时，防重配合）→ 切屏检测只警告 → 结果如实呈现。
 - 对应后端：`taking/ExamTakingController`（主）、`anticheat/BehaviorLogController`（切屏上报）、`exam/ExamController`（考试列表）。
 - **后端已交付但至今只能靠 curl 证明的能力**（本阶段要让它们在前端真实发生并可演示）：三重幂等（防重表 + `uk_exam_student` 唯一索引 + Redis SETNX 锁）、CAS 状态机、MQ 削峰与批量落库、30s Redis 草稿、超时定时兜底扫描、多实例扫描安全、交卷锁按 token 解锁。
@@ -75,7 +81,7 @@
 
 ## 实施
 
-1. **基线自检**：门禁三项 + 后端全量，记录数字。
+1. **基线自检**：门禁三项 + 后端全量门禁（命令见「后端门禁命令」小节），把结果**记录在案**（后端记 `Tests run / Failures / Errors / Skipped` + 实际命令 + 短 revision）。
 2. **核实后端契约**（见上 9 项），**尤其第 1 项服务端时间**。若第 1 项为缺口，**立即停下回报，不要继续往下写**。
 3. **学生端考试列表**：待考 / 进行中 / 已完成三态；迟到窗口可用性按后端返回渲染；用 `vue-query` 管查询。
 4. **进入考试**：调进入端点拉个人快照；按后端错误码处理「已有进行中会话」等冲突；**验证刷新后题目集合不变**（这是后端「进入即锁定」的可视化证明，要写进演示脚本）。
@@ -105,16 +111,14 @@
     - **归零锁定**：等到倒计时归零 → 证明锁定 + 待同步 + 后端兜底判定（期望：界面锁定、后端按超时处理）；
     - **切屏记录**：切标签页 → 证明只警告不交卷 + 事件落库（期望：警告弹出、答卷未交、教师端行为日志可见该事件——教师端在阶段 21 已交付，可交叉验证）。
     **实跑这四条并把真实观察结果记进回报**。跑不动的（例如需要真实断网环境）明确标注「未实跑 + 原因」，**不得声称已验证**。
-12. **联调验证**：后端 dev profile 跑在宿主 8080（本机 MySQL80 占 3306、Windows Redis 占 6379，**不要改端口、不要停服务**；起不来停下回报，不要 mock 冒充）。**走通一条真实链路**：教师发布考试（阶段 21 界面）→ 学生登录 → 进入考试 → 作答若干题 → 触发一次自动保存 → 手动交卷 → 结果页出现客观题得分。每步真实请求路径 + HTTP 状态记进回报。
-13. **门禁全绿 + 后端回归仍 210** 再提交。
+12. **联调验证**：后端以 dev profile 跑起来（端口与环境事实见顶部指针：`docs/指导Agent交接文档.md` §6.2 + `docker-compose.yml` + `application-dev.yml`；**不要改端口、不要停宿主已有的服务**；起不来停下回报，不要 mock 冒充）。**走通一条真实链路**：教师发布考试（阶段 21 界面）→ 学生登录 → 进入考试 → 作答若干题 → 触发一次自动保存 → 手动交卷 → 结果页出现客观题得分。每步真实请求路径 + HTTP 状态记进回报。
+13. **门禁全绿 + 后端回归满足顶部判据**（`Failures=0`、`Errors=0`、`Skipped=1`、总数不少于开工记录值）再提交。
 
-## 本机 Maven 命令（必须照抄，别自己拼）
+## 后端门禁命令
 
-PowerShell 下**必须用数组 splatting**，否则 `-Dclassworlds.conf=...` 会被拆坏：
+仓库自有的**唯一门禁命令待 `update-agent-gate-single-source`（E2）B-2 回填**——仓库里对「哪条命令算门禁」现有互斥说法，本提示词不再新增一种，也不再照抄任何机器绑定的命令行。
 
-```powershell
-$jargs = @('-classpath','D:\develop\Maven\apache-maven-3.9.4\boot\plexus-classworlds-2.7.0.jar','-Dclassworlds.conf=D:\develop\Maven\apache-maven-3.9.4\bin\m2.conf','-Dmaven.home=D:\develop\Maven\apache-maven-3.9.4','-Dmaven.multiModuleProjectDirectory=D:\code\examOnline','org.codehaus.plexus.classworlds.launcher.Launcher','-o','test'); & 'D:\develop\jdk177\bin\java.exe' @jargs
-```
+回填前按 `docs/指导Agent交接文档.md` 六（§6.1 上下文）的工具链小节自行拼装：那是**特定 shell / 本机环境下的历史绕行办法**（含仓库外 JDK/Maven 绝对路径），不是被指定的唯一命令，也不意味着别的 shell 非这么拼不可——换环境先自检 `mvn -version` 用的是哪个 JDK，再决定怎么拼，并在回报里给出实际执行的命令与原始输出。**必须带 `clean`**，否则 `target/surefire-reports` 的残留会让计数虚高。
 
 前端命令在 `frontend/` 下用 pnpm 跑。
 
@@ -134,13 +138,13 @@ docs(frontend): 学生端考试四条可复现演示脚本
 
 ## 回报格式（按此八段，不要写散文）
 
-1. **基线数字**：门禁三项 + 后端全量（改动前）
+1. **开工基线**：门禁三项 + 后端全量（改动前）——后端那项必须给出**实际执行的命令 + 原始输出四数字 + 当时短 revision**，这就是收尾时比较的记录值
 2. **后端契约核实结论（9 项逐条）**：**第 1 项服务端时间必须单独写清**——后端从哪个端点哪个字段给出时间 / 剩余秒数 / 截止时刻；若是缺口，写「缺口」并停在这段，不要继续；其余 8 项各写依据文件与关键代码行
 3. **新增页面 / 组件 / hook / 纯函数清单**：路径 + 职责一句话；**草稿合并纯函数的签名与保守策略**；自动保存周期常量与防抖间隔值
 4. **真实联调证据**：那条端到端链路每步的请求路径 + HTTP 状态（不得用 mock 冒充）
 5. **四条演示脚本实跑结果**：逐条写「实跑 / 未实跑 + 原因」+ **真实观察到的现象** + 它证明了后端哪条能力
 6. **单测清单**：用例名 + 断言什么（**必须含**：倒计时服务端时间偏移、合并三分支、连点只发一次、切屏一次失焦一条）；`vitest` 收尾三数字
-7. **收尾**：门禁三项结果、`vitest` 三数字、后端全量三数字（应仍为 210）、每个 commit 的 `git rev-parse HEAD`、`git status --short`、`git diff --stat`（证明后端零改动）
+7. **收尾**：门禁三项结果、`vitest` 三数字、**后端全量的命令 + 原始输出四数字**并按判据自评（`Failures=0`、`Errors=0`、`Skipped=1`、总数不少于第 1 项记录值；不满足即不通过，不得改测试凑数）、每个 commit 的 `git rev-parse HEAD`、`git status --short`、`git diff --stat`（证明后端零改动）
 8. **意外发现 / 接口缺口 / 文档与代码不一致处**：缺什么、你**没有**怎么绕过
 
 ## 禁止
