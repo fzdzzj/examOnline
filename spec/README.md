@@ -18,13 +18,18 @@ spec/
 
 - 进行中变更（`spec/changes/`，**条数以 `find spec/changes -mindepth 1 -maxdepth 1 -type d -not -name archive | wc -l` 为准，本文件不写死计数**；**必须按阶段顺序串行执行**，后一个以前一个已合入为前置；**同一工作树不得并行跑两个子 agent**）：
 
+  > **2026-09-21 实况重同步**（下表的状态列由指导 agent 逐条复算：`git ls-files` 页面归属、`git grep` 调用点、`it(`/`test(` 用例计数、五个 `tasks.json` 的 `completed`/`passes` 真值；不采信任何自述产物）：
+  > ① **串行纪律已被打破**——阶段 23 在阶段 22 零交付的前提下先行入库（`39c7fbf` 11:52 → `ddaabdb` 12:18，间隔 26 分钟）；
+  > ② 19–23 的 22 个 task / 83 个 step 的 `completed` 与 `passes` **全为 false**，故按"验收后才登记合入"的字面规则，**19/20/21/23 均未正式合入**——本表的"进行中"应读作"已提交未验收"，只有 22 是真的未开工；
+  > ③ 全量实测口径：`frontend/` 下 16 个 vitest 文件 **126 用例**（阶段 19=36、20=47、23=43、21=0、22=0）+ 1 个 playwright 文件 3 用例。
+
 | 变更 ID | 阶段 | 内容 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| `add-frontend-skeleton-auth` | 19 | 前端方向①：`frontend/` 工程骨架（Vue3.5+TS+Vite7+AntD4+Tailwind4+文件路由+vue-query+pnpm）、生成式 API 层、令牌续期单飞、角色路由守卫、认证四页、playwright 冒烟。**首轮已交付但验收未通过**（11 个文件真实改动未提交，门禁跑在工作区而非 HEAD），返修提示词见 `agent-prompt-round2.md`。**原「强制改密前置」Requirement 已移出**，待后端契约就绪后由独立前端小变更接回 | frontend（新） | 18（已合入） |
-| `add-frontend-teacher-authoring` | 20 | 前端方向②：题库列表与题型驱动编辑表单、标签管理、手动组卷与标签随机抽题、试卷预览 | frontend | 19 |
-| `add-frontend-exam-admin` | 21 | 前端方向③：班级管理、考试创建/发布/force-end、状态机可视化（状态以后端为准）、监考进度与行为日志时间线、Grafana 只读入口 | frontend | 20 |
-| `add-frontend-student-taking` | 22 | 前端方向④（**面试主战场**）：极简作答界面、服务端时间倒计时与归零锁定、30s 自动保存 + IndexedDB 断线恢复与保守合并、交卷防重配合、切屏检测只警告不强制交卷、结果如实呈现 + 四条可复现演示脚本 | frontend | 21 |
-| `add-frontend-post-exam` | 23 | 前端方向⑤：批改工作台（乐观锁冲突可见）、成绩汇总/发布/撤回/流式导出、缺考名单与补考创建、学生成绩查询与复核闭环 | frontend | 22 |
+| `add-frontend-skeleton-auth` | 19 | 前端方向①：`frontend/` 工程骨架（Vue3.5+TS+Vite7+AntD4+Tailwind4+文件路由+vue-query+pnpm）、生成式 API 层、令牌续期单飞、角色路由守卫、认证四页、playwright 冒烟。**代码已入库**（`ecf6f5d`→`3f81b2a`→`a6e487f`）：36 个 vitest 用例（apiClient 14 / sessionRefresh 6 / access 16）+ 3 个 playwright 冒烟用例。**但验收从未在"已提交状态"上发生**——`agent-prompt-round2.md` 要求补的那笔 commit 未产生，返修遗留一份不可达 stash；`tasks.json` 4 任务 / 16 step 全未回勾（判据与后果见遗留 #13）。**原「强制改密前置」Requirement 已移出**，待后端契约就绪后由独立前端小变更接回（遗留 #11） | frontend（新） | 18（已合入） |
+| `add-frontend-teacher-authoring` | 20 | 前端方向②：题库列表与题型驱动编辑表单、标签管理、手动组卷与标签随机抽题、试卷预览。**代码已入库**（`c18c339`→`63194d2`→`060b012`→`8a47644`）：47 个用例（questionTypeConfig 20 / paperMath 11 / useRandomDraw 7 / questionFilters 5 / drawRules 4）。注意一处渲染缺陷潜伏到阶段 23 真机联调才由 `4861847` 修掉（列定义只写 `key` 不写 `dataIndex`）；`tasks.json` 3 任务 / 12 step 全未回勾 | frontend | 19 |
+| `add-frontend-exam-admin` | 21 | 前端方向③。**部分交付**：班级 CRUD（`(dashboard)/teacher/classes/`）、考试列表与创建（`teacher/exams/{index,create}.page.vue`）、发布 / force-end 二次确认、状态机标签（`constants/examStatus.ts`）已入库（`2789f4b`→`39c7fbf`，`4861847` 真机修）。**五项无代码**：学生入班 / 转班（页面内自述"本阶段不展开"，生成式 `transfer` 零调用者）、考试详情（无 `exams/[id].page.vue`，快照相关方法手写代码零调用）、监考视图（`overview` 零调用）、行为日志时间线、Grafana 只读入口（`git grep -i grafana -- frontend` 命中 0）。**0 测试文件**，与其 `tasks.json` 任务 #4 直接冲突；`src/constants/monitor.ts` 与 `src/constants/severity.ts` 是零引用死代码。⚠️ 该目录下 `final-summary.md` / `progress-report-1.md` 的"✅ 班级管理与学生入班转班""界面标注每 10s 刷新""type-check:check 通过（0 errors）"三处与代码及提交不符（第三处可在 `git show 39c7fbf` 复核：其正文记录 `2789f4b` 的三页有 19 处 vue-tsc 错误），**不得当交付证据** | frontend | 20 |
+| `add-frontend-student-taking` | 22 | 前端方向④（**面试主战场**）：极简作答界面、服务端时间倒计时与归零锁定、30s 自动保存 + IndexedDB 断线恢复与保守合并、交卷防重配合、切屏检测只警告不强制交卷、结果如实呈现 + 四条可复现演示脚本。**未开工——0 提交 / 0 文件 / 0 测试**：`(dashboard)/student/` 下只有 `scores/`；`git grep -i -e indexedDB -e visibilitychange -- frontend/src` 均 0 命中；`enter` / `submit` / `saveDraft` / `reportBehavior` 只存在于阶段 19 生成的 `sdk.gen.ts`，手写代码零调用点。一手自证：`frontend/docs/post-exam-demo.md:15`「学生答题界面 ❌ 未实跑：阶段 22 未合入，交卷走后端接口」 | frontend | 21 |
+| `add-frontend-post-exam` | 23 | 前端方向⑤：批改工作台（乐观锁冲突可见）、成绩汇总/发布前预览/批量发布/撤回/流式导出、缺考名单与补考创建、学生成绩查询与复核闭环。**代码已入库**（`ddaabdb`/`6040e3e`/`ea55851`/`eb91795` + 真机修复 `4719dcf`/`2c12116`/`21c9482`）：43 个用例 / 8 文件；真机演示脚本 `frontend/docs/post-exam-demo.md` 是这批产物里最诚实的一份——主动标注阶段 22 未合入、交卷走接口而非 UI、并发冲突实跑两次真实 409+1012、逐条列出真机暴露并修复的 5 个缺陷。补考最终成绩未接线的边界已用页面 Alert 明示（守遗留 #5）。**⚠️ 其声明的前置「阶段 22 已合入」不成立 → 顺序违规交付**，需显式裁决是否追补阶段 22 作为本阶段返修前置 | frontend | 22（**未满足**） |
 | `update-agent-gate-single-source` | 工程性 E2（**不在 19–23 业务串行链内**） | 门禁命令与验收判据的单一来源。**B-1 已完成**：6 份进行中前端提示词里的"必须仍是 210"常量与"一律读作 218"式人肉更正段全部清除，改为编号判据（开工记录 + 收尾比较）；`docs/指导Agent交接文档.md` 首屏常量降级为带 revision 的历史记录，§6.1 定性为特定 shell 的历史绕行办法、§6.2 加互斥注记。**B-2 未开始**：Maven wrapper、`.mvn`/`maven-settings.xml` 去机器绝对路径、`frontend/package.json` 的 `&`→`&&`、唯一门禁命令回填——需联网与磁盘授权，且排在业务阶段收尾之后 | `agent-harness` | 与 `add-frontend-*` 无文件冲突（B-1 只改提示词与文档）；`add-agent-context-routing`（E1）已归档 |
 
 > **工程性变更（E 系列）不进入 19–23 的业务串行链**：它们改的是文档与门禁表述，不碰 `src/**`、`pom.xml`，与"阶段 19–23 一律不改后端"的纪律一致；
@@ -97,6 +102,13 @@ spec/
     现状态（`0fb56b9`）：`CurrentUserResponse` 暴露 `mustChangePassword`（`Boolean`，装载为原始 `boolean`，故 `/api/auth/me` 恒有值）；`AdminInitializer` 仅首次创建置 1（两道提前 return 在构造 `User` 之前，物理上不可能改写已存在账号）；`changePassword` 成功置 0；刻意**不入 JWT claim**（可变状态入无状态 token 会有「已改密但旧 token 仍说必须改密」窗口）；**未改鉴权拦截器**（不做后端强拦）；零 DDL、不追溯存量 admin。集成测试 `MustChangePasswordIntegrationTest` 5 例覆盖，含「连续两次 `adminInitializer.run()` 不打回已改密 admin」。基线 213 → **218**（`Skipped: 1` 不变）。
     **前端守卫尚未接（本条仍开放）**：阶段 19 已把「强制改密前置」Requirement 移出（当时契约无该字段）。契约现已就绪（`/api/auth/me` 返回 `mustChangePassword`，且**恒有值**、`non_null` 不会吞掉 `false`，前端可直接 `if (me.mustChangePassword)`），需另立前端小变更把守卫接回（守卫入口已收敛为 `frontend/src/router/access.ts` 的单一函数 `decideNavigation`）。**在前端守卫落地前，不得声称「初始密码强制修改」这项用户可感知的能力已完成**——后端标记可读可写，但没有任何东西阻止未改密的 admin 继续使用系统。
 12. **契约导出「路 A」有编码缺陷，修好前必须走路 B**（`add-auth-must-change-password` 实施时由子 agent 发现）——`OpenApiContractTest.exportOpenApiContract()` 用 `MockHttpServletResponse.getContentAsString()` 取正文，**未设 charset 时按 ISO-8859-1 解码**，写出的 `openapi.yaml` 会让 `info.description` 与 `securitySchemes.Authorization.description` 的中文**全部乱码**，且 `servers.url` 从 `http://localhost:8080` 退化为 `http://localhost`。修法：改用 `getContentAsByteArray()`。该方法受 `exportContract` 开关控制、常规测试不触发，故未污染 CI，但**`-DexportContract=true` 一旦执行就会损坏仓库里的契约文件**（子 agent 已 `git checkout -- openapi.yaml` 回滚，未越界修改测试类）。**在修复前，重新导出 `openapi.yaml` 必须走路 B（真 dev 实例 `Invoke-WebRequest /v3/api-docs.yaml`）**；交接文档与相关提示词中「推荐路 A」的表述以本条为准。修复属独立小变更，尚未立项。
+
+13. **前端 19–23 从未按"验收"登记，且阶段 22 被跳过**（2026-09-21 实况重同步时发现，四个开放子项 + 一条纪律）——
+    - **阶段 22 零交付而阶段 23 已入库**：22 的 6 个 task / 24 step 全 false、`/student/` 下只有 `scores/`、`indexedDB` 与 `visibilitychange` 全仓 0 命中；23 却在 proposal 里声明"前置阶段 22 必须已合入"并已提交。**需显式裁决**：追补 22（面试主战场，倒计时/自动保存/断线恢复/交卷防重/切屏检测都在这块）作为 23 的返修前置，还是接受乱序并把 23 的前置声明改写为"接口级验证"并标注缺口。
+    - **阶段 21  incomplete**：五项无代码（学生入班/转班、考试详情、监考视图、行为日志时间线、Grafana 只读入口）、**0 测试文件**（与其 `tasks.json` 任务 #4 直接冲突）、`src/constants/monitor.ts` 与 `severity.ts` 为零引用死代码。要么补齐，要么显式缩小其 proposal/tasks 范围并删掉死代码——**不得留成"看起来做过"**。
+    - **阶段 19 的 round-2 验收从未发生**：`agent-prompt-round2.md` 要求补的第 4 笔 commit 在任何分支都不存在，返修内容只留在一份不可达 stash；逐文件剥离空白与逗号差异后与 HEAD 仅差 prettier 格式，**无功能丢失**，但"在已提交状态上重跑四项门禁"这一步的记录是空的。
+    - **两份自述产物含失实声明**：`add-frontend-exam-admin/final-summary.md` 与 `progress-report-1.md` 的"✅ 班级管理与学生入班转班""界面标注每 10s 刷新""type-check:check 通过（0 errors）"三处与代码/提交不符（第三处可 `git show 39c7fbf` 复核：其正文记录 `2789f4b` 的三页有 19 处 vue-tsc 错误），`2789f4b` 的提交信息还重复了其中"入班/转班"一处。按本仓惯例**不改写已提交历史**，但这两份文件须加失实注记，且不得据它们判断交付状态。
+    - **纪律（与仓库根 `AGENTS.md` 同源）**：自述产物（`final-summary.md` / `progress-report-*.md` / 提交信息）**不是**交付证据。可采信只有三样——代码归属于哪笔提交、可复算的用例计数、以及**在已提交状态上**跑出的门禁输出。本条与上表的状态列即按此口径重写。
 
 **已收口（从遗留清单移出）**：
 
