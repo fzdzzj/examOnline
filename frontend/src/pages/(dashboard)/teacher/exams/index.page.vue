@@ -49,6 +49,15 @@
           </template>
           <template v-else-if="column.key === 'actions'">
             <Space>
+              <!-- 详情：快照预览 / 考生名单 / 提交进度 / 监考 / 行为日志的入口（阶段 21 缺口 2） -->
+              <Button
+                type="link"
+                size="small"
+                :disabled="(record as ExamResponse).id === undefined"
+                @click="router.push(`/teacher/exams/${(record as ExamResponse).id}`)"
+              >
+                详情
+              </Button>
               <!-- 发布考试：仅「未开始 + 未发布」可发布（后端 ExamController.publish 裁决，
                    前端只按状态渲染入口，越权点击会被后端拒绝） -->
               <Button
@@ -167,7 +176,7 @@ const columns: TableColumnsType = [
   { title: '开始时间', key: 'startTime', width: 170 },
   { title: '结束时间', key: 'endTime', width: 170 },
   { title: '个人时长(分)', key: 'durationMinutes', dataIndex: 'durationMinutes', width: 110 },
-  { title: '操作', key: 'actions', width: 170 },
+  { title: '操作', key: 'actions', width: 230 },
 ];
 
 function formatTime(value: string | undefined | null): string {
