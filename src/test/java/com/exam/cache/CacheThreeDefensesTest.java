@@ -3,7 +3,9 @@ package com.exam.cache;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.common.cache.CacheMutexLoader;
+import com.exam.common.cache.RedisLockHelper;
 import com.exam.config.CacheConfig;
+import com.exam.config.CacheProperties;
 import com.exam.exam.dto.ExamSnapshotResponse;
 import com.exam.support.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
@@ -124,6 +126,40 @@ class CacheThreeDefensesTest extends IntegrationTestBase {
                 CacheConfig.CACHE_EXAM_SNAPSHOT, hotKey)));
     }
 
+    // ==================== 防击穿：败者等待超时兜底直源 ====================
+
+    @Test
+    void waiterTimesOutAndFallsBackToDirectSource() {
+        // 场景：持锁线程迟迟不回填（回源极慢/阻塞），败者等待预算耗尽后必须兜底直接回源，
+        // 宁可多打一次 DB 也不无限阻塞业务线程；同时不得误删他人持有的锁。
+        Object hotKey = 9_100_000_010L;
+        String cacheName = CacheConfig.CACHE_EXAM_SNAPSHOT;
+        String lockKey = CacheMutexLoader.lockKey(cacheName, hotKey);
+
+        // 模拟"他人"占锁且从不回填（胜者持有）：直接以外部 token 占住锁
+        String heldBy = "stuck-holder-token";
+        redis.opsForValue().set(lockKey, heldBy, Duration.ofSeconds(30));
+
+        // 独立构造极短等待预算的 loader 实例：waitForRefill 按 waitMaxRounds 轮循环，
+        // 恒在预算轮后超时（轮数驱动，不看真实时钟，确定性可判）
+        CacheProperties tinyBudget = new CacheProperties();
+        tinyBudget.setWaitIntervalMs(1);
+        tinyBudget.setWaitMaxRounds(2);
+        CacheMutexLoader loaderInstance = new CacheMutexLoader(redis, cacheManager, tinyBudget,
+                new RedisLockHelper(redis));
+
+        AtomicInteger dbCalls = new AtomicInteger();
+        Supplier<ExamSnapshotResponse> loader = () -> {
+            dbCalls.incrementAndGet();
+            return sampleExamSnapshot((Long) hotKey);
+        };
+
+        ExamSnapshotResponse result = loaderInstance.load(cacheName, hotKey, loader);
+
+        assertEquals(1, dbCalls.get(), "等待超时后应兜底直接回源一次，而非无限等待");
+        assertEquals(hotKey, result.getId());
+        assertEquals(heldBy, redis.opsForValue().get(lockKey), "兜底回源不得误删他人持有的锁");
+    }
     // ==================== 防雪崩：TTL 随机抖动 ====================
 
     @Test
