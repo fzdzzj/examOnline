@@ -16,7 +16,7 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，共 5 个，**必须按阶段顺序串行执行**，后一个以前一个已合入为前置；**同一工作树不得并行跑两个子 agent**）：
+- 进行中变更（`spec/changes/`，**条数以 `find spec/changes -mindepth 1 -maxdepth 1 -type d -not -name archive | wc -l` 为准，本文件不写死计数**；**必须按阶段顺序串行执行**，后一个以前一个已合入为前置；**同一工作树不得并行跑两个子 agent**）：
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 | 前置 |
 |---|---|---|---|---|
@@ -25,8 +25,13 @@ spec/
 | `add-frontend-exam-admin` | 21 | 前端方向③：班级管理、考试创建/发布/force-end、状态机可视化（状态以后端为准）、监考进度与行为日志时间线、Grafana 只读入口 | frontend | 20 |
 | `add-frontend-student-taking` | 22 | 前端方向④（**面试主战场**）：极简作答界面、服务端时间倒计时与归零锁定、30s 自动保存 + IndexedDB 断线恢复与保守合并、交卷防重配合、切屏检测只警告不强制交卷、结果如实呈现 + 四条可复现演示脚本 | frontend | 21 |
 | `add-frontend-post-exam` | 23 | 前端方向⑤：批改工作台（乐观锁冲突可见）、成绩汇总/发布/撤回/流式导出、缺考名单与补考创建、学生成绩查询与复核闭环 | frontend | 22 |
+| `update-agent-gate-single-source` | 工程性 E2（**不在 19–23 业务串行链内**） | 门禁命令与验收判据的单一来源。**B-1 已完成**：6 份进行中前端提示词里的"必须仍是 210"常量与"一律读作 218"式人肉更正段全部清除，改为编号判据（开工记录 + 收尾比较）；`docs/指导Agent交接文档.md` 首屏常量降级为带 revision 的历史记录，§6.1 定性为特定 shell 的历史绕行办法、§6.2 加互斥注记。**B-2 未开始**：Maven wrapper、`.mvn`/`maven-settings.xml` 去机器绝对路径、`frontend/package.json` 的 `&`→`&&`、唯一门禁命令回填——需联网与磁盘授权，且排在业务阶段收尾之后 | `agent-harness` | 与 `add-frontend-*` 无文件冲突（B-1 只改提示词与文档）；`add-agent-context-routing`（E1）已归档 |
 
-**前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 基线**不并入** Maven surefire 计数（后端 210 基线独立）。
+> **工程性变更（E 系列）不进入 19–23 的业务串行链**：它们改的是文档与门禁表述，不碰 `src/**`、`pom.xml`，与"阶段 19–23 一律不改后端"的纪律一致；
+> 但**仍受"同一工作树不得并行跑两个子 agent"约束**，所以 E1/E2 要么排在当前返修之后单独跑一轮，要么在独立工作树里完成后由指导 agent 合并。
+> 上表的行数与 `spec/changes/` 目录数可以不相等：目录里有尚未登记的提案（如 E2）。
+
+**前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。
 
 - 已合入规范（`spec/specs/`，共 16 个能力域）：
 
@@ -49,7 +54,7 @@ spec/
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 | 16 | `api-contract` | `add-backend-openapi` | 18 |
 
-- 已归档变更（`spec/changes/archive/`，共 22 个，阶段 1–9、12–18 及 18 后小阶段已收尾，阶段 10–11 已归档）：
+- 已归档变更（`spec/changes/archive/`，**数量以 `find spec/changes/archive -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数**；阶段 1–9、12–18 及 18 后小阶段已收尾，阶段 10–11 已归档）：
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
@@ -75,6 +80,7 @@ spec/
 | `fix-schema-mysql-pk` | 17 | schema.sql 25 张表为 AUTO_INCREMENT 补 `PRIMARY KEY (id)`（MySQL 8 空库可建）；存量迁移 `2026-W16-add-primary-keys.sql`；约定测试 `SchemaSqlMysqlCompatibilityTest`；**MySQL 空库真机初始化仍未实测**（证据止于文本护栏 + H2 210 全绿） | W16 |
 | `add-auth-must-change-password` | 18+ | 接通恒 0 的死标记 `must_change_password`：`CurrentUserResponse` 暴露 + `AdminInitializer` **仅首次创建**置 1（两道提前 return 在构造 `User` 之前）+ 改密成功置 0 + 重导契约（+2 行）；**刻意不入 JWT claim**、**不改鉴权拦截器**、零 DDL、不追溯存量 admin；`MustChangePasswordIntegrationTest` 5 例（含连续两次 `run()` 不打回已改密 admin）；基线 213 → **218**。**前端守卫未接**，见遗留 #11 | W18 |
 | `add-backend-openapi` | 18 | springdoc 2.8.13 暴露 `/v3/api-docs`（65 paths、`openapi: 3.1.0`、覆盖 14 个 Controller）；导出 `openapi.yaml` 为前端客户端唯一契约来源；5 个公开端点由 `OpenApiCustomizer` 显式标 `security: []`（清单常量须与 `WebMvcConfig` 白名单同步）；契约冒烟测试 + 导出受 `exportContract` 开关控制（CI 基线 `Skipped: 1` 属设计使然）；prod 关 swagger-ui | W17 |
+| `add-agent-context-routing` | 工程性 E1 | **工程性变更（不占业务阶段号）**：`README.md` 去事实化改为路由表（删除端口/口令/工程结构/里程碑四类副本）；新增仓库根 `AGENTS.md`——4 条硬约定按「规则 + canonical 出处 + 可机械执行的自查命令」承载，禁忌只给指针；新增 `docker/mysql/migrations/README.md` 自述该目录无自动执行者；本文件登记 `agent-harness` 能力域并把 3 处硬编码计数换成可复算语句；收尾五步补第 7 步。三条自查各做过变异验证（注入违规→变红→撤销→变绿）。零代码、零构建配置改动 | 2026-09-21 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
@@ -101,7 +107,7 @@ spec/
 4. **缺考/补考真实链路仅 Mockito、以及 `@Sql` 掩盖缺表 / `score_review` 缺列** 已由阶段 12 收口——曾是真问题：`ClassManagementIntegrationTest` 的 `@Sql` 自建表掩盖过缺表回归；`score_review` 缺 `created_time` 曾使复核申请 INSERT 在任何环境必失败。现 `src/test` 无 `@Sql`，schema/migration 已补列，`listByExam` 同步改为 `@PathVariable`。
 5. **观测栈动态行为** 已由 `add-observability-runtime-evidence`（阶段 16）收口——Targets `UP`、9 条规则 loaded、**5 条真实 firing**（ExamOnlineDown / RateLimitDegraded / MqSubmitRetryExhausted / MqDlqBacklog / AntiCheatEventSpike）、面板出图；另 **4 条流量/性能阈值未在本机点着**（Http5xxRatioHigh / SubmitFailureRatioHigh / MqSubmitQueueBacklog / SubmitLatencyP99High）且**未改规则凑绿**，已留 PromQL 反证。详见 `docs/observability-runtime-evidence.md`。**不得据此声称遗留 #6（DLQ 真 broker 端到端）已完成**（firing ≠ 重投闭环）。
 
-## 能力地图（16 个能力域，作为规范组织单位）
+## 能力地图（规范组织单位；**已合入基线**的条数以 `find spec/specs -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数；下表允许出现"已立项、基线待收尾时创建"的能力域，由该行自己注明）
 
 | # | 能力（capability） | 范围 |
 |---|---|---|
@@ -121,6 +127,7 @@ spec/
 | 14 | absence-makeup | 缺考标记（含自然到点与 force-end 两条结束路径）、补考独立记录、补考成绩规则合并、考后闭环端到端一致性 |
 | 15 | score-review | 复核申请限次限时、复核中隐藏成绩、复核处理 |
 | 16 | api-contract | OpenAPI 契约暴露、鉴权语义标注、契约导出复现、契约冒烟护栏 |
+| 17 | agent-harness | 根入口路由（`README.md` 只指路不承载易变事实）、硬约定的 agent 必经索引（`AGENTS.md`）、无自动执行者的 SQL 目录必须自述触发方式、文档判据优先于文档常量。**基线已合入 `spec/specs/agent-harness/spec.md`**（E1，2026-09-21）；E2 的四条待其 B-2 收口后合入 |
 
 ## 开发阶段 → 变更映射
 
@@ -157,6 +164,7 @@ spec/
 4. 收尾五步（本项目约定）：spec-delta 合入 specs → 变更目录移入 archive → 回勾 `tasks.json`（**按代码实际完成度回查，不得凭印象勾满**）→ 更新本 README → commit。
 5. **集成测试不得用 `@Sql` 自建表**（本项目硬约定）：测试库建表只以 `src/main/resources/schema.sql` 为唯一来源（`application-test.yml` 已配 `mode: always` + `continue-on-error: false`）。自建表会让「新库/新环境建不起来」被测试掩盖——`schema.sql` 曾缺 `classes`/`user_class` 两表而 CI 全绿，就是这么发生的。目标：`grep -rn '@Sql' src/test` 保持为空。
 6. **实体字段与建表定义必须双向一致**（本项目硬约定）：MyBatis-Plus 按实体字段生成 INSERT，**实体有、表里没有的列会让该写入在任何环境都失败**——`score_review` 缺 `created_time` 而 `ScoreReview` 实体有 `@TableField(fill = INSERT) createdTime`（全局 `MetaObjectHandler` 会填充），导致复核申请接口从未成功执行过一次（阶段 12 挖出）。核对手法：用脚本比对每个含 `createdTime` 的实体的 `@TableName` 与 `schema.sql` 中对应建表语句，双方都必须齐。**新增表/实体时必须双向核对**，且优先靠「走真实链路的集成用例」暴露，而不是靠人肉比对。
+7. **收尾时同步 `AGENTS.md` 的指针（只加指针，不加正文）**：本次变更若新增了易变事实的载体（新的配置文件、新的 SQL 目录、新的门禁命令、新的能力域），检查仓库根 `AGENTS.md` 是否需要因此新增一条「去哪儿查」的指针或一条自查命令；需要就加指针，**不要把事实本身抄进去**（端口、口令、用例数、覆盖率、表清单、"共 N 个"一律不进 `AGENTS.md` 与 `README.md`）。判据与自查命令见 `AGENTS.md` 末尾与 `agent-harness` 能力域规格。
 
 ## 参考资料（非 openspec 资产）
 

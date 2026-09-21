@@ -1,60 +1,49 @@
-# examOnline —— 工程骨架（W1, add-project-skeleton）
+# examOnline —— 在线考试系统（Spring Boot 单体 + Vue3 前端）
 
-在线考试系统单体工程骨架：Spring Boot 3.5.5 + Java 17 + MySQL 8.0（主从）+ Redis 7 + RabbitMQ（Compose 编排）。
+> **本文件只做路由，不做事实源。**
+> 端口、口令、环境变量默认值、用例数、覆盖率、表清单、"当前进行到哪一步"——这些会随提交过期的东西，本文件一个都不写，
+> 只写**要查 X 去读哪个文件**。
+> 为什么：同一事实一旦有多个副本，副本必然漂移，而被读到最多的那份最新就会把读者带偏。
+> 本仓库为此记录过两次真实失败——照着旧版本文件给的连接信息去连库，连不上，然后把"容器没起"误判成"环境坏了 / 凭据不对"
+> （事故记录见 `docs/指导Agent交接文档.md` 的 dev 启动环境小节，规约见 `AGENTS.md`）。
+> 想给本文件补一个数值，请先读 `AGENTS.md` 末尾「本文件与 README 不承载易变事实」。
 
-## 快速开始
+## 新成员 / 新 agent 阅读顺序
 
-```bash
-# 1. 一键起中间件（MySQL 主从 + Redis + RabbitMQ，含健康检查与依赖顺序）
-docker compose up -d
+1. `AGENTS.md`（仓库根）——四条硬约定、禁忌清单指针、以及"哪些东西不许写进根入口"
+2. `spec/README.md` —— 当前状态（进行中的变更、已合入的能力域）
+3. `docs/指导Agent交接文档.md` —— 本机环境实况、踩过的坑、明确不建议做的事
+4. 目标能力域的规格：`spec/specs/<capability>/spec.md`
 
-# 2. 构建（依赖版本由父 POM dependencyManagement 集中锁定）
-mvn clean install
+## 要查什么，去哪儿查
 
-# 3. 本地启动（dev 默认连 127.0.0.1:3306/6379，可用环境变量覆盖）
-mvn spring-boot:run
-# 或
-java -jar target/exam-online.jar
-```
-
-- 健康检查：`GET /actuator/health`（返回 `UP`）
-- dev 启动自动执行 `classpath:schema.sql` 幂等建表（RBAC 五表），并预置 ADMIN/TEACHER/STUDENT 角色与权限点。
-
-## 环境变量
-
-| 变量 | 默认 | 说明 |
+| 你想知道 | 唯一出处 | 备注 |
 |---|---|---|
-| `SPRING_PROFILES_ACTIVE` | dev | dev / prod |
-| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | 本机 root/root | MySQL 连接 |
-| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | 127.0.0.1:6379 | Redis 连接 |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` | 空 | SMTP（dev 空则邮件走日志兜底） |
-| `SERVER_PORT` | 8080 | HTTP 端口 |
+| dev 环境连哪个 MySQL / Redis / RabbitMQ（地址、端口、口令默认值） | `src/main/resources/application-dev.yml` | 变量名与兜底默认值写在同一行 `${VAR:default}`；**本文件不复制其字面值** |
+| 生产环境配置 | `src/main/resources/application-prod.yml` + `src/main/resources/application.yml` | 生产侧刻意不给兜底默认值（缺变量就该启动失败） |
+| 启动需要哪些环境变量 | 上面两个文件里的 `${...}` 表达式 | 别在本文件维护变量清单——它已经过期过一次 |
+| 依赖服务的编排与宿主端口映射 | `docker-compose.yml`（顶部注释解释了宿主端口为何不是各组件的默认端口） | 实际生效的映射以 `docker ps --format "{{.Names}} {{.Ports}}"` 为准 |
+| 本机 dev 该怎么起、有哪些坑 | `docs/指导Agent交接文档.md` 的「本机 dev 启动环境」小节 | 含"哪个容器故意不要起"及其原因 |
+| 表结构 / 建表脚本 | `src/main/resources/schema.sql` | 建表唯一入口，见 `AGENTS.md` 约定 1 |
+| 存量库改表 | `docker/mysql/migrations/README.md` | **放进该目录 ≠ 变更已生效**，该目录无自动执行者 |
+| 后端接口契约 | 仓库根 `openapi.yaml` | 如何再生成、为何不能随手用测试桩导出：见 `spec/specs/api-contract/spec.md` |
+| 项目分成哪些能力域 / 某能力的验收标准 | `spec/README.md` 能力地图 + `spec/specs/*/spec.md` | 条数以目录实际内容为准，本文件不写数 |
+| 为什么这样设计（决策依据） | `docs/需求决策记录.md` | 按主题分节，含被推翻的旧方案 |
+| 产品愿景原文 | `docs/examOnline需求规格说明书.md` | |
+| 前端工程 | `frontend/`；进行中的前端变更见 `spec/README.md` 进行中表 | 前端与后端测试基线的关系见 `spec/README.md` 的「前端系列纪律」，本文件不复述 |
+| 跑哪一条命令算门禁通过 | **暂未定**：待 `spec/changes/update-agent-gate-single-source` 收口后由 `AGENTS.md` 回填 | 现有文档对该命令有互斥说法，**不要照抄任何一处** |
+| 当前进行到哪一步 / 下一步做什么 | `spec/README.md`「当前状态」的进行中变更表 | 本文件不再写"下一变更是 X"——它过期在阶段 2 |
 
-## 工程结构
+## 快速开始（只给入口，数值一律去上面那张表查）
 
-```
-src/main/java/com/exam/
-├── ExamOnlineApplication.java      # 入口
-├── common/                         # 统一响应 / 错误码 / 全局异常 / RequestId 过滤器
-└── user/                           # RBAC 五表实体 + Mapper
-    ├── entity/                     # users/roles/permissions/user_roles/role_permissions
-    └── mapper/
-src/main/resources/
-├── application.yml                 # 通用配置（含 logging pattern [%X{requestId}]）
-├── application-dev.yml / -prod.yml # 多环境
-└── schema.sql                      # 幂等建表脚本（MySQL 8 / H2 兼容）
-docker-compose.yml                  # MySQL 主从(GTID) + Redis 7 + RabbitMQ
-docker/mysql/{master,slave}/init/   # 复制账号 / 从库复制初始化
-```
+1. **起依赖**：`docker compose up -d`（服务清单与宿主映射见 `docker-compose.yml`；本机 Redis 用宿主实例，哪个容器故意不要起见交接文档小节）
+2. **构建与测试**：门禁命令当前**未定稿**，见上表最后一行；在 E2 落地前，按 `docs/指导Agent交接文档.md` 的工具链约束自行拼命令，并把实测输出记进回报
+3. **起应用**：dev profile；连接与凭据的默认值全部来自 `src/main/resources/application-dev.yml`
+4. **自检**：`GET /actuator/health` 返回 `UP`（HTTP 端口见 `application.yml` 的 `server.port`）
+5. **验证完停掉实例并回报**——残留实例会让下一次"连不上"变成互踩
 
-## 设计要点（对应规范）
+## 整体形态（一句话，细节去看规格）
 
-- **统一响应**：`ApiResponse{code, message, data}`，成功 `code=0, message="ok"`；失败返回结构化错误码，全局异常处理器不泄漏堆栈。
-- **可观测**：`RequestIdFilter` 生成/透传 `X-Request-Id` 写入 MDC，日志带 `[%X{requestId}]`，HTTP 基础日志（方法/路径/耗时/状态码）。
-- **RBAC 五表**：`users.username` 唯一（学生=学号、教师=工号），`user_roles`/`role_permissions` 外键关联，建表幂等（`IF NOT EXISTS`）。
-- **中间件编排**：Compose 定义 MySQL 主从（GTID 复制）等，`depends_on: condition: service_healthy` 保证依赖顺序。
-- **软删除**：实体统一 `is_deleted`（MyBatis-Plus 逻辑删除，0/1）。
-
-## 里程碑衔接
-
-下一变更 `add-authentication` 将在此骨架上接入认证与鉴权（JWT 双 Token / Redis 黑名单 / 角色 AOP / 登录锁定 / 管理员初始化）。
+单体 Spring Boot 应用 + 同仓库 Vue3 前端；统一响应 / 全局异常 / RequestId 透传，MyBatis-Plus 数据层，
+MySQL 主从 + Redis + RabbitMQ 依赖编排。**每个子系统的实际行为以 `spec/specs/<capability>/spec.md` 为准**，
+本文件不描述实现细节——它上一次这样写的时候，项目还只有两个包。
