@@ -7,6 +7,9 @@
 > `spec/changes/archive/optimize-sql-performance` 合入（动态条件不得拼接、空集合必须短路、索引变更先行核查）。
 > 2026-09-21 直补（非变更提案，240c2d2 与其后续）：「周期扫描的代价由结果集决定而非表大小」
 > 「两端共用的 DDL 必须落在共同语法子集内」两条，以及下面 optimize-sql-performance 那条注记的更正。
+> 同批（36ae7ca 直补）：「清理的删除条件必须索引可达」——原名"清理不得依赖新增索引"，
+> 与「无生命周期键的表须按年龄清理」互斥（两条同时成立等于宣布这类表永远不可清理），
+> 故改写为以实测代价为判据；「数据保留策略」新增 audit_log 按自身窗口清理一条。
 > 实施注记：
 > - 强一致读（答卷详情、成绩查询）**不标** `@DS("slave")`，走默认主库；`@DS("slave")` 只挂在可容忍主从延迟的快照类读上（`PaperSnapshotService`/`ExamSnapshotService`/`GradingQueryService`/`ScoreService` 等）。
 > - 数据保留（`RetentionService`，f42adba）：仅三张辅助表 `exam_behavior_logs` / `exam_submit_dedups` / `score_audit_logs`；删除条件只带 `exam_id`（命中既有索引最左前缀）；**零 DDL**；默认 `enabled=false` + `dry-run=true`；**不纳入** `exam_dlq_messages`（表存在但无 `exam_id`）；用 `end_time` 不用 `updated_time`；**不声称磁盘释放**。单次运行另有 `max-exams-per-run`（默认 100）与候选 `ORDER BY end_time ASC, id ASC` 有界。
@@ -91,6 +94,18 @@ AND 答卷、成绩、考试快照、班级归属等业务事实一律不被清�
 
 AND `exam_dlq_messages` 因无 `exam_id`、无法按考试生命周期有界清理，明确不纳入
 
+#### Scenario: 无业务生命周期键的审计表按自身窗口清理
+
+GIVEN `audit_log` 记录登录与账户锁定等安全事件，没有 `exam_id`，不参与考试生命周期
+
+WHEN 清理任务运行
+
+THEN 它按自身保留窗口（`audit-log.retention-days`，独立于前三张表）只按年龄有界清理
+
+AND 该窗口默认值只是"给增长一个上界"的占位口径，真实数值属合规决策，须确认后才改
+
+AND 确认前由 `enabled=false` + `dry-run=true` 两道默认闸保证不会静默删掉审计证据
+
 #### Scenario: 清理默认不发生
 
 GIVEN 系统以默认配置启动
@@ -153,13 +168,15 @@ AND 误差方向为晚删而非早删（不声称磁盘释放）
 
 ---
 
-### Requirement: 清理不得依赖新增索引
+### Requirement: 清理的删除条件必须索引可达
 
-WHEN 实现按生命周期驱动的清理,
+WHEN 实现清理的删除条件,
 
-系统 SHALL 使删除条件**只用已存在的索引**即可高效执行，且 SHALL NOT 为清理引入全表扫描或新增索引（零 DDL）。
+系统 SHALL 使该条件命中索引、其执行代价与**待删行数**相关而非与**表大小**相关；
+SHALL NOT 以无索引的时间列作为删除条件；新增一条索引只有在它能把上述代价从
+"与表大小相关"降到"与结果集相关"时才被允许。
 
-#### Scenario: 删除条件命中既有索引
+#### Scenario: 既有索引即可命中时不新增
 
 GIVEN 辅助表的既有索引最左前缀为考试维度
 
@@ -167,7 +184,7 @@ WHEN 清理按考试维度删除
 
 THEN 删除走既有索引
 
-AND 不需要新增索引或结构变更
+AND 不需要结构变更——此处的"零 DDL"是指**不为了清理而重构表结构**，不是禁止一切索引
 
 #### Scenario: 拒绝全表扫描式删除
 
@@ -178,6 +195,20 @@ WHEN 选择删除条件
 THEN 不以无索引的时间列作为全局删除条件
 
 AND 该取舍被记录在案
+
+#### Scenario: 无业务生命周期键的表先补索引再按年龄清理
+
+GIVEN 一张只增不减、且没有考试维度可供有界删除的表（如安全审计 `audit_log`）
+
+WHEN 需要为其引入按年龄的清理
+
+THEN 先补一条时间列索引，再让删除条件走该索引
+
+AND 判据是实测：10 万行时"无可删内容"的稳态在无索引下仍需读穿全表（34ms，随行数线性增长），
+     有索引后 0.16–0.7ms 且与表大小无关
+
+AND 原先"不得为清理新增索引"的表述与本场景互斥时，以本场景为准——
+     两条同时字面成立等于宣布这类表永远不可清理
 
 ---
 

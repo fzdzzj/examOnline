@@ -346,3 +346,38 @@ SELECT * FROM exam_submissions WHERE status = 2 AND answers IS NULL LIMIT 500
 - **剩余未测的同类风险**：`selectRetentionCandidateExamIds`（exams 表小，量了没意义）、
   `selectAbnormalStats`（按 exam_id 分组，单场内受限）。判分扫描走 `idx_submissions_grading`。
   本轮 harness 已就位，下次要量别的直接复用。
+
+## audit_log 只写不删：纳入保留策略，并纠正一条自相矛盾的规范（36ae7ca）
+
+我前几轮让每次登录都写 `audit_log`、又加了读接口，但**这张表整个落在保留策略之外**：
+`RetentionService` 三张表全按 `exam_id` 清理，而审计表没有 `exam_id`。等于我亲手造了一张只增不减的表。
+
+10 万行 `audit_log`（真实日志形态：id 与 created_time 同序）实测，MySQL 8.0.46：
+
+| 场景 | 无 `idx_audit_time` | 有 `idx_audit_time` |
+|---|---|---|
+| 夜间稳态、无可删内容（返回 0 行） | 34.2 / 35.2 ms（读穿全表，随行数线性增长） | 0.16 / 0.70 ms（与表大小无关） |
+| 真要删 1000 行 | 47.2 ms | 12.2 ms |
+
+- **规范冲突已正面处理**：既有 Requirement「清理不得依赖新增索引」写着
+  "SHALL NOT 为清理引入全表扫描**或新增索引（零 DDL）**"，与同一 Requirement 里的
+  "拒绝以无索引时间列作删除条件"合起来看，**对我这张无生命周期键的表等于宣布永远不可清理**。
+  我没有绕过去，而是把该条改写为「清理的删除条件必须索引可达」：判据换成实测代价
+  （必须与待删行数相关，不得与表大小相关），"零 DDL"澄清为"不为清理重构表结构"，
+  并显式记下"两条同时字面成立时以补索引场景为准"。
+- **保留窗口不假装是需求**：`audit-log.retention-days` 默认 365 只是给增长一个上界的占位口径，
+  真实保留期属合规决策，代码注释、application.yml 与规范三处都写明"须确认后才会被依赖"，
+  且默认 `enabled=false` + `dry-run=true` 保证确认前不会静默删审计证据。
+- **TDD 三条行为逐个红→绿**（`DataRetentionIntegrationTest` 3→6）：超窗删窗内留 /
+  dry-run 一行不少 / 单次封顶 `batch × maxBatches`。三处变异同时注入时恰好只有这三条红、
+  失败原因各不相同，原有三条不受影响（比逐条变异更能证明断言各自有效）。
+- **顺带查出的环境问题（已修）**：dev 库 `exam_online` 里**根本没有 `audit_log` 表**——
+  schema.sql 用 `CREATE TABLE IF NOT EXISTS`，存量库不会自动补表，而 `2026-W16-add-audit-log.sql`
+  从没跑过。后果：dev 上每次登录的审计写入都被 `record()` 的 catch 吞掉（只留 ERROR 日志），
+  我上一轮加的读接口在 dev 上会 500。已把 W16 与本轮 W38 两条迁移应用到 dev 主库并验证。
+  另：H2 测试每次都从 schema.sql 重建，所以这类"存量库缺表"在测试里永远看不见。
+- **一次自我造成的中断**：给这张表造 50 万行基准数据时，bulk 写入撑爆容器内 MySQL 的
+  100MB redo（日志里 `innodb_redo_log_capacity` 警告连排几分钟），`exam-mysql-master` 挂掉一次。
+  重启后 InnoDB 自行回滚、`exam_online` 未受影响（3 行原样）。教训：**基准数据别贪多**，
+  10 万行足以回答"代价与表大小相关还是与结果集相关"这类问题，且必须用 `EXPLAIN` 先确认
+  访问路径。全量 **276 tests / 0 失败**（273 + 3），行覆盖 89.8%、分支 71.7%。
