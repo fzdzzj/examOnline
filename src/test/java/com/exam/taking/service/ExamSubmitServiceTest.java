@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -133,6 +134,29 @@ class ExamSubmitServiceTest {
         verify(dedupMapper).insert(any(ExamSubmitDedup.class));
     }
 
+    /** 交卷锁释放必须按 token（RedisLockHelper.unlock），而非无条件 redis.delete：
+     *  TTL 到期后锁可能已易主，盲删会删掉别人的锁、破坏"三路竞态收敛为单飞"的设计语义。 */
+    @Test
+    void releasesLockByTokenCheckedUnlockNotBlindDelete() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(anyString(), anyString(), any(Duration.class))).thenReturn(true);
+        when(submissionService.getByExamStudent(EXAM_ID, STUDENT_ID)).thenReturn(inProgress);
+        when(submissionService.casSubmitToSubmitted(eq(SUBMISSION_ID), any(LocalDateTime.class), anyInt()))
+                .thenReturn(true);
+
+        submitService.submit(EXAM_ID, new SubmitRequest());
+
+        // 加锁用的 token 必须与解锁传入的 token 一致，compare-and-delete 才在"已易主"时拒删他人锁
+        ArgumentCaptor<String> acquireToken = ArgumentCaptor.forClass(String.class);
+        verify(valueOperations).setIfAbsent(startsWith(ExamSubmitService.LOCK_PREFIX), acquireToken.capture(),
+                any(Duration.class));
+        ArgumentCaptor<String> releaseToken = ArgumentCaptor.forClass(String.class);
+        verify(lockHelper).unlock(startsWith(ExamSubmitService.LOCK_PREFIX), releaseToken.capture());
+        assertEquals(acquireToken.getValue(), releaseToken.getValue(),
+                "释放必须使用与加锁相同的 token（按 token 校验，防误删他人锁）");
+        // 释放必须是按 token 的 unlock，而不是无条件 redis.delete
+        verify(redisTemplate, never()).delete(anyString());
+    }
     /** 重复交卷幂等：已交卷走快速路径返回首次结果，不抢锁、不发消息。 */
     @Test
     void duplicateSubmitReturnsFirstResult() {
