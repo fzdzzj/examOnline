@@ -4,12 +4,23 @@
 # 包含：MySQL 主从（GTID 复制）+ Redis 7 + RabbitMQ(management)
 #       + Jaeger(all-in-one) + Elasticsearch（链路追踪存储，add-distributed-tracing）
 # 健康检查 + depends_on 保证启动依赖顺序
+#
+# 宿主端口为什么是 13316 / 13317 而不是 3306 / 3307（2026-09-21 对齐实况）：
+#   本机 3306 被另一个 compose 项目（D:\code\sports 的 sport-verify-mysql）长期占用，
+#   3307 同样不可用。写 3306 会让 docker compose up 直接端口冲突失败，
+#   也难怪连读的人误判成"另一套 MySQL、凭据不通"。实际映射以
+#   `docker ps --format "{{.Names}} {{.Ports}}"` 为准。
+#
+# restart: unless-stopped —— 三件套（主库/从库/RabbitMQ）必须能跟着 Docker 自动回来。
+#   此前全部是 no：宿主或 Docker Desktop 一重启，整套依赖静默躺平，容器只留
+#   Exited (255)，下一位只能靠猜（曾因此把"没起"误判成"密码不对"）。
 # =============================================================
 services:
 
   mysql-master:
     image: mysql:8.0
     container_name: exam-mysql-master
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: exam_online
@@ -20,8 +31,11 @@ services:
       - --binlog-do-db=exam_online
       - --gtid-mode=ON
       - --enforce-gtid-consistency=ON
+      # 默认 100MB 在批量写入下会实测卡住（redo 写不进、log_checkpointer 落后，
+      # 日志里 MY-014084/MY-014089 连排几分钟）。给 256MB，纯磁盘开销。
+      - --innodb-redo-log-capacity=268435456
     ports:
-      - "3306:3306"
+      - "13316:3306"
     volumes:
       - ./docker/mysql/master/init:/docker-entrypoint-initdb.d:ro
       - master-data:/var/lib/mysql
@@ -35,6 +49,7 @@ services:
   mysql-slave:
     image: mysql:8.0
     container_name: exam-mysql-slave
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: exam_online
@@ -45,7 +60,7 @@ services:
       - --enforce-gtid-consistency=ON
       - --skip-log-bin
     ports:
-      - "3307:3306"
+      - "13317:3306"
     volumes:
       - ./docker/mysql/slave/init:/docker-entrypoint-initdb.d:ro
       - slave-data:/var/lib/mysql
@@ -62,6 +77,11 @@ services:
   redis:
     image: redis:7
     container_name: exam-redis
+    # 默认不启：本机宿主已有 Windows Redis 3.0.504 占着 6379（应用连的就是它），
+    # 一起会被端口冲突拖死，或反过来把宿主 Redis 的服务抢掉。
+    # 真需要容器版时显式起：docker compose --profile host-redis-unavailable up -d redis
+    profiles:
+      - host-redis-unavailable
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
@@ -76,6 +96,7 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management
     container_name: exam-rabbitmq
+    restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: exam
       RABBITMQ_DEFAULT_PASS: exam123

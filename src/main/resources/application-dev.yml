@@ -1,16 +1,19 @@
 spring:
   datasource:
     # 本地开发默认连接（可用环境变量覆盖：DB_URL / DB_USERNAME / DB_PASSWORD）
-    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true}
+    # 默认值就是本机 docker-compose.yml 的真实映射：主库 13316、从库 13317、口令 root123。
+    # 此前默认写的是 3306/root——本机 3306 被另一个项目占用、root/root 也被 MySQL80 服务拒绝，
+    # 于是不设 4 个环境变量就必然连不上，而失败现场长得像"密码不对"。
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:13316/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    password: ${DB_PASSWORD:root123}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: ${DB_POOL_MAX:20}
       minimum-idle: 5
       connection-timeout: 30000
     # ===== 读写分离（add-performance-deepening task3+4）=====
-    # 接入 dynamic-datasource：master=主库(3306)、slave=从库(3307)，primary 指向 master。
+    # 接入 dynamic-datasource：master=主库(13316)、slave=从库(13317)，primary 指向 master。
     # 语义：默认(不加 @DS)所有写与强一致读走 master；非强一致读接口加 @DS("slave") 走从库。
     # master 配置保留原 spring.datasource 同款连接（primary 接管默认路由，原块兜底保留）
     dynamic:
@@ -18,19 +21,19 @@ spring:
       strict: false
       datasource:
         master:
-          url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true}
+          url: ${DB_URL:jdbc:mysql://127.0.0.1:13316/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true}
           username: ${DB_USERNAME:root}
-          password: ${DB_PASSWORD:root}
+          password: ${DB_PASSWORD:root123}
           driver-class-name: com.mysql.cj.jdbc.Driver
           hikari:
             maximum-pool-size: ${DB_POOL_MAX:20}
             minimum-idle: 5
             connection-timeout: 30000
         slave:
-          # 从库：docker-compose 部署的 GTID 复制节点（127.0.0.1:3307），默认读写密码与主库一致
-          url: ${SLAVE_DB_URL:jdbc:mysql://127.0.0.1:3307/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true}
+          # 从库：docker-compose 部署的 GTID 复制节点（127.0.0.1:13317），默认读写密码与主库一致
+          url: ${SLAVE_DB_URL:jdbc:mysql://127.0.0.1:13317/exam_online?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&useSSL=false&allowPublicKeyRetrieval=true}
           username: ${SLAVE_DB_USERNAME:root}
-          password: ${SLAVE_DB_PASSWORD:root}
+          password: ${SLAVE_DB_PASSWORD:root123}
           driver-class-name: com.mysql.cj.jdbc.Driver
           hikari:
             maximum-pool-size: ${SLAVE_DB_POOL_MAX:10}
@@ -64,6 +67,15 @@ management:
     mail:
       # 本地未配置 SMTP 时禁用 mail 健康检查（生产 profile 保持启用，SMTP 为必需）
       enabled: ${MAIL_HEALTH_ENABLED:false}
+
+exam:
+  auth:
+    jwt:
+      # 仅限本地 dev 档：给一个固定的占位密钥，让 `dev` 真的能零环境变量起来
+      # （此前 dev 启动必需 JWT_SECRET，而交接文档只列了 4 个 DB 相关变量，
+      #  缺失时报的是 "JWT secret 长度必须 >= 32 字节（当前 0）"，看起来像代码问题）。
+      # 生产的 fail-fast 没有被削弱：application.yml 里仍是 ${JWT_SECRET:}，空值直接启动失败。
+      secret: ${JWT_SECRET:examOnline-dev-only-hs256-secret-never-use-in-prod-0123456789abcdef}
 
 # OpenAPI 契约暴露（add-backend-openapi）：springdoc 配置（继承主配置，开发时启用 UI）
 springdoc:

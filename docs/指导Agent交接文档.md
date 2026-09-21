@@ -183,22 +183,46 @@
 
 单类：末尾追加 `-Dtest=ClassName -DfailIfNoTests=false`。
 
-### 6.2 本机 dev 启动环境（已实测可用）
+### 6.2 本机 dev 启动环境（2026-09-21 实测已修：零环境变量可起）
 
-**`application-dev.yml` 的默认值连不上**：默认 `127.0.0.1:3306` + `root/root` 指向 Windows `MySQL80` 服务，该服务**拒绝 root/root**。真实可用的是 Docker 容器：
+`application-dev.yml` 的默认值**已对齐本机实况**，直接 `mvn spring-boot:run`（dev profile）即可，
+不需要再设任何环境变量。历史坑与现状：
 
 | 组件 | 宿主端口 | 凭证 | 说明 |
 |---|---|---|---|
-| `exam-mysql-master` | **13316**（历史文档写 13306，以实际为准） | `root/root123`，库 `exam_online` | 26 张表（含历史垃圾表 `rep_test`，**不要删**） |
-| `exam-mysql-slave` | **13317**（历史文档写 3307） | `root/root123` | |
-| `exam-rabbitmq` | 5672 / 15672 | — | 3.13.7 |
-| Redis | 6379 | — | 宿主 Windows Redis 服务（3.0.504）；**不要启 `exam-redis` 容器，会端口冲突** |
+| `exam-mysql-master` | **13316** | `root/root123`，库 `exam_online` | 27 张表（含历史垃圾表 `rep_test`，**不要删**） |
+| `exam-mysql-slave` | **13317** | `root/root123` | GTID 复制**实测在跑**：IO/SQL 双 Yes、`Last_Errno=0` |
+| `exam-rabbitmq` | 5672 / 15672 | `exam/exam123` | 3.13.7 |
+| Redis | 6379 | 无 | 宿主 **Windows Redis 3.0.504** 服务；**不要启 `exam-redis` 容器**（抢 6379） |
 
-> **端口是容器创建时分配的，宿主占用会导致映射漂移**（本机 3306 被 `MySQL80` 服务占着）。
-> 启动前先读实际映射，别照抄本文档：
+> 旧文档写的默认值是 `3306` + `root/root`：**3306 被另一个 compose 项目占用**
+> （`D:\code\sports` 的 `sport-verify-mysql`，它会被那边的 `compose up` 随时 recreate），
+> Windows 的 `MySQL80` 服务也拒绝 root/root。曾经有人据此误判成"另一套实例、凭据不通"，
+> 实际是**容器没起**。端口是容器创建时分配的，**以 `docker ps` 实际映射为准**：
 > `docker ps --format "{{.Names}} {{.Ports}}"`。
 
-容器若 exited：`docker start exam-mysql-master exam-mysql-slave exam-rabbitmq`。启动应用前必须设 `DB_URL`（实际主库端口）、`DB_PASSWORD=root123`、`SLAVE_DB_URL`（实际从库端口）、`SLAVE_DB_PASSWORD=root123`，完整命令见 `spec/changes/archive/add-backend-openapi/agent-prompt-round2.md` 修 4 节。
+**三件套 restart 策略已改成 `unless-stopped`**（主库/从库/RabbitMQ；`docker-compose.yml` 同步）。
+此前全是 `no`：宿主或 Docker Desktop 一重启，整套依赖静默躺平，容器只留 `Exited (255)`——
+这就是 `Exited (255)` 的真实含义（VM/宿主停过，不是密码错）。
+`exam-redis` 与 `exam-grafana` **故意保持 `no`**：前者抢 6379，后者属未完成的观测项，不该自动起。
+
+主库 `innodb_redo_log_capacity` 已从默认 100MB 提到 **256MB**（`SET PERSIST`，已进
+`performance_schema.persisted_variables`，重启仍在；compose 里也加了同名启动参数）。
+实测批量写入几十万行时默认值会卡住（日志 MY-014084/MY-014089 连排几分钟）。
+
+`JWT_SECRET` 现在也有 dev-only 默认值（`application-dev.yml`）。此前 dev 启动**必需**它，
+而缺失时报的是 `JWT secret 长度必须 >= 32 字节（当前 0）`——看着像代码问题，其实是缺环境变量，
+且旧文档只列了 4 个 DB 相关变量。**生产的 fail-fast 未被削弱**：`application.yml` 仍是
+`${JWT_SECRET:}`，空值直接启动失败。
+
+容器若 exited：`docker start exam-mysql-master exam-mysql-slave exam-rabbitmq`。
+存量库改表要跑 `docker/mysql/migrations/` 下对应脚本——**`schema.sql` 是
+`CREATE TABLE IF NOT EXISTS`，存量库不会自动补表**（实测：`audit_log` 因此在 dev 上缺失，
+审计写异常被 catch 静默吞掉，只有 ERROR 日志可查；H2 测试每轮重建，永远看不见这类问题）。
+
+**实测启动耗时 11.6s**，`/actuator/health` 返回 `UP`（db=MySQL、rabbit=3.13.7、redis=3.0.504）
+即为成功。**验证完必须停掉实例**：`netstat -ano | grep :8080` 取 PID → 核对命令行确是
+`ExamOnlineApplication` → `taskkill //PID <pid> //F`（`pkill` 在 Git Bash 下打不到 Windows 进程）。
 
 **两条会白白耗掉一轮的工具链约束（2026-09-19 实测）**：
 
