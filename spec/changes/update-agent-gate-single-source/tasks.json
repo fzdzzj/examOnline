@@ -134,18 +134,18 @@
     "steps": [
       {
         "step": "在本变更与后续变更的 tasks.json 模板约定中写明：凡声明「全绿/通过」的 step，其证据必须含产生该结论的命令与该次输出数值，并附当时短 revision；缺任一项视为未验收 — 证据：docs/指导Agent交接文档.md:10「子 agent 的回报不是事实；每轮交付必须独立查看 git status、git diff、关键代码和测试报告」",
-        "completed": false
+        "completed": true
       },
       {
         "step": "对照 da5b579 记录过的反例（b0eb18e 提交信息里的机制与数值均记错一次，事后不改写历史、只以状态文件为准）验证新格式可追溯：结论必须能定位到某次执行，而不是某段散文 — 证据：spec/changes/IMPLEMENTATION_STATUS.md 对该轮的更正记录",
-        "completed": false
+        "completed": true
       },
       {
         "step": "确认不为此新增第二份「数字汇总文件」——那会重演本提案要修的多副本问题 — 证据：proposal.md「不做的事」",
-        "completed": false
+        "completed": true
       }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 8,
