@@ -34,6 +34,10 @@
 - **出处**：`docs/需求决策记录.md:384-385` + 该目录自述 `docker/mysql/migrations/README.md`。
 - **自查**：`grep -n 'docker/mysql' docker-compose.yml` → 命中只有 `master/init` 与 `slave/init` 两处，本目录不在其中，因此**不存在**自动执行者。任何声称"脚本已提交＝迁移已完成"的回报按违规处理。
 
+## 上手顺序（新 agent）
+
+`docs/project-overview-for-agents.md`（项目全貌 + 真源地图 + 怎么验证）→ `README.md`（路由表）→ `spec/README.md`（当前状态与遗留清单）→ `docs/指导Agent交接文档.md`（环境实况、踩过的坑、明确不建议做的事）。
+
 ## 禁忌（只给指针，正文以被指向处为准）
 
 - 「不要为了架构优化而重写已经能讲清楚的单体」——明确不建议的架构动作清单：`docs/指导Agent交接文档.md:26-34`。

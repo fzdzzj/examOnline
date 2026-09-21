@@ -10,10 +10,11 @@
 
 ## 新成员 / 新 agent 阅读顺序
 
-1. `AGENTS.md`（仓库根）——四条硬约定、禁忌清单指针、以及"哪些东西不许写进根入口"
-2. `spec/README.md` —— 当前状态（进行中的变更、已合入的能力域）
-3. `docs/指导Agent交接文档.md` —— 本机环境实况、踩过的坑、明确不建议做的事
-4. 目标能力域的规格：`spec/specs/<capability>/spec.md`
+1. `docs/project-overview-for-agents.md` —— 这个项目是什么、每类事实的真源在哪、怎么验证（一份读完）
+2. `AGENTS.md`（仓库根）——四条硬约定、禁忌清单指针、以及"哪些东西不许写进根入口"
+3. `spec/README.md` —— 当前状态（进行中的变更、已合入的能力域）
+4. `docs/指导Agent交接文档.md` —— 本机环境实况、踩过的坑、明确不建议做的事
+5. 目标能力域的规格：`spec/specs/<capability>/spec.md`
 
 ## 要查什么，去哪儿查
 
