@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="examOnline · 交卷链路 5000 并发压测" enabled="true">
+      <stringProp name="TestPlan.comments">add-submit-loadtest 提案⑤：5000 并发交卷（P99 &lt; 2s / 0 丢单 / 批量落库 &lt; 30s）。
+两段式场景：setUp 组先完成登录取 token（前置，不计入交卷指标），主组再做交卷。
+
+## 交卷到达曲线（为什么主组 ramp-up = 10s）
+交卷接口带 @RateLimit(qps=500, capacity=2000, key="submit")，是按「接口」维度的全局令牌桶
+（见 RateLimitInterceptor / RedisTokenBucket）。N 笔在 t 秒内到达时放行上限 = 2000 + 500×t，
+故 5000 笔需要 t ≥ 6s 才可能全量放行。本场景取 ramp-up = 10s（约 500 笔/s 到达），
+使 5000 笔全部落在令牌桶预算内——这是**场景整形**，没有修改任何运行期限流参数。
+
+## 维护须知（踩过的坑）
+JMX 里「元素」与其「子节点树」是兄弟关系，且**每个元素后面都必须紧跟一个 &lt;hashTree&gt;，
+叶子元素也要写空树 &lt;hashTree/&gt;**。漏写空树会让元素与树错位配对，JMeter 报
+"ClassCastException: HTTPSamplerProxy cannot be cast to HashTree"，且行号指向无关位置。
+
+可用 CLI 属性覆盖（-J）：见 loadtest/README.md。</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">true</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+
+      <!-- ============================================================
+           阶段 1（setUp）：登录取 token —— 前置，不计入交卷指标
+           用户名由线程号推导（lt5k_0001..lt5k_5000），不依赖外部 CSV，
+           保证任何人可在真 dev 环境重建同场景。
+           ============================================================ -->
+      <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="阶段1 登录取 token（前置）" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(login.threads,${__P(submit.threads,5000)})}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(login.ramp,30)}</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </SetupThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="推导用户名 lt5k_%04d" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">// 学号由「共享原子计数器」分配，不用 ctx.getThreadNum()：
+// 实测 JMeter 的内部 threadNum 是 **0 基**（线程名 1-1 对应的 threadNum 为 0），
+// 直接用它会让首个线程算出不存在的 lt5k_0000 → 401；而线程名里的序号又是 1 基，容易误判。
+// 用 props 做共享锁 + 自增，语义与线程编号无关，保证 1..N 每个学号恰好被分配一次。
+int n
+synchronized (props) {
+    n = Integer.parseInt(props.get(&apos;lt.nextUser&apos;) ?: &apos;0&apos;) + 1
+    props.put(&apos;lt.nextUser&apos;, String.valueOf(n))
+}
+vars.put(&apos;username&apos;, &apos;lt5k_&apos; + String.format(&apos;%04d&apos;, n))</stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /api/auth/login" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{&quot;username&quot;:&quot;${username}&quot;,&quot;password&quot;:&quot;Load1234!&quot;}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">${__P(host,127.0.0.1)}</stringProp>
+          <stringProp name="HTTPSampler.port">${__P(port,8080)}</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+          <stringProp name="HTTPSampler.path">/api/auth/login</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">Content-Type</stringProp>
+                <stringProp name="Header.value">application/json</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+          <hashTree/>
+          <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="提取 accessToken" enabled="true">
+            <stringProp name="JSONPostProcessor.referenceNames">accessToken</stringProp>
+            <stringProp name="JSONPostProcessor.jsonPathExprs">$.data.accessToken</stringProp>
+            <stringProp name="JSONPostProcessor.match_numbers">1</stringProp>
+            <stringProp name="JSONPostProcessor.defaultValues">__LOGIN_FAILED__</stringProp>
+          </JSONPostProcessor>
+          <hashTree/>
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="落盘 username,token" enabled="true">
+            <stringProp name="scriptLanguage">groovy</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="script">// 只有取到真 token 才落盘；synchronized(props) 串行化 5000 线程的追加写入。
+// 文件路径来自 -Jtokens.file，JMeter 在此处做 ${} 替换。
+def token = vars.get(&apos;accessToken&apos;)
+if (token != null &amp;&amp; !token.startsWith(&apos;__LOGIN_FAILED__&apos;)) {
+    def f = new File(&apos;${__P(tokens.file,target/loadtest/tokens.csv)}&apos;)
+    synchronized (props) {
+        f.append(vars.get(&apos;username&apos;) + &apos;,&apos; + token + &apos;\n&apos;, &apos;UTF-8&apos;)
+    }
+}</stringProp>
+          </JSR223PostProcessor>
+          <hashTree/>
+        </hashTree>
+      </hashTree>
+
+      <!-- ============================================================
+           阶段 2（主组）：5000 并发交卷 —— 硬指标的取样来源
+           ramp-up=10s 的到达曲线依据见 TestPlan.comments。
+           ============================================================ -->
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="阶段2 交卷 ${__P(submit.threads,5000)} 并发 / ramp ${__P(submit.ramp,10)}s" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(submit.threads,5000)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(submit.ramp,10)}</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="读取 tokens.csv" enabled="true">
+          <stringProp name="filename">${__P(tokens.file,target/loadtest/tokens.csv)}</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="delimiter">,</stringProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">false</boolProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="shareMode">shareMode.all</stringProp>
+          <stringProp name="variableNames">username,token</stringProp>
+          <boolProp name="ignoreFirstLine">false</boolProp>
+        </CSVDataSet>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /submit" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{&quot;submitType&quot;:&quot;MANUAL&quot;,&quot;answers&quot;:{&quot;1001&quot;:&quot;A&quot;,&quot;1002&quot;:&quot;B&quot;,&quot;1003&quot;:&quot;C&quot;,&quot;1004&quot;:&quot;D&quot;,&quot;1005&quot;:&quot;A&quot;,&quot;1006&quot;:&quot;B&quot;,&quot;1007&quot;:&quot;C&quot;,&quot;1008&quot;:&quot;D&quot;,&quot;1009&quot;:&quot;A&quot;,&quot;1010&quot;:&quot;B&quot;,&quot;1011&quot;:&quot;C&quot;,&quot;1012&quot;:&quot;D&quot;,&quot;1013&quot;:&quot;A&quot;,&quot;1014&quot;:&quot;B&quot;,&quot;1015&quot;:&quot;C&quot;,&quot;1016&quot;:&quot;D&quot;,&quot;1017&quot;:&quot;A&quot;,&quot;1018&quot;:&quot;B&quot;,&quot;1019&quot;:&quot;C&quot;,&quot;1020&quot;:&quot;D&quot;}}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">${__P(host,127.0.0.1)}</stringProp>
+          <stringProp name="HTTPSampler.port">${__P(port,8080)}</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+          <stringProp name="HTTPSampler.path">/api/exam-taking/exams/${__P(exam.id,7)}/submit</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">Content-Type</stringProp>
+                <stringProp name="Header.value">application/json</stringProp>
+              </elementProp>
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">Authorization</stringProp>
+                <stringProp name="Header.value">Bearer ${token}</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+          <hashTree/>
+          <!-- 断言 1：HTTP 200（429/5xx 在此暴露，不会被当成成功样本混进 P99） -->
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="断言 HTTP 200" enabled="true">
+            <collectionProp name="Asserion.test_strings">
+              <stringProp name="49586">200</stringProp>
+            </collectionProp>
+            <stringProp name="Assertion.custom_message"></stringProp>
+            <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+            <boolProp name="Assertion.assume_success">false</boolProp>
+            <intProp name="Assertion.test_type">8</intProp>
+          </ResponseAssertion>
+          <hashTree/>
+          <!-- 断言 2：业务码 code == 0（HTTP 200 但业务失败同样算失败） -->
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="断言 code==0" enabled="true">
+            <stringProp name="JSON_PATH">$.code</stringProp>
+            <stringProp name="EXPECTED_VALUE">0</stringProp>
+            <boolProp name="JSONVALIDATION">true</boolProp>
+            <boolProp name="EXPECT_NULL">false</boolProp>
+            <boolProp name="INVERT">false</boolProp>
+            <boolProp name="ISREGEX">false</boolProp>
+          </JSONPathAssertion>
+          <hashTree/>
+        </hashTree>
+      </hashTree>
+
+      <!-- 结果落盘：主组逐笔明细（P99 由该 CSV 逐笔算出） -->
+      <ResultCollector guiclass="SimpleDataWriter" testclass="ResultCollector" testname="交卷逐笔结果" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp>
+          <name>saveConfig</name>
+          <value class="SampleSaveConfiguration">
+            <time>true</time><latency>true</latency><timestamp>true</timestamp><success>true</success>
+            <label>true</label><code>true</code><message>true</message><threadName>true</threadName>
+            <dataType>true</dataType><encoding>false</encoding><assertions>true</assertions>
+            <subresults>false</subresults><responseData>false</responseData><samplerData>false</samplerData>
+            <xml>false</xml><fieldNames>true</fieldNames><responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders><responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave><bytes>true</bytes>
+            <sentBytes>true</sentBytes><url>true</url><threadCounts>true</threadCounts>
+            <idleTime>true</idleTime><connectTime>true</connectTime>
+          </value>
+        </objProp>
+        <stringProp name="filename">${__P(results.file,target/loadtest/submit-results.csv)}</stringProp>
+      </ResultCollector>
+      <hashTree/>
+
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
