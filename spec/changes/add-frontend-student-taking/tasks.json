@@ -16,24 +16,24 @@
     "task": "时间以服务端为准，归零只锁定不越权判定",
     "steps": [
       { "step": "剩余时长基于服务端时间计算；不用本地 Date.now() 作为交卷判定依据", "completed": true },
-      { "step": "本地归零 → 锁定答题界面 + 标记「待同步」；网络恢复后按锁定状态提交；服务端仍兜底校验", "completed": false },
+      { "step": "本地归零 → 锁定答题界面 + 标记「待同步」；网络恢复后按锁定状态提交；服务端仍兜底校验", "completed": true },
       { "step": "最后 5 分钟警告", "completed": true },
       { "step": "倒计时 hook 有 vitest 单测（含服务端时间偏移场景）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 3,
     "category": "阶段 3：自动保存与断线恢复（W21-W22）",
     "task": "宕机期间作答不丢失",
     "steps": [
-      { "step": "30s 定时保存草稿到后端；输入防抖，防抖间隔不小于后端设计假设；不做「每次按键即保存」", "completed": false },
-      { "step": "同步写 IndexedDB 本地缓存", "completed": false },
-      { "step": "重进考试：先拉后端草稿，与本地缓存按时间戳/version 合并，冲突以较新为准且不静默覆盖", "completed": false },
-      { "step": "合并逻辑有 vitest 单测（后端较新 / 本地较新 / 二者相同三种分支）", "completed": false },
-      { "step": "不声称离线考试模式（无 Service Worker 完整离线作答）", "completed": false }
+      { "step": "30s 定时保存草稿到后端；输入防抖，防抖间隔不小于后端设计假设；不做「每次按键即保存」", "completed": true },
+      { "step": "同步写 IndexedDB 本地缓存", "completed": true },
+      { "step": "重进考试：先拉后端草稿，与本地缓存按时间戳/version 合并，冲突以较新为准且不静默覆盖", "completed": true },
+      { "step": "合并逻辑有 vitest 单测（后端较新 / 本地较新 / 二者相同三种分支）", "completed": true },
+      { "step": "不声称离线考试模式（无 Service Worker 完整离线作答）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 4,
