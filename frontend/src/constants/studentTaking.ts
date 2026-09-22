@@ -76,3 +76,40 @@ export const AUTOSAVE_INTERVAL_MS = 30_000;
  * 想改这两个值，先去读后端 `ExamDraftService` 与压测容量模型。
  */
 export const AUTOSAVE_DEBOUNCE_MS = 30_000;
+
+/**
+ * 交卷来源（阶段 22 第 3 片）。
+ *
+ * 取值逐字对齐后端 `SubmitRequest.TYPE_MANUAL / TYPE_COUNTDOWN_ZERO`
+ * （`src/main/java/com/exam/taking/dto/SubmitRequest.java`）：手动交卷传 MANUAL，
+ * 倒计时归零自动交卷传 COUNTDOWN_ZERO——后端据此区分 submitType 落库，
+ * 第三路（后端兜底扫描）不走这个端点，前端不模拟它。
+ *
+ * 手动与归零**共用同一个提交函数**（硬约定 4）：这里只是传给后端的来源标记，
+ * 不是两条提交路径。
+ */
+export const SUBMIT_TYPE = {
+  MANUAL: 'MANUAL',
+  COUNTDOWN_ZERO: 'COUNTDOWN_ZERO',
+} as const;
+
+export type SubmitType = (typeof SUBMIT_TYPE)[keyof typeof SUBMIT_TYPE];
+
+/**
+ * 前端可上报的行为事件（阶段 22 第 3 片）。
+ *
+ * **只登记后端已注册采集策略的两个值**（`anticheat/collector/BehaviorEventTypes.java`）：
+ * SWITCH_SCREEN（切屏）与 WINDOW_BLUR（失焦）。后端另有 DRAFT_CONFLICT /
+ * PAGE_REFRESH / SUBMIT_ANOMALY / 兜底 UNKNOWN，但那些由后端自产或走兜底，
+ * 前端不上报、不发明第三种类型（硬约定 9）。
+ *
+ * severity **不在前端上报**：后端 `BehaviorReportRequest` 根本没有该字段，
+ * 严重度由后端采集策略（`SwitchScreenEventCollector` 等）判定——前端想「调高」
+ * 也没有入口，这正是硬约定 9 要的形态。
+ */
+export const BEHAVIOR_EVENT = {
+  SWITCH_SCREEN: 'SWITCH_SCREEN',
+  WINDOW_BLUR: 'WINDOW_BLUR',
+} as const;
+
+export type BehaviorEventType = (typeof BEHAVIOR_EVENT)[keyof typeof BEHAVIOR_EVENT];
