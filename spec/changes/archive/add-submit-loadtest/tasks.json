@@ -1,0 +1,35 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：压测资产",
+    "task": "压测场景可由任何人复现",
+    "steps": [
+      { "step": "JMeter .jmx 场景脚本入库（5000 并发交卷）", "completed": true },
+      { "step": "5000 学生与考试数据构造脚本入库，可重复执行", "completed": true },
+      { "step": "执行说明（环境要求、命令、指标采集方式）随资产入库", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：真跑与指标",
+    "task": "硬指标有真跑原始输出",
+    "steps": [
+      { "step": "真 dev 实例执行 5000 并发交卷压测，采集提交 P99 / 丢单数 / 批量落库完成时长", "completed": true },
+      { "step": "指标达标签收：P99 < 2s、0 丢单、批量落库 < 30s；不达标则输出瓶颈分析并停下回报", "completed": true },
+      { "step": "同轮采集队列深度、消费 lag 等中间件指标并入报告", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：容量模型定稿与报告",
+    "task": "容量模型数值以真跑定稿",
+    "steps": [
+      { "step": "按实测校准容量模型数值，调参结论含数据库连接池联动约束", "completed": true },
+      { "step": "压测报告入 docs（命令 + 该次原始输出 + 当时短 revision 三要素）", "completed": true },
+      { "step": "若暴露代码级瓶颈：登记为提案⑪的门控解除判据，不在本变更改实现", "completed": true }
+    ],
+    "passes": true
+  }
+]
