@@ -75,6 +75,19 @@
 
 ---
 
-## 实跑记录（第 3 片，2026-09-22）
+## 实跑记录（第 3 片，2026-09-22 真机联调）
 
-> 逐条记录「实跑 / 未实跑 + 原因 + 真实观察」。此处为占位，联调后由实施者回填。
+环境：dev 后端（`--server.port=8080`，`/actuator/health` UP，db/rabbit/redis 全 UP）
++ 共享容器 `exam-mysql-master/slave`、`exam-rabbitmq` + 宿主 Redis。
+本轮造的数据：考试 #9（`s3-take-e2e`，试卷 #4、班级 #1、`pe_t160824` / `pe_s1_160824`）。
+驱动方式：真实 HTTP 接口（与前端页面发出的请求同端点同载荷），未改库、未 mock。
+
+| 脚本 | 实跑 | 真实观察 |
+| ---- | ---- | -------- |
+| 双击交卷 | ✅ 实跑 | 开考前后端先拒（`HTTP 400 考试尚未开始`，canEnter=false 可用性由后端判定）；进入 `HTTP 200`（status=1、remainingSeconds=3599、serverTime/deadlineTime 齐备）；交卷两次均 `HTTP 200` 且**同一 `submissionId=10005`**（幂等快速路径返回首次结果，`exam_submit_dedups` 仅 1 行）；重进返回 status=2、questions 置空、remainingSeconds=0 |
+| 断网续答 | ⚠️ 部分实跑（浏览器断网环境未逐项演练，IndexedDB 合并分支由 vitest 单测覆盖：35 文件 315 例含合并三分支/断线写入/恢复同步） | 草稿接口真跑：v1 `accepted=true`、31s 后 v2 `accepted=true`（≥30s 周期纪律保持）；重进返回同一快照 |
+| 归零锁定 | ⚠️ 未实跑完整等待（1 分钟场未演练到归零时刻）；判定链路已实证：服务端时间字段齐备、`canEnter`/开考判定均由后端返回控制；单测覆盖归零锁定与「待同步」标志 | — |
+| 切屏记录 | ✅ 实跑 | `WINDOW_BLUR`→`HTTP 200 {warned:false,severity:1,severityName:"低"}`；`SWITCH_SCREEN`→`HTTP 200 {warned:true,count:1,message:"…切屏不会强制交卷…"}`（警告文案由后端给）；教师端 `GET /api/exams/9/behavior-logs` 返回 **total=2，恰好两条**（WINDOW_BLUR、SWITCH_SCREEN 各一，无拆分虚报）；学生访问该端点 `HTTP 403` |
+
+交卷落库验证：`exam_submissions` #10005 status=2、submit_type=1(MANUAL)、`answers_missing=0`（MQ 消费落库成功，答案内容为草稿 v2 的最终状态）。
+
