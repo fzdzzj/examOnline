@@ -16,6 +16,7 @@ import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.submission.mq.ExamSubmitConsumer;
 import com.exam.support.IntegrationTestBase;
+import com.exam.support.RabbitTemplateInvokeStubs;
 import com.exam.taking.service.ExamSweepService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -95,6 +96,9 @@ class MultiInstanceSweepSafetyTest extends IntegrationTestBase {
                 .set(ExamSubmission::getDeadlineTime, LocalDateTime.now().minusMinutes(1)));
 
         reset(rabbitTemplate);
+        // reset 会清掉 invoke 桩：ExamSubmitSender 修复后发送+confirm 等待在 invoke 作用域内，
+        // 必须重打桩让 mock 的 invoke 执行 callback，verify(convertAndSend) 才可见（fix-broker-confirm-and-dlq-roundtrip）
+        RabbitTemplateInvokeStubs.runInvokeCallbacks(rabbitTemplate);
         runTwoThreads(() -> {
             sweepService.sweep();
             return null;
@@ -150,6 +154,9 @@ class MultiInstanceSweepSafetyTest extends IntegrationTestBase {
                 "MQ 未消费时 answers 应为 NULL");
 
         reset(rabbitTemplate);
+        // reset 会清掉 invoke 桩：ExamSubmitSender 修复后发送+confirm 等待在 invoke 作用域内，
+        // 必须重打桩让 mock 的 invoke 执行 callback，verify(convertAndSend) 才可见（fix-broker-confirm-and-dlq-roundtrip）
+        RabbitTemplateInvokeStubs.runInvokeCallbacks(rabbitTemplate);
         runTwoThreads(() -> {
             sweepService.sweep();
             return null;

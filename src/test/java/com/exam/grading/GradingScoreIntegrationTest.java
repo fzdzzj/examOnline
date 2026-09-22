@@ -22,10 +22,12 @@ import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mq.ExamSubmitConsumer;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.support.IntegrationTestBase;
+import com.exam.support.RabbitTemplateInvokeStubs;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.amqp.core.Message;
@@ -71,6 +73,16 @@ class GradingScoreIntegrationTest extends IntegrationTestBase {
 
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
+
+    /**
+     * ExamSubmitSender 修复后「发送 + confirm 等待」整体移入 RabbitTemplate.invoke() 作用域；
+     * mock 的 invoke 默认不执行 callback，会漏掉 callback 内的 3 参 convertAndSend 调用。
+     * 本桩让 invoke 真实执行 callback，既有 verify 断言不变（fix-broker-confirm-and-dlq-roundtrip）。
+     */
+    @BeforeEach
+    void runRabbitInvokeCallbacks() {
+        RabbitTemplateInvokeStubs.runInvokeCallbacks(rabbitTemplate);
+    }
 
     @Autowired
     private ExamStateMachineService stateMachineService;

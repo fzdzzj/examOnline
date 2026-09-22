@@ -12,12 +12,14 @@ import com.exam.submission.mapper.ExamSubmitDedupMapper;
 import com.exam.submission.dto.SubmitMessage;
 import com.exam.submission.mq.ExamSubmitConsumer;
 import com.exam.support.IntegrationTestBase;
+import com.exam.support.RabbitTemplateInvokeStubs;
 import com.exam.taking.dto.SubmitRequest;
 import com.exam.taking.service.ExamSubmitService;
 import com.exam.taking.service.ExamSweepService;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.amqp.core.Message;
@@ -63,6 +65,16 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
 
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
+
+    /**
+     * ExamSubmitSender 修复后「发送 + confirm 等待」整体移入 RabbitTemplate.invoke() 作用域；
+     * mock 的 invoke 默认不执行 callback，会漏掉 callback 内的 3 参 convertAndSend 调用。
+     * 本桩让 invoke 真实执行 callback，既有 verify 断言不变（fix-broker-confirm-and-dlq-roundtrip）。
+     */
+    @BeforeEach
+    void runRabbitInvokeCallbacks() {
+        RabbitTemplateInvokeStubs.runInvokeCallbacks(rabbitTemplate);
+    }
 
     @Autowired
     private ExamStateMachineService stateMachineService;
@@ -479,6 +491,9 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
 
         // MQ 消息"丢失"（Mock 未消费，answers 仍为 NULL）→ 扫描补发（跨用例遗留答卷也会被补发，按 examId 过滤）
         org.mockito.Mockito.reset(rabbitTemplate);
+        // reset 会清掉 invoke 桩：ExamSubmitSender 修复后发送+confirm 等待在 invoke 作用域内，
+        // 必须重打桩让 mock 的 invoke 执行 callback，verify(convertAndSend) 才可见（fix-broker-confirm-and-dlq-roundtrip）
+        RabbitTemplateInvokeStubs.runInvokeCallbacks(rabbitTemplate);
         sweepService.sweep();
         ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
         verify(rabbitTemplate, org.mockito.Mockito.atLeastOnce())
