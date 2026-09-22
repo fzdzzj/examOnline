@@ -40,12 +40,12 @@
     "category": "阶段 4：交卷防重配合（W22）",
     "task": "双击/弱网重试不产生重复提交",
     "steps": [
-      { "step": "手动交卷二次确认并提示未答题数", "completed": false },
-      { "step": "点击提交后按钮立即 pending 并禁用；超时自动交卷走同一提交路径", "completed": false },
-      { "step": "交卷结果以后端返回为权威；不用前端本地标记代替后端结果", "completed": false },
-      { "step": "交卷失败保留答案并允许重试，不静默丢弃", "completed": false }
+      { "step": "手动交卷二次确认并提示未答题数", "completed": true },
+      { "step": "点击提交后按钮立即 pending 并禁用；超时自动交卷走同一提交路径", "completed": true },
+      { "step": "交卷结果以后端返回为权威；不用前端本地标记代替后端结果", "completed": true },
+      { "step": "交卷失败保留答案并允许重试，不静默丢弃", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 5,
@@ -53,9 +53,9 @@
     "task": "可疑事件被记录，成绩如实呈现",
     "steps": [
       { "step": "visibilitychange + blur 记录次数与时长并上报后端行为日志接口", "completed": false },
-      { "step": "只弹警告 + 记录，不强制交卷", "completed": false },
-      { "step": "只记录能确证的事件，不虚报事件类型或严重度", "completed": false },
-      { "step": "交卷结果页：客观题即时出分（后端支持时）、主观题待批改如实展示、不猜分", "completed": false }
+      { "step": "只弹警告 + 记录，不强制交卷", "completed": true },
+      { "step": "只记录能确证的事件，不虚报事件类型或严重度", "completed": true },
+      { "step": "交卷结果页：客观题即时出分（后端支持时）、主观题待批改如实展示、不猜分", "completed": true }
     ],
     "passes": false
   },
@@ -64,11 +64,11 @@
     "category": "阶段 6：演示证据与质量（W22-W23）",
     "task": "深水区可演示、可复现",
     "steps": [
-      { "step": "可复现手动演示脚本四条：双击交卷 / 断网续答 / 归零锁定 / 切屏记录", "completed": false },
-      { "step": "lint + type-check + vitest 全绿；关键 hook 均有单测", "completed": false },
-      { "step": "不改后端；发现接口缺口停下回报并建议单独立项", "completed": false },
-      { "step": "未夹带离线模式 / 人脸识别 / 设备指纹 / 浏览器锁定 / IP 白名单 / 草稿画板", "completed": false }
+      { "step": "可复现手动演示脚本四条：双击交卷 / 断网续答 / 归零锁定 / 切屏记录", "completed": true },
+      { "step": "lint + type-check + vitest 全绿；关键 hook 均有单测", "completed": true },
+      { "step": "不改后端；发现接口缺口停下回报并建议单独立项", "completed": true },
+      { "step": "未夹带离线模式 / 人脸识别 / 设备指纹 / 浏览器锁定 / IP 白名单 / 草稿画板", "completed": true }
     ],
-    "passes": false
+    "passes": true
   }
 ]
