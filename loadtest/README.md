@@ -24,6 +24,8 @@
 | `probe/ProbeTomcatThreads.java` | 探针：从构建所用 jar 读出 Tomcat 线程/接受队列默认值（运行期读不到） |
 
 产物全部落在 `target/loadtest/`（`target/` 本就 gitignored），不入库。
+**注意**：`target/` 同时是 Maven 构建目录，**跑 `mvn clean` 会把历轮原始产物一起删掉**；
+需要长期留档就先复制出工作区。报告里的汇总数字可用上表脚本随时重算，不依赖这些文件存活。
 
 ## 2. 环境要求
 
