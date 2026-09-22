@@ -1,7 +1,7 @@
 # reliability 规范
 
 > 能力域：可靠性（阶段 8，W10；限流器降级阶段 10；定时扫描多实例安全阶段 13；死信可见性与有界重投阶段 14；2026-09-20 补分页入参上限）。
-> 来源：`spec/changes/archive/add-slow-sql-and-rate-limit` 合入（核心接口限流、分布式一致性、限流粒度）+ `spec/changes/archive/add-rate-limit-resilience` 合入（限流器降级、降级可观测）+ `spec/changes/archive/add-multi-instance-sweep-safety` 合入（定时扫描多实例安全、不引入调度锁的取舍）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信消息的可见性、有界重投、死信队列不设过期与容量上限）+ `spec/changes/archive/add-api-rate-limiting` 合入（分页入参上限；其全局限流器已撤回，见文末注记）。
+> 来源：`spec/changes/archive/add-slow-sql-and-rate-limit` 合入（核心接口限流、分布式一致性、限流粒度）+ `spec/changes/archive/add-rate-limit-resilience` 合入（限流器降级、降级可观测）+ `spec/changes/archive/add-multi-instance-sweep-safety` 合入（定时扫描多实例安全、不引入调度锁的取舍）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信消息的可见性、有界重投、死信队列不设过期与容量上限）+ `spec/changes/archive/add-api-rate-limiting` 合入（分页入参上限；其全局限流器已撤回，见文末注记）+ `spec/changes/archive/fix-broker-confirm-and-dlq-roundtrip` 合入（发布确认作用域与死信真往返，提案⑦，2026-09-22）。
 > 实施注记：超限返回 `ResponseCode.TOO_MANY_REQUESTS`（1008 → HTTP 429），由 `GlobalExceptionHandler` 统一转换。
 > 实施注记：限流依赖（Redis）异常时默认 **fail-open 放行**（`exam.ratelimit.fail-open`，默认 true），并打 ERROR 日志 + 递增 `exam.ratelimit.degraded` 计数器；置 false 则异常上抛（fail-close）。
 > 实施注记（阶段 13）：定时扫描正确性靠下游幂等（CAS + 唯一索引 + INSERT IGNORE + 消费端 casFillAnswers），**刻意不加分布式调度锁**；重复扫描指标 `exam.sweep.duplicate_detected`（tag `task`=`sweep`/`state-advance`，含消费者 `filled==0`）；交卷锁按 token 解锁（`RedisLockHelper` Lua compare-and-delete，`exam.taking.submit.lock-ttl-seconds` 默认 30）。
@@ -352,6 +352,56 @@ WHEN 其深度持续大于 0
 THEN 视为交卷链路存在真实缺陷
 
 AND 处理方式是查明原因而非清空队列
+
+---
+
+### Requirement: 发布确认作用域与死信真往返
+
+WHEN 交卷消息经 RabbitMQ 发布与消费,
+
+系统 SHALL 在真 broker 下保证发布确认调用合法、启动期补发对账可完成、死信可往返，且 SHALL NOT 仅凭 mock 证据声称上述能力已验证。
+
+#### Scenario: 真 broker 启动对账无异常
+
+GIVEN 真 dev 实例（MySQL、RabbitMQ、Redis）启动
+
+WHEN 启动期答案补发对账执行
+
+THEN 无 IllegalStateException
+
+AND 待补发消息实际送达消费侧
+
+#### Scenario: confirm 调用作用域合法
+
+GIVEN 任意需要 publisher confirm 的发布路径
+
+WHEN 调用 waitForConfirmsOrDie 类 API
+
+THEN 该调用处于 RabbitTemplate.invoke() 作用域内
+
+AND 该性质有可在无真 broker 的 CI 中运行的护栏测试守住
+
+#### Scenario: 死信真往返
+
+GIVEN 真 broker 且发出一条必进死信的消息
+
+WHEN 死信与重投流程走完
+
+THEN 消息进入 DLQ 且指标可见
+
+AND 重投后被消费或留档
+
+AND 全程无 mock 替身
+
+#### Scenario: mock 证据不得冒充实测
+
+GIVEN 仅有 mock RabbitTemplate 的测试通过
+
+WHEN 声称发布确认或死信链路能力
+
+THEN 不得声称端到端已验证
+
+AND 端到端结论只以真 broker 实测记录为准
 
 ---
 
