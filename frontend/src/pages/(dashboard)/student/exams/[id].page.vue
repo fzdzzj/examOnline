@@ -361,8 +361,9 @@ const submitResultView = computed<SubmitResponse | null>(() => {
   return null;
 });
 
-/** 手动交卷：面板二次确认已通过，这里只负责把按钮给的来源标记传下去。 */
+/** 手动交卷：先把未上报的切屏暂存兜底 flush（时长未知场景），再走唯一提交入口。 */
 function onManualSubmit(): void {
+  void behavior.flush();
   void submitHook.submitExam(SUBMIT_TYPE.MANUAL);
 }
 
@@ -376,6 +377,7 @@ watch(
   () => [countdown.isExpired.value, closedByBackend.value, examIdValid.value] as const,
   ([expired, closed, valid]) => {
     if (expired && !closed && valid) {
+      void behavior.flush(); // 归零交卷前兜底 flush 切屏暂存（suspended 置真后 hook 内部还会再兜一层）
       void submitHook.submitExam(SUBMIT_TYPE.COUNTDOWN_ZERO);
     }
   },
