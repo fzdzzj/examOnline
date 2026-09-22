@@ -1,7 +1,7 @@
 # absence-makeup 规范
 
 > 能力域：缺考与补考（阶段 9、12）。
-> 来源：`spec/changes/archive/add-class-and-post-exam-closure` 合入（缺考标记、补考独立记录、补考成绩规则）；`spec/changes/archive/add-post-exam-closure-e2e` 合入（阶段 12：两条结束路径对称、闭环端到端、建表与实体双向一致）。
+> 来源：`spec/changes/archive/add-class-and-post-exam-closure` 合入（缺考标记、补考独立记录、补考成绩规则）；`spec/changes/archive/add-post-exam-closure-e2e` 合入（阶段 12：两条结束路径对称、闭环端到端、建表与实体双向一致）；`spec/changes/archive/add-makeup-final-score` 合入（补考最终成绩接口接线，提案⑨，2026-09-22）。
 > 实施注记：缺考口径 = 应考名单（考试 `class_id` → `user_class` 当前学生）− 有答卷者；缺考锚定「进行中→已结束」，**自然到点与 force-end 两条路径都必须 `markAbsence`**；写 `exam_absence`（唯一索引 + INSERT IGNORE 幂等）。闭环由 `PostExamClosureIntegrationTest` 整链执行；集成测试不得 `@Sql` 自建表。补考是独立考试记录（`exams.parent_exam_id` 关联主考），准入由 `exam_candidates` 名单限制。
 
 ## Requirements
@@ -104,7 +104,7 @@ THEN 拒绝进入
 
 WHEN 计算补考最终成绩,
 
-系统 SHALL 按考试配置的规则（取最高分/取最近一次/取平均分）合并，历史成绩 SHALL 保留不覆盖。
+系统 SHALL 按考试配置的规则（取最高分/取最近一次/取平均分）合并，历史成绩 SHALL 保留不覆盖，且最终成绩 SHALL 可经接口查询。
 
 #### Scenario: 取最高分
 
@@ -127,6 +127,26 @@ WHEN 计算最终成绩
 THEN 各次成绩记录均保留
 
 AND 不覆盖删除
+
+#### Scenario: 最终成绩经接口可查
+
+GIVEN 学生主考与补考均有成绩
+
+WHEN 经补考最终成绩接口查询
+
+THEN 返回按考试配置规则合并的结果
+
+AND 历史成绩仍保留
+
+#### Scenario: 合并规则有真实调用者
+
+GIVEN 代码库中 MakeupScoreService 的最终成绩计算入口
+
+WHEN 检查其调用点
+
+THEN 存在接口层真实调用
+
+AND 不再是零调用死代码
 
 ---
 

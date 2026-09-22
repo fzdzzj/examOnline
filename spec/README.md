@@ -95,12 +95,11 @@ spec/
 | `fix-contract-export-charset` | 提案⑧ | 契约导出编码修复（遗留 #12 收口）：`getContentAsByteArray()` 按字节落盘 + Mock 请求固定 8080 端口；护栏断言（无 U+FFFD / 中文描述完整 / servers.url 带端口）；重导 openapi.yaml（+79/-0 仅陈旧契约补齐）与真 dev 实例路 B 产物 SHA256 字节级一致，**路 A 恢复为推荐路径** | 2026-09-21 |
 | `parameterize-dev-credentials` | 提案⑫ | docker-compose.yml 六处裸字面量凭据改 `${ENV:-default}`（默认值一字未改，开箱行为不变）；`application*.yml` 立项复核已达标记为证据基线；新建 `dev-config` 能力域（自查命令已做变异验证） | 2026-09-21 |
 | `audit-concurrency-test-coverage` | 提案⑬ | 三处并发边界「分支×测试名」覆盖盘点（coverage-mapping.md 入库）+ 5 个确定性测试：CacheMutexLoader 败者等待超时兜底直源（轮数驱动）、RedisLockHelper 按 token 解锁三场景（易主由改写 Redis 值模拟）、交卷锁按 token 装配解锁；边界二（状态机 CAS 0 行）既有覆盖如实收窄不重复补；**只补测试，实现零改动** | 2026-09-21 |
+| `add-makeup-final-score` | 提案⑨ | 补考最终成绩接口接线（遗留 #5 收口）：教师端 `GET /api/exams/{examId}/scores/makeup-final/{studentId}`（`exam:manage` + 归属校验）、学生端 `GET /api/scores/makeup-final`（仅本人 + 主考须已发布 + 复核中隐藏）；`MakeupScoreService.finalScore` 获真实调用者；2 个真实链路集成用例（takeAverage 合并 / 历史保留 / 越权 403 / 未发布 400 / 复核隐藏）；契约重导走路 A（纯增量 67 行）；absence-makeup 基线补两场景；前端展示位另立前端小变更（未立项） | 2026-09-22 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
 1. **交卷链路压测未做**（`add-exam-taking` task 8）——JMeter 5000 并发交卷压测与硬指标验收（P99 < 2s / 0 丢单 / 批量落库 < 30s）**未执行**，仓库内无任何 `.jmx` 或压测报告。前置瓶颈已由 `add-mq-trace-and-capacity` 消除：消费并发原先实际为 **1**（手工构造的 `batchContainerFactory` 从未设并发，`RABBIT_CONCURRENCY:2` 对它不生效），现已显式化并可经 `exam.taking.mq.concurrency` 调整；**具体数值仍须真跑压测定稿**，该变更只给可复算的容量模型，不替代实测。
-5. **补考成绩规则已合入规范但从未接线**（阶段 12 取证时发现）——`MakeupScoreService.finalScore(examId, studentId)` **全仓库零调用**，`mergeFinalScore(...)` 只被纯函数单测调用，也没有任何暴露"补考最终成绩"的接口。而 `spec/specs/absence-makeup/spec.md` 的 `Requirement: 补考成绩规则`（取最高分/取最近一次/取平均分）**已合入并验收**——属"已验收但未接线"的需求。修复需新增接口/查询路径（功能变更），建议单独立项 `add-makeup-final-score`，**不要在本清单里当成已完成**。
-
 6. **死信队列的"真 broker 往返"未验证**（阶段 14 取证时发现）——阶段 14 已补指标/告警/mock 重投（`exam.mq.dlq.depth` / `exam.mq.retry` / `exam.mq.dlq.entered`、告警 `MqDlqBacklog`/`MqSubmitRetryExhausted`、面板「交卷死信队列深度」、`DlqReplayService` 先留档再重投），但**本机 Docker 未运行、集成测试用 mock `RabbitTemplate`**，**「真发一条坏消息 → 真进 DLQ → 真重投回来」仍未验证**。**不得声称死信链路端到端已验证。**
 7. **磁盘空间回收不在任何提案范围内**（阶段 15 取证时发现）——MySQL InnoDB 的 `DELETE` 只把页标记为可复用，**文件大小不会变小**；真正回收需 `OPTIMIZE TABLE` 或 `ALTER TABLE ... ENGINE=InnoDB`（离线重写整表、期间锁表），在在线考试系统上属高风险窗口操作。`add-data-retention`（阶段 15）的目标是**控制行数与查询代价**（避免全表扫描与索引膨胀），**不是腾磁盘**。**不得声称"清理后磁盘释放"。**
 8. **`exams` 表没有 `ended_time` 列**（阶段 15 取证时发现）——实际结束时刻无字段记录，`updated_time` 会被任意更新刷新（表达的不是结束时刻）。`add-data-retention` 因此改用 `end_time`（时间窗终点）作为"考试已终结"的代理，误差方向是**晚删而非早删**（`force-end` 提前结束的考试其 `end_time` 仍在未来），属安全选择。若要精确化需新增列（= 迁移），当前不值得。
@@ -124,6 +123,7 @@ spec/
 5. **观测栈动态行为** 已由 `add-observability-runtime-evidence`（阶段 16）收口——Targets `UP`、9 条规则 loaded、**5 条真实 firing**（ExamOnlineDown / RateLimitDegraded / MqSubmitRetryExhausted / MqDlqBacklog / AntiCheatEventSpike）、面板出图；另 **4 条流量/性能阈值未在本机点着**（Http5xxRatioHigh / SubmitFailureRatioHigh / MqSubmitQueueBacklog / SubmitLatencyP99High）且**未改规则凑绿**，已留 PromQL 反证。详见 `docs/observability-runtime-evidence.md`。**不得据此声称遗留 #6（DLQ 真 broker 端到端）已完成**（firing ≠ 重投闭环）。
 6. **初始密码强制修改（前端守卫）** 已由 `add-frontend-must-change-guard`（提案④，2026-09-21）收口——`decideNavigation` 单一入口接 `mustChangePassword`（`/api/auth/me` 恒有值字段，缺省按 false 不误拦），未改密仅放行改密与登出（含 `/login` 重定向改密页），改密成功走既有会话刷新自动放开；不本地持久化标记、不改鉴权拦截器。原遗留 #11 的后端部分早由 `add-auth-must-change-password`（18+）完成，本条收口后「初始密码强制修改」用户可感知能力端到端成立。
 7. **契约导出路 A 编码缺陷** 已由 `fix-contract-export-charset`（提案⑧，2026-09-21）收口——根因：`getContentAsString()` 未设 charset 按 ISO-8859-1 解码 + Mock 请求无端口致 `servers.url` 退化；修法：`getContentAsByteArray()` 按字节落盘 + 固定 8080 端口，护栏断言（无 U+FFFD、中文描述完整、servers.url 带端口）随导出测试入库；修复后路 A 与真 dev 实例路 B 产物 SHA256 字节级一致，**路 A 恢复为推荐路径**（表述已同步 api-contract 基线、交接文档与提示词）。原遗留 #12 关闭。
+8. **补考成绩规则接线** 已由 `add-makeup-final-score`（提案⑨，2026-09-22）收口——`MakeupScoreService.finalScore` 自阶段 12 验收以来全仓库零调用，现获接口层真实调用者：教师端 `GET /api/exams/{examId}/scores/makeup-final/{studentId}`（`exam:manage` + 归属校验），学生端 `GET /api/scores/makeup-final?examId=`（仅本人 + 主考须已发布 + 进行中复核隐藏分数）；2 个真实链路集成用例断言 takeAverage 合并、历史成绩保留不覆盖、越权 403、未发布 400、复核隐藏；契约重导走路 A（纯增量）。absence-makeup 基线补「最终成绩经接口可查」「合并规则有真实调用者」两场景。**前端展示位（阶段 23 边界 Alert 的替换）另立前端小变更，尚未立项**。原遗留 #5 关闭。
 
 ## 能力地图（规范组织单位；**已合入基线**的条数以 `find spec/specs -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数；下表允许出现"已立项、基线待收尾时创建"的能力域，由该行自己注明）
 
