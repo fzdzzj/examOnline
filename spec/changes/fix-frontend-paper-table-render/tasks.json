@@ -1,0 +1,57 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：确认基线与红灯",
+    "task": "确认 D1 仍存在，并创建会因题目表缺失而失败的页面级回归测试",
+    "steps": [
+      {
+        "step": "核对当前分支、工作区改动归属、组卷界面现有 spec 与 20-3b/20-5 证据；现场记录本次开工测试命令、原始输出与短 revision，不复制旧基线数字",
+        "completed": true,
+        "evidence": "现场命令与原始输出（2026-09-23，未提交工作树，HEAD 短 revision e4126b9）：\n1) `git status --short` → ` M README.md`、` M spec/README.md`、`.trae/`、`docs/主Agent执行指南.md`、`spec/changes/fix-frontend-paper-table-render/`；\n2) `git symbolic-ref --short HEAD` → `feature/add-performance-deepening-readwrite`；\n3) `git rev-parse --short HEAD` → `e4126b9`；\n4) `rg -n -C 3 \"20-3b|20-5\" frontend/docs/frontend-stages-walkthrough.md ...` → 20-3b 记录“试卷题目表未渲染”并判定 FAIL → D1，20-5 记录“题目内容区不渲染”并判定部分成立；同时现有交接文档明确根因为页面漏导入 `Table`。本次改动未触碰既有 README、交接文档或 `.trae/`。"
+      },
+      {
+        "step": "新增挂载真实试卷详情页的定向测试：有题目时断言真实表格、题目内容及未锁定操作/锁定只读状态，并检查组件解析警告；未修复前测试必须红，记录失败输出",
+        "completed": true,
+        "evidence": "新增 `frontend/src/pages/(dashboard)/teacher/papers/__tests__/paperDetailTable.spec.ts`，真实挂载页面和 ant-design-vue Table，仅 mock 路由、API 与 vue-query 数据边界；覆盖草稿态表格/题干/改分/上移/下移/移出、锁定态题干/只读，并检查 `Failed to resolve component: Table`。\n红灯命令：`node node_modules/vitest/vitest.mjs run \"src/pages/(dashboard)/teacher/papers/__tests__/paperDetailTable.spec.ts\" --reporter=verbose`；原始结果：`2 failed`，两例均在 `.ant-table` 断言处 `expected false to be true`（行 107、123），说明修复前题目表未真实渲染；当时 HEAD 短 revision 为 `e4126b9`。"
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：最小修复",
+    "task": "补齐 Table 运行时导入并验证针对性回归",
+    "steps": [
+      {
+        "step": "在 teacher/papers/[id].page.vue 的 ant-design-vue 导入中补 Table，不修改后端、生成 SDK、其他业务流程或共享环境数据",
+        "completed": true,
+        "evidence": "仅修改 `frontend/src/pages/(dashboard)/teacher/papers/[id].page.vue` 的 ant-design-vue 运行时导入，加入 `Table`；未改后端、OpenAPI 生成文件、共享环境数据或其他业务流程。工作树 HEAD 短 revision：`e4126b9`。"
+      },
+      {
+        "step": "重跑阶段 1 的定向测试，确认由红转绿且表格确实渲染；如仍失败，停止并回报新证据，不放宽断言或 mock 掉 Table",
+        "completed": true,
+        "evidence": "绿灯命令：`node node_modules/vitest/vitest.mjs run \"src/pages/(dashboard)/teacher/papers/__tests__/paperDetailTable.spec.ts\" --reporter=verbose`；原始结果：`Test Files 1 passed (1)`、`Tests 2 passed (2)`、退出码 0，且两例均断言 `.ant-table`、题干及对应操作/只读状态。输出中的 jsdom `getComputedStyle()` 提示不是组件解析警告。工作树 HEAD 短 revision：`e4126b9`。"
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：验收与收口",
+    "task": "按证据认定真实修复范围，而非仅认定导入存在",
+    "steps": [
+      {
+        "step": "在 frontend/ 执行 pnpm lint:check、pnpm type-check:check、pnpm test；检查未减少的实测用例与退出码，在 evidence 写明命令、该次原始输出和 revision，核对改动边界",
+        "completed": true,
+        "evidence": "frontend 全量门禁（2026-09-23，HEAD 短 revision `e4126b9`）：\n1) `pnpm lint:check` → `eslint src e2e *.config.ts`，退出码 0；\n2) `pnpm type-check:check` → `vue-tsc --project ./tsconfig.app.json --noEmit` 与 `tsc --project ./tsconfig.config.json --noEmit` 均结束，退出码 0；\n3) `pnpm test` → `Test Files 39 passed (39)`、`Tests 333 passed (333)`，退出码 0。\n改动边界复核：应用代码只有页面导入 `Table` 一行；新增仅为该页面定向回归测试。"
+      },
+      {
+        "step": "重走可用的 20-3b/20-5 页面场景，区分 UI 渲染与真实 API 操作的证据；环境不允许则明确未证，不解除对应缺陷注记、不盲勾；证据充分后按 spec/README.md 工作流合入 delta、归档并更新状态",
+        "completed": false,
+        "evidence": "未在本轮重走真实 Chromium/backend 的 20-3b、20-5 场景；现有 walkthrough 仅作为 D1 的历史问题证据，不能替代本轮真实 API 交互验收。已验证“组件真实渲染”与“页面操作入口/锁定只读呈现”（定向测试），未验证真实后端改分、排序、移出请求。依 spec 保留 frontend 基线 D1 缺陷注记，不合入 delta、不归档变更目录、不盲勾本 step。"
+      }
+    ],
+    "passes": false
+  }
+]
+

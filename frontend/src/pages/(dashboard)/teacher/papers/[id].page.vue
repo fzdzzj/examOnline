@@ -279,6 +279,7 @@ import {
   TabPane,
   Tabs,
   Tag,
+  Table,
   Textarea,
   message,
   type TableColumnsType,
