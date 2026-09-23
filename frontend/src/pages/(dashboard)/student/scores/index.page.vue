@@ -74,9 +74,13 @@
       :confirm-loading="applying"
       @ok="onApply"
     >
+      <!-- ⚠️ ant-design-vue 4 的 Alert 只渲染 message/description，正文必须走具名插槽
+           （默认插槽会被静默丢弃） -->
       <Alert type="warning" show-icon class="mb-2">
-        复核次数与时间窗限制由后端在提交时校验（超窗 / 重复申请会被后端拒绝并给出原因），
-        前端不预先展示资格计数。
+        <template #message>
+          复核次数与时间窗限制由后端在提交时校验（超窗 / 重复申请会被后端拒绝并给出原因），
+          前端不预先展示资格计数。
+        </template>
       </Alert>
       <Textarea
         v-model:value="applyReason"

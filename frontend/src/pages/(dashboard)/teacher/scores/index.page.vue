@@ -113,12 +113,16 @@
       :confirm-loading="publishing"
       @ok="onPublish"
     >
+      <!-- ⚠️ ant-design-vue 4 的 Alert 只渲染 message/description，正文必须走具名插槽
+           （默认插槽会被静默丢弃） -->
       <Alert type="warning" show-icon>
-        <ul class="confirm-list">
-          <li>仅「已批改」状态的考试允许发布（后端状态机裁决）</li>
-          <li>发布后学生端立即可见，且汇总会被锁定（需撤回后重新汇总）</li>
-          <li>重复发布同一场属幂等操作，后端跳过而非报错</li>
-        </ul>
+        <template #message>
+          <ul class="confirm-list">
+            <li>仅「已批改」状态的考试允许发布（后端状态机裁决）</li>
+            <li>发布后学生端立即可见，且汇总会被锁定（需撤回后重新汇总）</li>
+            <li>重复发布同一场属幂等操作，后端跳过而非报错</li>
+          </ul>
+        </template>
       </Alert>
     </Modal>
 
