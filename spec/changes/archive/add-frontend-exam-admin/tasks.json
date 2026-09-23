@@ -1,0 +1,48 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：班级管理（W19）",
+    "task": "班级与学生归属可维护",
+    "steps": [
+      { "step": "班级列表 + CRUD", "completed": true },
+      { "step": "班级学生列表（分页）+ 入班 / 转班操作", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：考试创建与发布（W19-W20）",
+    "task": "考试可建、可发布、可强制结束",
+    "steps": [
+      { "step": "考试创建表单：试卷 + 班级 + 时间窗 + 个人时长 + 迟到允许 + 防作弊配置（仅后端已有字段）", "completed": true },
+      { "step": "考试列表：状态以标签呈现，状态与可用动作均按接口返回渲染，前端不自行推算状态迁移", "completed": true },
+      { "step": "发布考试（生成试卷快照）：二次确认", "completed": true },
+      { "step": "force-end 强制结束：二次确认且弹窗写明「会触发缺考标记」的后果", "completed": true },
+      { "step": "考试详情：试卷快照只读预览 + 考生名单 + 提交进度", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：监考与行为日志（W20）",
+    "task": "教师能看到考中情况与可疑事件",
+    "steps": [
+      { "step": "监考视图：在线/提交进度，vue-query 轮询并明确刷新间隔；文案用「准实时轮询」不声称「实时」", "completed": true },
+      { "step": "行为日志时间线：按学生查看事件类型与 severity", "completed": true },
+      { "step": "观测入口：只读链接到既有 Grafana 面板，不在前端重做图表", "completed": true },
+      { "step": "不自建 WebSocket 推送（v3 范围外）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：质量与边界（W20）",
+    "task": "不夹带、不改后端、越权不靠前端",
+    "steps": [
+      { "step": "lint + type-check + vitest 全绿；关键流程（建考试→发布）有用例覆盖", "completed": true },
+      { "step": "不改后端；发现接口缺口停下回报并建议单独立项", "completed": true },
+      { "step": "越权由后端校验兜底，前端注释写明「隐藏按钮不是安全边界」", "completed": true }
+    ],
+    "passes": true
+  }
+]

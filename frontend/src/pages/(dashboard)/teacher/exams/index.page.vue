@@ -94,13 +94,17 @@
       :confirm-loading="publishing"
       @ok="confirmPublish"
     >
+      <!-- ant-design-vue 4 的 Alert 只渲染 message/description 插槽，正文必须走具名插槽
+           （默认插槽会被静默丢弃，见 classes 页同类注释） -->
       <Alert type="info" show-icon>
-        <p>确定要发布该考试吗？发布后将会：</p>
-        <ul class="list-disc pl-5">
-          <li>生成试卷快照（唯一时机），学生侧可见</li>
-          <li>绑定试卷被锁定（只读），禁止改题 / 删题</li>
-          <li>考试状态仍为「未开始」，等待定时开考</li>
-        </ul>
+        <template #message>
+          <p>确定要发布该考试吗？发布后将会：</p>
+          <ul class="list-disc pl-5">
+            <li>生成试卷快照（唯一时机），学生侧可见</li>
+            <li>绑定试卷被锁定（只读），禁止改题 / 删题</li>
+            <li>考试状态仍为「未开始」，等待定时开考</li>
+          </ul>
+        </template>
       </Alert>
     </Modal>
 
@@ -112,17 +116,20 @@
       ok-text="强制结束"
       @ok="confirmForceEnd"
     >
+      <!-- 同上：正文走 #message 具名插槽，否则默认插槽被静默丢弃 -->
       <Alert type="warning" show-icon>
-        <p class="font-semibold">警告：此操作将立即结束考试！</p>
-        <ul class="list-disc pl-5">
-          <li>考试状态从「进行中」改为「已结束」</li>
-          <li>
-            <span class="font-semibold text-red-600">触发缺考标记</span>
-            （未交卷学生自动记缺考）
-          </li>
-          <li>锁定当前答卷（按最后自动保存）</li>
-        </ul>
-        <p class="mt-2 text-sm">这是不可逆操作，请谨慎执行。</p>
+        <template #message>
+          <p class="font-semibold">警告：此操作将立即结束考试！</p>
+          <ul class="list-disc pl-5">
+            <li>考试状态从「进行中」改为「已结束」</li>
+            <li>
+              <span class="font-semibold text-red-600">触发缺考标记</span>
+              （未交卷学生自动记缺考）
+            </li>
+            <li>锁定当前答卷（按最后自动保存）</li>
+          </ul>
+          <p class="mt-2 text-sm">这是不可逆操作，请谨慎执行。</p>
+        </template>
       </Alert>
     </Modal>
   </div>
