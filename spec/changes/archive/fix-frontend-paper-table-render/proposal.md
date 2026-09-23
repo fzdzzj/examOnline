@@ -1,6 +1,6 @@
 # 提案：修复试卷详情题目表未渲染（fix-frontend-paper-table-render）
 
-> 状态：实施中；组件级修复与自动化回归已完成，真实 20-3b / 20-5 交互尚未复验，故不代表全链路已验收。来源：`spec/README.md` 遗留 #17（D1）、`frontend/docs/frontend-stages-walkthrough.md` 的 20-3b / 20-5。
+> 状态：已归档；`f0e1288` 的组件修复、20-3b/20-5 真实 Chromium + dev 复验均已据证据收口。专用锁定试卷 18 / 快照 1 按授权永久保留。来源：`spec/README.md` 遗留 #17（D1）、`frontend/docs/frontend-stages-walkthrough.md` 的 20-3b / 20-5。
 
 ## Why
 
