@@ -4,47 +4,47 @@
     "category": "阶段 1：工程骨架（W17）",
     "task": "frontend/ 可 dev、可 build、可 lint、可测",
     "steps": [
-      { "step": "pnpm + Vite7 + Vue3.5 + TS 初始化；tsconfig 分层；@ 别名；Ant Design Vue 4 + Tailwind 4 接入", "completed": false },
-      { "step": "eslint9 + prettier + vue-tsc type-check + vitest 全部可跑通（零报错基线）", "completed": false },
-      { "step": "unplugin-vue-router 文件路由（src/pages + .page.vue）+ typed-router.d.ts 生成", "completed": false },
-      { "step": "不触碰 src/main、src/test、pom.xml；后端 210 测试基线不变", "completed": false }
+      { "step": "pnpm + Vite7 + Vue3.5 + TS 初始化；tsconfig 分层；@ 别名；Ant Design Vue 4 + Tailwind 4 接入", "completed": true },
+      { "step": "eslint9 + prettier + vue-tsc type-check + vitest 全部可跑通（零报错基线）", "completed": true },
+      { "step": "unplugin-vue-router 文件路由（src/pages + .page.vue）+ typed-router.d.ts 生成", "completed": true },
+      { "step": "不触碰 src/main、src/test、pom.xml；后端 210 测试基线不变", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 2,
     "category": "阶段 2：API 层与会话（W17）",
     "task": "契约生成 + 鉴权拦截可用",
     "steps": [
-      { "step": "gen:api 从 openapi.yaml 生成 src/api/axios（client-axios + sdk + typescript）", "completed": false },
-      { "step": "dev 代理 /api → localhost:8080 且不 rewrite 掉 /api 前缀；一条真实登录请求验证通过", "completed": false },
-      { "step": "请求拦截注入 Bearer；响应拦截统一解包 ApiResponse；业务错误码映射为可读提示", "completed": false },
-      { "step": "401 → refresh 单飞（并发只刷一次），refresh 失败登出清本地；有 vitest 单测覆盖单飞", "completed": false },
-      { "step": "Token 落 localStorage；vuex 持用户与角色；登出调黑名单接口", "completed": false }
+      { "step": "gen:api 从 openapi.yaml 生成 src/api/axios（client-axios + sdk + typescript）", "completed": true },
+      { "step": "dev 代理 /api → localhost:8080 且不 rewrite 掉 /api 前缀；一条真实登录请求验证通过", "completed": true },
+      { "step": "请求拦截注入 Bearer；响应拦截统一解包 ApiResponse；业务错误码映射为可读提示", "completed": true },
+      { "step": "401 → refresh 单飞（并发只刷一次），refresh 失败登出清本地；有 vitest 单测覆盖单飞", "completed": true },
+      { "step": "Token 落 localStorage；vuex 持用户与角色；登出调黑名单接口", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 3,
     "category": "阶段 3：布局、守卫与认证页（W17-W18）",
     "task": "三种角色可登录并进入各自首页",
     "steps": [
-      { "step": "布局壳：侧边菜单按角色渲染（ADMIN > TEACHER > STUDENT）", "completed": false },
-      { "step": "路由守卫：未登录跳登录、越权跳 403；注释写明「后端 @RequireRole 才是安全边界」", "completed": false },
-      { "step": "登录页：错误提示覆盖锁定/限流降级/黑名单", "completed": false },
-      { "step": "注册页（含邀请码）、找回密码（发码+重置）、修改密码页", "completed": false }
+      { "step": "布局壳：侧边菜单按角色渲染（ADMIN > TEACHER > STUDENT）", "completed": true },
+      { "step": "路由守卫：未登录跳登录、越权跳 403；注释写明「后端 @RequireRole 才是安全边界」", "completed": true },
+      { "step": "登录页：错误提示覆盖锁定/限流降级/黑名单", "completed": true },
+      { "step": "注册页（含邀请码）、找回密码（发码+重置）、修改密码页", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 4,
     "category": "阶段 4：冒烟验证（W18）",
     "task": "有一条可复现的端到端证据",
     "steps": [
-      { "step": "playwright：登录 → 首页 → 登出 一条链路通过", "completed": false },
-      { "step": "三种角色各登录一次，菜单与首页按角色正确区分（记录截图或用例断言）", "completed": false },
-      { "step": "docs/指导Agent交接文档.md 补前端启动方式与代理约定", "completed": false }
+      { "step": "playwright：登录 → 首页 → 登出 一条链路通过", "completed": true },
+      { "step": "三种角色各登录一次，菜单与首页按角色正确区分（记录截图或用例断言）", "completed": true },
+      { "step": "docs/指导Agent交接文档.md 补前端启动方式与代理约定", "completed": true }
     ],
-    "passes": false
+    "passes": true
   }
 ]
