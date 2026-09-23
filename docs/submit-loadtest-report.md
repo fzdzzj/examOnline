@@ -3,6 +3,11 @@
 > 对应提案：`spec/changes/add-submit-loadtest/proposal.md`
 > 可复现资产：`loadtest/`（README 为执行入口）
 > 规范落点：`spec/specs/exam-taking/spec.md` 的「交卷落库容量与时延」
+>
+> ⚠️ **本报告 §4 的瓶颈归因已被后续变更推翻，阅读前请看** `docs/submit-capacity-tuning-report.md`：
+> 该变更带着修订后的方法学（每臂 ≥3 轮 + 每轮预热 + 轮间等 TIME_WAIT + 臂级中位数）真跑了三臂，
+> 结论是 §4 把**下游**（线程池占满）当成了**根因**——真正的绑定约束是 master 连接池，
+> 把它一并打开后仍有 MySQL 写并发与宿主 CPU 饱和。本报告 §3.1/§5/§8 的方法学结论仍有效。
 
 ## 0. 三要素（谁产生这份报告）
 
