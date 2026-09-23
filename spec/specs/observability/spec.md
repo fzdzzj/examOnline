@@ -1,7 +1,7 @@
 # observability 规范
 
-> 能力域：可观测性（阶段 8，W10；阶段 11，W13 补告警与面板；阶段 14 补死信指标与告警；阶段 16 补观测栈动态可验证性；2026-09-20 补锁竞争可观测与日志链路关联）。
-> 来源：`spec/changes/archive/add-performance-deepening` 合入（指标导出、自定义业务指标、指标与请求关联）+ `spec/changes/archive/add-slow-sql-and-rate-limit` 合入（慢 SQL 识别、慢 SQL 与请求关联）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（异步链路请求关联）+ `spec/changes/archive/add-alerting-and-dashboards` 合入（指标驱动的告警、观测面板）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信队列的指标与告警覆盖）+ `spec/changes/archive/add-observability-runtime-evidence` 合入（观测栈动态可验证性）+ `spec/changes/archive/add-concurrency-monitoring` 合入（锁竞争可观测）+ `spec/changes/archive/add-distributed-tracing` 合入（日志与链路标识关联）。
+> 能力域：可观测性（阶段 8，W10；阶段 11，W13 补告警与面板；阶段 14 补死信指标与告警；阶段 16 补观测栈动态可验证性；2026-09-20 补锁竞争可观测与日志链路关联；2026-09-23 补交卷时延直方图与 Tomcat 线程水位）。
+> 来源：`spec/changes/archive/add-performance-deepening` 合入（指标导出、自定义业务指标、指标与请求关联）+ `spec/changes/archive/add-slow-sql-and-rate-limit` 合入（慢 SQL 识别、慢 SQL 与请求关联）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（异步链路请求关联）+ `spec/changes/archive/add-alerting-and-dashboards` 合入（指标驱动的告警、观测面板）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信队列的指标与告警覆盖）+ `spec/changes/archive/add-observability-runtime-evidence` 合入（观测栈动态可验证性）+ `spec/changes/archive/add-concurrency-monitoring` 合入（锁竞争可观测）+ `spec/changes/archive/add-distributed-tracing` 合入（日志与链路标识关联）+ `spec/changes/archive/add-submit-observability` 合入（交卷时延直方图、Tomcat 线程水位可观测）。
 > 实施注记：慢 SQL 阈值 key 为 `exam.monitor.slow-sql-threshold-ms`（默认 1000）；拆解思路是「指标定方向、日志定个案」——指标发现异常，再用 requestId 到日志里定位具体那一条。
 > 观测栈注记：抓取配置与告警规则在 `docker/observability/`（独立编排片段，**不并入主 `docker-compose.yml`**）；规则只使用能从 `BusinessMetrics` 常量确定性推导的指标名，刻意不写 `hikaricp_connections_*`（dynamic-datasource 下未实测）。**静态正确性由 `AlertAssetsTest` 守住；动态行为证据见 `docs/observability-runtime-evidence.md`（Targets UP、9 条 loaded、5 条真实 firing / 4 条未点着并留 PromQL 反证、面板出图；禁止改阈值凑绿；不得声称 DLQ 端到端）。**
 > 实施注记（阶段 14）：规则名 `MqDlqBacklog` / `MqSubmitRetryExhausted`；指标 `exam.mq.dlq.depth` / `exam.mq.retry` / `exam.mq.dlq.entered`；静态由 `AlertAssetsTest` 守住；告警能否响已由阶段 16 证据覆盖，真 broker 往返重投仍属遗留 #6。
@@ -439,3 +439,63 @@ AND 应改为按有限枚举（如 `status`）聚合，个体明细回到返回�
 > 导致应用无法启动，已删）；日志 pattern 增列 `[%X{traceId:-}]`，非 HTTP 线程无 span 时留空。
 > **未合入部分**：从未对活着的 Jaeger 跑通端到端（测试 profile 置 `otel.traces.exporter=none`），
 > 原提案的"服务依赖拓扑图""Span 层级逐层打点"未实现，故不作为需求写入。
+
+---
+
+### Requirement: 交卷时延直方图
+
+WHEN 观测交卷链路的服务端时延,
+
+系统 SHALL 提供带直方图桶的提交时长指标，且 SHALL 使服务端分位数可从指标端点计算。
+
+#### Scenario: 桶计数可读
+
+GIVEN 服务处理过交卷请求
+
+WHEN 读取 exam_submit_duration_seconds 指标
+
+THEN 直方图桶计数出现且桶边界覆盖亚秒到数秒量级
+
+AND 服务端 P99 可由桶计算，不依赖客户端侧采样
+
+---
+
+### Requirement: Tomcat 线程水位可观测
+
+WHEN 交卷链路接近容量上限,
+
+系统 SHALL 暴露 Tomcat 线程 busy 与 max 指标，且 SHALL NOT 引入无界标签。
+
+#### Scenario: 线程指标存在
+
+GIVEN 应用启动
+
+WHEN 读取指标端点
+
+THEN tomcat.threads.busy 与 tomcat.threads.config.max 可读
+
+#### Scenario: 基数有界
+
+GIVEN 新增线程与时延指标
+
+WHEN 检查其标签维度
+
+THEN 不含业务键（考试 ID / 用户 ID 等）维度
+
+#### Scenario: 配置回退可检测
+
+GIVEN 直方图或线程指标配置被移除
+
+WHEN 运行指标存在性测试
+
+THEN 测试失败（防静默失效）
+
+---
+
+> 合入注记（2026-09-23，`add-submit-observability`）：SLO 桶 0.1/0.25/0.5/1/2/5/10s 铺在既有
+> `exam_submit_duration_seconds` Timer 上（`BusinessMetrics` 构造器 `serviceLevelObjectives`，
+> 未另起名、口径未动）；线程水位靠 `server.tomcat.mbeanregistry.enabled=true`（Spring Boot 默认
+> 不注册 Tomcat MBean）。存在性由 `SubmitObservabilityIntegrationTest`（真实 Tomcat 打端点 +
+> `@AutoConfigureObservability`，原始响应打进 surefire 输出）与 `BusinessMetricsTest` 桶配置
+> 单测守住，变异验证红绿均有留存。Grafana 总览面板补线程水位图（PromQL 无业务键）。
+> 验收门禁：`mvn -o clean test` @ `3b8bcfa` → 293/0/0/1（指导 agent 独立复跑）。
