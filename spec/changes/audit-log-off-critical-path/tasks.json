@@ -1,0 +1,35 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：评估（门控步）",
+    "task": "有数字地评估移出收益与失败语义",
+    "steps": [
+      { "step": "盘点 audit_log 既有调用点与失败语义（写失败当前如何处理），git grep 现场定位", "completed": false },
+      { "step": "测量同步审计写占关键路径的时延（含/不含对比或等价证据，三要素纪律）", "completed": false },
+      { "step": "裁决：移出 / 不移出，数字依据入报告；不移出则如实关闭本提案并记录，不硬改", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：实施（仅当裁决=移出）",
+    "task": "审计异步化且不丢",
+    "steps": [
+      { "step": "按仓库既有异步风格移出关键路径（@Async/事件/队列），业务事务不等待审计落库", "completed": false },
+      { "step": "失败补偿：审计写失败不静默丢（重试/暂存/死信，与 reliability 基线对齐）", "completed": false },
+      { "step": "集成测试：异步化后审计仍落库 + 失败补偿分支有覆盖（变异可红）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：保留策略与性能证据",
+    "task": "查重后裁决保留策略，留移出前后对比",
+    "steps": [
+      { "step": "对照 data-access 基线既有保留策略 Requirement 查重：覆盖则引用，不覆盖且确需清理才补（迁移走既有判据）", "completed": false },
+      { "step": "移出前后关键路径时延对比证据（命令 + 原始输出 + 短 revision）", "completed": false },
+      { "step": "全量门禁复跑，surefire 计数只增不减", "completed": false }
+    ],
+    "passes": false
+  }
+]
