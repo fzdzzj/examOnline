@@ -54,7 +54,11 @@ class AlertAssetsTest {
             "http_server_requests_seconds_count",
             "jvm_memory_used_bytes",
             "jvm_gc_pause_seconds_count",
-            "jvm_gc_pause_seconds_sum");
+            "jvm_gc_pause_seconds_sum",
+            // Tomcat 线程水位（add-submit-observability）：需 server.tomcat.mbeanregistry.enabled=true 才导出；
+            // 导出名带 baseUnit 后缀（实测 /actuator/prometheus：tomcat_threads_busy_threads / _config_max_threads）
+            "tomcat_threads_busy_threads",
+            "tomcat_threads_config_max_threads");
 
     /** PromQL 关键字/函数/运算符/标签名（非指标名）：expr 里出现、又不以 exam_ 开头、也不在白名单的
      * 标识符必须落在此集合，否则说明引用了未登记的名字，直接失败。 */

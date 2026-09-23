@@ -103,6 +103,13 @@ public class BusinessMetrics {
 
         this.submitTimer = Timer.builder(SUBMIT_DURATION)
                 .description("交卷链路耗时（含 MQ confirm 等待），count 可推导 QPS，sum/count 可推导平均耗时")
+                // 显式 SLO 桶（add-submit-observability）：Micrometer 默认桶是几何间隔，
+                // 1.17s 与 6.82s 之间没有任何桶，而交卷耗时恰落在 0.5s~5s 段
+                // （mq-confirm-timeout-ms 默认 5000）——不铺桶时服务端 P50/P95/P99
+                // 只能跨数量级插值，与客户端侧 JMeter 口径无法区分。
+                .serviceLevelObjectives(
+                        Duration.ofMillis(100), Duration.ofMillis(250), Duration.ofMillis(500),
+                        Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(5), Duration.ofSeconds(10))
                 .register(registry);
         this.submitSuccessCounter = Counter.builder(SUBMIT_SUCCESS_COUNT)
                 .description("交卷成功次数")

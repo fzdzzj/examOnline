@@ -203,4 +203,26 @@ class BusinessMetricsTest {
                         || text.contains("exam_submit_lock_contentions_total{} 2.0"),
                 "锁竞争失败计数=2 应导出");
     }
+
+    @Test
+    @DisplayName("交卷耗时直方图：SLO 桶覆盖 0.5/1/2/5s 量级，服务端 P99 可算")
+    void submitDurationHasSecondScaleBuckets() {
+        PrometheusMeterRegistry registry = registry();
+        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+
+        metrics.recordSubmitSuccess(metrics.startSubmit());
+
+        String text = registry.scrape();
+        // Micrometer 默认桶（几何间隔）在 1.17s 与 6.82s 之间是空档，交卷耗时恰落在
+        // 这段——不显式铺 SLO 桶时，面板/告警里的 histogram_quantile 只能跨数量级插值。
+        // 断言带指标名前缀，避免与锁等待桶（同样有 le="0.5"）串味。
+        assertTrue(text.contains("exam_submit_duration_seconds_bucket{le=\"0.5\""),
+                "交卷耗时应有 0.5s 直方图桶");
+        assertTrue(text.contains("exam_submit_duration_seconds_bucket{le=\"1.0\""),
+                "交卷耗时应有 1s 直方图桶");
+        assertTrue(text.contains("exam_submit_duration_seconds_bucket{le=\"2.0\""),
+                "交卷耗时应有 2s 直方图桶");
+        assertTrue(text.contains("exam_submit_duration_seconds_bucket{le=\"5.0\""),
+                "交卷耗时应有 5s 直方图桶");
+    }
 }
