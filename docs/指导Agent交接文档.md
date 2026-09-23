@@ -261,7 +261,7 @@
 
 ## 八、接手检查清单
 
-- [ ] 核对 `git rev-parse HEAD` = `77de655`（或读 `.git/logs/HEAD` 末行）与 `git status --short`（预期仅 `?? .trae/`）；
+- [ ] 核对 `git rev-parse HEAD`（应为本文档提交 `ddd7eb4` 或其后；或读 `.git/logs/HEAD` 末行）与 `git status --short`（预期仅 `?? .trae/`）；
 - [ ] `find spec/changes -mindepth 1 -maxdepth 1 -type d -not -name archive` 计数 = 进行中表行数（当前 3）；
 - [ ] 需要门禁结论时现场跑（判据见首屏），不引用本文档任何历史数字；
 - [ ] 不要把以下事项误报成已完成：P99 达标（三臂复验仍不达标）、DLQ 往返（若 #6 仍未证）、补考最终成绩**前端**展示（后端已接线、前端在途）、D1/D2 修复（待立项）；
