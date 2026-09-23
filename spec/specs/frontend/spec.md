@@ -1,7 +1,7 @@
 # frontend 规范
 
-> 能力域：前端（阶段 19 起的前端系列）。
-> 来源：`spec/changes/archive/add-frontend-must-change-guard` 合入（强制改密前端守卫，提案④，2026-09-21；接回阶段 19 因契约缺字段而移出的「强制改密前置」需求）+ `spec/changes/archive/add-frontend-student-taking` 合入（学生端在线考试：作答界面/服务端时间倒计时/草稿保存与断线恢复/交卷防重配合/切屏检测与上报/交卷结果如实呈现，阶段 22，2026-09-23）+ `spec/changes/archive/add-frontend-exam-admin` 合入（教师端考务：班级管理界面/考试创建与发布界面/监考与行为日志界面，阶段 21，2026-09-23）+ `spec/changes/archive/add-frontend-post-exam` 合入（考后闭环：主观题批改工作台/成绩发布撤回导出/缺考与补考/成绩查询与复核，阶段 23，2026-09-23）。
+> 能力域：前端（阶段 19 起的前端系列，19–23 五阶段全量）。
+> 来源：`spec/changes/archive/add-frontend-skeleton-auth` 合入（前端工程底座/API 契约驱动集成/会话与令牌生命周期/角色路由守卫，阶段 19，2026-09-23）+ `spec/changes/archive/add-frontend-teacher-authoring` 合入（题库管理界面/组卷界面/前端不复现判分口径，阶段 20，2026-09-23）+ `spec/changes/archive/add-frontend-must-change-guard` 合入（强制改密前端守卫，提案④，2026-09-21；接回阶段 19 因契约缺字段而移出的「强制改密前置」需求）+ `spec/changes/archive/add-frontend-student-taking` 合入（学生端在线考试：作答界面/服务端时间倒计时/草稿保存与断线恢复/交卷防重配合/切屏检测与上报/交卷结果如实呈现，阶段 22，2026-09-23）+ `spec/changes/archive/add-frontend-exam-admin` 合入（教师端考务：班级管理界面/考试创建与发布界面/监考与行为日志界面，阶段 21，2026-09-23）+ `spec/changes/archive/add-frontend-post-exam` 合入（考后闭环：主观题批改工作台/成绩发布撤回导出/缺考与补考/成绩查询与复核，阶段 23，2026-09-23）。
 > 实施注记：
 > - 本文件由**首个收尾的前端变更**创建（spec/README.md 约定：谁先收尾谁建目录）；阶段 19–23 五份 spec-delta 待各自验收收尾后按 Requirement 标题逐个追加，不预建空壳。
 > - 判定收敛在 `frontend/src/router/access.ts` 的 `decideNavigation` 单一函数，`guard.ts` 只做接线；前端守卫不是安全边界，后端 `@RequireRole` 才是权限的唯一裁决者。
@@ -597,3 +597,255 @@ GIVEN 教师已处理复核申请
 WHEN 学生查看结果
 
 THEN 呈现处理结果与调整说明
+
+---
+
+### Requirement: 前端工程底座
+
+WHEN 需要为已交付的后端能力提供可演示的 Web 界面,
+
+系统 SHALL 提供与后端同仓库的前端工程，且 SHALL 使构建、类型检查、代码规范检查与测试各自可独立跑通。
+
+#### Scenario: 工程可复现启动
+
+GIVEN 一份干净检出
+
+WHEN 按记录命令安装依赖并启动开发服务
+
+THEN 前端可访问且能通过代理调用后端接口
+
+#### Scenario: 质量门禁可跑
+
+GIVEN 前端代码存在
+
+WHEN 运行 lint、type-check 与单元测试
+
+THEN 三者均通过
+
+#### Scenario: 前端基线不影响后端基线
+
+GIVEN 前端测试与后端 Maven 测试并存
+
+WHEN 各自运行
+
+THEN 前端测试不计入后端 surefire 计数
+
+AND 后端基线不因前端变更而下降
+
+### Requirement: API 契约驱动集成
+
+WHEN 前端调用后端接口,
+
+系统 SHALL 以导出的 OpenAPI 契约生成类型化客户端，且 SHALL NOT 手写与契约重复的接口定义。
+
+#### Scenario: 客户端由契约生成
+
+GIVEN openapi.yaml 存在
+
+WHEN 运行生成命令
+
+THEN 产出类型化客户端供页面调用
+
+#### Scenario: 代理保留后端路径前缀
+
+GIVEN 后端端点自身带 /api 前缀
+
+WHEN 前端开发代理转发请求
+
+THEN 不剥离该前缀
+
+AND 真实请求返回业务响应而非 404
+
+#### Scenario: 统一响应解包
+
+GIVEN 后端返回统一响应结构
+
+WHEN 前端收到响应
+
+THEN 由拦截层统一解包
+
+AND 业务错误码呈现为可读提示而非原始报文
+
+### Requirement: 会话与令牌生命周期
+
+WHEN 用户在前端持有访问令牌,
+
+系统 SHALL 使令牌过期后可自动续期，且 SHALL 在续期失败时清理本地会话。
+
+#### Scenario: 并发过期只刷新一次
+
+GIVEN 多个请求同时收到未授权响应
+
+WHEN 触发令牌刷新
+
+THEN 刷新只发生一次
+
+AND 其余请求排队等待刷新结果后重放
+
+#### Scenario: 刷新失败即登出
+
+GIVEN 刷新令牌已失效
+
+WHEN 刷新请求失败
+
+THEN 清理本地令牌与用户状态
+
+AND 跳转登录页
+
+#### Scenario: 登出主动失效
+
+GIVEN 用户点击登出
+
+WHEN 前端执行登出
+
+THEN 调用后端使令牌进入黑名单
+
+AND 本地会话被清理
+
+### Requirement: 角色路由守卫
+
+WHEN 不同角色用户访问前端路由,
+
+系统 SHALL 按角色渲染可用入口并拦截越权访问，且 SHALL NOT 以前端守卫作为安全边界。
+
+#### Scenario: 按角色渲染入口
+
+GIVEN 已登录用户具有某一角色
+
+WHEN 进入应用
+
+THEN 仅呈现该角色可用的菜单与路由
+
+#### Scenario: 越权访问被拦截
+
+GIVEN 用户访问不属于其角色的路由
+
+WHEN 路由守卫执行
+
+THEN 跳转无权限页
+
+AND 不呈现该页面内容
+
+#### Scenario: 安全边界在后端
+
+GIVEN 前端守卫被绕过
+
+WHEN 直接调用后端接口
+
+THEN 后端角色校验仍然拒绝
+
+AND 前端代码中明确记录该取舍
+
+### Requirement: 题库管理界面
+
+WHEN 教师需要维护题目,
+
+系统 SHALL 提供题目检索、录入、修改与软删除的界面，且 SHALL 按题型提供对应的录入校验。
+
+#### Scenario: 按条件检索题目
+
+GIVEN 题库中存在多道题目
+
+WHEN 教师按题型、标签或关键词筛选
+
+THEN 列表按分页呈现匹配结果
+
+#### Scenario: 题型差异化录入
+
+GIVEN 教师选择某一题型
+
+WHEN 填写题目表单
+
+THEN 仅呈现该题型适用的字段
+
+AND 该题型的必要校验在提交前生效
+
+#### Scenario: 软删除语义以后端为准
+
+GIVEN 一道题目已被软删除
+
+WHEN 教师查看题库
+
+THEN 其可见性与可操作性由后端返回决定
+
+AND 前端不将已删题目呈现为可用
+
+### Requirement: 组卷界面
+
+WHEN 教师需要产出试卷,
+
+系统 SHALL 提供手动选题与标签随机抽题两条路径，且 SHALL 支持逐题分值覆盖与总分汇总。
+
+#### Scenario: 手动组卷可排序与改分
+
+GIVEN 教师已选入若干题目
+
+WHEN 调整题号顺序或单题分值
+
+THEN 试卷内容与总分实时更新
+
+#### Scenario: 随机抽题结果可确认
+
+GIVEN 教师配置了标签、题型与数量
+
+WHEN 触发抽题
+
+THEN 前端呈现抽中结果
+
+AND 教师可重抽或确认入卷
+
+#### Scenario: 随机算法不在前端
+
+GIVEN 需要按标签抽题
+
+WHEN 前端发起抽题
+
+THEN 由后端决定抽中题目
+
+AND 前端不复现随机算法
+
+#### Scenario: 试卷可只读预览
+
+GIVEN 一份已组好的试卷
+
+WHEN 教师查看试卷详情
+
+THEN 呈现题目内容与分值分布
+
+### Requirement: 前端不复现判分口径
+
+WHEN 前端处理题目答案录入,
+
+系统 SHALL 仅做格式校验，且 SHALL NOT 在前端实现答案归一化或判分规则。
+
+#### Scenario: 归一化归后端
+
+GIVEN 教师录入判断题答案
+
+WHEN 前端提交
+
+THEN 按后端约定的原始格式提交
+
+AND 归一化由后端完成
+
+#### Scenario: 两端不漂移
+
+GIVEN 判分口径需要调整
+
+WHEN 修改发生
+
+THEN 仅后端变更
+
+AND 前端无需同步修改判分逻辑
+
+---
+
+> 合入注记（2026-09-23，`accept-frontend-19-23` 收口批次，阶段 19/20 的 delta 补合入）：
+> 五阶段 Requirement 至此全部入基线。**已知缺陷如实登记**（真机走查 `frontend/docs/frontend-stages-walkthrough.md`，
+> `59bab7b`）：①「组卷界面」的 *手动组卷可排序与改分* 与 *试卷可只读预览* 两个 Scenario 当前不成立——
+> `teacher/papers/[id].page.vue` 漏 `import { Table }`（引入提交 `060b012`，交付即坏，控制台
+> `[Vue warn]: Failed to resolve component: Table`、题目表零渲染），登记遗留 #17 待立项修复；
+> ②「主观题批改工作台」缺判分入口——`grading/run` 已生成到 SDK 但无页面调用，判分前
+> `totalStudents=0`，教师纯靠 UI 进不了批改队列（连带「跳过判分汇总按 0」分支未实走），登记遗留 #18。
+> 门禁：lint/type-check exit=0、vitest 38 文件 331 例（`59bab7b` 指导 agent 复跑）；
+> 后端树与已门禁 `b1fa8a2` 一致（293/0/0/1）。走查覆盖与残留数据清单见走查记录原文。
