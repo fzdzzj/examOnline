@@ -1,10 +1,11 @@
-# 交卷链路 5000 并发压测资产（add-submit-loadtest）
+# 交卷链路 5000 并发压测资产（add-submit-loadtest；tune-submit-capacity 修订 G1/G2/G4/G5）
 
 本目录是可复现的交卷压测资产：**任何人按下面步骤都能在真 dev 环境重建同场景**。
 它服务于 `spec/specs/exam-taking/spec.md` 的「交卷落库容量与时延」需求——
 该需求原先只有参数生效与容量估算场景，本资产补上真跑证据。
 
-对应提案：`spec/changes/add-submit-loadtest/proposal.md`；实测报告：`docs/submit-loadtest-report.md`。
+对应提案：`spec/changes/add-submit-loadtest/proposal.md`（原始资产）、
+`spec/changes/tune-submit-capacity/proposal.md`（容量裁决与压测复验）；实测报告：`docs/submit-loadtest-report.md`。
 
 ---
 
@@ -15,13 +16,18 @@
 | `jmeter/submit-5000.jmx` | JMeter 场景：阶段1 登录取 token（前置）→ 阶段2 5000 并发交卷 |
 | `db/01-prepare.sql` | 造数：压测专用试卷/考试 + 5000 学生 + 5000 条「进行中」答卷 |
 | `db/02-metrics.sql` | 指标采集：丢单计数、落库时效（两侧端点都取 DB 列） |
-| `db/03-cleanup.sql` | 清理：只删压测命名空间，把 dev 库恢复原状 |
+| `db/03-cleanup.sql` | 清理：只删压测专用命名空间，把 dev 库恢复原状 |
 | `db/04-reset.sql` | 复跑复位：答卷退回「待交卷」+ 清防重表，同一批数据可重复压测 |
 | `prepare-data.sh` | 取真实 BCrypt 哈希 → 渲染 → 执行 `01-prepare.sql`（幂等） |
-| `run-loadtest.sh` | 跑 JMeter + 同步采样 MQ 深度 + 等积压归零 + 采集 DB 指标 |
+| `start-app.sh` | **G2 注入点**：起 dev 实例并把容量参数经环境变量注入（relaxed binding，零文件改动），落 `app-env-*.txt` / `app-proof-*.txt` |
+| `stop-app.sh` | 停 dev 实例（换臂 = 换实例；只杀确为 `exam-online.jar` 的 8080 监听进程） |
+| `run-arm.sh` | **G4 编排**：一臂 N 轮，每轮 = 复位 → 预热轮 → 复位 → 正式轮；跑完打印臂级中位数 |
+| `run-loadtest.sh` | 单轮：轮前等 TIME_WAIT 排空 → prom 前置快照 → 持续采样 → JMeter → prom 后置快照 → 等积压归零 → DB 指标 |
 | `analyze-results.py` | 从逐笔 CSV 算 P50/P90/P95/P99/失败明细（只取交卷样本，不混登录） |
-| `compare-runs.py` | 多轮汇总：客户端逐笔 + 服务端 MVC 计时并置，算「隐含并发度」并与线程上限对照 |
+| `compare-runs.py` | 多轮/多臂汇总：客户端逐笔 + 服务端净增量 + 连接池净增量 + 臂级中位数 |
+| `summarize-samples.py` | **G5**：把采样时间线压成峰值表（Tomcat 线程水位 / Hikari pending·active / CPU / 队列 / DB 连接） |
 | `probe/ProbeTomcatThreads.java` | 探针：从构建所用 jar 读出 Tomcat 线程/接受队列默认值（运行期读不到） |
+
 
 产物全部落在 `target/loadtest/`（`target/` 本就 gitignored），不入库。
 **注意**：`target/` 同时是 Maven 构建目录，**跑 `mvn clean` 会把历轮原始产物一起删掉**；
@@ -38,33 +44,75 @@
 
 ## 3. 执行步骤
 
+### 3.1 推荐路径：按「臂」跑（G4 方法学，判定只认它）
+
 ```bash
-# 0) 准备（造数）——幂等，可反复跑；会打印 exam_id
-bash loadtest/prepare-data.sh
+# 0) 前置：docker 栈在跑（主库 13316 / 从库 13317 / RabbitMQ 5672+15672）、Redis 在跑、JMeter 就位
 
-# 1) 正式一轮：5000 并发，交卷 ramp-up 10s（TAG 决定产物文件名，默认 run）
-TAG=run1 bash loadtest/run-loadtest.sh
+# 1) 默认臂（不注入容量参数 = 框架默认线程上限 200 / master 池 20）
+ARM=default ROUNDS=3 bash loadtest/run-arm.sh
 
-# 2) 复核产物
-#    target/loadtest/jmeter-stdout-run1.log       JMeter 原始标准输出
-#    target/loadtest/submit-results-run1.csv      逐笔明细（P99 数据源）
-#    target/loadtest/mq-depth-run1.csv            队列深度 + 未落库计数时间线
-#    target/loadtest/metrics-run1.txt             DB 指标（丢单/落库时效）
-#    target/loadtest/html-run1/index.html         JMeter 仪表盘
+# 2) 调参臂 A（G2 注入：经环境变量走 relaxed binding，零文件改动）
+ARM=tuned-t400 ROUNDS=3 SERVER_TOMCAT_THREADS_MAX=400 bash loadtest/run-arm.sh
 
-# 3) 恢复环境
-mysql -h127.0.0.1 -P13316 -uroot -p exam_online < loadtest/db/03-cleanup.sql
+# 3) 调参臂 B（把线程上限的下游一并打开：master 池上限）
+#    §2.4 证明单独提高线程上限是负优化（约束被推给池），故追加此臂
+ARM=tuned-t400-p100 ROUNDS=3 SERVER_TOMCAT_THREADS_MAX=400 DB_POOL_MAX=100 bash loadtest/run-arm.sh
+
+# 4) 三臂并置 + 中位数判定（判定只看臂级中位数，单轮不作为结论）
+python loadtest/compare-runs.py default=default-r1,default-r2,default-r3 \
+                               tuned-t400=tuned-t400-r1,tuned-t400-r2,tuned-t400-r3 \
+                               tuned-t400-p100=tuned-t400-p100-r1,tuned-t400-p100-r2,tuned-t400-p100-r3
+
+# 5) 恢复环境（只删压测命名空间）
+#    --default-character-set=utf8mb4 不是可选项：本机客户端默认 character_set_client=gbk，
+#    漏掉它会让脚本里的中文字面量**静默失真**，DELETE 匹配 0 行、末尾自证也报 0（假绿）。
+#    实测复现与机理见报告 §8.7。
+mysql -h127.0.0.1 -P13316 -uroot -p --default-character-set=utf8mb4 exam_online < loadtest/db/03-cleanup.sql
+# 复位后必须独立复核（不能用同一字面量的自证代替）：
+mysql -h127.0.0.1 -P13316 -uroot -p --default-character-set=utf8mb4 exam_online -t -e \
+  "SELECT (SELECT COUNT(*) FROM users WHERE username LIKE 'lt5k\\_%') AS users, \
+          (SELECT COUNT(*) FROM exams WHERE title='LOADTEST-5000-并发交卷') AS exams;"
 ```
 
-**复跑（换容量参数对比，不重新造数）**——顺序不能颠倒：
+`run-arm.sh` 每轮的顺序是固定的，不能颠倒：**复位数据 → 预热轮 → 复位数据 → 正式轮**
+（`run-loadtest.sh` 会在正式轮前自己等 TIME_WAIT 排空）。预热轮用 `WARMUP_THREADS`（默认 500）
+小规模跑一轮，只为把 JIT 打热——冷 JVM 的 P99 比热 JVM 高 68%（见报告 §5），不预热等于在量 JIT。
+
+单轮/单臂也可以手工跑，用于排查资产本身（**不得作为容量结论**）：
 
 ```bash
-# 1) 停掉应用实例，用新参数重启（容量参数都是启动期读取的环境变量）
-#    例：RABBIT_BATCH_CONCURRENCY=8 DB_POOL_MAX=40 SLAVE_DB_POOL_MAX=20 java -jar target/exam-online.jar ...
+ARM=probe bash loadtest/start-app.sh              # 起实例（注入写在 ARM_LOG / app-proof-*.txt）
+TAG=probe bash loadtest/run-loadtest.sh           # 5000 并发正式一轮
+TAG=dry SUBMIT_THREADS=20 SUBMIT_RAMP=2 LOGIN_RAMP=2 SKIP_TIME_WAIT_WAIT=1 bash loadtest/run-loadtest.sh
+python loadtest/analyze-results.py target/loadtest/submit-results-probe.csv   # P99
+python loadtest/summarize-samples.py target/loadtest/sample-probe.csv target/loadtest/mq-depth-probe.csv
+```
+
+### 3.2 逐轮产物与「判定的数据源」
+
+| 产物 | 判什么 |
+| --- | --- |
+| `submit-results-<TAG>.csv` | 提交 P99（硬指标，`analyze-results.py` / `compare-runs.py`） |
+| `metrics-<TAG>.txt` | 0 丢单、批量落库 < 30s（硬指标） |
+| `prom-before/after-<TAG>.txt` | 服务端 sum/count 的**本轮净增量**（服务时长）、连接池累计量净增量 |
+| `sample-<TAG>.csv` | G5 应用侧时间线（Tomcat 线程水位、Hikari pending/active、进程/系统 CPU）峰值 |
+| `mq-depth-<TAG>.csv` | DB/MQ 侧时间线（队列深度、未落库计数、MySQL 连接数）峰值 |
+| `timewait-<TAG>.csv` | 轮前 TIME_WAIT 排空过程（判「本轮是否在临时端口耗尽状态下跑的」） |
+| `app-proof-<ARM>.txt` | G2 生效证据（运行期读到的 `tomcat_threads_config_max_threads`） |
+
+**复跑（换参数对比，不重新造数）**——顺序不能颠倒：
+
+```bash
+# 1) 停实例 → 用新参数重启（容量参数都是启动期读取的环境变量）
+bash loadtest/stop-app.sh
+ARM=r2 SERVER_TOMCAT_THREADS_MAX=400 bash loadtest/start-app.sh
 # 2) 复位数据到「5000 待交卷」（幂等；自证须打印 5000 / 0 / 0 / 0）
-mysql -h127.0.0.1 -P13316 -uroot -p exam_online < loadtest/db/04-reset.sql
-# 3) 确认两个队列都归零（否则上一轮积压会算进这一轮的落库时效）
-docker exec exam-rabbitmq rabbitmqctl list_queues name messages_ready messages_unacknowledged
+#    同样必须带 --default-character-set=utf8mb4：漏掉它 @exam_id 会静默变 NULL，
+#    复位（和 02-metrics.sql 的取数）全部静默变成 0 —— 见报告 §8.7
+mysql -h127.0.0.1 -P13316 -uroot -p --default-character-set=utf8mb4 exam_online < loadtest/db/04-reset.sql
+# 3) 确认队列归零（否则上一轮积压会算进这一轮的落库时效）
+curl -s -u exam:exam123 http://127.0.0.1:15672/api/queues/%2F/exam.submit.queue
 # 4) 换 TAG 再跑，保留上一轮产物以便对比
 TAG=run2 bash loadtest/run-loadtest.sh
 ```
@@ -105,7 +153,7 @@ N 笔请求在 t 秒内到达时的放行上限 = `capacity + qps × t` = `2000 
 | 提交 P99 < 2s | 只取 `label = POST /submit` 且断言通过的样本；429/5xx 记失败，不混入成功延迟 | `analyze-results.py` |
 | 0 丢单 | `status=2`（已被接受）但 `answers IS NULL` 的行数 = 0 | `db/02-metrics.sql` |
 | 批量落库 < 30s | `MAX(updated_time where answers 非空) − MAX(submit_time)`，两侧端点都取自 DB 列 | `db/02-metrics.sql` |
-| 队列深度 / 消费积压 | 1s 一次只读采样 `rabbitmqctl list_queues` | `mq-depth-*.csv` |
+| 队列深度 / 消费积压 | 应用侧 0.25s / DB·MQ 侧 1s 一次只读采样（管理 API，失败退 `rabbitmqctl`） | `sample-*.csv` / `mq-depth-*.csv` |
 
 「被接受」的判据是交卷接口返回 2xx：此时状态机 CAS 已把 `status` 置 2 且 `submit_time` 已落库，
 答案由 MQ 消费者异步批量落库——所以「丢单」只可能是「已接受但答案没落库」。
@@ -113,25 +161,57 @@ N 笔请求在 t 秒内到达时的放行上限 = `capacity + qps × t` = `2000 
 
 ## 6. 测量纪律（不遵守会得到错误结论）
 
-下面三条都已在真机上被咬过（证据见 `docs/submit-loadtest-report.md` §3.3 与 §5）：
+下面三条都已在真机上被咬过（证据见 `docs/submit-loadtest-report.md` §3.3 与 §5），
+**tune-submit-capacity 起它们不再是「人工纪律」而是脚本动作**（括号里是执行者）：
 
 1. **测量前必须预热 JVM**。同一场景、同一组参数，仅换「实例是否已预热」，
    交卷 P99 就从 2200ms 变到 3700ms（差 68%）。冷实例的首轮结果主要反映 JIT
-   编译开销，而不是系统容量。做法：正式轮前先跑一轮小规模，或在同一实例上连跑两轮只取后者。
+   编译开销，而不是系统容量。（`run-arm.sh`：每轮正式轮前先跑一轮 `WARMUP_THREADS` 小规模）
 2. **轮间必须等客户端 TIME_WAIT 排空**。每轮约产生 1 万条连接残留；不等就复跑会出现
    「登录连不上 → 该线程拿不到 token → 交卷假 401」以及客户端 `BindException:
    Address already in use: connect`，把假失败和虚高的 P99 混进结果。
    实测 9531 条 TIME_WAIT 约需 2 分钟自然排空（Windows 默认 `TcpTimedWaitDelay=120s`）。
-   查法：`netstat -an | grep -c TIME_WAIT`。
+   查法：`netstat -an | grep -c TIME_WAIT`。（`run-loadtest.sh` 第 2 步：阈值 `TIME_WAIT_MAX`，
+   另有「连续 30s 不再下降且已到本机基线」的提前退出，过程写 `timewait-*.csv`）
 3. **每臂至少 3 轮取中位数**。单轮单点无法区分「参数效应」与「环境漂移」，
-   报告里只能写区间、不能写归因。
+   报告里只能写区间、不能写归因。（`ROUNDS=3` + `compare-runs.py` 的臂级中位数表）
+
+## 6.1 容量参数注入（G2：不改代码、不改配置文件）
+
+`SERVER_TOMCAT_THREADS_MAX` → `server.tomcat.threads.max`，靠 Spring Boot **relaxed binding**
+由环境变量直接注入。dev 应用跑在**宿主机**（不在容器里），所以注入点是 `start-app.sh`，
+**不是** `docker-compose.yml`（那个文件只编排 MySQL/Redis/RabbitMQ/Jaeger）。
+
+生效证据不靠自述：`app-proof-<ARM>.txt` 里记录运行期从 `/actuator/prometheus` 读到的
+`tomcat_threads_config_max_threads`（add-submit-observability 暴露），**没改 `src/main` 也能证明生效**。
+
+## 6.2 连接池证据的两条线（G5）
+
+| 证据线 | 数据源 | 强度与限制 |
+| --- | --- | --- |
+| 采样峰值 | `sample-*.csv` 的 `hikari_pending/active` | 受采样周期限制：本机每次进程 spawn ~0.43s，采样周期实测 ~3s，10s 突发窗口只能取到 3~5 点 ⇒ **峰值可能漏尖峰**，只能当下界 |
+| 累计量净增量 | `prom-before/after-*.txt` 做差：`hikaricp_connections_acquire_seconds_{count,sum,max}`、`usage_seconds_max`、`timeout_total` | **不依赖采样**：Δ取连接次数/平均等待回答「池是否排队」，`timeout_total` 增量回答「有没有取不到连接」，`*_max` 是 2 分钟滑窗最差值（紧跟突发取即覆盖该轮） |
+
 
 ## 7. 本机环境踩过的坑（改脚本前先读）
 
 1. **`curl -o /dev/null` 会失败**：本机 `curl` 是 Windows 版，只认 `NUL`；写成 `/dev/null`
    会以 `CURLE_WRITE_ERROR(23)` 退出，脚本在 `set -e` 下表现为「静默退出 23」。
-2. **`mysql` 客户端默认 `character_set_client=gbk`**：与 UTF-8 的 SQL 文件混用会报
-   `Data too long for column`（乱码被当成长串）。所有调用都要带 `--default-character-set=utf8mb4`。
+2. **`mysql` 客户端默认 `character_set_client=gbk`，与 UTF-8 的 SQL 文件混用时行为分两种，第二种最危险**：
+   所有调用都要带 `--default-character-set=utf8mb4`（脚本里已全部带上，漏的是手工命令）。
+   - **纯中文字面量 → 报错**：`ERROR 1267 Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (gbk_chinese_ci,COERCIBLE)`，批处理中止、退出码 1（**会**被发现）。
+   - **ASCII+中文混合字面量 → 静默失真**：不报错、退出码 0，但字面量被解成别的字符，`=` 比较恒为假。
+     实测（同一文件、同一字面量 `'LOADTEST-5000-并发交卷'`，仅换连接字符集）：
+     ```text
+     # 默认 gbk：'…' = _utf8mb4'…'  → 0（不相等）  CONVERT(… USING utf8mb4) → …2D E9AA9E E8B7BA …（乱码）
+     # utf8mb4 ：'…' = _utf8mb4'…'  → 1（相等）    CONVERT(… USING utf8mb4) → …2D E5B9B6 E58F91 …（正确）
+     ```
+     ⇒ `03-cleanup.sql` 的 `DELETE … WHERE title='…'` 与它末尾的自证 `leftover_exams` **用同一个失真字面量**，
+     于是「删了 0 行」和「残留 0 行」同时成立，**自证打印全 0 的绿色结果而复位根本没执行**（实测复现，见报告 §8.7）。
+     ⇒ `04-reset.sql` / `02-metrics.sql` 的 `@exam_id` 同样依赖这个字面量：漏参数会静默变成 `NULL`，
+     于是**所有硬指标静默变成 0**——「0 丢单」会变成假绿。
+   - 因此：① 所有 `mysql` 调用显式带 `--default-character-set=utf8mb4`；
+     ② **复位/取数之后必须用独立查询复核**，不得用脚本自带的自证代替复核。
 3. **`git bash` 不做 POSIX→Windows 路径转换**：交给 `java` / `python.exe` / `jmeter` 的路径必须是
    `D:/...` 形态；写成 `/d/...` 会被解释成 `D:\d\...`（JMeter 报 `Unable to access jarfile`）。
    同样适用于 `javap` / `jar` / `javac`：`javap -classpath /d/code/... ` 会静默报
@@ -159,3 +239,28 @@ N 笔请求在 t 秒内到达时的放行上限 = `capacity + qps × t` = `2000 
     `spring-core`）——少 `spring-core` 会以 `NoClassDefFoundError: DataSize` 失败，
     看起来像类不存在。版本不要用 glob 猜：本机 `.m2-repo` 里躺着 6 代 spring-core。
     完整命令见 `probe/ProbeTomcatThreads.java` 文件头注释。
+11. **本机进程 spawn ~0.43s/次，它是采样周期的头号成本**（实测：`date` 10 次 3.9s、
+    `python -c` 10 次 5.3s、`awk` 10 次 5.4s；整份 `/actuator/prometheus` 才 32KB，
+    curl 一次 0.51s 里大半是进程启动）。所以：
+    - `now_ms` 用 bash 内建 `EPOCHREALTIME`（0 次 fork），**别改成 `python -c` / `date`**；
+    - 应用侧 8 个指标用**一个** awk 扫完（`parse_app_metrics`），不要一个指标一次 awk；
+    - DB/MQ 侧三条 SQL 合成**一次** mysql 调用；
+    - 改完必须复核采样密度：`wc -l target/loadtest/sample-<TAG>.csv`，
+      10s 突发窗口至少要有 3 个点，否则 G5 的峰值只是摆设。
+12. **Hikari 指标在 dynamic-datasource 下只注册了主库池**（实测
+    `/actuator/prometheus` 里只有 `pool="master"`，没有从库池）——写报告时不能声称
+    「整个连接池都被观测到了」；从库池（`SLAVE_DB_POOL_MAX`）目前**不可观测**。
+13. **RabbitMQ 管理 API 的凭据不是 guest**：容器用 `RABBITMQ_DEFAULT_USER/PASS`
+    （默认 `exam/exam123`，见 `docker-compose.yml`），`guest:guest` 会 401。
+    队列深度优先走 `http://127.0.0.1:15672/api/queues/%2F/exam.submit.queue`（~0.3s），
+    比 `docker exec rabbitmqctl`（~2.7s）快一个量级；脚本在 API 不可用时自动退回后者。
+
+## 8. 可覆盖的环境变量（速查）
+
+| 脚本 | 变量 | 默认 | 说明 |
+| --- | --- | --- | --- |
+| `start-app.sh` | `ARM` / `SERVER_TOMCAT_THREADS_MAX` / `DB_POOL_MAX` / `SLAVE_DB_POOL_MAX` / `RABBIT_BATCH_CONCURRENCY` / `JAVA_BIN` / `JVM_OPTS` | 见脚本 | 容量参数经环境变量注入；产物 `app-env-*.txt`、`app-proof-*.txt` |
+| `run-arm.sh` | `ARM`（必填）/ `ROUNDS` / `WARMUP_THREADS` / `WARMUP_SUBMIT_RAMP` / `WARMUP_LOGIN_RAMP` | `3` / `500` / `3` / `5` | 一臂 N 轮，每轮前预热 |
+| `run-loadtest.sh` | `TAG` / `SUBMIT_THREADS` / `SUBMIT_RAMP` / `LOGIN_RAMP` / `SAMPLE_INTERVAL_S` / `ENV_SAMPLE_INTERVAL_S` / `TIME_WAIT_MAX` / `TIME_WAIT_FLOOR_ACCEPT` / `TIME_WAIT_TIMEOUT_S` / `SKIP_TIME_WAIT_WAIT` / `DRAIN_TIMEOUT_S` / `RABBITMQ_USER` / `RABBITMQ_PASS` | `run` / `5000` / `10` / `30` / `0.25` / `1` / `1500` / `3000` / `300` / `0` / `180` / `exam` / `exam123` | 单轮采集；`SKIP_TIME_WAIT_WAIT=1` 只许用于调试 |
+| 全部 | `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `MYSQL_BIN` / `JMETER_HOME` / `JMETER_HEAP` / `PYTHON_BIN` / `APP_BASE_URL` | 见脚本 | 环境适配 |
+
