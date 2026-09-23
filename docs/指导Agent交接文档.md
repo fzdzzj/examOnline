@@ -1,10 +1,10 @@
 # examOnline 项目交接文档（指导 Agent 视角）
 
 > **交接对象**：下一位项目指导 Agent
-> **文档时点**：2026-09-17
+> **文档时点**：2026-09-23（本轮覆盖阶段 19–23 前端五方向收口、G1–G5 执行、前端统一验收）
 > **当前分支**：`feature/add-performance-deepening-readwrite`
-> **当前性质**：阶段 1–18 已归档；阶段 19–23（前端五方向）已立项待实施。
-> **代码 HEAD**：`47d42f85613418a663a89a2656532249c7e5d1e9`（阶段 18 补提交 springdoc 配置）；其前为 `000bbf0`（阶段 18 主体）、`ef1c455`（前端系列立项）。
+> **当前性质**：阶段 1–23 全部归档；后续提案 3 个在途（`add-makeup-final-score-frontend` / `audit-log-off-critical-path` / `update-agent-gate-single-source`），2 个待立项（D1/D2，见遗留 #17/#18）。
+> **代码 HEAD**：`77de655f26fa9d7c957646915391190290c1d636`（accept-frontend-19-23 收口）；近期链：`3b8bcfa`（G3 观测）→ `df1871d`+`259d4f4`（G1/G2/G4/G5 容量与复验）→ `5b56d03`/`809aa04`（阶段 19/20 回勾与走查合入）→ `77de655`（统一验收收口）。
 > **后端验收判据（不是常量）**：某次后端全量门禁算不算绿，只看该次执行是否满足
 > `Failures=0` 且 `Errors=0`、`Skipped` 保持 1（Skipped 为受 `exportContract` 开关控制的契约导出方法，属设计使然，不要消除），
 > 且**用例总数不得少于本阶段开工时实测并记录在案的数值**——记录方式为「命令 + 当次原始输出 + 当时短 revision」写进该阶段的 `tasks.json` 证据字段。
@@ -43,41 +43,22 @@
 
 ### 2.1 Git
 
-- 分支：`feature/add-performance-deepening-readwrite`
-- 阶段 17 实施 commit：`83bc9ca fix(data-access): schema.sql 为 AUTO_INCREMENT 补主键以兼容 MySQL 8`（仅 3 文件，161 行纯新增）
-- 最近提交（实施之前）：
-  - `6c9b69d docs(spec): 归档 add-observability-runtime-evidence 并合入 observability 规范`
-  - `ff7e981 docs(observability): 记录观测栈动态验证证据（抓取 UP / 规则 firing / 面板出图）`
-  - `580fe67 docs(spec): 归档 add-data-retention 并合入 data-access 规范`
-  - `f42adba feat(retention): 按考试生命周期有界清理三张辅助表`
-- 当前没有已跟踪文件修改（本次归档 docs commit 之后）。
-- 仓库根曾有的 `%SystemDrive%/` 未跟踪垃圾目录（历史命令把环境变量当字面量展开失误所致）已于 2026-09-17 清理，从未进入任何 commit。
+- 分支：`feature/add-performance-deepening-readwrite`（HEAD `77de655`，2026-09-23 收口后工作树干净，仅 `?? .trae/` 本地目录）。
+- 2026-09-23 提交链（按时间）：`ef02fc1`（五份后续提案立项）→ `3b8bcfa`/`e34e12e`/`981f254`/`b1fa8a2`（G3 观测补齐与收口）→ `df1871d`/`259d4f4`/`acf7427`/`59bab7b`（G1/G2/G4/G5 容量调整与压测复验收口）→ `6a90195`/`5b56d03`/`809aa04`/`77de655`（accept-frontend-19-23：走查记录、阶段 19/20 回勾、统一验收收口）。
+- 早期链：`f5b4b99`（阶段 21 收口）、`fce387d`（阶段 23 复核收口）、`813da6d`（阶段 22 收口）。
 
 ### 2.2 OpenSpec 状态
 
-- `spec/changes/` 当前只剩 `archive/`（共 20 个已归档变更，阶段 1–17 全部收尾）。
-- `spec/README.md` 当前事实：
-  - 进行中变更：**无**；
-  - 已合入能力域规范：15 个；
-  - `data-access` 规范新增两个 Requirement（新库建表可在 MySQL 8 执行 / AUTO_INCREMENT 列必须有主键）；
-  - 阶段 14 的 DLQ 真 broker 往返仍是遗留，不能因为告警 firing 就声称 DLQ 重投端到端完成；
-  - 阶段 17 的 MySQL 空库真机初始化仍未实测，已列入遗留事项 #9。
+- `spec/changes/` 进行中 **3** 个：`add-makeup-final-score-frontend`（提案⑨前端收口，无前置）、`audit-log-off-critical-path`（G6，**门控提案**：先评估后实施）、`update-agent-gate-single-source`（E2，需联网与磁盘授权）。行数注记与 `find spec/changes -mindepth 1 -maxdepth 1 -type d -not -name archive` 现场计数互为判据。
+- 归档 **47** 个（2026-09-23 现场数），能力域 **19** 个。
+- `spec/specs/frontend/spec.md` 现含 **21** 个 Requirement——五阶段全量，已知缺陷（D1/D2）在合入注记与遗留 #17/#18 如实登记。
+- 开放遗留速览（详单以 `spec/README.md` 遗留节为准）：#1 P99 保持开放（复验最好 2293ms，瓶颈已跳出应用）；#6 DLQ 往返未证；#14/#15 偶发测试留观；#16 压测复位 gbk 假绿坑；#17/#18 D1/D2 待立项。
 
-### 2.3 阶段 16 动态观测证据
+### 2.3 本轮新增的动态证据（2026-09-23）
 
-证据文件：`D:\code\examOnline\docs\observability-runtime-evidence.md`
-
-已记录并已进入提交的事实：
-
-- Prometheus target `exam-online` 为 `UP`；
-- 9 条告警规则已加载；
-- 真实 firing：`ExamOnlineDown`、`RateLimitDegraded`、`MqSubmitRetryExhausted`、`MqDlqBacklog`、`AntiCheatEventSpike`；
-- 未点着且保留 PromQL 反证：`Http5xxRatioHigh`、`SubmitFailureRatioHigh`、`MqSubmitQueueBacklog`、`SubmitLatencyP99High`；
-- Grafana 数据源 uid=`prometheus`，总览面板不是整页 `No data`；
-- **未证明**：坏消息真进 DLQ 后再通过 broker 真重投回来；该事项仍属于遗留 #6；
-- **未证明**：5000 并发交卷 P99 / 丢单 / 批量落库硬指标。
-
-环境特例只作为运行证据，不要改成产品代码：Windows MySQL80 占用 3306、Windows Redis 服务占用 6379、从库未同步时 slave 读可能 404；空 MySQL 执行旧版 `schema.sql` 暴露了主键问题，阶段 17 专门处理。
+- **G3 观测**：`tomcat.threads.busy/config.max` 经 MBean registry 暴露、`exam_submit_duration_seconds` 铺 SLO 桶（0.1–10s）——surefire 输出含 `[evidence]` 行、变异验证红绿在案（`3b8bcfa`）。
+- **G1/G2/G4/G5 压测复验**：`docs/submit-loadtest-report.md` + `loadtest/` 脚本化方法学（臂级 ≥3 轮中位数、预热轮、TIME_WAIT 排空轮询、Prometheus 净增量口径）。三臂复验结论：0 丢单三臂达标；P99 三臂均不达标（最好 2293ms）；批量落库仅默认臂达标。**改指标凑数是违规，不达标如实登记也是合格收口**。
+- **前端统一真机走查**：`frontend/docs/frontend-stages-walkthrough.md`（`59bab7b`，Playwright 真实 Chromium + 网络录像），五阶段全页面族实走，D1/D2 两个逻辑级缺陷如实登记未修未绕。
 
 ---
 
@@ -119,9 +100,15 @@
 | 14 | `add-dlq-observability-and-replay` | 已归档 | DLQ 指标、告警、面板、有界留档重投；真 broker 仍未证 |
 | 15 | `add-data-retention` | 已归档 | 默认关闭 + dry-run；按考试生命周期清理三张辅助表；零 DDL；不纳入 DLQ 表 |
 | 16 | `add-observability-runtime-evidence` | 已归档 | 9 条规则 loaded；5 条真实 firing；4 条留反证；面板出图 |
-| 17 | `fix-schema-mysql-pk` | 已归档 | 25 张表补 `PRIMARY KEY (id)`；W16 存量迁移脚本；文本约定测试；210 全绿；**MySQL 空库真机初始化未实测** |
+| 17 | `fix-schema-mysql-pk` | 已归档 | 25 张表补 `PRIMARY KEY (id)`；W16 存量迁移脚本；文本约定测试；MySQL 空库真机初始化已由 `verify-mysql8-init` 补证（遗留 #9 收口） |
 | 18 | `add-backend-openapi` | 已归档 | springdoc 2.8.13；`openapi.yaml` 65 paths / 3.1.0 / 覆盖 14 Controller；5 个公开端点标 `security: []`；契约冒烟测试；**返修 1 轮**（pom 格式被压成 3 行、测试写仓库文件 + 方法顺序依赖、免鉴权未标注、未 commit） |
-| 19–23 | 前端五方向 | **已立项待实施** | 骨架+认证 / 题库组卷 / 考试管理 / 学生端考试 / 考后闭环；串行执行，提示词见各变更目录 `agent-prompt.md` |
+| 19–23 | 前端五方向 | 已归档 | 骨架+认证 / 题库组卷 / 考试管理 / 学生端考试 / 考后闭环；经 `accept-frontend-19-23` 统一验收（走查记录 `frontend/docs/frontend-stages-walkthrough.md`）；frontend 基线 21 个 Requirement 五阶段全量；阶段 20 有 D1 两格禁盲勾未勾（遗留 #17） |
+| — | `add-submit-loadtest` | 已归档 | 5000 并发压测报告（`docs/submit-loadtest-report.md`）：P99 不达标归因线程池饱和 + 近饱和排队放大；JIT 预热自纠 |
+| — | `add-submit-observability` | 已归档 | G3：Tomcat 线程水位暴露 + 交卷时延 SLO 桶；变异验证红绿在案（`3b8bcfa`） |
+| — | `tune-submit-capacity` | 已归档 | G1/G2/G4/G5：容量裁决（B+：线程 400 + 池 100）、relaxed binding 注入、方法学脚本化、Hikari 采样；三臂复验 P99 仍不达标如实登记（遗留 #1 保持开放） |
+| — | `verify-mysql8-init` | 已归档 | MySQL 8 空库真机初始化 + 存量迁移真跑（遗留 #9 收口） |
+| — | `fix-broker-confirm-and-dlq-roundtrip` | 已归档 | 提案⑦：broker 确认修复 + DLQ 往返（遗留 #10/#6 相关收口） |
+| — | `fix-contract-export-charset` | 已归档 | 提案⑧：契约导出 UTF-8 无损 + servers.url 不降级（遗留 #12 收口） |
 
 ### 4.1 阶段 17 资产位置（已归档）
 
@@ -173,6 +160,12 @@
 | `git stash` + `reset` 丢工作 | 阶段 19 返修时子 agent `stash push` 后未 pop 又执行 `reset`，11 个文件改动从工作区消失；靠 `git fsck --lost-found` 找到 dangling stash commit 再 `git stash apply <sha>` 才恢复。**子 agent 提示词一律禁止 `stash` / `reset` / `checkout -- .` / `clean`**；要检查历史版本只能用 `git worktree add`；要固化未提交改动就**先 commit**，别 stash |
 | 工作区 ≠ 提交 | 子 agent 报「工作区 clean」不可信；每轮验收必须自己跑 `git status --short` **加** `git diff --numstat`（行尾噪音时 `--numstat` 无输出，真实改动才有数字）。门禁若跑在工作区而 HEAD 是旧版本，等于**已提交代码从未被验证** |
 | grep 实体字段漏 setter | 查某字段有没有被用过，必须同时匹配 `setXxx` / `getXxx`（大小写不同）或直接用 `-i`。曾用小写 `mustChangePassword` grep，漏掉 `setMustChangePassword(0)` 两处，得出错误结论 |
+| antd4 Alert 默认插槽静默丢弃 | ant-design-vue 4 的 `Alert` 只渲染 `slots.message` / `slots.description`，默认插槽正文**零渲染、零报错**——弹窗正文必须走具名插槽（本坑已修 5 处：exams 发布/force-end、teacher/scores 发布确认、student/scores 复核申请 + 阶段 22 两处）。写用例断言 `document.body.textContent` 而非组件树 |
+| 模板组件忘 import 只告警不失败 | `<Table>` 用了但只 `import type { TableColumnsType }` → `[Vue warn]: Failed to resolve component`，整块零渲染而门禁全绿（D1，遗留 #17）。页面级用例应断言「无组件解析警告」 |
+| PowerShell 不支持 `&&` / `\|\|` | 本机 PowerShell 版本多命令只能用 `;` 串接 + `$LASTEXITCODE` 判退码；vitest 路径含 `(dashboard)` 括号必须加双引号 |
+| 无头浏览器无真实窗口焦点 | visibilityState 恒 visible，切屏/失焦类用例只能合成 DOM 信号并在记录中如实标注——不要声称覆盖了真实用户切换 |
+| mysql 客户端 gbk 静默假绿 | 复位/对账脚本必须 `--default-character-set=utf8mb4`，且复位结果以独立复核命令为准（遗留 #16 详单） |
+| 子 agent 被中断留下半成品 | 接手的工作树先 `git status --short` + 通读未提交改动，判定质量后决定续用或按写入边界重做；禁 `stash`/`reset`/`checkout -- .`/`clean` 一键抹掉 |
 
 ### 6.1 本机历史坑与当时的绕行办法（**不是推荐的验证命令**）
 
@@ -268,37 +261,32 @@
 
 ## 八、接手检查清单
 
-- [x] 读 `docs/需求决策记录.md`；
-- [x] 读 `spec/README.md` 与相关 `spec/specs/`；
-- [x] 核对 `git rev-parse HEAD`、`git status --short`；
-- [x] 阶段 17 提案四件套确认（已随归档移入 `archive/`）；
-- [x] 提示词 B 已发给子 agent，子 agent 自己 commit（`83bc9ca`）；
-- [x] 指导 Agent 独立核 diff + 重跑全量（210 全绿）；
-- [x] 归档五步完成（spec 合入 → 目录 archive → tasks 回勾 → README 更新 → docs commit）；
-- [x] `%SystemDrive%/` 垃圾目录已清理（从未进入 commit）；
-- [ ] 下一位接手时：核对 `git rev-parse HEAD` 与本归档 docs commit 一致；
-- [ ] 不要把 DLQ 真 broker、5000 并发压测、补考成绩接线、MySQL 空库真机初始化误报成已完成。
+- [ ] 核对 `git rev-parse HEAD` = `77de655`（或读 `.git/logs/HEAD` 末行）与 `git status --short`（预期仅 `?? .trae/`）；
+- [ ] `find spec/changes -mindepth 1 -maxdepth 1 -type d -not -name archive` 计数 = 进行中表行数（当前 3）；
+- [ ] 需要门禁结论时现场跑（判据见首屏），不引用本文档任何历史数字；
+- [ ] 不要把以下事项误报成已完成：P99 达标（三臂复验仍不达标）、DLQ 往返（若 #6 仍未证）、补考最终成绩**前端**展示（后端已接线、前端在途）、D1/D2 修复（待立项）；
+- [ ] 派工前读对应变更目录 `agent-prompt.md`，并现场核验其中的「现状」段（工作树路径、事实基线会过期）。
 
 ---
 
 ## 九、下一步路线
 
-### 立即下一步
+### 在途（3 个，提示词均已落盘）
 
-**实施阶段 19 `add-frontend-skeleton-auth`**（前端方向①：工程骨架 + 认证）。提示词已落盘：`spec/changes/add-frontend-skeleton-auth/agent-prompt.md`。阶段 18 已交付 `openapi.yaml`（65 paths），前置条件满足。
+1. **`add-makeup-final-score-frontend`**（提案⑨前端收口，P3，无前置、改动面小）——后端 `ScoreController` 两条 makeup-final 端点与 `openapi.yaml` 均在，前端生成层零命中、makeups 页还挂着「后端尚未接线」诚实边界。注意 Alert 具名插槽坑。
+2. **`audit-log-off-critical-path`**（G6，**门控提案**）——任务 1 评估可先行；任务 2 实施仅在裁决=移出关键路径时执行；结论=不移出则如实关闭也是合格收口。
+3. **`update-agent-gate-single-source`**（E2）——需要联网与磁盘授权，收口后 `AGENTS.md`「唯一门禁命令」回填。
 
-前端系列（19→20→21→22→23）**必须串行**，每个阶段验收并归档后才发下一个。各阶段提示词均已写好，位于各自变更目录。
+### 待用户裁决立项
 
-### 阶段 19 之后的候选（不要与前端系列混做）
+- **D1**（遗留 #17）：`teacher/papers/[id].page.vue` 补 `import { Table }` + 「无组件解析警告」守卫用例——一行修复，优先级建议高（试卷详情核心功能交付即坏）；
+- **D2**（遗留 #18）：批改工作台加「运行判分」入口（`grading/run` 已在 SDK 无调用）——涉及产品决策（入口放哪、汇总是否对未判分数据给出提示）。
 
-1. **`ExamSubmitSender` 真 broker 启动异常修复**（遗留 #10）——`waitForConfirmsOrDie` 须在 `invoke()` 作用域内调用；启动对账当前实际未补发成功；
-2. **MySQL 8 空库真机初始化验证**（遗留 #9）——成本极低，证据价值高；
-3. **JMeter 5000 并发交卷真实数据**（遗留 #1）——P99 / 丢单 / 批量落库硬指标；
-4. **HTTP → MQ → 落库 requestId 日志串联证据**——观测链路可回答性深化；
-5. **DLQ 真 broker 往返**（遗留 #6）——本机 Docker 环境已确认可用（见 §6.2）；
-6. **补考成绩接线**（遗留 #5）——`MakeupScoreService.finalScore` 全仓库零调用，需新增接口，属功能变更。
+### 遗留观察项（不主动开工）
 
-1 与 6 是缺陷/缺口修复；2/3/4 是「我能证明它有」路线。优先级由用户定。
+- #1 P99：瓶颈已跳出应用（MySQL 内部排队 + 压测机同机抢核），继续需分离压测机/DB 排队治理（另立项）；
+- #14/#15 偶发测试失败留观（ExamTakingIntegrationTest 注册链路 400、DataRetentionIntegrationTest 共享 H2 干扰）——再复现值得单独立项查用例隔离；
+- #16 压测复位纪律照办。
 
 ---
 
@@ -306,20 +294,20 @@
 
 ### 已核实事实
 
-- 阶段 17 实施 commit 为 `83bc9ca`（仅 3 文件，161 行纯新增），归档 docs commit 紧随其后；
-- schema.sql 25 个自增表全部有 `PRIMARY KEY (id)`，与 `AUTO_INCREMENT` 计数一一对齐；
-- 阶段 17 验收时指导 Agent 独立重跑全量为 210 全绿（非转述）——**这条只描述 `83bc9ca` 那一次执行**，不是当前基线；当前是否绿一律按首屏判据现场跑一次判定，本文档不承载跨阶段有效的用例数；
-- 阶段 17 已归档：spec 已合入 data-access、目录已入 archive、tasks 已按证据回勾、README 已更新；
-- 阶段 16 已有 5 条 firing、4 条未点着的运行证据；
-- `exam_dlq_messages` 没有 `exam_id`，阶段 15 因此不纳入清理；
-- `%SystemDrive%/` 垃圾目录已清理，从未进入 commit。
+- 阶段 1–23 全部归档；frontend 基线 21 个 Requirement（五阶段全量）；归档 47 个变更、19 个能力域（2026-09-23 现场数）；
+- G3 已落地：线程水位指标 + 交卷时延 SLO 桶，surefire `[evidence]` 行与变异验证红绿在案（`3b8bcfa`）；
+- G1/G2/G4/G5 已落地：三臂（default/t400/t400-p100）×3 轮复验、0 丢单三臂达标、方法学脚本化（`loadtest/run-arm.sh` 等）；
+- 后端 `makeup-final` 两条端点已存在并被 openapi.yaml 覆盖（`ScoreController.java:119/:137`）；
+- 走查记录 `frontend/docs/frontend-stages-walkthrough.md` 五阶段实走、缺陷零静默；
+- 本机 PowerShell 门禁实测可跑：`pnpm lint:check` / `type-check:check` exit=0、vitest 38 文件 331 例（`59bab7b`，2026-09-23 指导 agent 亲自执行——仅描述该次执行，不是常量基线）。
 
 ### 当前未知 / 不应声称
 
-- 阶段 17 修复后的 MySQL 空库真机是否真的成功初始化——**仍未实测**（遗留 #9）；
-- W16 存量迁移脚本在真实存量库的行为——无真机执行记录；
-- DLQ 真 broker 往返重投是否成功——仍未验证（遗留 #6）；
-- 5000 并发交卷的 P99、丢单、批量落库时延——仍未实测（遗留 #1）。
+- 5000 并发 P99 < 2s —— **三臂复验均不达标**（最好 2293ms，超 14.6%），遗留 #1 保持开放；
+- 真实用户窗口切换的切屏上报（走查受无头环境限制，只有合成 DOM 信号证据）；
+- D1 修复后试卷详情功能是否完整（未修未测）；
+- D2 相关的「跳过判分直接汇总按 0」分支真机行为（走查为保护共享数据未实走，仅代码定性）；
+- E2 收口前不存在仓库自有的唯一门禁命令。
 
 ---
 
@@ -346,7 +334,7 @@ pnpm dev            # http://localhost:5173，hash 路由
 
 1. **代理不得 rewrite `/api`**。后端 14 个 Controller 的路径本身就带 `/api` 前缀，而参考项目的网关会剥掉它、所以 crm-front 写了 `rewrite: path.replace(/^\/api/, '')`。这里照抄会把所有接口变成 404。`vite.config.ts` 里已就地写了警示注释，并由 `e2e/auth-smoke.spec.ts` 断言请求 URL 仍含 `/api`。
 2. **API 客户端只能由 `pnpm gen:api` 生成**（契约 = 根目录 `openapi.yaml`，或 `VITE_CONTRACT_URL` 指向运行中的 `/v3/api-docs`）。手写只允许 `src/api/` 下的薄封装；`src/api/axios/**` 已在 eslint / prettier 里整体豁免，不要人工改、也不要为通过 formatter 去动它。
-3. **前端守卫不是安全边界**，只是体验层。`src/router/access.ts#decideNavigation` 是**唯一**导航裁决入口——日后接入 `must_change_password` 强制改密前置（另行立项 `add-auth-must-change-password`）时只改这一个函数。登录态一律以后端 `/api/auth/me` 的结果为准，绝不用「本地有 token」当代替。
+3. **前端守卫不是安全边界**，只是体验层。`src/router/access.ts#decideNavigation` 是**唯一**导航裁决入口——`must_change_password` 强制改密前置已由 `add-frontend-must-change-guard` 接入（该函数为唯一落点，有 `access.spec.ts` 覆盖未认证/正常/mustChangePassword 三场景）。登录态一律以后端 `/api/auth/me` 的结果为准，绝不用「本地有 token」当代替。
 
 ### Refresh 单飞（硬约束，勿退化）
 
@@ -368,6 +356,9 @@ pnpm test:e2e           # 需要后端在跑 + pnpm exec playwright install
 
 ### 已知缺口（不要误报成已完成）
 
-- `pnpm test:e2e` **未实跑**：本机 Playwright 要求的 chromium build 与已安装版本不一致（缺 `chromium_headless_shell-1243`）。用例已能通过收集与转译，卡在浏览器启动。首次执行需 `pnpm exec playwright install chromium`（会下载浏览器，属需授权动作）。
+- `pnpm test:e2e` 套件本身**未实跑**（本机 chromium 版本曾不匹配）；但 Playwright 真实 Chromium 已在统一走查中大量使用（`frontend/docs/frontend-stages-walkthrough.md`），浏览器可用性已证。
 - e2e 冒烟只覆盖「登录 → 首页 → 越权重定向 → 登出」，注册 / 找回密码有验证码与邮件依赖，未编入用例。
-- 阶段 19 只有认证四页 + 首页骨架；`/admin`、`/teacher`、`/student` 三个分区菜单项是 `disabled` 占位，属阶段 20+。
+- **D1**（遗留 #17）：`teacher/papers/[id].page.vue` 试卷题目表漏 import Table，手动组卷改分/调序与试卷预览题目内容不可用——**交付即坏、待立项修复**，走查 `20-3b`/`20-5` 有实证。
+- **D2**（遗留 #18）：批改工作台无「运行判分」入口，判分前 `totalStudents=0`，教师纯靠 UI 进不了批改队列。
+- 走查残留（无删除端点，已在走查记录如实登记）：考试 14 及其快照/答卷/行为日志/主观分/复核记录、试卷 14、走查账号 6 个——**下次走查/联调前先看走查记录的残留清单，别把残留数据当产品缺陷**。
+- 无头环境无真实窗口焦点：切屏相关结论只有合成 DOM 信号证据（走查记录有标注）。
