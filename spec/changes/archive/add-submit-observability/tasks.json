@@ -4,30 +4,30 @@
     "category": "阶段 1：Tomcat 线程水位",
     "task": "tomcat.threads.busy / config.max 可从指标端点读取",
     "steps": [
-      { "step": "开启 MBean registry（或等价 binder），现场证明 tomcat.threads.busy 与 tomcat.threads.config.max 出现在 /actuator/metrics", "completed": false },
-      { "step": "新增指标不引入无界标签（对齐「指标基数有界」基线）", "completed": false }
+      { "step": "开启 MBean registry（或等价 binder），现场证明 tomcat.threads.busy 与 tomcat.threads.config.max 出现在 /actuator/metrics", "completed": true },
+      { "step": "新增指标不引入无界标签（对齐「指标基数有界」基线）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 2,
     "category": "阶段 2：提交时延直方图",
     "task": "exam_submit_duration_seconds 带直方图桶，服务端 P99 可计算",
     "steps": [
-      { "step": "配置直方图桶（边界覆盖 0.5s/1s/2s/5s 量级），现场证明桶计数出现在指标端点", "completed": false },
-      { "step": "指标命名与既有 exam_submit_duration_seconds 口径一致（不另起名）", "completed": false }
+      { "step": "配置直方图桶（边界覆盖 0.5s/1s/2s/5s 量级），现场证明桶计数出现在指标端点", "completed": true },
+      { "step": "指标命名与既有 exam_submit_duration_seconds 口径一致（不另起名）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 3,
     "category": "阶段 3：测试与面板",
     "task": "防回退：配置拿掉时测试变红；面板最小可用",
     "steps": [
-      { "step": "指标存在性/桶配置测试（变异验证：撤掉配置→测试红）", "completed": false },
-      { "step": "Grafana 线程水位与提交时延最小面板（若面板资产在仓库内，补图；不在仓库则登记不阻塞）", "completed": false },
-      { "step": "全量门禁复跑，surefire 计数只增不减", "completed": false }
+      { "step": "指标存在性/桶配置测试（变异验证：撤掉配置→测试红）", "completed": true },
+      { "step": "Grafana 线程水位与提交时延最小面板（若面板资产在仓库内，补图；不在仓库则登记不阻塞）", "completed": true },
+      { "step": "全量门禁复跑，surefire 计数只增不减", "completed": true }
     ],
-    "passes": false
+    "passes": true
   }
 ]
