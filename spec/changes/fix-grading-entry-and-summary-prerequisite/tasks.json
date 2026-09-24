@@ -42,21 +42,21 @@
     "steps": [
       {
         "step": "在教师批改工作台对已结束且未汇总考试提供运行判分动作，调用现有生成 SDK；已批改/已发布不冒称可整场重判，重复点击被收敛且重跑影响说明可见",
-        "completed": false,
-        "evidence": "实现位于提交 e743c976cd5b983794ace062dc9819813b64cb77（短 revision e743c97）：批改工作台仅在后端状态为 ENDED 时显示运行判分，调用现有生成 SDK run，按钮 loading + 运行中守卫收敛重复点击，并明确说明重算客观题且不覆盖已保存主观分；运行结果按捕获的 examId 隔离，切换考试不会把旧请求结果落到新考试。定向页面测试命令：`node node_modules/vitest/vitest.mjs run --testNamePattern=\"教师批改工作台显式运行判分|成绩汇总前置失败引导\"`，原始结果为 6 passed / 333 skipped，退出码 0。本轮按指示不将阶段 3 passes 回勾为 true，待阶段 4 收口。"
+        "completed": true,
+        "evidence": "实现位于提交 e743c976cd5b983794ace062dc9819813b64cb77（短 revision e743c97）：批改工作台仅在后端状态为 ENDED 时显示运行判分，调用现有生成 SDK run，按钮 loading + 运行中守卫收敛重复点击，并明确说明重算客观题且不覆盖已保存主观分；运行结果按捕获的 examId 隔离，切换考试不会把旧请求结果落到新考试。2026-09-25 在 3a389dce09da36fe1f11bba88bcec0d441fcc0d6（短 revision 3a389dc）上现场复跑全量前端测试：`node node_modules/vitest/vitest.mjs run`，原始结果 `Test Files 41 passed (41), Tests 344 passed (344)`，退出码 0，其中含批改工作台与成绩页页面测试。"
       },
       {
         "step": "响应 total/success/failed/失败清单如实渲染，total=0 与 failed>0 有独立状态；运行后刷新题级进度/学生行，无主观题卷不误报无需客观判分；补页面测试",
-        "completed": false,
-        "evidence": "实现位于提交 e743c97：页面如实渲染 total/success/failed 与 failures，total=0 单独提示“无已交卷答卷”，failed>0 单独提示失败且不显示“判分完成”；运行后刷新题级进度，只有当前考试且已选 questionId 时才 refetch 学生行，避免向必填 questionId 传 undefined。定向页面测试原始结果为 6 passed / 333 skipped，退出码 0；阶段 3 仍按指示保持未完成。"
+        "completed": true,
+        "evidence": "实现位于提交 e743c97：页面如实渲染 total/success/failed 与 failures，total=0 单独提示“无已交卷答卷”，failed>0 单独提示失败且不显示“判分完成”；运行后刷新题级进度，只有当前考试且已选 questionId 时才 refetch 学生行，避免向必填 questionId 传 undefined。2026-09-25 在 3a389dce09da36fe1f11bba88bcec0d441fcc0d6（短 revision 3a389dc）上现场复跑全量前端测试：`node node_modules/vitest/vitest.mjs run`，原始结果 `Test Files 41 passed (41), Tests 344 passed (344)`，退出码 0。"
       },
       {
         "step": "成绩汇总被服务端拒绝时展示可操作提示并引导回判分工作台；前端不本地推算判分状态、不伪造成功；补对应测试",
-        "completed": false,
-        "evidence": "实现位于提交 e743c97：成绩页将判分/客观分前置错误与网络等通用汇总错误分开呈现，只有前置错误展示“前往批改工作台”，不在前端推算判分状态。定向页面测试原始结果为 6 passed / 333 skipped，退出码 0；阶段 3 仍按指示保持未完成。"
+        "completed": true,
+        "evidence": "成绩页前置错误处理经 cdc3137、94fde24、99a358c 连续修复，收口于提交 3a389dce09da36fe1f11bba88bcec0d441fcc0d6（短 revision 3a389dc）：成绩页将判分/客观分前置错误与网络等通用汇总错误分开呈现，只有前置错误展示“前往批改工作台”，不在前端推算判分状态。2026-09-25 在 3a389dc 上现场复跑定向测试：`node node_modules/vitest/vitest.mjs run \"src/pages/(dashboard)/teacher/scores/__tests__/summaryPrerequisiteAlert.spec.ts\" --reporter=verbose`，原始结果 `Tests 7 passed (7)`，退出码 0；同 revision 复跑 `npx eslint src e2e *.config.ts`、`npx vue-tsc --project ./tsconfig.app.json --noEmit`、`npx tsc --project ./tsconfig.config.json --noEmit`，退出码均为 0。"
       }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 4,
