@@ -55,6 +55,7 @@ beforeEach(() => {
   routerMock.push.mockClear();
   vi.mocked(api.summarize).mockReset();
   vi.spyOn(message, 'error').mockImplementation(() => ({}) as never);
+  vi.spyOn(message, 'success').mockImplementation(() => ({}) as never);
 });
 
 afterEach(() => {
@@ -62,7 +63,35 @@ afterEach(() => {
 });
 
 describe('成绩汇总前置失败引导', () => {
-  it('后端拒绝未判分汇总时显示原因，并提供回批改工作台操作', async () => {
+  it('拦截器包装后的汇总前置错误仍显示前往批改工作台', async () => {
+    vi.mocked(api.summarize).mockRejectedValue(
+      new ApiError(400, '请求参数不合法（存在未完成判分的答卷，不能汇总成绩）')
+    );
+
+    const wrapper = mount(TeacherScoresPage, { attachTo: document.body });
+    await flushPromises();
+    wrapper.findComponent(Select).vm.$emit('update:value', 7);
+    await flushPromises();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '汇总成绩')
+      ?.trigger('click');
+    await flushPromises();
+
+    expect(document.body.textContent).toContain(
+      '请求参数不合法（存在未完成判分的答卷，不能汇总成绩）'
+    );
+    const gradingButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === '前往批改工作台');
+    expect(gradingButton).toBeTruthy();
+
+    await gradingButton?.trigger('click');
+    expect(routerMock.push).toHaveBeenCalledWith('/teacher/grading');
+  });
+
+  it('裸文案「存在未完成判分的答卷，不能汇总成绩」仍显示前往批改工作台', async () => {
     vi.mocked(api.summarize).mockRejectedValue(
       new ApiError(400, '存在未完成判分的答卷，不能汇总成绩')
     );
@@ -83,9 +112,27 @@ describe('成绩汇总前置失败引导', () => {
       .findAll('button')
       .find((button) => button.text() === '前往批改工作台');
     expect(gradingButton).toBeTruthy();
+  });
 
-    await gradingButton?.trigger('click');
-    expect(routerMock.push).toHaveBeenCalledWith('/teacher/grading');
+  it('「判分服务暂不可用」不显示前往批改工作台', async () => {
+    vi.mocked(api.summarize).mockRejectedValue(new Error('判分服务暂不可用'));
+
+    const wrapper = mount(TeacherScoresPage, { attachTo: document.body });
+    await flushPromises();
+    wrapper.findComponent(Select).vm.$emit('update:value', 7);
+    await flushPromises();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '汇总成绩')
+      ?.trigger('click');
+    await flushPromises();
+
+    expect(document.body.textContent).toContain('判分服务暂不可用');
+    const gradingButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === '前往批改工作台');
+    expect(gradingButton).toBeFalsy();
   });
 
   it('网络故障只显示通用汇总失败，不引导到批改工作台', async () => {
@@ -106,35 +153,6 @@ describe('成绩汇总前置失败引导', () => {
     expect(document.body.textContent).not.toContain('前往批改工作台');
     expect(routerMock.push).not.toHaveBeenCalled();
   });
-  it('仅精确匹配后端特定汇总前置错误才显示引导按钮；其他含“判分”的错误不显示', async () => {
-    vi.mocked(api.summarize).mockRejectedValue(
-      new ApiError(400, '存在未完成判分的答卷，不能汇总成绩')
-    );
-    const wrapper = mount(TeacherScoresPage, { attachTo: document.body });
-    await flushPromises();
-    wrapper.findComponent(Select).vm.$emit('update:value', 7);
-    await flushPromises();
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === '汇总成绩')
-      ?.trigger('click');
-    await flushPromises();
-    expect(document.body.textContent).toContain('存在未完成判分的答卷，不能汇总成绩');
-    let btn = wrapper.findAll('button').find((button) => button.text() === '前往批改工作台');
-    expect(btn).toBeTruthy();
-    // non-exact containing 判分 should not guide
-    vi.mocked(api.summarize).mockRejectedValue(new Error('判分服务暂不可用，请稍后重试'));
-    wrapper.findComponent(Select).vm.$emit('update:value', 7);
-    await flushPromises();
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === '汇总成绩')
-      ?.trigger('click');
-    await flushPromises();
-    expect(document.body.textContent).toContain('判分服务暂不可用');
-    btn = wrapper.findAll('button').find((button) => button.text() === '前往批改工作台');
-    expect(btn).toBeFalsy();
-  });
 
   it('旧考试的汇总失败请求在切换考试后不会污染新考试的错误展示', async () => {
     let rejectLate!: (error: unknown) => void;
@@ -154,11 +172,9 @@ describe('成绩汇总前置失败引导', () => {
       .findAll('button')
       .find((button) => button.text() === '汇总成绩')
       ?.trigger('click');
-    // switch to B before A resolves
     wrapper.findComponent(Select).vm.$emit('update:value', 10);
     await flushPromises();
-    // now let A fail with the specific message
-    rejectLate(new ApiError(400, '存在未完成判分的答卷，不能汇总成绩'));
+    rejectLate(new ApiError(400, '请求参数不合法（存在未完成判分的答卷，不能汇总成绩）'));
     await flushPromises();
     const body = document.body.textContent || '';
     expect(body).not.toContain('存在未完成判分的答卷');
@@ -166,5 +182,68 @@ describe('成绩汇总前置失败引导', () => {
       .findAll('button')
       .find((button) => button.text() === '前往批改工作台');
     expect(gradingBtn).toBeFalsy();
+  });
+
+  it('旧考试汇总成功返回后，新考试不能出现旧的汇总结果卡片', async () => {
+    let resolveLate!: (value: unknown) => void;
+    const pending = new Promise((resolve) => {
+      resolveLate = resolve;
+    });
+    vi.mocked(api.summarize).mockReturnValue(pending as never);
+
+    const wrapper = mount(TeacherScoresPage, { attachTo: document.body });
+    await flushPromises();
+    queryStore.data.exams = [
+      { id: 7, title: '待判分考试', status: 2 },
+      { id: 10, title: '另一场考试', status: 2 },
+    ];
+    wrapper.findComponent(Select).vm.$emit('update:value', 7);
+    await flushPromises();
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '汇总成绩')
+      ?.trigger('click');
+
+    wrapper.findComponent(Select).vm.$emit('update:value', 10);
+    await flushPromises();
+
+    resolveLate({ summarized: 5, skipped: 1, examGraded: true });
+    await flushPromises();
+
+    const body = document.body.textContent || '';
+    expect(body).not.toContain('汇总结果');
+    expect(body).not.toContain('本次汇总');
+  });
+
+  it('切换考试时清除已展示的汇总结果卡片', async () => {
+    vi.mocked(api.summarize).mockResolvedValue({
+      summarized: 3,
+      skipped: 0,
+      examGraded: false,
+    } as never);
+
+    const wrapper = mount(TeacherScoresPage, { attachTo: document.body });
+    await flushPromises();
+    queryStore.data.exams = [
+      { id: 7, title: '待判分考试', status: 2 },
+      { id: 10, title: '另一场考试', status: 2 },
+    ];
+    wrapper.findComponent(Select).vm.$emit('update:value', 7);
+    await flushPromises();
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '汇总成绩')
+      ?.trigger('click');
+    await flushPromises();
+
+    expect(document.body.textContent).toContain('汇总结果');
+    expect(document.body.textContent).toContain('本次汇总');
+
+    wrapper.findComponent(Select).vm.$emit('update:value', 10);
+    await flushPromises();
+
+    const body = document.body.textContent || '';
+    expect(body).not.toContain('汇总结果');
+    expect(body).not.toContain('本次汇总');
   });
 });
