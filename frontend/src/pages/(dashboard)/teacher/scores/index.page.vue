@@ -297,7 +297,6 @@ async function onSummarize(): Promise<void> {
     summarizing.value = false;
   }
 }
-
 // ===== 发布前预览 =====
 const previewing = ref(false);
 const preview = ref<ScorePreviewResponse | null>(null);
