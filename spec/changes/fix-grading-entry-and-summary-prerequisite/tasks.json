@@ -12,7 +12,7 @@
       {
         "step": "现场核对 HEAD、已有工作树归属、现有 null 客观分测试和成绩/判分规范；记录开工门禁命令、原始输出、短 revision，不使用历史测试计数",
         "completed": true,
-        "evidence": "2026-09-24，用户已书面批准推荐 A；开工 HEAD=337c85e4929d2a4decda8de5d5f20c92f2d11a3e。开工当天没有执行全量后端门禁，不能把后续定向测试冒称为全量基线。全量门禁的既有出处仍是 docs/project-overview-for-agents.md:51-53 与 docs/指导Agent交接文档.md §6.1（已记录的 mvn -o clean test 验证方式及 Failures=0、Errors=0、Skipped 判据）；本轮只引用该既有记录，不改写成当天实跑结果。开工现场核对后端树零差异的命令为 `git diff --quiet HEAD -- src/main src/test pom.xml src/main/resources`，原始退出码 0；同时核对既有工作树改动仅属 spec/README.md、.trae/、frontend/.playwright-cli/、frontend/output/ 及本变更目录，未覆盖。"
+        "evidence": "2026-09-24，用户已书面批准推荐 A；开工 HEAD=337c85e4929d2a4decda8de5d5f20c92f2d11a3e。开工当天没有执行全量后端门禁，不能把后续定向测试冒称为全量基线。旧门禁的既有原出处仍是 docs/project-overview-for-agents.md:51-53 与 docs/指导Agent交接文档.md §6.1 （已记录的 mvn -o clean test 验证方式及 Failures=0、Errors=0、Skipped 判据）。开工 HEAD 与旧门禁 revision 的后端树比较命令为 `git diff --name-only 3b8bcfa 337c85e -- pom.xml src/main src/test`，原始输出为空、退出码 0；不再使用 `git diff --quiet HEAD` 声称开工树与旧门禁 revision 一致。"
       }
     ],
     "passes": true
@@ -43,17 +43,17 @@
       {
         "step": "在教师批改工作台对已结束且未汇总考试提供运行判分动作，调用现有生成 SDK；已批改/已发布不冒称可整场重判，重复点击被收敛且重跑影响说明可见",
         "completed": false,
-        "evidence": "实现已包含在提交 b6679cad9e5ed6bed5b02e6e76ff659d053a1b21（短 revision b6679ca）：批改工作台仅在后端状态为 ENDED 时显示运行判分，调用现有生成 SDK run，按钮 loading + 运行中守卫收敛重复点击，并明确说明重算客观题且不覆盖已保存主观分。定向页面测试命令：`node node_modules/vitest/vitest.mjs run --testNamePattern=\"教师批改工作台显式运行判分|成绩汇总前置失败引导\"`，原始结果为 3 passed / 333 skipped，退出码 0。本轮按指示不将阶段 3 passes 回勾为 true，待阶段 4 收口。"
+        "evidence": "实现位于提交 e743c976cd5b983794ace062dc9819813b64cb77（短 revision e743c97）：批改工作台仅在后端状态为 ENDED 时显示运行判分，调用现有生成 SDK run，按钮 loading + 运行中守卫收敛重复点击，并明确说明重算客观题且不覆盖已保存主观分；运行结果按捕获的 examId 隔离，切换考试不会把旧请求结果落到新考试。定向页面测试命令：`node node_modules/vitest/vitest.mjs run --testNamePattern=\"教师批改工作台显式运行判分|成绩汇总前置失败引导\"`，原始结果为 6 passed / 333 skipped，退出码 0。本轮按指示不将阶段 3 passes 回勾为 true，待阶段 4 收口。"
       },
       {
         "step": "响应 total/success/failed/失败清单如实渲染，total=0 与 failed>0 有独立状态；运行后刷新题级进度/学生行，无主观题卷不误报无需客观判分；补页面测试",
         "completed": false,
-        "evidence": "实现已包含在提交 b6679ca：页面如实渲染 total/success/failed 与 failures，total=0 单独提示“无已交卷答卷”，failed>0 单独提示失败且不显示“判分完成”；成功后调用题级进度与学生行 refetch。上述定向页面测试原始结果为 3 passed / 333 skipped，退出码 0。本轮按指示阶段 3 仍保持未完成。"
+        "evidence": "实现位于提交 e743c97：页面如实渲染 total/success/failed 与 failures，total=0 单独提示“无已交卷答卷”，failed>0 单独提示失败且不显示“判分完成”；运行后刷新题级进度，只有当前考试且已选 questionId 时才 refetch 学生行，避免向必填 questionId 传 undefined。定向页面测试原始结果为 6 passed / 333 skipped，退出码 0；阶段 3 仍按指示保持未完成。"
       },
       {
         "step": "成绩汇总被服务端拒绝时展示可操作提示并引导回判分工作台；前端不本地推算判分状态、不伪造成功；补对应测试",
         "completed": false,
-        "evidence": "实现已包含在提交 b6679ca：成绩页保留后端错误文案并展示“前往批改工作台”操作，点击导航到 `/teacher/grading`，不在前端推算判分状态。上述定向页面测试原始结果为 3 passed / 333 skipped，退出码 0。本轮按指示阶段 3 仍保持未完成。"
+        "evidence": "实现位于提交 e743c97：成绩页将判分/客观分前置错误与网络等通用汇总错误分开呈现，只有前置错误展示“前往批改工作台”，不在前端推算判分状态。定向页面测试原始结果为 6 passed / 333 skipped，退出码 0；阶段 3 仍按指示保持未完成。"
       }
     ],
     "passes": false
