@@ -65,15 +65,15 @@
     "steps": [
       {
         "step": "前端 lint/type-check/vitest 与后端相关测试、全量门禁按各自工具链现场执行；证据字段保留命令、当次原始输出和短 revision，范围外代码/共享数据零改动",
-        "completed": false,
-        "evidence": ""
+        "completed": true,
+        "evidence": "2026-09-25 在已提交 HEAD 006bb9c5985892c4eebc056941311f85b13551ab（短 revision 006bb9c；当时工作树仅 spec/README.md 文档草稿差异，src/ 与 frontend/ 代码与 HEAD 一致）上现场执行全量门禁。后端：`mvn.cmd clean test`，当次原始结果 `Tests run: 296, Failures: 0, Errors: 0, Skipped: 1`（Skipped: 1 为契约导出开关设计使然），`BUILD SUCCESS`，退出码 0，判据 Failures=0 且 Errors=0 成立。自查：`grep -rn '@Sql' src/test | sed -E 's/^[^:]+:[0-9]+://' | grep -vE '^[[:space:]]*\\*'` 无命中；AGENTS.md 三条自查同跑均无命中。前端（frontend/）四条命令现场执行、退出码均为 0：`node node_modules/vitest/vitest.mjs run` → `Test Files 41 passed (41), Tests 344 passed (344)`；`node node_modules/eslint/bin/eslint.js src e2e *.config.ts` → 退出码 0、无输出；`npx --no-install vue-tsc --project ./tsconfig.app.json --noEmit` → 退出码 0；`npx --no-install tsc --project ./tsconfig.config.json --noEmit` → 退出码 0。共享 dev 未写成绩、未启动浏览器、未 docker up/down。"
       },
       {
         "step": "核对教师端从运行判分到主观题行可见的真实链路证据；若共享 dev 写入不可安全复位则只凭可复现的隔离集成用例验收并标注边界，不制造脏成绩；证据充分后合入两个 delta、回勾并归档、同步 spec/README.md 的 D2 状态",
-        "completed": false,
-        "evidence": ""
+        "completed": true,
+        "evidence": "共享 dev 写入不可安全复位且本轮约束禁止启动浏览器与容器：真实 Chromium 与共享 dev 真汇总未执行；验收边界=隔离单测/页面测 + 已提交 HEAD（006bb9c）门禁。隔离证据：后端 `mvn.cmd clean test` 全绿（`Tests run: 296, Failures: 0, Errors: 0, Skipped: 1`，BUILD SUCCESS，006bb9c）覆盖汇总写前护栏（未判/失败答卷整场拒绝、合法客观零分与 §7.5 主观部分批改放行、拒绝时零写入零状态迁移）与判分服务链路；前端 vitest 41 文件 344 例全绿（006bb9c）覆盖批改工作台运行判分入口（仅 ENDED 显示、防重复点击、total/success/failed 如实呈现、total=0 不报成功、按 examId 隔离旧结果）与成绩页前置错误「前往批改工作台」指引（summaryPrerequisiteAlert 等），未向共享 dev 制造任何脏成绩。据此合入 frontend「主观题批改工作台」与 score-management「成绩汇总」两个 MODIFIED delta，变更目录移入 `spec/changes/archive/fix-grading-entry-and-summary-prerequisite/`，`spec/README.md` 同步 D2 状态（归档表新增该行、原遗留 #18 整条移入「已收口」、frontend/score-management 能力域行补登），以上均由本次收口提交落盘。"
       }
     ],
-    "passes": false
+    "passes": true
   }
 ]

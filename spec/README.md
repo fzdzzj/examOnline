@@ -47,7 +47,7 @@ spec/
 | 3 | `exam-management` | `add-exam-management` | 4 |
 | 4 | `exam-taking` | `add-exam-taking`、`add-mq-trace-and-capacity` | 5、10 |
 | 5 | `grading` | `add-grading-score` | 6 |
-| 6 | `score-management` | `add-grading-score` | 6 |
+| 6 | `score-management` | `add-grading-score`、`fix-grading-entry-and-summary-prerequisite`（前端 D2，2026-09-25 归档） | 6、前端 D2 |
 | 7 | `anti-cheat` | `add-anti-cheat` | 7 |
 | 8 | `performance` | `add-performance-deepening`、`tune-submit-capacity`（交卷容量与压测方法学，2026-09-23 归档） | 8 |
 | 9 | `data-access` | `add-performance-deepening`、`add-data-retention`、`fix-schema-mysql-pk` | 8、15、17 |
@@ -59,7 +59,7 @@ spec/
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 | 16 | `api-contract` | `add-backend-openapi` | 18 |
 | 17 | `agent-harness` | `add-agent-context-routing`（工程性 E1，2026-09-21 归档） | 工程性 |
-| 18 | `frontend` | `add-frontend-must-change-guard`（提案④，2026-09-21 归档）、`add-frontend-student-taking`（阶段 22，2026-09-23 归档）、`add-frontend-exam-admin`（阶段 21，2026-09-23 归档）、`add-frontend-post-exam`（阶段 23，2026-09-23 归档）、`add-frontend-skeleton-auth`（阶段 19，2026-09-23 归档）、`add-frontend-teacher-authoring`（阶段 20，2026-09-23 归档）、`fix-frontend-paper-table-render`（前端 D1，2026-09-23 归档） | 前端系列 |
+| 18 | `frontend` | `add-frontend-must-change-guard`（提案④，2026-09-21 归档）、`add-frontend-student-taking`（阶段 22，2026-09-23 归档）、`add-frontend-exam-admin`（阶段 21，2026-09-23 归档）、`add-frontend-post-exam`（阶段 23，2026-09-23 归档）、`add-frontend-skeleton-auth`（阶段 19，2026-09-23 归档）、`add-frontend-teacher-authoring`（阶段 20，2026-09-23 归档）、`fix-frontend-paper-table-render`（前端 D1，2026-09-23 归档）、`fix-grading-entry-and-summary-prerequisite`（前端 D2，2026-09-25 归档） | 前端系列 |
 | 19 | `dev-config` | `parameterize-dev-credentials`（提案⑫，2026-09-21 归档） | 工程性 |
 
 - 已归档变更（`spec/changes/archive/`，**数量以 `find spec/changes/archive -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数**；阶段 1–9、12–18 及 18 后小阶段已收尾，阶段 10–11 已归档）：
@@ -106,6 +106,7 @@ spec/
 | `add-frontend-teacher-authoring` | 阶段 20（前端方向②） | 题库与组卷界面，**经 `accept-frontend-19-23` 统一验收后收口（10/12 step）**：题库列表（分页+题型/标签/关键词筛选）、题型驱动编辑表单（单选/判断/简答差异化校验）、标签管理、标签随机抽题（预览/重抽/确认入卷、随机算法在后端、抽题不足错误路径可观察——走查 20-4c 实证业务拒绝语义正确）。**D1 如实未勾**：试卷题目表漏 import Table（引入提交 `060b012`，交付即坏），「手动组卷改分/调序」「试卷预览题目内容」两格按禁盲勾留未勾（登记遗留 #17 待立项）。frontend 基线合入 3 个 Requirement（组卷界面两个 Scenario 注记当前不成立） | 2026-09-23 |
 | `fix-frontend-paper-table-render` | 前端 D1 | `f0e1288` 补 `Table` 运行时导入与页面级红绿回归；真实 Chromium + dev 后端复验 20-3b（加题/改分/调序/移出/刷新）与 20-5（锁定只读题目表）均有 HTTP、截图、控制台证据；永久 fixture 为专用试卷 18 / 快照 1 / 题目 9、8，历史试卷 14 与已软删除试卷 17 未触碰 | 2026-09-23 |
 | `accept-frontend-19-23` | 验收类（提案②③合并载体） | 前端阶段 19–23 统一验收：①阶段 19 round-2 空缺补齐（四项门禁 `59bab7b` 复跑留证 + 16/16 回勾，见归档表 skeleton-auth 行）；②阶段 20 逐条判定回勾（10/12，D1 两格禁盲勾，见归档表 teacher-authoring 行）；③两阶段 spec-delta 合入 frontend 基线——**五阶段 21 个 Requirement 全量入基线**；④统一真机走查（`frontend/docs/frontend-stages-walkthrough.md`，Playwright 真实 Chromium + 网络录像 + 截图，`59bab7b` 零代码改动）：五阶段全页面族实走、切屏返修口径（合成 DOM 信号，无头环境限制如实标注）、四个修复弹窗浏览器侧确认、23 全闭环（并发冲突 409+1012 不覆盖、复核总分 19→18、三个 xlsx 导出、补考创建 200）；⑤缺陷零静默——**D1/D2 两个逻辑级缺陷如实登记**（遗留 #17/#18，未修未绕）；走查数据已清（残留无删除端点项如实登记）。遗留 #13 自此全部子项收口 | 2026-09-23 |
+| `fix-grading-entry-and-summary-prerequisite` | 前端 D2 | 判分入口与汇总护栏（推荐 A），**隔离测试验收后收口**：后端 `ScoreService.summarize` 在任何写入前对本次待汇总答卷整场校验判分成功且客观分非空（合法客观零分与 §7.5 主观部分批改保留），未判/失败答卷整场拒绝、不写总分、不迁移考试状态（`2717fce`）；批改工作台仅对已结束未汇总考试显示「运行判分」（调用既有生成 SDK、loading 防重复点击、total/success/failed 与失败清单如实呈现、total=0 不报判分成功、运行结果按 examId 隔离），成绩页对前置拒绝展示可观察原因与「前往批改工作台」指引（`e743c97`，错误匹配经 cdc3137/94fde24/99a358c 连续收口）；frontend 基线「主观题批改工作台」与 score-management 基线「成绩汇总」各合入 MODIFIED Requirement。**验收边界=隔离单测/页面测 + 已提交 HEAD（`006bb9c`）全量门禁（后端 mvn clean test 与前端 lint/type-check/vitest 全绿）；真实 Chromium 与共享 dev 真汇总未执行**，不冒称真机已验 | 2026-09-25 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
@@ -128,9 +129,6 @@ spec/
 
 16. **压测复位脚本受 mysql 客户端默认字符集影响可静默假绿**（2026-09-23 `tune-submit-capacity` 真实踩中）——本机 `character_set_client=gbk`，漏 `--default-character-set=utf8mb4` 时：纯中文字符串报 1267（会被发现），但 **ASCII+中文混合字面量静默失真**（`= _utf8mb4'…'` 匹配 0 行、退出码 0）——`loadtest/db/03-cleanup.sql` 的 DELETE 与末尾自证用同一失真字面量，打印全 0 假绿而复位根本没执行；同源风险罩着 `02-metrics.sql` 的 `@exam_id`（会静默变 NULL ⇒「0 丢单」假绿）。**已处置**：`loadtest/README.md` 用法行补 `--default-character-set=utf8mb4` + 独立复核命令 + 坑条目改写（`259d4f4`）；脚本本体属既有共享资产未动。**收尾纪律**：任何用这些脚本的后续压测，复位结果以独立复核命令为准，不信脚本自证输出。
 
-
-18. **D2｜批改工作台无判分入口，教师纯靠 UI 进不了批改队列**（2026-09-23 `accept-frontend-19-23` 真机走查 23-1 发现）——`POST /api/exams/{examId}/grading/run` 已生成到 SDK 但无任何页面调用；批改队列行来自 `subjective_grades` 表，判分前该表无行 → 工作台 `totalStudents=0`、「暂无数据」。连带风险：教师若跳过判分直接汇总，客观分按 0 汇总（`ScoreService` 不拒绝缺判分数据的答卷）——该分支走查时为保护共享 dev 数据未实走，仅代码定性。**待立项**：在批改工作台或考试详情加「运行判分」入口，建议同时让汇总对未判分答卷给出可观察的拒绝/提示。
-
 **已收口（从遗留清单移出）**：
 
 1. **限流器对 Redis 异常的兜底** 已由 `add-rate-limit-resilience`（阶段 10）实现——默认 fail-open 放行以保核心链路可用，同时打 ERROR 日志并递增 `exam.ratelimit.degraded` 计数（可按接口维度区分）；另留 `exam.ratelimit.fail-open=false` 切回 fail-close。
@@ -147,6 +145,8 @@ spec/
 11. **MySQL 8 空库真机初始化未实测** 已由 `verify-mysql8-init`（提案⑥，2026-09-22）收口——一次性 mysql:8.0.46 容器上 `schema.sql` 零报错建出全部业务表（26 个自增列全部被主键覆盖，information_schema 现场计数、双向集合差为空）；`2026-W16-add-primary-keys.sql` 在按迁移前形态构造的真实存量库上首跑全部成功、重复执行的 1068/1146 与头注逐条一致且业务数据 checksum 不变；**零缺陷**，证据见 `docs/mysql8-init-verification.md`（三要素齐全，开工/收尾门禁 290/0/0/1）。两条操作级发现如实登记：迁移脚本重复执行须带 `--force`（否则客户端中断退出）；`ADD PRIMARY KEY` 不清除 `id` 上原有二级索引（真实旧库无此索引，不构成生产问题）。原遗留 #9 关闭。**数字口径**：旧文档里的「25 张表」是过期副本，以现场 `SHOW TABLES` / `information_schema` 计数为准，本条不写死表数。
 
 12. **D1｜试卷题目表漏 import Table 组件，试卷详情核心功能交付即坏**（原遗留 #17；2026-09-23 `accept-frontend-19-23` 真机走查 20-3b/20-5 发现）——`frontend/src/pages/(dashboard)/teacher/papers/[id].page.vue` 模板用 `<Table>` 但只 `import type { TableColumnsType }`，控制台 `[Vue warn]: Failed to resolve component: Table`，题目表整体零渲染：手动组卷的改分/调序/移出入口不存在（入卷 POST 本身 200 但无任何反馈）、试卷预览看不到题目内容（分值分布可见）。**引入提交 `060b012`（阶段 20 自身交付提交，交付即坏，非回归）**；走查当时任一试卷详情页可复现。阶段 20 tasks.json 两格按禁盲勾留未勾、frontend 基线「组卷界面」两个 Scenario 如实注记不成立。**已收口（2026-09-23）**：`fix-frontend-paper-table-render` 以 `f0e1288` 提交运行时导入和页面级回归；真实 Chromium + dev 后端补证 20-3b 的加题、改分、调序、移出、刷新后状态，以及 20-5 的锁定只读题目表。HTTP 与截图/控制台证据随归档变更保存；主 Agent 另行完成只读数据库复核。专用草稿 17 已清理，专用锁定试卷 18 / 快照 1 / 题目 9、8 按授权永久保留；历史试卷 14 与已软删除试卷 17 未触碰。frontend 基线「组卷界面」Requirement 已补入真实题目表场景，原 `59bab7b` 故障记载保留；遗留 #17 关闭。
+
+13. **D2｜批改工作台无判分入口，教师纯靠 UI 进不了批改队列**（原遗留 #18；2026-09-23 `accept-frontend-19-23` 真机走查 23-1 发现）——`POST /api/exams/{examId}/grading/run` 已生成到 SDK 但无任何页面调用；批改队列行来自 `subjective_grades` 表，判分前该表无行 → 工作台 `totalStudents=0`、「暂无数据」。连带风险：教师若跳过判分直接汇总，客观分按 0 汇总（`ScoreService` 不拒绝缺判分数据的答卷）——该分支走查时为保护共享 dev 数据未实走，仅代码定性。**已收口（2026-09-25）**：`fix-grading-entry-and-summary-prerequisite`（推荐 A）由 `2717fce` 落地汇总写前护栏（未判/失败答卷在任何写入前整场拒绝，合法客观零分与 §7.5 主观部分批改保留）、`e743c97` 落地批改工作台显式运行判分入口与成绩页前置错误「前往批改工作台」指引；验收边界=隔离集成用例/页面测试 + 已提交 HEAD（`006bb9c`）全量门禁（后端 mvn clean test 与前端 lint/type-check/vitest 全绿），**真实 Chromium 与共享 dev 真汇总未执行**，不冒称真机已验。frontend 基线「主观题批改工作台」、score-management 基线「成绩汇总」已合入 MODIFIED Requirement；原 `59bab7b` 历史 D2 记载保留。原遗留 #18 关闭。
 
 ## 能力地图（规范组织单位；**已合入基线**的条数以 `find spec/specs -mindepth 1 -maxdepth 1 -type d | wc -l` 为准，本文件不写死计数；下表允许出现"已立项、基线待收尾时创建"的能力域，由该行自己注明）
 
@@ -169,7 +169,7 @@ spec/
 | 15 | score-review | 复核申请限次限时、复核中隐藏成绩、复核处理 |
 | 16 | api-contract | OpenAPI 契约暴露、鉴权语义标注、契约导出复现、契约冒烟护栏 |
 | 17 | agent-harness | 根入口路由（`README.md` 只指路不承载易变事实）、硬约定的 agent 必经索引（`AGENTS.md`）、无自动执行者的 SQL 目录必须自述触发方式、文档判据优先于文档常量。**基线已合入 `spec/specs/agent-harness/spec.md`**（E1，2026-09-21）；E2 的四条待其 B-2 收口后合入 |
-| 18 | frontend | 五阶段全量：前端工程底座（可复现启动/门禁独立可跑/不并入后端计数）、API 契约驱动集成（gen:api 生成/代理保留前缀/统一解包）、会话与令牌生命周期（续期单飞/刷新失败登出/登出黑名单）、角色路由守卫（安全边界在后端）、强制改密前置守卫；题库管理界面（题型差异化录入/软删以后端为准）、组卷界面（手动+随机抽题，随机算法在后端）、前端不复现判分口径；学生端在线考试（作答界面/服务端时间倒计时/草稿保存与断线恢复/交卷防重配合/切屏检测与上报/交卷结果如实呈现）；教师端考务（班级管理/考试创建与发布/监考与行为日志）；考后闭环（主观题批改工作台/成绩发布撤回与导出/缺考与补考/成绩查询与复核）。已知缺陷注记见遗留 #17/#18 |
+| 18 | frontend | 五阶段全量：前端工程底座（可复现启动/门禁独立可跑/不并入后端计数）、API 契约驱动集成（gen:api 生成/代理保留前缀/统一解包）、会话与令牌生命周期（续期单飞/刷新失败登出/登出黑名单）、角色路由守卫（安全边界在后端）、强制改密前置守卫；题库管理界面（题型差异化录入/软删以后端为准）、组卷界面（手动+随机抽题，随机算法在后端）、前端不复现判分口径；学生端在线考试（作答界面/服务端时间倒计时/草稿保存与断线恢复/交卷防重配合/切屏检测与上报/交卷结果如实呈现）；教师端考务（班级管理/考试创建与发布/监考与行为日志）；考后闭环（主观题批改工作台/成绩发布撤回与导出/缺考与补考/成绩查询与复核）。已知缺陷 D1/D2 的历史注记见基线合入注记，两项均已收口（原遗留 #17/#18，见「已收口」清单） |
 | 19 | dev-config | dev 环境凭据参数化（环境变量可覆盖、开箱默认不变、新增凭据不裸写、生产凭据不带默认值，含可机械执行的自查命令） |
 
 ## 开发阶段 → 变更映射
