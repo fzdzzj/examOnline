@@ -276,27 +276,33 @@ async function onSummarize(): Promise<void> {
   summarizeNeedsGrading.value = false;
   try {
     summarizeStats.value =
-      (await unwrap(
-        summarize({ client, throwOnError: true, path: { examId: selectedExamId.value } })
-      )) ?? null;
+      (await unwrap(summarize({ client, throwOnError: true, path: { examId: requestExamId } }))) ??
+      null;
+    // 运行期间已切换考试：旧请求成功结果不得落到新考试
+    if (selectedExamId.value !== requestExamId) return;
     summarizeError.value = null;
     summarizeNeedsGrading.value = false;
-    summarizeRequestExamId.value = undefined;
     message.success('汇总完成');
     void queryClient.invalidateQueries({ queryKey: ['exams'] });
   } catch (error) {
+    // 用发起请求时捕获的 examId 判定归属；切换后 watch 会清空 request 标记，不能再依赖它
+    if (selectedExamId.value !== requestExamId) return;
     const msg = error instanceof Error ? error.message : '汇总失败';
-    if (selectedExamId.value !== summarizeRequestExamId.value) {
-      summarizing.value = false;
-      return;
-    }
     summarizeError.value = msg;
+    // 仅精确匹配后端当前汇总前置错误，不按关键词猜
     summarizeNeedsGrading.value = msg === '存在未完成判分的答卷，不能汇总成绩';
     message.error(summarizeError.value);
   } finally {
-    summarizing.value = false;
+    // 只有当前考试仍是本请求目标时才清 loading，避免误清新考试请求
+    if (selectedExamId.value === requestExamId) {
+      summarizing.value = false;
+      if (summarizeRequestExamId.value === requestExamId) {
+        summarizeRequestExamId.value = undefined;
+      }
+    }
   }
 }
+
 // ===== 发布前预览 =====
 const previewing = ref(false);
 const preview = ref<ScorePreviewResponse | null>(null);

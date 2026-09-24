@@ -137,11 +137,11 @@ describe('成绩汇总前置失败引导', () => {
   });
 
   it('旧考试的汇总失败请求在切换考试后不会污染新考试的错误展示', async () => {
-    let rejectLate;
+    let rejectLate!: (error: unknown) => void;
     const pending = new Promise((_, reject) => {
       rejectLate = reject;
     });
-    vi.mocked(api.summarize).mockReturnValue(pending);
+    vi.mocked(api.summarize).mockReturnValue(pending as never);
     const wrapper = mount(TeacherScoresPage, { attachTo: document.body });
     await flushPromises();
     queryStore.data.exams = [
