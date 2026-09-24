@@ -101,12 +101,68 @@ describe('教师批改工作台显式运行判分', () => {
     expect(bodyText()).toContain('成功');
     expect(bodyText()).toContain('判分完成');
     expect(refetches.questions).toHaveBeenCalledTimes(1);
-    expect(refetches.rows).toHaveBeenCalledTimes(1);
+    // 首次运行时尚未选主观题，不能手动 refetch 带 undefined questionId 的学生行查询。
+    expect(refetches.rows).toHaveBeenCalledTimes(0);
 
     await selectExam(wrapper, GRADED_EXAM.id);
     expect(wrapper.findAll('button').some((button) => button.text() === '运行判分')).toBe(false);
     await selectExam(wrapper, PUBLISHED_EXAM.id);
     expect(wrapper.findAll('button').some((button) => button.text() === '运行判分')).toBe(false);
+  });
+
+  it('已选主观题时才刷新当前学生行', async () => {
+    queryStore.data.grading = [{ questionId: 11, number: 1, content: '简答题', score: 10 }];
+    vi.mocked(api.run).mockResolvedValue({
+      total: 1,
+      success: 1,
+      failed: 0,
+      failures: [],
+    } as never);
+
+    const wrapper = mount(TeacherGradingPage, { attachTo: document.body });
+    await selectExam(wrapper, ENDED_EXAM.id);
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '去批改')
+      ?.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '运行判分')
+      ?.trigger('click');
+    await flushPromises();
+
+    expect(refetches.questions).toHaveBeenCalledTimes(1);
+    expect(refetches.rows).toHaveBeenCalledTimes(1);
+  });
+
+  it('切换考试后丢弃旧判分结果，不刷新新考试的数据', async () => {
+    let resolveRun!: (value: unknown) => void;
+    vi.mocked(api.run).mockReturnValue(
+      new Promise((resolve) => {
+        resolveRun = resolve;
+      }) as never
+    );
+
+    // 两场考试在初始列表中同时存在，模拟运行期间切换选择。
+    queryStore.data.exams = [
+      ENDED_EXAM,
+      { id: 10, title: '另一场待判分考试', status: 2 },
+      GRADED_EXAM,
+      PUBLISHED_EXAM,
+    ];
+    const wrapper = mount(TeacherGradingPage, { attachTo: document.body });
+    await selectExam(wrapper, ENDED_EXAM.id);
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '运行判分')
+      ?.trigger('click');
+    await selectExam(wrapper, 10);
+    resolveRun({ total: 1, success: 1, failed: 0, failures: [] });
+    await flushPromises();
+
+    expect(bodyText()).not.toContain('最近一次判分结果');
+    expect(refetches.questions).not.toHaveBeenCalled();
+    expect(refetches.rows).not.toHaveBeenCalled();
   });
 
   it('零答卷和部分失败分别呈现，不冒称判分成功，并显示失败清单', async () => {

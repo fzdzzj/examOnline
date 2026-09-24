@@ -23,11 +23,23 @@
         <Tag v-if="!isAdmin" color="default">当前角色非管理员：撤回入口不可用</Tag>
       </div>
 
-      <Alert v-if="summarizeError" type="warning" show-icon class="mb-3">
-        <template #message>成绩汇总被后端拒绝</template>
+      <Alert
+        v-if="summarizeError"
+        :type="summarizeNeedsGrading ? 'warning' : 'error'"
+        show-icon
+        class="mb-3"
+      >
+        <template #message>
+          {{ summarizeNeedsGrading ? '成绩汇总被判分前置条件拒绝' : '成绩汇总失败' }}
+        </template>
         <template #description>
           <div>{{ summarizeError }}</div>
-          <Button class="mt-2" size="small" @click="() => void router.push('/teacher/grading')">
+          <Button
+            v-if="summarizeNeedsGrading"
+            class="mt-2"
+            size="small"
+            @click="() => void router.push('/teacher/grading')"
+          >
             前往批改工作台
           </Button>
         </template>
@@ -246,25 +258,34 @@ const statusTagColor = computed(
 const summarizing = ref(false);
 const summarizeStats = ref<SummarizeStats | null>(null);
 const summarizeError = ref<string | null>(null);
+const summarizeNeedsGrading = ref(false);
 
 watch(selectedExamId, () => {
   summarizeError.value = null;
+  summarizeNeedsGrading.value = false;
 });
+
+function isGradingPrerequisiteError(errorMessage: string): boolean {
+  return errorMessage.includes('判分') || errorMessage.includes('客观分');
+}
 
 async function onSummarize(): Promise<void> {
   if (selectedExamId.value === undefined) return;
   summarizing.value = true;
   summarizeError.value = null;
+  summarizeNeedsGrading.value = false;
   try {
     summarizeStats.value =
       (await unwrap(
         summarize({ client, throwOnError: true, path: { examId: selectedExamId.value } })
       )) ?? null;
     summarizeError.value = null;
+    summarizeNeedsGrading.value = false;
     message.success('汇总完成');
     void queryClient.invalidateQueries({ queryKey: ['exams'] });
   } catch (error) {
     summarizeError.value = error instanceof Error ? error.message : '汇总失败';
+    summarizeNeedsGrading.value = isGradingPrerequisiteError(summarizeError.value);
     message.error(summarizeError.value);
   } finally {
     summarizing.value = false;

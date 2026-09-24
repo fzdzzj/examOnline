@@ -35,7 +35,7 @@
               <span>
                 仅对已结束且尚未汇总的考试开放；会重新计算客观题分数，不覆盖教师已保存的主观题分数。
               </span>
-              <Button type="primary" :loading="gradingRunning" @click="onRunGrading">
+              <Button type="primary" :loading="gradingButtonLoading" @click="onRunGrading">
                 运行判分
               </Button>
             </div>
@@ -242,13 +242,32 @@ const canGradeSelected = computed(
 const canRunGrading = computed(() => selectedExam.value?.status === EXAM_STATUS.ENDED);
 
 const gradingRunning = ref(false);
+const gradingRunExamId = ref<number | undefined>(undefined);
+const gradingButtonLoading = computed(
+  () => gradingRunning.value && gradingRunExamId.value === selectedExamId.value
+);
 const gradingRunResult = ref<GradingRunResponse | null>(null);
 const gradingRunError = ref<string | null>(null);
 
+watch(selectedExamId, () => {
+  // 结果属于所选考试；切换考试时清掉旧结果，避免跨考试误读。
+  gradingRunResult.value = null;
+  gradingRunError.value = null;
+  selectedQuestionId.value = undefined;
+});
+
 async function onRunGrading(): Promise<void> {
-  if (selectedExamId.value === undefined || !canRunGrading.value || gradingRunning.value) return;
+  const examId = selectedExamId.value;
+  if (
+    examId === undefined ||
+    !canRunGrading.value ||
+    (gradingRunning.value && gradingRunExamId.value === examId)
+  ) {
+    return;
+  }
 
   gradingRunning.value = true;
+  gradingRunExamId.value = examId;
   gradingRunResult.value = null;
   gradingRunError.value = null;
   try {
@@ -256,9 +275,11 @@ async function onRunGrading(): Promise<void> {
       run({
         client,
         throwOnError: true,
-        path: { examId: selectedExamId.value },
+        path: { examId },
       })
     );
+    // 运行期间切换了考试：旧请求的结果不能显示，也不能刷新新考试的查询。
+    if (selectedExamId.value !== examId) return;
     if (!result) {
       gradingRunError.value = '判分接口未返回结果，未能确认本次判分状态。';
       message.error(gradingRunError.value);
@@ -267,7 +288,9 @@ async function onRunGrading(): Promise<void> {
 
     gradingRunResult.value = result;
     void refetchQuestions();
-    void refetchRows();
+    if (selectedQuestionId.value !== undefined) {
+      void refetchRows();
+    }
 
     if (result.total === 0) {
       message.info('无已交卷答卷，本次没有可判分的答卷');
@@ -277,10 +300,14 @@ async function onRunGrading(): Promise<void> {
       message.success('判分完成');
     }
   } catch (error) {
+    if (selectedExamId.value !== examId) return;
     gradingRunError.value = error instanceof Error ? error.message : '运行判分失败';
     message.error(gradingRunError.value);
   } finally {
-    gradingRunning.value = false;
+    if (gradingRunExamId.value === examId) {
+      gradingRunning.value = false;
+      gradingRunExamId.value = undefined;
+    }
   }
 }
 

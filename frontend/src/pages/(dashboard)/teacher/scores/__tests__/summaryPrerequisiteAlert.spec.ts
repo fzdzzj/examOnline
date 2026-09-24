@@ -87,4 +87,23 @@ describe('成绩汇总前置失败引导', () => {
     await gradingButton?.trigger('click');
     expect(routerMock.push).toHaveBeenCalledWith('/teacher/grading');
   });
+
+  it('网络故障只显示通用汇总失败，不引导到批改工作台', async () => {
+    vi.mocked(api.summarize).mockRejectedValue(new Error('网络连接失败'));
+
+    const wrapper = mount(TeacherScoresPage, { attachTo: document.body });
+    await flushPromises();
+    wrapper.findComponent(Select).vm.$emit('update:value', 7);
+    await flushPromises();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '汇总成绩')
+      ?.trigger('click');
+    await flushPromises();
+
+    expect(document.body.textContent).toContain('网络连接失败');
+    expect(document.body.textContent).not.toContain('前往批改工作台');
+    expect(routerMock.push).not.toHaveBeenCalled();
+  });
 });
