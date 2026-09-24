@@ -25,6 +25,7 @@
 | 启动需要哪些环境变量 | 上面两个文件里的 `${...}` 表达式 | 别在本文件维护变量清单——它已经过期过一次 |
 | 依赖服务的编排与宿主端口映射 | `docker-compose.yml`（顶部注释解释了宿主端口为何不是各组件的默认端口） | 实际生效的映射以 `docker ps --format "{{.Names}} {{.Ports}}"` 为准 |
 | 本机 dev 该怎么起、有哪些坑 | `docs/指导Agent交接文档.md` 的「本机 dev 启动环境」小节 | 含"哪个容器故意不要起"及其原因 |
+| 指导主 Agent 如何低成本给子 Agent 派工与验收 | `docs/主Agent执行指南.md` | 角色专用；新成员按需阅读，不属于必读顺序 |
 | 表结构 / 建表脚本 | `src/main/resources/schema.sql` | 建表唯一入口，见 `AGENTS.md` 约定 1 |
 | 存量库改表 | `docker/mysql/migrations/README.md` | **放进该目录 ≠ 变更已生效**，该目录无自动执行者 |
 | 后端接口契约 | 仓库根 `openapi.yaml` | 如何再生成（离线导出为推荐路径，护栏断言防编码回归）：见 `spec/specs/api-contract/spec.md` |
