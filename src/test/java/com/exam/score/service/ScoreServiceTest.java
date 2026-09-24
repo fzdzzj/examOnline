@@ -471,6 +471,22 @@ class ScoreServiceTest {
     }
 
     @Test
+    void summarizeRejectsWholeBatchWhenUnfinishedSubmissionFollowsValidSubmissionWithoutAnyWrite() {
+        loginAsTeacher();
+        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_ENDED));
+        when(paperReader.readByExamId(EXAM_ID)).thenReturn(paperOf(singleChoice(101L, 1)));
+        GradingSubmission valid = submission(1L, 201L, "12.0", null, null);
+        GradingSubmission unfinished = submission(2L, 202L, null, null, null);
+        when(gradingSubmissionMapper.selectList(any())).thenReturn(List.of(valid, unfinished));
+
+        assertEquals("存在未完成判分的答卷，不能汇总成绩",
+                assertThrows(BusinessException.class, () -> scoreService.summarize(EXAM_ID)).getMessage());
+        verify(gradingSubmissionMapper, never()).casSummarize(anyLong(), any(), any(), anyInt());
+        verify(examMapper, never()).casUpdateStatus(anyLong(), anyInt(), anyInt(), anyInt());
+        verifyNoInteractions(subjectiveGradeMapper);
+    }
+
+    @Test
     void summarizeRejectsFailedSubmissionBeforeAnyWrite() {
         loginAsTeacher();
         when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_ENDED));
