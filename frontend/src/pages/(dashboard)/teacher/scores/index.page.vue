@@ -259,18 +259,18 @@ const summarizing = ref(false);
 const summarizeStats = ref<SummarizeStats | null>(null);
 const summarizeError = ref<string | null>(null);
 const summarizeNeedsGrading = ref(false);
+const summarizeRequestExamId = ref<number | undefined>(undefined);
 
 watch(selectedExamId, () => {
   summarizeError.value = null;
   summarizeNeedsGrading.value = false;
+  summarizeRequestExamId.value = undefined;
 });
-
-function isGradingPrerequisiteError(errorMessage: string): boolean {
-  return errorMessage.includes('判分') || errorMessage.includes('客观分');
-}
 
 async function onSummarize(): Promise<void> {
   if (selectedExamId.value === undefined) return;
+  const requestExamId = selectedExamId.value;
+  summarizeRequestExamId.value = requestExamId;
   summarizing.value = true;
   summarizeError.value = null;
   summarizeNeedsGrading.value = false;
@@ -281,11 +281,17 @@ async function onSummarize(): Promise<void> {
       )) ?? null;
     summarizeError.value = null;
     summarizeNeedsGrading.value = false;
+    summarizeRequestExamId.value = undefined;
     message.success('汇总完成');
     void queryClient.invalidateQueries({ queryKey: ['exams'] });
   } catch (error) {
-    summarizeError.value = error instanceof Error ? error.message : '汇总失败';
-    summarizeNeedsGrading.value = isGradingPrerequisiteError(summarizeError.value);
+    const msg = error instanceof Error ? error.message : '汇总失败';
+    if (selectedExamId.value !== summarizeRequestExamId.value) {
+      summarizing.value = false;
+      return;
+    }
+    summarizeError.value = msg;
+    summarizeNeedsGrading.value = msg === '存在未完成判分的答卷，不能汇总成绩';
     message.error(summarizeError.value);
   } finally {
     summarizing.value = false;
