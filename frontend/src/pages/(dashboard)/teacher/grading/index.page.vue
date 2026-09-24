@@ -26,6 +26,69 @@
         message="该考试尚未结束，暂不可批改。批改入口在考试结束（自然到点或强制结束）后开放。"
         class="mb-3"
       />
+
+      <div v-if="canRunGrading" class="run-grading-panel mb-3">
+        <Alert type="info" show-icon>
+          <template #message>运行判分</template>
+          <template #description>
+            <div class="run-grading-description">
+              <span>
+                仅对已结束且尚未汇总的考试开放；会重新计算客观题分数，不覆盖教师已保存的主观题分数。
+              </span>
+              <Button type="primary" :loading="gradingRunning" @click="onRunGrading">
+                运行判分
+              </Button>
+            </div>
+          </template>
+        </Alert>
+      </div>
+
+      <Alert
+        v-if="gradingRunError"
+        type="error"
+        show-icon
+        :message="gradingRunError"
+        class="mb-3"
+      />
+
+      <div v-if="gradingRunResult" class="grading-run-result mb-3">
+        <div class="result-title">最近一次判分结果</div>
+        <div class="result-stats">
+          <span>总数：{{ gradingRunResult.total ?? '未返回' }}</span>
+          <span>成功：{{ gradingRunResult.success ?? '未返回' }}</span>
+          <span>失败：{{ gradingRunResult.failed ?? '未返回' }}</span>
+        </div>
+        <Alert
+          v-if="gradingRunResult.total === 0"
+          type="info"
+          show-icon
+          message="无已交卷答卷，本次没有可判分的答卷。"
+          class="mt-2"
+        />
+        <Alert
+          v-else-if="(gradingRunResult.failed ?? 0) > 0"
+          type="warning"
+          show-icon
+          message="部分答卷判分失败，请处理失败清单后再汇总成绩。"
+          class="mt-2"
+        />
+        <Alert
+          v-else-if="gradingRunResult.total !== undefined && gradingRunResult.failed === 0"
+          type="success"
+          show-icon
+          message="判分完成，可继续检查主观题批改进度。"
+          class="mt-2"
+        />
+        <ul v-if="(gradingRunResult.failures?.length ?? 0) > 0" class="failure-list">
+          <li
+            v-for="failure in gradingRunResult.failures"
+            :key="failure.submissionId ?? failure.studentId"
+          >
+            答卷 {{ failure.submissionId ?? '未知' }}（学生 {{ failure.studentId ?? '未知' }}）：
+            {{ failure.error ?? '未知错误' }}
+          </li>
+        </ul>
+      </div>
     </Card>
 
     <template v-if="selectedExamId !== undefined && canGradeSelected">
@@ -85,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { Alert, Button, Card, Select, Table, type TableColumnsType } from 'ant-design-vue';
+import { Alert, Button, Card, Select, Table, message, type TableColumnsType } from 'ant-design-vue';
 import { computed, ref, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 
@@ -93,7 +156,9 @@ import {
   page2 as pageExams,
   subjectiveQuestions,
   subjectiveRows,
+  run,
   type ExamResponse,
+  type GradingRunResponse,
   type SubjectiveGradeRow,
   type SubjectiveQuestionItem,
 } from '@/api/axios';
@@ -173,6 +238,51 @@ const selectedExam = computed<ExamResponse | undefined>(() =>
 const canGradeSelected = computed(
   () => resolveScoreActions(selectedExam.value?.status, false).canGrade
 );
+// 只有后端状态仍为 ENDED 时才提供“整场运行判分”；GRADED/PUBLISHED 不冒称可整场重判。
+const canRunGrading = computed(() => selectedExam.value?.status === EXAM_STATUS.ENDED);
+
+const gradingRunning = ref(false);
+const gradingRunResult = ref<GradingRunResponse | null>(null);
+const gradingRunError = ref<string | null>(null);
+
+async function onRunGrading(): Promise<void> {
+  if (selectedExamId.value === undefined || !canRunGrading.value || gradingRunning.value) return;
+
+  gradingRunning.value = true;
+  gradingRunResult.value = null;
+  gradingRunError.value = null;
+  try {
+    const result = await unwrap<GradingRunResponse>(
+      run({
+        client,
+        throwOnError: true,
+        path: { examId: selectedExamId.value },
+      })
+    );
+    if (!result) {
+      gradingRunError.value = '判分接口未返回结果，未能确认本次判分状态。';
+      message.error(gradingRunError.value);
+      return;
+    }
+
+    gradingRunResult.value = result;
+    void refetchQuestions();
+    void refetchRows();
+
+    if (result.total === 0) {
+      message.info('无已交卷答卷，本次没有可判分的答卷');
+    } else if ((result.failed ?? 0) > 0) {
+      message.warning('部分答卷判分失败，请处理失败清单后再汇总成绩');
+    } else if (result.total !== undefined && result.failed === 0) {
+      message.success('判分完成');
+    }
+  } catch (error) {
+    gradingRunError.value = error instanceof Error ? error.message : '运行判分失败';
+    message.error(gradingRunError.value);
+  } finally {
+    gradingRunning.value = false;
+  }
+}
 
 // ===== 主观题进度 =====
 const {
@@ -239,6 +349,28 @@ function onRowRefreshed(): void {
 }
 .mb-4 {
   margin-bottom: 1rem;
+}
+.run-grading-description {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.result-title {
+  font-weight: 600;
+}
+.result-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+.failure-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.mt-2 {
+  margin-top: 0.5rem;
 }
 .hint {
   color: #999;

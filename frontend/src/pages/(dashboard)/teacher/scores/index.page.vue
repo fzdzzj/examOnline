@@ -23,6 +23,16 @@
         <Tag v-if="!isAdmin" color="default">当前角色非管理员：撤回入口不可用</Tag>
       </div>
 
+      <Alert v-if="summarizeError" type="warning" show-icon class="mb-3">
+        <template #message>成绩汇总被后端拒绝</template>
+        <template #description>
+          <div>{{ summarizeError }}</div>
+          <Button class="mt-2" size="small" @click="() => void router.push('/teacher/grading')">
+            前往批改工作台
+          </Button>
+        </template>
+      </Alert>
+
       <div class="mb-3 flex flex-wrap items-center gap-2">
         <!-- 以下按钮全部按 scoreActions（后端状态 + 角色）渲染，后端未允许即不显示 -->
         <Button
@@ -157,7 +167,8 @@ import {
   message,
   type TableColumnsType,
 } from 'ant-design-vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { useQuery } from '@tanstack/vue-query';
 
@@ -198,6 +209,7 @@ const resultColumns: TableColumnsType = [
   { title: '后端说明', key: 'message', dataIndex: 'message' },
 ];
 
+const router = useRouter();
 const store = useStore<State>();
 // 撤回是管理员专属动作（后端 @RequireRole(ADMIN)）：角色取自 /api/auth/me，前端不做本地缓存推断
 const isAdmin = computed(() => highestRoleOf(store.state.user) === 'ADMIN');
@@ -233,19 +245,27 @@ const statusTagColor = computed(
 // ===== 汇总 =====
 const summarizing = ref(false);
 const summarizeStats = ref<SummarizeStats | null>(null);
+const summarizeError = ref<string | null>(null);
+
+watch(selectedExamId, () => {
+  summarizeError.value = null;
+});
 
 async function onSummarize(): Promise<void> {
   if (selectedExamId.value === undefined) return;
   summarizing.value = true;
+  summarizeError.value = null;
   try {
     summarizeStats.value =
       (await unwrap(
         summarize({ client, throwOnError: true, path: { examId: selectedExamId.value } })
       )) ?? null;
+    summarizeError.value = null;
     message.success('汇总完成');
     void queryClient.invalidateQueries({ queryKey: ['exams'] });
   } catch (error) {
-    message.error(error instanceof Error ? error.message : '汇总失败');
+    summarizeError.value = error instanceof Error ? error.message : '汇总失败';
+    message.error(summarizeError.value);
   } finally {
     summarizing.value = false;
   }

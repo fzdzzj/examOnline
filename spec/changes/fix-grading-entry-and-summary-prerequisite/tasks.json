@@ -12,10 +12,10 @@
       {
         "step": "现场核对 HEAD、已有工作树归属、现有 null 客观分测试和成绩/判分规范；记录开工门禁命令、原始输出、短 revision，不使用历史测试计数",
         "completed": true,
-        "evidence": "2026-09-24，开工前现场命令：git status --short --branch → ## feature/add-performance-deepening-readwrite；git rev-parse HEAD → 337c85e4929d2a4decda8de5d5f20c92f2d11a3e；git log -1 --oneline → 337c85e docs(agent): add main agent execution guide。确认已有工作树改动为 spec/README.md、.trae/、frontend/.playwright-cli/、frontend/output/ 及本变更目录，未覆盖。核对 ScoreServiceTest 原 null 客观分按零用例与 score-management 语义后，以本轮定向测试替换冲突断言。"
+        "evidence": "2026-09-24，用户已书面批准推荐 A；开工 HEAD=337c85e4929d2a4decda8de5d5f20c92f2d11a3e。开工当天没有执行全量后端门禁，不能把后续定向测试冒称为全量基线。全量门禁的既有出处仍是 docs/project-overview-for-agents.md:51-53 与 docs/指导Agent交接文档.md §6.1（已记录的 mvn -o clean test 验证方式及 Failures=0、Errors=0、Skipped 判据）；本轮只引用该既有记录，不改写成当天实跑结果。开工现场核对后端树零差异的命令为 `git diff --quiet HEAD -- src/main src/test pom.xml src/main/resources`，原始退出码 0；同时核对既有工作树改动仅属 spec/README.md、.trae/、frontend/.playwright-cli/、frontend/output/ 及本变更目录，未覆盖。"
       }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 2,
@@ -30,10 +30,10 @@
       {
         "step": "实现整场写前校验；覆盖判分失败、成功客观 0 分、纯主观试卷判分后客观 0 分、手动给分 0 分、主观未批仍按 §7.5 partial 汇总，并调整原 null=0 旧测试的冲突断言",
         "completed": true,
-        "evidence": "实现位于提交 2717fce06106bcd6a71a60f383edf06d7a0b0853：ScoreService 在任何 casSummarize/考试状态 CAS 前整场拒绝 grading_status 非 1 或 objective_score NULL；覆盖判分失败、成功客观 0 分、主观 0 分+未批部分批改，以及“好答卷在前、未判分答卷在后仍零汇总写入”。2026-09-24 复跑命令：mvn.cmd -Dtest=ScoreServiceTest test；原始结果 BUILD SUCCESS，Tests run: 38, Failures: 0, Errors: 0。未执行共享 dev 成绩汇总。"
+        "evidence": "实现位于提交 2717fce06106bcd6a71a60f383edf06d7a0b0853：ScoreService 在任何 casSummarize/考试状态 CAS 前整场拒绝 grading_status 非 1 或 objective_score NULL；覆盖判分失败、成功客观 0 分、主观 0 分+未批部分批改，以及“好答卷在前、未判分答卷在后仍零汇总写入”。在 fd21549e56ae22f206f59428a5addee1688f40bf（短 revision fd21549）上执行定向 clean test：`mvn.cmd clean -Dtest=ScoreServiceTest test`；原始结果 `Tests run: 38, Failures: 0, Errors: 0, Skipped: 0`，`BUILD SUCCESS`，退出码 0。未执行共享 dev 成绩汇总。"
       }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 3,
