@@ -126,6 +126,16 @@ public class ScoreService {
                         .in(GradingSubmission::getStatus,
                                 ExamSubmission.STATUS_SUBMITTED, ExamSubmission.STATUS_GRADED));
 
+        // 汇总是不可逆的成绩写入：先整场检查判分前置条件，避免前几份已写入后才发现坏答卷。
+        // 合法零分仍是已完成判分的结果；主观未批按 §7.5 继续由 computeSummary 标记 partial。
+        boolean hasUnfinishedGrading = submissions.stream().anyMatch(submission ->
+                submission.getGradingStatus() == null
+                        || submission.getGradingStatus() != 1
+                        || submission.getObjectiveScore() == null);
+        if (hasUnfinishedGrading) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "存在未完成判分的答卷，不能汇总成绩");
+        }
+
         int summarized = 0;
         int skipped = 0;
         for (GradingSubmission submission : submissions) {

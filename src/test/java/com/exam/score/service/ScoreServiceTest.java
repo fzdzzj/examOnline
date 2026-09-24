@@ -123,6 +123,7 @@ class ScoreServiceTest {
         submission.setObjectiveScore(objective == null ? null : new BigDecimal(objective));
         submission.setTotalScore(total == null ? null : new BigDecimal(total));
         submission.setPartialGraded(partialGraded);
+        submission.setGradingStatus(1);
         return submission;
     }
 
@@ -455,20 +456,50 @@ class ScoreServiceTest {
     }
 
     @Test
-    void summarizeTreatsUnscoredGradeRowAsPartialAndNullObjectiveAsZero() {
+    void summarizeRejectsSubmissionWithMissingObjectiveScoreBeforeAnyWrite() {
+        loginAsTeacher();
+        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_ENDED));
+        when(paperReader.readByExamId(EXAM_ID)).thenReturn(paperOf(shortAnswer(201L, 1)));
+        when(gradingSubmissionMapper.selectList(any()))
+                .thenReturn(List.of(submission(1L, 201L, null, null, null)));
+
+        BusinessException error = assertThrows(BusinessException.class, () -> scoreService.summarize(EXAM_ID));
+
+        assertEquals("存在未完成判分的答卷，不能汇总成绩", error.getMessage());
+        verify(gradingSubmissionMapper, never()).casSummarize(anyLong(), any(), any(), anyInt());
+        verify(examMapper, never()).casUpdateStatus(anyLong(), anyInt(), anyInt(), anyInt());
+    }
+
+    @Test
+    void summarizeRejectsFailedSubmissionBeforeAnyWrite() {
+        loginAsTeacher();
+        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_ENDED));
+        when(paperReader.readByExamId(EXAM_ID)).thenReturn(paperOf(singleChoice(101L, 1)));
+        GradingSubmission failed = submission(1L, 201L, "0.0", null, null);
+        failed.setGradingStatus(2);
+        when(gradingSubmissionMapper.selectList(any())).thenReturn(List.of(failed));
+
+        assertEquals("存在未完成判分的答卷，不能汇总成绩",
+                assertThrows(BusinessException.class, () -> scoreService.summarize(EXAM_ID)).getMessage());
+        verify(gradingSubmissionMapper, never()).casSummarize(anyLong(), any(), any(), anyInt());
+        verify(examMapper, never()).casUpdateStatus(anyLong(), anyInt(), anyInt(), anyInt());
+    }
+
+    @Test
+    void summarizeAllowsSuccessfulObjectiveZeroAndPartialSubjectiveGrading() {
         loginAsTeacher();
         when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_ENDED));
         when(paperReader.readByExamId(EXAM_ID)).thenReturn(paperOf(shortAnswer(201L, 1), shortAnswer(202L, 2)));
         when(gradingSubmissionMapper.selectList(any()))
-                .thenReturn(List.of(submission(1L, 201L, null, null, null)));
+                .thenReturn(List.of(submission(1L, 201L, "0.0", null, null)));
         when(subjectiveGradeMapper.selectList(any())).thenReturn(List.of(
-                gradeRow(1L, 201L, "5.0"), gradeRow(1L, 202L, null)));
+                gradeRow(1L, 201L, "0.0"), gradeRow(1L, 202L, null)));
         when(gradingSubmissionMapper.casSummarize(eq(1L), any(), any(), anyInt())).thenReturn(1);
         when(examMapper.casUpdateStatus(EXAM_ID, Exam.STATUS_ENDED, Exam.STATUS_GRADED, 0)).thenReturn(1);
 
         scoreService.summarize(EXAM_ID);
 
-        verify(gradingSubmissionMapper).casSummarize(1L, new BigDecimal("5.0"), new BigDecimal("5.0"), 1);
+        verify(gradingSubmissionMapper).casSummarize(1L, new BigDecimal("0.0"), new BigDecimal("0.0"), 1);
     }
 
     @Test
