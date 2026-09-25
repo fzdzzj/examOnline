@@ -1,0 +1,35 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：跑法",
+    "task": "把压测进程和被测进程拆到不同宿主",
+    "steps": [
+      { "step": "读 docs/submit-capacity-tuning-report.md 的同机 CPU 证据和 loadtest/ 现有入口，确认当前默认就是同机", "completed": false },
+      { "step": "改 loadtest 用法：压测进程通过显式主机地址打被测应用，并写明如何核对两边不在同一宿主", "completed": false },
+      { "step": "没有第二台机器或独立宿主时停止，不把同机结果写成已分离", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：复验",
+    "task": "用原口径复验一臂，不改应用参数",
+    "steps": [
+      { "step": "按既有方法学跑一臂：至少三轮中位数、预热、轮间排空；复位命令带 utf8mb4", "completed": false },
+      { "step": "不修改 Tomcat 线程、连接池、交卷代码、告警阈值", "completed": false },
+      { "step": "把命令、原始 P99/丢单/落库结果和 revision 写入 tasks.json；未达标只登记瓶颈位", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：收口",
+    "task": "合入规范并归档",
+    "steps": [
+      { "step": "将 spec-delta 合入 performance 基线，不改既有 P99 定义", "completed": false },
+      { "step": "更新 spec/README.md 的本变更行；不把新数字写成无 revision 的常量", "completed": false },
+      { "step": "归档本目录", "completed": false }
+    ],
+    "passes": false
+  }
+]
