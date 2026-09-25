@@ -69,19 +69,19 @@
     "task": "加入 Maven wrapper，使「用哪个 Maven」由仓库决定",
     "steps": [
       {
-        "step": "前置授权确认：wrapper 首次执行需联网下载 distribution。未获网络与磁盘授权前不得执行本任务 — 证据：proposal.md 风险「离线库不可复现」",
-        "completed": false
+        "step": "前置授权确认：wrapper 首次执行需联网下载 distribution。未获网络与磁盘授权前不得执行本任务 — 证据：proposal.md 风险「离线库不可复现」；授权来自 2026-09-25 本任务派发指令（明确要求提供仓库自有 wrapper 并在不带本机缓存的干净检出实测，成功或失败均记录）；网络前置实测：repo.maven.apache.org 可达（HTTP 200），distribution apache-maven-3.9.4-bin.zip 已由首次 wrapper 执行下载至本机用户级缓存 ~/.m2/wrapper/dists（2026-09-25 18:58 时间戳）",
+        "completed": true
       },
       {
-        "step": "新增 mvnw / mvnw.cmd / .mvn/wrapper 配置，并把唯一门禁命令写成 wrapper 调用；不为此修改 pom.xml — 证据：git ls-files 当前对 mvnw 为 0 命中、.mvn 下仅 maven.config",
-        "completed": false
+        "step": "新增 mvnw / mvnw.cmd / .mvn/wrapper 配置，并把唯一门禁命令写成 wrapper 调用；不为此修改 pom.xml — 证据：git ls-files 当前对 mvnw 为 0 命中、.mvn 下仅 maven.config；2026-09-25 落地：mvn wrapper:wrapper -Dtype=bin -Dmaven=3.9.4（wrapper-plugin 3.3.4）生成 mvnw / mvnw.cmd / .mvn/wrapper/maven-wrapper.properties / .mvn/wrapper/maven-wrapper.jar（distributionUrl 钉 3.9.4，即变更前实测可用版本；jar 依 .gitignore:3 既有反向规则入库，mvnw 在 index 记 100755）；未改 pom.xml；唯一门禁命令写成 ./mvnw clean test（Windows cmd 为 mvnw.cmd clean test），仓库根实测（HEAD 89e4984，工作树仅含本变更文档与构建配置差异，src/** 与 pom.xml 与 HEAD 一致）：Tests run: 304, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS（exit 0，03:51 min，2026-09-25T19:02:49+08:00 完成）",
+        "completed": true
       },
       {
-        "step": "回填 E1 在 AGENTS.md 预留的「唯一门禁命令」位（E1 明确要求在落地前留白，不得抄任何一种现存说法） — 证据：add-agent-context-routing 提案任务 2 第 3 步",
-        "completed": false
+        "step": "回填 E1 在 AGENTS.md 预留的「唯一门禁命令」位（E1 明确要求在落地前留白，不得抄任何一种现存说法） — 证据：add-agent-context-routing 提案任务 2 第 3 步；2026-09-25 已回填：AGENTS.md「唯一门禁命令」写入 ./mvnw clean test + 前置（JAVA_HOME 须不低于 pom 的 maven.compiler.release、首次运行需联网、不承诺零准备离线可跑）+ 判据指针（agent-harness 规范，本文件不复述数值）+ 可执行自查（test -x mvnw && test -f mvnw.cmd && test -f .mvn/wrapper/* && echo OK，实测输出 OK）；同批把 README.md、docs/project-overview-for-agents.md、docs/指导Agent交接文档.md（首屏注记、遗留表 Maven 行、§6.1 注记、§6.2 注记、后续工作清单行、前端基线行）的「待回填」指针改为指向 AGENTS.md 的引用——依据 spec-delta「文档中出现第二种命令说法」的整改方式（改为引用而非对齐参数）及各注记自带的回填承诺；交接文档 §6.2 的 dev 启动行按其原承诺改为 wrapper 形态 ./mvnw spring-boot:run（未端到端起服复验，已在文中标注）",
+        "completed": true
       }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 5,
@@ -89,23 +89,23 @@
     "task": ".mvn/maven.config 与 maven-settings.xml 不再指向仓库外或机器特定路径",
     "steps": [
       {
-        "step": "实测确认 Maven 解析 maven.config 内相对路径的基准目录（仓库根 vs 执行时 cwd），据此选定写法；结论写入本步证据而不是凭推断 — 证据：.mvn/maven.config 现为「-s」+ 指向仓库根的绝对盘符路径两行",
-        "completed": false
+        "step": "实测确认 Maven 解析 maven.config 内相对路径的基准目录（仓库根 vs 执行时 cwd），据此选定写法；结论写入本步证据而不是凭推断 — 证据：.mvn/maven.config 现为「-s」+ 指向仓库根的绝对盘符路径两行；2026-09-25 实测（Maven 3.9.4，mvn help:effective-settings 探针）：①裸相对 -s maven-settings.xml 从仓库根可解析，从 frontend/ 报 The specified user settings file does not exist: D:\\code\\examOnline\\frontend\\maven-settings.xml → 相对路径按执行时 cwd 解析，不可单独采用；②-s ${maven.multiModuleProjectDirectory}/maven-settings.xml 从仓库根与 frontend/ 均解析成功 → maven.config 支持系统属性展开，该属性由启动器按「从 cwd 向上找到 .mvn 的第一层」设置，与执行目录无关，据此采用；③从 frontend/ 执行确实读取仓库根的 .mvn/maven.config（否则不会尝试解析 settings 文件）",
+        "completed": true
       },
       {
-        "step": "把 maven-settings.xml:8 的 localRepository 改为仓库相对或可被环境变量覆盖；改造前先量 .m2-repo 体积并保留原目录不删，给出回滚路径（删除缓存目录不在本提案授权内） — 证据：.gitignore:7 已排除 .m2-repo/，git ls-files 对其为 0 命中",
-        "completed": false
+        "step": "把 maven-settings.xml:8 的 localRepository 改为仓库相对或可被环境变量覆盖；改造前先量 .m2-repo 体积并保留原目录不删，给出回滚路径（删除缓存目录不在本提案授权内） — 证据：.gitignore:7 已排除 .m2-repo/，git ls-files 对其为 0 命中；2026-09-25 实施与实测：改造前 du -sh .m2-repo = 2.4G（@ 89e4984）；目录未删除/未移动/未改写，原位保留即回滚路径组成部分；localRepository 改为 ${maven.multiModuleProjectDirectory}/.m2-repo，仓库根与 frontend/ 的 help:effective-settings 输出同为 D:\\code\\examOnline\\.m2-repo；CLI 显式覆盖实测：mvn -Dmaven.repo.local=<探测路径> help:effective-settings 输出变为探测路径（CLI -D 优先于 settings；探测产生的临时目录已清理）。整体回滚：git checkout 89e4984 -- .mvn/maven.config maven-settings.xml 即恢复绝对路径形态（.m2-repo 原位未动，旧配置立即可用）；wrapper 文件回滚 = revert 引入它的提交",
+        "completed": true
       },
       {
-        "step": "在仓库根与非根子目录各执行一次唯一门禁命令，确认两种 cwd 下 settings 与 localRepository 都能解析 — 证据：R-机器绑定不得入库 的 Scenario",
-        "completed": false
+        "step": "在仓库根与非根子目录各执行一次唯一门禁命令，确认两种 cwd 下 settings 与 localRepository 都能解析 — 证据：R-机器绑定不得入库 的 Scenario；2026-09-25 实测：仓库根 ./mvnw clean test → Tests run: 304, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS（exit 0）；frontend/ 下 D:/code/examOnline/mvnw help:effective-settings 输出 localRepository 与仓库根一致，D:/code/examOnline/mvnw clean test 在 settings 解析成功后报 no POM in this directory（Maven 3.9 语义：配置解析两种 cwd 一致，构建须在含 pom 的仓库根执行，已写入 AGENTS.md）",
+        "completed": true
       },
       {
-        "step": "自查：git ls-files .mvn maven-settings.xml 后 cat 两文件，确认不含绝对盘符路径 — 证据：本任务前后对照",
-        "completed": false
+        "step": "自查：git ls-files .mvn maven-settings.xml 后 cat 两文件，确认不含绝对盘符路径 — 证据：本任务前后对照；2026-09-25 提交 7d0171b 后自查：git ls-files .mvn maven-settings.xml 命中 .mvn/maven.config、.mvn/wrapper/maven-wrapper.jar、.mvn/wrapper/maven-wrapper.properties、maven-settings.xml；盘符扫描 grep -nE '[A-Za-z]:[\\\\/]' 两文件初跑仅命中 maven-settings.xml:2 的 XML 命名空间 URL（http:// 中的 p:/ 误命中，假阳性），收窄判据后再接 grep -v '://' 零命中——两文件实际内容仅含 ${maven.multiModuleProjectDirectory} 引用与相对文件名",
+        "completed": true
       }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 6,
@@ -153,15 +153,15 @@
     "task": "指导 agent 独立复核 B-1/B-2 并归档",
     "steps": [
       {
-        "step": "从一份新克隆（不含 .m2-repo、不含本机 JDK/Maven 绝对路径）按文档跑一次唯一门禁命令：跑通则记录，跑不通则如实记录缺的前置（网络、离线库、wrapper distribution），**不得为了让结论好看而改判据或回抄旧命令** — 证据：proposal.md 风险第 1 条明确要求不承诺「任何机器零准备可跑」",
+        "step": "从一份新克隆（不含 .m2-repo、不含本机 JDK/Maven 绝对路径）按文档跑一次唯一门禁命令：跑通则记录，跑不通则如实记录缺的前置（网络、离线库、wrapper distribution），**不得为了让结论好看而改判据或回抄旧命令** — 证据：proposal.md 风险第 1 条明确要求不承诺「任何机器零准备可跑」；执行 agent 预验证（2026-09-25，非独立复核）：方法学自证——首次在 wrapper 提交前克隆实测得 ./mvnw: No such file or directory（未提交文件不入克隆，且当时管道 tail 的退出码 0 不代表 mvnw 退出码），故干净检出验证以提交 7d0171b 之后为准；git clone 本仓库至系统临时目录 exam-gate-clean2（HEAD 7d0171b；test ! -e .m2-repo && test ! -e target 通过），克隆内 ./mvnw --version（autocrlf 检出为 CRLF 形态，Git Bash 实测 exit 0，Maven home 指向 ~/.m2/wrapper/dists 用户级缓存，Java 走 JAVA_HOME=JDK 21）与 cmd //c mvnw.cmd --version（exit 0）均通过；随后克隆内 ./mvnw clean test → Tests run: 304, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS（exit 0，07:18 min 含全部依赖经网络下载至克隆内新建 .m2-repo，实测终值 120M；jacoco.exec 落在克隆内 target，证明配置解析均指向克隆自身而非本仓库）→ 缺失前置仅两项且已满足：联网（distribution 复用用户级缓存 + 依赖全新下载）、JAVA_HOME 指向可用 JDK",
         "completed": false
       },
       {
-        "step": "确认三件套仍不阻断：pom.xml 的 failOnError/failOnViolation 未被顺带翻转，JaCoCo 仍无 check 目标 — 证据：pom.xml:335,364 与 :312,319",
+        "step": "确认三件套仍不阻断：pom.xml 的 failOnError/failOnViolation 未被顺带翻转，JaCoCo 仍无 check 目标 — 证据：pom.xml:335,364 与 :312,319；执行 agent 预验证（2026-09-25，非独立复核）：git status 无 pom.xml（零改动）；failOnError=false（:335，spotbugs）与 failOnViolation=false（:364，checkstyle）原文未动；jacoco 仅有 prepare-agent 与 report（门禁输出含 jacoco:0.8.12:report (jacoco-report)，无 check 目标）；pom 中另两处 <goal>check</goal>（:347/:382）属 spotbugs/checkstyle 的既有执行，受 :335/:364 非阻断开关控制",
         "completed": false
       },
       {
-        "step": "确认写入边界：git diff --name-only 只出现 proposal.md 列出的路径，无 src/**、无 pom.xml、无 docker/**、无 schema.sql",
+        "step": "确认写入边界：git diff --name-only 只出现 proposal.md 列出的路径，无 src/**、无 pom.xml、无 docker/**、无 schema.sql — 执行 agent 预验证（2026-09-25，非独立复核）：本轮改动= .mvn/maven.config、maven-settings.xml、.mvn/wrapper/**、mvnw、mvnw.cmd（proposal B-2 清单内）+ AGENTS.md（任务 4 步 3 授权的回填位）+ README.md、docs/project-overview-for-agents.md、docs/指导Agent交接文档.md、spec/README.md、本 tasks.json（「改为引用」类指针修正与证据回写，依据 spec-delta 对第二命令出处的整改要求）；src/**、pom.xml、schema.sql、docker/**、openapi.yaml、frontend/** 零命中",
         "completed": false
       },
       {
