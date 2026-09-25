@@ -1,7 +1,7 @@
 # reliability 规范
 
-> 能力域：可靠性（阶段 8，W10；限流器降级阶段 10；定时扫描多实例安全阶段 13；死信可见性与有界重投阶段 14；2026-09-20 补分页入参上限）。
-> 来源：`spec/changes/archive/add-slow-sql-and-rate-limit` 合入（核心接口限流、分布式一致性、限流粒度）+ `spec/changes/archive/add-rate-limit-resilience` 合入（限流器降级、降级可观测）+ `spec/changes/archive/add-multi-instance-sweep-safety` 合入（定时扫描多实例安全、不引入调度锁的取舍）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信消息的可见性、有界重投、死信队列不设过期与容量上限）+ `spec/changes/archive/add-api-rate-limiting` 合入（分页入参上限；其全局限流器已撤回，见文末注记）+ `spec/changes/archive/fix-broker-confirm-and-dlq-roundtrip` 合入（发布确认作用域与死信真往返，提案⑦，2026-09-22）。
+> 能力域：可靠性（阶段 8，W10；限流器降级阶段 10；定时扫描多实例安全阶段 13；死信可见性与有界重投阶段 14；2026-09-20 补分页入参上限；2026-09-26 补偶发失败处置与跨实例取号护栏确定性）。
+> 来源：`spec/changes/archive/add-slow-sql-and-rate-limit` 合入（核心接口限流、分布式一致性、限流粒度）+ `spec/changes/archive/add-rate-limit-resilience` 合入（限流器降级、降级可观测）+ `spec/changes/archive/add-multi-instance-sweep-safety` 合入（定时扫描多实例安全、不引入调度锁的取舍）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信消息的可见性、有界重投、死信队列不设过期与容量上限）+ `spec/changes/archive/add-api-rate-limiting` 合入（分页入参上限；其全局限流器已撤回，见文末注记）+ `spec/changes/archive/fix-broker-confirm-and-dlq-roundtrip` 合入（发布确认作用域与死信真往返，提案⑦，2026-09-22）+ `spec/changes/archive/fix-flaky-integration-baselines` 合入（集成测试偶发失败的可复现处置、跨实例取号确定性护栏，2026-09-26）。
 > 实施注记：超限返回 `ResponseCode.TOO_MANY_REQUESTS`（1008 → HTTP 429），由 `GlobalExceptionHandler` 统一转换。
 > 实施注记：限流依赖（Redis）异常时默认 **fail-open 放行**（`exam.ratelimit.fail-open`，默认 true），并打 ERROR 日志 + 递增 `exam.ratelimit.degraded` 计数器；置 false 则异常上抛（fail-close）。
 > 实施注记（阶段 13）：定时扫描正确性靠下游幂等（CAS + 唯一索引 + INSERT IGNORE + 消费端 casFillAnswers），**刻意不加分布式调度锁**；重复扫描指标 `exam.sweep.duplicate_detected`（tag `task`=`sweep`/`state-advance`，含消费者 `filled==0`）；交卷锁按 token 解锁（`RedisLockHelper` Lua compare-and-delete，`exam.taking.submit.lock-ttl-seconds` 默认 30）。
@@ -433,8 +433,56 @@ AND 参数约束抛出的异常类型与 `@Valid @RequestBody` 不同，须有�
 
 ---
 
+### Requirement: 集成测试的偶发失败必须可复现或明确保持观察
+
+WHEN 集成测试在一次全量或定向运行中失败、而单独重跑又通过,
+系统 SHALL 要么给出可重复的失败与对应修复，要么把该失败保持为未复现的观察项，且 SHALL NOT 把重跑通过写成缺陷已消除。
+
+#### Scenario: 失败可以重复
+
+GIVEN 某个集成测试在固定命令下再次失败
+WHEN 修复该失败
+THEN 同一失败路径先失败、后通过
+AND 修复不使用 `@Sql` 自建表，也不把断言改成接受多种行数
+
+#### Scenario: 失败不能重复
+
+GIVEN 按记录的命令重复运行后不再失败
+WHEN 更新遗留说明
+THEN 写明命令、次数和当时 revision
+AND 遗留保持开放，不宣称测试已经稳定
+
+#### Scenario: 护栏已修而历史失败未复现
+
+GIVEN 跨实例护栏已经先红后绿且全量门禁通过
+AND 两条历史偶发测试按记录次数未能复现
+WHEN 归档本可靠性变更
+THEN 历史遗留项仍标为开放观察，附命令与 revision
+AND 归档结论只声称护栏已修和观察方法收口，不声称历史失败被消除
+
+---
+
+### Requirement: 跨实例取号护栏必须为确定性反例
+
+WHEN 回归测试声明能防止测试实例各自取号而撞名的退化,
+系统 SHALL 用不依赖墙钟分辨率、执行速度或偶然同毫秒构造的断言证明实例共享取号状态。
+
+#### Scenario: 跨实例取号护栏不依赖时间巧合
+
+GIVEN 旧取号器为每个测试实例单独持有计数器，新取号器为实例共享计数器
+WHEN 运行跨实例回归护栏
+THEN 旧取号器下的同一护栏以确定性断言失败，新取号器下通过
+AND 护栏不依赖一千次构造恰好落在同一毫秒，也不重置共享静态计数以制造测试间干扰
+
+---
+
 > 合入注记（2026-09-20，`add-api-rate-limiting`）：只合入「分页入参上限」一条。
 > 该提案原拟的**全局 `/api/**` 限流器已实现后撤回**——它与既有 `@RateLimit` 体系重叠且更危险：
 > 一刀切 100 QPS 会把交卷接口压到其自身 500 预算之下（恰是 5000 人交卷场景），
 > 且绕开"先鉴权再限流"的既定顺序。429 的产生方仍是上文的 `@RateLimit` 令牌桶，未新增第二条路径。
+
+> 合入注记（2026-09-26，`fix-flaky-integration-baselines`）：合入「集成测试的偶发失败必须可复现或明确保持观察」「跨实例取号护栏必须为确定性反例」两条 Requirement。
+> 护栏返修（UniqueSeqGuardTest 反射比较两实例取号器对象身份）在 ed06f42 实例级基座上确定性失败、在共享 static 计数实现上通过（命令、四计数、revision 见归档 tasks.json 证据字段）。
+> **该返修只证明护栏本身**：`DataRetentionIntegrationTest` 与 `ExamTakingIntegrationTest` 两条历史偶发各 3 次逐次复核未复现（41f8298），
+> 遗留 #14/#15 继续开放——本注记与归档记录不声称两条历史失败已被消除。
 

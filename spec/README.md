@@ -26,7 +26,6 @@ spec/
 | 变更 ID | 阶段 | 内容 | 目标能力域 | 前置 |
 |---|---|---|---|---|
 | `isolate-submit-load-generator` | 性能复验（**待审批**） | 把压测进程和被测进程分开后再按原口径复验交卷容量。不改线程、连接池、交卷代码，也不放宽 P99。没有第二台宿主就停 | `performance` | 无；不与 E2 并行写同一工作树 |
-| `fix-flaky-integration-baselines` | 测试稳定性（**待审批**） | 只复查遗留里的保留清理与进入考试偶发失败。能复现才最小修复；不能复现就保持观察，不得把重跑变绿写成已修 | `reliability` | 无；不与上面一项并行 |
 
 
 
@@ -52,7 +51,7 @@ spec/
 | 8 | `performance` | `add-performance-deepening`、`tune-submit-capacity`（交卷容量与压测方法学，2026-09-23 归档）、`gate-java-change-on-measured-factor`（Java 优化先归因门禁，2026-09-25 归档） | 8 |
 | 9 | `data-access` | `add-performance-deepening`、`add-data-retention`、`fix-schema-mysql-pk` | 8、15、17 |
 | 10 | `observability` | `add-performance-deepening`、`add-slow-sql-and-rate-limit`、`add-mq-trace-and-capacity`、`add-alerting-and-dashboards`、`add-dlq-observability-and-replay`、`add-observability-runtime-evidence`、`add-submit-observability`（交卷时延直方图 + Tomcat 线程水位，2026-09-23 归档） | 8、8.1、10、11、14、16 |
-| 11 | `reliability` | `add-slow-sql-and-rate-limit`、`add-rate-limit-resilience`、`add-multi-instance-sweep-safety`、`add-dlq-observability-and-replay` | 8.1、10、13、14 |
+| 11 | `reliability` | `add-slow-sql-and-rate-limit`、`add-rate-limit-resilience`、`add-multi-instance-sweep-safety`、`add-dlq-observability-and-replay`、`fix-flaky-integration-baselines`（测试稳定性，2026-09-26 归档） | 8.1、10、13、14、测试稳定性 |
 | 12 | `data-consistency` | `add-tx-rollback-consistency` | 8.2 |
 | 13 | `class-management` | `add-class-and-post-exam-closure` | 9 |
 | 14 | `absence-makeup` | `add-class-and-post-exam-closure`、`add-post-exam-closure-e2e` | 9、12 |
@@ -113,6 +112,7 @@ spec/
 | `batch-summary-subjective-reads` | 调用次数 | 汇总主观分一次取出，**隔离单测验收后归档**：`ScoreService.summarize` 在判分前置检查通过后、逐份 CAS 写入前按本场答卷 ID 一次取出主观分（缺行仍按未批口径记部分批改；无简答题或无答卷不发查询）；总分、合法零分、未判完整场拒绝、§7.5 部分批改语义零改动；`ScoreServiceTest` 扩 2 用例（多份答卷只查一次、缺行不视为已批完）。**验收边界=ScoreServiceTest 40/0/0（`812d1a1`，隔离单测，证据见归档 tasks.json）；不是交卷 P99 修复；未跑共享 dev 真汇总**。score-management 基线「成绩汇总」合入 MODIFIED Requirement（新增「主观分一次取出」场景） | 2026-09-25 |
 | `batch-grading-subjective-upserts` | 调用次数 | 整场判分主观行一次取出，**隔离单测+既有集成测试验收后归档**：`ExamGradingService.runExamGrading` 在逐份判分前按本场答卷 ID 一条 IN 查询取出已有 `subjective_grades` 行（无简答题或无答卷不发查询），判分循环与单份 `rejudge` 不再按「答卷×题目」`selectOne`；刷新已有行只写答案快照与初判提示分（SET 列断言守住，终分/评语/批改人/批改时间/version 不动）；客观分、初判建行、失败隔离（坏卷只 markGradingFailed 该份）语义零改动，未新增 Mapper 方法、未加大事务；`ObjectiveGradingServiceTest` 新增 6 用例（一次取出、不覆盖终分、坏卷隔离、无查询护栏、重判一次取出）。**验收边界=ObjectiveGradingServiceTest 6/0/0 + GradingScoreIntegrationTest 3/0/0（`10aba79`，隔离单测+既有集成测试，红绿证据见归档 tasks.json）；不是交卷 P99 修复；未跑共享 dev 真判分**。grading 基线「简答批改」合入 MODIFIED Requirement（新增「整场判分主观行一次取出」场景，「教师批改留痕」「并发批改防覆盖」原文保留） | 2026-09-25 |
 | `gate-java-change-on-measured-factor` | 性能门禁 | Java 优化必须先用同一负载量出延迟、吞吐与资源占用，只改占比最高的一类；调用次数和事务范围没有下降之前不调 JVM。**文档门禁，验收后归档（未实施任何优化）**：spec-delta ADDED Requirement「Java 优化先归因、一次只改一类」整段合入 performance 基线（三个 Scenario：没有剖面不得改参数/一次只改一类/交卷入口的已知结构不是延迟占比）；交卷入口的 Redis 锁/幂等读写/CAS/MQ/消费端 JDBC batch 只作调用次数与事务范围清单、不写成延迟占比；同机历史复验结论不能授权 JVM 或热点改写；近期归档的 batch-summary-subjective-reads / batch-grading-subjective-upserts 只降低教师侧判分/汇总的调用次数，不是交卷 P99 修复。**验收边界=spec 合入 + diff 不含代码/JVM/线程池/SQL**；未跑压测机分离后的复验；未改 src/main；下一刀须先有同口径新剖面（依赖 isolate-submit-load-generator，仍待审批） | 2026-09-25 |
+| `fix-flaky-integration-baselines` | 测试稳定性 | 跨实例取号护栏返修为确定性反例 + 两条历史偶发逐次复核保持观察：`UniqueSeqGuardTest` 由「紧凑构造 1000 个实例碰同毫秒桶」（1000/100000 无鸽笼保证，执行变慢时旧实现可保持绿）改为反射比较两个 Probe 实例引用的取号器对象身份（assertSame）并保留两次取名不同的行为断言，不重置共享计数、不睡眠、无新增依赖、`IntegrationTestBase` 已提交实现零改动；隔离旧基座（`ed06f42` 实例级种子）工作树实跑红灯 1/1/0/0（assertSame 见两个不同 AtomicLong，退出码 1），共享 static 计数实现绿 1/0/0/0；全量门禁 `mvnw.cmd clean test` @ `d1dfcb6` → 305/0/0/1、BUILD SUCCESS、退出码 0（命令与失败断言见归档 tasks.json 证据字段）。`DataRetentionIntegrationTest` 与 `ExamTakingIntegrationTest` 各 3 次逐次定向复核未复现（41f8298），遗留 #14/#15 保持开放——**归档只声称护栏已修与观察方法收口，不声称两条历史偶发已消除**。reliability 基线合入 2 个新 Requirement（含「护栏已修而历史失败未复现」场景） | 2026-09-26 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
@@ -129,9 +129,9 @@ spec/
     - **阶段 23 入库时前端门禁其实是红的**（2026-09-21 因 E2-B2 的 `&`→`&&` 修复才暴露）：旧 `type-check:check` 用单个后台符 `&` 串接两个子检查，app 侧 `vue-tsc` 的退出码被丢弃，于是 `type-check:app:check` 报 6 处 `TS18048`（`ScorePublishPreview.spec.ts`，由 `21c9482` 引入）而 `type-check:check` 仍返回 0；config 侧另有 `vitest.config.ts` 在 `test` 块内重复 `plugins` 导致 1 处 `TS2769`。**修前证据**：`npm run type-check:app:check` → exit=2 / 6 errors，`npm run type-check:config:check` → exit=1 类错误，`npm run type-check:check` → exit=2（因 config 侧本来就红，说明这道门禁在改前也不是"绿"，只是吞掉了 app 侧）。**修后**：`npm run type-check:check` → exit=0、`vitest run` → 16 文件全绿；变异验证 `type-check:check` → exit=2（TS2322）→ 撤除后 exit=0。含义：**阶段 23 的"门禁全绿"从未在可判定的意义上成立过**，其交付状态应据此复核。**（已收口：2026-09-23 阶段 23 复核验收时独立重跑门禁——`pnpm lint:check`/`type-check:check` exit=0、vitest 38 文件 331 例全绿——"门禁在已提交状态全绿"自此在可判定意义上成立；历史红仅存在于旧串接符吞码时期，且当时引入的 6 处 TS18048 已由 E2-B2 修复并变异验证过。复核同时发现并修复两处 Alert 默认插槽正文不可见缺陷（见归档表该行）。本子项关闭。）**
     - **纪律（与仓库根 `AGENTS.md` 同源）**：自述产物（`final-summary.md` / `progress-report-*.md` / 提交信息）**不是**交付证据。可采信的只有三样——代码归属于哪笔提交、可复算的用例计数、以及**在已提交状态上**跑出的门禁输出。本条与上表的状态列即按此口径重写；上面那条"门禁其实是红的"正是违反本纪律的实例——它能一直"绿"，只是因为串接符写错。
 
-14. **`DataRetentionIntegrationTest` 存在偶发失败**（2026-09-23 阶段 22 第 3 片开工基线首跑暴露）——`purgeRemovesOnlyTerminalOldExams` expected 4 was 8，单类复跑 6/6 绿、同命令全量复跑 290/0/0/1 绿。子 agent 疑点指向共享 H2（`mem:exam;DB_CLOSE_DELAY=-1`）下 `exam` 表跨测试类不清理导致的测试间干扰，机制未定位（返修片禁改后端，未排查）。全量门禁当前可复现为绿，**不阻塞验收**；在它再次变红前不值得动，再变红时按「先单类复跑定性、再查跨类污染」处理。
+14. **`DataRetentionIntegrationTest` 存在偶发失败**（2026-09-23 阶段 22 第 3 片开工基线首跑暴露）——`purgeRemovesOnlyTerminalOldExams` expected 4 was 8，单类复跑 6/6 绿、同命令全量复跑 290/0/0/1 绿。子 agent 疑点指向共享 H2（`mem:exam;DB_CLOSE_DELAY=-1`）下 `exam` 表跨测试类不清理导致的测试间干扰，机制未定位（返修片禁改后端，未排查）。全量门禁当前可复现为绿，**不阻塞验收**；在它再次变红前不值得动，再变红时按「先单类复跑定性、再查跨类污染」处理。**逐次复核（2026-09-26，`fix-flaky-integration-baselines`）**：在 41f8298 上 `./mvnw clean test -Dtest=DataRetentionIntegrationTest` 逐次独立执行 3 次，每次 Tests run: 6, Failures: 0, Errors: 0, Skipped: 0、BUILD SUCCESS、退出码 0——**未复现，保持开放观察**（未把重跑绿写成已修复）；同批归档的跨实例取号护栏返修与本条偶发失败无归因关系。
 
-15. **`ExamTakingIntegrationTest.enterGateAndCountdown` 存在偶发失败**（2026-09-23 `add-submit-observability` 验收期间暴露，与观测改动无关——失败点在教师注册链路）——`registerTeacher` 期望 200 得 400，单类复跑 10/10 绿，另一轮全量复跑 293/0/0/1 绿；与遗留 #14 同属「全量偶发、单类绿」模式，疑点同指向共享 H2 下跨测试类状态干扰，机制未定位。**不阻塞验收**；再变红时与 #14 一并按「先单类复跑定性、再查跨类污染」处理，若两条同源可合并立项排查用例隔离。
+15. **`ExamTakingIntegrationTest.enterGateAndCountdown` 存在偶发失败**（2026-09-23 `add-submit-observability` 验收期间暴露，与观测改动无关——失败点在教师注册链路）——`registerTeacher` 期望 200 得 400，单类复跑 10/10 绿，另一轮全量复跑 293/0/0/1 绿；与遗留 #14 同属「全量偶发、单类绿」模式，疑点同指向共享 H2 下跨测试类状态干扰，机制未定位。**不阻塞验收**；再变红时与 #14 一并按「先单类复跑定性、再查跨类污染」处理，若两条同源可合并立项排查用例隔离。**逐次复核（2026-09-26，`fix-flaky-integration-baselines`）**：在 41f8298 上 `./mvnw clean test -Dtest=ExamTakingIntegrationTest`（含 enterGateAndCountdown）逐次独立执行 3 次，每次 Tests run: 10, Failures: 0, Errors: 0, Skipped: 0、BUILD SUCCESS、退出码 0——**未复现，保持开放观察**；与 #14 同批复核，护栏返修与本条无归因关系。
 
 16. **压测复位脚本受 mysql 客户端默认字符集影响可静默假绿**（2026-09-23 `tune-submit-capacity` 真实踩中）——本机 `character_set_client=gbk`，漏 `--default-character-set=utf8mb4` 时：纯中文字符串报 1267（会被发现），但 **ASCII+中文混合字面量静默失真**（`= _utf8mb4'…'` 匹配 0 行、退出码 0）——`loadtest/db/03-cleanup.sql` 的 DELETE 与末尾自证用同一失真字面量，打印全 0 假绿而复位根本没执行；同源风险罩着 `02-metrics.sql` 的 `@exam_id`（会静默变 NULL ⇒「0 丢单」假绿）。**已处置**：`loadtest/README.md` 用法行补 `--default-character-set=utf8mb4` + 独立复核命令 + 坑条目改写（`259d4f4`）；脚本本体属既有共享资产未动。**收尾纪律**：任何用这些脚本的后续压测，复位结果以独立复核命令为准，不信脚本自证输出。
 
@@ -168,7 +168,7 @@ spec/
 | 8 | performance | 缓存三防（穿透/击穿/雪崩）、热点只读缓存 |
 | 9 | data-access | 读写分离、读己之写、数据保留与有界清理（三张辅助表 / 零 DDL / 默认双关）、新库建表 MySQL 8 兼容（AUTO_INCREMENT 必须有主键） |
 | 10 | observability | 指标导出、自定义业务指标、慢 SQL 识别与请求关联、异步链路请求关联、指标驱动的告警、观测面板、死信队列指标与告警、观测栈动态可验证性 |
-| 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度、限流器降级与可观测、定时扫描多实例幂等、交卷锁按持有者解锁、死信可见性与有界重投 |
+| 11 | reliability | 接口限流（Redis 令牌桶）、分布式一致性、限流粒度、限流器降级与可观测、定时扫描多实例幂等、交卷锁按持有者解锁、死信可见性与有界重投、集成测试偶发失败的可复现处置、跨实例取号确定性护栏 |
 | 12 | data-consistency | 事务显式回滚、受检异常转换 |
 | 13 | class-management | 班级 CRUD、学生入班/转班、班级学生列表 |
 | 14 | absence-makeup | 缺考标记（含自然到点与 force-end 两条结束路径）、补考独立记录、补考成绩规则合并、考后闭环端到端一致性 |
