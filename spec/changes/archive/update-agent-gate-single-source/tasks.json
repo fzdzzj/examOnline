@@ -153,22 +153,22 @@
     "task": "指导 agent 独立复核 B-1/B-2 并归档",
     "steps": [
       {
-        "step": "从一份新克隆（不含 .m2-repo、不含本机 JDK/Maven 绝对路径）按文档跑一次唯一门禁命令：跑通则记录，跑不通则如实记录缺的前置（网络、离线库、wrapper distribution），**不得为了让结论好看而改判据或回抄旧命令** — 证据：proposal.md 风险第 1 条明确要求不承诺「任何机器零准备可跑」；执行 agent 预验证（2026-09-25，非独立复核）：方法学自证——首次在 wrapper 提交前克隆实测得 ./mvnw: No such file or directory（未提交文件不入克隆，且当时管道 tail 的退出码 0 不代表 mvnw 退出码），故干净检出验证以提交 7d0171b 之后为准；git clone 本仓库至系统临时目录 exam-gate-clean2（HEAD 7d0171b；test ! -e .m2-repo && test ! -e target 通过），克隆内 ./mvnw --version（autocrlf 检出为 CRLF 形态，Git Bash 实测 exit 0，Maven home 指向 ~/.m2/wrapper/dists 用户级缓存，Java 走 JAVA_HOME=JDK 21）与 cmd //c mvnw.cmd --version（exit 0）均通过；随后克隆内 ./mvnw clean test → Tests run: 304, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS（exit 0，07:18 min 含全部依赖经网络下载至克隆内新建 .m2-repo，实测终值 120M；jacoco.exec 落在克隆内 target，证明配置解析均指向克隆自身而非本仓库）→ 缺失前置仅两项且已满足：联网（distribution 复用用户级缓存 + 依赖全新下载）、JAVA_HOME 指向可用 JDK",
-        "completed": false
+        "step": "从一份新克隆（不含 .m2-repo、不含本机 JDK/Maven 绝对路径）按文档跑一次唯一门禁命令：跑通则记录，跑不通则如实记录缺的前置（网络、离线库、wrapper distribution），**不得为了让结论好看而改判据或回抄旧命令** — 证据：proposal.md 风险第 1 条明确要求不承诺「任何机器零准备可跑」；执行 agent 预验证（2026-09-25，非独立复核）：方法学自证——首次在 wrapper 提交前克隆实测得 ./mvnw: No such file or directory（未提交文件不入克隆，且当时管道 tail 的退出码 0 不代表 mvnw 退出码），故干净检出验证以提交 7d0171b 之后为准；git clone 本仓库至系统临时目录 exam-gate-clean2（HEAD 7d0171b；test ! -e .m2-repo && test ! -e target 通过），克隆内 ./mvnw --version（autocrlf 检出为 CRLF 形态，Git Bash 实测 exit 0，Maven home 指向 ~/.m2/wrapper/dists 用户级缓存，Java 走 JAVA_HOME=JDK 21）与 cmd //c mvnw.cmd --version（exit 0）均通过；随后克隆内 ./mvnw clean test → Tests run: 304, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS（exit 0，07:18 min 含全部依赖经网络下载至克隆内新建 .m2-repo，实测终值 120M；jacoco.exec 落在克隆内 target，证明配置解析均指向克隆自身而非本仓库）→ 缺失前置仅两项且已满足：联网（distribution 复用用户级缓存 + 依赖全新下载）、JAVA_HOME 指向可用 JDK — 证据：【指导 agent 独立复核（2026-09-25）：先在 D 盘新克隆 ed06f42（无 .m2-repo/target）运行 `mvnw.cmd clean test` → Tests run: 304, Failures: 1, Errors: 0, Skipped: 1，BUILD FAILURE，exit 1；QuestionBankIntegrationTest 注册教师返回 1002，日志证实与 AntiCheatIntegrationTest 同名，不能用执行 agent 的绿覆盖。独立修复提交 8bd04c2（仅 src/test 两文件）：UniqueSeqGuardTest 在旧实现红 1/1/0/0、新实现绿 1/0/0/0。再由指导 agent 另建新克隆 D:/code/examOnline-e2-independent-20260925（HEAD 8bd04c2，起跑前 NO_CACHE=True、NO_TARGET=True，JAVA_HOME 指向 JDK 21，首次依赖需联网），执行 `mvnw.cmd clean test` → Tests run: 305, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，exit 0；XML 报告求和相同，跳过项仅 OpenApiContractTest.exportOpenApiContract。原始日志在该克隆 e2-independent-gate.log；此数值仅对应 8bd04c2，不是收口提交自己的重新执行。】",
+        "completed": true
       },
       {
-        "step": "确认三件套仍不阻断：pom.xml 的 failOnError/failOnViolation 未被顺带翻转，JaCoCo 仍无 check 目标 — 证据：pom.xml:335,364 与 :312,319；执行 agent 预验证（2026-09-25，非独立复核）：git status 无 pom.xml（零改动）；failOnError=false（:335，spotbugs）与 failOnViolation=false（:364，checkstyle）原文未动；jacoco 仅有 prepare-agent 与 report（门禁输出含 jacoco:0.8.12:report (jacoco-report)，无 check 目标）；pom 中另两处 <goal>check</goal>（:347/:382）属 spotbugs/checkstyle 的既有执行，受 :335/:364 非阻断开关控制",
-        "completed": false
+        "step": "确认三件套仍不阻断：pom.xml 的 failOnError/failOnViolation 未被顺带翻转，JaCoCo 仍无 check 目标 — 证据：pom.xml:335,364 与 :312,319；执行 agent 预验证（2026-09-25，非独立复核）：git status 无 pom.xml（零改动）；failOnError=false（:335，spotbugs）与 failOnViolation=false（:364，checkstyle）原文未动；jacoco 仅有 prepare-agent 与 report（门禁输出含 jacoco:0.8.12:report (jacoco-report)，无 check 目标）；pom 中另两处 <goal>check</goal>（:347/:382）属 spotbugs/checkstyle 的既有执行，受 :335/:364 非阻断开关控制 — 证据：【指导 agent 独立静态核对（revision 8bd04c2）：从 pom.xml 解析插件 execution goals：JaCoCo 仅 prepare-agent、report，无 check；SpotBugs 的 failOnError=false、Checkstyle 的 failOnViolation=false，虽各有 check goal 仍按既有策略非阻断；`git diff --name-only 89e4984..ed06f42 -- pom.xml` 输出为空，退出码 0。】",
+        "completed": true
       },
       {
-        "step": "确认写入边界：git diff --name-only 只出现 proposal.md 列出的路径，无 src/**、无 pom.xml、无 docker/**、无 schema.sql — 执行 agent 预验证（2026-09-25，非独立复核）：本轮改动= .mvn/maven.config、maven-settings.xml、.mvn/wrapper/**、mvnw、mvnw.cmd（proposal B-2 清单内）+ AGENTS.md（任务 4 步 3 授权的回填位）+ README.md、docs/project-overview-for-agents.md、docs/指导Agent交接文档.md、spec/README.md、本 tasks.json（「改为引用」类指针修正与证据回写，依据 spec-delta 对第二命令出处的整改要求）；src/**、pom.xml、schema.sql、docker/**、openapi.yaml、frontend/** 零命中",
-        "completed": false
+        "step": "确认写入边界：git diff --name-only 只出现 proposal.md 列出的路径，无 src/**、无 pom.xml、无 docker/**、无 schema.sql — 执行 agent 预验证（2026-09-25，非独立复核）：本轮改动= .mvn/maven.config、maven-settings.xml、.mvn/wrapper/**、mvnw、mvnw.cmd（proposal B-2 清单内）+ AGENTS.md（任务 4 步 3 授权的回填位）+ README.md、docs/project-overview-for-agents.md、docs/指导Agent交接文档.md、spec/README.md、本 tasks.json（「改为引用」类指针修正与证据回写，依据 spec-delta 对第二命令出处的整改要求）；src/**、pom.xml、schema.sql、docker/**、openapi.yaml、frontend/** 零命中 — 证据：【指导 agent 独立写入边界核对（revision 8bd04c2）：`git diff --name-only 89e4984..ed06f42` 仅 B-1/B-2 的 .mvn/**、mvnw*、maven-settings.xml、AGENTS.md、README.md、docs/**、spec/README.md 与本 tasks.json，无 src/**、pom.xml、docker/**、schema.sql、openapi.yaml；`git diff --name-only ed06f42..8bd04c2` 恰为 src/test/java/com/exam/support/IntegrationTestBase.java 和 UniqueSeqGuardTest.java，这是另一个已提交的测试稳定性修复，不能谎称整条分支零 src/test 改动。收口时仅额外修正 maven-settings.xml 的归档路径注释，不改变构建语义。】",
+        "completed": true
       },
       {
-        "step": "收尾五步：spec-delta 的 4 条 ADDED 合入 spec/specs/agent-harness/spec.md → git mv 本目录进 archive → 按实际完成度回勾 tasks.json（不得凭印象勾满）→ 更新 spec/README.md 三处 → commit（提交信息引用命令与当次输出，不复述数字） — 证据：spec/README.md:157",
-        "completed": false
+        "step": "收尾五步：spec-delta 的 4 条 ADDED 合入 spec/specs/agent-harness/spec.md → git mv 本目录进 archive → 按实际完成度回勾 tasks.json（不得凭印象勾满）→ 更新 spec/README.md 三处 → commit（提交信息引用命令与当次输出，不复述数字） — 证据：spec/README.md:157 — 证据：【指导 agent 收口（2026-09-25，门禁 revision 8bd04c2）：本变更四条 ADDED Requirement 原段合入 spec/specs/agent-harness/spec.md，目录整体 git mv 到 archive，tasks.json 八阶段按现场证据回勾，spec/README.md 的进行中/归档/已合入规范/能力地图均同步；暂存集合与提交见本收口提交的 git diff --cached --name-only 和 git show --stat。完整门禁原始输出以本阶段第 1 步记录为准，收口提交只改规范、文档和 maven-settings.xml 中的归档证据指针，不冒充在收口提交后重新运行全量门禁。】",
+        "completed": true
       }
     ],
-    "passes": false
+    "passes": true
   }
 ]

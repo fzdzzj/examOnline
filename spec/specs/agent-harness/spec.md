@@ -1,14 +1,14 @@
 # agent-harness 规范
 
 > 能力域：面向 agent 的项目事实路由与文档判据（工程性变更 E1，2026-09-21）。
-> 来源：`spec/changes/archive/add-agent-context-routing` 合入（根入口只路由、硬约定必经索引、无执行者 SQL 目录自述、文档判据优先于常量）。
+> 来源：`spec/changes/archive/add-agent-context-routing`（E1）与 `spec/changes/archive/update-agent-gate-single-source`（E2）合入。
 > 实施注记：
 > - `README.md` 由"阶段 1 快照"改为路由表：删除端口/口令默认值/只列两包的工程结构/里程碑四类副本，全文不含连接事实字面值；dev 默认值指向 `src/main/resources/application-dev.yml`，进行中阶段指向 `spec/README.md` 的「当前状态」表。
 > - 新增仓库根 `AGENTS.md`：4 条硬约定按「一句话规则 + canonical 出处 + 可机械执行的自查命令」三段式承载，禁忌清单只给指针（`docs/指导Agent交接文档.md` 的对应小节），不复制正文。**该文件确被 provider 注入每次 agent 会话**——"agent 必经索引"这条路在本环境实测成立。
 > - 新增 `docker/mysql/migrations/README.md`：首段即"放进本目录 ≠ 变更已生效"，附 compose 实际挂载的两个 init 目录、`audit_log` 在 dev 缺失且异常被 `catch` 吞掉的先例、`idx_sweep_candidate` ≡ 既有 `idx_submissions_sweep` 的反例、存量库手工应用的顺序与验证、"新库无需执行"边界。**该目录既有 `.sql` 零改动**。
 > - `spec/README.md` 三处硬编码计数（进行中数、归档数、能力地图条数）改为可复算语句；工作流「收尾五步」补第 7 步（收尾时同步 `AGENTS.md` 指针，只加指针不加正文）。
 > - **自查命令里的字符类方括号是设计的一部分**：`330[6]`、`[T]ests run`、`root/[r]oot` 这类写法用于避免"判据命令自身含被禁字面量 → 永久命中自己那一行 → 判据永红等于没有判据"。把方括号"修正"回裸字面量会使该条自查失效。怀疑判据是装饰性的，按变异验证纪律走：注入违规 → 确认变红 → 撤销 → 确认变绿（E1 对三条自查各做过一次）。
-> - 尚未合入本能力域的：`update-agent-gate-single-source`（E2）的「唯一门禁命令 / 验收结论绑定执行 / 声明的门禁必须能失败 / 机器绑定不得入库」四条——E2 的 B-2 段未落地，其 spec-delta 待收口时再合入。
+> - E2 `update-agent-gate-single-source` 已收口：唯一后端门禁命令、验收绑定当次执行、声明的门禁能够失败、构建配置不绑定机器路径四条已由归档 spec-delta 合入；首次独立新克隆门禁暴露存量测试取号碰撞，另由 `8bd04c2` 修复后重新独立验收。
 
 ## Requirements
 
@@ -119,3 +119,107 @@ GIVEN 需要留档某次验收的测试数
 WHEN 写入文档
 THEN 同一行记录产生该数值的命令与短 revision
 AND 后续读者知道该数值描述的是哪一次执行，而非当前状态
+
+### Requirement: 后端验证只有一条仓库自有的门禁命令
+
+WHEN 需要验证一次后端改动是否通过,
+系统 SHALL 提供一条由仓库自有、且不依赖仓库外机器路径的门禁命令，并且项目内所有文档只引用这一条命令。
+
+#### Scenario: 按文档验证自己的改动
+
+GIVEN 一个 agent 完成了对 `src/main` 的一次修改
+WHEN 它按项目文档给出的唯一门禁命令执行验证
+THEN 命令来自仓库自身（wrapper 或仓库内配置），不需要任何仓库外的安装目录路径
+AND 命令的语义与判据在同一出处说明
+
+#### Scenario: 文档中出现第二种命令说法
+
+GIVEN 有人在文档或提示词中写入另一条与之互斥的门禁命令
+WHEN 执行自查（对 `spec/`、`docs/`、`README.md` 检索门禁命令出处，结果应只指向同一条）
+THEN 第二个出处判定为违反本需求
+AND 整改方式是改为引用，而不是把两处的数字或参数对齐
+
+#### Scenario: 命令在当前机器上跑不通
+
+GIVEN 一台缺少离线依赖库或 wrapper distribution 的机器
+WHEN 按唯一门禁命令执行并失败
+THEN 失败信息必须指明缺失的前置条件
+AND 文档如实记录该前置，不得为了"看起来能跑"而回抄旧的机器绑定命令，也不得承诺任何机器零准备可跑
+
+### Requirement: 验收结论必须绑定产生它的执行
+
+WHEN 一次交付声明"全绿"或"通过",
+系统 SHALL 记录产生该结论的命令、该次真实输出数值与当时的 revision；缺少任一要素时该声明视为未验收。
+
+#### Scenario: 阶段收尾时的回归结论
+
+GIVEN 一个阶段即将进入验收
+WHEN 记录回归结论
+THEN 记录包含命令、该次 `Tests run / Failures / Errors / Skipped` 数值与短 revision
+AND `Skipped: 1` 被说明为契约导出开关所致，而非被禁用的断言
+
+#### Scenario: 用例总数下降
+
+GIVEN 收尾记录的用例总数少于本阶段开工时记录的数值
+WHEN 按判据比较
+THEN 该阶段判定为不通过并停下回报
+AND 修复方式只能是补回或删除得动的用例说明，不得通过减少用例使数字吻合
+
+#### Scenario: 残留产物给出的数字不可信
+
+GIVEN 上一次未执行 clean 而留下了旧的测试报告产物
+WHEN 汇总测试总数
+THEN 结论必须以一次带 clean 的执行为准
+AND 由残留产物拼出的数值不得被写进任何验收记录
+
+### Requirement: 声明的门禁必须能够失败
+
+WHERE 仓库声明了某个校验脚本作为门禁,
+该脚本 SHALL 在其任一被包含的检查失败时以非零退出码结束，并且存在明确的调用者或是文档化的执行判据。
+
+#### Scenario: 前端类型检查失败
+
+GIVEN `frontend/package.json` 的 `type-check:check` 串联 app 与 config 两个类型检查
+WHEN app 侧 `vue-tsc --noEmit` 报告错误
+THEN `type-check:check` 以非零退出码结束
+AND 把它当作门禁的阶段提示词能够据此停下回报，而不是拿到通过信号
+
+#### Scenario: 门禁没有调用者
+
+GIVEN 一个声明为门禁的脚本没有任何 tracked 的调用者，也不在文档化的执行判据里
+WHEN 审查该门禁的实际效力
+THEN 它必须被要么纳入判据、要么删除
+AND 不允许保留为"看起来像门禁、实际不产生后果"的脚本
+
+#### Scenario: 变异验证确认门禁可失败
+
+GIVEN 门禁修复完成
+WHEN 人为注入一个会被该门禁覆盖的失败（如一个类型错误）并重跑门禁
+THEN 门禁以非零退出码结束
+AND 撤销注入后门禁恢复为通过，且工作树干净
+
+### Requirement: 构建配置的机器绑定不得进入版本库
+
+WHEN 构建或测试配置文件被纳入版本控制,
+其内容 SHALL 不包含指向仓库外机器路径的绝对路径，且其所引用的本地产物或缓存的存在条件被明确记录。
+
+#### Scenario: 新克隆解析构建配置
+
+GIVEN 一份全新的 checkout，不含本机历史缓存目录
+WHEN 按仓库自有命令执行构建配置解析
+THEN settings 与本地仓库位置都能在仓库内解析或被环境变量显式覆盖
+AND 在仓库根与非根子目录两种工作目录下执行结果一致
+
+#### Scenario: 缓存目录不存在时
+
+GIVEN 配置所依赖的本地依赖缓存在该机器上不存在
+WHEN 执行门禁命令
+THEN 得到的是可理解的前置缺失提示（并说明如何获得依赖）
+AND 不是一串指向不存在文件的编译或解析错误
+
+#### Scenario: 缓存迁移不得造成静默翻倍
+
+GIVEN 调整本地依赖仓库的位置
+WHEN 实施该调整
+THEN 保留原缓存目录且不改写其内容，回滚路径被记录
+AND 删除任何缓存目录需要单独授权，不属于本能力域的默认动作

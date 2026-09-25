@@ -25,7 +25,6 @@ spec/
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| `update-agent-gate-single-source` | 工程性 E2（**不在 19–23 业务串行链内**） | 门禁命令与验收判据的单一来源。**B-1 已完成**：6 份进行中前端提示词里的"必须仍是 210"常量与"一律读作 218"式人肉更正段全部清除，改为编号判据（开工记录 + 收尾比较）；`docs/指导Agent交接文档.md` 首屏常量降级为带 revision 的历史记录，§6.1 定性为特定 shell 的历史绕行办法、§6.2 加互斥注记。**B-2 已落地（任务 4/5/6/7，2026-09-25 执行 agent 实测）**：任务 6 前端 `&`→`&&` 与 `precommit:check` 去留（见遗留 #13）；任务 4 Maven wrapper 四件套入库并把唯一门禁命令回填进 `AGENTS.md`；任务 5 `.mvn/maven.config` 与 `maven-settings.xml` 去机器绝对路径（相对路径解析基准经实测选定写法，根目录与非根子目录解析一致）；实测证据在该变更 `tasks.json`。**待收口**：B-3 指导 agent 独立复核（含归档） | `agent-harness` | 与 `add-frontend-*` 无文件冲突（B-1 只改提示词与文档）；`add-agent-context-routing`（E1）已归档 |
 | `isolate-submit-load-generator` | 性能复验（**待审批**） | 把压测进程和被测进程分开后再按原口径复验交卷容量。不改线程、连接池、交卷代码，也不放宽 P99。没有第二台宿主就停 | `performance` | 无；不与 E2 并行写同一工作树 |
 | `fix-flaky-integration-baselines` | 测试稳定性（**待审批**） | 只复查遗留里的保留清理与进入考试偶发失败。能复现才最小修复；不能复现就保持观察，不得把重跑变绿写成已修 | `reliability` | 无；不与上面一项并行 |
 
@@ -59,7 +58,7 @@ spec/
 | 14 | `absence-makeup` | `add-class-and-post-exam-closure`、`add-post-exam-closure-e2e` | 9、12 |
 | 15 | `score-review` | `add-class-and-post-exam-closure` | 9 |
 | 16 | `api-contract` | `add-backend-openapi` | 18 |
-| 17 | `agent-harness` | `add-agent-context-routing`（工程性 E1，2026-09-21 归档） | 工程性 |
+| 17 | `agent-harness` | `add-agent-context-routing`（工程性 E1，2026-09-21 归档）、`update-agent-gate-single-source`（工程性 E2，2026-09-25 归档） | 工程性 |
 | 18 | `frontend` | `add-frontend-must-change-guard`（提案④，2026-09-21 归档）、`add-frontend-student-taking`（阶段 22，2026-09-23 归档）、`add-frontend-exam-admin`（阶段 21，2026-09-23 归档）、`add-frontend-post-exam`（阶段 23，2026-09-23 归档）、`add-frontend-skeleton-auth`（阶段 19，2026-09-23 归档）、`add-frontend-teacher-authoring`（阶段 20，2026-09-23 归档）、`fix-frontend-paper-table-render`（前端 D1，2026-09-23 归档）、`fix-grading-entry-and-summary-prerequisite`（前端 D2，2026-09-25 归档）、`add-makeup-final-score-frontend`（前端 P3，2026-09-25 归档） | 前端系列 |
 | 19 | `dev-config` | `parameterize-dev-credentials`（提案⑫，2026-09-21 归档） | 工程性 |
 
@@ -89,6 +88,7 @@ spec/
 | `fix-schema-mysql-pk` | 17 | schema.sql 25 张表为 AUTO_INCREMENT 补 `PRIMARY KEY (id)`（MySQL 8 空库可建）；存量迁移 `2026-W16-add-primary-keys.sql`；约定测试 `SchemaSqlMysqlCompatibilityTest`；**MySQL 空库真机初始化仍未实测**（证据止于文本护栏 + H2 210 全绿） | W16 |
 | `add-auth-must-change-password` | 18+ | 接通恒 0 的死标记 `must_change_password`：`CurrentUserResponse` 暴露 + `AdminInitializer` **仅首次创建**置 1（两道提前 return 在构造 `User` 之前）+ 改密成功置 0 + 重导契约（+2 行）；**刻意不入 JWT claim**、**不改鉴权拦截器**、零 DDL、不追溯存量 admin；`MustChangePasswordIntegrationTest` 5 例（含连续两次 `run()` 不打回已改密 admin）；基线 213 → **218**。**前端守卫未接**，见遗留 #11 | W18 |
 | `add-backend-openapi` | 18 | springdoc 2.8.13 暴露 `/v3/api-docs`（65 paths、`openapi: 3.1.0`、覆盖 14 个 Controller）；导出 `openapi.yaml` 为前端客户端唯一契约来源；5 个公开端点由 `OpenApiCustomizer` 显式标 `security: []`（清单常量须与 `WebMvcConfig` 白名单同步）；契约冒烟测试 + 导出受 `exportContract` 开关控制（CI 基线 `Skipped: 1` 属设计使然）；prod 关 swagger-ui | W17 |
+| `update-agent-gate-single-source` | 工程性 E2 | B-1 将验收数字改为判据并绑定当次执行；B-2 增加 Maven wrapper、去机器路径、修正前端类型检查退出码；B-3 经指导 agent 独立新克隆复核后收口。首次新克隆暴露存量测试账号撞名，另由 `8bd04c2` 独立修复并完成红绿护栏，再以修复后新克隆全量门禁复验；原失败和当次通过的命令、输出、revision 仅见归档 tasks.json。三件套仍为非阻断报告，未改业务代码、schema、共享 dev 数据 | 2026-09-25 |
 | `add-agent-context-routing` | 工程性 E1 | **工程性变更（不占业务阶段号）**：`README.md` 去事实化改为路由表（删除端口/口令/工程结构/里程碑四类副本）；新增仓库根 `AGENTS.md`——4 条硬约定按「规则 + canonical 出处 + 可机械执行的自查命令」承载，禁忌只给指针；新增 `docker/mysql/migrations/README.md` 自述该目录无自动执行者；本文件登记 `agent-harness` 能力域并把 3 处硬编码计数换成可复算语句；收尾五步补第 7 步。三条自查各做过变异验证（注入违规→变红→撤销→变绿）。零代码、零构建配置改动 | 2026-09-21 |
 | `add-frontend-must-change-guard` | 提案④ | 强制改密前端守卫（遗留 #11 收口）：`decideNavigation` 单一入口接 `mustChangePassword`（`/api/auth/me` 恒有值字段，缺省按 false 不误拦），未改密仅放行改密与登出（`/login` 也重定向改密页），改密成功走既有会话刷新自动放开；不本地持久化标记、不改鉴权拦截器；access.spec.ts +5 用例；创建 frontend 能力域基线 | 2026-09-21 |
 | `fix-contract-export-charset` | 提案⑧ | 契约导出编码修复（遗留 #12 收口）：`getContentAsByteArray()` 按字节落盘 + Mock 请求固定 8080 端口；护栏断言（无 U+FFFD / 中文描述完整 / servers.url 带端口）；重导 openapi.yaml（+79/-0 仅陈旧契约补齐）与真 dev 实例路 B 产物 SHA256 字节级一致，**路 A 恢复为推荐路径** | 2026-09-21 |
@@ -174,7 +174,7 @@ spec/
 | 14 | absence-makeup | 缺考标记（含自然到点与 force-end 两条结束路径）、补考独立记录、补考成绩规则合并、考后闭环端到端一致性 |
 | 15 | score-review | 复核申请限次限时、复核中隐藏成绩、复核处理 |
 | 16 | api-contract | OpenAPI 契约暴露、鉴权语义标注、契约导出复现、契约冒烟护栏 |
-| 17 | agent-harness | 根入口路由（`README.md` 只指路不承载易变事实）、硬约定的 agent 必经索引（`AGENTS.md`）、无自动执行者的 SQL 目录必须自述触发方式、文档判据优先于文档常量。**基线已合入 `spec/specs/agent-harness/spec.md`**（E1，2026-09-21）；E2 的四条待其 B-2 收口后合入 |
+| 17 | agent-harness | 根入口路由（`README.md` 只指路不承载易变事实）、硬约定的 agent 必经索引（`AGENTS.md`）、无自动执行者的 SQL 目录必须自述触发方式、文档判据优先于文档常量。**基线已合入 `spec/specs/agent-harness/spec.md`**（E1，2026-09-21；E2 四条，2026-09-25） |
 | 18 | frontend | 五阶段全量：前端工程底座（可复现启动/门禁独立可跑/不并入后端计数）、API 契约驱动集成（gen:api 生成/代理保留前缀/统一解包）、会话与令牌生命周期（续期单飞/刷新失败登出/登出黑名单）、角色路由守卫（安全边界在后端）、强制改密前置守卫；题库管理界面（题型差异化录入/软删以后端为准）、组卷界面（手动+随机抽题，随机算法在后端）、前端不复现判分口径；学生端在线考试（作答界面/服务端时间倒计时/草稿保存与断线恢复/交卷防重配合/切屏检测与上报/交卷结果如实呈现）；教师端考务（班级管理/考试创建与发布/监考与行为日志）；考后闭环（主观题批改工作台/成绩发布撤回与导出/缺考与补考/成绩查询与复核）。已知缺陷 D1/D2 的历史注记见基线合入注记，两项均已收口（原遗留 #17/#18，见「已收口」清单） |
 | 19 | dev-config | dev 环境凭据参数化（环境变量可覆盖、开箱默认不变、新增凭据不裸写、生产凭据不带默认值，含可机械执行的自查命令） |
 
