@@ -138,8 +138,13 @@ public class ScoreService {
 
         int summarized = 0;
         int skipped = 0;
+        // 主观分一次取出（batch-summary-subjective-reads）：进入逐份 CAS 前按本场答卷 ID
+        // 一条 IN 查询取回，替代原先每份答卷各查一次的 N+1；缺行答卷仍按未批口径。
+        Map<Long, Map<Long, SubjectiveGrade>> gradesBySubmission =
+                loadSubjectiveGradesBySubmission(submissions, shortAnswerIds);
         for (GradingSubmission submission : submissions) {
-            Summaries summary = computeSummary(submission, shortAnswerIds);
+            Summaries summary = computeSummary(submission, shortAnswerIds,
+                    gradesBySubmission.getOrDefault(submission.getId(), Map.of()));
             // 答卷级 CAS：并发汇总/并发批改保存时仅一个写入生效，总分不被交叉覆盖
             if (gradingSubmissionMapper.casSummarize(submission.getId(),
                     summary.subjectiveScore(), summary.totalScore(), summary.partialGraded() ? 1 : 0) > 0) {
@@ -165,31 +170,41 @@ public class ScoreService {
         return new SummarizeStats(summarized, skipped, examGraded);
     }
 
+    /**
+     * 汇总前一次取出本场全部主观分（batch-summary-subjective-reads）：按答卷 ID 分组、
+     * 组内按题 ID 归一（同题多行取首行，脏数据不中断汇总）。无简答题或无答卷时不查询。
+     */
+    private Map<Long, Map<Long, SubjectiveGrade>> loadSubjectiveGradesBySubmission(
+            List<GradingSubmission> submissions, List<Long> shortAnswerIds) {
+        if (shortAnswerIds.isEmpty() || submissions.isEmpty()) {
+            return Map.of();
+        }
+        List<SubjectiveGrade> rows = subjectiveGradeMapper.selectList(
+                Wrappers.<SubjectiveGrade>lambdaQuery()
+                        .in(SubjectiveGrade::getSubmissionId,
+                                submissions.stream().map(GradingSubmission::getId).toList()));
+        return rows.stream().collect(Collectors.groupingBy(SubjectiveGrade::getSubmissionId,
+                Collectors.toMap(SubjectiveGrade::getQuestionId, Function.identity(), (a, b) -> a)));
+    }
+
     /** 单份答卷汇总值：总分 = 客观 (未判按 0) + 主观 (已批之和)；部分批改以卷面简答题全集判定。 */
     private record Summaries(BigDecimal subjectiveScore, BigDecimal totalScore, boolean partialGraded) {
     }
 
-    private Summaries computeSummary(GradingSubmission submission, List<Long> shortAnswerIds) {
+    private Summaries computeSummary(GradingSubmission submission, List<Long> shortAnswerIds,
+                                     Map<Long, SubjectiveGrade> gradesByQuestion) {
         BigDecimal objective = submission.getObjectiveScore() == null
                 ? BigDecimal.ZERO : submission.getObjectiveScore();
 
         BigDecimal subjective = BigDecimal.ZERO;
         boolean partial = false;
-        if (!shortAnswerIds.isEmpty()) {
-            List<SubjectiveGrade> rows = subjectiveGradeMapper.selectList(
-                    Wrappers.<SubjectiveGrade>lambdaQuery()
-                            .eq(SubjectiveGrade::getSubmissionId, submission.getId()));
-            Map<Long, SubjectiveGrade> byQuestion = rows.stream()
-                    .collect(Collectors.toMap(SubjectiveGrade::getQuestionId, Function.identity(),
-                            (a, b) -> a));
-            for (Long questionId : shortAnswerIds) {
-                SubjectiveGrade row = byQuestion.get(questionId);
-                if (row == null || row.getScore() == null) {
-                    // 缺行或未批：按 0 分计入总分并标记部分批改（§7.5）
-                    partial = true;
-                } else {
-                    subjective = subjective.add(row.getScore());
-                }
+        for (Long questionId : shortAnswerIds) {
+            SubjectiveGrade row = gradesByQuestion.get(questionId);
+            if (row == null || row.getScore() == null) {
+                // 缺行或未批：按 0 分计入总分并标记部分批改（§7.5）
+                partial = true;
+            } else {
+                subjective = subjective.add(row.getScore());
             }
         }
         return new Summaries(subjective, objective.add(subjective), partial);

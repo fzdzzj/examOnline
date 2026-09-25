@@ -598,6 +598,57 @@ class ScoreServiceTest {
         verify(gradingSubmissionMapper).casSummarize(1L, new BigDecimal("7.0"), new BigDecimal("27.0"), 0);
     }
 
+    @Test
+    void summarizeQueriesSubjectiveGradesOnceForTwoSubmissionsAndKeepsPerSubmissionTotals() {
+        loginAsTeacher();
+        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_ENDED));
+        when(paperReader.readByExamId(EXAM_ID)).thenReturn(paperOf(
+                singleChoice(101L, 1), shortAnswer(201L, 2), shortAnswer(202L, 3)));
+        when(gradingSubmissionMapper.selectList(any())).thenReturn(List.of(
+                submission(1L, 201L, "30.0", null, null),
+                submission(2L, 202L, "30.0", null, null)));
+        // 一次查询返回两份答卷的主观分（行序按两份卷交错，证明按答卷分组而非取首份）：
+        // 1 号卷已批 7+3=10 分，2 号卷已批 5+4=9 分
+        when(subjectiveGradeMapper.selectList(any())).thenReturn(List.of(
+                gradeRow(2L, 201L, "5.0"), gradeRow(1L, 201L, "7.0"),
+                gradeRow(2L, 202L, "4.0"), gradeRow(1L, 202L, "3.0")));
+        when(gradingSubmissionMapper.casSummarize(eq(1L), any(), any(), anyInt())).thenReturn(1);
+        when(gradingSubmissionMapper.casSummarize(eq(2L), any(), any(), anyInt())).thenReturn(1);
+        when(examMapper.casUpdateStatus(EXAM_ID, Exam.STATUS_ENDED, Exam.STATUS_GRADED, 0)).thenReturn(1);
+
+        ScoreService.SummarizeStats stats = scoreService.summarize(EXAM_ID);
+
+        assertEquals(2, stats.summarized());
+        // 两份答卷只允许一次主观分查询（原先每份各查一次）
+        verify(subjectiveGradeMapper, times(1)).selectList(any());
+        // 逐份 CAS 的主观分/总分/部分批改标记与逐份查询时完全一致
+        verify(gradingSubmissionMapper).casSummarize(1L, new BigDecimal("10.0"), new BigDecimal("40.0"), 0);
+        verify(gradingSubmissionMapper).casSummarize(2L, new BigDecimal("9.0"), new BigDecimal("39.0"), 0);
+    }
+
+    @Test
+    void summarizeTreatsMissingSubjectiveRowsAsUngradedWhenBatchLoadedWithAnotherSubmission() {
+        loginAsTeacher();
+        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_ENDED));
+        when(paperReader.readByExamId(EXAM_ID)).thenReturn(paperOf(
+                singleChoice(101L, 1), shortAnswer(201L, 2), shortAnswer(202L, 3)));
+        when(gradingSubmissionMapper.selectList(any())).thenReturn(List.of(
+                submission(1L, 201L, "30.0", null, null),
+                submission(2L, 202L, "30.0", null, null)));
+        // 一次取回后只有 1 号卷有主观分行：2 号卷缺行 → 整卷未批口径（主观 0 分 + 部分批改），不得当成已批完
+        when(subjectiveGradeMapper.selectList(any())).thenReturn(List.of(
+                gradeRow(1L, 201L, "7.0"), gradeRow(1L, 202L, "3.0")));
+        when(gradingSubmissionMapper.casSummarize(eq(1L), any(), any(), anyInt())).thenReturn(1);
+        when(gradingSubmissionMapper.casSummarize(eq(2L), any(), any(), anyInt())).thenReturn(1);
+        when(examMapper.casUpdateStatus(EXAM_ID, Exam.STATUS_ENDED, Exam.STATUS_GRADED, 0)).thenReturn(1);
+
+        scoreService.summarize(EXAM_ID);
+
+        verify(subjectiveGradeMapper, times(1)).selectList(any());
+        verify(gradingSubmissionMapper).casSummarize(1L, new BigDecimal("10.0"), new BigDecimal("40.0"), 0);
+        verify(gradingSubmissionMapper).casSummarize(2L, new BigDecimal("0"), new BigDecimal("30.0"), 1);
+    }
+
     // ==================== 发布前预览 ====================
 
     @Test
