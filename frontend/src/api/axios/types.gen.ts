@@ -641,6 +641,19 @@ export type MyScoreResponse = {
     reviewing?: boolean;
 };
 
+export type ApiResponseMakeupFinalScoreResponse = {
+    code?: number;
+    message?: string;
+    data?: MakeupFinalScoreResponse;
+};
+
+export type MakeupFinalScoreResponse = {
+    examId?: number;
+    studentId?: number;
+    finalScore?: number;
+    reviewing?: boolean;
+};
+
 export type ApiResponseQuestionPageResponse = {
     code?: number;
     message?: string;
@@ -909,6 +922,24 @@ export type ApiResponseListInviteCodeResponse = {
     code?: number;
     message?: string;
     data?: Array<InviteCodeResponse>;
+};
+
+export type ApiResponseListAuditLogResponse = {
+    code?: number;
+    message?: string;
+    data?: Array<AuditLogResponse>;
+};
+
+export type AuditLogResponse = {
+    id?: number;
+    traceId?: string;
+    userId?: number;
+    username?: string;
+    action?: string;
+    ipAddress?: string;
+    status?: string;
+    details?: string;
+    createdTime?: string;
 };
 
 export type DeleteData = {
@@ -2005,6 +2036,24 @@ export type MyScoreResponses = {
 
 export type MyScoreResponse2 = MyScoreResponses[keyof MyScoreResponses];
 
+export type MyMakeupFinalScoreData = {
+    body?: never;
+    path?: never;
+    query: {
+        examId: number;
+    };
+    url: '/api/scores/makeup-final';
+};
+
+export type MyMakeupFinalScoreResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseMakeupFinalScoreResponse;
+};
+
+export type MyMakeupFinalScoreResponse = MyMakeupFinalScoreResponses[keyof MyMakeupFinalScoreResponses];
+
 export type GetSnapshot1Data = {
     body?: never;
     path: {
@@ -2078,6 +2127,25 @@ export type PublishPreviewResponses = {
 };
 
 export type PublishPreviewResponse = PublishPreviewResponses[keyof PublishPreviewResponses];
+
+export type MakeupFinalScoreData = {
+    body?: never;
+    path: {
+        examId: number;
+        studentId: number;
+    };
+    query?: never;
+    url: '/api/exams/{examId}/scores/makeup-final/{studentId}';
+};
+
+export type MakeupFinalScoreResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseMakeupFinalScoreResponse;
+};
+
+export type MakeupFinalScoreResponse2 = MakeupFinalScoreResponses[keyof MakeupFinalScoreResponses];
 
 export type ExportQuestionStatsData = {
     body?: never;
@@ -2321,6 +2389,27 @@ export type MeResponses = {
 };
 
 export type MeResponse = MeResponses[keyof MeResponses];
+
+export type AuditLogsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        username?: string;
+        action?: string;
+    };
+    url: '/api/admin/audit-logs';
+};
+
+export type AuditLogsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseListAuditLogResponse;
+};
+
+export type AuditLogsResponse = AuditLogsResponses[keyof AuditLogsResponses];
 
 export type Delete4Data = {
     body?: never;

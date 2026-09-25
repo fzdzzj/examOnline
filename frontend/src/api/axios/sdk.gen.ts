@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbsencesData, AbsencesResponses, AddQuestionData, AddQuestionResponses, ApplyData, ApplyResponses, ChangePasswordData, ChangePasswordResponses, CommitRandomDrawData, CommitRandomDrawResponses, Create1Data, Create1Responses, Create2Data, Create2Responses, Create3Data, Create3Responses, Create4Data, Create4Responses, CreateData, CreateInviteCodeData, CreateInviteCodeResponses, CreateMakeupData, CreateMakeupResponses, CreateResponses, Delete1Data, Delete1Responses, Delete2Data, Delete2Responses, Delete3Data, Delete3Responses, Delete4Data, Delete4Responses, DeleteData, DeleteResponses, Detail1Data, Detail1Responses, Detail2Data, Detail2Responses, Detail3Data, Detail3Responses, DetailData, DetailResponses, EnterData, EnterResponses, ExportClassSheetData, ExportClassSheetResponses, ExportPersonalData, ExportPersonalResponses, ExportQuestionDetailData, ExportQuestionDetailResponses, ExportQuestionStatsData, ExportQuestionStatsResponses, ForceEndData, ForceEndResponses, GenerateSnapshotData, GenerateSnapshotResponses, GetSnapshot1Data, GetSnapshot1Responses, GetSnapshotData, GetSnapshotResponses, HandleData, HandleResponses, InvalidateInviteCodeData, InvalidateInviteCodeResponses, JoinStudentData, JoinStudentResponses, KickUserData, KickUserResponses, ListByExamData, ListByExamResponses, ListData, ListInviteCodesData, ListInviteCodesResponses, ListResponses, ListStudentsData, ListStudentsResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, MakeupEligibleData, MakeupEligibleResponses, ManualScoreData, ManualScoreResponses, MeData, MeResponses, MyExamsData, MyExamsResponses, MyScoreData, MyScoreResponses, OverviewData, OverviewResponses, Page1Data, Page1Responses, Page2Data, Page2Responses, Page3Data, Page3Responses, Page4Data, Page4Responses, PageData, PageResponses, PaperData, PaperResponses, PreviewDrawData, PreviewDrawResponses, ProgressData, ProgressResponses, Publish1Data, Publish1Responses, PublishData, PublishPreviewData, PublishPreviewResponses, PublishResponses, RefreshData, RefreshResponses, RegisterData, RegisterResponses, RejudgeData, RejudgeResponses, RemoveQuestionData, RemoveQuestionResponses, RemoveStudentData, RemoveStudentResponses, ReplayData, ReplayResponses, ReportBehaviorData, ReportBehaviorResponses, ResetPasswordData, ResetPasswordResponses, RevokeData, RevokeResponses, RunData, RunResponses, SaveDraftData, SaveDraftResponses, SaveSubjectiveScoreData, SaveSubjectiveScoreResponses, SendResetCodeData, SendResetCodeResponses, SubjectiveQuestionsData, SubjectiveQuestionsResponses, SubjectiveRowsData, SubjectiveRowsResponses, SubmitData, SubmitResponses, SummarizeData, SummarizeResponses, TimelineData, TimelineResponses, TransferData, TransferResponses, Update1Data, Update1Responses, Update2Data, Update2Responses, Update3Data, Update3Responses, UpdateData, UpdateOrderData, UpdateOrderResponses, UpdateQuestionScoreData, UpdateQuestionScoreResponses, UpdateResponses } from './types.gen';
+import type { AbsencesData, AbsencesResponses, AddQuestionData, AddQuestionResponses, ApplyData, ApplyResponses, AuditLogsData, AuditLogsResponses, ChangePasswordData, ChangePasswordResponses, CommitRandomDrawData, CommitRandomDrawResponses, Create1Data, Create1Responses, Create2Data, Create2Responses, Create3Data, Create3Responses, Create4Data, Create4Responses, CreateData, CreateInviteCodeData, CreateInviteCodeResponses, CreateMakeupData, CreateMakeupResponses, CreateResponses, Delete1Data, Delete1Responses, Delete2Data, Delete2Responses, Delete3Data, Delete3Responses, Delete4Data, Delete4Responses, DeleteData, DeleteResponses, Detail1Data, Detail1Responses, Detail2Data, Detail2Responses, Detail3Data, Detail3Responses, DetailData, DetailResponses, EnterData, EnterResponses, ExportClassSheetData, ExportClassSheetResponses, ExportPersonalData, ExportPersonalResponses, ExportQuestionDetailData, ExportQuestionDetailResponses, ExportQuestionStatsData, ExportQuestionStatsResponses, ForceEndData, ForceEndResponses, GenerateSnapshotData, GenerateSnapshotResponses, GetSnapshot1Data, GetSnapshot1Responses, GetSnapshotData, GetSnapshotResponses, HandleData, HandleResponses, InvalidateInviteCodeData, InvalidateInviteCodeResponses, JoinStudentData, JoinStudentResponses, KickUserData, KickUserResponses, ListByExamData, ListByExamResponses, ListData, ListInviteCodesData, ListInviteCodesResponses, ListResponses, ListStudentsData, ListStudentsResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, MakeupEligibleData, MakeupEligibleResponses, MakeupFinalScoreData, MakeupFinalScoreResponses, ManualScoreData, ManualScoreResponses, MeData, MeResponses, MyExamsData, MyExamsResponses, MyMakeupFinalScoreData, MyMakeupFinalScoreResponses, MyScoreData, MyScoreResponses, OverviewData, OverviewResponses, Page1Data, Page1Responses, Page2Data, Page2Responses, Page3Data, Page3Responses, Page4Data, Page4Responses, PageData, PageResponses, PaperData, PaperResponses, PreviewDrawData, PreviewDrawResponses, ProgressData, ProgressResponses, Publish1Data, Publish1Responses, PublishData, PublishPreviewData, PublishPreviewResponses, PublishResponses, RefreshData, RefreshResponses, RegisterData, RegisterResponses, RejudgeData, RejudgeResponses, RemoveQuestionData, RemoveQuestionResponses, RemoveStudentData, RemoveStudentResponses, ReplayData, ReplayResponses, ReportBehaviorData, ReportBehaviorResponses, ResetPasswordData, ResetPasswordResponses, RevokeData, RevokeResponses, RunData, RunResponses, SaveDraftData, SaveDraftResponses, SaveSubjectiveScoreData, SaveSubjectiveScoreResponses, SendResetCodeData, SendResetCodeResponses, SubjectiveQuestionsData, SubjectiveQuestionsResponses, SubjectiveRowsData, SubjectiveRowsResponses, SubmitData, SubmitResponses, SummarizeData, SummarizeResponses, TimelineData, TimelineResponses, TransferData, TransferResponses, Update1Data, Update1Responses, Update2Data, Update2Responses, Update3Data, Update3Responses, UpdateData, UpdateOrderData, UpdateOrderResponses, UpdateQuestionScoreData, UpdateQuestionScoreResponses, UpdateResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -517,6 +517,12 @@ export const myScore = <ThrowOnError extends boolean = true>(options: Options<My
     ...options
 });
 
+export const myMakeupFinalScore = <ThrowOnError extends boolean = true>(options: Options<MyMakeupFinalScoreData, ThrowOnError>) => (options.client ?? client).get<MyMakeupFinalScoreResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/scores/makeup-final',
+    ...options
+});
+
 export const getSnapshot1 = <ThrowOnError extends boolean = true>(options: Options<GetSnapshot1Data, ThrowOnError>) => (options.client ?? client).get<GetSnapshot1Responses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/exams/{id}/snapshot',
@@ -538,6 +544,12 @@ export const absences = <ThrowOnError extends boolean = true>(options: Options<A
 export const publishPreview = <ThrowOnError extends boolean = true>(options: Options<PublishPreviewData, ThrowOnError>) => (options.client ?? client).get<PublishPreviewResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/exams/{examId}/scores/publish-preview',
+    ...options
+});
+
+export const makeupFinalScore = <ThrowOnError extends boolean = true>(options: Options<MakeupFinalScoreData, ThrowOnError>) => (options.client ?? client).get<MakeupFinalScoreResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/exams/{examId}/scores/makeup-final/{studentId}',
     ...options
 });
 
@@ -616,6 +628,12 @@ export const paper = <ThrowOnError extends boolean = true>(options: Options<Pape
 export const me = <ThrowOnError extends boolean = true>(options?: Options<MeData, ThrowOnError>) => (options?.client ?? client).get<MeResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/auth/me',
+    ...options
+});
+
+export const auditLogs = <ThrowOnError extends boolean = true>(options?: Options<AuditLogsData, ThrowOnError>) => (options?.client ?? client).get<AuditLogsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/admin/audit-logs',
     ...options
 });
 
