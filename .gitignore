@@ -38,6 +38,10 @@ application-local.yml
 # .qoder/ 是 Qoder agent 的会话产物（better-harness 报告与画布等），同理不入库。
 # 某份报告确实要留档时，显式 `git add` 那一个文件，不要为此放开整个目录。
 .qoder/
+# .codex/ 与 .trae/ 分别是 Codex、Trae 两个 agent 工具的本地会话与配置产物，
+# 同属工具产物而非项目代码，入库只会给协作者制造噪音，故忽略。
+.codex/
+.trae/
 
 # ==== 前端（frontend/，阶段 19 起）====
 # 依赖与构建产物一律不入库：体积大、跨平台二进制不一致，且都能由 pnpm install / build 复原。
@@ -49,6 +53,9 @@ frontend/test-results/
 frontend/playwright-report/
 frontend/blob-report/
 frontend/.vite/
+# .playwright-cli/ 是 playwright-cli 的本地工作目录、output/ 是脚本运行输出，均为本地运行产物，不入库
+frontend/.playwright-cli/
+frontend/output/
 # vite 插件生成的类型声明：由 dev/build 产出，不入库以免与路由文件频繁冲突
 frontend/typed-router.d.ts
 frontend/auto-imports.d.ts
