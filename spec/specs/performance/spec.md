@@ -161,3 +161,10 @@ AND 未达标时如实登记与下一步瓶颈位，不修改指标定义凑数
 > 抢 20 核（system_cpu 峰值 0.976–1.000 而应用仅占 0.43 核）——再调应用参数无进一步收益。
 > 证据见 `docs/submit-capacity-tuning-report.md` 与 `loadtest/evidence-sha256.txt`（227 个
 > 机器可读产物 sha256 清单）。
+
+> 评估结论注记（2026-09-25，`audit-log-off-critical-path` 归档）：判据 G6 经评估**不移出**，
+> 本基线**未合入**该提案的任何 Requirement——其 spec-delta「审计写入不占请求关键路径」按
+> 未采用草案随目录归档。要点：audit_log 写入仅登录链路（登录成功/失败、账户锁定），交卷
+> 路径不写审计；审计写失败已旁路（catch 吞掉 + ERROR，不回滚业务）；秒级慢 INSERT 仅旧压测
+> run2 偶发（4c3b7d7）、修订方法学 9 轮复验（b1fa8a2）未复现，登录时延由 BCrypt CPU 主导。
+> 数字与依据见 `spec/changes/archive/audit-log-off-critical-path/tasks.json` 阶段 1 evidence。

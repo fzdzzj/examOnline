@@ -1,5 +1,12 @@
 # 提案：审计日志移出请求关键路径（audit-log-off-critical-path，P2）
 
+> **已归档（2026-09-25）。评估结论 = 不移出，未实施异步化。**
+> - **调用点仅登录**：audit_log 写入全仓唯一入口 `AuditLogService.record()`，调用点仅登录成功/失败与账户锁定三处——**交卷路径不写 `audit_log`**，提案「交卷等写操作落审计行」的前提与代码不符（压测慢 INSERT 全部发生在登录阶段）；
+> - **失败已旁路**：审计写失败 catch 吞掉 + ERROR 日志，不回滚业务；`login()` 无 `@Transactional`，审计 INSERT 是独立 auto-commit——「业务事务等待审计落库」在现状不存在；
+> - **保留策略已覆盖**：data-access 基线「无业务生命周期键的审计表按自身窗口清理」已覆盖 audit_log 且实现落地（`RetentionService` + `idx_audit_time`），本次仅引用、未补 delta；
+> - **未做**「含/不含审计写」的隔离压测（需共享 dev 栈双臂），已记录为缺口，**不改变裁决**——现有数字已足够支撑不移出；
+> - 数字与依据见本目录 `tasks.json` 阶段 1 evidence；`specs/performance/spec-delta.md`（异步化条款）按**未采用草案**原样随目录归档，**未合入** performance 基线。
+
 ## Why
 
 `docs/submit-loadtest-report.md` §7.1 与判据 **G6**：`audit_log` 同步写在请求关键路径上（交卷等写操作的事务内/请求内落审计行），两个问题尚未单独评估：
