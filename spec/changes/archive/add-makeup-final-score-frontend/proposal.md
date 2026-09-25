@@ -1,5 +1,7 @@
 # 提案：补考最终成绩前端展示（add-makeup-final-score-frontend，P3）
 
+> **状态：已归档（2026-09-25）。** 验收边界=隔离页面测 + 前端四门禁（vitest / eslint / vue-tsc / tsc）全绿；**未跑真实 Chromium、未写共享 dev、未 docker**，不冒称真机已验。规范已合入 frontend 基线、目录已归档；生成层 diff 除 makeup-final 两方法外含既有欠账 `auditLogs`（`GET /api/admin/audit-logs`）——该端点早已在 `openapi.yaml` 与后端实现中，经裁决随本次重生成一并消化，未新开变更、未做审计页面、业务代码零调用。
+
 ## Why
 
 提案⑨（补考成绩接线）的**后端部分已完成**：`ScoreController` 已有两个端点——`GET /api/exams/{examId}/scores/makeup-final/{studentId}`（教师侧，`exam:manage`，沿主考家族按考试配置规则合并、历史成绩保留不覆盖）与 `GET /api/scores/makeup-final?examId=`（学生查本人，口径同 `myScore`：未发布统一「成绩待发布」、进行中复核隐藏分数防「看了分数再申请」）；`openapi.yaml` 已含两条路径。
