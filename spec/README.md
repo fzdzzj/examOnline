@@ -27,7 +27,6 @@ spec/
 |---|---|---|---|---|
 | `update-agent-gate-single-source` | 工程性 E2（**不在 19–23 业务串行链内**） | 门禁命令与验收判据的单一来源。**B-1 已完成**：6 份进行中前端提示词里的"必须仍是 210"常量与"一律读作 218"式人肉更正段全部清除，改为编号判据（开工记录 + 收尾比较）；`docs/指导Agent交接文档.md` 首屏常量降级为带 revision 的历史记录，§6.1 定性为特定 shell 的历史绕行办法、§6.2 加互斥注记。**B-2 部分完成**：任务 6 已落地——`type-check` / `type-check:check` 的单个 `&` 改 `&&`、删除无任何调用者的 `precommit:check`，并因此暴露且修掉两处既存类型红（见遗留 #13）。**仍未开始**：Maven wrapper、`.mvn`/`maven-settings.json` 去机器绝对路径、唯一门禁命令回填——需联网与磁盘授权，且排在业务阶段收尾之后 | `agent-harness` | 与 `add-frontend-*` 无文件冲突（B-1 只改提示词与文档）；`add-agent-context-routing`（E1）已归档 |
 | `isolate-submit-load-generator` | 性能复验（**待审批**） | 把压测进程和被测进程分开后再按原口径复验交卷容量。不改线程、连接池、交卷代码，也不放宽 P99。没有第二台宿主就停 | `performance` | 无；不与 E2 并行写同一工作树 |
-| `gate-java-change-on-measured-factor` | 性能门禁（**待审批**） | Java 优化必须先用同一负载量延迟、吞吐和资源，只改占比最高的一类。调用次数和事务范围没降之前不调 JVM。本提案不改代码 | `performance` | 新的同口径复验依赖压测机分离；本身不与其它变更并行改代码 |
 | `fix-flaky-integration-baselines` | 测试稳定性（**待审批**） | 只复查遗留里的保留清理与进入考试偶发失败。能复现才最小修复；不能复现就保持观察，不得把重跑变绿写成已修 | `reliability` | 无；不与上面一项并行 |
 
 
@@ -51,7 +50,7 @@ spec/
 | 5 | `grading` | `add-grading-score`、`batch-grading-subjective-upserts`（2026-09-25 归档） | 6 |
 | 6 | `score-management` | `add-grading-score`、`fix-grading-entry-and-summary-prerequisite`（前端 D2，2026-09-25 归档）、`batch-summary-subjective-reads`（2026-09-25 归档） | 6、前端 D2 |
 | 7 | `anti-cheat` | `add-anti-cheat` | 7 |
-| 8 | `performance` | `add-performance-deepening`、`tune-submit-capacity`（交卷容量与压测方法学，2026-09-23 归档） | 8 |
+| 8 | `performance` | `add-performance-deepening`、`tune-submit-capacity`（交卷容量与压测方法学，2026-09-23 归档）、`gate-java-change-on-measured-factor`（Java 优化先归因门禁，2026-09-25 归档） | 8 |
 | 9 | `data-access` | `add-performance-deepening`、`add-data-retention`、`fix-schema-mysql-pk` | 8、15、17 |
 | 10 | `observability` | `add-performance-deepening`、`add-slow-sql-and-rate-limit`、`add-mq-trace-and-capacity`、`add-alerting-and-dashboards`、`add-dlq-observability-and-replay`、`add-observability-runtime-evidence`、`add-submit-observability`（交卷时延直方图 + Tomcat 线程水位，2026-09-23 归档） | 8、8.1、10、11、14、16 |
 | 11 | `reliability` | `add-slow-sql-and-rate-limit`、`add-rate-limit-resilience`、`add-multi-instance-sweep-safety`、`add-dlq-observability-and-replay` | 8.1、10、13、14 |
@@ -113,6 +112,7 @@ spec/
 | `audit-log-off-critical-path` | 后端独立立项（P2，**门控提案**，判据 G6 载体） | **评估后不移出，如实关闭（未实施异步化）**：现场盘点 audit_log 写入全仓唯一入口 = `AuditLogService.record()`，调用点仅登录链路（登录成功/失败、账户锁定），**交卷路径不写 audit_log**——压测慢 INSERT 全部发生在 jmx 登录阶段（`serialize_threadgroups=true`），提案「交卷落审计行」前提修正；失败语义已是旁路（catch 吞掉 + ERROR、不回滚业务，`login()` 无事务包裹）；时延证据：旧报告 run2 17 条秒级慢 INSERT（4c3b7d7）在修订方法学 9 轮复验（b1fa8a2）未复现，登录时延由 BCrypt CPU 饱和主导（P50 33.5s）；同步写是带理由的设计决定（旧异步实现静默丢 traceId/用户，全仓无 `@Async`/事件先例）；保留策略已由 data-access 基线覆盖并落地（引用不补 delta）；**未做**「含/不含审计写」隔离压测且不改变裁决（缺口如实记录于 tasks.json 阶段 1）；spec-delta 异步化条款按**未采用草案**归档、**未合入** performance 基线（基线仅留评估结论注记） | 2026-09-25 |
 | `batch-summary-subjective-reads` | 调用次数 | 汇总主观分一次取出，**隔离单测验收后归档**：`ScoreService.summarize` 在判分前置检查通过后、逐份 CAS 写入前按本场答卷 ID 一次取出主观分（缺行仍按未批口径记部分批改；无简答题或无答卷不发查询）；总分、合法零分、未判完整场拒绝、§7.5 部分批改语义零改动；`ScoreServiceTest` 扩 2 用例（多份答卷只查一次、缺行不视为已批完）。**验收边界=ScoreServiceTest 40/0/0（`812d1a1`，隔离单测，证据见归档 tasks.json）；不是交卷 P99 修复；未跑共享 dev 真汇总**。score-management 基线「成绩汇总」合入 MODIFIED Requirement（新增「主观分一次取出」场景） | 2026-09-25 |
 | `batch-grading-subjective-upserts` | 调用次数 | 整场判分主观行一次取出，**隔离单测+既有集成测试验收后归档**：`ExamGradingService.runExamGrading` 在逐份判分前按本场答卷 ID 一条 IN 查询取出已有 `subjective_grades` 行（无简答题或无答卷不发查询），判分循环与单份 `rejudge` 不再按「答卷×题目」`selectOne`；刷新已有行只写答案快照与初判提示分（SET 列断言守住，终分/评语/批改人/批改时间/version 不动）；客观分、初判建行、失败隔离（坏卷只 markGradingFailed 该份）语义零改动，未新增 Mapper 方法、未加大事务；`ObjectiveGradingServiceTest` 新增 6 用例（一次取出、不覆盖终分、坏卷隔离、无查询护栏、重判一次取出）。**验收边界=ObjectiveGradingServiceTest 6/0/0 + GradingScoreIntegrationTest 3/0/0（`10aba79`，隔离单测+既有集成测试，红绿证据见归档 tasks.json）；不是交卷 P99 修复；未跑共享 dev 真判分**。grading 基线「简答批改」合入 MODIFIED Requirement（新增「整场判分主观行一次取出」场景，「教师批改留痕」「并发批改防覆盖」原文保留） | 2026-09-25 |
+| `gate-java-change-on-measured-factor` | 性能门禁 | Java 优化必须先用同一负载量出延迟、吞吐与资源占用，只改占比最高的一类；调用次数和事务范围没有下降之前不调 JVM。**文档门禁，验收后归档（未实施任何优化）**：spec-delta ADDED Requirement「Java 优化先归因、一次只改一类」整段合入 performance 基线（三个 Scenario：没有剖面不得改参数/一次只改一类/交卷入口的已知结构不是延迟占比）；交卷入口的 Redis 锁/幂等读写/CAS/MQ/消费端 JDBC batch 只作调用次数与事务范围清单、不写成延迟占比；同机历史复验结论不能授权 JVM 或热点改写；近期归档的 batch-summary-subjective-reads / batch-grading-subjective-upserts 只降低教师侧判分/汇总的调用次数，不是交卷 P99 修复。**验收边界=spec 合入 + diff 不含代码/JVM/线程池/SQL**；未跑压测机分离后的复验；未改 src/main；下一刀须先有同口径新剖面（依赖 isolate-submit-load-generator，仍待审批） | 2026-09-25 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 

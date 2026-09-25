@@ -1,7 +1,7 @@
 # performance 规范
 
 > 能力域：性能（阶段 8，W9-W10；2026-09-23 补交卷容量调整与压测方法学）。
-> 来源：`spec/changes/archive/add-performance-deepening` 合入（热点只读缓存、缓存穿透/击穿/雪崩三防）+ `spec/changes/archive/tune-submit-capacity` 合入（交卷容量可由运行参数调整且达标判定可复现）。
+> 来源：`spec/changes/archive/add-performance-deepening` 合入（热点只读缓存、缓存穿透/击穿/雪崩三防）+ `spec/changes/archive/tune-submit-capacity` 合入（交卷容量可由运行参数调整且达标判定可复现）+ `spec/changes/archive/gate-java-change-on-measured-factor` 合入（Java 优化先归因、一次只改一类）。
 > 归并说明：原提案 performance spec-delta 中的「慢查询识别」与 observability spec-delta 的「慢 SQL 识别」是同一需求，**不重复登记**——统一归入 `spec/specs/observability/spec.md`（日志与请求关联属可观测性能力域），本文件不再重复。
 
 ## Requirements
@@ -168,3 +168,57 @@ AND 未达标时如实登记与下一步瓶颈位，不修改指标定义凑数
 > 路径不写审计；审计写失败已旁路（catch 吞掉 + ERROR，不回滚业务）；秒级慢 INSERT 仅旧压测
 > run2 偶发（4c3b7d7）、修订方法学 9 轮复验（b1fa8a2）未复现，登录时延由 BCrypt CPU 主导。
 > 数字与依据见 `spec/changes/archive/audit-log-off-critical-path/tasks.json` 阶段 1 evidence。
+
+---
+
+### Requirement: Java 优化先归因、一次只改一类
+
+WHEN 对 Java 路径做性能优化,
+
+系统 SHALL 先在同一负载下量出延迟、吞吐和资源占用，并确认时间主要耗在业务规则、数据库、远程调用、锁、CPU 或 GC 中的哪一类；每次 SHALL 只改占比最高的一类，并用同一基线验收。调用次数和事务范围没有下降之前，系统 SHALL NOT 先调整 JVM 参数。
+
+#### Scenario: 没有剖面不得改参数
+
+GIVEN 还没有同一负载下的延迟、吞吐和资源剖面
+
+WHEN 准备优化
+
+THEN 先补测量
+
+AND 不修改 JVM、堆、GC 或容器内存参数
+
+#### Scenario: 一次只改一类
+
+GIVEN 剖面显示某一类占比最高
+
+WHEN 实施优化
+
+THEN 该次只改这一类因素
+
+AND 分数、名额、权限和交卷幂等语义保持不变
+
+AND 用同一基线复测；指标没有变化就回到度量，不继续叠加别的参数
+
+#### Scenario: 交卷入口的已知结构不是延迟占比
+
+GIVEN 交卷入口包含 Redis 锁、幂等读写、状态迁移和消息发送，答案落库使用 JDBC batch
+
+WHEN 引用代码结构
+
+THEN 只把它当作调用次数和事务范围的清单
+
+AND 不把它当成已经测得的延迟占比
+
+AND 同机压测的历史结果不能单独授权 JVM 或热点改写
+
+> 合入注记（2026-09-25，`gate-java-change-on-measured-factor`）：本变更只把上述门禁合入基线，
+> **未实施** JVM/堆/GC/容器内存、线程池、SQL 或业务代码改动（`src/main` 零触碰），未跑压测，
+> 不是交卷 P99 修复。它引用的历史基线是 `docs/submit-capacity-tuning-report.md`
+> （`tune-submit-capacity` 同机复验）：同机抢核（压测进程与被测应用共用宿主）、应用 CPU 远非
+> 主体而整机饱和、MySQL 在库内排队、线程上限单独调整曾是负优化、线程与连接池同调后 P99 仍
+> 不达标——那次结果只证明「应用参数已用尽、约束已跳出应用」，**不能授权 JVM 或热点改写**。
+> 交卷入口的 Redis 锁、幂等读写、CAS、MQ 发送与消费端 JDBC batch 只是调用次数与事务范围的
+> 清单，不是已测得的延迟占比；近期归档的 `batch-summary-subjective-reads` /
+> `batch-grading-subjective-upserts` 只降低教师侧判分/汇总的调用次数，与交卷 P99 无关。
+> 下一刀必须先有压测机分离后的同口径新剖面（依赖 `isolate-submit-load-generator`，
+> 截至本变更归档仍待审批未实施）。

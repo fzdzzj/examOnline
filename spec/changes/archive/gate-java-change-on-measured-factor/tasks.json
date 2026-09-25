@@ -1,0 +1,44 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：基线",
+    "task": "固定交卷链路的同一负载口径",
+    "steps": [
+      { "step": "引用既有容量复验报告里的方法学和同机结论，写明那次不能授权 JVM 或热点改写", "completed": true,
+        "evidence": "通读 docs/submit-capacity-tuning-report.md（tune-submit-capacity 复验报告，2026-09-23；关键小节=§1 结论摘要、§2.4、§6.3、§7.2、§7.3）：① 同机——压测进程与被测应用同机抢 20 逻辑核（§0 宿主行、§7.2 证据 B），压测机未分离；② 应用 CPU 不是主体——应用进程 CPU 峰值仅 0.43 核，系统 CPU 峰值反复打到约 0.99–1.00（§7.2 证据 B），宿主饱和且不是应用吃掉的；③ MySQL 库内排队——Threads_running 57–103、最差连接持有 6.9–7.7s、取连接超时恒 0（§7.2 证据 A、§6.1 表③），慢在 DB 下游而非应用内等待；④ 线程 400 单独是负优化——服务端均值 460→1224ms、隐含容量 435→327 req/s、池 pending 峰值 169→357（§1 结论 1、§2.4）；⑤ 线程 400 + 池 100 仍未达 P99——三臂全不达标、最好臂中位 2293ms（§1 表、§6.3）。判定（§7.3）：那次复验只证明应用参数已用尽、约束已跳出应用边界；本变更引用它仅作同机历史基线，它不能授权 JVM 或热点改写，也不是压测机分离后的新结论。本证据不含端口/口令；历史数字不写入 spec/README.md 与 AGENTS.md。本阶段未跑压测、未跑 docker、未写共享 dev。revision 920deff（只读，零改动）" },
+      { "step": "从 ExamSubmitService 与 ExamSubmissionService.fillAnswersBatch 列清一次交卷的同步步骤：Redis 锁、幂等读写、CAS、MQ、消费端 JDBC batch", "completed": true,
+        "evidence": "通读 src/main/java/com/exam/taking/service/ExamSubmitService.java（doSubmit 全文）与 src/main/java/com/exam/submission/service/ExamSubmissionService.java（fillAnswersBatch）。一次交卷的同步步骤（结构清单，不是延迟占比）：① 幂等快速路径——getByExamStudent 读答卷，已 STATUS_SUBMITTED 直接返回首次结果，不抢锁不发消息；② 答案解析 resolveAnswers——请求体优先，缺省读 Redis 草稿（ExamDraftService.get），再缺省空 JSON；③ 第一重 Redis SETNX 一次性锁（exam:submit:lock:{examId}:{studentId}，TTL 默认 30s）——竞争失败走短轮询（20 轮 × 100ms）等并发赢家后幂等返回；④ 锁内二次确认答卷状态；⑤ 第二重防重表先查后插（uk_submit_dedup 唯一索引兜底并发插入，DuplicateKeyException 即让位）；⑥ 第三重状态机 CAS——casSubmitToSubmitted 进行中→已交卷仅一次，0 行让位；⑦ MQ 削峰——ExamSubmitSender.send（发送与 confirm 等待同一 invoke 作用域），失败则答案暂存草稿并抛错，由对账补发扫描器自愈；⑧ finally 按 token 安全解锁。答案落库不在交卷同步路径：消费端 fillAnswersBatch 手工开 ExecutorType.BATCH 的 SqlSession，把一批 SubmitMessage 的 casFillAnswers 合并为 JDBC batch 一次 flushStatements + commit（连接串 rewriteBatchedStatements 下重写为多值语句）；casFillAnswers 仅 answers 为 NULL 时写入，重复投递 0 行（消费端幂等）；任一语句失败整批回滚，由调用方降级逐条处理。revision 920deff（只读，零改动）" },
+      { "step": "不把 batch 循环误写成按题远程调用；没有新的同负载剖面之前不声称某一类占延迟最高", "completed": true,
+        "evidence": "fillAnswersBatch 的循环体是对同一 mapper 方法 casFillAnswers 的连续调用，语句在 flushStatements 时作为同一 JDBC batch 一次发出（同一 SqlSession、同一连接），不是按题一次远程调用——把它写成按题远程调用属误读。另通读归档变更 batch-summary-subjective-reads 与 batch-grading-subjective-upserts 的 proposal.md：两者分别只降低教师侧成绩汇总与整场判分对主观分/主观行的查询或写入次数（教师侧调用次数类优化，隔离单测验收），不是交卷 P99 修复，不得写成已改善交卷延迟。明确声明：在没有压测机分离后的同负载新剖面之前（isolate-submit-load-generator 仍待审批且未实施），不声称业务规则、数据库、远程调用、锁、CPU、GC 中任何一类占交卷延迟最高。revision 920deff（只读，零改动）" }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：门禁",
+    "task": "未降调用次数和事务范围之前不调 JVM",
+    "steps": [
+      { "step": "合入 spec-delta：同一负载下先看延迟、吞吐和资源，只改占比最高的一类", "completed": true,
+        "evidence": "spec/specs/performance/spec.md 已合入本变更 spec-delta 的 ADDED Requirements 整段：Requirement「Java 优化先归因、一次只改一类」（WHEN/SHALL 主体原文一字未改）+ 三个 Scenario——没有剖面不得改参数、一次只改一类、交卷入口的已知结构不是延迟占比；文件头来源行补登 gate-java-change-on-measured-factor。既有「热点只读缓存」「缓存穿透/击穿/雪崩防护」「交卷容量可由运行参数调整且达标判定可复现」各 Requirement 原文零改动；tune-submit-capacity 合入注记与 audit-log 评估结论注记（G6 不移出）原样保留。git diff 确认为纯追加段落。" },
+      { "step": "写明分数、名额、权限、交卷幂等不得为变快而改语义", "completed": true,
+        "evidence": "合入的「一次只改一类」Scenario 内含 SHALL 级约束「分数、名额、权限和交卷幂等语义保持不变」（金额/库存/权限/幂等在本系统的映射，随 spec-delta 原文合入，未改写）；「同机压测的历史结果不能单独授权 JVM 或热点改写」由第三个 Scenario 的 AND 子句承载；文末合入注记复述本变更不实施 JVM/SQL/业务改动、同机历史结果不能授权热点改写，并写明不是交卷 P99 修复。" },
+      { "step": "确认本变更 diff 不含 JVM 参数、线程池、SQL 或业务代码", "completed": true,
+        "evidence": "git diff 复核（提交前以 git diff --cached --name-only 再次自查）：本变更改动仅 spec/specs/performance/spec.md、spec/README.md 与 spec/changes/gate-java-change-on-measured-factor/（proposal 状态行、tasks.json 回勾、目录整体移入 spec/changes/archive/）；diff 内容不含 JVM 参数、线程池、SQL、业务代码；src/main、src/test、pom.xml、schema.sql、frontend、openapi.yaml、loadtest 零触碰；isolate-submit-load-generator、fix-flaky-integration-baselines、update-agent-gate-single-source 三个目录未触碰。" }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：下一刀",
+    "task": "只有新剖面才能另开一个因素",
+    "steps": [
+      { "step": "若尚无压测机分离后的同口径复验，本阶段停，不新建立项去改代码", "completed": true,
+        "evidence": "当前无压测机分离后的同口径复验：isolate-submit-load-generator 仍在 spec/changes/ 待审批且未实施（目录未移入 archive、tasks.json 未回勾）。按提案「停，不新建立项去改代码」处理：本阶段不产出任何改代码的立项，本变更就此收口；proposal 归档状态行已写明「未跑压测机分离后的复验」。" },
+      { "step": "若已有同口径剖面，只为占比最高的一类另开一个变更，并保留瓶颈假设", "completed": true,
+        "evidence": "前置条件（已有同口径剖面）不成立，本步无实施对象；未为「占比最高的一类」另写任何变更目录。spec/changes/ 非 archive 目录经 ls 复核仅 isolate-submit-load-generator、fix-flaky-integration-baselines、update-agent-gate-single-source 三项待审批提案，本变更归档后无新增目录。" },
+      { "step": "指标不动则回到度量，不继续叠参数", "completed": true,
+        "evidence": "本变更零参数叠加：无 SERVER_TOMCAT_THREADS_MAX/DB_POOL_MAX 类注入、无 JVM 堆/GC/容器内存改动、无线程池调整；「用同一基线复测；指标没有变化就回到度量，不继续叠加别的参数」已随 Scenario 合入基线，作为后续任何 Java 优化的约束。" }
+    ],
+    "passes": true
+  }
+]

@@ -1,6 +1,6 @@
 # 提案：Java 优化必须先按同一负载归因（gate-java-change-on-measured-factor）
 
-> 状态：待审批。本提案只建立门禁，不改 JVM，不改交卷代码。
+> 状态：已归档（2026-09-25）。验收边界=文档门禁合入——spec-delta 的 ADDED Requirement「Java 优化先归因、一次只改一类」（含三个 Scenario）整段合入 `spec/specs/performance/spec.md`，且本变更 diff 不含任何代码/JVM/线程池/SQL 改动；这不是交卷 P99 修复；未跑压测机分离后的复验；`src/main` 零改动。任务回勾与证据见同目录 tasks.json。
 
 ## Why
 
