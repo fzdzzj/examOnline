@@ -48,7 +48,7 @@ spec/
 | 2 | `question-bank`（覆盖 paper-assembly 范围） | `add-question-bank` | 3 |
 | 3 | `exam-management` | `add-exam-management` | 4 |
 | 4 | `exam-taking` | `add-exam-taking`、`add-mq-trace-and-capacity` | 5、10 |
-| 5 | `grading` | `add-grading-score` | 6 |
+| 5 | `grading` | `add-grading-score`、`batch-grading-subjective-upserts`（2026-09-25 归档） | 6 |
 | 6 | `score-management` | `add-grading-score`、`fix-grading-entry-and-summary-prerequisite`（前端 D2，2026-09-25 归档）、`batch-summary-subjective-reads`（2026-09-25 归档） | 6、前端 D2 |
 | 7 | `anti-cheat` | `add-anti-cheat` | 7 |
 | 8 | `performance` | `add-performance-deepening`、`tune-submit-capacity`（交卷容量与压测方法学，2026-09-23 归档） | 8 |
@@ -112,6 +112,7 @@ spec/
 | `add-makeup-final-score-frontend` | 前端独立立项（P3） | 补考最终成绩前端展示（提案⑨前端收口），**隔离验收后归档**：gen:api 重生成补齐 makeup-final 两方法（生成层 diff 恰三条——第 3 条 `auditLogs` 为既有欠账，`GET /api/admin/audit-logs` 早已在 `openapi.yaml` 与后端实现中，经裁决随本次一并消化、未新开变更、未做审计页面、业务代码零调用）；教师 makeups 页新增「补考最终成绩（后端合并）」卡片按学生查询、原样渲染返回值（null 显示空态不编造），「尚未接线 / finalScore 零调用」过期 Alert 改写为如实说明（合并规则在后端、历史成绩保留不覆盖、不本地推算不组家族树）；学生 scores 页显式切换成绩口径（考试列表无 parentExamId，前端不猜补考）走 `GET /api/scores/makeup-final`，三态完全复用 `scoreVisibility`（`mapMakeupFinalScoreToView` 同一 `ScoreView`；未发布沿用「成绩待发布」判别；`reviewing=true` 只看后端字段藏分，残留分数也不渲染），复核申请入口仅在常规口径出现；`ScoreVisibilityCard` 加 `final` 变体（只渲染合并总分，不编造排名/批改状态）。**验收边界=隔离页面测 + 前端门禁验收（vitest / eslint / vue-tsc / tsc 全绿，零后端改动）；未跑真实 Chromium、未写共享 dev、未 docker**。frontend 基线「缺考与补考界面」合入 MODIFIED Requirement（「不声称最终成绩合并可用」换为展示 + 学生复核同构两场景） | 2026-09-25 |
 | `audit-log-off-critical-path` | 后端独立立项（P2，**门控提案**，判据 G6 载体） | **评估后不移出，如实关闭（未实施异步化）**：现场盘点 audit_log 写入全仓唯一入口 = `AuditLogService.record()`，调用点仅登录链路（登录成功/失败、账户锁定），**交卷路径不写 audit_log**——压测慢 INSERT 全部发生在 jmx 登录阶段（`serialize_threadgroups=true`），提案「交卷落审计行」前提修正；失败语义已是旁路（catch 吞掉 + ERROR、不回滚业务，`login()` 无事务包裹）；时延证据：旧报告 run2 17 条秒级慢 INSERT（4c3b7d7）在修订方法学 9 轮复验（b1fa8a2）未复现，登录时延由 BCrypt CPU 饱和主导（P50 33.5s）；同步写是带理由的设计决定（旧异步实现静默丢 traceId/用户，全仓无 `@Async`/事件先例）；保留策略已由 data-access 基线覆盖并落地（引用不补 delta）；**未做**「含/不含审计写」隔离压测且不改变裁决（缺口如实记录于 tasks.json 阶段 1）；spec-delta 异步化条款按**未采用草案**归档、**未合入** performance 基线（基线仅留评估结论注记） | 2026-09-25 |
 | `batch-summary-subjective-reads` | 调用次数 | 汇总主观分一次取出，**隔离单测验收后归档**：`ScoreService.summarize` 在判分前置检查通过后、逐份 CAS 写入前按本场答卷 ID 一次取出主观分（缺行仍按未批口径记部分批改；无简答题或无答卷不发查询）；总分、合法零分、未判完整场拒绝、§7.5 部分批改语义零改动；`ScoreServiceTest` 扩 2 用例（多份答卷只查一次、缺行不视为已批完）。**验收边界=ScoreServiceTest 40/0/0（`812d1a1`，隔离单测，证据见归档 tasks.json）；不是交卷 P99 修复；未跑共享 dev 真汇总**。score-management 基线「成绩汇总」合入 MODIFIED Requirement（新增「主观分一次取出」场景） | 2026-09-25 |
+| `batch-grading-subjective-upserts` | 调用次数 | 整场判分主观行一次取出，**隔离单测+既有集成测试验收后归档**：`ExamGradingService.runExamGrading` 在逐份判分前按本场答卷 ID 一条 IN 查询取出已有 `subjective_grades` 行（无简答题或无答卷不发查询），判分循环与单份 `rejudge` 不再按「答卷×题目」`selectOne`；刷新已有行只写答案快照与初判提示分（SET 列断言守住，终分/评语/批改人/批改时间/version 不动）；客观分、初判建行、失败隔离（坏卷只 markGradingFailed 该份）语义零改动，未新增 Mapper 方法、未加大事务；`ObjectiveGradingServiceTest` 新增 6 用例（一次取出、不覆盖终分、坏卷隔离、无查询护栏、重判一次取出）。**验收边界=ObjectiveGradingServiceTest 6/0/0 + GradingScoreIntegrationTest 3/0/0（`10aba79`，隔离单测+既有集成测试，红绿证据见归档 tasks.json）；不是交卷 P99 修复；未跑共享 dev 真判分**。grading 基线「简答批改」合入 MODIFIED Requirement（新增「整场判分主观行一次取出」场景，「教师批改留痕」「并发批改防覆盖」原文保留） | 2026-09-25 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）
 
