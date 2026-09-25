@@ -4,39 +4,39 @@
     "category": "阶段 1：契约接入",
     "task": "生成层补齐 makeup-final，无漂移",
     "steps": [
-      { "step": "pnpm gen:api 重生成，git diff 核对：除 makeup-final 两方法外无其它漂移（有则停下回报）", "completed": false },
-      { "step": "两条端点的权限与语义入代码注释（教师 exam:manage、学生本人、reviewing 同 myScore 口径）", "completed": false }
+      { "step": "pnpm gen:api 重生成，git diff 核对：除 makeup-final 两方法外无其它漂移（有则停下回报）。执行调整：既有欠账 GET /api/admin/audit-logs（auditLogs 及 AuditLogResponse 等类型）经裁决随本次生成层一并消化，未新开变更、未做审计页面", "completed": true },
+      { "step": "两条端点的权限与语义入代码注释（教师 exam:manage、学生本人、reviewing 同 myScore 口径）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 2,
     "category": "阶段 2：教师侧展示",
     "task": "补考最终成绩在教师端可见且只渲染后端返回",
     "steps": [
-      { "step": "makeups 页（或按领域归属裁决的页面）展示补考最终成绩：合并规则在后端，前端不本地推算", "completed": false },
-      { "step": "「后端尚未接线」诚实边界 Alert 改写为如实描述（合并规则在后端、历史成绩保留不覆盖）", "completed": false }
+      { "step": "makeups 页（或按领域归属裁决的页面）展示补考最终成绩：合并规则在后端，前端不本地推算", "completed": true },
+      { "step": "「后端尚未接线」诚实边界 Alert 改写为如实描述（合并规则在后端、历史成绩保留不覆盖）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 3,
     "category": "阶段 3：学生侧展示",
     "task": "学生按本人视角看补考最终成绩，复核语义同构",
     "steps": [
-      { "step": "student/scores 对补考关联考试展示 GET /api/scores/makeup-final 返回值；reviewing=true 隐藏分数，不本地推断", "completed": false },
-      { "step": "未发布统一按后端「成绩待发布」渲染（复用既有三态映射风格）", "completed": false }
+      { "step": "student/scores 对补考关联考试展示 GET /api/scores/makeup-final 返回值；reviewing=true 隐藏分数，不本地推断", "completed": true },
+      { "step": "未发布统一按后端「成绩待发布」渲染（复用既有三态映射风格）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 4,
     "category": "阶段 4：测试与门禁",
     "task": "用例覆盖三态与渲染，门禁全绿",
     "steps": [
-      { "step": "vitest：教师侧渲染 + 学生侧三态（正常/待发布/复核中）+ 不本地推算合并规则", "completed": false },
-      { "step": "lint + type-check + vitest 全绿；零后端改动（src/main、src/test、pom.xml 不动）", "completed": false }
+      { "step": "vitest：教师侧渲染 + 学生侧三态（正常/待发布/复核中）+ 不本地推算合并规则", "completed": true },
+      { "step": "lint + type-check + vitest 全绿；零后端改动（src/main、src/test、pom.xml 不动）", "completed": true }
     ],
-    "passes": false
+    "passes": true
   }
 ]
