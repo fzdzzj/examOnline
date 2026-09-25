@@ -45,8 +45,12 @@ public abstract class IntegrationTestBase {
     @Autowired
     private StringRedisTemplate redis;
 
-    /** 账号唯一序号（跨用例递增，避免 H2 中账号冲突） */
-    private final AtomicLong seq = new AtomicLong(System.currentTimeMillis() % 100_000);
+    /**
+     * 账号/造数取号器：JVM 级单调递增，所有测试实例共享同一计数，不随实例重新播种。
+     * 不能改回实例级毫秒种子——紧凑构造的实例会同毫秒撞桶，跨类注册出同名账号。
+     * H2 是进程内存库、每轮随 JVM 新建，同轮内唯一即可，故不取模、不带时间种子。
+     */
+    private static final AtomicLong seq = new AtomicLong();
 
     @BeforeEach
     void flushRedis() {
