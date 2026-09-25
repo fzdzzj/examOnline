@@ -25,7 +25,7 @@ spec/
 
 | 变更 ID | 阶段 | 内容 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| `update-agent-gate-single-source` | 工程性 E2（**不在 19–23 业务串行链内**） | 门禁命令与验收判据的单一来源。**B-1 已完成**：6 份进行中前端提示词里的"必须仍是 210"常量与"一律读作 218"式人肉更正段全部清除，改为编号判据（开工记录 + 收尾比较）；`docs/指导Agent交接文档.md` 首屏常量降级为带 revision 的历史记录，§6.1 定性为特定 shell 的历史绕行办法、§6.2 加互斥注记。**B-2 部分完成**：任务 6 已落地——`type-check` / `type-check:check` 的单个 `&` 改 `&&`、删除无任何调用者的 `precommit:check`，并因此暴露且修掉两处既存类型红（见遗留 #13）。**仍未开始**：Maven wrapper、`.mvn`/`maven-settings.json` 去机器绝对路径、唯一门禁命令回填——需联网与磁盘授权，且排在业务阶段收尾之后 | `agent-harness` | 与 `add-frontend-*` 无文件冲突（B-1 只改提示词与文档）；`add-agent-context-routing`（E1）已归档 |
+| `update-agent-gate-single-source` | 工程性 E2（**不在 19–23 业务串行链内**） | 门禁命令与验收判据的单一来源。**B-1 已完成**：6 份进行中前端提示词里的"必须仍是 210"常量与"一律读作 218"式人肉更正段全部清除，改为编号判据（开工记录 + 收尾比较）；`docs/指导Agent交接文档.md` 首屏常量降级为带 revision 的历史记录，§6.1 定性为特定 shell 的历史绕行办法、§6.2 加互斥注记。**B-2 已落地（任务 4/5/6/7，2026-09-25 执行 agent 实测）**：任务 6 前端 `&`→`&&` 与 `precommit:check` 去留（见遗留 #13）；任务 4 Maven wrapper 四件套入库并把唯一门禁命令回填进 `AGENTS.md`；任务 5 `.mvn/maven.config` 与 `maven-settings.xml` 去机器绝对路径（相对路径解析基准经实测选定写法，根目录与非根子目录解析一致）；实测证据在该变更 `tasks.json`。**待收口**：B-3 指导 agent 独立复核（含归档） | `agent-harness` | 与 `add-frontend-*` 无文件冲突（B-1 只改提示词与文档）；`add-agent-context-routing`（E1）已归档 |
 | `isolate-submit-load-generator` | 性能复验（**待审批**） | 把压测进程和被测进程分开后再按原口径复验交卷容量。不改线程、连接池、交卷代码，也不放宽 P99。没有第二台宿主就停 | `performance` | 无；不与 E2 并行写同一工作树 |
 | `fix-flaky-integration-baselines` | 测试稳定性（**待审批**） | 只复查遗留里的保留清理与进入考试偶发失败。能复现才最小修复；不能复现就保持观察，不得把重跑变绿写成已修 | `reliability` | 无；不与上面一项并行 |
 

@@ -48,7 +48,7 @@
 
 ## 四、怎么验证（接手第一天就该跑的）
 
-**后端**：**仓库自有的唯一门禁命令尚未定稿**——它待工程性变更 `update-agent-gate-single-source` 的 B-2 段（加 Maven wrapper、把 `.mvn` / `maven-settings.xml` 里的机器绝对路径去掉）落地后回填到 `AGENTS.md`。在此之前，本仓库于 2026-09-21 实测可跑的验证方式是 `mvn -o clean test`——但它依赖所执行 shell 的 JDK/Maven 解析（当次是在 Git Bash、`JAVA_HOME` 指向项目所需 JDK 的前提下跑通的），换环境先自检再拼命令，**不要把它当成已定稿的标准命令**；交接文档 §6.1 那段更完整的启动器写法已被明确标注为"特定 shell / 本机的历史绕行办法"，同样不是推荐命令。
+**后端**：唯一门禁命令已由工程性变更 `update-agent-gate-single-source` 的 B-2 段定稿并回填到 `AGENTS.md`：`./mvnw clean test`（在仓库根执行，`mvnw.cmd` 为 Windows cmd 等价形式）。在它定稿之前，本仓库于 2026-09-21 实测跑通过 `mvn -o clean test`——它依赖所执行 shell 的 JDK/Maven 解析，现仅作历史背景，**不再是标准命令**；交接文档 §6.1 那段更完整的启动器写法仍标注为"特定 shell / 本机的历史绕行办法"，同样不是推荐命令。
 ⚠️ 必须带 `clean`——残留的 surefire 报告会让用例总数虚高。判据是 `Failures=0`、`Errors=0`、`Skipped` 保持 1（那 1 个 skip 是契约导出方法受 `exportContract` 开关控制，属设计使然，**不要试图消除**）。
 覆盖率可复算：`mvn -o test jacoco:report` 后读 `target/site/jacoco/jacoco.csv`（JaCoCo 只出报告不拦截，见第五节）。
 

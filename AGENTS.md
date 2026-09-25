@@ -47,10 +47,23 @@
 
 ## 唯一门禁命令
 
-**待 `update-agent-gate-single-source`（E2）落地后回填。**
+**后端验证只跑这一条，且必须在仓库根执行：**
 
-本文件此刻故意不写出任何命令行：现有文档对"哪一条命令算门禁"存在互斥说法，抄任何一种进来都会让它变成又一个副本——而且是最新、被读到最多的那个。
-E2 收口前若确实需要跑构建：读 `docs/指导Agent交接文档.md` 的工具链小节自行拼命令，并在回报里给出**实际执行的命令与原始输出**（不得引用文档里的数字当结果）。
+```bash
+./mvnw clean test
+```
+
+- Windows cmd 下写 `mvnw.cmd clean test`，语义相同。必须带 `clean`（残留报告会拼出虚高计数）。
+- 前置：`JAVA_HOME` 指向不低于 `pom.xml` 的 `maven.compiler.release` 的 JDK（本机 PATH 上的 `java` 不是可用版本，起决定作用的是 `JAVA_HOME`，见 `docs/指导Agent交接文档.md` §6.1 的历史记述）；首次运行需联网下载 wrapper distribution，`.m2-repo/` 缺失时 Maven 会重建缓存并联网补齐依赖。本仓库**不承诺零准备离线可跑**。
+- 验收判据（`Failures` / `Errors` / `Skipped` 与用例总数怎么比、结论怎么记）**不在本文件复述**：以 `spec/specs/agent-harness/spec.md` 的「验收结论必须绑定产生它的执行」为准，结论按 tasks.json 证据格式落记录（命令 + 当次输出 + 短 revision）。
+- 出处：命令与构建配置由 `update-agent-gate-single-source`（E2）B-2 实测回填，证据在其 `tasks.json` 任务 4、5；`.mvn/maven.config`、`maven-settings.xml` 与 wrapper 文件不得引入机器绝对路径（判据见同规范「构建配置的机器绑定不得进入版本库」）。
+- 从仓库内子目录执行时，settings 与 localRepository 的解析结果与仓库根一致（配置以「向上找到 `.mvn` 的第一层」为基准）；但构建本身须在仓库根执行——子目录无 pom 时 Maven 以 `no POM in this directory` 明确失败，这不是配置缺陷。
+
+自查（须输出 OK）：
+
+```bash
+test -x mvnw && test -f mvnw.cmd && test -f .mvn/wrapper/maven-wrapper.properties && test -f .mvn/wrapper/maven-wrapper.jar && echo OK
+```
 
 ## 本文件与 `README.md` 不承载易变事实
 

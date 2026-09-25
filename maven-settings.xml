@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
     <!--
-      本机 Maven 全局 settings.xml 将 localRepository 指向不可写的
-      D:\develop\Maven\apache-maven-3.9.4\mvn_repo，导致构建失败。
-      此处覆盖为工程内可写的 .m2-repo（由 .mvn/maven.config 的 -s 引入）。
+      本机 Maven 全局 settings.xml 将 localRepository 指向不可写的盘上目录，导致构建失败。
+      此处覆盖为工程内可写的 .m2-repo：由 .mvn/maven.config 的 -s 引入本文件；
+      maven.multiModuleProjectDirectory 由 Maven 启动脚本按「从执行目录向上找到 .mvn 的第一层」设置，
+      因此无论从仓库根还是从仓库内子目录执行，都解析到仓库根下的 .m2-repo
+      （该解析基准为 2026-09-25 实测结论，见 spec/changes/update-agent-gate-single-source/tasks.json）。
+      需要临时改用其他本地仓库时，用 CLI 显式覆盖：mvn -Dmaven.repo.local=<路径> ...
+      （.m2-repo/ 由 .gitignore 排除，不入版本库；缺失时 Maven 会重建并联网补齐依赖。）
     -->
-    <localRepository>D:\code\examOnline\.m2-repo</localRepository>
+    <localRepository>${maven.multiModuleProjectDirectory}/.m2-repo</localRepository>
 </settings>

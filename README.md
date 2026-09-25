@@ -33,7 +33,7 @@
 | 为什么这样设计（决策依据） | `docs/需求决策记录.md` | 按主题分节，含被推翻的旧方案 |
 | 产品愿景原文 | `docs/examOnline需求规格说明书.md` | |
 | 前端工程 | `frontend/`；进行中的前端变更见 `spec/README.md` 进行中表 | 前端与后端测试基线的关系见 `spec/README.md` 的「前端系列纪律」，本文件不复述 |
-| 跑哪一条命令算门禁通过 | **暂未定**：待 `spec/changes/update-agent-gate-single-source` 收口后由 `AGENTS.md` 回填 | 现有文档对该命令有互斥说法，**不要照抄任何一处** |
+| 跑哪一条命令算门禁通过 | `AGENTS.md`「唯一门禁命令」（`./mvnw clean test`，已由 `update-agent-gate-single-source` B-2 回填） | 验收判据见 `spec/specs/agent-harness/spec.md`，不在本文件复述 |
 | 当前进行到哪一步 / 下一步做什么 | `spec/README.md`「当前状态」的进行中变更表 | 本文件不再写"下一变更是 X"——它过期在阶段 2 |
 
 ## 快速开始（只给入口，数值一律去上面那张表查）
