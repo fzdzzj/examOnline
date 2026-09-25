@@ -18,7 +18,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 单份答卷判分服务（spec「客观题判分」需求的执行体）：
@@ -77,10 +80,15 @@ public class ObjectiveGradingService {
     /**
      * 安全判分入口：异常一律就地捕获并标记"判分失败"，绝不向编排层扩散——
      * 一份坏答卷（答案 JSON 损坏、快照缺题等）不能中断整场判分（失败隔离）。
+     *
+     * <p>{@code existingGrades} 是编排层在进入逐份写入<b>之前</b>按本场答卷一次取出的
+     * 已有主观批改行（batch-grading-subjective-upserts，按题 ID 索引；无行传空 Map）——
+     * 判分循环内不再按「答卷 × 题目」selectOne。
      */
-    public GradeOutcome gradeSafely(GradingSubmission submission, GradingPaper paper) {
+    public GradeOutcome gradeSafely(GradingSubmission submission, GradingPaper paper,
+                                    Map<Long, SubjectiveGrade> existingGrades) {
         try {
-            doGrade(submission, paper);
+            doGrade(submission, paper, existingGrades);
             return GradeOutcome.ok(submission);
         } catch (Exception e) {
             // 判分失败只标记本答卷：grading_error 保留现场原因，供教师排查/重判/手动给分
@@ -91,8 +99,28 @@ public class ObjectiveGradingService {
         }
     }
 
+    /**
+     * 已有主观批改行一次取出（batch-grading-subjective-upserts）：按本场答卷 ID 一条
+     * IN 查询取回，按答卷 ID 分组、组内按题 ID 归一（同题多行取首行，脏数据不中断判分）。
+     * 无简答题或无答卷时不发这张表的查询。预取本身是一次读，失败按整场异常上抛
+     * （与成绩汇总的批量读取口径一致），逐份写入的失败隔离不变。
+     */
+    public Map<Long, Map<Long, SubjectiveGrade>> loadSubjectiveGrades(List<GradingSubmission> submissions,
+                                                                      GradingPaper paper) {
+        if (submissions.isEmpty() || paper.shortAnswerQuestions().isEmpty()) {
+            return Map.of();
+        }
+        List<SubjectiveGrade> rows = subjectiveGradeMapper.selectList(
+                Wrappers.<SubjectiveGrade>lambdaQuery()
+                        .in(SubjectiveGrade::getSubmissionId,
+                                submissions.stream().map(GradingSubmission::getId).toList()));
+        return rows.stream().collect(Collectors.groupingBy(SubjectiveGrade::getSubmissionId,
+                Collectors.toMap(SubjectiveGrade::getQuestionId, Function.identity(), (a, b) -> a)));
+    }
+
     /** 判分主体：客观题逐题分派策略 + 简答初判建行 + 汇总落库。 */
-    private void doGrade(GradingSubmission submission, GradingPaper paper) {
+    private void doGrade(GradingSubmission submission, GradingPaper paper,
+                         Map<Long, SubjectiveGrade> existingGrades) {
         Map<Long, String> answers = paperReader.parseAnswers(submission.getAnswers());
 
         BigDecimal objectiveScore = BigDecimal.ZERO;
@@ -100,7 +128,8 @@ public class ObjectiveGradingService {
             String studentAnswer = answers.get(question.questionId());
             if (question.type() == QuestionType.SHORT_ANSWER) {
                 // 简答不入客观分：建/更新批改行（含初判提示分），终分由教师批改产生
-                upsertSubjectiveRow(submission, question, studentAnswer);
+                upsertSubjectiveRow(submission, question, studentAnswer,
+                        existingGrades.get(question.questionId()));
                 continue;
             }
             // 策略分派：按题型路由到单选/多选/判断策略（新增题型在此自动生效）
@@ -126,18 +155,15 @@ public class ObjectiveGradingService {
     }
 
     /**
-     * 主观批改行 upsert（幂等，重判安全）：
+     * 主观批改行 upsert（幂等，重判安全）：行来自预取结果，不再逐题查库。
      * 已有行只刷新学生答案与初判提示分（教师终分/评语/version 原样保留），
      * 无行则新建——同一答卷重判 N 次不会产生重复行或覆盖教师批改结果。
      */
-    private void upsertSubjectiveRow(GradingSubmission submission, GradingQuestion question, String studentAnswer) {
+    private void upsertSubjectiveRow(GradingSubmission submission, GradingQuestion question,
+                                     String studentAnswer, SubjectiveGrade existing) {
         GradeResult suggestion = strategyRegistry.dispatch(question)
                 .grade(question, studentAnswer, gradingConfig);
 
-        SubjectiveGrade existing = subjectiveGradeMapper.selectOne(
-                Wrappers.<SubjectiveGrade>lambdaQuery()
-                        .eq(SubjectiveGrade::getSubmissionId, submission.getId())
-                        .eq(SubjectiveGrade::getQuestionId, question.questionId()));
         if (existing != null) {
             subjectiveGradeMapper.update(null, Wrappers.<SubjectiveGrade>lambdaUpdate()
                     .eq(SubjectiveGrade::getId, existing.getId())
