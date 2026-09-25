@@ -7,7 +7,7 @@
  *   前端只看 `reviewing` 字段，**绝不**自行判断「是否处于复核中」。
  */
 
-import type { MyScoreResponse } from '@/api/axios';
+import type { MakeupFinalScoreResponse, MyScoreResponse } from '@/api/axios';
 import { BizCode } from '@/api/errorMap';
 import { ApiError } from '@/api/types';
 
@@ -59,5 +59,30 @@ export function mapMyScoreToView(response: MyScoreResponse | undefined): ScoreVi
     totalScore: response.totalScore,
     rank: response.rank,
     partialGraded: response.partialGraded,
+  };
+}
+
+/**
+ * 把补考最终成绩（GET /api/scores/makeup-final，学生查本人）映射为**同一套**三态视图，
+ * 口径与 myScore 完全同构（差异只在后端实现，前端不引入第三种状态机）：
+ * - 未发布：后端 requirePublishedRoot 对非 PUBLISHED 家族根统一抛 400「成绩待发布」，
+ *   与 myScore 同文案——页面继续用 isNotPublishedError 识别后归入 not-published；
+ * - `reviewing === true` → 复核中：主考家族存在进行中复核时后端已把 finalScore 置 null
+ *   （防「看了分数再申请」），前端只看 reviewing 字段，绝不回填分数；
+ * - 其余按已发布渲染：finalScore 透传为 totalScore（后端给 null 保持 undefined，不补 0）；
+ *   该响应没有排名 / 客观题 / 主观题字段，一律不编造。
+ */
+export function mapMakeupFinalScoreToView(
+  response: MakeupFinalScoreResponse | undefined
+): ScoreView {
+  if (!response) {
+    return { kind: 'not-published' };
+  }
+  if (response.reviewing === true) {
+    return { kind: 'reviewing' };
+  }
+  return {
+    kind: 'published',
+    totalScore: response.finalScore,
   };
 }

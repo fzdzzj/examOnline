@@ -1,7 +1,20 @@
 <template>
   <div>
     <!-- 三态均由后端决定：未发布（后端 400「成绩待发布」）/ 复核中（reviewing=true，后端已置空分数）/ 已发布 -->
-    <Descriptions v-if="view.kind === 'published'" bordered :column="2" size="middle">
+    <!-- variant="final"：补考最终成绩视图——后端 MakeupFinalScoreResponse 只有 finalScore，
+         不渲染排名 / 客观题 / 主观题 / 批改状态等后端没给的字段（不编造） -->
+    <Descriptions
+      v-if="view.kind === 'published' && variant === 'final'"
+      bordered
+      :column="1"
+      size="middle"
+    >
+      <DescriptionsItem label="最终成绩（后端沿主考家族合并）">
+        <span class="total">{{ view.totalScore ?? '-' }}</span>
+      </DescriptionsItem>
+    </Descriptions>
+
+    <Descriptions v-else-if="view.kind === 'published'" bordered :column="2" size="middle">
       <DescriptionsItem label="考试">{{ view.examTitle ?? '-' }}</DescriptionsItem>
       <DescriptionsItem label="排名">
         {{ view.rank === 0 || view.rank === undefined ? '-' : `第 ${view.rank} 名` }}
@@ -43,9 +56,12 @@ import type { ScoreView } from '@/utils/scoreVisibility';
  * 学生成绩卡片：三态渲染完全由后端返回的 ScoreView 驱动。
  * ⚠️ 组件内不得出现任何「是否复核中」「是否已发布」的本地推断——
  * 那会把后端的可见性裁决复制到前端，规则漂移会泄露成绩。
+ * variant：'detail' 常规成绩全字段；'final' 补考最终成绩仅总分（后端只返回 finalScore）。
  */
 
-defineProps<{ view: ScoreView }>();
+withDefaults(defineProps<{ view: ScoreView; variant?: 'detail' | 'final' }>(), {
+  variant: 'detail',
+});
 </script>
 
 <style scoped>

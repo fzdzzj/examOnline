@@ -15,6 +15,13 @@
           :filter-option="examFilterOption"
           :loading="examsFetching"
         />
+        <RadioGroup v-model:value="scoreMode">
+          <Radio value="regular">常规成绩</Radio>
+          <Radio value="makeup">补考最终成绩</Radio>
+        </RadioGroup>
+        <span v-if="scoreMode === 'makeup'" class="hint">
+          后端沿主考家族按考试配置规则合并，历史成绩保留不覆盖；前端只渲染返回值。
+        </span>
       </div>
 
       <!-- 接口缺口如实告知：学生端没有「查询自己复核申请」的端点 -->
@@ -28,20 +35,21 @@
       </Alert>
 
       <Spin :spinning="scoreFetching">
-        <ScoreVisibilityCard :view="view" />
+        <ScoreVisibilityCard :view="view" :variant="scoreMode === 'makeup' ? 'final' : 'detail'" />
       </Spin>
 
-      <div v-if="view.kind === 'published' || view.kind === 'reviewing'" class="mt-3">
+      <div v-if="view.kind === 'reviewing'" class="mt-3">
         <!-- 复核中不再重复申请：后端会对重复申请返回 1001，此处按钮由后端 reviewing 字段驱动 -->
+        <span class="pending-hint">复核进行中，处理完成后成绩恢复显示</span>
+      </div>
+      <div v-else-if="view.kind === 'published' && scoreMode === 'regular'" class="mt-3">
         <Button
-          v-if="view.kind === 'published'"
           type="primary"
           :disabled="appliedExamIds.includes(selectedExamId as number)"
           @click="applyModalOpen = true"
         >
           申请成绩复核
         </Button>
-        <span v-else class="pending-hint">复核进行中，处理完成后成绩恢复显示</span>
       </div>
 
       <Alert
@@ -92,27 +100,50 @@
 </template>
 
 <script setup lang="ts">
-import { Alert, Button, Card, Modal, Select, Spin, Textarea, message } from 'ant-design-vue';
+import {
+  Alert,
+  Button,
+  Card,
+  Modal,
+  Radio,
+  RadioGroup,
+  Select,
+  Spin,
+  Textarea,
+  message,
+} from 'ant-design-vue';
 import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 
 import {
   apply,
   myExams,
+  myMakeupFinalScore,
   myScore,
   type ExamListItem,
+  type MakeupFinalScoreResponse,
   type MyScoreResponse,
   type ScoreReview,
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { getReviewStatusConfig } from '@/constants/postExam';
-import { mapMyScoreToView, isNotPublishedError } from '@/utils/scoreVisibility';
+import {
+  mapMakeupFinalScoreToView,
+  mapMyScoreToView,
+  isNotPublishedError,
+} from '@/utils/scoreVisibility';
 import ScoreVisibilityCard from '@/components/postexam/ScoreVisibilityCard.vue';
 
 /**
- * 学生成绩查询与复核申请（阶段 23）：
+ * 学生成绩查询与复核申请（阶段 23，补考最终成绩见 add-makeup-final-score-frontend）：
  * - GET /api/exam-taking/exams 我的考试列表；
  * - GET /api/scores/my?examId= 成绩（未发布 → 后端 400「成绩待发布」；复核中 → reviewing=true 且分数置空）；
+ * - GET /api/scores/makeup-final?examId= 补考最终成绩（学生查本人，口径同 myScore）：
+ *   未发布同样统一「成绩待发布」（后端 requirePublishedRoot）；主考家族存在进行中复核时
+ *   reviewing=true 且 finalScore 置 null（防「看了分数再申请」），前端只看 reviewing 字段
+ *   隐藏分数、不本地推断；合并规则在后端（沿主考家族按考试配置规则），前端只渲染返回值。
+ *   教师侧对端点为 GET /api/exams/{examId}/scores/makeup-final/{studentId}（exam:manage，
+ *   teacher/makeups 页使用），学生无此权限、本页不调用；
  * - POST /api/exams/{examId}/score-reviews 申请复核（限次限时由后端校验，前端不计数）。
  */
 
@@ -133,7 +164,12 @@ function examFilterOption(input: string, option?: unknown): boolean {
 
 const selectedExamId = ref<number | undefined>(undefined);
 
-const { data: scoreData, isFetching: scoreFetching } = useQuery({
+// 成绩口径：常规成绩（myScore）/ 补考最终成绩（makeup-final）。
+// 考试列表不携带补考标记（ExamListItem 无 parentExamId），前端不猜哪场是补考，
+// 由学生显式选择口径——可见性裁决仍 100% 在后端。
+const scoreMode = ref<'regular' | 'makeup'>('regular');
+
+const { data: scoreData, isFetching: myScoreFetching } = useQuery({
   queryKey: computed(() => ['my-score', selectedExamId.value] as const),
   queryFn: async () => {
     try {
@@ -148,12 +184,42 @@ const { data: scoreData, isFetching: scoreFetching } = useQuery({
       throw error;
     }
   },
-  enabled: computed(() => selectedExamId.value !== undefined),
+  enabled: computed(() => scoreMode.value === 'regular' && selectedExamId.value !== undefined),
   retry: false,
 });
 
-// 三态映射：未发布（响应为空）/ 复核中（reviewing）/ 已发布
-const view = computed(() => mapMyScoreToView(scoreData.value ?? undefined));
+const { data: makeupData, isFetching: makeupFetching } = useQuery({
+  queryKey: computed(() => ['my-makeup-final', selectedExamId.value] as const),
+  queryFn: async () => {
+    try {
+      return (
+        (await unwrap<MakeupFinalScoreResponse>(
+          myMakeupFinalScore({
+            client,
+            throwOnError: true,
+            query: { examId: selectedExamId.value as number },
+          })
+        )) ?? null
+      );
+    } catch (error) {
+      // 口径同 myScore：未发布（400「成绩待发布」）→ not-published，不当异常弹给用户
+      if (isNotPublishedError(error)) return null;
+      throw error;
+    }
+  },
+  enabled: computed(() => scoreMode.value === 'makeup' && selectedExamId.value !== undefined),
+  retry: false,
+});
+
+// 三态映射：未发布（响应为空）/ 复核中（reviewing）/ 已发布——两种口径共用同一套 ScoreView
+const view = computed(() =>
+  scoreMode.value === 'makeup'
+    ? mapMakeupFinalScoreToView(makeupData.value ?? undefined)
+    : mapMyScoreToView(scoreData.value ?? undefined)
+);
+const scoreFetching = computed(() =>
+  scoreMode.value === 'makeup' ? makeupFetching.value : myScoreFetching.value
+);
 
 // ===== 复核申请 =====
 const applyModalOpen = ref(false);

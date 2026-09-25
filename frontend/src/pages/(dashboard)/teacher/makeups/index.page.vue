@@ -7,16 +7,15 @@
         </span>
       </template>
 
-      <!-- 诚实边界：后端 MakeupScoreService.finalScore 全仓库零调用，不存在「补考最终成绩」接口 -->
-      <Alert type="warning" show-icon class="mb-3">
-        <template #message>补考最终成绩合并规则：后端尚未接线</template>
+      <!-- 合并规则在后端：本页只渲染返回值，前端不本地推算（诚实边界随后端接线同步更新） -->
+      <Alert type="info" show-icon class="mb-3">
+        <template #message>补考最终成绩：合并规则在后端，历史成绩保留不覆盖</template>
         <template #description>
-          <code>MakeupScoreService.finalScore</code>
-          当前没有任何 Controller / Service 调用（遗留 #5），因此本页
-          <b>只做补考的创建与准入管理</b>
-          ， 不展示「主考 vs 补考合并后的最终成绩」，也不声称该能力可用。需要该展示须先单独立项
-          <code>add-makeup-final-score</code>
-          （后端功能变更）。
+          后端沿主考家族（主考 + 各次补考）按考试配置的成绩规则（取最高 / 取最近一次 /
+          取平均）合并出最终成绩，
+          历史各次成绩保留、从不覆盖（后端只读计算，不改答卷）。本页只渲染后端返回值，
+          <b>不本地推算合并规则、不组装家族树</b>
+          。
         </template>
       </Alert>
 
@@ -57,6 +56,28 @@
         <code>GET /api/exams/{id}/makeup-eligible?passLine=</code>
         ，判定口径（缺考 / 未达及格线）由后端 reason 字段给出，前端不自行筛选。
       </p>
+    </Card>
+
+    <Card title="补考最终成绩（后端合并）" class="mb-4">
+      <div class="mb-3 flex flex-wrap items-center gap-3">
+        <Select
+          v-model:value="finalStudentId"
+          :options="finalStudentOptions"
+          placeholder="选择学生（来自候选人名单）"
+          class="w-72"
+          allow-clear
+        />
+      </div>
+      <Spin :spinning="finalFetching">
+        <Descriptions v-if="finalData" bordered :column="1">
+          <DescriptionsItem label="最终成绩（后端沿主考家族合并）">
+            {{ finalData.finalScore ?? '—（后端返回为空：该生无已批改成绩记录）' }}
+          </DescriptionsItem>
+        </Descriptions>
+        <p v-else class="reason-note">
+          选择学生后查询：后端沿主考家族按考试配置规则合并，历史成绩保留不覆盖；前端只渲染返回值，不本地推算。
+        </p>
+      </Spin>
     </Card>
 
     <Card title="创建补考">
@@ -113,7 +134,7 @@
         class="mt-2"
         type="info"
         show-icon
-        message="补考已成为独立考试记录，可在「考试管理」中查看与发布；最终成绩合并规则后端未接线，故此处不展示 merged 成绩。"
+        message="补考已成为独立考试记录，可在「考试管理」中查看与发布；补考最终成绩由后端沿主考家族合并（历史成绩保留不覆盖），可在上方「补考最终成绩」卡片按学生查询。"
       />
     </Card>
   </div>
@@ -131,6 +152,7 @@ import {
   Input,
   InputNumber,
   Select,
+  Spin,
   Table,
   Tag,
   message,
@@ -144,20 +166,28 @@ import { useQuery } from '@tanstack/vue-query';
 import {
   createMakeup,
   makeupEligible,
+  makeupFinalScore,
   page2 as pageExams,
   type ExamResponse,
   type MakeupCandidateItem,
   type MakeupCreateResponse,
+  type MakeupFinalScoreResponse,
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { MAKEUP_RULE_OPTIONS, makeupRuleLabel } from '@/constants/postExam';
 import { toIsoLocalDateTime } from '@/utils/dateTime';
 
 /**
- * 补考管理（阶段 23）：
+ * 补考管理（阶段 23，最终成绩展示见 add-makeup-final-score-frontend）：
  * - GET /api/exams/{id}/makeup-eligible?passLine= 候选名单（后端按及格线判定，reason 由后端给出）
  * - POST /api/exams/{id}/makeups 创建补考（独立考试记录 + parentExamId + exam_candidates 准入）
- * 硬约定 5：不做「主考 vs 补考最终成绩合并展示」（后端 finalScore 零调用），界面明示该边界。
+ * - GET /api/exams/{examId}/scores/makeup-final/{studentId} 补考最终成绩（教师侧）：
+ *   权限 exam:manage（TEACHER/ADMIN），水平越权由后端归属校验兜底（仅考试创建教师可查，ADMIN 放行）；
+ *   沿主考家族按考试配置规则合并、历史成绩保留不覆盖（后端只读计算）；教师侧返回 reviewing 恒为 false
+ *   ——「复核中隐藏分数」是学生查本人的口径（见 student/scores 页），前端不得在此自行推断。
+ * - GET /api/scores/makeup-final?examId= 补考最终成绩（学生查本人，教师侧端点的学生视角）：
+ *   口径同 myScore——未发布统一「成绩待发布」、家族内存在进行中复核时 reviewing=true 且分数置空；
+ *   该端点在 student/scores 页使用，本页不调用。
  */
 
 const route = useRoute();
@@ -240,6 +270,38 @@ const rowSelection = computed<TableProps['rowSelection']>(() => ({
     selectedIds.value = keys.map((k) => Number(k));
   },
 }));
+
+// ===== 补考最终成绩（教师侧，exam:manage；合并在后端，这里只渲染返回值） =====
+const finalStudentId = ref<number | undefined>(undefined);
+const finalStudentOptions = computed(() =>
+  candidates.value.map((c) => ({
+    value: c.studentId as number,
+    label: `#${c.studentId} ${c.studentName ?? ''}`,
+  }))
+);
+
+const { data: finalData, isFetching: finalFetching } = useQuery({
+  queryKey: computed(
+    () => ['makeup-final-score', selectedExamId.value, finalStudentId.value] as const
+  ),
+  queryFn: () =>
+    unwrap<MakeupFinalScoreResponse>(
+      makeupFinalScore({
+        client,
+        throwOnError: true,
+        path: {
+          examId: selectedExamId.value as number,
+          studentId: finalStudentId.value as number,
+        },
+      })
+    ),
+  enabled: computed(() => selectedExamId.value !== undefined && finalStudentId.value !== undefined),
+});
+
+// 换主考后候选名单随之变化：清掉已选学生，避免拿着旧家族的学生查询
+watch(selectedExamId, () => {
+  finalStudentId.value = undefined;
+});
 
 // as const 的只读元组转可变数组，满足 antd Select 的 options 类型
 const ruleOptions = MAKEUP_RULE_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
