@@ -1,0 +1,58 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：核对与隔离测量设计",
+    "task": "确认当次代码真值、行为边界和可复跑的隔离负载",
+    "steps": [
+      { "step": "核对 HEAD/工作树、anti-cheat 与 performance 基线、MonitorService/ExamDraftService/OnlinePresenceService/现有集成测试；记录答卷 SQL、草稿 GET、在线 MGET、异常聚合的实际调用边界，不沿用旧台账当新测量", "completed": true },
+      { "step": "建立专用隔离数据/Redis（不使用共享 dev），固定人数、答卷状态、快照/答案字节规模和草稿分布；写明预热、轮数、并发、采集方法、CPU/GC/堆、端到端延迟/吞吐与 SQL/Redis 分账方法及测量扰动，工具可复跑且不泄漏凭据", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "开工核对：HEAD=525337d（分支 feature/update-monitor-overview-submission-projection，自 90222ef）；git status 仅 `docs/backend-optimization-candidates.md` 与 `spec/changes/update-monitor-overview-submission-projection/` 未跟踪（前者全程未动，未暂存）。调用边界现场核对（非旧台账）：MonitorService.overview 用 `submissionMapper.selectList(eq(exam_id))` 全列取答卷（含 LONGTEXT paper_json/answers），题数从第一份非空 paperJson 解析；逐份进行中答卷调 `ExamDraftService.get`＝逐人一次 Redis GET；在线用 `OnlinePresenceService.onlineOf`＝一次 MGET（已批读）；异常用 `behaviorLogMapper.selectAbnormalStats` 一条 GROUP BY；排序为异常优先→严重度→次数→进度→studentId。隔离测量工具（可复跑）：`src/test/java/com/exam/monitoring/measure/MonitorAttributionMeasureIT.java`（类名以 IT 结尾，不进 Surefire 全量门禁，仅显式 -Dtest 运行），已随本阶段提交 revision=525337d（提交信息「test(monitor): 补可复跑的监考总览归因隔离测量工具」）。隔离口径：`@ActiveProfiles(\"test\")` → H2 内存库（application-test.yml，mem:exam MODE=MySQL）+ Redis **db15**（dev 用 db0，天然隔离）；不启 Docker、不写共享 dev。负载常量：N_STUDENTS=200，状态比 120/50/30（进行中/已交卷/已批改），进行中 answers=NULL（真实链路：交卷才落答案），两变体 rep(40 题，paper_json 14866 字符/行)/small(5 题，1885 字符/行)；进行中学生逐人写 `exam:draft:{examId}:{sid}`（answers 12 条），1/5 写在线键（TTL 2h 仅为测量稳定，非生产 60s）；异常日志按 i%5 造 severity>=2（聚合 40 行）。预热/轮数/并发：SQL 各 warmup=5/reps=20；草稿 warmupPasses=2/passes=10（=1200 次调用）；e2e warmup=10/requests=60，并发 1 与 8；JFR=jdk.ExecutionSample(10ms)+jdk.CPULoad(500ms)+jdk.GCPhasePause(0ms)。命令（逐轮，输出到 target/measure，证据复制入本目录 evidence/）：`mvnw.cmd -o test -Dtest=MonitorAttributionMeasureIT \"-Dmeasure.rev=525337d\" \"-Dmeasure.label=old-run1\" \"-Dmeasure.out=target/measure\"`（run2/run3 同，仅改 label）。工具自带 cleanupRedisKeys() 只删本场 exam:draft:{examId}:* 与 exam:monitor:online:{examId}:*，不动其它键；参数化输出，不泄漏凭据。已知扰动：MockMvc 同进程、H2 内存库，不能外推 MySQL/Tomcat；响应 JSON 解析在计时窗口外但在 JFR 录制窗口内（虚高 Jackson 份额，已在文档注明）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：旧实现归因与 GO/NO-GO",
+    "task": "先分清 DB 长字段与逐人 Redis 草稿哪个因素主导",
+    "steps": [
+      { "step": "在旧代码上按阶段 1 同一隔离负载预热并多轮实测；逐轮保存命令、原始输出与 revision，单独记录主答卷 SQL 行/长字段量和耗时、题数相关 SQL、草稿 GET 次数和耗时、在线 MGET、异常聚合、端到端 mean/p95/p99/吞吐、CPU/GC/峰值堆和响应大小；估算字段字节不得称实际网络字节", "completed": true },
+      { "step": "比较各类可控成本与轮间波动，书面裁决：仅当答卷长字段取数占主导且预期改善能分辨时 GO；否则 NO-GO，停止实现、记录主导因素和后续独立方向。测量环境无法隔离或归因不充分亦停止，不以静态 LONGTEXT 结构代替性能证据", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "三轮同负载实测（revision=525337d，每轮独立 test JVM 启动一次，逐轮原始输出见本目录 evidence/monitor-attribution-old-run{1,2,3}.json，sha256 清单 evidence/evidence-sha256.txt）。**rep 变体（N=200，进行中 120，快照 14866 字符/行）**逐轮：e2e 并发1 meanMs=30.42 / 31.88 / 32.96（p99=64.58 / 71.31 / 未列；并发8 meanMs=52.65 / 63.58 / 55.12，respondBytesMean=27496，errors=0）；draftGetEach(逐人 Redis GET，120 次/请求) passMedianMs=30.917 / 33.395 / 42.19（= e2e mean 的 101.6% / 104.8% / 128.0%，callP50 0.27–0.36ms）；sqlFull(全列) p50Ms=2.002 / 2.058 / 2.385，sqlProjected(短列，断言 longFieldsAbsent=true，rowCount=200) p50Ms=1.647 / 1.466 / 1.556 → longFieldDelta=0.355 / 0.592 / 0.829ms（占 e2e mean 的 1.17% / 1.86% / 2.52%；projected p95 常大于 full p95，delta 自身轮间 0.36→0.83ms 与绝对值同量级＝噪声）；namesSql p50=1.386 / 1.578 / 1.677；onlineMGet p50=0.378 / 0.435 / 0.376（onlineCount=96）；abnormalAgg p50=0.265 / 0.224 / 0.246（rowCount=40）；narrowSnapshot(SELECT paper_json … LIMIT 1) p50=0.039 / 0.037 / 0.040；对照方向 draftMGetInfo(一次 multiGet 120 键) p50=0.452，仅为可达成本对照、本轮不实施。factorRanking(run1) 降序：draftGetEach 30.917 → namesSql 1.386 → onlineMGet 0.378 → sqlLongFieldDelta 0.355 → abnormalAgg 0.265 → narrowSnapshot 0.039。**small 变体（快照 1885 字符/行）**：e2e 并发1 meanMs=18.737 / 18.863 / 19.773；longFieldDelta=0.025 / 0.029 / −0.024ms（0.13% / 0.15% / −0.12%，一轮为负＝噪声）；draftGetEach passMedianMs=12.209 / 13.653 / 9.625。JFR（whole/focused，run1）：focused 栈含目标类样本份额 Jackson 50.6% / Mybatis(MybatisPlus) 21.7% / MonitorService 18.1% / ExamDraftService 8.4% / H2 7.2% / RedisDriver 1.2%，cpuUserPctMean≈13.5–15.0、cpuMachineTotalPctMean≈40（caveat：ExecutionSample 是 CPU 偏向，阻塞式 Redis 往返不入样，故 JFR 低估草稿 GET；墙钟分账才是权威，两者分母不同、不可等值）。**裁决＝NO-GO 并停止实现**：主导可控因素是逐人 Redis 草稿 GET（近似等于整条请求延迟、随进行中人数线性增长，三轮均为因子排序第一）；答卷长字段读取增量仅 1.17–2.52%（rep）或噪声级（small，含负值），且 delta 自身轮间波动 0.36→0.83ms 与绝对值同量级，`projectedPlusNarrow`(投影+一次窄读) ≈1.5–1.7ms 相对 e2e 30–33ms 净收益不可分辨。按阶段 2 step2 判据：长字段非主导、预期改善不可分辨 → NO-GO。后续独立方向（不在本变更实施）：逐人草稿 GET 批读（本轮 draftMGetInfo 显示一次 multiGet 取回 120 键 p50≈0.45ms，与 120 次逐人 GET 的 30–42ms 量级差明显），应另立变更并按性能基线「先归因、一次只改一类」走。复测环境限制：H2 内存库 + MockMvc 同进程，不能外推真实 MySQL/Tomcat 生产性能，不构成交卷 P99 结论。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：单因素等价修改（仅 GO）",
+    "task": "只缩减答卷长字段读取并守住原总览语义",
+    "steps": [
+      { "step": "先加确定性护栏并见旧实现红灯：主查询不得 SELECT 全场 paper_json/answers，题数至多一次窄快照读取且不能逐人回查；补异常数据、空卷/空白/损坏快照、已交卷/进行中进度、姓名、异常高亮/排序和权限/归属语义测试；红灯原因必须是预期投影缺失而非桩或环境失败", "completed": false },
+      { "step": "仅改 MonitorService 总览答卷取数及确有必要的窄 Mapper 查询，使现有与新增用例转绿；不得改 Redis 草稿/在线读取、异常聚合、API、schema、前端、索引和 JVM；对未排序首份非空快照的边界须有等价证据，否则停止并回退", "completed": false },
+      { "step": "显式路径提交实现和测试，复核 diff 中只有本因素；记录实现 revision，不夹带候选台账或其他待审批变更", "completed": false }
+    ],
+    "passes": false,
+    "evidence": "不适用（NO-GO）：阶段 2 证据判定答卷长字段取数非主导因素，按判据不进入阶段 3。护栏与投影实现均未编写，`src/main` 零改动，未合入任何拟实施 delta。spec-delta.md 原样保留为未采用草案。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：同负载复测与全量门禁（仅 GO）",
+    "task": "证明请求级收益、语义和仓库门禁，而非仅测试用例转绿",
+    "steps": [
+      { "step": "用阶段 2 相同样本/环境/工具/预热/并发多轮复测 SQL/Redis/响应、mean/p95/p99/吞吐、CPU/GC/堆；逐轮对账。额外窄查询抵消净收益或语义变化则回退实现并按未采用收口，不挑最好一轮", "completed": false },
+      { "step": "在已提交实现 revision 于仓库根执行唯一全量门禁 mvnw.cmd clean test（或 ./mvnw clean test）；记录命令、当次 Tests run/Failures/Errors/Skipped、BUILD 结论、退出码、revision 和 AGENTS.md 的 @Sql/schema/实体自查；不把重跑绿覆盖首次失败", "completed": true }
+    ],
+    "passes": false,
+    "evidence": "step1 不适用（NO-GO）：无 GO 实现可复测，未做「实现后」同负载对账，不作为收益结论。step2 已执行（NO-GO 下唯一仍可跑的仓库门禁，验证本变更 submitted 状态本身干净）：命令 `mvnw.cmd clean test`，工作目录＝仓库根 `d:/code/examOnline`，revision=525337d（已提交；其 `src/main` 与基线 90222ef 零 diff，仅多出测试侧测量工具），输出 `Tests run: 308, Failures: 0, Errors: 0, Skipped: 1`、`BUILD SUCCESS`、退出码 0；完整日志留存 `%TEMP%\\gate-525337d.log`（1021261 字节）。测量 IT（MonitorAttributionMeasureIT）以 IT 结尾，未计入 Surefire 全量。AGENTS.md 三条自查（同 revision）：① `flyway` 在 pom.xml 命中 0；② `test ! -e src/main/resources/db` → OK；③ `@Sql` 在 src/test 仅 1 处命中且为 DataRetentionIntegrationTest 类注释 javadoc 续行（以 `*` 开头，过滤后为空）＝无注解形态违规；实体↔schema 表级：@TableName 唯一表 26（exam_submissions 两实体同名计 1）与 schema.sql 26 张真表一一对应，`comm -23` 侧为空。首次失败未发生（首跑即 308/0/0/1 绿）。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：规范真值与一次性收口",
+    "task": "按实际 GO/NO-GO 结果处理规范及归档，不伪造未执行步骤",
+    "steps": [
+      { "step": "仅在阶段 2 GO、阶段 3/4 完成且收益/语义/门禁都成立时，把 MODIFIED「监考大屏」Requirement 整段合入 anti-cheat 基线、更新 spec/README.md 进行中/归档/已合入登记并归档本目录；NO-GO 则只记录评估与未采用理由，delta 原样留作未采用草案，不把投影条款并入基线；不适用阶段保持 false 并写 note", "completed": true },
+      { "step": "显式路径暂存，核对 git diff --cached --name-only 与 --check，交付一次性回报：所有提交 SHA、文件列表、逐轮原始数据位置、当次门禁及未做事项；其他候选和 isolate-submit-load-generator 原样保留", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "按 NO-GO 收口：① `spec/specs/anti-cheat/spec.md` 的「监考大屏」Requirement **未改**，仅在其后追加「评估结论注记（NO-GO）」段落，未把投影条款并入基线；② spec-delta.md 原样保留为未采用草案；③ `spec/README.md` 已归档表新增本变更一行（标注未采用）并保留 isolate-submit-load-generator 原样；④ 本目录（含 evidence/）整体移入 `spec/changes/archive/update-monitor-overview-submission-projection/`；⑤ 显式路径暂存后核对 `git diff --cached --name-only` 与 `--check`；⑥ 未跟踪的 `docs/backend-optimization-candidates.md` 全程未暂存、未修改。"
+  }
+]

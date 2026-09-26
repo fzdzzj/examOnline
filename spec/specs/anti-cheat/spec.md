@@ -122,3 +122,18 @@ GIVEN 监考大屏高亮某学生异常
 WHEN 教师点击该学生
 
 THEN 系统展示该学生行为时间线
+
+---
+
+> 评估结论注记（2026-09-26，`update-monitor-overview-submission-projection` 归档）：本基线
+> **未合入**该提案的任何 Requirement——其 spec-delta（总览逐人答卷投影 + 至多一次窄快照读题数）
+> 按**未采用草案**随目录归档。要点：在专用隔离环境（H2 内存库 + Redis db15，非共享 dev、不启
+> Docker）对旧实现同负载三轮实测，**占比最高的可控因素是逐人 Redis 草稿 GET**（120 次/请求，
+> passMedian 30.9/33.4/42.2ms，≈整条请求延迟 `e2e` 并发1 mean 30.4/31.9/33.0ms），答卷长字段
+> （`paper_json`+`answers`）读取增量仅 `longFieldDelta` 0.355/0.592/0.829ms＝1.17%/1.86%/2.52%，
+> 且增量自身轮间波动与绝对值同量级（small 变体甚至一轮为负）＝噪声；投影+一次窄读约 1.5–1.7ms，
+> 相对该口径无净收益。按门禁判据（长字段非主导、预期改善不可分辨）裁定 **NO-GO 并停止实现**，
+> `src/main` 零改动。后续独立方向＝草稿批读（同轮一次 multiGet 取回 120 键 p50≈0.45ms 对照），
+> 须另立变更、按 performance 基线「先归因、一次只改一类」走。数字与依据见
+> `spec/changes/archive/update-monitor-overview-submission-projection/tasks.json` 阶段 2 evidence；
+> 隔离 H2+MockMvc 结果不能外推生产 MySQL/Tomcat，不构成监考 P99 结论。
