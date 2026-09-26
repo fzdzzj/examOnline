@@ -129,6 +129,48 @@ TAG=dryrun SUBMIT_THREADS=20 SUBMIT_RAMP=2 LOGIN_RAMP=2 bash loadtest/run-loadte
 
 可覆盖的变量都在 `run-loadtest.sh` 顶部「可用环境变量」段落里。
 
+### 3.3 双宿主：把压测进程与被测进程分开（isolate-submit-load-generator）
+
+默认跑法把 JMeter 与被测应用放在同一台机器：**那只能得到「未分离」的历史记录**，不能当作分离后的
+达标/未达标结论（同机时 JMeter 的 5000 线程与应用抢同一批 CPU/磁盘，报告 §7.2 证据 B 的
+「整机 1.00、应用仅 0.43 核」就是这个成因）。
+
+分离后的角色分工（**只有这一种分工**）：
+
+| 角色 | 宿主 | 跑什么 |
+| --- | --- | --- |
+| 控制端（SUT） | 被测应用所在宿主 | 应用实例、Docker 栈（MySQL/RabbitMQ）、`run-arm.sh`、采样器（`/actuator/prometheus`、MySQL、RabbitMQ 队列）、复位/清理 |
+| 负载端（loadgen） | **另一台物理宿主** | 只跑 JMeter（JMX 由控制端推送过去）；临时端口/TIME_WAIT 也在这一侧 |
+
+`.jmx` 的请求目标由 `run-loadtest.sh` 的 `-Jhost/-Jport` 决定，默认从 `APP_BASE_URL` 推导
+（历史版本曾硬编码 `127.0.0.1:8080`）；**只改 `APP_BASE_URL` 只是把目标地址改了，并没有完成分离**——
+分离还要求 JMeter 进程确实跑在另一台宿主上，故必须设 `JMETER_SSH`。
+
+```bash
+# 在 SUT 宿主的仓库根执行；凭据只从安全环境变量或人工配置取得，不写进仓库/日志/回报。
+export JMETER_SSH=loadgen-user@loadgen-host     # 触发负载端执行（缺 ssh/scp 即 fail-closed）
+export JMETER_REMOTE_HOME=/opt/apache-jmeter    # 负载宿主上的 JMeter 目录（POSIX 路径）
+export LOADGEN_DIR=/tmp/loadtest                # 负载宿主上的暂存目录（可选，默认 /tmp/loadtest-<TAG>）
+export LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1    # 人工核实两台宿主不共享物理 CPU/磁盘后声明（必需）
+ARM=default ROUNDS=3 bash loadtest/run-arm.sh
+```
+
+**如何确认两边不在同一宿主**（不是只看主机名）：
+
+1. `run-loadtest.sh` 打印两端 `hostname` 并要求**不同**，相同即拒绝启动；
+2. 但「不同 hostname / 容器名 / VM 名」**不足以**证明不抢同一物理宿主资源，故还要求
+   `LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1` 的人工声明；未声明即 fail-closed，不启动压测；
+3. 运行时以证据核实：控制端 `sample-*.csv` 的 `sys_cpu` 与负载端 JMeter 的 CPU 分别记录，
+   两者不应再把同一台机器的核打满；网络拓扑改变会影响延迟，**不得把前后差值全归因于应用变快**。
+
+**结果回收是可验证的**：JMeter 的逐笔 CSV / token CSV / 日志由 `scp` 从负载端拉回控制端的
+`target/loadtest/`，`run-loadtest.sh` 会核验逐笔 CSV 存在且非空；拉回失败/空文件即判本轮失败
+（非零退出），不会退回同机、也不会静默沿用旧文件。
+
+**失败传播**：JMeter 非零退出、轮前/轮后队列未归零、等积压归零超时、远端产物未回收——任一条
+都会让该轮以非零退出；`run-arm.sh` 据此把该轮排除出臂级中位数，并在整臂有失败轮时以非零退出。
+即：**失败轮不会再被报成成功**。
+
 ## 4. 场景设计与「交卷限流」的关系（重要）
 
 交卷接口带 `@RateLimit(qps = 500, capacity = 2000, key = "submit")`，而 `RateLimitInterceptor`
@@ -263,4 +305,6 @@ N 笔请求在 t 秒内到达时的放行上限 = `capacity + qps × t` = `2000 
 | `run-arm.sh` | `ARM`（必填）/ `ROUNDS` / `WARMUP_THREADS` / `WARMUP_SUBMIT_RAMP` / `WARMUP_LOGIN_RAMP` | `3` / `500` / `3` / `5` | 一臂 N 轮，每轮前预热 |
 | `run-loadtest.sh` | `TAG` / `SUBMIT_THREADS` / `SUBMIT_RAMP` / `LOGIN_RAMP` / `SAMPLE_INTERVAL_S` / `ENV_SAMPLE_INTERVAL_S` / `TIME_WAIT_MAX` / `TIME_WAIT_FLOOR_ACCEPT` / `TIME_WAIT_TIMEOUT_S` / `SKIP_TIME_WAIT_WAIT` / `DRAIN_TIMEOUT_S` / `RABBITMQ_USER` / `RABBITMQ_PASS` | `run` / `5000` / `10` / `30` / `0.25` / `1` / `1500` / `3000` / `300` / `0` / `180` / `exam` / `exam123` | 单轮采集；`SKIP_TIME_WAIT_WAIT=1` 只许用于调试 |
 | 全部 | `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `MYSQL_BIN` / `JMETER_HOME` / `JMETER_HEAP` / `PYTHON_BIN` / `APP_BASE_URL` | 见脚本 | 环境适配 |
+| 全部（目标地址） | `SUT_HOST` / `SUT_PORT` | 从 `APP_BASE_URL` 推导 | JMeter 的**实际请求目标**（不再硬编码 `127.0.0.1:8080`），见 §3.3 |
+| 双宿主（见 §3.3） | `JMETER_SSH` / `JMETER_REMOTE_HOME` / `JAVA_HOME_FOR_JMETER_REMOTE` / `JMETER_REMOTE_HEAP` / `LOADGEN_DIR` / `LOADGEN_PHYSICAL_ISOLATION_ATTESTED` | 空 / 空 / 空 / 同 `JMETER_HEAP` / `/tmp/loadtest-<TAG>` / `0` | 设 `JMETER_SSH` 才启用负载端执行；分离校验或物理隔离声明不通过即 fail-closed |
 

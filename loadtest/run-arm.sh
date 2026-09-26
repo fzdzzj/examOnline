@@ -14,6 +14,15 @@
 #   ARM=tuned SERVER_TOMCAT_THREADS_MAX=400 ROUNDS=3 bash loadtest/run-arm.sh
 #   ARM=tuned2 SERVER_TOMCAT_THREADS_MAX=400 DB_POOL_MAX=40 ROUNDS=3 bash loadtest/run-arm.sh
 #
+# 双宿主（isolate-submit-load-generator）：本脚本必须跑在 **SUT 宿主**（它要停/启应用、造数、复位），
+#   JMeter 交给负载宿主。用法（隔离与凭据由人工/安全环境变量提供，不写进仓库）：
+#   JMETER_SSH=user@loadgen JMETER_REMOTE_HOME=/opt/apache-jmeter \
+#     LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1 ARM=default ROUNDS=3 bash loadtest/run-arm.sh
+#   不设 JMETER_SSH = 同机历史跑法：该臂只能当「未分离」的历史记录，不得当作分离后的容量结论。
+#
+# 失败传播：任一硬失败（JMeter 非零退出 / 队列未归零 / 排空超时 / 产物未回收）的轮会被本脚本
+#   排除出臂级中位数；只要本臂有失败轮，脚本以非零退出，不允许把失败轮报成成功。
+#
 # 产物：target/loadtest/ 下 <ARM>-r1..rN（正式轮）、<ARM>-w1..wN（预热轮）各一套；
 #       臂级汇总在脚本末尾用 compare-runs.py 打印。
 # =============================================================
@@ -74,6 +83,14 @@ assert_queues_zero() {
   echo "############################################################"
 } | tee -a "$ARM_LOG"
 
+# 分离状态必须显式出现在臂日志里（同机采样只能当历史记录，不得当作分离后的结论）。
+if [ -z "${JMETER_SSH:-}" ]; then
+  echo "!! 未设置 JMETER_SSH = 压测进程与被测进程同机（未分离）：本臂只能作为历史记录，不得当作分离后的容量结论" | tee -a "$ARM_LOG"
+fi
+{ echo "# APP_BASE_URL=${APP_BASE_URL:-(默认 http://127.0.0.1:8080)}"; \
+  echo "# JMETER_SSH=${JMETER_SSH:-<未设置=同机，未分离>}  JMETER_REMOTE_HOME=${JMETER_REMOTE_HOME:-(不适用)}"; \
+  echo "# 物理隔离声明 LOADGEN_PHYSICAL_ISOLATION_ATTESTED=${LOADGEN_PHYSICAL_ISOLATION_ATTESTED:-0}"; } | tee -a "$ARM_LOG"
+
 echo "=== [臂 $ARM] 重启实例（容量参数是启动期读取的） ==="
 bash "$SCRIPT_DIR/stop-app.sh" 2>&1 | tee -a "$ARM_LOG"
 bash "$SCRIPT_DIR/start-app.sh" 2>&1 | tee -a "$ARM_LOG"
@@ -81,37 +98,82 @@ bash "$SCRIPT_DIR/start-app.sh" 2>&1 | tee -a "$ARM_LOG"
 echo "=== [臂 $ARM] 造数（幂等；已存在则秒回） ==="
 bash "$SCRIPT_DIR/prepare-data.sh" 2>&1 | tail -5 | tee -a "$ARM_LOG"
 
+# 逐轮成败记录：失败轮一律排除出臂级中位数（失败轮不参与 compare-runs.py 的判定）。
+OK_ROUNDS=()
+FAILED_ROUNDS=()
+
 for i in $(seq 1 "$ROUNDS"); do
   echo
   echo "================ [臂 $ARM] 第 $i/$ROUNDS 轮 ================" | tee -a "$ARM_LOG"
+  ROUND_TAG="$ARM-r$i"
+  round_failed=0
 
-  assert_queues_zero || true
+  # 轮前队列必须归零，否则上一轮积压会污染本轮落库时效 ⇒ 归零失败即本轮作废，不再往下跑。
+  if ! assert_queues_zero; then
+    echo "      !! 轮前队列未归零，本轮作废（不得作为容量结论）" | tee -a "$ARM_LOG"
+    FAILED_ROUNDS+=("$ROUND_TAG")
+    continue
+  fi
   reset_data
 
   echo "--- 预热轮（G4：冷 JVM 的 P99 比热 JVM 高 68%，不预热就等于在量 JIT）---"
+  set +e
   TAG="$ARM-w$i" SUBMIT_THREADS="$WARMUP_THREADS" SUBMIT_RAMP="$WARMUP_SUBMIT_RAMP" \
     LOGIN_RAMP="$WARMUP_LOGIN_RAMP" \
     bash "$SCRIPT_DIR/run-loadtest.sh" 2>&1 | tee -a "$ARM_LOG" \
-    | grep -E '===|P99|失败|已排空|已到本机基线|超时|积压归零' || true
+    | grep -E '===|P99|失败|已排空|已到本机基线|超时|积压归零|本轮判定'
+  warm_rc=${PIPESTATUS[0]}
+  set -e
+  # 预热失败 ⇒ 正式轮会半冷（§8.1：半冷轮不得悄悄混入容量结论），本轮作废。
+  if [ "$warm_rc" -ne 0 ]; then
+    echo "      !! 预热轮 $ARM-w$i 失败（exit=$warm_rc）——正式轮会半冷，本轮作废" | tee -a "$ARM_LOG"
+    round_failed=1
+  fi
 
   echo "--- 预热后复位（预热轮的 500 笔会把答卷推到 status=2）---"
-  assert_queues_zero || true
+  if ! assert_queues_zero; then round_failed=1; fi
   reset_data
 
-  echo "--- 正式轮 TAG=$ARM-r$i ---"
-  TAG="$ARM-r$i" bash "$SCRIPT_DIR/run-loadtest.sh" 2>&1 | tee -a "$ARM_LOG" \
-    | grep -E '===|P99|平均延迟|失败|到达窗口|已排空|已到本机基线|超时|积压归零|丢单|persist_tail' || true
+  echo "--- 正式轮 TAG=$ROUND_TAG ---"
+  set +e
+  TAG="$ROUND_TAG" bash "$SCRIPT_DIR/run-loadtest.sh" 2>&1 | tee -a "$ARM_LOG" \
+    | grep -E '===|P99|平均延迟|失败|到达窗口|已排空|已到本机基线|超时|积压归零|丢单|persist_tail|本轮判定'
+  off_rc=${PIPESTATUS[0]}
+  set -e
+  if [ "$off_rc" -ne 0 ]; then
+    echo "      !! 正式轮 $ROUND_TAG 失败（exit=$off_rc）——不进入臂级中位数" | tee -a "$ARM_LOG"
+    round_failed=1
+  fi
 
-  echo "--- 该轮原始产物已落盘：target/loadtest/*-$ARM-r$i.* ---"
+  if [ "$round_failed" -eq 0 ]; then
+    OK_ROUNDS+=("$ROUND_TAG")
+    echo "--- 该轮原始产物已落盘：target/loadtest/*-$ROUND_TAG.* ---"
+  else
+    FAILED_ROUNDS+=("$ROUND_TAG")
+  fi
 done
 
 echo
 echo "=== [臂 $ARM] 臂级汇总（中位数判定） ===" | tee -a "$ARM_LOG"
+# 只有成功轮进入中位数；失败轮的 tag 不传给 compare-runs.py。
 TAGS=""
-for i in $(seq 1 "$ROUNDS"); do TAGS="$TAGS,$ARM-r$i"; done
-TAGS="${TAGS#,}"
-"$PYTHON_BIN" "$WT_WIN/loadtest/compare-runs.py" "$ARM=$TAGS" 2>&1 | tee -a "$ARM_LOG"
+if [ "${#OK_ROUNDS[@]}" -gt 0 ]; then
+  TAGS="$(IFS=,; echo "${OK_ROUNDS[*]}")"
+fi
+if [ "${#FAILED_ROUNDS[@]}" -gt 0 ]; then
+  echo "!! 本臂 ${#FAILED_ROUNDS[@]} 轮失败：${FAILED_ROUNDS[*]} —— 已排除，不参与中位数，也不得报成达标/未达标" | tee -a "$ARM_LOG"
+fi
+if [ -n "$TAGS" ]; then
+  "$PYTHON_BIN" "$WT_WIN/loadtest/compare-runs.py" "$ARM=$TAGS" 2>&1 | tee -a "$ARM_LOG"
+else
+  echo "!! 本臂无成功轮，不能给臂级中位数（不得报成达标/未达标）" | tee -a "$ARM_LOG"
+fi
 
 echo
+if [ "${#FAILED_ROUNDS[@]}" -gt 0 ] || [ -z "$TAGS" ]; then
+  echo "!! 臂 $ARM 判定：失败 —— 有轮未通过硬失败传播检查，本臂不得作为容量结论" | tee -a "$ARM_LOG"
+  echo "逐轮明细日志：$ARM_LOG"
+  exit 1
+fi
 echo "臂 $ARM 完成：$(date '+%Y-%m-%d %H:%M:%S %z')" | tee -a "$ARM_LOG"
 echo "逐轮明细日志：$ARM_LOG"

@@ -43,6 +43,16 @@ set -euo pipefail
 
 # ---------- 可用环境变量 ----------
 APP_BASE_URL="${APP_BASE_URL:-http://127.0.0.1:8080}"
+# JMeter 的**实际请求目标**（isolate-submit-load-generator）：从 APP_BASE_URL 推导，SUT_HOST/SUT_PORT 可显式覆盖。
+# 历史版本在 [4/8] 里硬编码 `-Jhost=127.0.0.1 -Jport=8080`，于是「只改 APP_BASE_URL」并不能把压测目标指向
+# 另一台宿主——这正是本变更要修的缺陷：JMeter 的目标必须与本脚本第 1/3/5 步真正访问的地址同源。
+_sut_authority="${APP_BASE_URL#*://}"; _sut_authority="${_sut_authority%%/*}"
+case "$_sut_authority" in
+  *:*) _sut_host_default="${_sut_authority%%:*}"; _sut_port_default="${_sut_authority##*:}";;
+  *)   _sut_host_default="$_sut_authority";       _sut_port_default="80";;
+esac
+SUT_HOST="${SUT_HOST:-$_sut_host_default}"
+SUT_PORT="${SUT_PORT:-$_sut_port_default}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-13316}"
 DB_NAME="${DB_NAME:-exam_online}"
@@ -79,6 +89,20 @@ JAVA_HOME_FOR_JMETER="${JAVA_HOME_FOR_JMETER:-D:\\develop\\jdk177}"
 # 本机 16G 物理内存还要同时容纳应用 + Docker 栈，故抬到 2g 而不是更高。
 JMETER_HEAP="${JMETER_HEAP:--Xms1g -Xmx2g -XX:MaxMetaspaceSize=256m}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
+# ---- 双宿主：把 JMeter 放到负载宿主上运行（isolate-submit-load-generator）----
+# 不设 JMETER_SSH = 同机历史跑法：该轮只能当「未分离」的历史记录，不得当作分离后的达标/未达标结论。
+# 设 JMETER_SSH=user@loadgen 后：JMeter 在负载宿主运行，本脚本（控制端）留在 SUT 侧跑采样器；
+#   轮前 TIME_WAIT 排空改查负载宿主的 netstat（临时端口耗尽发生在压测机一侧）；
+#   JMX 推到负载宿主，原始产物（逐笔 CSV / token CSV / 日志）拉回 $OUT 并核验非空。
+# 负载宿主按 POSIX 约定：LOADGEN_DIR 用 POSIX 路径，需有 ssh/scp/netstat 与 JMeter。
+JMETER_SSH="${JMETER_SSH:-}"
+LOADGEN_DIR="${LOADGEN_DIR:-/tmp/loadtest-$TAG}"
+JMETER_REMOTE_HOME="${JMETER_REMOTE_HOME:-}"
+JAVA_HOME_FOR_JMETER_REMOTE="${JAVA_HOME_FOR_JMETER_REMOTE:-}"
+JMETER_REMOTE_HEAP="${JMETER_REMOTE_HEAP:-$JMETER_HEAP}"
+# 物理隔离声明（人工）：不同 hostname/容器/VM 名**不足以**证明不抢同一物理宿主 CPU/磁盘，故要求显式声明；
+# 未声明即 fail-closed（见 assert_separated_hosts）。
+LOADGEN_PHYSICAL_ISOLATION_ATTESTED="${LOADGEN_PHYSICAL_ISOLATION_ATTESTED:-0}"
 # --------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -100,6 +124,65 @@ PROM_AFTER="$OUT/prom-after-$TAG.txt"
 # 时间戳走 bash 内建 EPOCHREALTIME（0 次 fork）。**不要换成 `python -c` 或 `date`**：
 # 本机实测每次进程 spawn ~0.4s，采样循环里一个 now_ms 就足以把采样周期从 0.5s 拉到 1s+。
 now_ms() { local t="${EPOCHREALTIME/./}"; echo "${t:0:13}"; }
+
+# ---- 失败传播（isolate-submit-load-generator）----
+# 硬失败（JMeter 非零退出 / 队列未归零 / 排空超时 / 远端产物没拉回来）必须让本轮以非零退出。
+# 否则 run-arm.sh 的管道与 `|| true` 会把失败轮当成成功轮吸进臂级中位数，报成「达标/未达标」。
+ROUND_FAILED=0
+fail_round() { echo "!!! 本轮失败：$*" >&2; ROUND_FAILED=1; }
+
+# ---- 双宿主：宿主身份与物理隔离（fail-closed）----
+# 不同 hostname/容器/VM 名本身不足以证明不抢同一物理宿主资源，故除了「两端 hostname 必须不同」，
+# 还要求人工显式声明物理隔离；任一条不满足即拒绝启动压测。
+assert_separated_hosts() {
+  command -v ssh >/dev/null 2>&1 || { echo "出错：JMETER_SSH 已设置但本机无 ssh"; return 1; }
+  local local_host remote_host
+  local_host="$(hostname 2>/dev/null || echo unknown)"
+  remote_host="$(ssh "$JMETER_SSH" 'hostname 2>/dev/null || echo unknown' 2>/dev/null | tr -d '\r\n')"
+  echo "      控制端(SUT) hostname=$local_host   负载端 hostname=${remote_host:-<取不到，ssh 不通？>}"
+  [ -n "$remote_host" ] || return 1
+  if [ "$local_host" = "$remote_host" ]; then
+    echo "      拒绝：两端 hostname 相同（$local_host）——这仍是同机/同命名空间"
+    return 1
+  fi
+  if [ "$LOADGEN_PHYSICAL_ISOLATION_ATTESTED" != "1" ]; then
+    echo "      拒绝：未声明物理隔离。不同 hostname/容器/VM 名不足以证明不抢同一物理宿主资源；"
+    echo "            人工核实两台宿主不共享物理 CPU/磁盘后，设 LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1 再跑。"
+    return 1
+  fi
+  echo "      物理隔离：已由 LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1 人工声明"
+  return 0
+}
+
+# ---- 双宿主：在负载宿主上跑 JMeter，并把原始产物拉回并核验 ----
+# 为什么用 ssh/scp 而不是共享盘：编排必须能证明「JMeter 真的在另一台宿主跑、结果真的传回来了」，
+# 共享盘/同一目录会把「其实没传」藏起来。缺 ssh/scp 一律 fail-closed，不退回同机。
+run_jmeter_remote() {
+  command -v scp >/dev/null 2>&1 || { echo "出错：JMETER_SSH 已设置但本机无 scp"; return 1; }
+  [ -n "$JMETER_REMOTE_HOME" ] || { echo "出错：JMETER_SSH 模式下必须给 JMETER_REMOTE_HOME（负载宿主上的 JMeter 目录）"; return 1; }
+  local remote_tokens remote_results remote_log remote_jmx remote_cmd rc
+  remote_tokens="$LOADGEN_DIR/tokens-$TAG.csv"
+  remote_results="$LOADGEN_DIR/submit-results-$TAG.csv"
+  remote_log="$LOADGEN_DIR/jmeter-stdout-$TAG.log"
+  remote_jmx="$LOADGEN_DIR/submit-5000.jmx"
+  ssh "$JMETER_SSH" "mkdir -p '$LOADGEN_DIR' && rm -f '$remote_tokens' '$remote_results' '$remote_log'" || return 1
+  scp -q "$SCRIPT_DIR/jmeter/submit-5000.jmx" "$JMETER_SSH:$remote_jmx" || return 1
+  remote_cmd="HEAP='$JMETER_REMOTE_HEAP' JAVA_HOME='$JAVA_HOME_FOR_JMETER_REMOTE' bash '$JMETER_REMOTE_HOME/bin/jmeter' -n -t '$remote_jmx' -Jhost='$SUT_HOST' -Jport='$SUT_PORT' -Jexam.id='$EXAM_ID' -Jsubmit.threads='$SUBMIT_THREADS' -Jsubmit.ramp='$SUBMIT_RAMP' -Jlogin.threads='$SUBMIT_THREADS' -Jlogin.ramp='$LOGIN_RAMP' -Jtokens.file='$remote_tokens' -Jresults.file='$remote_results' -Jjmeter.save.saveservice.print_field_names=true > '$remote_log' 2>&1"
+  echo "      负载宿主执行：ssh $JMETER_SSH ... jmeter -Jhost=$SUT_HOST -Jport=$SUT_PORT"
+  ssh "$JMETER_SSH" "$remote_cmd"; rc=$?
+  # 无论成败都把远端原始产物拉回（失败轮的原始数据同样要留档，只是不得进入判定）
+  scp -q "$JMETER_SSH:$remote_results" "$RESULTS" 2>/dev/null || echo "警告：远端 $remote_results 未拉回"
+  scp -q "$JMETER_SSH:$remote_tokens"  "$TOKENS"  2>/dev/null || true
+  scp -q "$JMETER_SSH:$remote_log"     "$JM_LOG"  2>/dev/null || true
+  [ "$rc" -ne 0 ] && return "$rc"
+  # 结果回收的可验证判据：逐笔 CSV 必须存在且非空（拉回失败/空文件 = 没有可判定的证据）
+  if [ ! -s "$RESULTS" ]; then
+    echo "出错：远端结果未成功回收（$RESULTS 缺失或为空）"
+    return 1
+  fi
+  echo "      已回收 $(wc -l < "$RESULTS") 行逐笔结果 → $RESULTS"
+  return 0
+}
 
 run_sql() {
   # --default-character-set=utf8mb4：本机客户端默认 gbk，与 UTF-8 库/脚本混用会乱码
@@ -132,8 +215,14 @@ parse_app_metrics() {
 
 tw_count() {
   local n
-  n="$(netstat -an 2>/dev/null | grep -c 'TIME_WAIT' || true)"   # grep -c 无匹配时打印 0 但退出码 1
-  echo "${n:-0}"
+  if [ -n "$JMETER_SSH" ]; then
+    # 双宿主：临时端口耗尽发生在**压测机**一侧，须查负载宿主的 TIME_WAIT，而不是控制端本机。
+    n="$(ssh "$JMETER_SSH" "netstat -an 2>/dev/null | grep -c TIME_WAIT || true" 2>/dev/null | tr -d '\r\n' || true)"
+  else
+    n="$(netstat -an 2>/dev/null | grep -c 'TIME_WAIT' || true)"   # grep -c 无匹配时打印 0 但退出码 1
+  fi
+  case "$n" in ''|*[!0-9]*) n=0;; esac
+  echo "$n"
 }
 
 echo "=== [1/8] 前置检查 ==="
@@ -145,6 +234,18 @@ EXAM_ID="$(run_sql -e "SELECT id FROM exams WHERE title='$EXAM_TITLE';" | tr -d 
 [ -n "$EXAM_ID" ] || { echo "出错：未找到考试 '$EXAM_TITLE'——请先跑 prepare-data.sh"; exit 1; }
 PENDING="$(run_sql -e "SELECT COUNT(*) FROM exam_submissions WHERE exam_id=$EXAM_ID AND status=1;")"
 echo "      exam_id=$EXAM_ID 进行中答卷=$PENDING  JMeter=$JMETER_HOME"
+echo "      JMeter 目标=$SUT_HOST:$SUT_PORT  负载端=${JMETER_SSH:-<同机，未分离>}"
+
+# 双宿主前置：JMETER_SSH 已设置时，必须通过「宿主不同 + 物理隔离已声明」的 fail-closed 校验才允许启动压测；
+# 未设置时如实标注「未分离」——该轮只能当历史记录，不得当作分离后的达标/未达标结论。
+if [ -n "$JMETER_SSH" ]; then
+  if ! assert_separated_hosts; then
+    echo "出错：双宿主前置未通过（见上），拒绝启动压测"
+    exit 1
+  fi
+else
+  echo "      注意：未设置 JMETER_SSH = 同机跑法，本轮只能作为「未分离」的历史记录，不得当作分离后的容量结论"
+fi
 
 # 先删旧文件再让 JMeter 新建：JMeter 只在「文件不存在」时写字段名表头，
 # 用 `: >` 截断成 0 字节的空文件它不写表头，导致结果 CSV 无表头、
@@ -259,18 +360,25 @@ stop_poller() {
 }
 trap stop_poller EXIT
 
-echo "=== [4/8] 运行 JMeter（非 GUI） ==="
+echo "=== [4/8] 运行 JMeter（非 GUI；目标 $SUT_HOST:$SUT_PORT） ==="
 T0="$(now_ms)"
-HEAP="$JMETER_HEAP" JAVA_HOME="$JAVA_HOME_FOR_JMETER" bash "$JMETER_HOME/bin/jmeter" -n \
-  -t "$WT_WIN/loadtest/jmeter/submit-5000.jmx" \
-  -Jhost=127.0.0.1 -Jport=8080 \
-  -Jexam.id="$EXAM_ID" \
-  -Jsubmit.threads="$SUBMIT_THREADS" -Jsubmit.ramp="$SUBMIT_RAMP" \
-  -Jlogin.threads="$SUBMIT_THREADS" -Jlogin.ramp="$LOGIN_RAMP" \
-  -Jtokens.file="$WT_WIN/target/loadtest/tokens-$TAG.csv" \
-  -Jresults.file="$WT_WIN/target/loadtest/submit-results-$TAG.csv" \
-  -Jjmeter.save.saveservice.print_field_names=true \
-  > "$JM_LOG" 2>&1 || echo "警告：JMeter 退出码非 0（见 $JM_LOG）"
+JM_EXIT=0
+if [ -n "$JMETER_SSH" ]; then
+  run_jmeter_remote || JM_EXIT=$?
+else
+  HEAP="$JMETER_HEAP" JAVA_HOME="$JAVA_HOME_FOR_JMETER" bash "$JMETER_HOME/bin/jmeter" -n \
+    -t "$WT_WIN/loadtest/jmeter/submit-5000.jmx" \
+    -Jhost="$SUT_HOST" -Jport="$SUT_PORT" \
+    -Jexam.id="$EXAM_ID" \
+    -Jsubmit.threads="$SUBMIT_THREADS" -Jsubmit.ramp="$SUBMIT_RAMP" \
+    -Jlogin.threads="$SUBMIT_THREADS" -Jlogin.ramp="$LOGIN_RAMP" \
+    -Jtokens.file="$WT_WIN/target/loadtest/tokens-$TAG.csv" \
+    -Jresults.file="$WT_WIN/target/loadtest/submit-results-$TAG.csv" \
+    -Jjmeter.save.saveservice.print_field_names=true \
+    > "$JM_LOG" 2>&1 || JM_EXIT=$?
+fi
+# JMeter 非零退出 = 本轮不可信：必须让本轮以非零退出，不得被 run-arm.sh 的管道吞掉后进入臂级中位数。
+[ "$JM_EXIT" -eq 0 ] || fail_round "JMeter 退出码 $JM_EXIT（见 $JM_LOG）"
 T1="$(now_ms)"
 echo "      提交阶段墙钟窗口: $T0 → $T1 （$(python -c "print(f'{($T1-$T0)/1000:.1f}')")s）"
 
@@ -285,9 +393,13 @@ while :; do
   queue_depth
   miss="$(run_sql -e "SELECT COUNT(*) FROM exam_submissions WHERE exam_id=$EXAM_ID AND status=2 AND answers IS NULL;" | tr -d '\r\n')"
   [ "${q_ready:-1}" = "0" ] && [ "${q_unack:-1}" = "0" ] && [ "${miss:-1}" = "0" ] && break
-  [ "$(now_ms)" -ge "$DEADLINE" ] && { echo "      超时（${DRAIN_TIMEOUT_S}s）：ready=$q_ready unack=$q_unack 未落库=$miss"; break; }
+  [ "$(now_ms)" -ge "$DEADLINE" ] && { fail_round "等积压归零超时（${DRAIN_TIMEOUT_S}s）：ready=$q_ready unack=$q_unack 未落库=$miss"; break; }
   sleep 1
 done
+# 排空失败（超时仍非零）= 落库时效被前一轮/本轮积压污染，本轮不得进入臂级中位数。
+if [ "${q_ready:-1}" != "0" ] || [ "${q_unack:-1}" != "0" ] || [ "${miss:-1}" != "0" ]; then
+  fail_round "积压未归零：ready=$q_ready unack=$q_unack 未落库=$miss"
+fi
 T2="$(now_ms)"
 echo "      积压归零: $T2 （提交阶段结束后 $(python -c "print(f'{($T2-$T1)/1000:.1f}')")s）"
 stop_poller
@@ -321,3 +433,13 @@ echo "  $PROM_BEFORE"
 echo "  $PROM_AFTER"
 echo "  $OUT/metrics-$TAG.txt"
 echo "  $OUT/html-$TAG/index.html"
+
+# 失败传播的最终出口：只要本轮有任何硬失败，就以非零退出——run-arm.sh 据此把该轮排除出臂级中位数，
+# 「失败轮被报成成功」在脚本层面不再可能。
+if [ "$ROUND_FAILED" != "0" ]; then
+  echo
+  echo "!!! 本轮判定：失败 —— 不得作为容量结论，也不得进入臂级中位数（原因见上文 !!! 行）"
+  exit 1
+fi
+echo
+echo "本轮判定：成功（exit 0）"
