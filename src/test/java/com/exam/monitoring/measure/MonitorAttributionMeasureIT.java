@@ -32,6 +32,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +47,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +55,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -69,9 +73,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * <p><b>一次运行 = 一轮</b>（同一 label 下逐轮跑三次，用于比较轮间波动）。同负载做两件事：
  * <ol>
  *   <li><b>请求内分账</b>：分别单独计时「主答卷取数（全列）」「主答卷取数（仅短列投影）」「学生姓名批查」
- *       「窄读一份个人快照」「逐人草稿 GET（N 次 Redis 往返）」「草稿批量 MGET（对照方向）」
+ *       「窄读一份个人快照」「逐人草稿 GET（N 次 Redis 往返）」「仅原始草稿 MGET」
+ *       「完整草稿批取（MGET + 逐值解析 + 学生关联，并与逐人 get 断言等价）」
  *       「在线状态 MGET」「异常聚合 SQL」，以及 MockMvc 端到端 {@code GET /api/exams/{id}/monitor/overview}
- *       （并发 1 与 8）的 p50/p95/p99/mean/吞吐与响应字节；</li>
+ *       （并发 1 与 8）的 p50/p95/p99/mean/吞吐、响应字节、堆峰值与 Redis 命令数；</li>
  *   <li><b>JFR 逐帧归因</b>：{@code jdk.ExecutionSample} 采样中栈内含 MonitorService / ExamDraftService /
  *       OnlinePresenceService / Redis 客户端 / H2 / MyBatis / Jackson 帧的比例 + 栈顶帧直方图，
  *       以及 {@code jdk.CPULoad} / {@code jdk.GCPhasePause} 汇总。</li>
@@ -171,7 +176,12 @@ class MonitorAttributionMeasureIT {
             Map.entry("namesSql", "resolveNames 的 userMapper.selectBatchIds(N 个学生) 逐次耗时"),
             Map.entry("narrowSnapshot", "只读一份个人快照的窄查询（SELECT paper_json ... LIMIT 1）逐次耗时，即拟实施新增的至多一次取数"),
             Map.entry("draftGetEach", "逐人草稿 GET：全部进行中学生各调一次 draftService.get（含 Redis 往返 + JSON 解析）每轮总耗时与单次分位"),
-            Map.entry("draftMGetInfo", "对照方向（本轮不实施）：一次 multiGet 取回全部进行中学生的草稿键耗时"),
+            Map.entry("draftMGetInfo", "仅原始 multiGet 取回全部进行中学生的草稿键耗时（不解析，只证明网络取数下限）"),
+            Map.entry("draftBatchFull", "完整批取＝一次 multiGet + 逐值按 draftService.get 同口径解析 + 按学生下标关联，"
+                    + "并逐学生与单份 get 断言结果等价（version/answers/marked/savedTime 全等），每轮总耗时与单次解析分位"),
+            Map.entry("draftBatchVsGetEachRatio", "同一轮内 draftGetEach 与 draftBatchFull 的 passMedian 比值（同工具同数据同时刻，可相除）"),
+            Map.entry("redisCalls", "Redis INFO commandstats 前后差值，量出「逐人 get 一轮＝N 次 GET 命令」与「批取一轮＝1 次 MGET 命令」"
+                    + "以及端到端每请求命令数（server 级全局计数，需确认无其它客户端并发写同一实例）"),
             Map.entry("onlineMGet", "OnlinePresenceService.onlineOf 的一次 MGET 耗时（已批读，不属本提案因素）"),
             Map.entry("abnormalAgg", "ExamBehaviorLogMapper.selectAbnormalStats 的一条 GROUP BY 聚合耗时"),
             Map.entry("e2e", "MockMvc GET /api/exams/{id}/monitor/overview 请求墙钟（含安全过滤链/JSON 序列化/全部组件）"),
@@ -323,6 +333,7 @@ class MonitorAttributionMeasureIT {
         Map<String, Object> narrow = measureNarrowSnapshot(examId);
         Map<String, Object> draftGet = measureDraftGetEach(examId, data.inProgressIds());
         Map<String, Object> draftMGet = measureDraftMGet(examId, data.inProgressIds());
+        Map<String, Object> draftBatch = measureDraftBatchFull(examId, data.inProgressIds());
         Map<String, Object> onlineMGet = measureOnlineMGet(examId, data.inProgressIds());
         Map<String, Object> abnormalAgg = measureAbnormalAgg(examId);
 
@@ -332,8 +343,15 @@ class MonitorAttributionMeasureIT {
         v.put("narrowSnapshot", narrow);
         v.put("draftGetEach", draftGet);
         v.put("draftMGetInfo", draftMGet);
+        v.put("draftBatchFull", draftBatch);
         v.put("onlineMGet", onlineMGet);
         v.put("abnormalAgg", abnormalAgg);
+        v.put("draftBatchVsGetEachRatio", Map.of(
+                "denominator", "同一轮 draftGetEach.passMedianMs（同工具同数据同时刻，与批取臂可相除）",
+                "getEachPassMedianMs", draftGet.get("passMedianMs"),
+                "batchPassMedianMs", draftBatch.get("passMedianMs"),
+                "ratioGetEachOverBatch", round3(ratioNumerator(draftGet.get("passMedianMs"), draftBatch.get("passMedianMs"))),
+                "ratioBatchOverGetEach", round3(ratioNumerator(draftBatch.get("passMedianMs"), draftGet.get("passMedianMs")))));
 
         List<Map<String, Object>> e2e = new ArrayList<>();
         for (int c : concurrencies) {
@@ -374,6 +392,9 @@ class MonitorAttributionMeasureIT {
             partition.put("longFieldSharePctOfE2eMean", round3(pctOf(longFieldDelta, e2eMean)));
             partition.put("draftGetEachMs", round3(draftPassMedian));
             partition.put("draftSharePctOfE2eMean", round3(pctOf(draftPassMedian, e2eMean)));
+            partition.put("draftBatchFullMs", draftBatch.get("passMedianMs"));
+            partition.put("draftBatchSharePctOfE2eMean", round3(pctOf(
+                    ((Number) draftBatch.get("passMedianMs")).doubleValue(), e2eMean)));
             partition.put("projectedPlusNarrowMs", round3(projMedian + narrowMedian));
             v.put("e2ePartition", partition);
             v.put("factorRanking", ranking);
@@ -388,6 +409,7 @@ class MonitorAttributionMeasureIT {
             System.out.println("MEASURE narrowSnapshot " + narrow);
             System.out.println("MEASURE draftGetEach " + draftGet);
             System.out.println("MEASURE draftMGetInfo " + draftMGet);
+            System.out.println("MEASURE draftBatchFull " + draftBatch);
             System.out.println("MEASURE onlineMGet " + onlineMGet);
             System.out.println("MEASURE abnormalAgg " + abnormalAgg);
         }
@@ -503,7 +525,9 @@ class MonitorAttributionMeasureIT {
         List<Long> callNs = new ArrayList<>(DRAFT_PASSES * inProgressIds.size());
         int misses = 0;
         long answeredSum = 0;
+        Map<String, Long> cmdDelta = null;
         for (int p = 0; p < DRAFT_PASSES; p++) {
+            Map<String, Long> before = p == 0 ? commandCallCounts() : null;
             long t0 = System.nanoTime();
             for (Long sid : inProgressIds) {
                 long c0 = System.nanoTime();
@@ -516,6 +540,9 @@ class MonitorAttributionMeasureIT {
                 }
             }
             passNs[p] = System.nanoTime() - t0;
+            if (before != null) {
+                cmdDelta = cacheOnlyDelta(before, commandCallCounts());
+            }
         }
         long[] calls = callNs.stream().mapToLong(Long::longValue).toArray();
         long[] callsSorted = calls.clone();
@@ -537,7 +564,207 @@ class MonitorAttributionMeasureIT {
         m.put("callP95Ms", round3(percentile(callsSorted, 0.95)));
         m.put("callMeanMs", round3(mean(calls)));
         m.put("perStudentRoundTripsPerRequest", inProgressIds.size());
+        m.put("redisCommandDeltaPerPass", cmdDelta);
         return m;
+    }
+
+    /**
+     * 完整批取臂：一次 multiGet + 逐值按 {@code ExamDraftService.get} 同口径解析 + 按学生下标关联。
+     * 每轮计时窗口内只做「批取 + 解析 + 关联」；与单份 get 的等价校验放在计时窗口之后，避免污染计时。
+     * 等价判据：逐学生的 version / answers / marked / savedTime 与 {@code draftService.get} 全等，
+     * 且「无草稿/损坏按 null」的缺失集合一致——不成立即断言失败（测量结论无效）。
+     */
+    private Map<String, Object> measureDraftBatchFull(Long examId, List<Long> inProgressIds) {
+        List<String> keys = new ArrayList<>(inProgressIds.size());
+        for (Long sid : inProgressIds) {
+            keys.add("exam:draft:" + examId + ":" + sid);
+        }
+        for (int w = 0; w < DRAFT_WARMUP_PASSES; w++) {
+            batchPass(keys);
+        }
+        long[] passNs = new long[DRAFT_PASSES];
+        List<Long> parseNs = new ArrayList<>(DRAFT_PASSES * inProgressIds.size());
+        int nonNull = -1;
+        int parseFail = 0;
+        long answeredSum = 0;
+        Map<String, Long> cmdDelta = null;
+        for (int p = 0; p < DRAFT_PASSES; p++) {
+            Map<String, Long> before = p == 0 ? commandCallCounts() : null;
+            long t0 = System.nanoTime();
+            BatchPassResult r = batchPass(keys);
+            passNs[p] = System.nanoTime() - t0;
+            parseNs.addAll(r.parseNanos());
+            nonNull = r.nonNull();
+            parseFail += r.parseFail();
+            answeredSum += r.answeredEntries();
+            if (before != null) {
+                cmdDelta = cacheOnlyDelta(before, commandCallCounts());
+            }
+        }
+
+        // 等价校验（不计时）：逐学生与单份 get 对照
+        int mismatches = 0;
+        String firstMismatch = "";
+        int nullAgreement = 0;
+        for (Long sid : inProgressIds) {
+            String json = redis.opsForValue().get("exam:draft:" + examId + ":" + sid);
+            ExamDraftService.DraftState batched = (json == null || json.isBlank()) ? null : parseDraftLikeGet(json);
+            ExamDraftService.DraftState single = draftService.get(examId, sid);
+            String diff = diffState(single, batched);
+            if (diff != null) {
+                mismatches++;
+                if (firstMismatch.isEmpty()) {
+                    firstMismatch = "student=" + sid + " " + diff;
+                }
+            }
+            if (single == null && batched == null) {
+                nullAgreement++;
+            }
+        }
+        assertEquals(0, mismatches, "批取结果与单份 get 不等价（测量结论无效）: " + firstMismatch);
+
+        long[] parses = parseNs.stream().mapToLong(Long::longValue).toArray();
+        long[] parsesSorted = parses.clone();
+        Arrays.sort(parsesSorted);
+        long[] passSorted = passNs.clone();
+        Arrays.sort(passSorted);
+
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("inProgressStudents", inProgressIds.size());
+        m.put("warmupPasses", DRAFT_WARMUP_PASSES);
+        m.put("passes", DRAFT_PASSES);
+        m.put("keysPerPass", keys.size());
+        m.put("redisCommandsPerPass", "1 x MGET（见 redisCommandDeltaPerPass）");
+        m.put("nonNullValues", nonNull);
+        m.put("parseFailures", parseFail);
+        m.put("answeredEntriesTotal", answeredSum);
+        m.put("equivalenceCheckedStudents", inProgressIds.size());
+        m.put("equivalenceMismatches", mismatches);
+        m.put("nullAgreementStudents", nullAgreement);
+        m.put("passBestMs", round3(passSorted[0] / 1e6));
+        m.put("passMedianMs", round3(percentile(passSorted, 0.50)));
+        m.put("passMeanMs", round3(mean(passNs)));
+        m.put("passWorstMs", round3(passSorted[passSorted.length - 1] / 1e6));
+        m.put("parseP50Ms", round3(percentile(parsesSorted, 0.50)));
+        m.put("parseP95Ms", round3(percentile(parsesSorted, 0.95)));
+        m.put("parseMeanMs", round3(mean(parses)));
+        m.put("redisCommandDeltaPerPass", cmdDelta);
+        return m;
+    }
+
+    private record BatchPassResult(int nonNull, int parseFail, long answeredEntries, List<Long> parseNanos) {
+    }
+
+    /** 一次完整批取：multiGet → 逐值解析 → 按下标关联（回填 null 表示无草稿/损坏）。 */
+    private BatchPassResult batchPass(List<String> keys) {
+        List<String> values = redis.opsForValue().multiGet(keys);
+        List<Long> parseNanos = new ArrayList<>(keys.size());
+        int nonNull = 0;
+        int parseFail = 0;
+        long answered = 0;
+        for (int i = 0; i < keys.size(); i++) {
+            String value = values == null ? null : values.get(i);
+            if (value == null || value.isBlank()) {
+                continue;   // 缺键：与单份 get 一致按无草稿，不参与解析
+            }
+            nonNull++;
+            long t = System.nanoTime();
+            ExamDraftService.DraftState state = parseDraftLikeGet(value);
+            parseNanos.add(System.nanoTime() - t);
+            if (state == null) {
+                parseFail++;
+            } else if (state.answers() != null && state.answers().isObject()) {
+                answered += state.answers().size();
+            }
+        }
+        return new BatchPassResult(nonNull, parseFail, answered, parseNanos);
+    }
+
+    /** 与 {@code ExamDraftService.get} 逐行同口径的解析（供批取臂复用同一解析语义做等价对照）。 */
+    private ExamDraftService.DraftState parseDraftLikeGet(String json) {
+        try {
+            JsonNode root = om.readTree(json);
+            List<Long> marked = new ArrayList<>();
+            JsonNode markedNode = root.get("marked");
+            if (markedNode != null && markedNode.isArray()) {
+                markedNode.forEach(n -> marked.add(n.asLong()));
+            }
+            LocalDateTime savedTime = root.hasNonNull("savedTime")
+                    ? LocalDateTime.parse(root.get("savedTime").asText()) : null;
+            return new ExamDraftService.DraftState(root.path("version").asInt(1), root.get("answers"), marked, savedTime);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 两份草稿状态是否全等；不等返回差异描述，相等返回 null。 */
+    private static String diffState(ExamDraftService.DraftState single, ExamDraftService.DraftState batched) {
+        if (single == null || batched == null) {
+            return single == batched ? null : ("null 不一致 single=" + (single == null) + " batched=" + (batched == null));
+        }
+        if (single.version() != batched.version()) {
+            return "version " + single.version() + " != " + batched.version();
+        }
+        if (!java.util.Objects.equals(single.answers(), batched.answers())) {
+            return "answers 不等";
+        }
+        if (!java.util.Objects.equals(single.marked(), batched.marked())) {
+            return "marked 不等 " + single.marked() + " != " + batched.marked();
+        }
+        if (!java.util.Objects.equals(single.savedTime(), batched.savedTime())) {
+            return "savedTime 不等 " + single.savedTime() + " != " + batched.savedTime();
+        }
+        return null;
+    }
+
+    /** 只保留命令名 → 调用次数的差值（丢弃 usec 等非计数项），便于跨轮比较。 */
+    private static Map<String, Long> cacheOnlyDelta(Map<String, Long> before, Map<String, Long> after) {
+        Map<String, Long> delta = new LinkedHashMap<>();
+        for (Map.Entry<String, Long> e : after.entrySet()) {
+            long d = e.getValue() - before.getOrDefault(e.getKey(), 0L);
+            if (d != 0) {
+                delta.put(e.getKey(), d);
+            }
+        }
+        return delta;
+    }
+
+    /** 读取 Redis INFO commandstats 的 cmdstat_<cmd> calls 计数（server 级全局计数）。 */
+    private Map<String, Long> commandCallCounts() {
+        var connection = redis.getConnectionFactory().getConnection();
+        try {
+            Properties props = connection.serverCommands().info("commandstats");
+            Map<String, Long> counts = new LinkedHashMap<>();
+            if (props == null) {
+                return counts;
+            }
+            for (String key : props.stringPropertyNames()) {
+                if (!key.startsWith("cmdstat_")) {
+                    continue;
+                }
+                String value = props.getProperty(key);
+                int at = value == null ? -1 : value.indexOf("calls=");
+                if (at < 0) {
+                    continue;
+                }
+                int end = value.indexOf(',', at);
+                String num = end < 0 ? value.substring(at + 6) : value.substring(at + 6, end);
+                try {
+                    counts.put(key.substring("cmdstat_".length()), Long.parseLong(num.trim()));
+                } catch (NumberFormatException ignored) {
+                    // 计数格式异常不参与差值，留给缺失项判定
+                }
+            }
+            return counts;
+        } finally {
+            connection.close();
+        }
+    }
+
+    private static double ratioNumerator(Object numerator, Object denominator) {
+        double n = ((Number) numerator).doubleValue();
+        double d = ((Number) denominator).doubleValue();
+        return d == 0 ? 0 : n / d;
     }
 
     private Map<String, Object> measureDraftMGet(long examId, List<Long> inProgressIds) {
@@ -623,100 +850,146 @@ class MonitorAttributionMeasureIT {
         int expectedStudents = N_STUDENTS;
         int expectedQuestions = data.qCount();
 
-        for (int i = 0; i < E2E_WARMUP; i++) {
-            RequestResult warm = doRequest(url);
-            assertEquals(200, warm.status, "预热请求失败: " + warm.status);
-        }
-
-        long[] latency = new long[count];
-        int[] statuses = new int[count];
-        int[] students = new int[count];
-        int[] questions = new int[count];
-        long[] respBytes = new long[count];
-
-        long wallStart;
-        if (concurrency == 1) {
-            wallStart = System.nanoTime();
-            for (int i = 0; i < count; i++) {
-                RequestResult r = doRequest(url);
-                latency[i] = r.nanos;
-                statuses[i] = r.status;
-                students[i] = r.totalStudents;
-                questions[i] = r.totalQuestions;
-                respBytes[i] = r.bytes;
+        try (HeapSampler heap = new HeapSampler()) {
+            for (int i = 0; i < E2E_WARMUP; i++) {
+                RequestResult warm = doRequest(url);
+                assertEquals(200, warm.status, "预热请求失败: " + warm.status);
             }
-        } else {
-            ExecutorService pool = Executors.newFixedThreadPool(concurrency);
-            CountDownLatch ready = new CountDownLatch(concurrency);
-            CountDownLatch go = new CountDownLatch(1);
-            AtomicInteger next = new AtomicInteger(0);
-            List<Future<?>> futures = new ArrayList<>(concurrency);
-            wallStart = System.nanoTime();
-            for (int t = 0; t < concurrency; t++) {
-                futures.add(pool.submit(() -> {
-                    ready.countDown();
-                    try {
-                        go.await(30, TimeUnit.SECONDS);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+
+            long[] latency = new long[count];
+            int[] statuses = new int[count];
+            int[] students = new int[count];
+            int[] questions = new int[count];
+            long[] respBytes = new long[count];
+
+            // 端到端每请求的 Redis 命令数：仅并发 1 的臂可取「整段差值 ÷ 请求数」
+            Map<String, Long> cmdBefore = concurrency == 1 ? commandCallCounts() : null;
+            long wallStart;
+            if (concurrency == 1) {
+                wallStart = System.nanoTime();
+                for (int i = 0; i < count; i++) {
+                    RequestResult r = doRequest(url);
+                    latency[i] = r.nanos;
+                    statuses[i] = r.status;
+                    students[i] = r.totalStudents;
+                    questions[i] = r.totalQuestions;
+                    respBytes[i] = r.bytes;
+                }
+            } else {
+                ExecutorService pool = Executors.newFixedThreadPool(concurrency);
+                CountDownLatch ready = new CountDownLatch(concurrency);
+                CountDownLatch go = new CountDownLatch(1);
+                AtomicInteger next = new AtomicInteger(0);
+                List<Future<?>> futures = new ArrayList<>(concurrency);
+                wallStart = System.nanoTime();
+                for (int t = 0; t < concurrency; t++) {
+                    futures.add(pool.submit(() -> {
+                        ready.countDown();
+                        try {
+                            go.await(30, TimeUnit.SECONDS);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return null;
+                        }
+                        int i;
+                        while ((i = next.getAndIncrement()) < count) {
+                            RequestResult r = doRequest(url);
+                            latency[i] = r.nanos;
+                            statuses[i] = r.status;
+                            students[i] = r.totalStudents;
+                            questions[i] = r.totalQuestions;
+                            respBytes[i] = r.bytes;
+                        }
                         return null;
-                    }
-                    int i;
-                    while ((i = next.getAndIncrement()) < count) {
-                        RequestResult r = doRequest(url);
-                        latency[i] = r.nanos;
-                        statuses[i] = r.status;
-                        students[i] = r.totalStudents;
-                        questions[i] = r.totalQuestions;
-                        respBytes[i] = r.bytes;
-                    }
-                    return null;
-                }));
+                    }));
+                }
+                ready.await(30, TimeUnit.SECONDS);
+                go.countDown();
+                for (Future<?> f : futures) {
+                    f.get(120, TimeUnit.SECONDS);
+                }
+                pool.shutdown();
             }
-            ready.await(30, TimeUnit.SECONDS);
-            go.countDown();
-            for (Future<?> f : futures) {
-                f.get(120, TimeUnit.SECONDS);
-            }
-            pool.shutdown();
-        }
-        long wallNanos = System.nanoTime() - wallStart;
+            long wallNanos = System.nanoTime() - wallStart;
 
-        int errors = 0;
-        StringBuilder firstError = new StringBuilder();
-        long totalBytes = 0;
-        long totalNanos = 0;
-        for (int i = 0; i < count; i++) {
-            totalBytes += respBytes[i];
-            totalNanos += latency[i];
-            if (statuses[i] != 200 || students[i] != expectedStudents || questions[i] != expectedQuestions) {
-                errors++;
-                if (firstError.length() == 0) {
-                    firstError.append("第一处不符 idx=").append(i)
-                            .append(" status=").append(statuses[i])
-                            .append(" totalStudents=").append(students[i]).append(" 期望=").append(expectedStudents)
-                            .append(" totalQuestions=").append(questions[i]).append(" 期望=").append(expectedQuestions);
+            int errors = 0;
+            StringBuilder firstError = new StringBuilder();
+            long totalBytes = 0;
+            long totalNanos = 0;
+            for (int i = 0; i < count; i++) {
+                totalBytes += respBytes[i];
+                totalNanos += latency[i];
+                if (statuses[i] != 200 || students[i] != expectedStudents || questions[i] != expectedQuestions) {
+                    errors++;
+                    if (firstError.length() == 0) {
+                        firstError.append("第一处不符 idx=").append(i)
+                                .append(" status=").append(statuses[i])
+                                .append(" totalStudents=").append(students[i]).append(" 期望=").append(expectedStudents)
+                                .append(" totalQuestions=").append(questions[i]).append(" 期望=").append(expectedQuestions);
+                    }
                 }
             }
-        }
-        assertEquals(0, errors, "端到端语义不符: " + firstError);
+            assertEquals(0, errors, "端到端语义不符: " + firstError);
 
-        long[] sorted = latency.clone();
-        Arrays.sort(sorted);
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("concurrency", concurrency);
-        m.put("requests", count);
-        m.put("warmupRequests", E2E_WARMUP);
-        m.put("errors", errors);
-        m.put("p50Ms", round3(percentile(sorted, 0.50)));
-        m.put("p95Ms", round3(percentile(sorted, 0.95)));
-        m.put("p99Ms", round3(percentile(sorted, 0.99)));
-        m.put("meanMs", round3(mean(latency)));
-        m.put("worstMs", round3(sorted[sorted.length - 1] / 1e6));
-        m.put("wallMillis", round3(wallNanos / 1e6));
-        m.put("throughputRps", round3(count / (wallNanos / 1e9)));
-        m.put("respBytesMean", round3(totalBytes / (double) count));
-        return m;
+            long[] sorted = latency.clone();
+            Arrays.sort(sorted);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("concurrency", concurrency);
+            m.put("requests", count);
+            m.put("warmupRequests", E2E_WARMUP);
+            m.put("errors", errors);
+            m.put("p50Ms", round3(percentile(sorted, 0.50)));
+            m.put("p95Ms", round3(percentile(sorted, 0.95)));
+            m.put("p99Ms", round3(percentile(sorted, 0.99)));
+            m.put("meanMs", round3(mean(latency)));
+            m.put("worstMs", round3(sorted[sorted.length - 1] / 1e6));
+            m.put("wallMillis", round3(wallNanos / 1e6));
+            m.put("throughputRps", round3(count / (wallNanos / 1e9)));
+            m.put("respBytesMean", round3(totalBytes / (double) count));
+            m.put("peakHeapDuringArmMB", heap.peakMB());
+            if (cmdBefore != null) {
+                Map<String, Long> total = cacheOnlyDelta(cmdBefore, commandCallCounts());
+                Map<String, Object> perRequest = new LinkedHashMap<>();
+                total.forEach((k, v) -> perRequest.put(k, round3(v / (double) count)));
+                m.put("redisCommandDeltaTotal", total);
+                m.put("redisCommandsPerRequest", perRequest);
+            }
+            return m;
+        }
+    }
+
+    /** 粗粒度堆峰值采样（20ms 轮询 MemoryMXBean），只作量级参考，非精确分配峰值。 */
+    private static final class HeapSampler implements AutoCloseable {
+        private final AtomicLong peak = new AtomicLong();
+        private volatile boolean running = true;
+        private final Thread thread;
+
+        HeapSampler() {
+            MemoryMXBean bean = ManagementFactory.getMemoryMXBean();
+            thread = new Thread(() -> {
+                while (running) {
+                    peak.accumulateAndGet(bean.getHeapMemoryUsage().getUsed(), Math::max);
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
+            }, "measure-heap-sampler");
+            thread.setDaemon(true);
+            thread.start();
+        }
+
+        double peakMB() {
+            return round3(peak.get() / 1024.0 / 1024.0);
+        }
+
+        @Override
+        public void close() {
+            running = false;
+            thread.interrupt();
+        }
     }
 
     private record RequestResult(long nanos, int status, int totalStudents, int totalQuestions, long bytes) {
