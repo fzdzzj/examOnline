@@ -1,4 +1,4 @@
-﻿# examOnline — OpenSpec 规范驱动开发
+# examOnline — OpenSpec 规范驱动开发
 
 > 组织方式对齐参考项目 `D:\code\sports\spec`：**一个变更（change）= 一个开发阶段**，阶段实现并验收后合入 `specs/`，变更目录移入 `archive/`。
 
@@ -16,7 +16,7 @@ spec/
 
 ## 当前状态
 
-- 进行中变更（`spec/changes/`，**条数以 `find spec/changes -mindepth 1 -maxdepth 1 -type d -not -name archive | wc -l` 为准，本文件不写死计数**；**必须按阶段顺序串行执行**，后一个以前一个已合入为前置；**同一工作树不得并行跑两个子 agent**）：
+- 进行中变更（`spec/changes/`，**条数以 `find spec/changes -mindepth 1 -maxdepth 1 -type d -not -name archive | wc -l` 为准，本文件不写死计数**；**历史业务阶段 19–23 按阶段顺序串行；其他独立变更按下表「前置」列判断依赖**；**同一工作树不得并行跑两个子 agent**）：
 
   > **2026-09-21 实况重同步**（下表的状态列由指导 agent 逐条复算：`git ls-files` 页面归属、`git grep` 调用点、`it(`/`test(` 用例计数、五个 `tasks.json` 的 `completed`/`passes` 真值；不采信任何自述产物）：
   > ① **串行纪律已被打破**——阶段 23 在阶段 22 零交付的前提下先行入库（`39c7fbf` 11:52 → `ddaabdb` 12:18，间隔 26 分钟）；
@@ -46,7 +46,7 @@ spec/
 | 3 | `exam-management` | `add-exam-management` | 4 |
 | 4 | `exam-taking` | `add-exam-taking`、`add-mq-trace-and-capacity` | 5、10 |
 | 5 | `grading` | `add-grading-score`、`batch-grading-subjective-upserts`（2026-09-25 归档） | 6 |
-| 6 | `score-management` | `add-grading-score`、`fix-grading-entry-and-summary-prerequisite`（前端 D2，2026-09-25 归档）、`batch-summary-subjective-reads`（2026-09-25 归档） | 6、前端 D2 |
+| 6 | `score-management` | `add-grading-score`、`fix-grading-entry-and-summary-prerequisite`（前端 D2，2026-09-25 归档）、`batch-summary-subjective-reads`（2026-09-25 归档）、`update-score-ranking-calculation`（成绩排名先归因再 O(n log n) 等价提速，2026-09-26 归档） | 6、前端 D2 |
 | 7 | `anti-cheat` | `add-anti-cheat` | 7 |
 | 8 | `performance` | `add-performance-deepening`、`tune-submit-capacity`（交卷容量与压测方法学，2026-09-23 归档）、`gate-java-change-on-measured-factor`（Java 优化先归因门禁，2026-09-25 归档） | 8 |
 | 9 | `data-access` | `add-performance-deepening`、`add-data-retention`、`fix-schema-mysql-pk` | 8、15、17 |
@@ -112,6 +112,7 @@ spec/
 | `batch-summary-subjective-reads` | 调用次数 | 汇总主观分一次取出，**隔离单测验收后归档**：`ScoreService.summarize` 在判分前置检查通过后、逐份 CAS 写入前按本场答卷 ID 一次取出主观分（缺行仍按未批口径记部分批改；无简答题或无答卷不发查询）；总分、合法零分、未判完整场拒绝、§7.5 部分批改语义零改动；`ScoreServiceTest` 扩 2 用例（多份答卷只查一次、缺行不视为已批完）。**验收边界=ScoreServiceTest 40/0/0（`812d1a1`，隔离单测，证据见归档 tasks.json）；不是交卷 P99 修复；未跑共享 dev 真汇总**。score-management 基线「成绩汇总」合入 MODIFIED Requirement（新增「主观分一次取出」场景） | 2026-09-25 |
 | `batch-grading-subjective-upserts` | 调用次数 | 整场判分主观行一次取出，**隔离单测+既有集成测试验收后归档**：`ExamGradingService.runExamGrading` 在逐份判分前按本场答卷 ID 一条 IN 查询取出已有 `subjective_grades` 行（无简答题或无答卷不发查询），判分循环与单份 `rejudge` 不再按「答卷×题目」`selectOne`；刷新已有行只写答案快照与初判提示分（SET 列断言守住，终分/评语/批改人/批改时间/version 不动）；客观分、初判建行、失败隔离（坏卷只 markGradingFailed 该份）语义零改动，未新增 Mapper 方法、未加大事务；`ObjectiveGradingServiceTest` 新增 6 用例（一次取出、不覆盖终分、坏卷隔离、无查询护栏、重判一次取出）。**验收边界=ObjectiveGradingServiceTest 6/0/0 + GradingScoreIntegrationTest 3/0/0（`10aba79`，隔离单测+既有集成测试，红绿证据见归档 tasks.json）；不是交卷 P99 修复；未跑共享 dev 真判分**。grading 基线「简答批改」合入 MODIFIED Requirement（新增「整场判分主观行一次取出」场景，「教师批改留痕」「并发批改防覆盖」原文保留） | 2026-09-25 |
 | `gate-java-change-on-measured-factor` | 性能门禁 | Java 优化必须先用同一负载量出延迟、吞吐与资源占用，只改占比最高的一类；调用次数和事务范围没有下降之前不调 JVM。**文档门禁，验收后归档（未实施任何优化）**：spec-delta ADDED Requirement「Java 优化先归因、一次只改一类」整段合入 performance 基线（三个 Scenario：没有剖面不得改参数/一次只改一类/交卷入口的已知结构不是延迟占比）；交卷入口的 Redis 锁/幂等读写/CAS/MQ/消费端 JDBC batch 只作调用次数与事务范围清单、不写成延迟占比；同机历史复验结论不能授权 JVM 或热点改写；近期归档的 batch-summary-subjective-reads / batch-grading-subjective-upserts 只降低教师侧判分/汇总的调用次数，不是交卷 P99 修复。**验收边界=spec 合入 + diff 不含代码/JVM/线程池/SQL**；未跑压测机分离后的复验；未改 src/main；下一刀须先有同口径新剖面（依赖 isolate-submit-load-generator，仍待审批） | 2026-09-25 |
+| `update-score-ranking-calculation` | 成绩排名（先归因再等价提速） | **先归因、后等价提速（GO）**：隔离同负载（H2，SIZES 50/200/1000/3000，确定性分数含并列/不同 scale）下分账 SQL 取数与 O(n²) 排名计算——旧实现 rank() 微基准 n=3000≈19.6ms vs 学生查分全班 SQL n=3000≈1.3ms、端到端 n=3000 p99≈38–67ms，裁决排名计算为巨大班该路径占比最高的可控因素。阶段 3 只改 `RankCalculator.rank` 为 O(n log n)：`RankCalculatorTest` 加可计数 `BigDecimal.compareTo` 护栏 + 旧函数参考oracle，旧实现比较 4,110,756 > 护栏 49,152 红灯，新实现 21,681 ≤ 49,152 绿（≈190x）；`ScoreService`/`ScoreExportService`/Mapper/schema/前端/JVM/线程池零改动。阶段 4 同数据同负载复测：rank() n=3000 0.276ms（≈71x）、SQL 持平≈0.8ms、端到端 n=3000 my mean≈7–8ms p99≈11–12ms（旧 mean≈22–44ms）、JFR CPU User≈2–4%/GC 全 Minor 1–2ms；仓库根 `mvnw.cmd clean test` @ `7c11578` → **308/0/0/1 BUILD SUCCESS**；AGENTS 自查（@Sql 仅 javadoc 自述、flyway 0、实体↔schema 26/26）全绿。score-management 基线「成绩排名」合入 MODIFIED Requirement（并列/空值与数值等价/归因成立才替换/缺少归因或改后无收益四场景） | 2026-09-26 |
 | `fix-flaky-integration-baselines` | 测试稳定性 | 跨实例取号护栏返修为确定性反例 + 两条历史偶发逐次复核保持观察：`UniqueSeqGuardTest` 由「紧凑构造 1000 个实例碰同毫秒桶」（1000/100000 无鸽笼保证，执行变慢时旧实现可保持绿）改为反射比较两个 Probe 实例引用的取号器对象身份（assertSame）并保留两次取名不同的行为断言，不重置共享计数、不睡眠、无新增依赖、`IntegrationTestBase` 已提交实现零改动；隔离旧基座（`ed06f42` 实例级种子）工作树实跑红灯 1/1/0/0（assertSame 见两个不同 AtomicLong，退出码 1），共享 static 计数实现绿 1/0/0/0；全量门禁 `mvnw.cmd clean test` @ `d1dfcb6` → 305/0/0/1、BUILD SUCCESS、退出码 0（命令与失败断言见归档 tasks.json 证据字段）。`DataRetentionIntegrationTest` 与 `ExamTakingIntegrationTest` 各 3 次逐次定向复核未复现（41f8298），遗留 #14/#15 保持开放——**归档只声称护栏已修与观察方法收口，不声称两条历史偶发已消除**。reliability 基线合入 2 个新 Requirement（含「护栏已修而历史失败未复现」场景） | 2026-09-26 |
 
 ## 遗留事项（已归档但未收口，勿当成已完成）

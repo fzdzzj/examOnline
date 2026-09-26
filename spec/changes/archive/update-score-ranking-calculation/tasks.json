@@ -1,0 +1,58 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：基线与口径",
+    "task": "复核排名语义、调用点及测量环境",
+    "steps": [
+      { "step": "确认开工 HEAD、工作树、现行成绩排名/Java 归因规范；列出 rank 三个调用点及学生查分全班 SQL，区分已证实 O(n²) 与未知的请求耗时占比", "completed": true },
+      { "step": "在不写共享 dev 的隔离环境准备固定人数、并列比例、null 与 BigDecimal 不同 scale 的可复现数据；记录负载、JDK/机器、数据库配置、预热和指标采集命令，说明临时数据清理方式", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "HEAD=31b70c3 开工核对，后实施提交 HEAD=7c11578。rank 三个调用点：ScoreService.publishPreview(:234)、ScoreService.myScore(:308，全班 SQL 在 :293-297，:280 需 status=PUBLISHED)、ScoreExportService(:394)。隔离测量用 RankAttributionMeasureIT（@SpringBootTest RANDOM_PORT + H2，未触碰共享 dev/Docker/跨宿主）。SIZES={50,200,1000,3000}，确定性分数 score(i)=BigDecimal(400+(i*7919)%300,1)；students/exam_submissions 均以 930000000+ 段位种子；预热+JFR(jdk.ExecutionSample/CPULoad/GC*)。环境 java=21.0.9 HotSpot、processors=20、maxHeapMB=3952、Windows 11、DB=H2 memory。临时数据仅在测试容器的共享 H2(mem) 内按 exam_id=EXAM_ID_BASE+size 绑定，进程退出即不存在，无共享库写入。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：同负载归因与裁决",
+    "task": "先量排名计算是否真是优先因素，不靠复杂度猜瓶颈",
+    "steps": [
+      { "step": "在旧代码上按固定负载逐次记录请求延迟分布、吞吐、资源占用及 SQL 取数/排名计算分段耗时；原始命令和输出绑定短 revision，不拿交卷同机历史压测代替成绩路径基线", "completed": true },
+      { "step": "按 spec/specs/performance/spec.md 判定排名计算是否为目标路径占比最高的可控因素；SQL/其他因素主导或测量不可用时停止代码实施，如实回报并保留本阶段不通过，不用微基准替代整体归因", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "旧实现(31b70c3 起，rank 为 O(n²) 二重遍历)上依次量：rank() 微基准 bestOf30: n=1000≈2.06ms、n=3000≈19.61ms；学生查分全班 SQL 取数 n=3000≈1.31ms(bestNs)；端到端 /api/scores/my n=3000(并发1) mean≈22-44ms、p99≈38-67ms、响应≈193B。裁决 GO：n=3000 时 rank()≈19.6ms 相对 SQL≈1.3ms 与整请求为占比最高的可控因素，且随班规模扩展；n≤1000 rank 占少数，巨大班才主导。裁决不依赖单次微基准（有 SQL 分段 + 端到端同负载对账）。JFR 逐帧归因 n3000 rank 份额仅 2%（分类/稀释噪声大），故以 clean SQL 分账 + 微基准 + E2E 同负载为归因依据。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：条件成立后才做计算层返修",
+    "task": "纯函数语义护栏先红后绿，单独降低比较增长",
+    "steps": [
+      { "step": "在 RankCalculatorTest 添加不依赖墙钟的比较次数增长护栏（测试侧可计数 BigDecimal.compareTo，确认可覆盖后使用）与旧函数语义对照：空列表、null、同分跳号、不同 scale 等价、输入顺序、确定性多规模样本；在旧实现上得到与二重比较对应的红灯", "completed": true },
+      { "step": "仅改 RankCalculator.rank 使比较次数增长不超过 O(n log n)，保持调用者入参和输出结构不变；原红灯在新实现变绿，既有 RankCalculatorTest、ScoreServiceTest 与必要导出/复核边界测试不得放宽", "completed": true },
+      { "step": "核对代码 diff：不改查询、Mapper/schema、前端、JVM/线程池/缓存或其他服务；如测量裁决不支持本阶段，则不执行并保持未完成、注明不适用原因", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "RankCalculatorTest 新增 CountingBigDecimal(ThreadLocal<AtomicLong> 重写 compareTo 计数)、referenceRank(测试内旧 O(n²) oracle)、semanticsMatchReferenceAcrossScalesAndNulls、comparisonGrowthGuard(n=2048, 混合并列+不同scale+null, bound=n*(2*ceilLog2(n)+2)=49152)。旧实现红灯：comparisons=4,110,756 > 49152（Tests run:8, Failures:1，对应二重遍历候选≈n(n-1)）。只改 RankCalculator.rank（O(n log n) sort 后按位定名次，维持 compareTo 数值并列/跳号/null→0/按入参位置映射），comparisons=21,681 ≤ 49152 全绿（≈190x 降低）。RankCalculatorTest 8、ScoreServiceTest 40、ScoreServiceReviewHideTest 2 无回归。diff 仅 RankCalculator.java+RankCalculatorTest.java，不改查询/Mapper/schema/前端/JVM/线程池/缓存。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：同口径复测与门禁",
+    "task": "证明优化的计算效果与请求级效果，而不是只让测试变绿",
+    "steps": [
+      { "step": "用与阶段 2 相同数据、负载、预热和环境重复测量；分别报告比较次数/计算耗时、SQL 耗时、端到端延迟/吞吐、CPU/GC 与原始结果；如果无收益或语义不一致，撤销实施并返回归因", "completed": true },
+      { "step": "在已提交实现 revision、仓库根执行唯一后端门禁（Windows mvnw.cmd clean test，或 Git Bash ./mvnw clean test）；记录当次四计数、BUILD 结论、退出码和短 revision，核对 AGENTS.md 的 schema/@Sql/实体自查；不把一次失败用重跑绿覆盖", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "同数据/负载/环境复测(提交 rev 7c11578)：rank() 微基准 bestOf30 n=1000=0.0959ms、n=3000=0.276ms（旧≈2.06/19.61ms，n=3000 约 71x）；SQL 取数 n=3000 bestNs=837300(0.837ms flat)/876200(0.876ms preview)，SQL 未改近似持平；端到端 n=3000: my c1 mean=7.187ms p99=10.747ms、my c8 mean=8.042ms p99=12.148ms、preview c1 mean=16.507ms p99=36.033ms（旧 mean≈22-44ms/p99≈38-67ms）。CPU(JFR n3000)：JVM User≈2-4%、Machine Total≈25-35%；GC 全为 Minor ≈1-2ms 无停摆。门禁：仓库根 mvnw.cmd clean test → BUILD SUCCESS、Tests run:308、Failures:0、Errors:0、Skipped:1、exit=0、rev 7c11578。AGENTS 自查：@Sql 仅命中 DataRetentionIntegrationTest javadoc 自述(允许)、flyway 无命中、schema.sql 无改动、实体@TableName 26/26 与 CREATE TABLE 一一对应。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：规范真值与收口",
+    "task": "只有完成优化验收才合入行为规范，否则以评估结论关闭或保留",
+    "steps": [
+      { "step": "按阶段 2/4 裁决二选一如实收口：有归因、有收益且门禁通过才把 MODIFIED 成绩排名 Requirement 整段合入 score-management、归档并更新 spec/README.md；不实施或无收益则仅登记测量与未采用理由，不合入拟实施条款，保持待处理或按未采用草案例关闭；分支结果写入 evidence 后才回勾", "completed": true },
+      { "step": "仅显式路径暂存，核对 git diff --cached --name-only 与 --check；回报提交 SHA、数据/命令/原始结果、未做事项，并保留其他候选及隔离压测提案原样", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "归因、收益与门禁全部满足 → MODIFIED「成绩排名」Requirement 整段按 spec-delta 合入 spec/specs/score-management/spec.md（并列同名次/空值与数值等价/归因成立才替换/缺少归因或改后无收益四场景）。变更目录归档至 spec/changes/archive/update-score-ranking-calculation/，spec/README.md 登记本提案合入并移除待审批条目。临时测量工具 RankAttributionMeasureIT.java 与 target/measure 为隔离产物，未提交（工作树内删除）。docs/backend-optimization-candidates.md 属独立台账，只读引用、未夹带进任何提交，按指示保留。"
+  }
+]
