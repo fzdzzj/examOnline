@@ -1,0 +1,659 @@
+{
+  "revision" : "e6b9a17",
+  "label" : "batch-run3",
+  "startedAt" : "2026-09-27T00:04:28.252999800",
+  "jdk" : "21.0.9 (Oracle Corporation)",
+  "vm" : "Java HotSpot(TM) 64-Bit Server VM / 21.0.9+7-LTS-338",
+  "os" : "Windows 11 10.0 amd64",
+  "processors" : 20,
+  "maxHeapMB" : 3952,
+  "redisEnv" : {
+    "REDIS_HOST" : "null",
+    "effectiveNote" : "application-test.yml 的 ${REDIS_HOST:127.0.0.1}/${REDIS_PORT:6379} + db15；专用隔离实例由 REDIS_PORT 注入（不写其它客户端共用的实例）",
+    "REDIS_PORT" : "6390"
+  },
+  "dataRule" : "隔离 H2 内存库（application-test.yml test profile）+ Redis db15；单场 200 份答卷，状态比 120/50/30（进行中/已交卷/已批改）；进行中 answers=NULL（真实链路：答案交卷才落库），已交卷/已批改 answers 为含少量长文本的 JSON；paper_json 为合法快照（questions 数组长度=题数），字符量随题数梯度（rep=40 题，small=5 题）；进行中学生逐个写入草稿键 exam:draft:{examId}:{sid}（answers 12 条），其中每 60 个进行中学生里有 2 个分别为「损坏 JSON / 非对象 answers / 缺键 / 空白值」四种形态（i%60 = 0/15/30/45，与本变更要守住的语义分支一一对应，批取必须与单份 get 同判）——其余为正常草稿；1/5 写入在线键 exam:monitor:online:{examId}:{sid}（TTL 2h，仅为测量稳定，非生产 60s）；异常日志按 i%5 步长造 severity>=2 聚合；学生无 users 行（姓名批查走空结果，与真实同名回退路径等价）；teacher 为真实注册登录教师并拥有该考试。",
+  "metricDefinitions" : {
+    "longFieldDelta" : "sqlFull 与 sqlProjected 的耗时差 = 载入 paper_json/answers 的可控增量（同语句同数据，仅列集不同）",
+    "sqlFull" : "主答卷取数（与现有 overview 同语句：exam_id 等值 selectList 全列，含 paper_json/answers）逐次耗时",
+    "onlineMGet" : "OnlinePresenceService.onlineOf 的一次 MGET 耗时（已批读，不属本提案因素）",
+    "e2e" : "MockMvc GET /api/exams/{id}/monitor/overview 请求墙钟（含安全过滤链/JSON 序列化/全部组件）",
+    "redisCalls" : "Redis INFO commandstats 前后差值，量出「逐人 get 一轮＝N 次 GET 命令」与「批取一轮＝1 次 MGET 命令」以及端到端每请求命令数（server 级全局计数，需确认无其它客户端并发写同一实例）",
+    "abnormalAgg" : "ExamBehaviorLogMapper.selectAbnormalStats 的一条 GROUP BY 聚合耗时",
+    "draftMGetInfo" : "仅原始 multiGet 取回全部进行中学生的草稿键耗时（不解析，只证明网络取数下限）",
+    "jfr" : "jdk.ExecutionSample 中栈内含目标类帧的样本占比 + 栈顶帧直方图；与墙钟份额分母不同",
+    "draftGetEach" : "逐人草稿 GET：全部进行中学生各调一次 draftService.get（含 Redis 往返 + JSON 解析）每轮总耗时与单次分位",
+    "draftBatchVsGetEachRatio" : "同一轮内 draftGetEach 与 draftBatchFull 的 passMedian 比值（同工具同数据同时刻，可相除）",
+    "sqlProjected" : "同语句但 select(...) 只取短列（拟实施投影）逐次耗时；同时校验返回行 paper_json/answers 均为 null",
+    "draftBatchFull" : "完整批取＝一次 multiGet + 逐值按 draftService.get 同口径解析 + 按学生下标关联，并逐学生与单份 get 断言结果等价（version/answers/marked/savedTime 全等），每轮总耗时与单次解析分位",
+    "namesSql" : "resolveNames 的 userMapper.selectBatchIds(N 个学生) 逐次耗时",
+    "fieldChars" : "按生成内容估算的 paper_json / answers 字符量（估计值，不是真实网络字节）",
+    "sharePct" : "各分账臂中位耗时 / e2e(并发1) mean 的百分比；分母不同，仅作排序佐证，不可等值相加",
+    "narrowSnapshot" : "只读一份个人快照的窄查询（SELECT paper_json ... LIMIT 1）逐次耗时，即拟实施新增的至多一次取数"
+  },
+  "load" : {
+    "nStudents" : 200,
+    "inProgressCount" : 120,
+    "submittedCount" : 50,
+    "sqlWarmup" : 5,
+    "sqlReps" : 20,
+    "draftWarmupPasses" : 2,
+    "draftPasses" : 10,
+    "e2eWarmupRequests" : 10,
+    "e2eRequests" : 60,
+    "e2eConcurrencyRep" : [ 1, 8 ],
+    "e2eConcurrencySmall" : [ 1 ],
+    "jfrEvents" : [ "jdk.ExecutionSample(period=10ms)", "jdk.CPULoad(period=500ms)", "jdk.GCPhasePause(threshold=0ms)" ],
+    "redisDatabase" : 15
+  },
+  "setupLoginMillis" : 2911,
+  "variants" : [ {
+    "variant" : "rep",
+    "examId" : 941000001,
+    "n" : 200,
+    "qCount" : 40,
+    "buildDataMillis" : 270,
+    "statusMix" : {
+      "inProgress" : 120,
+      "graded" : 30,
+      "submitted" : 50
+    },
+    "draftKindMix" : {
+      "CORRUPT" : 2,
+      "NORMAL" : 112,
+      "NON_OBJECT_ANSWERS" : 2,
+      "MISSING_KEY" : 2,
+      "BLANK_VALUE" : 2
+    },
+    "paperCharsPerRow" : 14866,
+    "answersCharsPerRow" : 1666,
+    "paperCharsTotal" : 2973200,
+    "answersCharsTotal" : 133280,
+    "fieldCharsNote" : "按生成内容字符数估算（估计值），非真实网络字节",
+    "sqlFull" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 1.998,
+      "p50Ms" : 2.28,
+      "medianMs" : 2.28,
+      "meanMs" : 2.877,
+      "p95Ms" : 3.762,
+      "worstMs" : 12.609,
+      "rowCount" : 200
+    },
+    "sqlProjected" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 1.264,
+      "p50Ms" : 1.62,
+      "medianMs" : 1.62,
+      "meanMs" : 1.829,
+      "p95Ms" : 2.903,
+      "worstMs" : 3.235,
+      "rowCount" : 200,
+      "longFieldsAbsent" : true
+    },
+    "namesSql" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 1.423,
+      "p50Ms" : 1.859,
+      "medianMs" : 1.859,
+      "meanMs" : 2.08,
+      "p95Ms" : 3.072,
+      "worstMs" : 3.137,
+      "rowCount" : 0
+    },
+    "narrowSnapshot" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 0.044,
+      "p50Ms" : 0.046,
+      "medianMs" : 0.046,
+      "meanMs" : 0.048,
+      "p95Ms" : 0.054,
+      "worstMs" : 0.065,
+      "rowCount" : 1,
+      "sql" : "SELECT paper_json FROM exam_submissions WHERE exam_id = ? AND paper_json IS NOT NULL LIMIT 1"
+    },
+    "draftGetEach" : {
+      "inProgressStudents" : 120,
+      "warmupPasses" : 2,
+      "passes" : 10,
+      "totalCalls" : 1200,
+      "misses" : 60,
+      "answeredEntriesTotal" : 13440,
+      "passBestMs" : 92.055,
+      "passMedianMs" : 107.03,
+      "passMeanMs" : 108.739,
+      "passWorstMs" : 129.061,
+      "callP50Ms" : 0.792,
+      "callP95Ms" : 1.614,
+      "callMeanMs" : 0.903,
+      "perStudentRoundTripsPerRequest" : 120,
+      "redisCommandDeltaPerPass" : {
+        "get" : 120,
+        "info" : 1
+      }
+    },
+    "draftMGetInfo" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 1.051,
+      "p50Ms" : 1.499,
+      "medianMs" : 1.499,
+      "meanMs" : 1.679,
+      "p95Ms" : 2.66,
+      "worstMs" : 2.977,
+      "keys" : 120,
+      "nonNullValues" : 118,
+      "note" : "对照方向：本轮不实施；仅证明草稿批量化的可达成本"
+    },
+    "draftBatchFull" : {
+      "inProgressStudents" : 120,
+      "warmupPasses" : 2,
+      "passes" : 10,
+      "keysPerPass" : 120,
+      "redisCommandsPerPass" : "1 x MGET（见 redisCommandDeltaPerPass）",
+      "nonNullValues" : 116,
+      "parseFailures" : 20,
+      "answeredEntriesTotal" : 13440,
+      "equivalenceCheckedStudents" : 120,
+      "equivalenceMismatches" : 0,
+      "nullAgreementStudents" : 6,
+      "equivalenceByBranch" : {
+        "CORRUPT" : {
+          "checked" : 2,
+          "mismatches" : 0,
+          "bothNull" : 2,
+          "singleNonNull" : 0
+        },
+        "NORMAL" : {
+          "checked" : 112,
+          "mismatches" : 0,
+          "bothNull" : 0,
+          "singleNonNull" : 112
+        },
+        "NON_OBJECT_ANSWERS" : {
+          "checked" : 2,
+          "mismatches" : 0,
+          "bothNull" : 0,
+          "singleNonNull" : 2
+        },
+        "MISSING_KEY" : {
+          "checked" : 2,
+          "mismatches" : 0,
+          "bothNull" : 2,
+          "singleNonNull" : 0
+        },
+        "BLANK_VALUE" : {
+          "checked" : 2,
+          "mismatches" : 0,
+          "bothNull" : 2,
+          "singleNonNull" : 0
+        }
+      },
+      "passBestMs" : 1.98,
+      "passMedianMs" : 2.238,
+      "passMeanMs" : 2.461,
+      "passWorstMs" : 3.381,
+      "parseP50Ms" : 0.004,
+      "parseP95Ms" : 0.013,
+      "parseMeanMs" : 0.006,
+      "redisCommandDeltaPerPass" : {
+        "info" : 1,
+        "mget" : 1
+      }
+    },
+    "onlineMGet" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 1.373,
+      "p50Ms" : 1.967,
+      "medianMs" : 1.967,
+      "meanMs" : 2.019,
+      "p95Ms" : 2.681,
+      "worstMs" : 3.089,
+      "onlineCount" : 96
+    },
+    "abnormalAgg" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 0.213,
+      "p50Ms" : 0.303,
+      "medianMs" : 0.303,
+      "meanMs" : 0.349,
+      "p95Ms" : 0.428,
+      "worstMs" : 1.07,
+      "rowCount" : 40
+    },
+    "draftBatchVsGetEachRatio" : {
+      "ratioGetEachOverBatch" : 47.824,
+      "ratioBatchOverGetEach" : 0.021,
+      "denominator" : "同一轮 draftGetEach.passMedianMs（同工具同数据同时刻，与批取臂可相除）",
+      "getEachPassMedianMs" : 107.03,
+      "batchPassMedianMs" : 2.238
+    },
+    "e2e" : [ {
+      "concurrency" : 1,
+      "requests" : 60,
+      "warmupRequests" : 10,
+      "errors" : 0,
+      "p50Ms" : 24.544,
+      "p95Ms" : 44.058,
+      "p99Ms" : 66.402,
+      "meanMs" : 27.006,
+      "worstMs" : 66.402,
+      "wallMillis" : 1647.039,
+      "throughputRps" : 36.429,
+      "respBytesMean" : 27480.0,
+      "peakHeapDuringArmMB" : 176.424,
+      "redisCommandDeltaTotal" : {
+        "get" : 60,
+        "exists" : 60,
+        "info" : 1,
+        "mget" : 120
+      },
+      "redisCommandsPerRequest" : {
+        "get" : 1.0,
+        "exists" : 1.0,
+        "info" : 0.017,
+        "mget" : 2.0
+      }
+    }, {
+      "concurrency" : 8,
+      "requests" : 60,
+      "warmupRequests" : 10,
+      "errors" : 0,
+      "p50Ms" : 37.294,
+      "p95Ms" : 75.559,
+      "p99Ms" : 81.66,
+      "meanMs" : 42.231,
+      "worstMs" : 81.66,
+      "wallMillis" : 347.109,
+      "throughputRps" : 172.856,
+      "respBytesMean" : 27480.0,
+      "peakHeapDuringArmMB" : 163.541
+    } ],
+    "e2ePartition" : {
+      "denominator" : "e2e 并发1 meanMs（含安全过滤链/序列化，故各臂份额之和 < 100%）",
+      "e2eMeanMs" : 27.006,
+      "longFieldDeltaMs" : 0.66,
+      "longFieldSharePctOfE2eMean" : 2.444,
+      "draftGetEachMs" : 107.03,
+      "draftSharePctOfE2eMean" : 396.319,
+      "draftBatchFullMs" : 2.238,
+      "draftBatchSharePctOfE2eMean" : 8.287,
+      "projectedPlusNarrowMs" : 1.666
+    },
+    "factorRanking" : [ {
+      "factor" : "draftGetEach(逐人 Redis GET)",
+      "perRequestMs" : 107.03,
+      "sharePctOfE2eMean" : 396.319
+    }, {
+      "factor" : "onlineMGet(在线 MGET，已批读)",
+      "perRequestMs" : 1.967,
+      "sharePctOfE2eMean" : 7.284
+    }, {
+      "factor" : "namesSql(姓名批查)",
+      "perRequestMs" : 1.859,
+      "sharePctOfE2eMean" : 6.884
+    }, {
+      "factor" : "sqlLongFieldDelta(paper_json+answers 增量)",
+      "perRequestMs" : 0.66,
+      "sharePctOfE2eMean" : 2.444
+    }, {
+      "factor" : "abnormalAgg(异常聚合)",
+      "perRequestMs" : 0.303,
+      "sharePctOfE2eMean" : 1.122
+    }, {
+      "factor" : "narrowSnapshot(拟新增窄读一次)",
+      "perRequestMs" : 0.046,
+      "sharePctOfE2eMean" : 0.17
+    } ]
+  }, {
+    "variant" : "small",
+    "examId" : 941000002,
+    "n" : 200,
+    "qCount" : 5,
+    "buildDataMillis" : 282,
+    "statusMix" : {
+      "inProgress" : 120,
+      "graded" : 30,
+      "submitted" : 50
+    },
+    "draftKindMix" : {
+      "CORRUPT" : 2,
+      "NORMAL" : 112,
+      "NON_OBJECT_ANSWERS" : 2,
+      "MISSING_KEY" : 2,
+      "BLANK_VALUE" : 2
+    },
+    "paperCharsPerRow" : 1885,
+    "answersCharsPerRow" : 301,
+    "paperCharsTotal" : 377000,
+    "answersCharsTotal" : 24080,
+    "fieldCharsNote" : "按生成内容字符数估算（估计值），非真实网络字节",
+    "sqlFull" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 0.373,
+      "p50Ms" : 0.476,
+      "medianMs" : 0.476,
+      "meanMs" : 0.554,
+      "p95Ms" : 0.771,
+      "worstMs" : 1.005,
+      "rowCount" : 200
+    },
+    "sqlProjected" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 0.328,
+      "p50Ms" : 0.436,
+      "medianMs" : 0.436,
+      "meanMs" : 0.451,
+      "p95Ms" : 0.618,
+      "worstMs" : 0.69,
+      "rowCount" : 200,
+      "longFieldsAbsent" : true
+    },
+    "namesSql" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 0.278,
+      "p50Ms" : 0.341,
+      "medianMs" : 0.341,
+      "meanMs" : 0.378,
+      "p95Ms" : 0.586,
+      "worstMs" : 0.641,
+      "rowCount" : 0
+    },
+    "narrowSnapshot" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 0.008,
+      "p50Ms" : 0.011,
+      "medianMs" : 0.011,
+      "meanMs" : 0.013,
+      "p95Ms" : 0.014,
+      "worstMs" : 0.041,
+      "rowCount" : 1,
+      "sql" : "SELECT paper_json FROM exam_submissions WHERE exam_id = ? AND paper_json IS NOT NULL LIMIT 1"
+    },
+    "draftGetEach" : {
+      "inProgressStudents" : 120,
+      "warmupPasses" : 2,
+      "passes" : 10,
+      "totalCalls" : 1200,
+      "misses" : 60,
+      "answeredEntriesTotal" : 5600,
+      "passBestMs" : 78.772,
+      "passMedianMs" : 86.002,
+      "passMeanMs" : 91.592,
+      "passWorstMs" : 126.163,
+      "callP50Ms" : 0.686,
+      "callP95Ms" : 1.317,
+      "callMeanMs" : 0.76,
+      "perStudentRoundTripsPerRequest" : 120,
+      "redisCommandDeltaPerPass" : {
+        "get" : 120,
+        "info" : 1
+      }
+    },
+    "draftMGetInfo" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 0.721,
+      "p50Ms" : 1.056,
+      "medianMs" : 1.056,
+      "meanMs" : 1.101,
+      "p95Ms" : 1.247,
+      "worstMs" : 2.248,
+      "keys" : 120,
+      "nonNullValues" : 118,
+      "note" : "对照方向：本轮不实施；仅证明草稿批量化的可达成本"
+    },
+    "draftBatchFull" : {
+      "inProgressStudents" : 120,
+      "warmupPasses" : 2,
+      "passes" : 10,
+      "keysPerPass" : 120,
+      "redisCommandsPerPass" : "1 x MGET（见 redisCommandDeltaPerPass）",
+      "nonNullValues" : 116,
+      "parseFailures" : 20,
+      "answeredEntriesTotal" : 5600,
+      "equivalenceCheckedStudents" : 120,
+      "equivalenceMismatches" : 0,
+      "nullAgreementStudents" : 6,
+      "equivalenceByBranch" : {
+        "CORRUPT" : {
+          "checked" : 2,
+          "mismatches" : 0,
+          "bothNull" : 2,
+          "singleNonNull" : 0
+        },
+        "NORMAL" : {
+          "checked" : 112,
+          "mismatches" : 0,
+          "bothNull" : 0,
+          "singleNonNull" : 112
+        },
+        "NON_OBJECT_ANSWERS" : {
+          "checked" : 2,
+          "mismatches" : 0,
+          "bothNull" : 0,
+          "singleNonNull" : 2
+        },
+        "MISSING_KEY" : {
+          "checked" : 2,
+          "mismatches" : 0,
+          "bothNull" : 2,
+          "singleNonNull" : 0
+        },
+        "BLANK_VALUE" : {
+          "checked" : 2,
+          "mismatches" : 0,
+          "bothNull" : 2,
+          "singleNonNull" : 0
+        }
+      },
+      "passBestMs" : 1.467,
+      "passMedianMs" : 1.845,
+      "passMeanMs" : 2.102,
+      "passWorstMs" : 3.091,
+      "parseP50Ms" : 0.002,
+      "parseP95Ms" : 0.005,
+      "parseMeanMs" : 0.004,
+      "redisCommandDeltaPerPass" : {
+        "info" : 1,
+        "mget" : 1
+      }
+    },
+    "onlineMGet" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 0.786,
+      "p50Ms" : 1.037,
+      "medianMs" : 1.037,
+      "meanMs" : 1.057,
+      "p95Ms" : 1.353,
+      "worstMs" : 1.399,
+      "onlineCount" : 96
+    },
+    "abnormalAgg" : {
+      "warmup" : 5,
+      "reps" : 20,
+      "bestMs" : 0.054,
+      "p50Ms" : 0.062,
+      "medianMs" : 0.062,
+      "meanMs" : 0.065,
+      "p95Ms" : 0.077,
+      "worstMs" : 0.107,
+      "rowCount" : 40
+    },
+    "draftBatchVsGetEachRatio" : {
+      "ratioGetEachOverBatch" : 46.614,
+      "ratioBatchOverGetEach" : 0.021,
+      "denominator" : "同一轮 draftGetEach.passMedianMs（同工具同数据同时刻，与批取臂可相除）",
+      "getEachPassMedianMs" : 86.002,
+      "batchPassMedianMs" : 1.845
+    },
+    "e2e" : [ {
+      "concurrency" : 1,
+      "requests" : 60,
+      "warmupRequests" : 10,
+      "errors" : 0,
+      "p50Ms" : 14.024,
+      "p95Ms" : 19.345,
+      "p99Ms" : 21.23,
+      "meanMs" : 14.554,
+      "worstMs" : 21.23,
+      "wallMillis" : 889.095,
+      "throughputRps" : 67.484,
+      "respBytesMean" : 27401.0,
+      "peakHeapDuringArmMB" : 211.323,
+      "redisCommandDeltaTotal" : {
+        "get" : 60,
+        "exists" : 60,
+        "info" : 1,
+        "mget" : 120
+      },
+      "redisCommandsPerRequest" : {
+        "get" : 1.0,
+        "exists" : 1.0,
+        "info" : 0.017,
+        "mget" : 2.0
+      }
+    } ],
+    "e2ePartition" : {
+      "denominator" : "e2e 并发1 meanMs（含安全过滤链/序列化，故各臂份额之和 < 100%）",
+      "e2eMeanMs" : 14.554,
+      "longFieldDeltaMs" : 0.04,
+      "longFieldSharePctOfE2eMean" : 0.275,
+      "draftGetEachMs" : 86.002,
+      "draftSharePctOfE2eMean" : 590.917,
+      "draftBatchFullMs" : 1.845,
+      "draftBatchSharePctOfE2eMean" : 12.677,
+      "projectedPlusNarrowMs" : 0.447
+    },
+    "factorRanking" : [ {
+      "factor" : "draftGetEach(逐人 Redis GET)",
+      "perRequestMs" : 86.002,
+      "sharePctOfE2eMean" : 590.917
+    }, {
+      "factor" : "onlineMGet(在线 MGET，已批读)",
+      "perRequestMs" : 1.037,
+      "sharePctOfE2eMean" : 7.125
+    }, {
+      "factor" : "namesSql(姓名批查)",
+      "perRequestMs" : 0.341,
+      "sharePctOfE2eMean" : 2.343
+    }, {
+      "factor" : "abnormalAgg(异常聚合)",
+      "perRequestMs" : 0.062,
+      "sharePctOfE2eMean" : 0.426
+    }, {
+      "factor" : "sqlLongFieldDelta(paper_json+answers 增量)",
+      "perRequestMs" : 0.04,
+      "sharePctOfE2eMean" : 0.275
+    }, {
+      "factor" : "narrowSnapshot(拟新增窄读一次)",
+      "perRequestMs" : 0.011,
+      "sharePctOfE2eMean" : 0.076
+    } ]
+  } ],
+  "jfr" : {
+    "whole" : {
+      "totalSamples" : 227,
+      "samplesWithoutStack" : 0,
+      "hitSharePct" : {
+        "ExamDraftService" : 11.894,
+        "H2" : 1.762,
+        "Jackson" : 31.718,
+        "MonitorService" : 13.656,
+        "Mybatis" : 6.608,
+        "MybatisPlus" : 6.608,
+        "RedisDriver" : 8.811,
+        "RedisTemplate" : 3.084
+      },
+      "cpuUserPctMean" : 10.781,
+      "cpuMachineTotalPctMean" : 63.752,
+      "cpuLoadEvents" : 17,
+      "cpuReadingUsable" : true,
+      "gcPauseCount" : 14,
+      "gcPauseMsTotal" : 77.351,
+      "topFrames" : [ {
+        "frame" : "java.io.ByteArrayOutputStream.ensureCapacity",
+        "samples" : 44
+      }, {
+        "frame" : "org.mindrot.jbcrypt.BCrypt.encipher",
+        "samples" : 32
+      }, {
+        "frame" : "java.util.zip.ZipFile$Source.getEntryPos",
+        "samples" : 4
+      }, {
+        "frame" : "java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take",
+        "samples" : 4
+      }, {
+        "frame" : "java.util.Arrays.copyOf",
+        "samples" : 3
+      }, {
+        "frame" : "org.mindrot.jbcrypt.BCrypt.key",
+        "samples" : 3
+      }, {
+        "frame" : "com.fasterxml.jackson.core.json.ReaderBasedJsonParser.nextFieldName",
+        "samples" : 3
+      }, {
+        "frame" : "com.exam.monitoring.measure.MonitorAttributionMeasureIT$HeapSampler.lambda$new$0",
+        "samples" : 3
+      } ]
+    },
+    "focused" : {
+      "totalSamples" : 132,
+      "samplesWithoutStack" : 0,
+      "hitSharePct" : {
+        "ExamDraftService" : 16.667,
+        "H2" : 2.273,
+        "Jackson" : 43.939,
+        "MonitorService" : 18.939,
+        "Mybatis" : 8.333,
+        "MybatisPlus" : 8.333,
+        "RedisDriver" : 6.818,
+        "RedisTemplate" : 1.515
+      },
+      "cpuUserPctMean" : 10.79,
+      "cpuMachineTotalPctMean" : 65.776,
+      "cpuLoadEvents" : 9,
+      "cpuReadingUsable" : true,
+      "gcPauseCount" : 10,
+      "gcPauseMsTotal" : 63.324,
+      "topFrames" : [ {
+        "frame" : "java.io.ByteArrayOutputStream.ensureCapacity",
+        "samples" : 37
+      }, {
+        "frame" : "com.fasterxml.jackson.core.json.ReaderBasedJsonParser.nextFieldName",
+        "samples" : 3
+      }, {
+        "frame" : "com.exam.monitoring.measure.MonitorAttributionMeasureIT$HeapSampler.lambda$new$0",
+        "samples" : 3
+      }, {
+        "frame" : "java.util.Arrays.copyOf",
+        "samples" : 2
+      }, {
+        "frame" : "java.util.concurrent.ThreadPoolExecutor.runWorker",
+        "samples" : 2
+      }, {
+        "frame" : "java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take",
+        "samples" : 2
+      }, {
+        "frame" : "io.netty.channel.nio.NioEventLoop.wakeup",
+        "samples" : 2
+      }, {
+        "frame" : "java.util.zip.ZipFile$Source.getEntryPos",
+        "samples" : 2
+      } ]
+    }
+  },
+  "heapUsedAfterGcMB" : 66.995,
+  "finishedAt" : "2026-09-27T00:04:39.647264500"
+}
