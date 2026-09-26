@@ -89,6 +89,10 @@ public class MonitorService {
                 .map(ExamSubmission::getStudentId).toList();
         Set<Long> onlineIds = new HashSet<>(presenceService.onlineOf(examId, activeIds));
 
+        // 草稿进度：进行中学生一次 MGET 批量取回（逐人往返改批量；无进行中学生则零调用）。
+        // 读取失败/结果无法对齐时由 getBatch 抛错，不降级成"全员零进度"。
+        Map<Long, ExamDraftService.DraftState> drafts = draftService.getBatch(examId, activeIds);
+
         // 异常聚合：severity>=2 的行为事件按学生一条 SQL 取回
         Map<Long, AbnormalBehaviorStat> abnormalStats = new HashMap<>();
         for (AbnormalBehaviorStat stat : behaviorLogMapper.selectAbnormalStats(examId, ABNORMAL_SEVERITY_THRESHOLD)) {
@@ -104,7 +108,7 @@ public class MonitorService {
 
         List<MonitorStudentItem> students = new ArrayList<>(submissions.size());
         for (ExamSubmission submission : submissions) {
-            MonitorStudentItem item = buildStudentItem(submission, totalQuestions, names, onlineIds, abnormalStats);
+            MonitorStudentItem item = buildStudentItem(submission, totalQuestions, names, onlineIds, abnormalStats, drafts);
             students.add(item);
 
             if (MonitorStudentItem.STATUS_SUBMITTED.equals(item.getStatus())) {
@@ -133,7 +137,8 @@ public class MonitorService {
     /** 单个答卷 → 学生行：状态（在线/离线/已交卷）+ 进度 + 异常字段。 */
     private MonitorStudentItem buildStudentItem(ExamSubmission submission, int totalQuestions,
                                                 Map<Long, String> names, Set<Long> onlineIds,
-                                                Map<Long, AbnormalBehaviorStat> abnormalStats) {
+                                                Map<Long, AbnormalBehaviorStat> abnormalStats,
+                                                Map<Long, ExamDraftService.DraftState> drafts) {
         MonitorStudentItem item = new MonitorStudentItem();
         item.setStudentId(submission.getStudentId());
         item.setStudentName(names.get(submission.getStudentId()));
@@ -149,7 +154,7 @@ public class MonitorService {
         // 进度：进行中读草稿答案字段数（近似）；已交卷即 100%
         int answered = 0;
         if (submission.getStatus() == ExamSubmission.STATUS_IN_PROGRESS) {
-            ExamDraftService.DraftState draft = draftService.get(submission.getExamId(), submission.getStudentId());
+            ExamDraftService.DraftState draft = drafts.get(submission.getStudentId());
             if (draft != null && draft.answers() != null && draft.answers().isObject()) {
                 answered = draft.answers().size();
             }
