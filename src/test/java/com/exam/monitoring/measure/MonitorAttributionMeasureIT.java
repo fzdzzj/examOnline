@@ -86,8 +86,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * 「仅短列投影」这一臂用 MyBatis-Plus 的 {@code select(...)} 在测量侧模拟拟实施的取数边界，
  * 不新增生产方法。
  *
- * <p><b>环境隔离</b>：{@code @ActiveProfiles("test")} → 隔离 H2 内存库（{@code mem:exam}）+ Redis <b>db15</b>
- * （dev 用 db0，不写共享 dev 数据）；不启 Docker，不做跨宿主压测。仅删除本工具自建的
+ * <p><b>环境隔离</b>：{@code @ActiveProfiles("test")} → 隔离 H2 内存库（{@code mem:exam}）+ Redis <b>db15</b>；
+ * 本机 6379 被其它项目占用，测量须用<b>专用实例</b>：{@code REDIS_PORT}（application-test.yml 的占位符）指向
+ * 临时 Redis（如 {@code docker run -d --name ... -p 6390:6379 redis:7.2-alpine}），跑完即删；不写共享 dev 数据。
+ * 不启本项目 docker-compose、不做跨宿主压测。仅删除本工具自建的
  * {@code exam:draft:{examId}:*} / {@code exam:monitor:online:{examId}:*} 键，不动其它键。
  *
  * <p><b>口径提醒</b>：本工具跑隔离 H2 + MockMvc <b>同进程</b>，字段「字节量」是按生成内容估算的<b>估计值</b>，
@@ -166,7 +168,9 @@ class MonitorAttributionMeasureIT {
             + "已交卷/已批改 answers 为含少量长文本的 JSON；paper_json 为合法快照（questions 数组长度=题数），"
             + "字符量随题数梯度（rep=" + VARIANT_REP_QCOUNT + " 题，small=" + VARIANT_SMALL_QCOUNT + " 题）；"
             + "进行中学生逐个写入草稿键 exam:draft:{examId}:{sid}（answers " + DRAFT_ANSWER_ENTRIES + " 条），"
-            + "其中 " + (ONLINE_EVERY - ONLINE_OFFSET) + "/" + ONLINE_EVERY + " 写入在线键 exam:monitor:online:{examId}:{sid}"
+            + "其中每 60 个进行中学生里有 2 个分别为「损坏 JSON / 非对象 answers / 缺键 / 空白值」四种形态"
+            + "（i%60 = 0/15/30/45，与本变更要守住的语义分支一一对应，批取必须与单份 get 同判）——其余为正常草稿；"
+            + (ONLINE_EVERY - ONLINE_OFFSET) + "/" + ONLINE_EVERY + " 写入在线键 exam:monitor:online:{examId}:{sid}"
             + "（TTL 2h，仅为测量稳定，非生产 60s）；异常日志按 i%" + ABNORMAL_STRIDE + " 步长造 severity>=2 聚合；"
             + "学生无 users 行（姓名批查走空结果，与真实同名回退路径等价）；teacher 为真实注册登录教师并拥有该考试。";
 
@@ -240,6 +244,11 @@ class MonitorAttributionMeasureIT {
         result.put("os", System.getProperty("os.name") + " " + System.getProperty("os.version") + " " + System.getProperty("os.arch"));
         result.put("processors", Runtime.getRuntime().availableProcessors());
         result.put("maxHeapMB", Runtime.getRuntime().maxMemory() / (1024 * 1024));
+        result.put("redisEnv", Map.of(
+                "REDIS_HOST", String.valueOf(System.getenv("REDIS_HOST")),
+                "REDIS_PORT", String.valueOf(System.getenv("REDIS_PORT")),
+                "effectiveNote", "application-test.yml 的 ${REDIS_HOST:127.0.0.1}/${REDIS_PORT:6379} + db15；"
+                        + "专用隔离实例由 REDIS_PORT 注入（不写其它客户端共用的实例）"));
         result.put("dataRule", DATA_RULE);
         result.put("metricDefinitions", METRIC_DEFS);
         result.put("load", loadParams());
@@ -320,6 +329,7 @@ class MonitorAttributionMeasureIT {
         v.put("statusMix", Map.of("inProgress", IN_PROGRESS_COUNT,
                 "submitted", SUBMITTED_COUNT,
                 "graded", N_STUDENTS - IN_PROGRESS_COUNT - SUBMITTED_COUNT));
+        v.put("draftKindMix", draftKindMix(data.draftKinds()));
         v.put("paperCharsPerRow", data.paperJson().length());
         v.put("answersCharsPerRow", data.answersJson() == null ? 0 : data.answersJson().length());
         v.put("paperCharsTotal", (long) data.paperJson().length() * N_STUDENTS);
@@ -333,7 +343,7 @@ class MonitorAttributionMeasureIT {
         Map<String, Object> narrow = measureNarrowSnapshot(examId);
         Map<String, Object> draftGet = measureDraftGetEach(examId, data.inProgressIds());
         Map<String, Object> draftMGet = measureDraftMGet(examId, data.inProgressIds());
-        Map<String, Object> draftBatch = measureDraftBatchFull(examId, data.inProgressIds());
+        Map<String, Object> draftBatch = measureDraftBatchFull(examId, data.inProgressIds(), data.draftKinds());
         Map<String, Object> onlineMGet = measureOnlineMGet(examId, data.inProgressIds());
         Map<String, Object> abnormalAgg = measureAbnormalAgg(examId);
 
@@ -574,7 +584,7 @@ class MonitorAttributionMeasureIT {
      * 等价判据：逐学生的 version / answers / marked / savedTime 与 {@code draftService.get} 全等，
      * 且「无草稿/损坏按 null」的缺失集合一致——不成立即断言失败（测量结论无效）。
      */
-    private Map<String, Object> measureDraftBatchFull(Long examId, List<Long> inProgressIds) {
+    private Map<String, Object> measureDraftBatchFull(Long examId, List<Long> inProgressIds, List<DraftKind> kinds) {
         List<String> keys = new ArrayList<>(inProgressIds.size());
         for (Long sid : inProgressIds) {
             keys.add("exam:draft:" + examId + ":" + sid);
@@ -602,11 +612,13 @@ class MonitorAttributionMeasureIT {
             }
         }
 
-        // 等价校验（不计时）：逐学生与单份 get 对照
+        // 等价校验（不计时）：逐学生与单份 get 对照，并按草稿形态分桶记录
         int mismatches = 0;
         String firstMismatch = "";
         int nullAgreement = 0;
-        for (Long sid : inProgressIds) {
+        Map<String, Map<String, Object>> byBranch = new LinkedHashMap<>();
+        for (int i = 0; i < inProgressIds.size(); i++) {
+            Long sid = inProgressIds.get(i);
             String json = redis.opsForValue().get("exam:draft:" + examId + ":" + sid);
             ExamDraftService.DraftState batched = (json == null || json.isBlank()) ? null : parseDraftLikeGet(json);
             ExamDraftService.DraftState single = draftService.get(examId, sid);
@@ -619,6 +631,23 @@ class MonitorAttributionMeasureIT {
             }
             if (single == null && batched == null) {
                 nullAgreement++;
+            }
+            Map<String, Object> bucket = byBranch.computeIfAbsent(kinds.get(i).name(), k -> {
+                Map<String, Object> b = new LinkedHashMap<>();
+                b.put("checked", 0);
+                b.put("mismatches", 0);
+                b.put("bothNull", 0);
+                b.put("singleNonNull", 0);
+                return b;
+            });
+            bucket.put("checked", ((Integer) bucket.get("checked")) + 1);
+            if (diff != null) {
+                bucket.put("mismatches", ((Integer) bucket.get("mismatches")) + 1);
+            }
+            if (single == null && batched == null) {
+                bucket.put("bothNull", ((Integer) bucket.get("bothNull")) + 1);
+            } else if (single != null) {
+                bucket.put("singleNonNull", ((Integer) bucket.get("singleNonNull")) + 1);
             }
         }
         assertEquals(0, mismatches, "批取结果与单份 get 不等价（测量结论无效）: " + firstMismatch);
@@ -641,6 +670,7 @@ class MonitorAttributionMeasureIT {
         m.put("equivalenceCheckedStudents", inProgressIds.size());
         m.put("equivalenceMismatches", mismatches);
         m.put("nullAgreementStudents", nullAgreement);
+        m.put("equivalenceByBranch", byBranch);
         m.put("passBestMs", round3(passSorted[0] / 1e6));
         m.put("passMedianMs", round3(percentile(passSorted, 0.50)));
         m.put("passMeanMs", round3(mean(passNs)));
@@ -1018,7 +1048,24 @@ class MonitorAttributionMeasureIT {
     // ==================== 数据构造 ====================
 
     private record VariantData(String name, int qCount, long examId, String paperJson, String answersJson,
-                               List<Long> studentIds, List<Long> inProgressIds) {
+                               List<Long> studentIds, List<Long> inProgressIds, List<DraftKind> draftKinds) {
+    }
+
+    /**
+     * 进行中学生的草稿数据形态——与本变更必须守住、且必须与单份 get 同判的语义分支一一对应。
+     * {@code NORMAL} 之外的四种都不应让批取与单份读取产生分歧。
+     */
+    private enum DraftKind { NORMAL, CORRUPT, NON_OBJECT_ANSWERS, MISSING_KEY, BLANK_VALUE }
+
+    /** 每 60 个进行中学生取 2 个做异常形态（i%60=0/15/30/45），其余正常。 */
+    private static DraftKind draftKindFor(int i) {
+        return switch (i % 60) {
+            case 0 -> DraftKind.CORRUPT;
+            case 15 -> DraftKind.NON_OBJECT_ANSWERS;
+            case 30 -> DraftKind.MISSING_KEY;
+            case 45 -> DraftKind.BLANK_VALUE;
+            default -> DraftKind.NORMAL;
+        };
     }
 
     private VariantData buildData(String name, int qCount, long examId) throws Exception {
@@ -1070,12 +1117,17 @@ class MonitorAttributionMeasureIT {
         String draftJson = buildDraftJson(examId, qCount);
         String savedTime = LocalDateTime.now().toString();
         int onlineCount = 0;
+        List<DraftKind> draftKinds = new ArrayList<>(inProgressIds.size());
         for (int i = 0; i < inProgressIds.size(); i++) {
             Long sid = inProgressIds.get(i);
             String draftKey = "exam:draft:" + examId + ":" + sid;
-            redis.opsForValue().set(draftKey, draftJson.replace("\"savedTime\":\"\"", "\"savedTime\":\"" + savedTime + "\""),
-                    Duration.ofHours(2));
-            createdRedisKeys.add(draftKey);
+            DraftKind kind = draftKindFor(i);
+            draftKinds.add(kind);
+            String value = draftValueOf(kind, draftJson, savedTime);
+            if (value != null) {
+                redis.opsForValue().set(draftKey, value, Duration.ofHours(2));
+                createdRedisKeys.add(draftKey);
+            }
             if (i % ONLINE_EVERY != ONLINE_OFFSET) {
                 String key = "exam:monitor:online:" + examId + ":" + sid;
                 redis.opsForValue().set(key, "1", Duration.ofHours(2));
@@ -1086,7 +1138,20 @@ class MonitorAttributionMeasureIT {
         assertEquals(IN_PROGRESS_COUNT - IN_PROGRESS_COUNT / ONLINE_EVERY, onlineCount,
                 "在线键数量与预期不符（离线 1/5）");
 
-        return new VariantData(name, qCount, examId, paperJson, answersJson, studentIds, inProgressIds);
+        return new VariantData(name, qCount, examId, paperJson, answersJson, studentIds, inProgressIds, draftKinds);
+    }
+
+    /** 按形态给出该学生的草稿原始值；{@code null} 表示不写键（缺键形态）。 */
+    private String draftValueOf(DraftKind kind, String draftJson, String savedTime) {
+        String normal = draftJson.replace("\"savedTime\":\"\"", "\"savedTime\":\"" + savedTime + "\"");
+        return switch (kind) {
+            case MISSING_KEY -> null;
+            case BLANK_VALUE -> "";
+            case CORRUPT -> "{\"version\":1,\"answers\":{\"1000\":\"A\"";
+            case NON_OBJECT_ANSWERS ->
+                    "{\"version\":1,\"answers\":\"oops\",\"marked\":[],\"savedTime\":\"" + savedTime + "\"}";
+            case NORMAL -> normal;
+        };
     }
 
     /** 进行中答卷：不写 answers/submit_time/submit_type（留 DEFAULT NULL），避开 H2 的 NULL 类型绑定限制。 */
@@ -1345,6 +1410,14 @@ class MonitorAttributionMeasureIT {
                 "jdk.GCPhasePause(threshold=0ms)"));
         m.put("redisDatabase", 15);
         return m;
+    }
+
+    private static Map<String, Integer> draftKindMix(List<DraftKind> kinds) {
+        Map<String, Integer> mix = new LinkedHashMap<>();
+        for (DraftKind kind : kinds) {
+            mix.merge(kind.name(), 1, Integer::sum);
+        }
+        return mix;
     }
 
     private static List<Integer> ints(int[] values) {
