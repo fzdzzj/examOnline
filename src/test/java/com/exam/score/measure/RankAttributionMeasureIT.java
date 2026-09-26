@@ -733,6 +733,8 @@ class RankAttributionMeasureIT {
         summary.put("rankSharePct", round3(totalSamples == 0 ? 0 : 100.0 * rankSamples / totalSamples));
         summary.put("cpuUserPctMean", round3(cpuSamples == 0 ? 0 : 100.0 * cpuUserSum / cpuSamples));
         summary.put("cpuMachineTotalPctMean", round3(cpuSamples == 0 ? 0 : 100.0 * cpuMachineSum / cpuSamples));
+        summary.put("cpuLoadEvents", cpuSamples);
+        summary.put("cpuReadingUsable", cpuSamples > 0);
         summary.put("gcPauseCount", gcCount);
         summary.put("gcPauseMsTotal", round3(gcPauseMs));
         summary.put("topFrames", topFrames(topFrames, 8));
