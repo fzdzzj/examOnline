@@ -142,7 +142,7 @@ class RankAttributionMeasureIT {
             Map.entry("e2e.meanMs", "同上算术均值"),
             Map.entry("e2e.throughputRps", "计时请求数 / 该臂墙钟秒数（并发>1 时为有效吞吐）"),
             Map.entry("e2e.rankMeanMs", "计时包装器累计的请求内 rank() 耗时 / 请求数（口径=纯调用耗时，不含 SQL/框架）"),
-            Map.entry("e2e.rankSharePct", "请求内 rank() 总耗时 / 全部请求墙钟总耗时（同臂同并发下可直接对账 JFR 份额）"),
+            Map.entry("e2e.rankSharePct", "请求内 rank() 总耗时 / 全部请求墙钟总耗时（口径是墙钟占比；与 JFR 的 CPU 栈采样份额分母不同、FOCUSED 录制范围也不同，二者只可相互佐证，不可直接等值比较）"),
             Map.entry("jfr.rankSharePct", "jdk.ExecutionSample 样本中栈内含 com.exam.score.service.RankCalculator 帧的比例"),
             Map.entry("jfr.topFrames", "栈顶（最内层）帧 class.method 直方图 Top8，用于判断采样落点与内联影响"),
             Map.entry("note", "本工具跑隔离 H2 + MockMvc 同进程，不是真实 MySQL/Tomcat 生产性能，不得当作交卷 P99 收益")
