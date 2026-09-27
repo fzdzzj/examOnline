@@ -1,0 +1,11 @@
+combo                        oldBandMax driftMax pushMin pushMedian projWins D1aPerSample D1aAggregate
+s200-p10-a2k                 1.797      1.584    1.317   1.914      4/12     false        true
+s1000-p10-a2k                1.474      1.488    2.316   3.484      0/12     true         true
+s1000-p10-a20k               1.565      3.518    2.399   3.757      0/12     true         true
+s3000-p10-a2k                1.304      1.594    2.267   2.969      0/12     true         true
+
+readings:
+ NO-GO  A 冻结读法（D1a 逐样本 + D2 极值：min(下推) > max(OLD带, 顺序漂移）)  D1=false D2=false D5=false
+ NO-GO  B D1a 聚合 + D2 极值（只松开 D1a 的实现口径）  D1=true D2=false D5=false
+ NO-GO  C D1a 聚合 + D2 只用 OLD 等价臂噪声带（去掉顺序漂移这一项）  D1=true D2=false D5=false
+ GO     D D1a 聚合 + D2 中位统计（pushMedian > max(OLD带, 顺序漂移）)  D1=true D2=true D5=false

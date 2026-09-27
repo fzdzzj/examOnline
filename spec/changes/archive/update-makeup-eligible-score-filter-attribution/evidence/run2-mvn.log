@@ -1,0 +1,184 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.exam:exam-online >------------------------
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (jacoco-prepare-agent) @ exam-online ---
+[INFO] argLine set to -javaagent:D:\\code\\examOnline\\.m2-repo\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\code\\examOnline\\target\\jacoco.exec,excludes=com/exam/ExamOnlineApplication.class:com/exam/**/dto/**:com/exam/**/entity/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ exam-online ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ exam-online ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ exam-online ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.exam.exam.measure.MakeupEligibleAttributionMeasureIT
+23:30:24.261 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.exam.ExamOnlineApplication for test class com.exam.exam.measure.MakeupEligibleAttributionMeasureIT
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-09-27 23:30:25.023 [main] [] [] INFO  c.e.e.m.MakeupEligibleAttributionMeasureIT - Starting MakeupEligibleAttributionMeasureIT using Java 21.0.9 with PID 38796 (started by fzdzzj in D:\code\examOnline)
+2026-09-27 23:30:25.023 [main] [] [] INFO  c.e.e.m.MakeupEligibleAttributionMeasureIT - The following 1 profile is active: "test"
+2026-09-27 23:30:27.889 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-27 23:30:27.895 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-27 23:30:28.045 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 117 ms. Found 0 Redis repository interfaces.
+2026-09-27 23:30:29.485 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig' of type [io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-09-27 23:30:29.501 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'mapConverter' of type [io.opentelemetry.instrumentation.spring.autoconfigure.internal.MapConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-09-27 23:30:30.552 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: DRAFT_CONFLICT -> DraftConflictEventCollector
+2026-09-27 23:30:30.558 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: PAGE_REFRESH -> PageRefreshEventCollector
+2026-09-27 23:30:30.558 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SUBMIT_ANOMALY -> SubmitAnomalyEventCollector
+2026-09-27 23:30:30.558 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SWITCH_SCREEN -> SwitchScreenEventCollector
+2026-09-27 23:30:30.558 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: WINDOW_BLUR -> WindowBlurEventCollector
+2026-09-27 23:30:30.675 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2026-09-27 23:30:31.302 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection conn0: url=jdbc:h2:mem:exam user=SA
+2026-09-27 23:30:31.305 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2026-09-27 23:30:31.311 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Starting...
+2026-09-27 23:30:31.312 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - slave - Added connection conn1: url=jdbc:h2:mem:exam user=SA
+2026-09-27 23:30:31.312 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Start completed.
+2026-09-27 23:30:31.312 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [slave] success
+2026-09-27 23:30:31.312 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2026-09-27 23:30:31.312 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [2] datasource,primary datasource named [master]
+2026-09-27 23:30:33.728 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: JUDGE -> JudgeGradingStrategy
+2026-09-27 23:30:33.728 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: MULTIPLE -> MultipleChoiceGradingStrategy
+2026-09-27 23:30:33.730 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SHORT_ANSWER -> ShortAnswerGradingStrategy
+2026-09-27 23:30:33.730 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SINGLE -> SingleChoiceGradingStrategy
+2026-09-27 23:30:37.203 [main] [] [] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 3 endpoints beneath base path '/actuator'
+2026-09-27 23:30:37.334 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-27 23:30:37.357 [main] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused: getsockopt
+2026-09-27 23:30:37.366 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-27 23:30:37.389 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:632)
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726)
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2262)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2235)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2215)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1972)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1936)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1481)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1322)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.net.ConnectException: Connection refused: getsockopt
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:690)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:678)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:647)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:593)
+	... 12 common frames omitted
+2026-09-27 23:30:37.401 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-27 23:30:37.431 [main] [] [] INFO  c.e.e.m.MakeupEligibleAttributionMeasureIT - Started MakeupEligibleAttributionMeasureIT in 12.943 seconds (process running for 14.757)
+2026-09-27 23:30:37.767 [main] [] [] INFO  c.exam.config.RolePermissionInitializer - RBAC 角色/权限预置完成
+2026-09-27 23:30:37.869 [main] [] [] INFO  com.exam.config.AdminInitializer - 首次启动：已创建默认管理员 username=admin（请尽快通过环境变量 ADMIN_PASSWORD 修改）
+2026-09-27 23:30:37.870 [main] [] [] INFO  com.exam.config.ApplicationConfig - JWT_SECRET validated successfully (length: 58)
+2026-09-27 23:30:37.871 [main] [] [] INFO  com.exam.config.ApplicationConfig - Application configuration validated successfully
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\code\examOnline\.m2-repo\net\bytebuddy\byte-buddy-agent\1.17.7\byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+MEASURE semantics 12 cases
+MEASURE oracle {combo=s200-p10-a2k, expectedBelowLine=20, expectedAbsent=10, expectedSize=30, actualSize=30, actualReasonCounts={ABSENT=10, BELOW_LINE=20}, oracleMatch=true, namesPresent=true}
+MEASURE oracle {combo=s1000-p10-a2k, expectedBelowLine=100, expectedAbsent=50, expectedSize=150, actualSize=150, actualReasonCounts={ABSENT=50, BELOW_LINE=100}, oracleMatch=true, namesPresent=true}
+MEASURE oracle {combo=s1000-p50-a2k, expectedBelowLine=500, expectedAbsent=50, expectedSize=550, actualSize=550, actualReasonCounts={ABSENT=50, BELOW_LINE=500}, oracleMatch=true, namesPresent=true}
+MEASURE oracle {combo=s1000-p90-a2k, expectedBelowLine=900, expectedAbsent=50, expectedSize=950, actualSize=950, actualReasonCounts={ABSENT=50, BELOW_LINE=900}, oracleMatch=true, namesPresent=true}
+MEASURE oracle {combo=s1000-p10-a20k, expectedBelowLine=100, expectedAbsent=50, expectedSize=150, actualSize=150, actualReasonCounts={ABSENT=50, BELOW_LINE=100}, oracleMatch=true, namesPresent=true}
+MEASURE oracle {combo=s3000-p10-a2k, expectedBelowLine=300, expectedAbsent=150, expectedSize=450, actualSize=450, actualReasonCounts={ABSENT=150, BELOW_LINE=300}, oracleMatch=true, namesPresent=true}
+MEASURE s200-p10-a2k r1 order=[OLD, PUSHDOWN, PROJECTION] prodFirst=1.922 prodLast=1.339 OLD=1.508 PUSHDOWN=1.186 PROJECTION=1.056 ratios(prodFirst) OLD=1.275 PUSH=1.621 PROJ=1.82 prodLastVsFirst=1.435
+MEASURE s200-p10-a2k r2 order=[PROJECTION, PUSHDOWN, OLD] prodFirst=1.544 prodLast=1.477 OLD=1.684 PUSHDOWN=1.118 PROJECTION=1.258 ratios(prodFirst) OLD=0.917 PUSH=1.381 PROJ=1.227 prodLastVsFirst=1.045
+MEASURE s200-p10-a2k r3 order=[PUSHDOWN, OLD, PROJECTION] prodFirst=1.629 prodLast=1.449 OLD=1.153 PUSHDOWN=0.546 PROJECTION=1.024 ratios(prodFirst) OLD=1.413 PUSH=2.984 PROJ=1.591 prodLastVsFirst=1.124
+2026-09-27 23:30:42.595 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-09-27 23:30:42.601 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@46f295e5: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-09-27 23:30:42.605 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-27 23:30:42.605 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-09-27 23:30:42.605 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+MEASURE s200-p10-a2k r4 order=[PROJECTION, OLD, PUSHDOWN] prodFirst=1.354 prodLast=1.402 OLD=0.976 PUSHDOWN=0.779 PROJECTION=0.62 ratios(prodFirst) OLD=1.387 PUSH=1.738 PROJ=2.184 prodLastVsFirst=0.966
+MEASURE s1000-p10-a2k r1 order=[OLD, PUSHDOWN, PROJECTION] prodFirst=3.966 prodLast=3.568 OLD=3.714 PUSHDOWN=1.027 PROJECTION=1.526 ratios(prodFirst) OLD=1.068 PUSH=3.862 PROJ=2.599 prodLastVsFirst=1.112
+MEASURE s1000-p10-a2k r2 order=[PROJECTION, PUSHDOWN, OLD] prodFirst=2.959 prodLast=3.102 OLD=2.567 PUSHDOWN=0.846 PROJECTION=1.621 ratios(prodFirst) OLD=1.153 PUSH=3.498 PROJ=1.825 prodLastVsFirst=0.954
+MEASURE s1000-p10-a2k r3 order=[PUSHDOWN, OLD, PROJECTION] prodFirst=3.282 prodLast=3.685 OLD=2.606 PUSHDOWN=0.966 PROJECTION=1.662 ratios(prodFirst) OLD=1.259 PUSH=3.398 PROJ=1.975 prodLastVsFirst=0.891
+MEASURE s1000-p10-a2k r4 order=[PROJECTION, OLD, PUSHDOWN] prodFirst=2.579 prodLast=2.098 OLD=1.586 PUSHDOWN=0.647 PROJECTION=1.057 ratios(prodFirst) OLD=1.626 PUSH=3.986 PROJ=2.44 prodLastVsFirst=1.229
+MEASURE s1000-p50-a2k r1 order=[OLD, PUSHDOWN, PROJECTION] prodFirst=4.92 prodLast=3.28 OLD=4.379 PUSHDOWN=3.501 PROJECTION=3.482 ratios(prodFirst) OLD=1.124 PUSH=1.405 PROJ=1.413 prodLastVsFirst=1.5
+MEASURE s1000-p50-a2k r2 order=[PROJECTION, PUSHDOWN, OLD] prodFirst=3.81 prodLast=3.557 OLD=2.396 PUSHDOWN=1.931 PROJECTION=2.154 ratios(prodFirst) OLD=1.59 PUSH=1.973 PROJ=1.769 prodLastVsFirst=1.071
+2026-09-27 23:30:47.765 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-09-27 23:30:47.765 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@c8ab10c: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-09-27 23:30:47.767 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-3] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-27 23:30:47.769 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-3] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-09-27 23:30:47.770 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-3] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+MEASURE s1000-p50-a2k r3 order=[PUSHDOWN, OLD, PROJECTION] prodFirst=5.362 prodLast=2.697 OLD=6.009 PUSHDOWN=3.464 PROJECTION=3.219 ratios(prodFirst) OLD=0.892 PUSH=1.548 PROJ=1.666 prodLastVsFirst=1.988
+MEASURE s1000-p50-a2k r4 order=[PROJECTION, OLD, PUSHDOWN] prodFirst=5.565 prodLast=3.927 OLD=3.596 PUSHDOWN=2.702 PROJECTION=2.725 ratios(prodFirst) OLD=1.548 PUSH=2.06 PROJ=2.042 prodLastVsFirst=1.417
+MEASURE s1000-p90-a2k r1 order=[OLD, PUSHDOWN, PROJECTION] prodFirst=5.098 prodLast=4.497 OLD=5.455 PUSHDOWN=5.727 PROJECTION=3.93 ratios(prodFirst) OLD=0.935 PUSH=0.89 PROJ=1.297 prodLastVsFirst=1.134
+MEASURE s1000-p90-a2k r2 order=[PROJECTION, PUSHDOWN, OLD] prodFirst=5.389 prodLast=3.561 OLD=2.763 PUSHDOWN=2.819 PROJECTION=5.21 ratios(prodFirst) OLD=1.95 PUSH=1.912 PROJ=1.034 prodLastVsFirst=1.513
+2026-09-27 23:30:52.953 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-3] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-09-27 23:30:52.953 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-3] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@eb951b4: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-09-27 23:30:52.955 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-4] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-27 23:30:52.956 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-4] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-09-27 23:30:52.956 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-4] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+MEASURE s1000-p90-a2k r3 order=[PUSHDOWN, OLD, PROJECTION] prodFirst=4.72 prodLast=5.22 OLD=5.997 PUSHDOWN=5.75 PROJECTION=5.294 ratios(prodFirst) OLD=0.787 PUSH=0.821 PROJ=0.892 prodLastVsFirst=0.904
+MEASURE s1000-p90-a2k r4 order=[PROJECTION, OLD, PUSHDOWN] prodFirst=4.711 prodLast=4.292 OLD=3.024 PUSHDOWN=3.837 PROJECTION=2.35 ratios(prodFirst) OLD=1.558 PUSH=1.228 PROJ=2.005 prodLastVsFirst=1.098
+MEASURE s1000-p10-a20k r1 order=[OLD, PUSHDOWN, PROJECTION] prodFirst=2.999 prodLast=1.762 OLD=1.684 PUSHDOWN=0.479 PROJECTION=1.027 ratios(prodFirst) OLD=1.781 PUSH=6.261 PROJ=2.92 prodLastVsFirst=1.702
+MEASURE s1000-p10-a20k r2 order=[PROJECTION, PUSHDOWN, OLD] prodFirst=2.756 prodLast=4.629 OLD=3.973 PUSHDOWN=0.944 PROJECTION=1.553 ratios(prodFirst) OLD=0.694 PUSH=2.919 PROJ=1.775 prodLastVsFirst=0.595
+MEASURE s1000-p10-a20k r3 order=[PUSHDOWN, OLD, PROJECTION] prodFirst=2.622 prodLast=2.194 OLD=2.421 PUSHDOWN=0.518 PROJECTION=1.095 ratios(prodFirst) OLD=1.083 PUSH=5.062 PROJ=2.395 prodLastVsFirst=1.195
+MEASURE s1000-p10-a20k r4 order=[PROJECTION, OLD, PUSHDOWN] prodFirst=3.371 prodLast=1.877 OLD=1.677 PUSHDOWN=0.61 PROJECTION=0.891 ratios(prodFirst) OLD=2.01 PUSH=5.526 PROJ=3.783 prodLastVsFirst=1.796
+2026-09-27 23:30:58.064 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-4] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-09-27 23:30:58.065 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-4] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@163913ee: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-09-27 23:30:58.065 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-5] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-27 23:30:58.080 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-5] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-09-27 23:30:58.080 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-5] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+MEASURE s3000-p10-a2k r1 order=[OLD, PUSHDOWN, PROJECTION] prodFirst=7.577 prodLast=7.719 OLD=10.16 PUSHDOWN=1.817 PROJECTION=2.729 ratios(prodFirst) OLD=0.746 PUSH=4.17 PROJ=2.776 prodLastVsFirst=0.982
+MEASURE s3000-p10-a2k r2 order=[PROJECTION, PUSHDOWN, OLD] prodFirst=9.124 prodLast=5.725 OLD=10.285 PUSHDOWN=3.257 PROJECTION=4.18 ratios(prodFirst) OLD=0.887 PUSH=2.801 PROJ=2.183 prodLastVsFirst=1.594
+MEASURE s3000-p10-a2k r3 order=[PUSHDOWN, OLD, PROJECTION] prodFirst=9.605 prodLast=6.333 OLD=7.915 PUSHDOWN=3.054 PROJECTION=3.116 ratios(prodFirst) OLD=1.214 PUSH=3.145 PROJ=3.082 prodLastVsFirst=1.517
+2026-09-27 23:31:03.243 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-5] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-09-27 23:31:03.243 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-5] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@15c426f8: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-09-27 23:31:03.245 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-6] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-27 23:31:03.245 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-6] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-09-27 23:31:03.245 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-6] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+MEASURE s3000-p10-a2k r4 order=[PROJECTION, OLD, PUSHDOWN] prodFirst=7.047 prodLast=7.899 OLD=5.729 PUSHDOWN=2.4 PROJECTION=3.491 ratios(prodFirst) OLD=1.23 PUSH=2.936 PROJ=2.019 prodLastVsFirst=0.892
+MEASURE wrote D:\code\examOnline\spec\changes\update-makeup-eligible-score-filter-attribution\evidence\makeup-eligible-attribution-run2.json
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 40.77 s -- in com.exam.exam.measure.MakeupEligibleAttributionMeasureIT
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (jacoco-report) @ exam-online ---
+[INFO] Loading execution data file D:\code\examOnline\target\jacoco.exec
+[INFO] Analyzed bundle 'exam-online' with 133 classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  48.069 s
+[INFO] Finished at: 2026-09-27T23:31:06+08:00
+[INFO] ------------------------------------------------------------------------

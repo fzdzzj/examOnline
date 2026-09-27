@@ -245,3 +245,27 @@ WHEN 先行运行端到端用例
 THEN 用例如期失败并指出缺陷位置
 
 AND 缺陷修复后同一条用例转绿（不得通过放宽断言转绿）
+
+---
+
+> 评估结论注记（NO-GO，2026-09-27，`update-makeup-eligible-score-filter-attribution` 归档）：本基线
+> **未合入**该提案的任何 Requirement——其 spec-delta（补考候选低分取数把 `total_score < passLine`
+> 下推进 SQL）按**未采用草案**随目录归档，补考候选名单的现行行为条款不变。该提案先归因后裁决：
+> 在隔离 H2 + 进程内直调 Service（test profile、仓库正式 `schema.sql` 建表、不启 Docker、不写共享
+> dev）三次独立 JVM 调用、6 形状 × 4 轮，预登记判据（`evidence/PREREGISTRATION.md`，写定于正式测量前）
+> 的结论算子 `D1∧D2∧D3∧D4∧¬D5∧D6` 为 **false**——**D1 不成立**：`s200-p10-a2k` 有 5/12 个样本中
+> 「答卷取回 + Java 过滤」组不是最大相位（200 人规模下低分取回非占比最高的可控因素）；
+> **D2 不成立**：`s200` 下推请求级比值最小值 1.317 < 判定带 1.797（同轮 `OLD` 等价副本与前后两次
+> 生产入口的漂移读数吞没收益），`s1000-p10-a20k` 最小值 2.399 < 判定带 3.518（判定带由同代码顺序漂移
+> 样本 5.118→1.455ms 设定；若只用等价臂噪声带上界 1.565 则越过——如实记为「稳定性不达标」而非
+> 「收益不存在」）；D3（结果等价）与 D6（可靠性）成立、D5（投影主导）不成立。方向性读数（不作 GO
+> 依据）：下推中位收益 1.91/3.48/3.76/2.97 倍、并发吞吐中位比 3.69–4.96 倍，但低分占比升高时收益衰减
+> （p90 中位 1.06、投影在 p90 10/12 与 p50 7/12 轮次胜出，p90 由姓名装载相位主导）。敏感性四读法中
+> 三种仍 NO-GO；唯一翻绿的读法用中位数替换「每一轮」，不再检验提案要求的逐轮稳定性，按
+> 「不得为追求 GO 放宽判据」不采用。按判据裁决 **NO-GO 并停止实施**：未改 `MakeupService` 与任何
+> `src/main` 代码（`git diff --stat 31a5ff8 f88655a` 仅测试侧测量工具 1 文件），未做列投影/索引/排序/
+> 缓存/schema/前端/API/JVM 改动，未转手实施投影。运行时边界：本端点真实请求频度、真实考试人数与
+> `answers` 分布无获准来源，记为未知；隔离 H2 结果不外推生产 MySQL/Tomcat 与 P99。数字、逐轮原值、
+> 反例与算子见 `spec/changes/archive/update-makeup-eligible-score-filter-attribution/evidence/`
+> （`measurement-rounds.md`、`rounds-analysis.json`、`sensitivity-analysis.json`、`evidence-sha256.txt`）；
+> 门禁 `mvnw.cmd clean test` @ `f88655a` → 314/0/0/1 BUILD SUCCESS 退出码 0。

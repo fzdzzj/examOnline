@@ -1,0 +1,106 @@
+=== 有效性闸门 ===
+ OK   run1: 12 条语义用例全绿 cases=12
+ OK   run1: 6 个 combo 夹具 oracle 全绿 oracles=6
+ OK   run1: 全部轮次结果等价（G3） rounds=24
+ OK   run1: 受控臂 SQL 形状（G4） rounds=24
+ OK   run1: SQL 捕获生效（G5 前置） rounds=24
+ OK   run1: 并发臂完整（8×8=64 次/臂）
+ OK   run1: 形状/轮数完整（6 combo × 4 轮） roundsPerCombo=4,4,4,4,4,4
+ OK   run2: 12 条语义用例全绿 cases=12
+ OK   run2: 6 个 combo 夹具 oracle 全绿 oracles=6
+ OK   run2: 全部轮次结果等价（G3） rounds=24
+ OK   run2: 受控臂 SQL 形状（G4） rounds=24
+ OK   run2: SQL 捕获生效（G5 前置） rounds=24
+ OK   run2: 并发臂完整（8×8=64 次/臂）
+ OK   run2: 形状/轮数完整（6 combo × 4 轮） roundsPerCombo=4,4,4,4,4,4
+ OK   run3: 12 条语义用例全绿 cases=12
+ OK   run3: 6 个 combo 夹具 oracle 全绿 oracles=6
+ OK   run3: 全部轮次结果等价（G3） rounds=24
+ OK   run3: 受控臂 SQL 形状（G4） rounds=24
+ OK   run3: SQL 捕获生效（G5 前置） rounds=24
+ OK   run3: 并发臂完整（8×8=64 次/臂）
+ OK   run3: 形状/轮数完整（6 combo × 4 轮） roundsPerCombo=4,4,4,4,4,4
+
+=== 逐 combo（6 个 combo）===
+
+[主族] s200-p10-a2k  samples=12 eligible=30
+  medianMillis prodRef=1.504 OLD=1.139 PUSH=0.585 PROJ=0.955
+  ratio OLD[0.746..1.797] PUSH[1.317..3.484] med=1.915 PROJ[1.201..2.223] med=1.549
+  orderDrift[0.579..1.584] decidabilityBar=1.797 D1a=false D1b=true D2=false D5projWins=4/12
+  phaseMillis(OLD median) {"ownerLoad":0.321,"absenceLoad":0.44,"gradingSelect":0.663,"absencePutAndJavaFilter":0.022,"nameLoad":0.432}
+  structural rowsOut=200 rowsEliminated=180 charsElim=368640 charsOLD=409600 charsPUSH=40960 charsPROJ=0 absentRows=10 nameRows=30
+  conc8 rps OLD=1077.606 PUSH=3977.149 ratio=3.691
+
+[主族] s1000-p10-a2k  samples=12 eligible=150
+  medianMillis prodRef=3.132 OLD=2.863 PUSH=1.011 PROJ=1.642
+  ratio OLD[0.805..1.474] PUSH[2.316..3.87] med=3.484 PROJ[1.626..2.469] med=2.042
+  orderDrift[0.682..1.488] decidabilityBar=1.488 D1a=true D1b=true D2=true D5projWins=0/12
+  phaseMillis(OLD median) {"ownerLoad":0.231,"absenceLoad":0.344,"gradingSelect":2.332,"absencePutAndJavaFilter":0.108,"nameLoad":0.771}
+  structural rowsOut=1000 rowsEliminated=900 charsElim=1843200 charsOLD=2048000 charsPUSH=204800 charsPROJ=0 absentRows=50 nameRows=150
+  conc8 rps OLD=224.74 PUSH=1090.431 ratio=4.852
+
+[主族] s1000-p10-a20k  samples=12 eligible=150
+  medianMillis prodRef=2.741 OLD=2.305 PUSH=0.698 PROJ=1.182
+  ratio OLD[0.9..1.565] PUSH[2.399..7.239] med=3.757 PROJ[1.396..2.945] med=2.315
+  orderDrift[0.595..3.518] decidabilityBar=3.518 D1a=true D1b=true D2=false D5projWins=0/12
+  phaseMillis(OLD median) {"ownerLoad":0.18,"absenceLoad":0.269,"gradingSelect":2.48,"absencePutAndJavaFilter":0.119,"nameLoad":0.755}
+  structural rowsOut=1000 rowsEliminated=900 charsElim=18432000 charsOLD=20480000 charsPUSH=2048000 charsPROJ=0 absentRows=50 nameRows=150
+  conc8 rps OLD=211.423 PUSH=1048.97 ratio=4.961
+
+[主族] s3000-p10-a2k  samples=12 eligible=450
+  medianMillis prodRef=7.008 OLD=8.293 PUSH=2.258 PROJ=3.651
+  ratio OLD[0.419..1.304] PUSH[2.267..4.314] med=2.97 PROJ[1.348..2.802] med=1.75
+  orderDrift[0.738..1.594] decidabilityBar=1.594 D1a=true D1b=true D2=true D5projWins=0/12
+  phaseMillis(OLD median) {"ownerLoad":0.169,"absenceLoad":0.347,"gradingSelect":6.117,"absencePutAndJavaFilter":0.309,"nameLoad":1.858}
+  structural rowsOut=3000 rowsEliminated=2700 charsElim=5529600 charsOLD=6144000 charsPUSH=614400 charsPROJ=0 absentRows=150 nameRows=450
+  conc8 rps OLD=75.315 PUSH=365.36 ratio=4.851
+
+[敏感族] s1000-p50-a2k  samples=12 eligible=550
+  medianMillis prodRef=4.065 OLD=3.604 PUSH=2.569 PROJ=2.642
+  ratio OLD[0.671..1.703] PUSH[1.163..2.573] med=1.652 PROJ[1.177..2.563] med=1.671
+  orderDrift[0.542..1.988] decidabilityBar=1.988 D1a=false D1b=false D2=false D5projWins=7/12
+  phaseMillis(OLD median) {"ownerLoad":0.238,"absenceLoad":0.318,"gradingSelect":2.171,"absencePutAndJavaFilter":0.165,"nameLoad":2.259}
+  structural rowsOut=1000 rowsEliminated=500 charsElim=1024000 charsOLD=2048000 charsPUSH=1024000 charsPROJ=0 absentRows=50 nameRows=550
+  conc8 rps OLD=166.65 PUSH=282.822 ratio=1.697
+
+[敏感族] s1000-p90-a2k  samples=12 eligible=950
+  medianMillis prodRef=5.345 OLD=4.871 PUSH=5.537 PROJ=3.851
+  ratio OLD[0.663..2.13] PUSH[0.818..2.039] med=1.063 PROJ[0.859..2.022] med=1.503
+  orderDrift[0.476..1.513] decidabilityBar=2.13 D1a=false D1b=false D2=false D5projWins=10/12
+  phaseMillis(OLD median) {"ownerLoad":0.227,"absenceLoad":0.31,"gradingSelect":2.315,"absencePutAndJavaFilter":0.216,"nameLoad":3.766}
+  structural rowsOut=1000 rowsEliminated=100 charsElim=204800 charsOLD=2048000 charsPUSH=1843200 charsPROJ=0 absentRows=50 nameRows=950
+  conc8 rps OLD=141.652 PUSH=152.352 ratio=1.076
+
+=== 裁决 ===
+{
+  "validityPass": true,
+  "D1_highestProportionControllableFactor": false,
+  "D2_benefitAboveNoiseEveryRound": false,
+  "D3_equivalence": true,
+  "D4_notOnlyExtremeShapes": false,
+  "D5_projectionOrOtherDominates": false,
+  "D6_reliable": true,
+  "primaryFamilyGO": false,
+  "sensitiveFamilyNote": {
+    "s1000_p50": {
+      "D1": false,
+      "D2": false,
+      "pushdownRatio": {
+        "min": 1.163,
+        "median": 1.652,
+        "max": 2.573
+      }
+    },
+    "s1000_p90": {
+      "D1": false,
+      "D2": false,
+      "pushdownRatio": {
+        "min": 0.818,
+        "median": 1.063,
+        "max": 2.039
+      }
+    }
+  }
+}
+
+wrote rounds-analysis.json
