@@ -9,16 +9,22 @@
 #   同一臂内每轮 = 复位数据 → 预热轮 → 复位数据 → 正式轮，轮前由 run-loadtest.sh
 #   自动等 TIME_WAIT 排空。
 #
-# 用法（注入参数用环境变量传给 start-app.sh）：
-#   ARM=default ROUNDS=3 bash loadtest/run-arm.sh
-#   ARM=tuned SERVER_TOMCAT_THREADS_MAX=400 ROUNDS=3 bash loadtest/run-arm.sh
-#   ARM=tuned2 SERVER_TOMCAT_THREADS_MAX=400 DB_POOL_MAX=40 ROUNDS=3 bash loadtest/run-arm.sh
+# 用法（注入参数用环境变量传给 start-app.sh）。
+# **入口门禁在任何停/启应用、造数、复位之前执行**，不通过即非零退出且零副作用：
+#   * LT_WRITE_AUTHORIZED=1   必填。显式写入授权——本脚本会停/启应用、造数与复位数据库；
+#                             环境变量声明不是用户授权。
+#   * JMETER_SSH=user@loadgen 分离模式。另需 LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1
+#                             （不同 hostname/容器/VM 名不足以证明不抢同一物理宿主 CPU/磁盘）。
+#   * 不设 JMETER_SSH 时**默认拒绝**；确要走历史同机跑法须显式 LT_ALLOW_SAME_HOST=1，
+#     该臂只能当「未分离」的历史记录，不得当作分离后的容量结论。
+#
+#   ARM=default ROUNDS=3 LT_WRITE_AUTHORIZED=1 bash loadtest/run-arm.sh
+#   JMETER_SSH=user@loadgen JMETER_REMOTE_HOME=/opt/apache-jmeter \
+#     LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1 LT_WRITE_AUTHORIZED=1 \
+#     ARM=default ROUNDS=3 bash loadtest/run-arm.sh
 #
 # 双宿主（isolate-submit-load-generator）：本脚本必须跑在 **SUT 宿主**（它要停/启应用、造数、复位），
-#   JMeter 交给负载宿主。用法（隔离与凭据由人工/安全环境变量提供，不写进仓库）：
-#   JMETER_SSH=user@loadgen JMETER_REMOTE_HOME=/opt/apache-jmeter \
-#     LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1 ARM=default ROUNDS=3 bash loadtest/run-arm.sh
-#   不设 JMETER_SSH = 同机历史跑法：该臂只能当「未分离」的历史记录，不得当作分离后的容量结论。
+#   JMeter 交给负载宿主（隔离与凭据由人工/安全环境变量提供，不写进仓库）。
 #
 # 失败传播：任一硬失败（JMeter 非零退出 / 队列未归零 / 排空超时 / 产物未回收）的轮会被本脚本
 #   排除出臂级中位数；只要本臂有失败轮，脚本以非零退出，不允许把失败轮报成成功。
@@ -32,7 +38,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WT="$(cd "$SCRIPT_DIR/.." && pwd)"
 WT_WIN="$(cd "$WT" && pwd -W)"
 OUT="$WT/target/loadtest"
-mkdir -p "$OUT"
 
 ARM="${ARM:?必须给 ARM（臂名，决定产物前缀与实例日志名）}"
 ROUNDS="${ROUNDS:-3}"
@@ -49,6 +54,28 @@ RABBIT_CONTAINER="${RABBIT_CONTAINER:-exam-rabbitmq}"
 SUBMIT_QUEUE="${SUBMIT_QUEUE:-exam.submit.queue}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 ARM_LOG="$OUT/arm-$ARM.log"
+
+# 共享前置（与 run-loadtest.sh 同一套判定；可被替身测试单独 source 后直接驱动）。
+# shellcheck source=loadtest/lib-loadtest.sh
+. "$SCRIPT_DIR/lib-loadtest.sh"
+
+# ============================================================
+# 入口门禁：必须在**任何**应用生命周期 / 造数 / 复位之前。
+#
+# 修复的缺口：此前双宿主校验留在 run-loadtest.sh（单轮入口），于是本脚本会先
+#   stop-app → start-app → prepare-data，再在单轮里发现配置无效并拒绝——拒绝得太晚，
+#   副作用（停/启应用、造数）已经发生，且缺省 JMETER_SSH 的调用会静默进入真实执行。
+#
+# 现在的顺序：判定 → （通过才）mkdir 日志、stop/start-app、prepare-data、reset。
+# 不通过：非零退出，且 stop-app / start-app / prepare-data / 04-reset.sql 一次都不会被调用。
+# ============================================================
+if ! lt_preflight_isolation; then
+  echo "!! 臂 $ARM 未启动：入口门禁拒绝（宿主配置 / 物理隔离声明 / 显式写入授权）。" >&2
+  echo "   已确认未调用：loadtest/stop-app.sh、loadtest/start-app.sh、loadtest/prepare-data.sh、db/04-reset.sql" >&2
+  exit 1
+fi
+
+mkdir -p "$OUT"
 
 run_sql_file() {
   MYSQL_PWD="$DB_PASSWORD" "$MYSQL_BIN" -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" \
@@ -83,13 +110,15 @@ assert_queues_zero() {
   echo "############################################################"
 } | tee -a "$ARM_LOG"
 
-# 分离状态必须显式出现在臂日志里（同机采样只能当历史记录，不得当作分离后的结论）。
+# 跑法必须显式出现在臂日志里：同机采样只能当历史记录，不得当作分离后的结论。
+# （门禁已在文件顶部执行；能走到这里说明配置有效，且同机模式是**显式**选择的。）
 if [ -z "${JMETER_SSH:-}" ]; then
-  echo "!! 未设置 JMETER_SSH = 压测进程与被测进程同机（未分离）：本臂只能作为历史记录，不得当作分离后的容量结论" | tee -a "$ARM_LOG"
+  echo "!! 同机历史跑法（未分离）：本臂只能作为历史记录，不得当作分离后的容量结论" | tee -a "$ARM_LOG"
 fi
-{ echo "# APP_BASE_URL=${APP_BASE_URL:-(默认 http://127.0.0.1:8080)}"; \
+{ echo "# 跑法=$([ -n "${JMETER_SSH:-}" ] && echo '双宿主（已分离）' || echo '同机（未分离）')"; \
+  echo "# APP_BASE_URL=${APP_BASE_URL:-(默认 http://127.0.0.1:8080)}"; \
   echo "# JMETER_SSH=${JMETER_SSH:-<未设置=同机，未分离>}  JMETER_REMOTE_HOME=${JMETER_REMOTE_HOME:-(不适用)}"; \
-  echo "# 物理隔离声明 LOADGEN_PHYSICAL_ISOLATION_ATTESTED=${LOADGEN_PHYSICAL_ISOLATION_ATTESTED:-0}"; } | tee -a "$ARM_LOG"
+  echo "# 物理隔离声明 LOADGEN_PHYSICAL_ISOLATION_ATTESTED=${LOADGEN_PHYSICAL_ISOLATION_ATTESTED:-0}  写入授权 LT_WRITE_AUTHORIZED=${LT_WRITE_AUTHORIZED:-0}"; } | tee -a "$ARM_LOG"
 
 echo "=== [臂 $ARM] 重启实例（容量参数是启动期读取的） ==="
 bash "$SCRIPT_DIR/stop-app.sh" 2>&1 | tee -a "$ARM_LOG"

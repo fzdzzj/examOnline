@@ -23,6 +23,8 @@
 | `stop-app.sh` | 停 dev 实例（换臂 = 换实例；只杀确为 `exam-online.jar` 的 8080 监听进程） |
 | `run-arm.sh` | **G4 编排**：一臂 N 轮，每轮 = 复位 → 预热轮 → 复位 → 正式轮；跑完打印臂级中位数 |
 | `run-loadtest.sh` | 单轮：轮前等 TIME_WAIT 排空 → prom 前置快照 → 持续采样 → JMeter → prom 后置快照 → 等积压归零 → DB 指标 |
+| `lib-loadtest.sh` | 共享前置：入口门禁（宿主/物理隔离/写入授权）、可移植 `now_ms`、TIME_WAIT 探测（真零 vs 失败） |
+| `tests/guards.sh` | 回归护栏：用替身直接跑上面两个脚本，验证门禁零副作用、Git Bash 4.4 时间戳、探测失败传播、远端结果回收；不触真实 DB/应用/Docker/负载宿主 |
 | `analyze-results.py` | 从逐笔 CSV 算 P50/P90/P95/P99/失败明细（只取交卷样本，不混登录） |
 | `compare-runs.py` | 多轮/多臂汇总：客户端逐笔 + 服务端净增量 + 连接池净增量 + 臂级中位数 |
 | `summarize-samples.py` | **G5**：把采样时间线压成峰值表（Tomcat 线程水位 / Hikari pending·active / CPU / 队列 / DB 连接） |
@@ -48,16 +50,23 @@
 
 ```bash
 # 0) 前置：docker 栈在跑（主库 13316 / 从库 13317 / RabbitMQ 5672+15672）、Redis 在跑、JMeter 就位
+#    入口门禁（在停/启应用、造数、复位**之前**执行；不通过即非零退出且零副作用）：
+#      LT_WRITE_AUTHORIZED=1   必填。显式写入授权——run-arm.sh 会停/启应用、造数与复位数据库；
+#                              env 里声明一个变量**不是**用户授权。
+#      LT_ALLOW_SAME_HOST=1    只有在「确实没有第二台宿主、且只要历史同机记录」时显式选择；
+#                              该臂只能标注为「未分离」，不得当作分离后的容量结论。
 
 # 1) 默认臂（不注入容量参数 = 框架默认线程上限 200 / master 池 20）
-ARM=default ROUNDS=3 bash loadtest/run-arm.sh
+ARM=default ROUNDS=3 LT_WRITE_AUTHORIZED=1 LT_ALLOW_SAME_HOST=1 bash loadtest/run-arm.sh
 
 # 2) 调参臂 A（G2 注入：经环境变量走 relaxed binding，零文件改动）
-ARM=tuned-t400 ROUNDS=3 SERVER_TOMCAT_THREADS_MAX=400 bash loadtest/run-arm.sh
+ARM=tuned-t400 ROUNDS=3 SERVER_TOMCAT_THREADS_MAX=400 \
+  LT_WRITE_AUTHORIZED=1 LT_ALLOW_SAME_HOST=1 bash loadtest/run-arm.sh
 
 # 3) 调参臂 B（把线程上限的下游一并打开：master 池上限）
 #    §2.4 证明单独提高线程上限是负优化（约束被推给池），故追加此臂
-ARM=tuned-t400-p100 ROUNDS=3 SERVER_TOMCAT_THREADS_MAX=400 DB_POOL_MAX=100 bash loadtest/run-arm.sh
+ARM=tuned-t400-p100 ROUNDS=3 SERVER_TOMCAT_THREADS_MAX=400 DB_POOL_MAX=100 \
+  LT_WRITE_AUTHORIZED=1 LT_ALLOW_SAME_HOST=1 bash loadtest/run-arm.sh
 
 # 4) 三臂并置 + 中位数判定（判定只看臂级中位数，单轮不作为结论）
 python loadtest/compare-runs.py default=default-r1,default-r2,default-r3 \
@@ -79,15 +88,19 @@ mysql -h127.0.0.1 -P13316 -uroot -p --default-character-set=utf8mb4 exam_online 
 （`run-loadtest.sh` 会在正式轮前自己等 TIME_WAIT 排空）。预热轮用 `WARMUP_THREADS`（默认 500）
 小规模跑一轮，只为把 JIT 打热——冷 JVM 的 P99 比热 JVM 高 68%（见报告 §5），不预热等于在量 JIT。
 
-单轮/单臂也可以手工跑，用于排查资产本身（**不得作为容量结论**）：
+单轮/单臂也可以手工跑，用于排查资产本身（**不得作为容量结论**；同样有入口门禁）：
 
 ```bash
-ARM=probe bash loadtest/start-app.sh              # 起实例（注入写在 ARM_LOG / app-proof-*.txt）
-TAG=probe bash loadtest/run-loadtest.sh           # 5000 并发正式一轮
-TAG=dry SUBMIT_THREADS=20 SUBMIT_RAMP=2 LOGIN_RAMP=2 SKIP_TIME_WAIT_WAIT=1 bash loadtest/run-loadtest.sh
+ARM=probe LT_WRITE_AUTHORIZED=1 LT_ALLOW_SAME_HOST=1 bash loadtest/start-app.sh   # 起实例（注入写在 ARM_LOG / app-proof-*.txt）
+TAG=probe LT_WRITE_AUTHORIZED=1 LT_ALLOW_SAME_HOST=1 bash loadtest/run-loadtest.sh  # 5000 并发正式一轮
+TAG=dry SUBMIT_THREADS=20 SUBMIT_RAMP=2 LOGIN_RAMP=2 \
+  LT_WRITE_AUTHORIZED=1 LT_ALLOW_SAME_HOST=1 bash loadtest/run-loadtest.sh
 python loadtest/analyze-results.py target/loadtest/submit-results-probe.csv   # P99
 python loadtest/summarize-samples.py target/loadtest/sample-probe.csv target/loadtest/mq-depth-probe.csv
 ```
+
+> `SKIP_TIME_WAIT_WAIT=1` 现在**会让该轮以非零退出**（跳过排空 = 无法证明临时端口已排空，
+> 不得当成合格样本），只能用于调试脚本本身，不能用来「省时间跑一轮」。
 
 ### 3.2 逐轮产物与「判定的数据源」
 
@@ -152,12 +165,19 @@ export JMETER_SSH=loadgen-user@loadgen-host     # 触发负载端执行（缺 ss
 export JMETER_REMOTE_HOME=/opt/apache-jmeter    # 负载宿主上的 JMeter 目录（POSIX 路径）
 export LOADGEN_DIR=/tmp/loadtest                # 负载宿主上的暂存目录（可选，默认 /tmp/loadtest-<TAG>）
 export LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1    # 人工核实两台宿主不共享物理 CPU/磁盘后声明（必需）
+export LT_WRITE_AUTHORIZED=1                    # 显式写入授权（必需；env 里给个变量不等于用户授权）
 ARM=default ROUNDS=3 bash loadtest/run-arm.sh
 ```
 
+**门禁的执行位置**（isolate-submit-load-generator 返修）：`run-arm.sh` 会在**任何** `stop-app.sh` /
+`start-app.sh` / `prepare-data.sh` / `db/04-reset.sql` **之前**先跑这套判定（`loadtest/lib-loadtest.sh`
+的 `lt_preflight_isolation`）。判定不通过 ⇒ 立刻非零退出，**停/启应用、造数、复位一次都不会被调用**，
+也不会创建臂日志。`run-loadtest.sh` 被单独调用时同样会判一次（fail-closed，不默认放行）。
+这样「缺配置的缺省调用」不会先产生副作用再在单轮入口才发现被拒。
+
 **如何确认两边不在同一宿主**（不是只看主机名）：
 
-1. `run-loadtest.sh` 打印两端 `hostname` 并要求**不同**，相同即拒绝启动；
+1. `lt_preflight_isolation` 打印两端 `hostname` 并要求**不同**，相同即拒绝启动；
 2. 但「不同 hostname / 容器名 / VM 名」**不足以**证明不抢同一物理宿主资源，故还要求
    `LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1` 的人工声明；未声明即 fail-closed，不启动压测；
 3. 运行时以证据核实：控制端 `sample-*.csv` 的 `sys_cpu` 与负载端 JMeter 的 CPU 分别记录，
@@ -167,9 +187,36 @@ ARM=default ROUNDS=3 bash loadtest/run-arm.sh
 `target/loadtest/`，`run-loadtest.sh` 会核验逐笔 CSV 存在且非空；拉回失败/空文件即判本轮失败
 （非零退出），不会退回同机、也不会静默沿用旧文件。
 
-**失败传播**：JMeter 非零退出、轮前/轮后队列未归零、等积压归零超时、远端产物未回收——任一条
-都会让该轮以非零退出；`run-arm.sh` 据此把该轮排除出臂级中位数，并在整臂有失败轮时以非零退出。
+**失败传播**：JMeter 非零退出、轮前/轮后队列未归零、等积压归零超时、远端产物未回收、
+**轮前 TIME_WAIT 探测失败**、**轮前排空超时**、**显式跳过轮前排空**——任一条都会让该轮以非零退出；
+`run-arm.sh` 据此把该轮排除出臂级中位数，并在整臂有失败轮时以非零退出。
 即：**失败轮不会再被报成成功**。
+
+**TIME_WAIT 探测的两种结果必须可区分**（`loadtest/lib-loadtest.sh` 的 `lt_tw_probe` / `lt_tw_count`）：
+「命令成功且确实为 0」= 真的排空了（放行本轮）；「ssh 非零退出 / 远端没有 `netstat` / 输出非法」
+= **探测失败**，返回非零 ⇒ 该轮判失败，**不得把空值或非法输出改写成 0** 来伪装成已排空。
+双宿主下查的是**负载宿主**的 TIME_WAIT（临时端口耗尽发生在压测机一侧）。
+
+### 3.4 回归护栏（替身，不触真实服务）
+
+改 `run-arm.sh` / `run-loadtest.sh` / `lib-loadtest.sh` 后，先在 Git Bash（本机 `D:\git\Git\bin\bash.exe`，
+4.4.23；`C:\Windows\System32\bash.exe` 是坏的 WSL，别用）跑一遍护栏：
+
+```bash
+& 'D:\git\Git\bin\bash.exe' loadtest/tests/guards.sh     # 全部通过退出 0
+```
+
+它用 PATH 前缀的替身（`curl`/`mysql`/`docker`/`hostname`/`netstat`/`ssh`/`scp`/`jmeter`）直接驱动真实脚本，
+**不连真实 DB、应用、Docker 或负载宿主**，覆盖：
+
+- `R*`：入口门禁拒绝时**零副作用**（`stop-app`/`start-app`/`prepare-data`/`04-reset.sql` 均未被调用、
+  臂日志未创建），并有「配置齐备时副作用才发生」的正向对照；
+- `T*`：真实 Git Bash 4.4 下（**不注入** `EPOCHREALTIME`）`now_ms` 可用且随时间前进；排空超时按真实时钟推进
+  （`>=4s`），不被固定假时钟掩盖；
+- `W*`/`I*`：TIME_WAIT 探测「真零」与「SSH 非零 / 远端无 netstat / 非法输出」可区分，后者让本轮失败；
+- `N*`：正常远端执行 + 逐笔 CSV 回收可验证，回收失败即本轮失败。
+
+护栏写在 `loadtest/tests/`（入库），判据是**真的调用**这些脚本看行为，不是 grep 脚本文本。
 
 ## 4. 场景设计与「交卷限流」的关系（重要）
 
@@ -213,8 +260,10 @@ N 笔请求在 t 秒内到达时的放行上限 = `capacity + qps × t` = `2000 
    「登录连不上 → 该线程拿不到 token → 交卷假 401」以及客户端 `BindException:
    Address already in use: connect`，把假失败和虚高的 P99 混进结果。
    实测 9531 条 TIME_WAIT 约需 2 分钟自然排空（Windows 默认 `TcpTimedWaitDelay=120s`）。
-   查法：`netstat -an | grep -c TIME_WAIT`。（`run-loadtest.sh` 第 2 步：阈值 `TIME_WAIT_MAX`，
-   另有「连续 30s 不再下降且已到本机基线」的提前退出，过程写 `timewait-*.csv`）
+   查法：`netstat -an | grep -c TIME_WAIT`。**探测失败（ssh 非零 / 远端无 netstat / 输出非法）
+   不再被改写成 0**：该轮直接判失败，不进入臂级中位数；`SKIP_TIME_WAIT_WAIT=1` 与排空超时同理
+   （即：跳过排空或没排空，都不算合格的分离容量样本）。（`run-loadtest.sh` 第 2 步：阈值
+   `TIME_WAIT_MAX`，另有「连续 30s 不再下降且已到本机基线」的提前退出，过程写 `timewait-*.csv`）
 3. **每臂至少 3 轮取中位数**。单轮单点无法区分「参数效应」与「环境漂移」，
    报告里只能写区间、不能写归因。（`ROUNDS=3` + `compare-runs.py` 的臂级中位数表）
 
@@ -284,7 +333,14 @@ N 笔请求在 t 秒内到达时的放行上限 = `capacity + qps × t` = `2000 
 11. **本机进程 spawn ~0.43s/次，它是采样周期的头号成本**（实测：`date` 10 次 3.9s、
     `python -c` 10 次 5.3s、`awk` 10 次 5.4s；整份 `/actuator/prometheus` 才 32KB，
     curl 一次 0.51s 里大半是进程启动）。所以：
-    - `now_ms` 用 bash 内建 `EPOCHREALTIME`（0 次 fork），**别改成 `python -c` / `date`**；
+    - `now_ms` 优先用 bash5 内建 `EPOCHREALTIME`（0 次 fork）；**但编排宿主是 Git Bash 4.4.23，
+      没有 `EPOCHREALTIME`**（`set -u` 下直接引用会 `unbound variable` 终止整轮），
+      故 `loadtest/lib-loadtest.sh` 的 `lt_now_ms` 会回退 GNU `date +%s%3N`；
+      **别改成 `python -c`**（更慢）。回退路径每个时间戳多一次进程 spawn ⇒ **采样周期会变长，
+      这是口径变化、不是等价替换**：本机实测 `date +%s%3N` ≈ **62ms/次**（与 `date +%s` 基本相同，
+      成本几乎全在 spawn）。以应用侧为例，`sample_*_once` 每次约 1 个 curl(~0.5s) + 1 个 awk(~0.5s)
+      + 1 个时间戳(~0.06s)，即回退相对 EPOCHREALTIME 只多约 6%，0.25s 的 `SAMPLE_INTERVAL_S`
+      本来就受进程成本支配，故**采样密度不因该回退发生量级变化**；但结论要按实测密度复核，不能默认；
     - 应用侧 8 个指标用**一个** awk 扫完（`parse_app_metrics`），不要一个指标一次 awk；
     - DB/MQ 侧三条 SQL 合成**一次** mysql 调用；
     - 改完必须复核采样密度：`wc -l target/loadtest/sample-<TAG>.csv`，
@@ -303,7 +359,8 @@ N 笔请求在 t 秒内到达时的放行上限 = `capacity + qps × t` = `2000 
 | --- | --- | --- | --- |
 | `start-app.sh` | `ARM` / `SERVER_TOMCAT_THREADS_MAX` / `DB_POOL_MAX` / `SLAVE_DB_POOL_MAX` / `RABBIT_BATCH_CONCURRENCY` / `JAVA_BIN` / `JVM_OPTS` | 见脚本 | 容量参数经环境变量注入；产物 `app-env-*.txt`、`app-proof-*.txt` |
 | `run-arm.sh` | `ARM`（必填）/ `ROUNDS` / `WARMUP_THREADS` / `WARMUP_SUBMIT_RAMP` / `WARMUP_LOGIN_RAMP` | `3` / `500` / `3` / `5` | 一臂 N 轮，每轮前预热 |
-| `run-loadtest.sh` | `TAG` / `SUBMIT_THREADS` / `SUBMIT_RAMP` / `LOGIN_RAMP` / `SAMPLE_INTERVAL_S` / `ENV_SAMPLE_INTERVAL_S` / `TIME_WAIT_MAX` / `TIME_WAIT_FLOOR_ACCEPT` / `TIME_WAIT_TIMEOUT_S` / `SKIP_TIME_WAIT_WAIT` / `DRAIN_TIMEOUT_S` / `RABBITMQ_USER` / `RABBITMQ_PASS` | `run` / `5000` / `10` / `30` / `0.25` / `1` / `1500` / `3000` / `300` / `0` / `180` / `exam` / `exam123` | 单轮采集；`SKIP_TIME_WAIT_WAIT=1` 只许用于调试 |
+| `run-loadtest.sh` | `TAG` / `SUBMIT_THREADS` / `SUBMIT_RAMP` / `LOGIN_RAMP` / `SAMPLE_INTERVAL_S` / `ENV_SAMPLE_INTERVAL_S` / `TIME_WAIT_MAX` / `TIME_WAIT_FLOOR_ACCEPT` / `TIME_WAIT_TIMEOUT_S` / `SKIP_TIME_WAIT_WAIT` / `DRAIN_TIMEOUT_S` / `RABBITMQ_USER` / `RABBITMQ_PASS` | `run` / `5000` / `10` / `30` / `0.25` / `1` / `1500` / `3000` / `300` / `0` / `180` / `exam` / `exam123` | 单轮采集；`SKIP_TIME_WAIT_WAIT=1` 只许用于调试，且**该轮会以非零退出**（不算合格样本） |
+| `run-arm.sh` / `run-loadtest.sh`（入口门禁） | `LT_WRITE_AUTHORIZED` / `LT_ALLOW_SAME_HOST` | `0` / `0` | `LT_WRITE_AUTHORIZED=1` **必填**（显式写入授权，非「声明」）；未设 `JMETER_SSH` 时须显式 `LT_ALLOW_SAME_HOST=1` 才走同机历史跑法（该臂标为「未分离」，不得当分离容量结论） |
 | 全部 | `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `MYSQL_BIN` / `JMETER_HOME` / `JMETER_HEAP` / `PYTHON_BIN` / `APP_BASE_URL` | 见脚本 | 环境适配 |
 | 全部（目标地址） | `SUT_HOST` / `SUT_PORT` | 从 `APP_BASE_URL` 推导 | JMeter 的**实际请求目标**（不再硬编码 `127.0.0.1:8080`），见 §3.3 |
 | 双宿主（见 §3.3） | `JMETER_SSH` / `JMETER_REMOTE_HOME` / `JAVA_HOME_FOR_JMETER_REMOTE` / `JMETER_REMOTE_HEAP` / `LOADGEN_DIR` / `LOADGEN_PHYSICAL_ISOLATION_ATTESTED` | 空 / 空 / 空 / 同 `JMETER_HEAP` / `/tmp/loadtest-<TAG>` / `0` | 设 `JMETER_SSH` 才启用负载端执行；分离校验或物理隔离声明不通过即 fail-closed |

@@ -101,7 +101,7 @@ JMETER_REMOTE_HOME="${JMETER_REMOTE_HOME:-}"
 JAVA_HOME_FOR_JMETER_REMOTE="${JAVA_HOME_FOR_JMETER_REMOTE:-}"
 JMETER_REMOTE_HEAP="${JMETER_REMOTE_HEAP:-$JMETER_HEAP}"
 # 物理隔离声明（人工）：不同 hostname/容器/VM 名**不足以**证明不抢同一物理宿主 CPU/磁盘，故要求显式声明；
-# 未声明即 fail-closed（见 assert_separated_hosts）。
+# 未声明即 fail-closed（见 lib-loadtest.sh 的 lt_preflight_isolation）。
 LOADGEN_PHYSICAL_ISOLATION_ATTESTED="${LOADGEN_PHYSICAL_ISOLATION_ATTESTED:-0}"
 # --------------------------------
 
@@ -112,6 +112,12 @@ OUT="$WT/target/loadtest"
 OUT_WIN="$WT_WIN/target/loadtest"               # 交给 Java / python.exe 的路径必须是 Windows 形态
 mkdir -p "$OUT"
 
+# 共享前置（前置门禁 / 毫秒时间戳 / TIME_WAIT 探测）。
+# 抽到 lib-loadtest.sh 是为了让 run-arm.sh 与本脚本用**同一套**判定，且能被替身测试
+# 单独 source 后直接驱动真实函数（而不是靠 grep 文本证明控制流）。
+# shellcheck source=loadtest/lib-loadtest.sh
+. "$SCRIPT_DIR/lib-loadtest.sh"
+
 TOKENS="$OUT/tokens-$TAG.csv"
 RESULTS="$OUT/submit-results-$TAG.csv"
 JM_LOG="$OUT/jmeter-stdout-$TAG.log"
@@ -121,9 +127,9 @@ TW_CSV="$OUT/timewait-$TAG.csv"
 PROM_BEFORE="$OUT/prom-before-$TAG.txt"
 PROM_AFTER="$OUT/prom-after-$TAG.txt"
 
-# 时间戳走 bash 内建 EPOCHREALTIME（0 次 fork）。**不要换成 `python -c` 或 `date`**：
-# 本机实测每次进程 spawn ~0.4s，采样循环里一个 now_ms 就足以把采样周期从 0.5s 拉到 1s+。
-now_ms() { local t="${EPOCHREALTIME/./}"; echo "${t:0:13}"; }
+# 时间戳 now_ms 定义在 lib-loadtest.sh：优先 bash5 的 EPOCHREALTIME（0 次 fork），
+# 在 Git Bash 4.4（无 EPOCHREALTIME，set -u 下会 unbound variable）回退 GNU `date +%s%3N`。
+# 回退路径多一次进程 spawn ⇒ 采样周期会变长，属口径变化，实测开销见 loadtest/README.md。
 
 # ---- 失败传播（isolate-submit-load-generator）----
 # 硬失败（JMeter 非零退出 / 队列未归零 / 排空超时 / 远端产物没拉回来）必须让本轮以非零退出。
@@ -131,28 +137,8 @@ now_ms() { local t="${EPOCHREALTIME/./}"; echo "${t:0:13}"; }
 ROUND_FAILED=0
 fail_round() { echo "!!! 本轮失败：$*" >&2; ROUND_FAILED=1; }
 
-# ---- 双宿主：宿主身份与物理隔离（fail-closed）----
-# 不同 hostname/容器/VM 名本身不足以证明不抢同一物理宿主资源，故除了「两端 hostname 必须不同」，
-# 还要求人工显式声明物理隔离；任一条不满足即拒绝启动压测。
-assert_separated_hosts() {
-  command -v ssh >/dev/null 2>&1 || { echo "出错：JMETER_SSH 已设置但本机无 ssh"; return 1; }
-  local local_host remote_host
-  local_host="$(hostname 2>/dev/null || echo unknown)"
-  remote_host="$(ssh "$JMETER_SSH" 'hostname 2>/dev/null || echo unknown' 2>/dev/null | tr -d '\r\n')"
-  echo "      控制端(SUT) hostname=$local_host   负载端 hostname=${remote_host:-<取不到，ssh 不通？>}"
-  [ -n "$remote_host" ] || return 1
-  if [ "$local_host" = "$remote_host" ]; then
-    echo "      拒绝：两端 hostname 相同（$local_host）——这仍是同机/同命名空间"
-    return 1
-  fi
-  if [ "$LOADGEN_PHYSICAL_ISOLATION_ATTESTED" != "1" ]; then
-    echo "      拒绝：未声明物理隔离。不同 hostname/容器/VM 名不足以证明不抢同一物理宿主资源；"
-    echo "            人工核实两台宿主不共享物理 CPU/磁盘后，设 LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1 再跑。"
-    return 1
-  fi
-  echo "      物理隔离：已由 LOADGEN_PHYSICAL_ISOLATION_ATTESTED=1 人工声明"
-  return 0
-}
+# ---- 双宿主：宿主身份 / 物理隔离 / 写入授权 → 统一走 lib-loadtest.sh 的 lt_preflight_isolation ----
+# （同一判定必须被 run-arm.sh 的**入口**复用，故不再在本文件内联一份，避免两处漂移。）
 
 # ---- 双宿主：在负载宿主上跑 JMeter，并把原始产物拉回并核验 ----
 # 为什么用 ssh/scp 而不是共享盘：编排必须能证明「JMeter 真的在另一台宿主跑、结果真的传回来了」，
@@ -213,17 +199,10 @@ parse_app_metrics() {
   '
 }
 
-tw_count() {
-  local n
-  if [ -n "$JMETER_SSH" ]; then
-    # 双宿主：临时端口耗尽发生在**压测机**一侧，须查负载宿主的 TIME_WAIT，而不是控制端本机。
-    n="$(ssh "$JMETER_SSH" "netstat -an 2>/dev/null | grep -c TIME_WAIT || true" 2>/dev/null | tr -d '\r\n' || true)"
-  else
-    n="$(netstat -an 2>/dev/null | grep -c 'TIME_WAIT' || true)"   # grep -c 无匹配时打印 0 但退出码 1
-  fi
-  case "$n" in ''|*[!0-9]*) n=0;; esac
-  echo "$n"
-}
+# TIME_WAIT 探测（G4）→ 统一走 lib-loadtest.sh 的 lt_tw_count。
+# 旧实现把 SSH 非零 / 远端无 netstat / 非法输出一律 `n=0`，会把「探测失败」伪装成
+# 「确实排空」，从而放行一轮根本没排空的压测；现在探测失败**返回非零**，由调用方让本轮失败。
+# 双宿主下查的是**负载宿主**的 TIME_WAIT（临时端口耗尽发生在压测机一侧）。
 
 echo "=== [1/8] 前置检查 ==="
 # `|| echo 000` 必需：set -e 下 curl 连不上（exit 7）会直接终止脚本，连「实例不健康」这句
@@ -236,15 +215,12 @@ PENDING="$(run_sql -e "SELECT COUNT(*) FROM exam_submissions WHERE exam_id=$EXAM
 echo "      exam_id=$EXAM_ID 进行中答卷=$PENDING  JMeter=$JMETER_HOME"
 echo "      JMeter 目标=$SUT_HOST:$SUT_PORT  负载端=${JMETER_SSH:-<同机，未分离>}"
 
-# 双宿主前置：JMETER_SSH 已设置时，必须通过「宿主不同 + 物理隔离已声明」的 fail-closed 校验才允许启动压测；
-# 未设置时如实标注「未分离」——该轮只能当历史记录，不得当作分离后的达标/未达标结论。
-if [ -n "$JMETER_SSH" ]; then
-  if ! assert_separated_hosts; then
-    echo "出错：双宿主前置未通过（见上），拒绝启动压测"
-    exit 1
-  fi
-else
-  echo "      注意：未设置 JMETER_SSH = 同机跑法，本轮只能作为「未分离」的历史记录，不得当作分离后的容量结论"
+# 前置门禁（宿主配置 / 物理隔离声明 / 显式写入授权）：run-arm.sh 的入口已判过一次，
+# 这里再判一次是为了让**本脚本被单独调用**时也不会「缺配置却进入真实执行」。
+# 未设置 JMETER_SSH 时不再默认放行——必须显式 LT_ALLOW_SAME_HOST=1 才走同机历史跑法。
+if ! lt_preflight_isolation; then
+  echo "出错：前置门禁未通过（见上），拒绝启动压测"
+  exit 1
 fi
 
 # 先删旧文件再让 JMeter 新建：JMeter 只在「文件不存在」时写字段名表头，
@@ -255,35 +231,50 @@ rm -f "$TOKENS" "$RESULTS" "$MQ_CSV"
 echo "=== [2/8] 轮前等 TIME_WAIT 排空（G4：连续压测会耗尽客户端临时端口，制造假 401） ==="
 echo "ts,time_wait" > "$TW_CSV"
 if [ "$SKIP_TIME_WAIT_WAIT" = "1" ]; then
-  echo "      已按 SKIP_TIME_WAIT_WAIT=1 跳过（该轮不得用于容量结论）"
+  echo "      已按 SKIP_TIME_WAIT_WAIT=1 跳过轮前排空"
+  # 跳过排空 = 无法证明临时端口已排空 ⇒ 本轮不是合格的分离容量样本，必须失败而非静默放行。
+  fail_round "跳过了轮前 TIME_WAIT 排空：无法证明临时端口已排空，本轮不得作为合格的分离容量样本"
 else
   TW_START="$(date +%s)"
   TW_DEADLINE=$(( TW_START + TIME_WAIT_TIMEOUT_S ))
-  tw0="$(tw_count)"
-  echo "      起始 TIME_WAIT=$tw0  阈值=$TIME_WAIT_MAX  上限=${TIME_WAIT_TIMEOUT_S}s"
-  tw_prev="$tw0"
-  plateau=0
-  while :; do
-    tw="$(tw_count)"
-    echo "$(now_ms),$tw" >> "$TW_CSV"
-    if [ "$tw" -le "$TIME_WAIT_MAX" ]; then
-      echo "      已排空：TIME_WAIT=$tw0 → $tw（耗时 $(( $(date +%s) - TW_START ))s）"
-      break
-    fi
-    # 自然排空的尾巴会停在本机基线（历史实测 9531→3329），死等阈值等于白等；
-    # 连续 30s 不下降且已低于 FLOOR_ACCEPT 就认定到位，并把判据写进 timewait-*.csv。
-    if [ "$tw" -ge "$tw_prev" ]; then plateau=$((plateau + 1)); else plateau=0; fi
-    tw_prev="$tw"
-    if [ "$plateau" -ge 6 ] && [ "$tw" -le "$TIME_WAIT_FLOOR_ACCEPT" ]; then
-      echo "      已到本机基线：连续 30s 不再下降，TIME_WAIT=$tw0 → $tw（耗时 $(( $(date +%s) - TW_START ))s）"
-      break
-    fi
-    if [ "$(date +%s)" -ge "$TW_DEADLINE" ]; then
-      echo "      超时（${TIME_WAIT_TIMEOUT_S}s）：TIME_WAIT=$tw > $TIME_WAIT_MAX，继续跑但须在报告里声明"
-      break
-    fi
-    sleep 5
-  done
+  # 起始读数探测失败同样致命：没有起点就无法谈「排空」。
+  if ! tw0="$(lt_tw_count)"; then
+    fail_round "轮前 TIME_WAIT 探测失败（起始读数）：无法证明已排空，本轮不得作为合格的分离容量样本"
+    tw0=""
+  fi
+  if [ -n "$tw0" ]; then
+    echo "      起始 TIME_WAIT=$tw0  阈值=$TIME_WAIT_MAX  上限=${TIME_WAIT_TIMEOUT_S}s"
+    tw_prev="$tw0"
+    plateau=0
+    while :; do
+      # 探测失败绝不允许被改写成 0（那会伪装成「已排空」）；直接作废本轮。
+      if ! tw="$(lt_tw_count)"; then
+        echo "$(now_ms),PROBE_FAIL" >> "$TW_CSV"
+        fail_round "轮前 TIME_WAIT 探测失败（探测中）：无法证明已排空，本轮不得作为合格的分离容量样本"
+        break
+      fi
+      echo "$(now_ms),$tw" >> "$TW_CSV"
+      if [ "$tw" -le "$TIME_WAIT_MAX" ]; then
+        echo "      已排空：TIME_WAIT=$tw0 → $tw（耗时 $(( $(date +%s) - TW_START ))s）"
+        break
+      fi
+      # 自然排空的尾巴会停在本机基线（历史实测 9531→3329），死等阈值等于白等；
+      # 连续 30s 不下降且已低于 FLOOR_ACCEPT 就认定到位，并把判据写进 timewait-*.csv。
+      if [ "$tw" -ge "$tw_prev" ]; then plateau=$((plateau + 1)); else plateau=0; fi
+      tw_prev="$tw"
+      if [ "$plateau" -ge 6 ] && [ "$tw" -le "$TIME_WAIT_FLOOR_ACCEPT" ]; then
+        echo "      已到本机基线：连续 30s 不再下降，TIME_WAIT=$tw0 → $tw（耗时 $(( $(date +%s) - TW_START ))s）"
+        break
+      fi
+      if [ "$(date +%s)" -ge "$TW_DEADLINE" ]; then
+        echo "      超时（${TIME_WAIT_TIMEOUT_S}s）：TIME_WAIT=$tw > $TIME_WAIT_MAX"
+        # 超时 = 排空判据未满足 ⇒ 同样不是合格的分离容量样本。
+        fail_round "轮前 TIME_WAIT 排空超时（${TIME_WAIT_TIMEOUT_S}s，TIME_WAIT=$tw > $TIME_WAIT_MAX）：本轮不得作为合格的分离容量样本"
+        break
+      fi
+      sleep 5
+    done
+  fi
 fi
 
 echo "=== [3/8] 取 prom-before 快照并启动持续采样（G5：应用侧 ${SAMPLE_INTERVAL_S}s / DB·MQ 侧 ${ENV_SAMPLE_INTERVAL_S}s） ==="
