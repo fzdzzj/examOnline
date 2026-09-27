@@ -91,6 +91,8 @@ import java.util.zip.ZipFile;
  *         快照装载 → 答卷分页取数（{@code pagingSelect}）→ {@code resolveQuietly}（{@code resolveTotal}）→
  *         pairs 积累 → pairs 保留量 → 区分度排序 → SXSSF 组装 → 工作簿序列化（临时文件）→ 最终 {@code toByteArray}；
  *         其中 {@code resolveTotal} 再以 test-only 受控副本做嵌套分账（主观分读取 / 答案解析 / 解析评分），
+ *         解析答案复合段再在同一调用内拆出 {@code parseAnswers} 调用与主观分映射构建两个子段（子段与父段同窗口，
+ *         子段各含自身计时/分配插桩开销，残差记 {@code loopOverhead*}，不作纯 CPU），
  *         并按整批是否降级逐份分成 normal/fallback 两桶。</li>
  * </ol>
  *
@@ -176,6 +178,10 @@ class QuestionStatsExportAttributionMeasureIT {
             Map.entry("replica.nestedResolve",
                     "test-only 受控副本在同一 resolve 调用内的嵌套分账：主观分读取/答案解析/解析评分 + 未归属段；"
                     + "分母为副本自身 resolve 总耗时，不与生产 resolveTotal 跨调用相除"),
+            Map.entry("replica.nestedResolve.answerParseSplit",
+                    "答案解析复合段在同一调用内的进一步拆分：parseAnswersCall（逐份 paperReader.parseAnswers）与"
+                    + "subjectiveMapBuild（逐份主观分按题映射构建）两个子段 + loopOverhead*（循环/put 与逐次计时插桩残差）；"
+                    + "子段与父段同窗口，子段各含自身插桩开销；只作同窗口份额比较，不作纯 CPU"),
             Map.entry("replica.buckets", "正常页与坏卷降级页分桶：页数/耗时/分配/SQL；降级页另记逐份 resolve 次数，异常页不混入正常页归因"),
             Map.entry("replica.probe", "受控副本作为额外一遍 resolve 的探针开销，及与生产 resolveBatch 逐页 result.equals 校验（不等即判本轮证据无效）"),
             Map.entry("cellsEqualProduction", "副本 XLSX 与生产 XLSX 用 DataFormatter 逐格比对结果"),
@@ -681,20 +687,26 @@ class QuestionStatsExportAttributionMeasureIT {
         return new ResolveOutcome(result, true);
     }
 
-    /** 受控副本一次调用：结果 + 是否降级 + 总耗时/分配 + 三段嵌套（主观分读取/答案解析/解析评分）。 */
+    /**
+     * 受控副本一次调用：结果 + 是否降级 + 总耗时/分配 + 三段嵌套（主观分读取/答案解析/解析评分）；
+     * 「答案解析」复合段再拆出 parseAnswers 调用与主观分映射构建两个子段。
+     */
     private record SplitOutcome(
             Map<Long, Map<Long, QuestionScoreResolver.ResolvedQuestionScore>> result,
             boolean fallback,
             long totalNanos, long totalAlloc,
             long subjectiveReadNanos, long subjectiveReadAlloc, long subjectiveReadSql, long subjectiveReadRows,
             long answerParseNanos, long answerParseAlloc,
+            long parseAnswersCallNanos, long parseAnswersCallAlloc,
+            long subjectiveMapBuildNanos, long subjectiveMapBuildAlloc,
             long gradeNanos, long gradeAlloc) {
     }
 
     /**
      * test-only 受控测量副本：逐句镜像 {@code QuestionScoreResolver.resolveBatch} 与生产 {@code resolveQuietly}
      * 的整批失败逐份降级，只在段边界插入计时/分配，把 resolve 段拆成
-     * 「主观分读取（subjective_grades 批查）/ 答案解析（parseAnswers）/ 解析评分（resolveOne 循环）」。
+     * 「主观分读取（subjective_grades 批查）/ 答案解析（parseAnswers）/ 解析评分（resolveOne 循环）」，
+     * 其中答案解析复合段再拆出 {@code parseAnswers} 调用与主观分映射构建两个同窗口子段。
      * 不改业务语义；结果由调用方与生产 resolveBatch 逐页 equals 校验（不等即判本轮证据无效）。
      */
     private SplitOutcome resolveSplitReplica(List<GradingSubmission> page, GradingPaper paper) {
@@ -707,6 +719,8 @@ class QuestionStatsExportAttributionMeasureIT {
                     batch.subjectiveReadNanos(), batch.subjectiveReadAlloc(),
                     batch.subjectiveReadSql(), batch.subjectiveReadRows(),
                     batch.answerParseNanos(), batch.answerParseAlloc(),
+                    batch.parseAnswersCallNanos(), batch.parseAnswersCallAlloc(),
+                    batch.subjectiveMapBuildNanos(), batch.subjectiveMapBuildAlloc(),
                     batch.gradeNanos(), batch.gradeAlloc());
         } catch (Exception e) {
             // 与生产一致：整批失败 → 逐份降级
@@ -721,7 +735,7 @@ class QuestionStatsExportAttributionMeasureIT {
         }
         return new SplitOutcome(result, true,
                 System.nanoTime() - totalStart, allocated() - totalAllocStart,
-                0, 0, 0, 0, 0, 0, 0, 0);
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
 
     /** 受控副本的「整批解析」部分：镜像 {@code resolveBatch}；失败即抛，由调用方降级。 */
@@ -746,15 +760,35 @@ class QuestionStatsExportAttributionMeasureIT {
         long t2 = System.nanoTime();
         Map<Long, Map<Long, String>> answersBySubmission = new HashMap<>();
         Map<Long, Map<Long, SubjectiveGrade>> subjectiveBySubmission = new HashMap<>();
+        long parseAnswersCallNanos = 0;
+        long parseAnswersCallAlloc = 0;
+        long subjectiveMapBuildNanos = 0;
+        long subjectiveMapBuildAlloc = 0;
         for (GradingSubmission submission : submissions) {
-            answersBySubmission.put(submission.getId(), paperReader.parseAnswers(submission.getAnswers()));
-            subjectiveBySubmission.put(submission.getId(),
-                    rowsBySubmission.getOrDefault(submission.getId(), List.of()).stream()
-                            .collect(Collectors.toMap(SubjectiveGrade::getQuestionId, Function.identity(),
-                                    (x, y) -> x)));
+            long p0 = allocated();
+            long pt0 = System.nanoTime();
+            Map<Long, String> answers = paperReader.parseAnswers(submission.getAnswers());
+            parseAnswersCallNanos += System.nanoTime() - pt0;
+            parseAnswersCallAlloc += allocated() - p0;
+            answersBySubmission.put(submission.getId(), answers);
+
+            long s0 = allocated();
+            long st0 = System.nanoTime();
+            Map<Long, SubjectiveGrade> subjective = rowsBySubmission
+                    .getOrDefault(submission.getId(), List.of()).stream()
+                    .collect(Collectors.toMap(SubjectiveGrade::getQuestionId, Function.identity(),
+                            (x, y) -> x));
+            subjectiveMapBuildNanos += System.nanoTime() - st0;
+            subjectiveMapBuildAlloc += allocated() - s0;
+            subjectiveBySubmission.put(submission.getId(), subjective);
         }
         long answerParseNanos = System.nanoTime() - t2;
         long answerParseAlloc = allocated() - a2;
+        // 硬护栏：子段是父段窗口内不重叠的子区间，二者之和不可能超过父段；越界即插桩失效
+        if (parseAnswersCallNanos + subjectiveMapBuildNanos > answerParseNanos
+                || parseAnswersCallAlloc + subjectiveMapBuildAlloc > answerParseAlloc) {
+            throw new IllegalStateException("answerParse 子段之和超过复合段（插桩失效），本轮证据无效");
+        }
 
         long a3 = allocated();
         long t3 = System.nanoTime();
@@ -775,7 +809,10 @@ class QuestionStatsExportAttributionMeasureIT {
         return new SplitOutcome(result, false,
                 System.nanoTime() - totalStart, allocated() - totalAllocStart,
                 subjectiveReadNanos, subjectiveReadAlloc, subjectiveReadSql, subjectiveReadRows,
-                answerParseNanos, answerParseAlloc, gradeNanos, gradeAlloc);
+                answerParseNanos, answerParseAlloc,
+                parseAnswersCallNanos, parseAnswersCallAlloc,
+                subjectiveMapBuildNanos, subjectiveMapBuildAlloc,
+                gradeNanos, gradeAlloc);
     }
 
     /** 与 {@code QuestionScoreResolver.resolveOne} 逐句一致（主观题取终分、客观题走判分策略）。 */
@@ -806,6 +843,10 @@ class QuestionStatsExportAttributionMeasureIT {
         private long subjectiveReadRows;
         private long answerParseNanos;
         private long answerParseAlloc;
+        private long parseAnswersCallNanos;
+        private long parseAnswersCallAlloc;
+        private long subjectiveMapBuildNanos;
+        private long subjectiveMapBuildAlloc;
         private long gradeNanos;
         private long gradeAlloc;
 
@@ -819,6 +860,10 @@ class QuestionStatsExportAttributionMeasureIT {
             subjectiveReadRows += s.subjectiveReadRows();
             answerParseNanos += s.answerParseNanos();
             answerParseAlloc += s.answerParseAlloc();
+            parseAnswersCallNanos += s.parseAnswersCallNanos();
+            parseAnswersCallAlloc += s.parseAnswersCallAlloc();
+            subjectiveMapBuildNanos += s.subjectiveMapBuildNanos();
+            subjectiveMapBuildAlloc += s.subjectiveMapBuildAlloc();
             gradeNanos += s.gradeNanos();
             gradeAlloc += s.gradeAlloc();
         }
@@ -833,6 +878,18 @@ class QuestionStatsExportAttributionMeasureIT {
             m.put("subjectiveRead", segment(subjectiveReadNanos, subjectiveReadAlloc,
                     subjectiveReadSql, subjectiveReadRows));
             m.put("answerParse", segment(answerParseNanos, answerParseAlloc, -1, -1));
+
+            Map<String, Object> split = new LinkedHashMap<>();
+            split.put("parseAnswersCall", segment(parseAnswersCallNanos, parseAnswersCallAlloc, -1, -1));
+            split.put("subjectiveMapBuild", segment(subjectiveMapBuildNanos, subjectiveMapBuildAlloc, -1, -1));
+            split.put("loopOverheadMillis",
+                    round3((answerParseNanos - parseAnswersCallNanos - subjectiveMapBuildNanos) / 1e6));
+            split.put("loopOverheadAllocMB",
+                    round3((answerParseAlloc - parseAnswersCallAlloc - subjectiveMapBuildAlloc) / 1048576.0));
+            split.put("note", "复合段 = parseAnswersCall + subjectiveMapBuild + loopOverhead（循环/put 与逐次计时插桩残差）；"
+                    + "子段与父段在同一调用内同窗口，子段各含自身插桩开销；仅作同窗口份额比较");
+            m.put("answerParseSplit", split);
+
             m.put("grade", segment(gradeNanos, gradeAlloc, -1, -1));
             long accountedNanos = subjectiveReadNanos + answerParseNanos + gradeNanos;
             long accountedAlloc = subjectiveReadAlloc + answerParseAlloc + gradeAlloc;
