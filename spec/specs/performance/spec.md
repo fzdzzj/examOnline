@@ -251,12 +251,16 @@ THEN 标记归因未定并保留原始证据
 
 AND 不因先前合并相位的分配量较高便指定 SQL 或解析为已证实的生产瓶颈
 
-> 合入注记（2026-09-27，`update-question-stats-paging-resolve-attribution`）：本变更只扩展测试侧隔离测量工具
-> （`src/test/.../QuestionStatsExportAttributionMeasureIT`），`src/main`、Mapper SQL、schema、JVM、线程池
-> 与导出行为零触碰。三次独立 JVM 调用（revision `94ca842`）在 H2 进程内测得：全部 5 个数据形状、9 个样本中
-> `resolveQuietly` 稳定主导分页取数（全局 min 解析份额 0.510 > 全局 max 分页份额 0.490）；进入嵌套后
-> 27/27 个 normal 桶样本中**答案解析段**为最大段（份额 0.381–0.656，主观分读取 0.073–0.370、评分
-> 0.200–0.359）；未归属段与探针开销 ≤ 2.2%，逐页 `result.equals` 与 XLSX/ZIP oracle 全部一致。稳定主导
-> 因素仅作下一份独立提案候选，本变更不实施优化，也不外推生产 P99。证据见
+> 合入注记（2026-09-27，`update-question-stats-paging-resolve-attribution`；同日证据返修，按归档 JSON 复算校正口径）：
+> 本变更只扩展测试侧隔离测量工具（`src/test/.../QuestionStatsExportAttributionMeasureIT`），`src/main`、Mapper SQL、
+> schema、JVM、线程池与导出行为零触碰。三次独立 JVM 调用（revision `94ca842`）在 H2 进程内测得：5 个数据形状、
+> 每形状 9 个样本（共 45）中 `resolveQuietly` 份额稳定高于分页取数（全局 min 解析份额 0.510 > 全局 max 分页份额
+> 0.490）；进入嵌套后 27/27 个 normal 桶样本中 **`answerParse` 复合段**（`parseAnswers` 循环 + 主观分映射构建，
+> 不等同于纯解析 CPU）为最大段（份额 0.381–0.656，主观分读取 0.073–0.370、评分 0.200–0.359）。内容语义校验
+> 45/45 通过（逐页 `result.equals`、`cellsEqualProduction` 逐格文本、排除 `docProps/core.xml` 的 `zipContentEqual`
+> 逐条目），均为内容/语义等价而非整个 XLSX 原始字节相等；原始长度校验 `outputBytesEqual` 只比长度、39/45 true
+> （6 次长度差恰 1 字节，成因未定）。副本内部未归属段约占副本自身 resolve 总耗时 0.28%–2.24%；额外一遍受控副本
+> resolve 的探针成本单列，不是未归属段、不并入生产 `resolveTotal`、不与其跨调用作精确占比。稳定主导因素仅作
+> 下一份独立提案候选，本变更不实施优化，也不外推生产 P99。证据见
 > `spec/changes/archive/update-question-stats-paging-resolve-attribution/evidence/measurement-rounds.md`
 > 与同目录 `evidence-sha256.txt`。

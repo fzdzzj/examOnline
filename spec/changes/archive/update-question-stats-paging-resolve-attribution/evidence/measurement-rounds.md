@@ -23,12 +23,13 @@
 
 ## 裁决一：测量是否有效（有效）
 
-3 次 JVM 调用 × 内部 3 轮 = 每形状 9 个样本，全部满足：
+3 次 JVM 调用 × 内部 3 轮 = 每形状 9 个样本（共 45 个）：
 
-- `probe.unequalPages = 0`（受控副本逐页 `result.equals` 与生产等价 `resolveBatch` 一致；不等即抛错判本轮无效，未触发）
-- `cellsEqualProduction = true`、`zipContentEqual = true`、`outputBytesEqual = true`（既有 XLSX/ZIP oracle 核对生产导出与测量副本）
+- `probe.unequalPages = 0`（45/45；受控副本逐页 `result.equals` 与生产等价 `resolveBatch` 一致；不等即抛错判本轮无效，未触发）
+- 内容语义校验 45/45 通过（均为内容/语义等价，**不是**整个 XLSX 原始字节相等）：`cellsEqualProduction = true`（生产与副本 XLSX 用 DataFormatter 逐格文本相等）、`zipContentEqual = true`（排除 `docProps/core.xml` 后逐 zip 条目解压字节相等）、顶层 `oracle` 独立重算与生产单元格对照 `oracleMatch = true`（每轮 5 combo，15/15）
+- 原始长度校验：`outputBytesEqual` 只比较两数组长度（`prod.length == replica.length`），不是内容比对；45 样本中 **39 true / 6 false**（逐份 JSON：run1 14/1、run2 11/4、run3 14/1），6 次 false 的长度差均为 1 字节（差值为 prod − replica；+1：run1 s1000-q20 r1、run2 s1000-q150 r1、run2 s3000-q60 r3、run3 s3000-q60 r1；−1：run2 s3000-q60 r1、run2 s100-q20-bad2 r3），具体成因本轮证据未确定，本记录不作推断
 - 坏卷分桶正确：`s100-q20-bad2` / `s3-q20-bad1` 的 `fallbackPages = 1`，其余形状 `fallbackPages = 0`；`resolveFallbackExtraSql` 与既有归档口径一致（s100-q20-bad2 = 98，s3-q20-bad1 = 2）
-- 未归属段（框架/映射/探针）占副本 resolve 总耗时 ≤ 2.2%
+- 副本内部未归属段（框架/映射/计时插桩残差）占**副本自身** resolve 总耗时约 0.28%–2.24%（27 个嵌套样本 min 0.2839%、max 2.2402%；分母为副本自身总耗时，不与生产 `phases.resolveTotal` 跨调用相除）
 
 ## 裁决二：是否存在稳定主导因素（存在）
 
@@ -42,7 +43,7 @@
 | s100-q20-bad2 | 0.027 / 0.050 / 0.079 | 0.921 / 0.950 / 0.973 |
 | s3-q20-bad1 | 0.318 / 0.341 / 0.442 | 0.558 / 0.659 / 0.682 |
 
-→ 全部 9 样本、全部 5 形状中 `resolveTotal` 份额 > `pagingSelect` 份额（全局 min resolve 份额 0.510 > 全局 max paging 份额 0.490）。**解析段稳定主导分页取数**，故进入嵌套分账。
+→ 全部 9 样本、全部 5 形状中 `resolveTotal` 份额 > `pagingSelect` 份额（全局 min resolve 份额 0.510 > 全局 max paging 份额 0.490）。**隔离 H2 负载下解析段稳定高于分页取数**（结论仅限本隔离口径），故进入嵌套分账。
 
 嵌套分账取自 normal 桶（坏卷页不并入正常页归因；两个坏卷形状整批降级、normal 桶为空，无嵌套值）：
 
@@ -52,10 +53,17 @@
 | s1000-q150 | 0.103 | 0.578 | 0.307 | 9/9 |
 | s3000-q60 | 0.192 | 0.541 | 0.253 | 9/9 |
 
-→ 27/27 个 normal 桶样本中 **答案解析段（`paperReader.parseAnswers` 循环 + 主观分映射构建）** 为最大段，份额 0.381–0.656；主观分读取 0.073–0.370、评分 0.200–0.359。稳定主导因素 = 解析段。
+→ 27/27 个 normal 桶样本中 **`answerParse` 复合段**（`paperReader.parseAnswers` 循环 + 主观分映射构建；含循环内的映射构建开销，**不等同于纯解析 CPU**）为最大段，份额 0.381–0.656；主观分读取 0.073–0.370、评分 0.200–0.359。隔离 H2 负载下正常桶最大段 = 该复合解析段（结论仅限本隔离口径）。
 
 ## 探针开销与口径声明
 
-- 受控副本为额外一遍 resolve，其耗时计为探针开销（`probe.replicaResolveMillis`），**不并入**生产 `phases.resolveTotal`；副本三段之和与副本总耗时的差记为 `unaccountedMillis`（≤ 2.2%），不作纯 CPU、不作生产 DB 耗时。
+- **探针成本（额外一遍 resolve）单列**：受控副本是额外一遍 resolve，其耗时记 `probe.replicaResolveMillis`，逐形状 min–max：s1000-q20 7.442–24.400ms、s1000-q150 42.069–56.788ms、s3000-q60 60.890–78.740ms、s100-q20-bad2 11.342–34.112ms、s3-q20-bad1 0.596–1.251ms。它是额外一次的整遍 resolve（该副本自身含三段与残差），**不是**未归属段，**不并入**生产 `phases.resolveTotal`；与生产 `resolveTotal` 属不同调用，**不能**跨调用作精确占比。
+- **未归属段**：normal 桶嵌套副本三段之和与副本自身总耗时的差（`unaccountedMillis`，框架/映射/计时插桩残差）占**副本自身** resolve 总耗时约 0.28%–2.24%（分母为副本自身，非生产段）；不作纯 CPU、不作生产 DB 耗时。
 - 墙钟含 GC/JIT/调度；H2 为进程内，隔离结果不外推真实 MySQL/Tomcat 或生产 P99。
 - 主导因素仅作为下一份独立提案的候选，本变更不改 `src/main`、Mapper SQL、schema、JVM、线程池与导出行为。
+
+---
+
+## 返修记（2026-09-27）
+
+本记录按归档三份 `question-stats-attribution-attr-run{1,2,3}.json` 逐份复算校正：`outputBytesEqual` 仅比较长度且 39 true / 6 false（6 次长度差 1 字节）、内容语义校验与原始长度校验分列裁决（不再对两类校验作笼统的同一结论）、未归属段区间与探针成本分列、`answerParse` 标注为复合段（含主观分映射构建）。原始 JSON、`evidence-sha256.txt`、测量工具与 `src/main` 均未改动。
