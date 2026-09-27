@@ -4,9 +4,14 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.exam.auth.security.LoginUser;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.grading.entity.GradingSubmission;
+import com.exam.grading.entity.SubjectiveGrade;
 import com.exam.grading.mapper.GradingSubmissionMapper;
+import com.exam.grading.mapper.SubjectiveGradeMapper;
+import com.exam.grading.model.GradeResult;
+import com.exam.grading.model.GradingConfig;
 import com.exam.grading.model.GradingPaper;
 import com.exam.grading.model.GradingQuestion;
+import com.exam.grading.strategy.GradingStrategyRegistry;
 import com.exam.grading.support.GradingPaperReader;
 import com.exam.question.entity.QuestionType;
 import com.exam.score.service.ScoreExportService;
@@ -59,17 +64,21 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
  * 题目统计导出（{@code ScoreExportService.exportQuestionStats}）内存/临时盘/耗时隔离归因测量工具
- * （update-question-stats-export-memory 阶段 1）。
+ *（update-question-stats-export-memory 阶段 1；由 update-question-stats-paging-resolve-attribution
+ * 扩展为「分页取数 / resolveQuietly 分段 + resolve 内嵌套分账」）。
  *
  * <p><b>为什么类名以 IT 结尾</b>：Surefire 默认只收 {@code *Test}/{@code *Tests}/{@code Test*}/{@code *TestCase}，
  * 本类不进 {@code mvnw.cmd clean test} 全量门禁，只有显式 {@code -Dtest=QuestionStatsExportAttributionMeasureIT} 才运行。
@@ -78,9 +87,11 @@ import java.util.zip.ZipFile;
  * <p><b>测什么</b>：对同一份可复现数据（学生数×题量梯度 + 坏答卷边角），多轮分别记录
  * <ol>
  *   <li>整体导出（生产 {@code exportQuestionStats} 原味调用）的耗时/分配/堆峰值/GC 后堆/临时盘峰值/输出字节/SQL 次数；</li>
- *   <li>分相位（测试侧同步骤副本，输出经 XLSX 单元格逐格比对与生产实现交叉校验）：
- *       快照装载 → 答卷分页+逐题解析 → pairs 积累 → pairs 保留量 → 区分度排序 → SXSSF 组装 →
- *       工作簿序列化（临时文件） → 最终 {@code toByteArray}。</li>
+ *     <li>分相位（测试侧同步骤副本，输出经 XLSX 单元格逐格比对与生产实现交叉校验）：
+ *         快照装载 → 答卷分页取数（{@code pagingSelect}）→ {@code resolveQuietly}（{@code resolveTotal}）→
+ *         pairs 积累 → pairs 保留量 → 区分度排序 → SXSSF 组装 → 工作簿序列化（临时文件）→ 最终 {@code toByteArray}；
+ *         其中 {@code resolveTotal} 再以 test-only 受控副本做嵌套分账（主观分读取 / 答案解析 / 解析评分），
+ *         并按整批是否降级逐份分成 normal/fallback 两桶。</li>
  * </ol>
  *
  * <p><b>口径与边界</b>（都必须随结果一起回报，不得省略）：
@@ -155,12 +166,23 @@ class QuestionStatsExportAttributionMeasureIT {
                     "java.io.tmpdir/poifiles 下文件字节/相对相位起点增量/个数的峰值"),
             Map.entry("production.outputBytes", "返回的 XLSX 字节数"),
             Map.entry("production.sqlQueries", "MyBatis Executor.query 调用次数（Interceptor 计数）"),
-            Map.entry("replica.phases[].millis/allocatedMB", "分相位耗时与精确分配（副本步骤与生产逐句对齐，输出单元格逐格比对）"),
+            Map.entry("replica.phases[].millis/allocatedMB",
+                    "分相位耗时与精确分配；pagingSelect（答卷分页 selectList）与 resolveTotal（resolveQuietly）已分开；"
+                    + "副本步骤与生产逐句对齐，输出单元格逐格比对"),
             Map.entry("replica.pairsRetainedMB", "建成 pairs 并 GC 后堆 − 释放 pairs 并 GC 后堆（GC 后差分，逐轮上报）"),
-            Map.entry("replica.sql.pagingResolve/pagingResolveFallback", "分页+解析阶段 SQL 次数；损坏答卷触发逐份降级的额外次数"),
+            Map.entry("replica.sql.pagingSelect/resolve",
+                    "分页取数 SQL 次数；resolveQuietly 段 SQL 次数（正常页=整批 1 次主观分读取；降级页=逐份 resolve）"),
+            Map.entry("replica.pagingRowsOut", "分页 selectList 返回的答卷行数合计"),
+            Map.entry("replica.nestedResolve",
+                    "test-only 受控副本在同一 resolve 调用内的嵌套分账：主观分读取/答案解析/解析评分 + 未归属段；"
+                    + "分母为副本自身 resolve 总耗时，不与生产 resolveTotal 跨调用相除"),
+            Map.entry("replica.buckets", "正常页与坏卷降级页分桶：页数/耗时/分配/SQL；降级页另记逐份 resolve 次数，异常页不混入正常页归因"),
+            Map.entry("replica.probe", "受控副本作为额外一遍 resolve 的探针开销，及与生产 resolveBatch 逐页 result.equals 校验（不等即判本轮证据无效）"),
             Map.entry("cellsEqualProduction", "副本 XLSX 与生产 XLSX 用 DataFormatter 逐格比对结果"),
             Map.entry("oracle.*", "测试侧独立重算的题序/平均分/得分率/答对率/作答人数/区分度与生产单元格对照"),
-            Map.entry("note", "隔离 H2 + 进程内直调 Service，非真实 MySQL/Tomcat 性能；不外推生产 P99")
+            Map.entry("note",
+                    "隔离 H2 + 进程内直调 Service，非真实 MySQL/Tomcat 性能；不外推生产 P99；不对跨轮/跨窗口量相减或相除；"
+                    + "墙钟含 GC/JIT/调度/探针，H2 进程内，残差不得冒称纯 CPU")
     );
 
     // ==================== 测试侧 SQL 计数（仅本测试上下文） ====================
@@ -216,6 +238,12 @@ class QuestionStatsExportAttributionMeasureIT {
     private QuestionScoreResolver scoreResolver;
     @Autowired
     private GradingSubmissionMapper gradingSubmissionMapper;
+    @Autowired
+    private SubjectiveGradeMapper subjectiveGradeMapper;
+    @Autowired
+    private GradingStrategyRegistry strategyRegistry;
+    @Autowired
+    private GradingConfig gradingConfig;
 
     // ==================== 主流程 ====================
 
@@ -367,6 +395,9 @@ class QuestionStatsExportAttributionMeasureIT {
 
     /**
      * 与 {@code ScoreExportService.exportQuestionStats} 同步骤的副本，仅在相位边界插入计时/分配。
+     * 本变更把原「pagingResolve」拆成 {@code pagingSelect}（答卷分页 {@code selectList}）与
+     * {@code resolveTotal}（{@code resolveQuietly}），并对 resolve 段以 test-only 受控副本做嵌套分账
+     * （主观分读取 / 答案解析 / 解析评分），再按整批是否降级逐份分成 normal/fallback 两桶。
      * 唯一顺序调整：把逐题 {@code discrimination} 提到写表之前统一算（生产在写行时逐题算），
      * 计算量与前值完全相同、输出不变，只为把「排序」与「SXSSF 写」分成两个相位。
      */
@@ -392,16 +423,38 @@ class QuestionStatsExportAttributionMeasureIT {
         Map<Long, int[]> counts = new LinkedHashMap<>();
         Map<Long, List<double[]>> pairs = new LinkedHashMap<>();
 
-        // 相位 2：答卷分页 + 逐题解析；相位 3：pairs/sums/counts 积累
+        // 相位 2：答卷分页 selectList；相位 3：resolveQuietly；相位 4：pairs/sums/counts 积累
+        long pagingNanos = 0;
+        long pagingAlloc = 0;
+        long pagingSqlTotal = 0;
+        long pagingRowsOut = 0;
         long resolveNanos = 0;
         long resolveAlloc = 0;
+        long resolveSqlTotal = 0;
+        long pages = 0;
+        long fallbackPages = 0;
+        long fallbackSubmissionResolves = 0;
         long aggregateNanos = 0;
         long aggregateAlloc = 0;
-        long pagingSqlTotal = 0;
-        long fallbackExtraSql = 0;
+        long normalResolveNanos = 0;
+        long normalResolveAlloc = 0;
+        long normalResolveSql = 0;
+        long fallbackResolveNanos = 0;
+        long fallbackResolveAlloc = 0;
+        long fallbackResolveSql = 0;
+        // 探针：test-only 受控副本（额外一遍 resolve）+ 逐页等价性校验
+        long probeNanos = 0;
+        long probeAlloc = 0;
+        long unequalPages = 0;
+        List<String> unequalPageDetail = new ArrayList<>();
+        NestedAccum nested = new NestedAccum();
+
         long lastId = 0;
         while (true) {
-            sqlBefore = CountingInterceptor.count();
+            // ---- 分页取数（生产 selectList 原句）----
+            long psql0 = CountingInterceptor.count();
+            long pa0 = allocated();
+            long pt0 = System.nanoTime();
             List<GradingSubmission> page = gradingSubmissionMapper.selectList(
                     Wrappers.<GradingSubmission>lambdaQuery()
                             .eq(GradingSubmission::getExamId, examId)
@@ -409,26 +462,60 @@ class QuestionStatsExportAttributionMeasureIT {
                             .gt(GradingSubmission::getId, lastId)
                             .orderByAsc(GradingSubmission::getId)
                             .last("LIMIT " + PAGE_SIZE));
+            pagingNanos += System.nanoTime() - pt0;
+            pagingAlloc += allocated() - pa0;
+            pagingSqlTotal += CountingInterceptor.count() - psql0;
             if (page.isEmpty()) {
                 break;
             }
-            long rSqlBefore = CountingInterceptor.count();
+            pages++;
+            pagingRowsOut += page.size();
+
+            // ---- resolveQuietly（生产语义；带是否走逐份降级的标记）----
+            long rsql0 = CountingInterceptor.count();
             long ra0 = allocated();
             long rt0 = System.nanoTime();
-            Map<Long, Map<Long, QuestionScoreResolver.ResolvedQuestionScore>> resolved =
-                    resolveQuietly(examId, page, paper);
-            resolveNanos += System.nanoTime() - rt0;
-            resolveAlloc += allocated() - ra0;
-            // 降级路径额外 SQL：整批失败后被逐份重解析的份数（每份 1 次主观批改查询）
-            long extraSql = CountingInterceptor.count() - rSqlBefore - 1;
-            if (extraSql > 0) {
-                fallbackExtraSql += extraSql;
+            ResolveOutcome outcome = resolveQuietlyProbed(examId, page, paper);
+            long pageResolveNanos = System.nanoTime() - rt0;
+            long pageResolveAlloc = allocated() - ra0;
+            long pageResolveSql = CountingInterceptor.count() - rsql0;
+            resolveNanos += pageResolveNanos;
+            resolveAlloc += pageResolveAlloc;
+            resolveSqlTotal += pageResolveSql;
+            if (outcome.fallback()) {
+                fallbackPages++;
+                fallbackSubmissionResolves += page.size();
+                fallbackResolveNanos += pageResolveNanos;
+                fallbackResolveAlloc += pageResolveAlloc;
+                fallbackResolveSql += pageResolveSql;
+            } else {
+                normalResolveNanos += pageResolveNanos;
+                normalResolveAlloc += pageResolveAlloc;
+                normalResolveSql += pageResolveSql;
             }
 
+            // ---- 探针：test-only 受控副本（镜像 resolveBatch），嵌套分账 + 与生产结果逐页 equals ----
+            long qa0 = allocated();
+            long qt0 = System.nanoTime();
+            SplitOutcome split = resolveSplitReplica(page, paper);
+            probeNanos += System.nanoTime() - qt0;
+            probeAlloc += allocated() - qa0;
+            if (!split.result().equals(outcome.result())) {
+                unequalPages++;
+                if (unequalPageDetail.size() < 5) {
+                    unequalPageDetail.add("pageLastId=" + page.get(page.size() - 1).getId()
+                            + " fallback=" + split.fallback());
+                }
+            } else if (!split.fallback()) {
+                nested.add(split);
+            }
+
+            // ---- 积累 pairs/sums/counts（用生产等价 resolve 结果）----
             long aa0 = allocated();
             long at0 = System.nanoTime();
             for (GradingSubmission submission : page) {
-                Map<Long, QuestionScoreResolver.ResolvedQuestionScore> perQuestion = resolved.get(submission.getId());
+                Map<Long, QuestionScoreResolver.ResolvedQuestionScore> perQuestion =
+                        outcome.result().get(submission.getId());
                 if (perQuestion == null) {
                     continue;
                 }
@@ -451,17 +538,39 @@ class QuestionStatsExportAttributionMeasureIT {
             }
             aggregateNanos += System.nanoTime() - at0;
             aggregateAlloc += allocated() - aa0;
-            pagingSqlTotal += CountingInterceptor.count() - sqlBefore;
 
             lastId = page.get(page.size() - 1).getId();
             if (page.size() < PAGE_SIZE) {
                 break;
             }
         }
-        phases.add(phase("pagingResolve", resolveNanos, resolveAlloc));
+        // 硬护栏：受控副本必须与生产 resolveBatch 逐页等价，否则本轮证据无效
+        if (unequalPages > 0) {
+            throw new IllegalStateException("受控副本与生产 resolveBatch 结果不等价的页数=" + unequalPages
+                    + " " + unequalPageDetail + "，本轮证据无效");
+        }
+        // 硬护栏：坏卷分桶必须与数据形状一致，否则分桶不成立
+        if (combo.badAnswers() > 0 && fallbackPages == 0) {
+            throw new IllegalStateException(combo.label() + " 期望出现坏卷降级分桶，但 fallbackPages=0");
+        }
+        if (combo.badAnswers() == 0 && fallbackPages != 0) {
+            throw new IllegalStateException(combo.label() + " 无坏卷却出现降级分桶 fallbackPages=" + fallbackPages);
+        }
+
+        phases.add(phase("pagingSelect", pagingNanos, pagingAlloc));
+        phases.add(phase("resolveTotal", resolveNanos, resolveAlloc));
         phases.add(phase("aggregatePairs", aggregateNanos, aggregateAlloc));
-        extra.put("sql.pagingResolve", pagingSqlTotal);
-        extra.put("sql.pagingResolveFallbackExtra", fallbackExtraSql);
+        extra.put("sql.pagingSelect", pagingSqlTotal);
+        extra.put("sql.resolve", resolveSqlTotal);
+        extra.put("pagingPages", pages);
+        extra.put("pagingRowsOut", pagingRowsOut);
+        extra.put("fallbackPages", fallbackPages);
+        extra.put("resolveFallbackExtraSql", fallbackResolveSql - fallbackPages);
+        extra.put("buckets", buckets(pages - fallbackPages, normalResolveNanos, normalResolveAlloc, normalResolveSql,
+                fallbackPages, fallbackResolveNanos, fallbackResolveAlloc, fallbackResolveSql,
+                fallbackSubmissionResolves));
+        extra.put("nestedResolve", nested.toJson());
+        extra.put("probe", probe(probeNanos, probeAlloc, pages, unequalPages, unequalPageDetail));
 
         // pairs 保留量：GC 后差分（含 pairs 与不含 pairs 的 used 堆）
         long heapWithPairs = heapAfterGc();
@@ -548,11 +657,16 @@ class QuestionStatsExportAttributionMeasureIT {
         return new PhasedRun(bytes, phases, extra);
     }
 
-    /** 与生产 {@code resolveQuietly} 同语义：整批失败时逐份降级、坏卷跳过。 */
-    private Map<Long, Map<Long, QuestionScoreResolver.ResolvedQuestionScore>> resolveQuietly(
-            Long examId, List<GradingSubmission> page, GradingPaper paper) {
+    /** 生产等价 resolve 结果 + 是否走了逐份降级。 */
+    private record ResolveOutcome(
+            Map<Long, Map<Long, QuestionScoreResolver.ResolvedQuestionScore>> result,
+            boolean fallback) {
+    }
+
+    /** 与生产 {@code resolveQuietly} 同语义：整批失败时逐份降级、坏卷跳过；额外返回是否降级。 */
+    private ResolveOutcome resolveQuietlyProbed(Long examId, List<GradingSubmission> page, GradingPaper paper) {
         try {
-            return scoreResolver.resolveBatch(page, paper);
+            return new ResolveOutcome(scoreResolver.resolveBatch(page, paper), false);
         } catch (Exception e) {
             // 与生产一致：warn 后降级
         }
@@ -564,7 +678,219 @@ class QuestionStatsExportAttributionMeasureIT {
                 // 坏卷跳过
             }
         }
-        return result;
+        return new ResolveOutcome(result, true);
+    }
+
+    /** 受控副本一次调用：结果 + 是否降级 + 总耗时/分配 + 三段嵌套（主观分读取/答案解析/解析评分）。 */
+    private record SplitOutcome(
+            Map<Long, Map<Long, QuestionScoreResolver.ResolvedQuestionScore>> result,
+            boolean fallback,
+            long totalNanos, long totalAlloc,
+            long subjectiveReadNanos, long subjectiveReadAlloc, long subjectiveReadSql, long subjectiveReadRows,
+            long answerParseNanos, long answerParseAlloc,
+            long gradeNanos, long gradeAlloc) {
+    }
+
+    /**
+     * test-only 受控测量副本：逐句镜像 {@code QuestionScoreResolver.resolveBatch} 与生产 {@code resolveQuietly}
+     * 的整批失败逐份降级，只在段边界插入计时/分配，把 resolve 段拆成
+     * 「主观分读取（subjective_grades 批查）/ 答案解析（parseAnswers）/ 解析评分（resolveOne 循环）」。
+     * 不改业务语义；结果由调用方与生产 resolveBatch 逐页 equals 校验（不等即判本轮证据无效）。
+     */
+    private SplitOutcome resolveSplitReplica(List<GradingSubmission> page, GradingPaper paper) {
+        long totalStart = System.nanoTime();
+        long totalAllocStart = allocated();
+        try {
+            SplitOutcome batch = resolveBatchReplica(page, paper);
+            return new SplitOutcome(batch.result(), false,
+                    System.nanoTime() - totalStart, allocated() - totalAllocStart,
+                    batch.subjectiveReadNanos(), batch.subjectiveReadAlloc(),
+                    batch.subjectiveReadSql(), batch.subjectiveReadRows(),
+                    batch.answerParseNanos(), batch.answerParseAlloc(),
+                    batch.gradeNanos(), batch.gradeAlloc());
+        } catch (Exception e) {
+            // 与生产一致：整批失败 → 逐份降级
+        }
+        Map<Long, Map<Long, QuestionScoreResolver.ResolvedQuestionScore>> result = new LinkedHashMap<>();
+        for (GradingSubmission submission : page) {
+            try {
+                result.put(submission.getId(), scoreResolver.resolve(submission, paper));
+            } catch (Exception e) {
+                // 坏卷跳过
+            }
+        }
+        return new SplitOutcome(result, true,
+                System.nanoTime() - totalStart, allocated() - totalAllocStart,
+                0, 0, 0, 0, 0, 0, 0, 0);
+    }
+
+    /** 受控副本的「整批解析」部分：镜像 {@code resolveBatch}；失败即抛，由调用方降级。 */
+    private SplitOutcome resolveBatchReplica(List<GradingSubmission> submissions, GradingPaper paper) {
+        long totalStart = System.nanoTime();
+        long totalAllocStart = allocated();
+
+        List<Long> submissionIds = submissions.stream().map(GradingSubmission::getId).toList();
+        long a1 = allocated();
+        long t1 = System.nanoTime();
+        long sql1 = CountingInterceptor.count();
+        Map<Long, List<SubjectiveGrade>> rowsBySubmission = subjectiveGradeMapper.selectList(
+                        Wrappers.<SubjectiveGrade>lambdaQuery().in(SubjectiveGrade::getSubmissionId, submissionIds))
+                .stream()
+                .collect(Collectors.groupingBy(SubjectiveGrade::getSubmissionId));
+        long subjectiveReadNanos = System.nanoTime() - t1;
+        long subjectiveReadAlloc = allocated() - a1;
+        long subjectiveReadSql = CountingInterceptor.count() - sql1;
+        long subjectiveReadRows = rowsBySubmission.values().stream().mapToLong(List::size).sum();
+
+        long a2 = allocated();
+        long t2 = System.nanoTime();
+        Map<Long, Map<Long, String>> answersBySubmission = new HashMap<>();
+        Map<Long, Map<Long, SubjectiveGrade>> subjectiveBySubmission = new HashMap<>();
+        for (GradingSubmission submission : submissions) {
+            answersBySubmission.put(submission.getId(), paperReader.parseAnswers(submission.getAnswers()));
+            subjectiveBySubmission.put(submission.getId(),
+                    rowsBySubmission.getOrDefault(submission.getId(), List.of()).stream()
+                            .collect(Collectors.toMap(SubjectiveGrade::getQuestionId, Function.identity(),
+                                    (x, y) -> x)));
+        }
+        long answerParseNanos = System.nanoTime() - t2;
+        long answerParseAlloc = allocated() - a2;
+
+        long a3 = allocated();
+        long t3 = System.nanoTime();
+        Map<Long, Map<Long, QuestionScoreResolver.ResolvedQuestionScore>> result = new LinkedHashMap<>();
+        for (GradingSubmission submission : submissions) {
+            Map<Long, String> answers = answersBySubmission.get(submission.getId());
+            Map<Long, SubjectiveGrade> subjective = subjectiveBySubmission.get(submission.getId());
+            Map<Long, QuestionScoreResolver.ResolvedQuestionScore> perQuestion = new LinkedHashMap<>();
+            for (GradingQuestion question : paper.questions()) {
+                perQuestion.put(question.questionId(), resolveOneReplica(question,
+                        answers.get(question.questionId()), subjective.get(question.questionId())));
+            }
+            result.put(submission.getId(), perQuestion);
+        }
+        long gradeNanos = System.nanoTime() - t3;
+        long gradeAlloc = allocated() - a3;
+
+        return new SplitOutcome(result, false,
+                System.nanoTime() - totalStart, allocated() - totalAllocStart,
+                subjectiveReadNanos, subjectiveReadAlloc, subjectiveReadSql, subjectiveReadRows,
+                answerParseNanos, answerParseAlloc, gradeNanos, gradeAlloc);
+    }
+
+    /** 与 {@code QuestionScoreResolver.resolveOne} 逐句一致（主观题取终分、客观题走判分策略）。 */
+    private QuestionScoreResolver.ResolvedQuestionScore resolveOneReplica(
+            GradingQuestion question, String studentAnswer, SubjectiveGrade subjectiveRow) {
+        if (question.type() == QuestionType.SHORT_ANSWER) {
+            boolean graded = subjectiveRow != null && subjectiveRow.getScore() != null;
+            BigDecimal score = graded ? subjectiveRow.getScore() : BigDecimal.ZERO;
+            return new QuestionScoreResolver.ResolvedQuestionScore(score, question.score(),
+                    graded && score.compareTo(question.score()) == 0,
+                    graded,
+                    subjectiveRow == null ? null : subjectiveRow.getComment(),
+                    null);
+        }
+        GradeResult result = strategyRegistry.dispatch(question).grade(question, studentAnswer, gradingConfig);
+        return new QuestionScoreResolver.ResolvedQuestionScore(result.score(), question.score(),
+                result.correct(), true, null, result.detail());
+    }
+
+    /** 正常页嵌套分账累加器（仅正常页；降级页不并入）。 */
+    private static final class NestedAccum {
+        private long pages;
+        private long totalNanos;
+        private long totalAlloc;
+        private long subjectiveReadNanos;
+        private long subjectiveReadAlloc;
+        private long subjectiveReadSql;
+        private long subjectiveReadRows;
+        private long answerParseNanos;
+        private long answerParseAlloc;
+        private long gradeNanos;
+        private long gradeAlloc;
+
+        void add(SplitOutcome s) {
+            pages++;
+            totalNanos += s.totalNanos();
+            totalAlloc += s.totalAlloc();
+            subjectiveReadNanos += s.subjectiveReadNanos();
+            subjectiveReadAlloc += s.subjectiveReadAlloc();
+            subjectiveReadSql += s.subjectiveReadSql();
+            subjectiveReadRows += s.subjectiveReadRows();
+            answerParseNanos += s.answerParseNanos();
+            answerParseAlloc += s.answerParseAlloc();
+            gradeNanos += s.gradeNanos();
+            gradeAlloc += s.gradeAlloc();
+        }
+
+        Map<String, Object> toJson() {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("pages", pages);
+            m.put("denominatorNote", "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；"
+                    + "与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU");
+            m.put("replicaResolveMillis", round3(totalNanos / 1e6));
+            m.put("replicaResolveAllocMB", round3(totalAlloc / 1048576.0));
+            m.put("subjectiveRead", segment(subjectiveReadNanos, subjectiveReadAlloc,
+                    subjectiveReadSql, subjectiveReadRows));
+            m.put("answerParse", segment(answerParseNanos, answerParseAlloc, -1, -1));
+            m.put("grade", segment(gradeNanos, gradeAlloc, -1, -1));
+            long accountedNanos = subjectiveReadNanos + answerParseNanos + gradeNanos;
+            long accountedAlloc = subjectiveReadAlloc + answerParseAlloc + gradeAlloc;
+            m.put("unaccountedMillis", round3((totalNanos - accountedNanos) / 1e6));
+            m.put("unaccountedAllocMB", round3((totalAlloc - accountedAlloc) / 1048576.0));
+            return m;
+        }
+    }
+
+    private static Map<String, Object> segment(long nanos, long alloc, long sql, long rows) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("millis", round3(nanos / 1e6));
+        m.put("allocatedMB", alloc < 0 ? -1 : round3(alloc / 1048576.0));
+        if (sql >= 0) {
+            m.put("sqlCount", sql);
+        }
+        if (rows >= 0) {
+            m.put("rowsOut", rows);
+        }
+        return m;
+    }
+
+    private static Map<String, Object> buckets(long normalPages, long normalNanos, long normalAlloc, long normalSql,
+                                               long fallbackPages, long fallbackNanos, long fallbackAlloc,
+                                               long fallbackSql, long fallbackSubmissionResolves) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> normal = new LinkedHashMap<>();
+        normal.put("pages", normalPages);
+        normal.put("resolveMillis", round3(normalNanos / 1e6));
+        normal.put("resolveAllocatedMB", round3(normalAlloc / 1048576.0));
+        normal.put("resolveSql", normalSql);
+        normal.put("note", "整批 resolveBatch 成功页；嵌套分账取自此桶");
+        m.put("normal", normal);
+
+        Map<String, Object> fallback = new LinkedHashMap<>();
+        fallback.put("pages", fallbackPages);
+        fallback.put("resolveMillis", round3(fallbackNanos / 1e6));
+        fallback.put("resolveAllocatedMB", round3(fallbackAlloc / 1048576.0));
+        fallback.put("resolveSql", fallbackSql);
+        fallback.put("submissionResolveAttempts", fallbackSubmissionResolves);
+        fallback.put("note", "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因");
+        m.put("fallback", fallback);
+        return m;
+    }
+
+    private static Map<String, Object> probe(long nanos, long alloc, long pages, long unequalPages,
+                                             List<String> unequalDetail) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("replicaResolveMillis", round3(nanos / 1e6));
+        m.put("replicaResolveAllocMB", round3(alloc / 1048576.0));
+        m.put("pagesCompared", pages);
+        m.put("unequalPages", unequalPages);
+        if (!unequalDetail.isEmpty()) {
+            m.put("unequalPageDetail", unequalDetail);
+        }
+        m.put("note", "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；"
+                + "等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效");
+        return m;
     }
 
     /** 与生产 {@code discrimination} 逐句一致（前后 27% 高低分组法）。 */
@@ -1033,6 +1359,11 @@ class QuestionStatsExportAttributionMeasureIT {
         m.put("pairsRetainedMeasurement", "GC 后 used 堆差分（含/不含 pairs），逐轮上报");
         m.put("sqlMeasurement", "MyBatis Executor.query Interceptor 计数");
         m.put("tempMeasurement", "java.io.tmpdir/poifiles 递归字节/文件数峰值");
+        m.put("phaseSplit", "replica.phases 把原 pagingResolve 拆为 pagingSelect（selectList）与 resolveTotal（resolveQuietly），各自记耗时/分配/SQL/返回行数");
+        m.put("nestedTiming", "test-only 受控副本镜像 resolveBatch，在同一调用内嵌套计时主观分读取/答案解析/解析评分；另跑生产等价 resolveQuietly 供归因，副本与生产逐页 result.equals 校验");
+        m.put("probeOverhead", "受控副本为额外一遍 resolve，计为探针开销，不并入生产段；其总耗时与三段之和的差记为未归属（框架/映射/探针），不作 CPU 也不作生产 DB 耗时");
+        m.put("badPaperBucket", "按整批是否降级逐份分成 normal/fallback 两桶，异常页不混入正常页归因");
+        m.put("noCrossWindowClaim", "不对跨轮/跨窗口量相减或相除；只报同次调用内绝对量与同调用内份额；墙钟含 GC/JIT/调度，H2 为进程内；隔离结果不外推生产");
         m.put("coldStartExcluded", "Spring 上下文启动与数据准备在测量窗口之外；预热 2 轮不计入");
         return m;
     }
