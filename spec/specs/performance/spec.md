@@ -1,7 +1,7 @@
 # performance 规范
 
 > 能力域：性能（阶段 8，W9-W10；2026-09-23 补交卷容量调整与压测方法学）。
-> 来源：`spec/changes/archive/add-performance-deepening` 合入（热点只读缓存、缓存穿透/击穿/雪崩三防）+ `spec/changes/archive/tune-submit-capacity` 合入（交卷容量可由运行参数调整且达标判定可复现）+ `spec/changes/archive/gate-java-change-on-measured-factor` 合入（Java 优化先归因、一次只改一类）。
+> 来源：`spec/changes/archive/add-performance-deepening` 合入（热点只读缓存、缓存穿透/击穿/雪崩三防）+ `spec/changes/archive/tune-submit-capacity` 合入（交卷容量可由运行参数调整且达标判定可复现）+ `spec/changes/archive/gate-java-change-on-measured-factor` 合入（Java 优化先归因、一次只改一类）+ `spec/changes/archive/update-question-stats-paging-resolve-attribution` 合入（题目统计导出优化先拆分分页与解析）。
 > 归并说明：原提案 performance spec-delta 中的「慢查询识别」与 observability spec-delta 的「慢 SQL 识别」是同一需求，**不重复登记**——统一归入 `spec/specs/observability/spec.md`（日志与请求关联属可观测性能力域），本文件不再重复。
 
 ## Requirements
@@ -222,3 +222,41 @@ AND 同机压测的历史结果不能单独授权 JVM 或热点改写
 > `batch-grading-subjective-upserts` 只降低教师侧判分/汇总的调用次数，与交卷 P99 无关。
 > 下一刀必须先有压测机分离后的同口径新剖面（依赖 `isolate-submit-load-generator`，
 > 截至本变更归档仍待审批未实施）。
+
+---
+
+### Requirement: 题目统计导出优化先拆分分页与解析
+
+WHEN 针对题目统计导出的 `pagingResolve` 路径提出代码优化,
+
+系统 SHALL 在相同隔离负载、同一次导出页内先分别记录答卷分页取数与 `resolveQuietly` 的耗时、分配和 SQL 交互；若解析段稳定占主导，SHALL 再将其中主观分读取与答案解析/逐题评分分账，并说明嵌套计时与探针开销；SHALL 先核对导出语义与测量开销，再决定下一次只研究哪一类因素。系统 SHALL NOT 将跨轮、跨窗口的比值或独立分位数差额当成请求内精确占比，亦 SHALL NOT 将隔离 H2 结果宣称为生产 MySQL/Tomcat 瓶颈。
+
+#### Scenario: 可重复的单一因素主导
+
+GIVEN 同一数据和负载已分别记录分页与解析的成本，解析为主导时又记录其主观分读取与解析/评分成本，且生产导出与测量输出语义一致
+
+WHEN 多轮观测中某一因素高于轮间波动并稳定占主导
+
+THEN 该因素仅成为下一份独立优化提案的候选
+
+AND 不在本次归因变更中同时改 SQL、解析业务逻辑或 JVM 参数
+
+#### Scenario: 归因未定或测量改变行为
+
+GIVEN 探针开销不可忽略、坏卷降级与正常页混算、输出不等价，或多轮主导因素反复变化
+
+WHEN 评估是否实施代码优化
+
+THEN 标记归因未定并保留原始证据
+
+AND 不因先前合并相位的分配量较高便指定 SQL 或解析为已证实的生产瓶颈
+
+> 合入注记（2026-09-27，`update-question-stats-paging-resolve-attribution`）：本变更只扩展测试侧隔离测量工具
+> （`src/test/.../QuestionStatsExportAttributionMeasureIT`），`src/main`、Mapper SQL、schema、JVM、线程池
+> 与导出行为零触碰。三次独立 JVM 调用（revision `94ca842`）在 H2 进程内测得：全部 5 个数据形状、9 个样本中
+> `resolveQuietly` 稳定主导分页取数（全局 min 解析份额 0.510 > 全局 max 分页份额 0.490）；进入嵌套后
+> 27/27 个 normal 桶样本中**答案解析段**为最大段（份额 0.381–0.656，主观分读取 0.073–0.370、评分
+> 0.200–0.359）；未归属段与探针开销 ≤ 2.2%，逐页 `result.equals` 与 XLSX/ZIP oracle 全部一致。稳定主导
+> 因素仅作下一份独立提案候选，本变更不实施优化，也不外推生产 P99。证据见
+> `spec/changes/archive/update-question-stats-paging-resolve-attribution/evidence/measurement-rounds.md`
+> 与同目录 `evidence-sha256.txt`。
