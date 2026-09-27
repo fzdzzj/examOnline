@@ -1,0 +1,1175 @@
+{
+  "revision" : "8085c57",
+  "label" : "old-run2",
+  "startedAt" : "2026-09-27T18:41:24.485722900",
+  "jdk" : "21.0.9 (Oracle Corporation)",
+  "vm" : "Java HotSpot(TM) 64-Bit Server VM / 21.0.9+7-LTS-338",
+  "os" : "Windows 11 10.0 amd64",
+  "processors" : 20,
+  "maxHeapMB" : 3952,
+  "heapCapNote" : "堆上限由运行 JVM 决定，多轮必须同设置；本工具不注入 -Xmx",
+  "dataRule" : "每 combo 一场考试：exams.status=4/published=1；exam_snapshots.paper_json 含 questions（前 80% 为 SINGLE，choices=[A,B,C,D]，correctAnswer=A，score=2；其余为 SHORT_ANSWER，choices=null，correctAnswer=参考答案，score=5）；exam_submissions 逐份直插 status=3、grading_status=1，answers JSON：客观题 answer=((i+qi)%3==0)?B:A ⇒ 得 2 或 0，简答题无 subjective_grades 行 ⇒ 未批计 0；total_score=objective_score=2×(该生答对的客观题数)，subjective_score=0；坏答卷为最后 badAnswers 份，answers=?{ 非法 JSON 或 NULL ⇒ 解析抛错被跳过；不建 users 行（exportQuestionStats 不读 users），登录上下文用合成 ADMIN LoginUser（只过 owner 校验）。",
+  "metricDefinitions" : {
+    "production.tempPeakBytes/tempGrowthPeakBytes/tempFilesPeak" : "java.io.tmpdir/poifiles 下文件字节/相对相位起点增量/个数的峰值",
+    "production.heapPeakMB" : "整段调用期间采样线程观测的 used 堆最大值（上界，含夹具）",
+    "production.heapUsedAfterGcBeforeMB/AfterMB" : "调用前后多次 System.gc() 后 used 堆的最小值",
+    "cellsEqualProduction" : "副本 XLSX 与生产 XLSX 用 DataFormatter 逐格比对结果",
+    "production.millis" : "生产 exportQuestionStats 单次调用墙钟耗时",
+    "production.sqlQueries" : "MyBatis Executor.query 调用次数（Interceptor 计数）",
+    "replica.pairsRetainedMB" : "建成 pairs 并 GC 后堆 − 释放 pairs 并 GC 后堆（GC 后差分，逐轮上报）",
+    "production.allocatedMB" : "该调用期间当前线程分配字节差分（精确分配，非采样）",
+    "replica.sql.pagingResolve/pagingResolveFallback" : "分页+解析阶段 SQL 次数；损坏答卷触发逐份降级的额外次数",
+    "replica.phases[].millis/allocatedMB" : "分相位耗时与精确分配（副本步骤与生产逐句对齐，输出单元格逐格比对）",
+    "oracle.*" : "测试侧独立重算的题序/平均分/得分率/答对率/作答人数/区分度与生产单元格对照",
+    "note" : "隔离 H2 + 进程内直调 Service，非真实 MySQL/Tomcat 性能；不外推生产 P99",
+    "production.outputBytes" : "返回的 XLSX 字节数"
+  },
+  "loadParams" : {
+    "pageSize" : 500,
+    "sxssfWindow" : 100,
+    "rounds" : 3,
+    "objectiveRatio" : 0.8,
+    "objectiveScore" : 2.0,
+    "shortAnswerScore" : 5.0,
+    "combos" : [ {
+      "label" : "s1000-q20",
+      "students" : 1000,
+      "badAnswers" : 0,
+      "questions" : 20,
+      "note" : "基线：学生数中等、题量小于 SXSSF 窗口"
+    }, {
+      "label" : "s1000-q150",
+      "students" : 1000,
+      "badAnswers" : 0,
+      "questions" : 150,
+      "note" : "题量大于 SXSSF 窗口：触发临时刷盘"
+    }, {
+      "label" : "s3000-q60",
+      "students" : 3000,
+      "badAnswers" : 0,
+      "questions" : 60,
+      "note" : "学生数放大：pairs = N×Q"
+    }, {
+      "label" : "s100-q20-bad2",
+      "students" : 100,
+      "badAnswers" : 2,
+      "questions" : 20,
+      "note" : "含 2 份损坏答卷：走逐份降级路径"
+    }, {
+      "label" : "s3-q20-bad1",
+      "students" : 3,
+      "badAnswers" : 1,
+      "questions" : 20,
+      "note" : "少样本：n=2 → 区分度「样本不足」"
+    } ],
+    "allocMeasurement" : "com.sun.management.ThreadMXBean.getCurrentThreadAllocatedBytes 差分",
+    "heapPeakMeasurement" : "1ms 采样线程读 MemoryMXBean used 取最大（上界，含夹具）",
+    "pairsRetainedMeasurement" : "GC 后 used 堆差分（含/不含 pairs），逐轮上报",
+    "sqlMeasurement" : "MyBatis Executor.query Interceptor 计数",
+    "tempMeasurement" : "java.io.tmpdir/poifiles 递归字节/文件数峰值",
+    "coldStartExcluded" : "Spring 上下文启动与数据准备在测量窗口之外；预热 2 轮不计入"
+  },
+  "prepareDataMillis" : 529,
+  "oracle" : [ {
+    "combo" : "s1000-q20",
+    "goodSubmissions" : 1000,
+    "badAnswers" : 0,
+    "objectiveQuestions" : 16,
+    "rowCount" : 20,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  }, {
+    "combo" : "s1000-q150",
+    "goodSubmissions" : 1000,
+    "badAnswers" : 0,
+    "objectiveQuestions" : 120,
+    "rowCount" : 150,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  }, {
+    "combo" : "s3000-q60",
+    "goodSubmissions" : 3000,
+    "badAnswers" : 0,
+    "objectiveQuestions" : 48,
+    "rowCount" : 60,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  }, {
+    "combo" : "s100-q20-bad2",
+    "goodSubmissions" : 98,
+    "badAnswers" : 2,
+    "objectiveQuestions" : 16,
+    "rowCount" : 20,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  }, {
+    "combo" : "s3-q20-bad1",
+    "goodSubmissions" : 2,
+    "badAnswers" : 1,
+    "objectiveQuestions" : 16,
+    "rowCount" : 20,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  } ],
+  "rounds" : [ {
+    "round" : 1,
+    "combos" : [ {
+      "combo" : "s1000-q20",
+      "students" : 1000,
+      "questions" : 20,
+      "badAnswers" : 0,
+      "round" : 1,
+      "production" : {
+        "millis" : 147.275,
+        "allocatedMB" : 21.009,
+        "heapPeakMB" : 89.649,
+        "heapUsedAfterGcBeforeMB" : 69.649,
+        "heapUsedAfterGcAfterMB" : 69.657,
+        "heapUsedDeltaAfterGcMB" : 0.008,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4569,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 5.142,
+          "allocatedMB" : 0.072
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 23.565,
+          "allocatedMB" : 10.901
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 18.039,
+          "allocatedMB" : 0.931
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 3.03,
+          "allocatedMB" : 0.108
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 22.645,
+          "allocatedMB" : 1.748
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 67.423,
+          "allocatedMB" : 3.853
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 4,
+        "sql.pagingResolveFallbackExtra" : 0,
+        "pairsRetainedMB" : 0.704,
+        "heapWithPairsAfterGcMB" : 70.379,
+        "heapWithoutPairsAfterGcMB" : 69.674,
+        "wallMillis" : 1257.947,
+        "sqlTotal" : 6,
+        "outputBytes" : 4570,
+        "tempPeakBytes" : 8858,
+        "tempGrowthPeakBytes" : 8858,
+        "tempFilesPeak" : 2,
+        "heapPeakMB" : 83.658,
+        "heapUsedAfterGcBeforeMB" : 69.658,
+        "heapUsedAfterGcAfterMB" : 69.762,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : false
+    }, {
+      "combo" : "s1000-q150",
+      "students" : 1000,
+      "questions" : 150,
+      "badAnswers" : 0,
+      "round" : 1,
+      "production" : {
+        "millis" : 331.382,
+        "allocatedMB" : 89.329,
+        "heapPeakMB" : 159.661,
+        "heapUsedAfterGcBeforeMB" : 69.661,
+        "heapUsedAfterGcAfterMB" : 69.671,
+        "heapUsedDeltaAfterGcMB" : 0.011,
+        "tempPeakBytes" : 70776,
+        "tempGrowthPeakBytes" : 70776,
+        "tempFilesPeak" : 2,
+        "outputBytes" : 9238,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.938,
+          "allocatedMB" : 0.25
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 46.516,
+          "allocatedMB" : 49.698
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 17.223,
+          "allocatedMB" : 6.787
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 1.953,
+          "allocatedMB" : 0.796
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 70.098,
+          "allocatedMB" : 14.546
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 112.225,
+          "allocatedMB" : 14.142
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.009,
+          "allocatedMB" : 0.009
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 4,
+        "sql.pagingResolveFallbackExtra" : 0,
+        "pairsRetainedMB" : 5.292,
+        "heapWithPairsAfterGcMB" : 75.063,
+        "heapWithoutPairsAfterGcMB" : 69.77,
+        "wallMillis" : 1378.418,
+        "sqlTotal" : 6,
+        "outputBytes" : 9237,
+        "tempPeakBytes" : 70775,
+        "tempGrowthPeakBytes" : 70775,
+        "tempFilesPeak" : 2,
+        "heapPeakMB" : 129.672,
+        "heapUsedAfterGcBeforeMB" : 69.672,
+        "heapUsedAfterGcAfterMB" : 69.749,
+        "rowCount" : 150,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : false
+    }, {
+      "combo" : "s3000-q60",
+      "students" : 3000,
+      "questions" : 60,
+      "badAnswers" : 0,
+      "round" : 1,
+      "production" : {
+        "millis" : 224.571,
+        "allocatedMB" : 102.238,
+        "heapPeakMB" : 173.663,
+        "heapUsedAfterGcBeforeMB" : 69.663,
+        "heapUsedAfterGcAfterMB" : 69.672,
+        "heapUsedDeltaAfterGcMB" : 0.008,
+        "tempPeakBytes" : 8192,
+        "tempGrowthPeakBytes" : 8192,
+        "tempFilesPeak" : 1,
+        "outputBytes" : 5987,
+        "sqlQueries" : 17
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.135,
+          "allocatedMB" : 0.126
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 90.902,
+          "allocatedMB" : 70.404
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 16.848,
+          "allocatedMB" : 8.472
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.717,
+          "allocatedMB" : 0.783
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 29.058,
+          "allocatedMB" : 4.41
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 85.149,
+          "allocatedMB" : 9.021
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.011,
+          "allocatedMB" : 0.006
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 12,
+        "sql.pagingResolveFallbackExtra" : 0,
+        "pairsRetainedMB" : 6.445,
+        "heapWithPairsAfterGcMB" : 76.16,
+        "heapWithoutPairsAfterGcMB" : 69.715,
+        "wallMillis" : 1417.652,
+        "sqlTotal" : 14,
+        "outputBytes" : 5987,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 151.673,
+        "heapUsedAfterGcBeforeMB" : 69.673,
+        "heapUsedAfterGcAfterMB" : 69.709,
+        "rowCount" : 60,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s100-q20-bad2",
+      "students" : 100,
+      "questions" : 20,
+      "badAnswers" : 2,
+      "round" : 1,
+      "production" : {
+        "millis" : 138.356,
+        "allocatedMB" : 11.264,
+        "heapPeakMB" : 81.673,
+        "heapUsedAfterGcBeforeMB" : 69.673,
+        "heapUsedAfterGcAfterMB" : 69.701,
+        "heapUsedDeltaAfterGcMB" : 0.028,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4590,
+        "sqlQueries" : 102
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.527,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 50.051,
+          "allocatedMB" : 4.796
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 1.116,
+          "allocatedMB" : 0.093
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.577,
+          "allocatedMB" : 0.023
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 14.417,
+          "allocatedMB" : 1.703
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 54.641,
+          "allocatedMB" : 3.757
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 100,
+        "sql.pagingResolveFallbackExtra" : 98,
+        "pairsRetainedMB" : 0.103,
+        "heapWithPairsAfterGcMB" : 69.821,
+        "heapWithoutPairsAfterGcMB" : 69.719,
+        "wallMillis" : 1265.893,
+        "sqlTotal" : 101,
+        "outputBytes" : 4590,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 75.719,
+        "heapUsedAfterGcBeforeMB" : 69.702,
+        "heapUsedAfterGcAfterMB" : 69.805,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3-q20-bad1",
+      "students" : 3,
+      "questions" : 20,
+      "badAnswers" : 1,
+      "round" : 1,
+      "production" : {
+        "millis" : 85.011,
+        "allocatedMB" : 6.339,
+        "heapPeakMB" : 75.705,
+        "heapUsedAfterGcBeforeMB" : 69.704,
+        "heapUsedAfterGcAfterMB" : 69.7,
+        "heapUsedDeltaAfterGcMB" : -0.004,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4577,
+        "sqlQueries" : 6
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.209,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 2.942,
+          "allocatedMB" : 0.141
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.862,
+          "allocatedMB" : 0.007
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.04,
+          "allocatedMB" : 0.002
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 16.719,
+          "allocatedMB" : 1.758
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 54.639,
+          "allocatedMB" : 3.856
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 4,
+        "sql.pagingResolveFallbackExtra" : 2,
+        "pairsRetainedMB" : 0.004,
+        "heapWithPairsAfterGcMB" : 69.719,
+        "heapWithoutPairsAfterGcMB" : 69.715,
+        "wallMillis" : 1041.472,
+        "sqlTotal" : 7,
+        "outputBytes" : 4576,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 75.718,
+        "heapUsedAfterGcBeforeMB" : 69.701,
+        "heapUsedAfterGcAfterMB" : 69.804,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : false
+    } ]
+  }, {
+    "round" : 2,
+    "combos" : [ {
+      "combo" : "s1000-q20",
+      "students" : 1000,
+      "questions" : 20,
+      "badAnswers" : 0,
+      "round" : 2,
+      "production" : {
+        "millis" : 116.255,
+        "allocatedMB" : 20.457,
+        "heapPeakMB" : 91.703,
+        "heapUsedAfterGcBeforeMB" : 69.703,
+        "heapUsedAfterGcAfterMB" : 69.75,
+        "heapUsedDeltaAfterGcMB" : 0.047,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4570,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.056,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 13.354,
+          "allocatedMB" : 10.841
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 2.423,
+          "allocatedMB" : 0.931
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.49,
+          "allocatedMB" : 0.107
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 14.395,
+          "allocatedMB" : 1.705
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 57.634,
+          "allocatedMB" : 3.75
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.001,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 4,
+        "sql.pagingResolveFallbackExtra" : 0,
+        "pairsRetainedMB" : 0.704,
+        "heapWithPairsAfterGcMB" : 70.471,
+        "heapWithoutPairsAfterGcMB" : 69.767,
+        "wallMillis" : 1039.831,
+        "sqlTotal" : 6,
+        "outputBytes" : 4570,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 83.751,
+        "heapUsedAfterGcBeforeMB" : 69.751,
+        "heapUsedAfterGcAfterMB" : 69.768,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s1000-q150",
+      "students" : 1000,
+      "questions" : 150,
+      "badAnswers" : 0,
+      "round" : 2,
+      "production" : {
+        "millis" : 198.127,
+        "allocatedMB" : 88.383,
+        "heapPeakMB" : 157.752,
+        "heapUsedAfterGcBeforeMB" : 69.752,
+        "heapUsedAfterGcAfterMB" : 69.761,
+        "heapUsedDeltaAfterGcMB" : 0.009,
+        "tempPeakBytes" : 58266,
+        "tempGrowthPeakBytes" : 58266,
+        "tempFilesPeak" : 2,
+        "outputBytes" : 9238,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.886,
+          "allocatedMB" : 0.25
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 44.759,
+          "allocatedMB" : 49.697
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 12.545,
+          "allocatedMB" : 6.787
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 1.856,
+          "allocatedMB" : 0.796
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 59.593,
+          "allocatedMB" : 13.842
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 102.382,
+          "allocatedMB" : 13.984
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.015,
+          "allocatedMB" : 0.009
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 4,
+        "sql.pagingResolveFallbackExtra" : 0,
+        "pairsRetainedMB" : 5.292,
+        "heapWithPairsAfterGcMB" : 75.153,
+        "heapWithoutPairsAfterGcMB" : 69.861,
+        "wallMillis" : 1189.976,
+        "sqlTotal" : 6,
+        "outputBytes" : 9238,
+        "tempPeakBytes" : 16384,
+        "tempGrowthPeakBytes" : 16384,
+        "tempFilesPeak" : 1,
+        "heapPeakMB" : 125.762,
+        "heapUsedAfterGcBeforeMB" : 69.762,
+        "heapUsedAfterGcAfterMB" : 69.837,
+        "rowCount" : 150,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3000-q60",
+      "students" : 3000,
+      "questions" : 60,
+      "badAnswers" : 0,
+      "round" : 2,
+      "production" : {
+        "millis" : 200.165,
+        "allocatedMB" : 102.049,
+        "heapPeakMB" : 171.759,
+        "heapUsedAfterGcBeforeMB" : 69.759,
+        "heapUsedAfterGcAfterMB" : 69.766,
+        "heapUsedDeltaAfterGcMB" : 0.006,
+        "tempPeakBytes" : 24576,
+        "tempGrowthPeakBytes" : 24576,
+        "tempFilesPeak" : 2,
+        "outputBytes" : 5987,
+        "sqlQueries" : 15
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.386,
+          "allocatedMB" : 0.126
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 80.305,
+          "allocatedMB" : 70.401
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 16.468,
+          "allocatedMB" : 8.472
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.261,
+          "allocatedMB" : 0.783
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 21.442,
+          "allocatedMB" : 4.395
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 64.201,
+          "allocatedMB" : 8.95
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.006
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 12,
+        "sql.pagingResolveFallbackExtra" : 0,
+        "pairsRetainedMB" : 6.445,
+        "heapWithPairsAfterGcMB" : 76.253,
+        "heapWithoutPairsAfterGcMB" : 69.808,
+        "wallMillis" : 1164.019,
+        "sqlTotal" : 16,
+        "outputBytes" : 5986,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 149.766,
+        "heapUsedAfterGcBeforeMB" : 69.766,
+        "heapUsedAfterGcAfterMB" : 69.8,
+        "rowCount" : 60,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : false
+    }, {
+      "combo" : "s100-q20-bad2",
+      "students" : 100,
+      "questions" : 20,
+      "badAnswers" : 2,
+      "round" : 2,
+      "production" : {
+        "millis" : 118.953,
+        "allocatedMB" : 11.161,
+        "heapPeakMB" : 83.765,
+        "heapUsedAfterGcBeforeMB" : 69.765,
+        "heapUsedAfterGcAfterMB" : 69.789,
+        "heapUsedDeltaAfterGcMB" : 0.024,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4589,
+        "sqlQueries" : 102
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.331,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 26.374,
+          "allocatedMB" : 4.788
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.688,
+          "allocatedMB" : 0.093
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.402,
+          "allocatedMB" : 0.022
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 14.57,
+          "allocatedMB" : 1.699
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 61.209,
+          "allocatedMB" : 3.733
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.001,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 100,
+        "sql.pagingResolveFallbackExtra" : 98,
+        "pairsRetainedMB" : 0.068,
+        "heapWithPairsAfterGcMB" : 69.875,
+        "heapWithoutPairsAfterGcMB" : 69.807,
+        "wallMillis" : 1060.285,
+        "sqlTotal" : 101,
+        "outputBytes" : 4590,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 75.807,
+        "heapUsedAfterGcBeforeMB" : 69.79,
+        "heapUsedAfterGcAfterMB" : 69.807,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : false
+    }, {
+      "combo" : "s3-q20-bad1",
+      "students" : 3,
+      "questions" : 20,
+      "badAnswers" : 1,
+      "round" : 2,
+      "production" : {
+        "millis" : 79.589,
+        "allocatedMB" : 6.311,
+        "heapPeakMB" : 75.791,
+        "heapUsedAfterGcBeforeMB" : 69.791,
+        "heapUsedAfterGcAfterMB" : 69.736,
+        "heapUsedDeltaAfterGcMB" : -0.055,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4577,
+        "sqlQueries" : 6
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.627,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 1.207,
+          "allocatedMB" : 0.141
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.025,
+          "allocatedMB" : 0.007
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.036,
+          "allocatedMB" : 0.002
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 16.473,
+          "allocatedMB" : 1.754
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 57.055,
+          "allocatedMB" : 3.849
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.001,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 4,
+        "sql.pagingResolveFallbackExtra" : 2,
+        "pairsRetainedMB" : 0.002,
+        "heapWithPairsAfterGcMB" : 69.754,
+        "heapWithoutPairsAfterGcMB" : 69.751,
+        "wallMillis" : 1010.882,
+        "sqlTotal" : 5,
+        "outputBytes" : 4576,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 75.751,
+        "heapUsedAfterGcBeforeMB" : 69.737,
+        "heapUsedAfterGcAfterMB" : 69.753,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : false
+    } ]
+  }, {
+    "round" : 3,
+    "combos" : [ {
+      "combo" : "s1000-q20",
+      "students" : 1000,
+      "questions" : 20,
+      "badAnswers" : 0,
+      "round" : 3,
+      "production" : {
+        "millis" : 109.196,
+        "allocatedMB" : 20.448,
+        "heapPeakMB" : 89.743,
+        "heapUsedAfterGcBeforeMB" : 69.743,
+        "heapUsedAfterGcAfterMB" : 69.8,
+        "heapUsedDeltaAfterGcMB" : 0.057,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4569,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.567,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 10.047,
+          "allocatedMB" : 10.841
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 1.427,
+          "allocatedMB" : 0.931
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.784,
+          "allocatedMB" : 0.107
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 14.102,
+          "allocatedMB" : 1.701
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 61.702,
+          "allocatedMB" : 3.744
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 4,
+        "sql.pagingResolveFallbackExtra" : 0,
+        "pairsRetainedMB" : 0.704,
+        "heapWithPairsAfterGcMB" : 70.52,
+        "heapWithoutPairsAfterGcMB" : 69.816,
+        "wallMillis" : 1030.874,
+        "sqlTotal" : 8,
+        "outputBytes" : 4569,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 75.816,
+        "heapUsedAfterGcBeforeMB" : 69.801,
+        "heapUsedAfterGcAfterMB" : 69.817,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s1000-q150",
+      "students" : 1000,
+      "questions" : 150,
+      "badAnswers" : 0,
+      "round" : 3,
+      "production" : {
+        "millis" : 207.056,
+        "allocatedMB" : 88.374,
+        "heapPeakMB" : 157.79,
+        "heapUsedAfterGcBeforeMB" : 69.79,
+        "heapUsedAfterGcAfterMB" : 69.801,
+        "heapUsedDeltaAfterGcMB" : 0.011,
+        "tempPeakBytes" : 60206,
+        "tempGrowthPeakBytes" : 60206,
+        "tempFilesPeak" : 2,
+        "outputBytes" : 9237,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.432,
+          "allocatedMB" : 0.25
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 59.537,
+          "allocatedMB" : 49.697
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 19.125,
+          "allocatedMB" : 6.787
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.9,
+          "allocatedMB" : 0.796
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 58.807,
+          "allocatedMB" : 13.841
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 87.807,
+          "allocatedMB" : 13.984
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.009
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 4,
+        "sql.pagingResolveFallbackExtra" : 0,
+        "pairsRetainedMB" : 5.294,
+        "heapWithPairsAfterGcMB" : 75.195,
+        "heapWithoutPairsAfterGcMB" : 69.901,
+        "wallMillis" : 1188.202,
+        "sqlTotal" : 6,
+        "outputBytes" : 9237,
+        "tempPeakBytes" : 70775,
+        "tempGrowthPeakBytes" : 70775,
+        "tempFilesPeak" : 2,
+        "heapPeakMB" : 129.802,
+        "heapUsedAfterGcBeforeMB" : 69.802,
+        "heapUsedAfterGcAfterMB" : 69.877,
+        "rowCount" : 150,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3000-q60",
+      "students" : 3000,
+      "questions" : 60,
+      "badAnswers" : 0,
+      "round" : 3,
+      "production" : {
+        "millis" : 189.653,
+        "allocatedMB" : 102.046,
+        "heapPeakMB" : 171.799,
+        "heapUsedAfterGcBeforeMB" : 69.799,
+        "heapUsedAfterGcAfterMB" : 69.805,
+        "heapUsedDeltaAfterGcMB" : 0.006,
+        "tempPeakBytes" : 25451,
+        "tempGrowthPeakBytes" : 25451,
+        "tempFilesPeak" : 2,
+        "outputBytes" : 5987,
+        "sqlQueries" : 15
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 5.221,
+          "allocatedMB" : 0.126
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 60.869,
+          "allocatedMB" : 70.399
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 13.386,
+          "allocatedMB" : 8.472
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 3.003,
+          "allocatedMB" : 0.783
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 25.46,
+          "allocatedMB" : 4.393
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 67.763,
+          "allocatedMB" : 8.95
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.006
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 12,
+        "sql.pagingResolveFallbackExtra" : 0,
+        "pairsRetainedMB" : 6.446,
+        "heapWithPairsAfterGcMB" : 76.293,
+        "heapWithoutPairsAfterGcMB" : 69.847,
+        "wallMillis" : 1122.232,
+        "sqlTotal" : 14,
+        "outputBytes" : 5986,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 147.806,
+        "heapUsedAfterGcBeforeMB" : 69.806,
+        "heapUsedAfterGcAfterMB" : 69.84,
+        "rowCount" : 60,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : false
+    }, {
+      "combo" : "s100-q20-bad2",
+      "students" : 100,
+      "questions" : 20,
+      "badAnswers" : 2,
+      "round" : 3,
+      "production" : {
+        "millis" : 93.338,
+        "allocatedMB" : 11.121,
+        "heapPeakMB" : 79.805,
+        "heapUsedAfterGcBeforeMB" : 69.805,
+        "heapUsedAfterGcAfterMB" : 69.829,
+        "heapUsedDeltaAfterGcMB" : 0.025,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4589,
+        "sqlQueries" : 102
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.24,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 17.921,
+          "allocatedMB" : 4.745
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.298,
+          "allocatedMB" : 0.093
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.273,
+          "allocatedMB" : 0.022
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 14.602,
+          "allocatedMB" : 1.697
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 50.602,
+          "allocatedMB" : 3.733
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.001,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 100,
+        "sql.pagingResolveFallbackExtra" : 98,
+        "pairsRetainedMB" : 0.068,
+        "heapWithPairsAfterGcMB" : 69.914,
+        "heapWithoutPairsAfterGcMB" : 69.846,
+        "wallMillis" : 1012.219,
+        "sqlTotal" : 101,
+        "outputBytes" : 4589,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 75.846,
+        "heapUsedAfterGcBeforeMB" : 69.83,
+        "heapUsedAfterGcAfterMB" : 69.846,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3-q20-bad1",
+      "students" : 3,
+      "questions" : 20,
+      "badAnswers" : 1,
+      "round" : 3,
+      "production" : {
+        "millis" : 74.552,
+        "allocatedMB" : 6.308,
+        "heapPeakMB" : 75.832,
+        "heapUsedAfterGcBeforeMB" : 69.831,
+        "heapUsedAfterGcAfterMB" : 69.777,
+        "heapUsedDeltaAfterGcMB" : -0.055,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4576,
+        "sqlQueries" : 8
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 2.681,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingResolve",
+          "millis" : 0.954,
+          "allocatedMB" : 0.14
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.023,
+          "allocatedMB" : 0.007
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.022,
+          "allocatedMB" : 0.002
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 12.454,
+          "allocatedMB" : 1.752
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 56.508,
+          "allocatedMB" : 3.849
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.001,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingResolve" : 4,
+        "sql.pagingResolveFallbackExtra" : 2,
+        "pairsRetainedMB" : 0.002,
+        "heapWithPairsAfterGcMB" : 69.795,
+        "heapWithoutPairsAfterGcMB" : 69.792,
+        "wallMillis" : 1016.46,
+        "sqlTotal" : 5,
+        "outputBytes" : 4576,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 75.792,
+        "heapUsedAfterGcBeforeMB" : 69.777,
+        "heapUsedAfterGcAfterMB" : 69.793,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    } ]
+  } ],
+  "finishedAt" : "2026-09-27T18:42:24.164084900"
+}

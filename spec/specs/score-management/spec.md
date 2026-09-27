@@ -184,3 +184,15 @@ WHEN 系统导出
 THEN 采用流式写入
 
 AND 不因内存不足失败
+
+> 评估结论注记（2026-09-27，`update-question-stats-export-memory` 归档）：本基线**未合入**该提案的
+> 任何 Requirement——其 spec-delta（题目统计在保持统计口径下的逐题全量中间数据持有约束）按
+> **未采用草案**随目录归档。要点：在隔离环境（H2 内存库 + 进程内直调 Service，不写共享 dev、不启
+> Docker）对旧实现同负载三轮实测（工具提交 `91bf892`，`QuestionStatsExportAttributionMeasureIT`，
+> 类名以 IT 结尾不进全量门禁），三轮 XLSX 单元格与 zip 条目内容均与生产等价（oracleMatch=true）。
+> **占比最高的可控内存因素是答卷分页与逐题解析**（s3000-q60 分相位精确分配 67.1–70.4MB／总计
+> 99.1–102.2MB ≈ 68–69%；s1000-q150 ≈ 54–56%），SXSSF 序列化 8.8–16%，而逐题 `pairs` 积累仅
+> ≈ 8.3%/7.6%、其**持有**量 6.445MB@180000（占堆峰值约 3.8%）。彻底消除 `pairs` 需第二遍全量
+> 扫描（分页 SQL 12→24、解析相位耗时约翻倍）＝判定为不可接受的重复 SQL/CPU 交换，故 **NO-GO**，
+> `src/main` 零改动。数字与依据见 `spec/changes/archive/update-question-stats-export-memory/tasks.json`
+> 阶段 2 evidence；隔离 H2 + 进程内直调不代表真实 MySQL/Tomcat 生产性能，不构成生产 P99 结论。
