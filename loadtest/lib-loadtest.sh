@@ -89,24 +89,33 @@ now_ms() { lt_now_ms; }
 # 3) TIME_WAIT 探测（G4 轮前排空）
 #    关键不变式：**「探测到 0」与「探测失败」必须可区分**。
 #    0 的含义是「确实排空了」，是放行本轮容量结论的依据；把 SSH 非零、远端无 netstat、
-#    输出非法等情况改写成 0，会让一轮根本没排空的压测被误判为「已排空」。
+#    **netstat 存在但执行非零**、输出非法等情况改写成 0，会让一轮根本没排空的压测被误判为「已排空」。
+#
+#    特别注意 `netstat ... | grep -c TIME_WAIT` 这个管道：netstat **执行失败**时它没有任何输出，
+#    `grep -c` 会打印 0 并以「无匹配」退出 1，再被 `|| true` 一吞，就与「netstat 成功执行且确实为 0」
+#    完全无法区分——`command -v netstat` 只能证明命令存在，证明不了它跑成功。
+#    故两条路径都必须**先单独取 netstat 的退出码**，非零时改打失败哨兵，绝不落到 0。
 # -------------------------------------------------------------
 # lt_tw_probe：成功时把计数打到 stdout（可为 0）；失败时打 LT_PROBE_FAIL:<原因>。
 # 设计成「永远退出 0、用哨兵表达失败」，是为了让 ssh 的退出码/输出解析在调用方一处收敛。
 lt_tw_probe() {
-  local out rc
+  local out rc ns_out ns_rc
   if [ -n "${JMETER_SSH:-}" ]; then
     command -v ssh >/dev/null 2>&1 || { echo "LT_PROBE_FAIL:no-local-ssh"; return 0; }
-    # 远端命令自己区分「无 netstat」与「计数为 0」：`grep -c` 无匹配时打印 0 但退出 1，
-    # 故用 `|| true` 保住 0 的输出，把「命令是否可用」单独用哨兵表达。
-    out="$(ssh "$JMETER_SSH" 'if ! command -v netstat >/dev/null 2>&1; then echo LT_PROBE_FAIL:no-remote-netstat; exit 0; fi; netstat -an 2>/dev/null | grep -c TIME_WAIT || true' 2>/dev/null)"
+    # 远端脚本自己区分三件事：命令是否可用、netstat 是否**执行成功**、以及成功后的计数（可为 0）。
+    # `grep -c` 无匹配时打印 0 但退出 1，故保留 `|| true` 以保住这个合法的 0；
+    # 而 netstat 自身的非零退出必须在进入管道前拦下，改打 remote-netstat-rc 哨兵。
+    out="$(ssh "$JMETER_SSH" 'if ! command -v netstat >/dev/null 2>&1; then echo LT_PROBE_FAIL:no-remote-netstat; exit 0; fi; _ns="$(netstat -an 2>/dev/null)"; _rc=$?; if [ "$_rc" -ne 0 ]; then echo "LT_PROBE_FAIL:remote-netstat-rc=$_rc"; exit 0; fi; printf "%s\n" "$_ns" | grep -c TIME_WAIT || true' 2>/dev/null)"
     rc=$?
     if [ "$rc" -ne 0 ]; then echo "LT_PROBE_FAIL:ssh-rc=$rc"; return 0; fi
     printf '%s\n' "$out"
     return 0
   fi
   command -v netstat >/dev/null 2>&1 || { echo "LT_PROBE_FAIL:no-local-netstat"; return 0; }
-  netstat -an 2>/dev/null | grep -c TIME_WAIT || true
+  # 先取 netstat 退出码：非零即「执行失败」（与「成功且为 0」是两回事），改打 local-netstat-rc 哨兵。
+  ns_out="$(netstat -an 2>/dev/null)"; ns_rc=$?
+  if [ "$ns_rc" -ne 0 ]; then echo "LT_PROBE_FAIL:local-netstat-rc=$ns_rc"; return 0; fi
+  printf '%s\n' "$ns_out" | grep -c TIME_WAIT || true
 }
 
 # lt_tw_count：成功时打印计数并返回 0；失败时把原因打到 stderr 并返回非零。

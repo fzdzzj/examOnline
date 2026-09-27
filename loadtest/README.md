@@ -193,8 +193,10 @@ ARM=default ROUNDS=3 bash loadtest/run-arm.sh
 即：**失败轮不会再被报成成功**。
 
 **TIME_WAIT 探测的两种结果必须可区分**（`loadtest/lib-loadtest.sh` 的 `lt_tw_probe` / `lt_tw_count`）：
-「命令成功且确实为 0」= 真的排空了（放行本轮）；「ssh 非零退出 / 远端没有 `netstat` / 输出非法」
+「命令成功且确实为 0」= 真的排空了（放行本轮）；「ssh 非零退出 / 没有 `netstat` / **有 `netstat` 但执行非零退出** / 输出非法」
 = **探测失败**，返回非零 ⇒ 该轮判失败，**不得把空值或非法输出改写成 0** 来伪装成已排空。
+注意「命令存在」不等于「执行成功」：`command -v netstat` 只证明可执行文件在，
+`netstat ... | grep -c TIME_WAIT || true` 在 netstat 非零退出时仍会打印 0——本地与远端都先单独取 netstat 退出码，非零即判失败。
 双宿主下查的是**负载宿主**的 TIME_WAIT（临时端口耗尽发生在压测机一侧）。
 
 ### 3.4 回归护栏（替身，不触真实服务）
@@ -213,7 +215,7 @@ ARM=default ROUNDS=3 bash loadtest/run-arm.sh
   臂日志未创建），并有「配置齐备时副作用才发生」的正向对照；
 - `T*`：真实 Git Bash 4.4 下（**不注入** `EPOCHREALTIME`）`now_ms` 可用且随时间前进；排空超时按真实时钟推进
   （`>=4s`），不被固定假时钟掩盖；
-- `W*`/`I*`：TIME_WAIT 探测「真零」与「SSH 非零 / 远端无 netstat / 非法输出」可区分，后者让本轮失败；
+- `W*`/`I*`：TIME_WAIT 探测「真零」与「SSH 非零 / 无 netstat / **有 netstat 但执行非零** / 非法输出」可区分，后者让本轮失败；
 - `N*`：正常远端执行 + 逐笔 CSV 回收可验证，回收失败即本轮失败。
 
 护栏写在 `loadtest/tests/`（入库），判据是**真的调用**这些脚本看行为，不是 grep 脚本文本。
@@ -260,7 +262,7 @@ N 笔请求在 t 秒内到达时的放行上限 = `capacity + qps × t` = `2000 
    「登录连不上 → 该线程拿不到 token → 交卷假 401」以及客户端 `BindException:
    Address already in use: connect`，把假失败和虚高的 P99 混进结果。
    实测 9531 条 TIME_WAIT 约需 2 分钟自然排空（Windows 默认 `TcpTimedWaitDelay=120s`）。
-   查法：`netstat -an | grep -c TIME_WAIT`。**探测失败（ssh 非零 / 远端无 netstat / 输出非法）
+   查法：`netstat -an | grep -c TIME_WAIT`。**探测失败（ssh 非零 / 无 netstat / 有 netstat 但执行非零 / 输出非法）
    不再被改写成 0**：该轮直接判失败，不进入臂级中位数；`SKIP_TIME_WAIT_WAIT=1` 与排空超时同理
    （即：跳过排空或没排空，都不算合格的分离容量样本）。（`run-loadtest.sh` 第 2 步：阈值
    `TIME_WAIT_MAX`，另有「连续 30s 不再下降且已到本机基线」的提前退出，过程写 `timewait-*.csv`）

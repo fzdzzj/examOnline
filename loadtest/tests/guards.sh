@@ -8,7 +8,7 @@
 # 覆盖面（全部用替身，不连接真实 DB / 应用 / Docker / 负载宿主）：
 #   R*  run-arm.sh 入口门禁：配置无效时零副作用（stop/start/prepare/reset 均未调用）
 #   T*  真实 Git Bash 4.4 下的毫秒时间戳（不注入 EPOCHREALTIME）+ 排空超时不被假时钟掩盖
-#   W*  TIME_WAIT 探测：「真零」与「探测失败」必须可区分
+#   W*  TIME_WAIT 探测：「真零」与「探测失败」必须可区分（含 netstat 存在但执行非零退出）
 #   I*  远端 TIME_WAIT 探测失败 → 本轮失败（不进入臂级中位数）
 #   N*  正常远端执行 + 结果回收可验证
 #
@@ -105,6 +105,9 @@ STUB
 cat > "$BIN/netstat" <<'STUB'
 #!/usr/bin/env bash
 # 默认不含 TIME_WAIT 行 ⇒ grep -c 得 0（真零）；STUB_NETSTAT_TW_COUNT 可造出非零。
+# STUB_NETSTAT_EXEC_RC：模拟 netstat **存在但执行失败**——非零退出且无 stdout，
+# 用来把「执行失败」与「执行成功且计数为 0」分开（二者在本替身下不能是同一现象）。
+if [ -n "${STUB_NETSTAT_EXEC_RC:-}" ]; then exit "$STUB_NETSTAT_EXEC_RC"; fi
 echo "  TCP    127.0.0.1:8080   127.0.0.1:5000   ESTABLISHED"
 n="${STUB_NETSTAT_TW_COUNT:-0}"
 i=0
@@ -129,7 +132,9 @@ case "$cmd" in
   *netstat*)
     if [ -n "${STUB_SSH_NETSTAT_RC:-}" ]; then exit "$STUB_SSH_NETSTAT_RC"; fi
     if [ -n "${STUB_SSH_NETSTAT_OUT:-}" ]; then echo "$STUB_SSH_NETSTAT_OUT"; exit 0; fi
-    echo 0; exit 0;;
+    # 默认**真正执行远端命令串**（PATH 前缀已把 netstat 换成替身）：这样「远端 netstat 执行失败」
+    # 由命令串自身的语义产生，而不是替身预置的答案——旧实现把失败吞成 0 时新负例才会判红。
+    bash -c "$cmd"; exit $?;;
 esac
 case "$cmd" in *mkdir*) exit 0;; esac
 case "$cmd" in *jmeter*) exit "${STUB_SSH_JMETER_EXIT:-0}";; esac
@@ -350,6 +355,20 @@ w_rc="$(w_run "$W/w_illegal.out" JMETER_SSH=user@loadgen STUB_SSH_NETSTAT_OUT='a
 check "W4 非法输出 → 探测失败"     test "$w_rc" != "0"
 check "W4 失败时不得输出 0"        test "$(tr -d '\r\n' < "$W/w_illegal.out")" != "0"
 check "W4 报错含非法输出"          has '非法输出' "$W/w_illegal.out.err"
+
+# W5/W6：netstat **存在但执行非零退出** —— 最易被吞的一格。
+# `command -v netstat` 只能证明命令存在；`netstat ... | grep -c TIME_WAIT || true` 在 netstat 失败时
+# 会打印 0（grep 无匹配），把「没跑成」伪装成「真零」。负例断言：非零退出 + 不输出 0 + 报 netstat-rc。
+# 远端负例走替身 ssh 真正执行命令串，故它检验的是「远端命令本身不再吞掉 netstat 失败」，而非预置答案。
+w_rc="$(w_run "$W/w_localexecfail.out" STUB_NETSTAT_EXEC_RC=7)"
+check "W5 本地 netstat 执行失败 → 探测失败" test "$w_rc" != "0"
+check "W5 失败时不得输出 0"                 test "$(tr -d '\r\n' < "$W/w_localexecfail.out")" != "0"
+check "W5 报错含 local-netstat-rc"          has 'local-netstat-rc' "$W/w_localexecfail.out.err"
+
+w_rc="$(w_run "$W/w_remoteexecfail.out" JMETER_SSH=user@loadgen STUB_NETSTAT_EXEC_RC=7)"
+check "W6 远端 netstat 执行失败 → 探测失败" test "$w_rc" != "0"
+check "W6 失败时不得输出 0"                 test "$(tr -d '\r\n' < "$W/w_remoteexecfail.out")" != "0"
+check "W6 报错含 remote-netstat-rc"         has 'remote-netstat-rc' "$W/w_remoteexecfail.out.err"
 
 # ---------------- I: 远端探测失败 → 本轮失败 ----------------
 echo
