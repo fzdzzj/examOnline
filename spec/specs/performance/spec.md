@@ -264,3 +264,19 @@ AND 不因先前合并相位的分配量较高便指定 SQL 或解析为已证�
 > 下一份独立提案候选，本变更不实施优化，也不外推生产 P99。证据见
 > `spec/changes/archive/update-question-stats-paging-resolve-attribution/evidence/measurement-rounds.md`
 > 与同目录 `evidence-sha256.txt`。
+
+> 评估结论注记（NO-GO，2026-09-27，`update-answer-json-parse-hotspot` 归档）：本基线**未合入**该提案的任何
+> Requirement——其 spec-delta 按**未采用草案**随目录归档。该提案按上行判据把 `answerParse` 复合段在测试侧
+> 进一步拆为 `parseAnswers` 调用与主观分映射构建（工具提交 revision `e233936`，`src/main` 零改动），三次独立
+> JVM 调用（同夹具/预热/口径，45 样本）测得：`parseAnswers` 相对映射构建稳定主导（占复合段 0.8454–0.9758，
+> 映射构建 ≤0.0553，比值 15.3 倍起），但作为副本 resolve 的并列嵌套段 {`parseAnswers`, 主观分读取, 评分}
+> 比较时**不满足「单独稳定主导」**——3/27 个 normal 样本（均为 s1000-q20）中主观分读取高于 `parseAnswers`
+> （pa/次大段比值 min 0.61），最窄余量 −1.230–+0.203 ms 落在同轮抖动 0.44–1.44 ms 内（不可辨），全局份额
+> 区间交叠（pa min 0.2896 < 主观分读取 max 0.4778）。测量有效性：逐页 `result.equals` 不等 0/45、
+> `cellsEqualProduction` 与 `zipContentEqual`（排除 `docProps/core.xml`）45/45 通过、独立 oracle 15/15，
+> 坏卷分桶与额外 SQL 与既有归档一致（98/2）；长度-only 的 `outputBytesEqual` 38/45 true（7 次差 1 字节）
+> 不作字节/内容等价。按判据裁决 **NO-GO 并停止实现**：未改 `GradingPaperReader.parseAnswers` 及任何生产
+> 代码、未改主观分映射/SQL/schema/JVM/线程池；隔离 H2 进程内结果不外推生产 MySQL/Tomcat 与 P99。后续若
+> 再议，须按本基线「先归因、一次只改一类」另立变更。证据见
+> `spec/changes/archive/update-answer-json-parse-hotspot/evidence/measurement-rounds.md` 与同目录
+> `evidence-sha256.txt`。
