@@ -21,6 +21,7 @@ import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.dto.ScorePreviewResponse;
 import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.mapper.ScoreAuditLogMapper;
+import com.exam.submission.entity.ExamSubmission;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -749,10 +750,11 @@ class ScoreServiceTest {
     void myScoreRejectsWhenOwnRecordIsAbsentFromRankedList() {
         loginAs(201L, RoleHierarchy.levelOf(RoleHierarchy.STUDENT));
         when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_PUBLISHED));
-        when(gradingSubmissionMapper.selectOne(any())).thenReturn(submission(1L, 201L, "14.0", "14.0", 0));
-        // 榜单里没有自己（如被移出汇总范围）→ 不返回一个"排名第 0"的假成绩
-        when(gradingSubmissionMapper.selectList(any()))
-                .thenReturn(List.of(submission(999L, 999L, "20.0", "20.0", 0)));
+        // 场景不变：本人行不在全班 GRADED 集合里。旧实现靠「selectList 榜单无本人」隐式表达，
+        // 名次改聚合后等价显式化为 status 判定——已交卷(2)且有总分仍不属于已汇总集合，一律 404。
+        GradingSubmission notGraded = submission(1L, 201L, "14.0", "14.0", 0);
+        notGraded.setStatus(ExamSubmission.STATUS_SUBMITTED);
+        when(gradingSubmissionMapper.selectOne(any())).thenReturn(notGraded);
 
         assertEquals("暂无本人成绩记录",
                 assertThrows(BusinessException.class, () -> scoreService.myScore(EXAM_ID)).getMessage());
@@ -762,10 +764,11 @@ class ScoreServiceTest {
     void myScoreReturnsRankAndKeepsPartialFlagWhenNothingIsPending() {
         loginAs(201L, RoleHierarchy.levelOf(RoleHierarchy.STUDENT));
         when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_PUBLISHED));
-        when(gradingSubmissionMapper.selectOne(any())).thenReturn(submission(1L, 201L, "14.0", "20.0", 1));
-        when(gradingSubmissionMapper.selectList(any()))
-                .thenReturn(List.of(submission(1L, 201L, "14.0", "20.0", 1)));
-        when(rankCalculator.rank(any())).thenReturn(new int[]{3});
+        GradingSubmission mine = submission(1L, 201L, "14.0", "20.0", 1);
+        mine.setStatus(ExamSubmission.STATUS_GRADED);
+        when(gradingSubmissionMapper.selectOne(any())).thenReturn(mine);
+        // 名次 = 严格更高分人数 + 1（optimize-my-score-rank-fetch）：count=2 ⇒ rank=3，与原期望一致
+        when(gradingSubmissionMapper.selectCount(any())).thenReturn(2L);
         when(scoreReviewService.hasPendingReview(EXAM_ID, 201L)).thenReturn(false);
 
         MyScoreResponse response = scoreService.myScore(EXAM_ID);

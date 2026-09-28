@@ -73,6 +73,8 @@ class ScoreServiceReviewHideTest {
         s.setSubjectiveScore(new BigDecimal("6.0"));
         s.setTotalScore(new BigDecimal("20.0"));
         s.setPartialGraded(0);
+        // 名次改聚合后 404 显式判 status：本夹具是「已发布、本人行已汇总」的正例，须显式已批改
+        s.setStatus(com.exam.submission.entity.ExamSubmission.STATUS_GRADED);
         return s;
     }
 
@@ -89,8 +91,8 @@ class ScoreServiceReviewHideTest {
 
         GradingSubmission mine = prepare(0);
         when(gradingSubmissionMapper.selectOne(any())).thenReturn(mine);
-        when(gradingSubmissionMapper.selectList(any())).thenReturn(List.of(mine));
-        when(rankCalculator.rank(any())).thenReturn(new int[]{1});
+        // 名次 = 严格更高分人数 + 1（optimize-my-score-rank-fetch）：count=0 ⇒ rank=1，与原期望一致
+        when(gradingSubmissionMapper.selectCount(any())).thenReturn(0L);
     }
 
     @Test

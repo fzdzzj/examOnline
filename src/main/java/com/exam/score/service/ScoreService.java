@@ -36,6 +36,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -285,28 +286,24 @@ public class ScoreService {
                 Wrappers.<GradingSubmission>lambdaQuery()
                         .eq(GradingSubmission::getExamId, examId)
                         .eq(GradingSubmission::getStudentId, studentId));
-        if (submission == null || submission.getTotalScore() == null) {
+        // 404 判定显式化（optimize-my-score-rank-fetch）：无行 / 总分未产生 / 状态不是已批改，
+        // 与旧实现「本人行落在全班 GRADED 且总分非空集合」的隐式判定逐条等价。
+        if (submission == null || submission.getTotalScore() == null
+                || !Objects.equals(submission.getStatus(), ExamSubmission.STATUS_GRADED)) {
             throw new BusinessException(ResponseCode.NOT_FOUND, "暂无本人成绩记录");
         }
 
-        // 排名在全班已汇总成绩中计算（与预览/导出同一口径）；按答卷定位本人下标，避免同分 equals 歧义
-        List<GradingSubmission> gradedAll = gradingSubmissionMapper.selectList(
+        // 名次 = 全班已汇总答卷中总分严格更高的人数 + 1（竞赛排名：同分并列、后续跳号，
+        // 与预览/导出的 RankCalculator 口径一致）；一条聚合计数，不再取回全班答卷行——
+        // 同负载归因（optimize-my-score-rank-fetch 阶段 2）证实「取数+结果映射」为该请求
+        // 占比最高的一类，行级取数自此不随班级人数增长。
+        Long higherCount = gradingSubmissionMapper.selectCount(
                 Wrappers.<GradingSubmission>lambdaQuery()
                         .eq(GradingSubmission::getExamId, examId)
                         .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_GRADED)
-                        .isNotNull(GradingSubmission::getTotalScore));
-        int myIndex = -1;
-        for (int i = 0; i < gradedAll.size(); i++) {
-            if (gradedAll.get(i).getId().equals(submission.getId())) {
-                myIndex = i;
-                break;
-            }
-        }
-        if (myIndex < 0) {
-            throw new BusinessException(ResponseCode.NOT_FOUND, "暂无本人成绩记录");
-        }
-        int rank = rankCalculator.rank(gradedAll.stream()
-                .map(GradingSubmission::getTotalScore).toList())[myIndex];
+                        .isNotNull(GradingSubmission::getTotalScore)
+                        .gt(GradingSubmission::getTotalScore, submission.getTotalScore()));
+        int rank = higherCount.intValue() + 1;
 
         MyScoreResponse response = new MyScoreResponse();
         response.setExamId(examId);
