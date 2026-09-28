@@ -1,0 +1,929 @@
+{
+  "revision" : "39d64d0",
+  "label" : "new-run2",
+  "startedAt" : "2026-09-29T00:42:54.029821500",
+  "jdk" : "21.0.9 (Oracle Corporation)",
+  "vm" : "Java HotSpot(TM) 64-Bit Server VM / 21.0.9+7-LTS-338",
+  "os" : "Windows 11 10.0 amd64",
+  "processors" : 20,
+  "maxHeapMB" : 3952,
+  "dataRule" : "单人登录取 token（Pass1234）；exams 行直插 id=930000000+n、status=4/published=1、paper_id=930000001(占位无外键)；exam_submissions 逐份直插 exam_id=930000000+n、status=3(已批改)、grading_status=1、total_score=objective_score=score(i)、subjective_score=0.0；student_id：下标 0 为真实登录用户，其余 = 930000000 + n*100000 + i（无 users 行，myScore 不读 users）。分数含大量并列与 null 无关（全部非 null）。",
+  "sizes" : [ 50, 200, 1000, 3000 ],
+  "metricDefinitions" : {
+    "jfr.rankSharePct" : "jdk.ExecutionSample 样本中栈内含 com.exam.score.service.RankCalculator 帧的比例",
+    "e2e.heapPeakMB" : "该臂期间采样线程（5ms 步长）读 MemoryMXBean used 堆的最大值（上界，含夹具自身，不是净增量）",
+    "e2e.sqlRowsPerRequest" : "每请求全部语句返回行数合计（含 COUNT 的 1 行标量）",
+    "e2e.sqlQueriesPerRequest" : "每请求经 Executor 的 SQL 语句条数（拦截器累计/请求数）",
+    "microbench.bestMs" : "纯函数 rank() 逐次 nanoTime 差分的最小值（bestOf30，抗调度噪声的乐观下界）",
+    "sqlFetch.medianMs" : "同上，耗时中位数",
+    "microbench.ranksum" : "该次排名数组求和（跨版本可比的语义指纹）",
+    "microbench.p95Ms" : "纯函数 rank() 逐次耗时 p95",
+    "e2e.rankSharePct" : "请求内 rank() 总耗时 / 全部请求墙钟总耗时（口径是墙钟占比；与 JFR 的 CPU 栈采样份额分母不同、FOCUSED 录制范围也不同，二者只可相互佐证，不可直接等值比较）",
+    "jfr.topFrames" : "栈顶（最内层）帧 class.method 直方图 Top8，用于判断采样落点与内联影响",
+    "e2e.submissionsRowsPerRequest" : "每请求 GradingSubmissionMapper 语句返回行数合计（答卷表行级取数）",
+    "e2e.fetchMapMeanMs" : "请求内「全班取数+结果映射」耗时/请求数：SqlAccountingInterceptor 对 GradingSubmissionMapper.selectList 语句的计时（含 H2 执行+JDBC 取回+MyBatis 逐行反射映射；新实现下该语句不再出现则记 0，聚合 COUNT 语句耗时单列在 perStatement）",
+    "probe.accountingNsPerSqlQuery" : "分账探针自身开销：单次语句级记账操作（nanoTime 对 + LongAdder 累计 + map 归类）微基准的每次耗时；×每请求语句数=每请求探针开销，单列不并入任何生产段",
+    "e2e.meanMs" : "同上算术均值",
+    "note" : "本工具跑隔离 H2 + MockMvc 同进程，不是真实 MySQL/Tomcat 生产性能，不得当作交卷 P99 收益",
+    "sqlFetch.bestMs" : "与 myScore 全班查询同语句的 mapper.selectList 逐次耗时最小值",
+    "e2e.restMeanMs" : "(请求墙钟合计 − fetchMap − rank) / 请求数：含 otherSql、安全过滤链、JSON 序列化与未归属段，不并入前两类",
+    "e2e.perStatement" : "按语句 id 分账明细（nanos/queries/rows），取数形态替换前后的证据载体",
+    "e2e.arm=serviceDirect" : "进程内直调 ScoreService.myScore 的服务级臂：绕过 MockMvc/HTTP 底座（约 4-5ms 固定段），①②③分账落在业务段；同拦截器同 rank 包装器、串行、同预热同请求量。端到端 p99 与新旧对比仍以 MockMvc 臂为准",
+    "e2e.p50/p95/p99Ms" : "MockMvc GET /api/scores/my 单请求墙钟耗时（含安全过滤链+JSON 序列化+mapper+rank），最近秩取值",
+    "microbench.medianMs" : "纯函数 rank() 逐次耗时中位数",
+    "e2e.otherSqlMeanMs" : "请求内除 GradingSubmissionMapper.selectList 外全部 SQL 语句耗时/请求数（考试行/本人行/复核判定等）",
+    "e2e.fetchMapSharePct" : "fetchMap 总耗时 / 全部请求墙钟总耗时（墙钟占比；与 JFR CPU 采样份额分母不同，不可直接等值比较）",
+    "e2e.rankMeanMs" : "计时包装器累计的请求内 rank() 耗时 / 请求数（口径=纯调用耗时，不含 SQL/框架）",
+    "e2e.throughputRps" : "计时请求数 / 该臂墙钟秒数（并发>1 时为有效吞吐）"
+  },
+  "load" : {
+    "rankWarmup" : 10,
+    "rankReps" : 30,
+    "sqlWarmup" : 5,
+    "sqlReps" : 20,
+    "e2eWarmupRequests" : 10,
+    "e2eRequests" : 60,
+    "e2eConcurrency" : [ 1, 8 ],
+    "rankHotMillis" : 2000,
+    "jfrEvents" : [ "jdk.ExecutionSample(period=10ms)", "jdk.CPULoad(period=500ms)", "jdk.GCPhasePause(threshold=0ms)" ]
+  },
+  "setupLoginMillis" : 2765,
+  "setupDataMillis" : 468,
+  "microbench" : [ {
+    "n" : 50,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.012,
+    "medianMs" : 0.013,
+    "meanMs" : 0.013,
+    "p95Ms" : 0.013,
+    "worstMs" : 0.013,
+    "ranksum" : 1275
+  }, {
+    "n" : 200,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.049,
+    "medianMs" : 0.052,
+    "meanMs" : 0.053,
+    "p95Ms" : 0.061,
+    "worstMs" : 0.068,
+    "ranksum" : 20100
+  }, {
+    "n" : 1000,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.13,
+    "medianMs" : 0.156,
+    "meanMs" : 0.222,
+    "p95Ms" : 0.418,
+    "worstMs" : 0.457,
+    "ranksum" : 499300
+  }, {
+    "n" : 3000,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.423,
+    "medianMs" : 0.538,
+    "meanMs" : 0.538,
+    "p95Ms" : 0.628,
+    "worstMs" : 1.076,
+    "ranksum" : 4488000
+  } ],
+  "sqlFetch" : [ {
+    "n" : 50,
+    "warmup" : 5,
+    "reps" : 20,
+    "rowCount" : 50,
+    "bestMs" : 1.49,
+    "medianMs" : 2.252,
+    "meanMs" : 2.364,
+    "p95Ms" : 3.222
+  }, {
+    "n" : 200,
+    "warmup" : 5,
+    "reps" : 20,
+    "rowCount" : 200,
+    "bestMs" : 2.313,
+    "medianMs" : 3.402,
+    "meanMs" : 3.499,
+    "p95Ms" : 4.783
+  }, {
+    "n" : 1000,
+    "warmup" : 5,
+    "reps" : 20,
+    "rowCount" : 1000,
+    "bestMs" : 3.935,
+    "medianMs" : 8.431,
+    "meanMs" : 8.172,
+    "p95Ms" : 12.103
+  }, {
+    "n" : 3000,
+    "warmup" : 5,
+    "reps" : 20,
+    "rowCount" : 3000,
+    "bestMs" : 5.254,
+    "medianMs" : 6.637,
+    "meanMs" : 8.075,
+    "p95Ms" : 13.491
+  } ],
+  "e2e" : [ {
+    "n" : 50,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 50,
+    "errors" : 0,
+    "p50Ms" : 9.766,
+    "p95Ms" : 11.98,
+    "p99Ms" : 17.787,
+    "meanMs" : 10.038,
+    "worstMs" : 17.787,
+    "wallMillis" : 624.534,
+    "throughputRps" : 96.072,
+    "respBytesMean" : 204.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.599,
+    "fetchMapSharePct" : 5.962,
+    "otherSqlMeanMs" : 1.265,
+    "restMeanMs" : 9.44,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 35.911,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 32.691,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 22.42,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 20.793,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 169.718
+  }, {
+    "n" : 50,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 50,
+    "errors" : 0,
+    "p50Ms" : 12.23,
+    "p95Ms" : 16.741,
+    "p99Ms" : 17.217,
+    "meanMs" : 12.476,
+    "worstMs" : 17.217,
+    "wallMillis" : 106.882,
+    "throughputRps" : 561.369,
+    "respBytesMean" : 204.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.616,
+    "fetchMapSharePct" : 4.937,
+    "otherSqlMeanMs" : 1.505,
+    "restMeanMs" : 11.86,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 45.46,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 36.956,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 24.211,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 20.6,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 173.718
+  }, {
+    "n" : 200,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 200,
+    "errors" : 0,
+    "p50Ms" : 10.526,
+    "p95Ms" : 14.763,
+    "p99Ms" : 48.807,
+    "meanMs" : 11.693,
+    "worstMs" : 48.807,
+    "wallMillis" : 727.586,
+    "throughputRps" : 82.464,
+    "respBytesMean" : 206.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.558,
+    "fetchMapSharePct" : 4.771,
+    "otherSqlMeanMs" : 1.081,
+    "restMeanMs" : 11.135,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 33.472,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 26.692,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 19.755,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 18.39,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 113.724
+  }, {
+    "n" : 200,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 200,
+    "errors" : 0,
+    "p50Ms" : 10.895,
+    "p95Ms" : 17.07,
+    "p99Ms" : 17.143,
+    "meanMs" : 11.778,
+    "worstMs" : 17.143,
+    "wallMillis" : 96.898,
+    "throughputRps" : 619.211,
+    "respBytesMean" : 206.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.551,
+    "fetchMapSharePct" : 4.677,
+    "otherSqlMeanMs" : 1.319,
+    "restMeanMs" : 11.227,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 34.168,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 33.048,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 26.275,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 18.725,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 103.64
+  }, {
+    "n" : 1000,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 997,
+    "errors" : 0,
+    "p50Ms" : 8.487,
+    "p95Ms" : 10.165,
+    "p99Ms" : 12.923,
+    "meanMs" : 8.596,
+    "worstMs" : 12.923,
+    "wallMillis" : 531.691,
+    "throughputRps" : 112.848,
+    "respBytesMean" : 207.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.401,
+    "fetchMapSharePct" : 4.663,
+    "otherSqlMeanMs" : 0.83,
+    "restMeanMs" : 8.196,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 24.05,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 22.211,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 15.178,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 12.418,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 133.64
+  }, {
+    "n" : 1000,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 997,
+    "errors" : 0,
+    "p50Ms" : 10.622,
+    "p95Ms" : 26.199,
+    "p99Ms" : 26.87,
+    "meanMs" : 11.637,
+    "worstMs" : 26.87,
+    "wallMillis" : 91.91,
+    "throughputRps" : 652.813,
+    "respBytesMean" : 207.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.397,
+    "fetchMapSharePct" : 3.411,
+    "otherSqlMeanMs" : 2.399,
+    "restMeanMs" : 11.24,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 105.759,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 23.816,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 22.686,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 15.492,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 161.64
+  }, {
+    "n" : 3000,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 2991,
+    "errors" : 0,
+    "p50Ms" : 6.689,
+    "p95Ms" : 8.29,
+    "p99Ms" : 13.567,
+    "meanMs" : 6.937,
+    "worstMs" : 13.567,
+    "wallMillis" : 429.595,
+    "throughputRps" : 139.666,
+    "respBytesMean" : 208.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.353,
+    "fetchMapSharePct" : 5.091,
+    "otherSqlMeanMs" : 0.765,
+    "restMeanMs" : 6.584,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 21.191,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 20.182,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 13.933,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 11.757,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 175.64
+  }, {
+    "n" : 3000,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 2991,
+    "errors" : 0,
+    "p50Ms" : 10.196,
+    "p95Ms" : 38.201,
+    "p99Ms" : 39.085,
+    "meanMs" : 13.025,
+    "worstMs" : 39.085,
+    "wallMillis" : 105.001,
+    "throughputRps" : 571.426,
+    "respBytesMean" : 208.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.389,
+    "fetchMapSharePct" : 2.99,
+    "otherSqlMeanMs" : 3.649,
+    "restMeanMs" : 12.635,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 185.004,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 23.369,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 18.561,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 15.386,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 110.248
+  }, {
+    "n" : 50,
+    "arm" : "serviceDirect",
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 50,
+    "errors" : 0,
+    "p50Ms" : 0.869,
+    "p95Ms" : 1.401,
+    "p99Ms" : 1.713,
+    "meanMs" : 0.886,
+    "worstMs" : 1.713,
+    "throughputRps" : 1128.995,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.218,
+    "fetchMapSharePct" : 24.614,
+    "otherSqlMeanMs" : 0.441,
+    "restMeanMs" : 0.668,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 13.081,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 10.052,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 9.4,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 6.986,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 122.248
+  }, {
+    "n" : 200,
+    "arm" : "serviceDirect",
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 200,
+    "errors" : 0,
+    "p50Ms" : 0.626,
+    "p95Ms" : 0.982,
+    "p99Ms" : 1.229,
+    "meanMs" : 0.666,
+    "worstMs" : 1.229,
+    "throughputRps" : 1502.291,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.15,
+    "fetchMapSharePct" : 22.493,
+    "otherSqlMeanMs" : 0.353,
+    "restMeanMs" : 0.516,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 8.984,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 7.81,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 7.398,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 5.951,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 136.248
+  }, {
+    "n" : 1000,
+    "arm" : "serviceDirect",
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 997,
+    "errors" : 0,
+    "p50Ms" : 0.452,
+    "p95Ms" : 0.996,
+    "p99Ms" : 1.325,
+    "meanMs" : 0.526,
+    "worstMs" : 1.325,
+    "throughputRps" : 1901.677,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.13,
+    "fetchMapSharePct" : 24.7,
+    "otherSqlMeanMs" : 0.275,
+    "restMeanMs" : 0.396,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 7.793,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 6.202,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 6.075,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 4.231,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 148.248
+  }, {
+    "n" : 3000,
+    "arm" : "serviceDirect",
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 2991,
+    "errors" : 0,
+    "p50Ms" : 0.394,
+    "p95Ms" : 0.714,
+    "p99Ms" : 0.857,
+    "meanMs" : 0.43,
+    "worstMs" : 0.857,
+    "throughputRps" : 2323.033,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.1,
+    "fetchMapSharePct" : 23.145,
+    "otherSqlMeanMs" : 0.228,
+    "restMeanMs" : 0.331,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 5.978,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 5.089,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 4.99,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 3.627,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 162.248
+  } ],
+  "focusedMicrobench" : {
+    "n" : 3000,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.416,
+    "medianMs" : 0.611,
+    "meanMs" : 0.704,
+    "p95Ms" : 1.094,
+    "worstMs" : 1.166,
+    "ranksum" : 4488000
+  },
+  "focusedE2e" : [ {
+    "n" : 3000,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 2991,
+    "errors" : 0,
+    "p50Ms" : 6.655,
+    "p95Ms" : 8.63,
+    "p99Ms" : 15.142,
+    "meanMs" : 6.882,
+    "worstMs" : 15.142,
+    "wallMillis" : 426.545,
+    "throughputRps" : 140.665,
+    "respBytesMean" : 208.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.325,
+    "fetchMapSharePct" : 4.727,
+    "otherSqlMeanMs" : 0.705,
+    "restMeanMs" : 6.556,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 19.517,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 18.294,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 15.16,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 8.835,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 176.248
+  }, {
+    "n" : 3000,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 2991,
+    "errors" : 0,
+    "p50Ms" : 10.893,
+    "p95Ms" : 18.506,
+    "p99Ms" : 18.603,
+    "meanMs" : 11.349,
+    "worstMs" : 18.603,
+    "wallMillis" : 92.225,
+    "throughputRps" : 650.584,
+    "respBytesMean" : 208.0,
+    "rankCallsInRequest" : 0,
+    "rankMeanMs" : 0.0,
+    "rankTotalMs" : 0.0,
+    "rankSharePct" : 0.0,
+    "fetchMapMeanMs" : 0.35,
+    "fetchMapSharePct" : 3.084,
+    "otherSqlMeanMs" : 0.649,
+    "restMeanMs" : 10.999,
+    "sqlQueriesPerRequest" : 4.0,
+    "sqlRowsPerRequest" : 4.0,
+    "submissionsRowsPerRequest" : 2.0,
+    "perStatement" : [ {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "nanosMs" : 21.002,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "nanosMs" : 19.192,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "nanosMs" : 10.087,
+      "queries" : 60,
+      "rows" : 60
+    }, {
+      "statement" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "nanosMs" : 9.656,
+      "queries" : 60,
+      "rows" : 60
+    } ],
+    "heapPeakMB" : 114.399
+  } ],
+  "probeOverhead" : {
+    "warmupIters" : 20000,
+    "reps" : 200000,
+    "accountingNsPerSqlQuery" : 141.803,
+    "note" : "每请求探针开销 ≈ accountingNsPerSqlQuery × 每请求语句数；与各臂均值同排报告，不并入生产段"
+  },
+  "rankHotCalls" : 3408,
+  "rankHotMillis" : 2000,
+  "jfr" : {
+    "whole" : {
+      "totalSamples" : 200,
+      "samplesWithoutStack" : 0,
+      "rankSamples" : 0,
+      "rankSharePct" : 0.0,
+      "cpuUserPctMean" : 16.844,
+      "cpuMachineTotalPctMean" : 50.734,
+      "cpuLoadEvents" : 11,
+      "cpuReadingUsable" : true,
+      "gcPauseCount" : 9,
+      "gcPauseMsTotal" : 60.263,
+      "topFrames" : [ {
+        "frame" : "org.mindrot.jbcrypt.BCrypt.encipher",
+        "samples" : 36
+      }, {
+        "frame" : "java.util.zip.ZipFile$Source.getEntryPos",
+        "samples" : 8
+      }, {
+        "frame" : "java.lang.Thread.sleep",
+        "samples" : 3
+      }, {
+        "frame" : "com.exam.score.measure.RankAttributionMeasureIT.referenceRank",
+        "samples" : 3
+      }, {
+        "frame" : "java.util.HashMap.getNode",
+        "samples" : 3
+      }, {
+        "frame" : "java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run",
+        "samples" : 2
+      }, {
+        "frame" : "java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos",
+        "samples" : 2
+      }, {
+        "frame" : "org.apache.ibatis.executor.resultset.DefaultResultSetHandler.applyAutomaticMappings",
+        "samples" : 2
+      } ]
+    },
+    "focused" : {
+      "totalSamples" : 16,
+      "samplesWithoutStack" : 0,
+      "rankSamples" : 0,
+      "rankSharePct" : 0.0,
+      "cpuUserPctMean" : 17.827,
+      "cpuMachineTotalPctMean" : 50.791,
+      "cpuLoadEvents" : 1,
+      "cpuReadingUsable" : true,
+      "gcPauseCount" : 1,
+      "gcPauseMsTotal" : 4.746,
+      "topFrames" : [ {
+        "frame" : "org.apache.maven.surefire.booter.spi.AbstractMasterProcessChannelProcessorFactory$1.run",
+        "samples" : 1
+      }, {
+        "frame" : "jdk.internal.misc.Blocker.begin",
+        "samples" : 1
+      }, {
+        "frame" : "org.springframework.beans.factory.BeanFactoryUtils.transformedBeanName",
+        "samples" : 1
+      }, {
+        "frame" : "java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take",
+        "samples" : 1
+      }, {
+        "frame" : "java.util.ArrayList.toArray",
+        "samples" : 1
+      }, {
+        "frame" : "io.micrometer.observation.ObservationHandler$FirstMatchingCompositeObservationHandler.supportsContext",
+        "samples" : 1
+      }, {
+        "frame" : "sun.nio.fs.WindowsPathParser.nextNonSlash",
+        "samples" : 1
+      }, {
+        "frame" : "org.springframework.boot.test.autoconfigure.web.servlet.SpringBootMockMvcBuilderCustomizer$LinesWritingResultHandler.handle",
+        "samples" : 1
+      } ]
+    },
+    "rankHot" : {
+      "totalSamples" : 71,
+      "samplesWithoutStack" : 0,
+      "rankSamples" : 66,
+      "rankSharePct" : 92.958,
+      "cpuUserPctMean" : 8.723,
+      "cpuMachineTotalPctMean" : 36.824,
+      "cpuLoadEvents" : 4,
+      "cpuReadingUsable" : true,
+      "gcPauseCount" : 2,
+      "gcPauseMsTotal" : 9.177,
+      "topFrames" : [ {
+        "frame" : "java.util.TimSort.mergeLo",
+        "samples" : 24
+      }, {
+        "frame" : "java.util.TimSort.mergeHi",
+        "samples" : 18
+      }, {
+        "frame" : "java.util.Objects.checkIndex",
+        "samples" : 11
+      }, {
+        "frame" : "java.util.TimSort.binarySort",
+        "samples" : 8
+      }, {
+        "frame" : "java.util.Arrays.sort",
+        "samples" : 3
+      }, {
+        "frame" : "java.util.TimSort.gallopRight",
+        "samples" : 2
+      }, {
+        "frame" : "java.util.concurrent.ThreadPoolExecutor.runWorker",
+        "samples" : 1
+      }, {
+        "frame" : "java.util.concurrent.locks.ReentrantLock$NonfairSync.initialTryLock",
+        "samples" : 1
+      } ]
+    }
+  },
+  "finishedAt" : "2026-09-29T00:43:05.290937900"
+}
