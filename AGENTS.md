@@ -10,7 +10,7 @@
 ### 1. 未接 Flyway；建表唯一入口是 `src/main/resources/schema.sql`
 
 - **规则**：新增/修改表、列、索引一律改 `src/main/resources/schema.sql`（dev 与测试共用，H2/MySQL 双兼容；`AUTO_INCREMENT` 块必须同时写 `PRIMARY KEY (id)`）。不要引入 Flyway / Liquibase，也不要恢复 `src/main/resources/db/migration/V*.sql` 形态的文件——那种形态在本仓库**从不执行**，留着只会制造"表已存在"的错觉。
-- **出处**：`docs/需求决策记录.md` 第十八节「建表与迁移的唯一事实源」（`:384-385`）。
+- **出处**：`docs/需求决策记录.md` 第十八节「建表与迁移的唯一事实源」。
 - **自查**：`grep -n flyway pom.xml` → 命中须为 0；`test ! -e src/main/resources/db && echo OK` → 须输出 `OK`。
 
 ### 2. 集成测试不得用 `@Sql` 自建表
@@ -31,7 +31,7 @@
 ### 4. 存量库改表走 `docker/mysql/migrations/`，而该目录没有自动执行者
 
 - **规则**：`schema.sql` 是 `CREATE TABLE IF NOT EXISTS`，**存量库不会因此补表**；把脚本放进 `docker/mysql/migrations/` **不等于变更已生效**，必须由人按顺序应用到存量库并验证（缺表的写库路径可能被 `catch` 静默吞掉，测试还看不见）。写脚本前先查 `schema.sql` 是否已有等价对象。
-- **出处**：`docs/需求决策记录.md:384-385` + 该目录自述 `docker/mysql/migrations/README.md`。
+- **出处**：`docs/需求决策记录.md` 第十八节「建表与迁移的唯一事实源」 + 该目录自述 `docker/mysql/migrations/README.md`。
 - **自查**：`grep -n 'docker/mysql' docker-compose.yml` → 命中只有 `master/init` 与 `slave/init` 两处，本目录不在其中，因此**不存在**自动执行者。任何声称"脚本已提交＝迁移已完成"的回报按违规处理。
 
 ## 上手顺序（新 agent）
@@ -40,10 +40,10 @@
 
 ## 禁忌（只给指针，正文以被指向处为准）
 
-- 「不要为了架构优化而重写已经能讲清楚的单体」——明确不建议的架构动作清单：`docs/指导Agent交接文档.md:26-34`。
-- dev 库里那张历史遗留表 `rep_test` **不要删**：`docs/指导Agent交接文档.md:193`。
-- 启动期"答案补发对账"在真 broker 下抛的那个异常 **不要顺手修**（非致命，属遗留项）：`docs/指导Agent交接文档.md:236`，并见 `spec/README.md` 遗留事项 #10。
-- 子 agent 的回报不是事实：每轮交付必须独立看 `git status`、`git diff`、关键代码、测试报告：`docs/指导Agent交接文档.md:10`。
+- 「不要为了架构优化而重写已经能讲清楚的单体」——明确不建议的架构动作清单：`docs/指导Agent交接文档.md`「当前明确不建议」小节。
+- dev 库里那张历史遗留表 `rep_test` **不要删**：`docs/指导Agent交接文档.md` §6.2 的容器端口/凭证表里 `rep_test` 那一行。
+- 发布确认调用（`waitForConfirmsOrDie` 一类）**必须留在 `RabbitTemplate.invoke()` 作用域内**；移出即在真 broker 下抛 `IllegalStateException`，启动期「答案补发对账」静默失效。词法护栏：`src/test/java/com/exam/submission/mq/PublisherConfirmScopeGuardTest.java`；收口记录：`spec/README.md`「原遗留 #10 关闭」。此项**已修**，不是待修遗留项；`docs/指导Agent交接文档.md` §6.2 的旧叙述已过期，登记处见 `docs/主Agent执行指南.md` §2 校正表。
+- 子 agent 的回报不是事实：每轮交付必须独立看 `git status`、`git diff`、关键代码、测试报告——判据出处 `spec/README.md`「验收记录三要素」，角色纪律出处 `docs/主Agent执行指南.md`「审阅与升级边界」。
 
 ## 唯一门禁命令
 
@@ -80,6 +80,8 @@ grep -nE '1331[67]|330[67]|root12[3]|[T]ests run|[0-9]+%' AGENTS.md
 grep -nE '330[67]|1331[67]|root12[3]|root/[r]oot' README.md
 # 3) 测试侧不得出现 @Sql 注解（注释复述本规矩不算）
 grep -rn '@Sql' src/test | sed -E 's/^[^:]+:[0-9]+://' | grep -vE '^[[:space:]]*\*'
+# 4) 出处指针不得写裸行号（行号会漂）；本条命令以字符类收尾，不会命中它自己
+grep -nE '\.md:[0-9]' AGENTS.md
 ```
 
 判据 1、2 里的字符类方括号（`330[6]`、`[T]ests`、`root/[r]oot`）是**故意的**：写成裸字面量会让这条命令永远命中它自己所在的文件，于是永远变红、等于没有判据。
