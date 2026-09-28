@@ -50,7 +50,7 @@
 
 | 判据 | 结果 | 依据 |
 |---|---|---|
-| D1 低分取回+Java 过滤是占比最高的可控因素 | **false** | `s200-p10-a2k` 有 5/12 个样本不成立（见下） |
+| D1 低分取回+Java 过滤是占比最高的可控因素 | **false** | `s200-p10-a2k` 有 4/12 个样本不成立（见下） |
 | D2 下推收益每一轮都越过波动带 | **false** | `s200` 下推比值最小值 1.317 < 判定带 1.797；`a20k` 最小值 2.399 < 判定带 3.518 |
 | D3 行为等价 | true | G3 全轮成立 |
 | D4 收益不只是人为极端形状 | **false** | D4 = D2 且必须含 `s200` 与 `a20k`；D2 已 false |
@@ -76,8 +76,9 @@
    而下推最差一轮只有 1.317，见 `run1` 轮 1：
    `prodFirst=1.722 / prodLast=1.795 / OLD=2.358 / PUSHDOWN=1.335 / PROJECTION=1.213`（毫秒；臂序 `OLD→PUSHDOWN→PROJECTION`）。
    该轮除下推外的三条等价路径同时变慢（同轮 OLD 比值 0.746），说明这是同轮漂移吞掉了收益，而非下推无效。
-   同一形状的 D1 也失败：`gradingSelect + Java 过滤` 组在 5/12 个样本里不是最大相位，反例
-   `run3` 轮 1 组 = 0.941ms vs `absenceLoad` 1.918ms、`nameLoad` 1.423ms；`run1` 轮 1 组 = 0.653ms vs `nameLoad` 2.290ms。
+   同一形状的 D1 也失败：`gradingSelect + Java 过滤` 组在 4/12 个样本里不是最大相位，反例
+   `run1` 轮 1 组 = 0.653ms vs `nameLoad` 2.290ms；`run2` 轮 1 组 = 0.819ms vs `nameLoad` 2.345ms；
+   `run2` 轮 4 组 = 0.566ms vs `absenceLoad` 0.697ms；`run3` 轮 1 组 = 0.941ms vs `absenceLoad` 1.918ms、`nameLoad` 1.423ms。
    即**200 人规模下，低分取回并非本入口占比最高的可控因素**。
 
 2. **`s1000-p10-a20k`：顺序漂移上界使判定带不可达。** 判定带 3.518 由 `run3` 轮 4 的
@@ -145,3 +146,15 @@ AGENTS.md 四条自查（当次执行，均为绿）：
 > 上述四计数与退出码是**当次执行的转录**；原始输出以 `gate-mvn.log` 为准。
 > 归档提交本身不改任何代码（可用 `git diff --stat f88655a..<归档提交> -- src pom.xml` 复核为空），
 > 故 `f88655a` 即最终代码态。
+
+## 六、勘误（2026-09-28，指导 agent 复算）
+
+1. **「四路 canonical」的称法不准**：本目录沿用「四路 canonical」指代 G3 的对照集合，实为**四种实现、五份结果**——
+   生产入口前后各一份（`prodFirst`、`prodLast`，同一实现采样两次）加 `OLD`/`PUSHDOWN`/`PROJECTION` 三臂。
+   G3 实际比较的是这五份结果按 `(studentId|reason|name)` 的排序集合（每轮 JSON 的 `equivalence` 以 `prodFirst`
+   为基准记录四个比较项与 `allEqual`，不等价即工具抛错）。原措辞（含 `PREREGISTRATION.md`、本文件与
+   `src/test` 注释）不删不改，以本注为准。
+2. **「预登记写定于正式测量前」的时序不能仅由 sha256 证明**：`evidence-sha256.txt` 只证明清单与产物一致，
+   不证明先后。现存依据是过程记录与本机文件 mtime 顺序——`PREREGISTRATION.md` 的 mtime（2026-09-27 23:28:08）
+   早于 `makeup-eligible-attribution-run1.json`（2026-09-27 23:30:11）。**git 不保存 mtime**，该顺序换一台机器
+   不可复验；原句「写定于正式测量之前」不删不改，此处只注明依据与不可复验边界。
