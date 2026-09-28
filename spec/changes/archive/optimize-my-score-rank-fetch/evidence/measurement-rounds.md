@@ -47,7 +47,7 @@ MockMvc 端到端臂（同口径对照，与归档基线可比）：n=3000 并�
 [ERROR]   ...e7SubmissionRowsFetchedByMyScoreDoNotGrowWithClassSize:350 小班 myScore 对答卷表的行级取数应恒为常数，实测=201 ==> expected: <true> but was: <false>
 ```
 
-（E6 语义对拍半段在旧实现全过、红灯只来自取数形态结构断言；E7 在 200 人班即红（201 行），1000 人班为 1001 行。其余 7 用例（E1–E5/E8a/E8b）旧实现即绿——它们断言的是须保持的语义。）
+（E6 语义对拍半段在旧实现全过、红灯只来自取数形态结构断言；E7 在 200 人班即红——实测 201 行、护栏上限 10，1000 人班未在该红灯轮内执行（JUnit 在前置断言失败即止），其 1001 行由同目录 old-run JSON 的 `submissionsRowsPerRequest=1001`（同 revision 同实现）佐证。其余 7 用例（E1–E5/E8a/E8b）旧实现即绿——它们断言的是须保持的语义。）
 
 新实现（39d64d0）绿灯转录（`mvnw test "-Dtest=MyScoreRankEquivalenceTest,ScoreServiceTest,ScoreServiceReviewHideTest"`，退出码 0）：
 
