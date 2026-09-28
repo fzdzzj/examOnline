@@ -4,16 +4,20 @@
     "category": "阶段 1：跑法",
     "task": "把压测进程和被测进程拆到不同宿主",
     "steps": [
-      { "step": "读 docs/submit-capacity-tuning-report.md 的同机 CPU 证据和 loadtest/ 现有入口，确认当前默认就是同机", "completed": false },
-      { "step": "改 loadtest 用法：压测进程通过显式主机地址打被测应用，并写明如何核对两边不在同一宿主", "completed": false },
-      { "step": "没有第二台机器或独立宿主时停止，不把同机结果写成已分离", "completed": false }
+      { "step": "读 docs/submit-capacity-tuning-report.md 的同机 CPU 证据和 loadtest/ 现有入口，确认当前默认就是同机", "completed": true,
+        "evidence": "现场只读复核（revision e0e7b9f，零改动）：docs/submit-capacity-tuning-report.md §7.2 证据 B——应用进程 CPU 峰值仅 0.43 核（占单核），而系统 CPU 峰值反复打到 0.99–1.00（20 逻辑核全满），并写明 JMeter 与应用同机、整机是满的但不是应用吃掉的；同报告跑法表把「压测机与 SUT 分离」标为「未做」。loadtest/README.md 复核：§3.1 默认跑法即同机；不设 JMETER_SSH 时须显式 LT_ALLOW_SAME_HOST=1 才放行，且该臂只能标注「未分离」（§3.3、§8 变量表）。⇒ 确认当前默认就是同机，历史结论只能当「未分离」记录，不能当分离后的容量结论。" },
+      { "step": "改 loadtest 用法：压测进程通过显式主机地址打被测应用，并写明如何核对两边不在同一宿主", "completed": true,
+        "evidence": "改动已入库（6c47d23、7cd9431、8085c57，均为本变更工作）：run-loadtest.sh 由 APP_BASE_URL 推导 -Jhost/-Jport（不再硬编码请求目标）；双宿主跑法（JMETER_SSH/JMETER_REMOTE_HOME/LOADGEN_DIR）缺 ssh/scp 即 fail-closed，远端逐笔 CSV 由 scp 回收并核验非空；入口门禁 lt_preflight_isolation 在 stop/start/造数/复位之前执行，要求两端 hostname 不同 + LOADGEN_PHYSICAL_ISOLATION_ATTESTED 人工声明；loadtest/README.md §3.3 写明角色分工与「如何确认两边不在同一宿主」。本次实跑为证：命令 D:/git/Git/bin/bash.exe loadtest/tests/guards.sh（Git Bash 4.4.23；日志首行 BASH_VERSION=4.4.23(1)-release、EPOCHREALTIME=absent），退出码 0，汇总 PASS=63 FAIL=0；其中 N1 断言远端 JMeter 收到 -Jhost='10.0.0.5' 且未落到 127.0.0.1、逐笔 CSV 回收非空，S 段 bash -n 语法检查全过。原始输出 target/loadtest/guards-commit2.log（target/ 已 gitignore）。revision e0e7b9f。" },
+      { "step": "没有第二台机器或独立宿主时停止，不把同机结果写成已分离", "completed": true,
+        "evidence": "本条以门禁行为与本次执行边界为证：R1–R4 实跑断言「缺写入授权 / 缺同机显式选择 / 缺物理隔离声明 / 两端 hostname 相同」四种情形均非零退出且零副作用（stop-app、start-app、prepare-data、04-reset.sql 一次都不调用、臂日志不创建），R5 为配置齐备副作用才发生的正向对照——同机结果在机制上无法被写成已分离。本次执行未跑压测、未连共享 dev、未起 Docker；阶段 2 三个 step 因无第二台宿主或独立容器宿主留白（停止条件已写入本阶段备注）。revision e0e7b9f，guards 退出码 0。" }
     ],
-    "passes": false
+    "passes": true
   },
   {
     "number": 2,
     "category": "阶段 2：复验",
     "task": "用原口径复验一臂，不改应用参数",
+    "note": "停止条件：无第二台宿主或独立容器宿主，不得把同机结果写成已分离。据此本阶段留白，待条件具备后再实施。",
     "steps": [
       { "step": "按既有方法学跑一臂：至少三轮中位数、预热、轮间排空；复位命令带 utf8mb4", "completed": false },
       { "step": "不修改 Tomcat 线程、连接池、交卷代码、告警阈值", "completed": false },
