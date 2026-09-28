@@ -41,8 +41,8 @@
 ## 禁忌（只给指针，正文以被指向处为准）
 
 - 「不要为了架构优化而重写已经能讲清楚的单体」——明确不建议的架构动作清单：`docs/指导Agent交接文档.md`「当前明确不建议」小节。
-- dev 库里那张历史遗留表 `rep_test` **不要删**：`docs/指导Agent交接文档.md` §6.2 的容器端口/凭证表里 `rep_test` 那一行。
-- 发布确认调用（`waitForConfirmsOrDie` 一类）**必须留在 `RabbitTemplate.invoke()` 作用域内**；移出即在真 broker 下抛 `IllegalStateException`，启动期「答案补发对账」静默失效。词法护栏：`src/test/java/com/exam/submission/mq/PublisherConfirmScopeGuardTest.java`；收口记录：`spec/README.md`「原遗留 #10 关闭」。此项**已修**，不是待修遗留项；`docs/指导Agent交接文档.md` §6.2 的旧叙述已过期，登记处见 `docs/主Agent执行指南.md` §2 校正表。
+- dev 库里那张历史遗留表 `rep_test` **不要删**：`docs/指导Agent交接文档.md` §6.2 的「宿主端口」表里 `rep_test` 那一行。
+- 发布确认调用（`waitForConfirmsOrDie` 一类）**必须留在 `RabbitTemplate.invoke()` 作用域内**；移出即在真 broker 下抛 `IllegalStateException`，启动期「答案补发对账」静默失效。词法护栏：`src/test/java/com/exam/submission/mq/PublisherConfirmScopeGuardTest.java`；收口记录：`spec/README.md`「原遗留 #10 关闭」。此项**已修**，不是待修遗留项；`docs/指导Agent交接文档.md` §6.2 的旧叙述已过期，登记处见 `docs/主Agent执行指南.md` 「对旧指导方式的校正」小节。
 - 子 agent 的回报不是事实：每轮交付必须独立看 `git status`、`git diff`、关键代码、测试报告——判据出处 `spec/README.md`「验收记录三要素」，角色纪律出处 `docs/主Agent执行指南.md`「审阅与升级边界」。
 
 ## 唯一门禁命令
@@ -71,7 +71,7 @@ test -x mvnw && test -f mvnw.cmd && test -f .mvn/wrapper/maven-wrapper.propertie
 需要事实 → 去读产生它的文件；需要数值出现在回报里 → 现场跑命令，并把产生它的 revision 与数值同排记录；否则把常量改写成判据。
 canonical 需求：`spec/specs/agent-harness/spec.md` 的「文档判据优先于文档常量」（由已归档的 `add-agent-context-routing` 合入）。
 
-自查（三条，跑一遍就该全绿）：
+自查（逐条跑一遍就该全绿）：
 
 ```bash
 # 1) 本文件不得含端口 / 口令 / 用例数 / 百分比
