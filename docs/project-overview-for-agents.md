@@ -33,7 +33,7 @@
 | 环境事实、禁忌、已知假阳性 | `docs/指导Agent交接文档.md` | 含"不要做"清单、dev 库实况、启动日志里哪些异常属已知而非故障。**该文档是历史记录**：其中的"当前/下一步"与未收口结论一律按 `docs/主Agent执行指南.md`「对旧指导方式的校正」小节判定是否过期，不得直接继承 |
 | 观测面板与告警 | `docker/observability/`（独立编排，不随根 `docker compose up` 启动） | 前端 Grafana 入口的基址是环境变量，不写端口 |
 
-能力域清单（名字，不是数量，也不解释范围——范围读各自 spec）：`authentication`、`question-bank`、`exam-management`、`exam-taking`、`grading`、`score-management`、`anti-cheat`、`performance`、`data-access`、`observability`、`reliability`、`data-consistency`、`class-management`、`absence-makeup`、`score-review`、`api-contract`、`agent-harness`。
+能力域清单**不在此枚举**——枚举就是又一份副本，而副本会漂（本行就曾落后于 `spec/specs/` 的基线）。要知道当前有哪些能力域：读 `spec/specs/` 的目录名，或 `spec/README.md`「能力地图」表（该表逐行给出范围）；可复算命令 `find spec/specs -mindepth 1 -maxdepth 1 -type d`。
 
 ## 三、业务主线（一句话一条，细节读 spec）
 
