@@ -1,9 +1,14 @@
 package com.exam.score.measure;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.exam.auth.security.LoginUser;
+import com.exam.auth.security.RoleHierarchy;
+import com.exam.auth.security.SecurityUtil;
 import com.exam.grading.entity.GradingSubmission;
 import com.exam.grading.mapper.GradingSubmissionMapper;
+import com.exam.score.dto.MyScoreResponse;
 import com.exam.score.service.RankCalculator;
+import com.exam.score.service.ScoreService;
 import com.exam.submission.entity.ExamSubmission;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,6 +18,16 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordingFile;
+import org.apache.ibatis.cache.CacheKey;
+import org.apache.ibatis.executor.Executor;
+import org.apache.ibatis.mapping.BoundSql;
+import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.ibatis.plugin.Intercepts;
+import org.apache.ibatis.plugin.Interceptor;
+import org.apache.ibatis.plugin.Invocation;
+import org.apache.ibatis.plugin.Signature;
+import org.apache.ibatis.session.ResultHandler;
+import org.apache.ibatis.session.RowBounds;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +44,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -43,6 +60,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,6 +71,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -64,12 +83,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * {@code *TestCase} 四类命名，本类名以 {@code IT} 结尾因此<b>不会</b>进入 {@code mvn clean test} 全量门禁；只有显式
  * {@code -Dtest=RankAttributionMeasureIT} 才运行。它只做测量、不构成任何业务断言基线。
  *
- * <p><b>一次运行量四件事</b>（口径见 {@link #METRIC_DEFS} 与 {@link #DATA_RULE}）：
+ * <p><b>一次运行量五件事</b>（口径见 {@link #METRIC_DEFS} 与 {@link #DATA_RULE}）：
  * <ol>
  *   <li>纯函数微基准：{@code new RankCalculator().rank(同数据列表)} 的 best/median/mean/p95；</li>
  *   <li>隔离 SQL 取数：与 {@code ScoreService.myScore} 全班查询同语句的 selectList 耗时；</li>
  *   <li>请求级端到端：MockMvc {@code GET /api/scores/my}（并发 1 与 8）的 p50/p95/p99/mean/吞吐，
  *       并由测试侧 @Primary 计时包装器分账「请求内排名计算耗时」（见 {@link TimedRankCalculator}）；</li>
+ *   <li>请求内取数分账（optimize-my-score-rank-fetch 阶段 2 新增）：测试侧 MyBatis 拦截器
+ *       （见 {@link SqlAccountingInterceptor}，仅本测试上下文注册）按语句 id 分账每请求
+ *       「全班取数 + 结果映射」「其余 SQL」耗时、SQL 条数与返回行数，配合堆峰值采样线程；</li>
  *   <li>JFR 逐帧归因：WHOLE（登录+造数+语义自检+全量相位）/FOCUSED（仅 n=3000 热点）/RANK_HOT（纯 rank 紧循环）
  *       三个作用域下 {@code jdk.ExecutionSample} 中栈内含 {@code RankCalculator} 的样本占比 + 栈顶帧直方图。</li>
  * </ol>
@@ -143,8 +165,19 @@ class RankAttributionMeasureIT {
             Map.entry("e2e.throughputRps", "计时请求数 / 该臂墙钟秒数（并发>1 时为有效吞吐）"),
             Map.entry("e2e.rankMeanMs", "计时包装器累计的请求内 rank() 耗时 / 请求数（口径=纯调用耗时，不含 SQL/框架）"),
             Map.entry("e2e.rankSharePct", "请求内 rank() 总耗时 / 全部请求墙钟总耗时（口径是墙钟占比；与 JFR 的 CPU 栈采样份额分母不同、FOCUSED 录制范围也不同，二者只可相互佐证，不可直接等值比较）"),
+            Map.entry("e2e.fetchMapMeanMs", "请求内「全班取数+结果映射」耗时/请求数：SqlAccountingInterceptor 对 GradingSubmissionMapper.selectList 语句的计时（含 H2 执行+JDBC 取回+MyBatis 逐行反射映射；新实现下该语句不再出现则记 0，聚合 COUNT 语句耗时单列在 perStatement）"),
+            Map.entry("e2e.fetchMapSharePct", "fetchMap 总耗时 / 全部请求墙钟总耗时（墙钟占比；与 JFR CPU 采样份额分母不同，不可直接等值比较）"),
+            Map.entry("e2e.otherSqlMeanMs", "请求内除 GradingSubmissionMapper.selectList 外全部 SQL 语句耗时/请求数（考试行/本人行/复核判定等）"),
+            Map.entry("e2e.restMeanMs", "(请求墙钟合计 − fetchMap − rank) / 请求数：含 otherSql、安全过滤链、JSON 序列化与未归属段，不并入前两类"),
+            Map.entry("e2e.sqlQueriesPerRequest", "每请求经 Executor 的 SQL 语句条数（拦截器累计/请求数）"),
+            Map.entry("e2e.sqlRowsPerRequest", "每请求全部语句返回行数合计（含 COUNT 的 1 行标量）"),
+            Map.entry("e2e.submissionsRowsPerRequest", "每请求 GradingSubmissionMapper 语句返回行数合计（答卷表行级取数）"),
+            Map.entry("e2e.perStatement", "按语句 id 分账明细（nanos/queries/rows），取数形态替换前后的证据载体"),
+            Map.entry("e2e.arm=serviceDirect", "进程内直调 ScoreService.myScore 的服务级臂：绕过 MockMvc/HTTP 底座（约 4-5ms 固定段），①②③分账落在业务段；同拦截器同 rank 包装器、串行、同预热同请求量。端到端 p99 与新旧对比仍以 MockMvc 臂为准"),
+            Map.entry("e2e.heapPeakMB", "该臂期间采样线程（5ms 步长）读 MemoryMXBean used 堆的最大值（上界，含夹具自身，不是净增量）"),
             Map.entry("jfr.rankSharePct", "jdk.ExecutionSample 样本中栈内含 com.exam.score.service.RankCalculator 帧的比例"),
             Map.entry("jfr.topFrames", "栈顶（最内层）帧 class.method 直方图 Top8，用于判断采样落点与内联影响"),
+            Map.entry("probe.accountingNsPerSqlQuery", "分账探针自身开销：单次语句级记账操作（nanoTime 对 + LongAdder 累计 + map 归类）微基准的每次耗时；×每请求语句数=每请求探针开销，单列不并入任何生产段"),
             Map.entry("note", "本工具跑隔离 H2 + MockMvc 同进程，不是真实 MySQL/Tomcat 生产性能，不得当作交卷 P99 收益")
     );
 
@@ -160,6 +193,15 @@ class RankAttributionMeasureIT {
         @Primary
         RankCalculator measuringRankCalculator() {
             return new TimedRankCalculator();
+        }
+
+        /**
+         * 测试侧 SQL 分账拦截器：以 Interceptor Bean 声明后由 MyBatis-Plus 自动装配加入
+         * 拦截器链（与生产 SlowSqlInterceptor 同一机制），仅本测试上下文生效。
+         */
+        @Bean
+        Interceptor sqlAccountingInterceptor() {
+            return new SqlAccountingInterceptor();
         }
     }
 
@@ -183,6 +225,78 @@ class RankAttributionMeasureIT {
         }
     }
 
+    /**
+     * 语句级 SQL 分账拦截器（测试侧，仅统计不改变任何行为）：按 mapped statement id
+     * 累计耗时/次数/返回行数。myScore 的三类分账由 {@code e2eArm} 从这里的静态累计值
+     * 派生：全班取数+映射 = {@code ...GradingSubmissionMapper.selectList}；其余 SQL =
+     * 其余全部语句；rank 由 {@link TimedRankCalculator} 单独分账。
+     */
+    @Intercepts({
+            @Signature(type = Executor.class, method = "query",
+                    args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
+            @Signature(type = Executor.class, method = "query",
+                    args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class,
+                            CacheKey.class, BoundSql.class})
+    })
+    static class SqlAccountingInterceptor implements Interceptor {
+        static final String CLASS_FETCH_ID = "com.exam.grading.mapper.GradingSubmissionMapper.selectList";
+        static final Map<String, LongAdder> NANOS = new ConcurrentHashMap<>();
+        static final Map<String, LongAdder> QUERIES = new ConcurrentHashMap<>();
+        static final Map<String, LongAdder> ROWS = new ConcurrentHashMap<>();
+
+        static void reset() {
+            NANOS.clear();
+            QUERIES.clear();
+            ROWS.clear();
+        }
+
+        @Override
+        public Object intercept(Invocation invocation) throws Throwable {
+            MappedStatement ms = (MappedStatement) invocation.getArgs()[0];
+            long t0 = System.nanoTime();
+            Object result = invocation.proceed();
+            long nanos = System.nanoTime() - t0;
+            NANOS.computeIfAbsent(ms.getId(), k -> new LongAdder()).add(nanos);
+            QUERIES.computeIfAbsent(ms.getId(), k -> new LongAdder()).increment();
+            int rows = (result instanceof java.util.Collection<?> c) ? c.size() : 0;
+            ROWS.computeIfAbsent(ms.getId(), k -> new LongAdder()).add(rows);
+            return result;
+        }
+    }
+
+    /** 堆峰值采样线程（与 QuestionStatsExportAttributionMeasureIT 同一模式）：上界口径，含夹具自身。 */
+    static final class HeapSampler extends Thread {
+        private final MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
+        private volatile boolean running = true;
+        volatile long heapPeak = 0;
+
+        HeapSampler() {
+            setDaemon(true);
+            setName("rank-measure-heap-sampler");
+        }
+
+        @Override
+        public void run() {
+            while (running) {
+                long used = memory.getHeapMemoryUsage().getUsed();
+                if (used > heapPeak) {
+                    heapPeak = used;
+                }
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+
+        void stopAndJoin() throws InterruptedException {
+            running = false;
+            join(2000);
+        }
+    }
+
     // ==================== 依赖 ====================
 
     @Autowired
@@ -193,6 +307,8 @@ class RankAttributionMeasureIT {
     private JdbcTemplate jdbc;
     @Autowired
     private GradingSubmissionMapper gradingSubmissionMapper;
+    @Autowired
+    private ScoreService scoreService;
 
     /** 生产实现的原味实例（绕过计时包装器），用于微基准与语义自检。 */
     private final RankCalculator rawCalculator = new RankCalculator();
@@ -268,6 +384,15 @@ class RankAttributionMeasureIT {
                     System.out.println("MEASURE e2e " + r);
                 }
             }
+            // 直调 Service 臂：绕过 MockMvc/HTTP 栈（约 4-5ms 固定底座会把份额稀释），
+            // 服务级请求内分账与 MockMvc 臂同拦截器、同 rank 包装器、同预热同请求量。
+            SecurityUtil.set(directUser());
+            for (int n : SIZES) {
+                Map<String, Object> r = serviceArm(n, E2E_REQUESTS);
+                e2e.add(r);
+                System.out.println("MEASURE serviceDirect " + r);
+            }
+            SecurityUtil.clear();
         } finally {
             whole.stop();
             whole.dump(wholeJfr);
@@ -296,6 +421,10 @@ class RankAttributionMeasureIT {
         }
         result.put("focusedMicrobench", focusedMicro);
         result.put("focusedE2e", focusedE2e);
+
+        // ---- 2.5) 探针开销单列（optimize-my-score-rank-fetch 阶段 2 判据 S3）：
+        //          分账拦截器单次记账操作的微基准，不并入任何生产段。
+        result.put("probeOverhead", probeOverhead());
 
         // ---- 3) RANK_HOT：纯 rank 紧循环，探「逐帧归因在最好情况下能认到多少份额」 ----
         Path hotJfr = jfrDir.resolve(label + "-rankhot.jfr");
@@ -402,6 +531,9 @@ class RankAttributionMeasureIT {
         }
 
         TimedRankCalculator.reset();
+        SqlAccountingInterceptor.reset();
+        HeapSampler heapSampler = new HeapSampler();
+        heapSampler.start();
         long[] latency = new long[count];
         int[] statuses = new int[count];
         int[] ranks = new int[count];
@@ -452,6 +584,7 @@ class RankAttributionMeasureIT {
             pool.shutdown();
         }
         long wallNanos = System.nanoTime() - wallStart;
+        heapSampler.stopAndJoin();
 
         long rankNanos = TimedRankCalculator.RANK_NANOS.sum();
         long rankCalls = TimedRankCalculator.RANK_CALLS.sum();
@@ -475,6 +608,7 @@ class RankAttributionMeasureIT {
 
         long[] sorted = latency.clone();
         Arrays.sort(sorted);
+        Map<String, Object> accounting = sqlAccountingFields(totalNanos, count, rankNanos, heapSampler);
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("n", n);
         m.put("concurrency", concurrency);
@@ -497,7 +631,151 @@ class RankAttributionMeasureIT {
         m.put("rankMeanMs", round3(rankNanos / 1e6 / count));
         m.put("rankTotalMs", round3(rankNanos / 1e6));
         m.put("rankSharePct", round3(totalNanos == 0 ? 0 : 100.0 * rankNanos / totalNanos));
+        m.putAll(accounting);
         return m;
+    }
+
+    /**
+     * 语句级 SQL 分账字段提取（MockMvc 臂与直调 Service 臂共用同一口径）：
+     * fetchMap = GradingSubmissionMapper.selectList（全班取数+结果映射，含 H2 执行+JDBC 取回+逐行反射映射）；
+     * otherSql = 其余全部语句；rest = 墙钟 − fetchMap − rank（含 otherSql 与未归属段）；
+     * 并携带每请求 SQL 条数/返回行数、按语句明细与堆峰值。
+     */
+    private Map<String, Object> sqlAccountingFields(long totalNanos, int count, long rankNanos,
+                                                    HeapSampler heapSampler) {
+        long fetchMapNanos = SqlAccountingInterceptor.NANOS
+                .getOrDefault(SqlAccountingInterceptor.CLASS_FETCH_ID, new LongAdder()).sum();
+        long totalSqlNanos = 0;
+        long totalQueries = 0;
+        long totalRows = 0;
+        long submissionsRows = 0;
+        List<Map<String, Object>> perStatement = new ArrayList<>();
+        for (Map.Entry<String, LongAdder> e : SqlAccountingInterceptor.NANOS.entrySet()) {
+            long nanos = e.getValue().sum();
+            long queries = SqlAccountingInterceptor.QUERIES
+                    .getOrDefault(e.getKey(), new LongAdder()).sum();
+            long rows = SqlAccountingInterceptor.ROWS
+                    .getOrDefault(e.getKey(), new LongAdder()).sum();
+            totalSqlNanos += nanos;
+            totalQueries += queries;
+            totalRows += rows;
+            if (e.getKey().startsWith("com.exam.grading.mapper.GradingSubmissionMapper.")) {
+                submissionsRows += rows;
+            }
+            Map<String, Object> s = new LinkedHashMap<>();
+            s.put("statement", e.getKey());
+            s.put("nanosMs", round3(nanos / 1e6));
+            s.put("queries", queries);
+            s.put("rows", rows);
+            perStatement.add(s);
+        }
+        perStatement.sort((a, b) -> Double.compare((double) b.get("nanosMs"), (double) a.get("nanosMs")));
+        long otherSqlNanos = totalSqlNanos - fetchMapNanos;
+        Map<String, Object> f = new LinkedHashMap<>();
+        f.put("fetchMapMeanMs", round3(fetchMapNanos / 1e6 / count));
+        f.put("fetchMapSharePct", round3(totalNanos == 0 ? 0 : 100.0 * fetchMapNanos / totalNanos));
+        f.put("otherSqlMeanMs", round3(otherSqlNanos / 1e6 / count));
+        f.put("restMeanMs", round3((totalNanos - fetchMapNanos - rankNanos) / 1e6 / count));
+        f.put("sqlQueriesPerRequest", round3(totalQueries / (double) count));
+        f.put("sqlRowsPerRequest", round3(totalRows / (double) count));
+        f.put("submissionsRowsPerRequest", round3(submissionsRows / (double) count));
+        f.put("perStatement", perStatement);
+        f.put("heapPeakMB", round3(heapSampler.heapPeak / 1048576.0));
+        return f;
+    }
+
+    /**
+     * 直调 Service 一臂：绕过 MockMvc/HTTP 栈的固定底座（安全过滤链+序列化，约 4-5ms），
+     * 让 ①「全班取数+结果映射」②「rank 计算」③「其余（权限/考试/本人行/复核判定）」
+     * 的分账落在业务段上；与 MockMvc 臂同拦截器、同 rank 包装器、同预热、同请求量、串行。
+     */
+    private Map<String, Object> serviceArm(int n, int count) throws Exception {
+        long examId = EXAM_ID_BASE + n;
+        int expected = expectedRank.get(n);
+
+        for (int i = 0; i < E2E_WARMUP; i++) {
+            String problem = callMyScoreDirect(examId, expected);
+            assertNull(problem, "预热直调失败: " + problem);
+        }
+
+        TimedRankCalculator.reset();
+        SqlAccountingInterceptor.reset();
+        HeapSampler heapSampler = new HeapSampler();
+        heapSampler.start();
+        long[] latency = new long[count];
+        int errors = 0;
+        String firstError = null;
+        for (int i = 0; i < count; i++) {
+            long t0 = System.nanoTime();
+            String problem = callMyScoreDirect(examId, expected);
+            latency[i] = System.nanoTime() - t0;
+            if (problem != null) {
+                errors++;
+                if (firstError == null) {
+                    firstError = problem;
+                }
+            }
+        }
+        heapSampler.stopAndJoin();
+
+        long rankNanos = TimedRankCalculator.RANK_NANOS.sum();
+        long rankCalls = TimedRankCalculator.RANK_CALLS.sum();
+        long totalNanos = 0;
+        for (long l : latency) {
+            totalNanos += l;
+        }
+        long[] sorted = latency.clone();
+        Arrays.sort(sorted);
+
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("n", n);
+        m.put("arm", "serviceDirect");
+        m.put("concurrency", 1);
+        m.put("requests", count);
+        m.put("warmupRequests", E2E_WARMUP);
+        m.put("expectedRank", expected);
+        m.put("errors", errors);
+        if (firstError != null) {
+            m.put("firstError", firstError);
+        }
+        m.put("p50Ms", round3(percentile(sorted, 0.50)));
+        m.put("p95Ms", round3(percentile(sorted, 0.95)));
+        m.put("p99Ms", round3(percentile(sorted, 0.99)));
+        m.put("meanMs", round3(mean(latency)));
+        m.put("worstMs", round3(sorted[sorted.length - 1] / 1e6));
+        m.put("throughputRps", round3(count / (totalNanos / 1e9)));
+        m.put("rankCallsInRequest", rankCalls);
+        m.put("rankMeanMs", round3(rankNanos / 1e6 / count));
+        m.put("rankSharePct", round3(totalNanos == 0 ? 0 : 100.0 * rankNanos / totalNanos));
+        m.putAll(sqlAccountingFields(totalNanos, count, rankNanos, heapSampler));
+        return m;
+    }
+
+    /** 直调一次 myScore 并做语义核对；返回 null=通过，否则返回问题描述（不抛出，不中断臂内循环）。 */
+    private String callMyScoreDirect(long examId, int expected) {
+        try {
+            MyScoreResponse response = scoreService.myScore(examId);
+            if (response.getRank() != expected) {
+                return "rank mismatch got=" + response.getRank() + " expected=" + expected;
+            }
+            if (Boolean.TRUE.equals(response.getReviewing())) {
+                return "unexpected reviewing=true";
+            }
+            if (response.getTotalScore() == null) {
+                return "unexpected null totalScore";
+            }
+            return null;
+        } catch (Exception e) {
+            return "exception: " + e;
+        }
+    }
+
+    /** 直调臂的登录身份（与 MockMvc 臂同一真实学生；SecurityUtil 为 ThreadLocal，臂前设置、臂后清除）。 */
+    private LoginUser directUser() {
+        LoginUser user = new LoginUser();
+        user.setId(realStudentId);
+        user.setRoleLevel(RoleHierarchy.levelOf(RoleHierarchy.STUDENT));
+        return user;
     }
 
     /** 纯 rank 紧循环（同一份不可变列表，避免建列表成本混入）。 */
@@ -510,6 +788,47 @@ class RankAttributionMeasureIT {
             calls++;
         }
         return calls;
+    }
+
+    // ==================== 探针开销（单列，不并入生产段） ====================
+
+    /**
+     * 分账探针自身开销微基准：复刻 {@link SqlAccountingInterceptor#intercept} 的记账形状
+     * （nanoTime 对 + map 归类 + LongAdder 累计），不执行真实 SQL。结果 = 每次记账的纳秒数
+     * 与按「每请求语句数 × 记账纳秒」折算的每请求估计；供停止条件 S3 裁决，不得并入 fetchMap/rank/rest。
+     */
+    private static Map<String, Object> probeOverhead() {
+        SqlAccountingInterceptor.NANOS.computeIfAbsent("probe.accounting", k -> new LongAdder());
+        SqlAccountingInterceptor.QUERIES.computeIfAbsent("probe.accounting", k -> new LongAdder());
+        SqlAccountingInterceptor.ROWS.computeIfAbsent("probe.accounting", k -> new LongAdder());
+        for (int i = 0; i < 20_000; i++) {
+            probeOnce();
+        }
+        int reps = 200_000;
+        long t0 = System.nanoTime();
+        long sink = 0;
+        for (int i = 0; i < reps; i++) {
+            sink += probeOnce();
+        }
+        long total = System.nanoTime() - t0;
+        if (sink == Long.MIN_VALUE) {
+            System.out.println("MEASURE probe sink unreachable guard");
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("warmupIters", 20_000);
+        m.put("reps", reps);
+        m.put("accountingNsPerSqlQuery", round3(total / (double) reps));
+        m.put("note", "每请求探针开销 ≈ accountingNsPerSqlQuery × 每请求语句数；与各臂均值同排报告，不并入生产段");
+        return m;
+    }
+
+    /** 单次记账形状（与拦截器 intercept 的统计路径同构），返回值防 JIT 消除。 */
+    private static long probeOnce() {
+        long a = System.nanoTime();
+        SqlAccountingInterceptor.NANOS.get("probe.accounting").add(a);
+        SqlAccountingInterceptor.QUERIES.get("probe.accounting").increment();
+        SqlAccountingInterceptor.ROWS.get("probe.accounting").add(1);
+        return System.nanoTime() - a;
     }
 
     // ==================== 语义自检与数据 ====================

@@ -1,0 +1,58 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：立项与口径",
+    "task": "复核 myScore 现状、归档依据与边界，冻结测量口径",
+    "steps": [
+      { "step": "确认开工 HEAD、工作树、AGENTS.md 四条硬约定、performance「Java 优化先归因、一次只改一类」与 spec/README.md「工作流」「验收记录三要素」；核对归档 update-score-ranking-calculation 的剩余热点结论（引用其 revision 与数值口径）与 RankAttributionMeasureIT 在位", "completed": false },
+      { "step": "核对 exam_submissions 实际 DDL（total_score DECIMAL 精度/可空、status TINYINT、uk_exam_student）与 GradingSubmission 实体，确认 404 隐式判定改显式判 status 的逐条等价条件；写 proposal/tasks/spec-delta 三件套，证据留空待填", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：同口径归因基线（先量后改）",
+    "task": "确认「取数+映射」仍是 myScore 请求内占比最高的一类，否则停手",
+    "steps": [
+      { "step": "扩展 RankAttributionMeasureIT：新增 myScore 请求内分账臂 ①「全班取数+结果映射」②「rank 计算」③「其余」，测试侧 MyBatis 拦截器按语句 id 分账；同数据同负载同预热，SIZES 50/200/1000/3000、逐轮至少 3 次、不取单次最好值；记录每请求 SQL 条数与返回行数、堆峰值；探针开销单列不并入生产段", "completed": false },
+      { "step": "按停止条件裁决：S1 取数+映射非占比最高、S2 占比未稳定高于轮间波动、S3 探针开销不可忽略——命中即停手回报不改生产代码；达标才进阶段 3。逐轮数值与波动区间写入 evidence", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：条件成立后只改这一类",
+    "task": "myScore 名次改一条聚合 COUNT，404 显式判定逐条等价，E1–E8 先红后绿",
+    "steps": [
+      { "step": "先写等价性测试 E1（90,85,85,80→1,2,2,4）E2（60 与 60.00 数值等价，按入库后实际 scale 形态断言）E3（本人 null→404）E4（本人 status≠GRADED→404，新增显式判定）E5（本人最高分→1、全场同分全 1）E6（差分对拍旧 rankCalculator oracle，n 覆盖 1/2/50/3000）E7（行级取数条数不随班级人数增长的护栏，旧实现必须红）E8（复核隐藏与强一致读各一条）；E6/E7 在旧实现上跑出红灯，跑不出即停手", "completed": false },
+      { "step": "实现：myScore 名次 = COUNT(exam_id=? AND status=GRADED AND total_score IS NOT NULL AND total_score>本人总分)+1 一条聚合，不再取全班；404 改显式判 status 且无行/totalScore null/status 非 GRADED 逐条等价；不加 @DS(\"slave\")、不改复核隐藏分支、不改发布状态门、不改 preview/导出/schema/RankCalculator/Mapper 既有 SQL", "completed": false },
+      { "step": "核对代码 diff 与既有测试适配：ScoreServiceTest/ScoreServiceReviewHideTest 的 mock 适配新调用形态（断言不放宽），既有断言零放宽；E1–E8 全绿", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：同口径复测与门禁",
+    "task": "同数据同负载复测并跑唯一门禁，三要素回勾",
+    "steps": [
+      { "step": "同数据同负载逐轮 3 次复测：报告新旧 best/mean/p99 比值、SQL 条数与返回行数变化、堆峰值变化、映射段份额变化；指标无变化就如实写无收益并回到度量，不叠加别的参数", "completed": false },
+      { "step": "在已提交实现 revision 上仓库根跑唯一门禁 ./mvnw clean test（Windows mvnw.cmd clean test），记录四计数+BUILD+退出码+短 revision；跑 AGENTS.md 四条自查与实体↔schema 表级自查；clean 前把 target 原始证据移进变更目录 evidence/，生成 evidence-sha256.txt 并 sha256sum -c 全 OK", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：规范真值与收口",
+    "task": "GO 且等价才合入行为规范，否则按未采用草案归档",
+    "steps": [
+      { "step": "据实回勾 tasks.json（命令+当次输出+短 revision）；GO 且等价才把 delta 合入 spec/specs/score-management/spec.md，更新 spec/README.md（当前状态行+归档表新增一行+能力地图/映射表按现有体例）；NO-GO 或不等价则按未采用草案归档、src/main 零改动", "completed": false },
+      { "step": "显式路径暂存提交（禁 git add -A、禁提交 docs/backend-optimization-candidates.md），核对 git status / git diff --cached --name-only；回报提交 SHA、逐轮数值、红绿输出、未验证项与阻塞", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]
