@@ -1,6 +1,7 @@
 # 提案：监考总览答卷取数再归因——真引擎下的列投影与至多一条窄读
 
 > 状态：执行中（先冻结判据、再测量、仅 GO 才实施）。静态核对基于 `bea34af`（分支 `feature/update-monitor-overview-submission-projection`，2026-09-29）。
+> 注记：PREREGISTRATION 冻结入口 bea34af、测量与裁决 rev bede6c8，两者 src 零差异（判据 git diff --name-only 为空）。
 > 本提案不是已测得的缺陷：它是**前序 `update-monitor-overview-submission-projection` NO-GO 之后的第二次归因**，只改一个站点（s6）、一次只改一类（答卷取数形态）。
 
 ## Why

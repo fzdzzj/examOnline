@@ -62,6 +62,7 @@ class ScalarProjectionGuardTest {
 
     private static final long S1_EXAM_BASE = 980_100_000L;
     private static final long S1_STUDENT = 980_100_100L;
+    private static final long S1_CLASS = 980_100_050L;
     private static final long S2_EXAM = 980_200_000L;
     private static final long S2_CLASS = 980_200_100L;
     private static final long S2_STUDENT_BASE = 980_200_200L;
@@ -97,22 +98,32 @@ class ScalarProjectionGuardTest {
         LocalDateTime start = now.plusDays(3650);
         Timestamp nowTs = Timestamp.valueOf(now);
 
+        jdbc.update("DELETE FROM user_class WHERE class_id = ?", S1_CLASS);
+        jdbc.update("DELETE FROM classes WHERE id = ?", S1_CLASS);
         jdbc.update("DELETE FROM exam_submissions WHERE exam_id BETWEEN ? AND ?", S1_EXAM_BASE, S1_EXAM_BASE + 2);
         jdbc.update("DELETE FROM exams WHERE id BETWEEN ? AND ?", S1_EXAM_BASE, S1_EXAM_BASE + 2);
-        jdbc.update("INSERT INTO exams (id, title, paper_id, start_time, end_time, duration_minutes,"
+
+        jdbc.update("INSERT INTO classes (id, name, course_id, teacher_id, created_by, created_time,"
+                        + " updated_time, is_deleted) VALUES (?,?,NULL,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,0)",
+                S1_CLASS, "护栏-列表班级", OWNER_ID, OWNER_ID);
+        jdbc.update("INSERT INTO user_class (user_id, class_id, joined_time)"
+                        + " VALUES (?,?,CURRENT_TIMESTAMP)",
+                S1_STUDENT, S1_CLASS);
+
+        jdbc.update("INSERT INTO exams (id, title, paper_id, class_id, start_time, end_time, duration_minutes,"
                         + " status, published, created_by, version, is_deleted, created_time, updated_time)"
-                        + " VALUES (?,?,?,?,?,60,?,1,?,0,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)",
-                S1_EXAM_BASE, "护栏-进行中", 980_100_900L, Timestamp.valueOf(start),
+                        + " VALUES (?,?,?,?,?,?,60,?,1,?,0,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)",
+                S1_EXAM_BASE, "护栏-进行中", 980_100_900L, S1_CLASS, Timestamp.valueOf(start),
                 Timestamp.valueOf(start.plusMinutes(60)), Exam.STATUS_IN_PROGRESS, OWNER_ID);
-        jdbc.update("INSERT INTO exams (id, title, paper_id, start_time, end_time, duration_minutes,"
+        jdbc.update("INSERT INTO exams (id, title, paper_id, class_id, start_time, end_time, duration_minutes,"
                         + " status, published, created_by, version, is_deleted, created_time, updated_time)"
-                        + " VALUES (?,?,?,?,?,60,?,1,?,0,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)",
-                S1_EXAM_BASE + 1, "护栏-已交卷", 980_100_901L, Timestamp.valueOf(start.plusHours(1)),
+                        + " VALUES (?,?,?,?,?,?,60,?,1,?,0,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)",
+                S1_EXAM_BASE + 1, "护栏-已交卷", 980_100_901L, S1_CLASS, Timestamp.valueOf(start.plusHours(1)),
                 Timestamp.valueOf(start.plusHours(2)), Exam.STATUS_IN_PROGRESS, OWNER_ID);
-        jdbc.update("INSERT INTO exams (id, title, paper_id, start_time, end_time, duration_minutes,"
+        jdbc.update("INSERT INTO exams (id, title, paper_id, class_id, start_time, end_time, duration_minutes,"
                         + " status, published, created_by, version, is_deleted, created_time, updated_time)"
-                        + " VALUES (?,?,?,?,?,60,?,1,?,0,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)",
-                S1_EXAM_BASE + 2, "护栏-待考", 980_100_902L, Timestamp.valueOf(start.plusHours(2)),
+                        + " VALUES (?,?,?,?,?,?,60,?,1,?,0,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)",
+                S1_EXAM_BASE + 2, "护栏-待考", 980_100_902L, S1_CLASS, Timestamp.valueOf(start.plusHours(2)),
                 Timestamp.valueOf(start.plusHours(3)), Exam.STATUS_NOT_STARTED, OWNER_ID);
         jdbc.update("INSERT INTO exam_submissions (exam_id, student_id, start_time, deadline_time,"
                         + " answers, paper_json, status, version, created_time, updated_time)"
@@ -149,24 +160,28 @@ class ScalarProjectionGuardTest {
         List<ExamListItem> ours = items.stream()
                 .filter(i -> i.getExamId() >= S1_EXAM_BASE && i.getExamId() <= S1_EXAM_BASE + 2)
                 .toList();
-        assertEquals(List.of(S1_EXAM_BASE + 2, S1_EXAM_BASE + 1, S1_EXAM_BASE),
-                ours.stream().map(ExamListItem::getExamId).toList(), "按 start_time 降序：待考/已交卷/进行中");
+        assertEquals(List.of(S1_EXAM_BASE + 2, S1_EXAM_BASE, S1_EXAM_BASE + 1),
+                ours.stream().map(ExamListItem::getExamId).toList(), "按分组优先级：待考/进行中/已完成");
         ExamListItem upcoming = ours.get(0);
         assertEquals(ExamListItem.GROUP_UPCOMING, upcoming.getGroup());
         assertFalse(upcoming.isCanEnter());
         assertNull(upcoming.getSubmissionStatus());
-        ExamListItem finished = ours.get(1);
-        assertEquals(ExamListItem.GROUP_FINISHED, finished.getGroup());
-        assertFalse(finished.isCanEnter());
-        assertEquals(ExamSubmission.STATUS_SUBMITTED, finished.getSubmissionStatus());
-        assertNull(finished.getRemainingSeconds());
-        ExamListItem ongoing = ours.get(2);
+        ExamListItem ongoing = ours.get(1);
         assertEquals(ExamListItem.GROUP_ONGOING, ongoing.getGroup());
         assertTrue(ongoing.isCanEnter());
         assertEquals(ExamSubmission.STATUS_IN_PROGRESS, ongoing.getSubmissionStatus());
         assertNotNull(ongoing.getRemainingSeconds());
         assertTrue(ongoing.getRemainingSeconds() > 0 && ongoing.getRemainingSeconds() <= 3600,
                 "剩余秒数应为服务端截止邻近值：" + ongoing.getRemainingSeconds());
+        ExamListItem finished = ours.get(2);
+        assertEquals(ExamListItem.GROUP_FINISHED, finished.getGroup());
+        assertFalse(finished.isCanEnter());
+        assertEquals(ExamSubmission.STATUS_SUBMITTED, finished.getSubmissionStatus());
+        assertNull(finished.getRemainingSeconds());
+
+        // 清理班级夹具
+        jdbc.update("DELETE FROM user_class WHERE class_id = ?", S1_CLASS);
+        jdbc.update("DELETE FROM classes WHERE id = ?", S1_CLASS);
     }
 
     @Test
@@ -226,6 +241,11 @@ class ScalarProjectionGuardTest {
     private void assertGuardSawStatement() {
         assertTrue(SubmissionSelectGuardInterceptor.EXECUTIONS.get() > 0,
                 "canary：护栏必须实际拦到目标语句，否则本次护栏证据不成立");
+        assertNotNull(SubmissionSelectGuardInterceptor.targetSql, "canary：须捕获到目标语句 SQL");
+        System.out.println("CAPTURED_S1_SQL=" + SubmissionSelectGuardInterceptor.targetSql);
+        String sqlLower = SubmissionSelectGuardInterceptor.targetSql.toLowerCase(java.util.Locale.ROOT);
+        assertFalse(sqlLower.contains("paper_json") || sqlLower.contains("answers"),
+                "列投影后 SELECT 列表不得载入长字段：" + SubmissionSelectGuardInterceptor.targetSql);
     }
 
     private int count(String sql, Object... args) {
@@ -258,12 +278,14 @@ class ScalarProjectionGuardTest {
         static final AtomicInteger EXECUTIONS = new AtomicInteger();
         static final AtomicInteger ROWS = new AtomicInteger();
         static final AtomicInteger LONG_FIELD_NON_NULL = new AtomicInteger();
+        static volatile String targetSql;
         static volatile boolean armed;
 
         static void reset() {
             EXECUTIONS.set(0);
             ROWS.set(0);
             LONG_FIELD_NON_NULL.set(0);
+            targetSql = null;
             armed = false;
         }
 
@@ -274,6 +296,9 @@ class ScalarProjectionGuardTest {
             if (armed && ms.getId().equals(TARGET_MS) && result instanceof List<?> list) {
                 EXECUTIONS.incrementAndGet();
                 ROWS.addAndGet(list.size());
+                Object param = invocation.getArgs()[1];
+                BoundSql boundSql = ms.getBoundSql(param);
+                targetSql = boundSql.getSql();
                 for (Object o : list) {
                     if (o instanceof ExamSubmission s
                             && (s.getAnswers() != null || s.getPaperJson() != null)) {

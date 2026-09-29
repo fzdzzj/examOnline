@@ -1,0 +1,1307 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.exam:exam-online >------------------------
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (jacoco-prepare-agent) @ exam-online ---
+[INFO] argLine set to -javaagent:D:\\code\\examOnline\\.m2-repo\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\code\\examOnline\\target\\jacoco.exec,excludes=com/exam/ExamOnlineApplication.class:com/exam/**/dto/**:com/exam/**/entity/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ exam-online ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ exam-online ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ exam-online ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 67 source files with javac [debug parameters release 17] to target\test-classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/service/AbsenceServiceTest.java: 某些输入文件使用了未经检查或不安全的操作。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/service/AbsenceServiceTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ exam-online ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.exam.taking.MyExamsListScopeIntegrationTest
+23:18:07.239 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.exam.taking.MyExamsListScopeIntegrationTest]: MyExamsListScopeIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+23:18:07.600 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.exam.ExamOnlineApplication for test class com.exam.taking.MyExamsListScopeIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-09-29 23:18:08.518 [main] [] [] INFO  c.e.t.MyExamsListScopeIntegrationTest - Starting MyExamsListScopeIntegrationTest using Java 21.0.9 with PID 25296 (started by fzdzzj in D:\code\examOnline)
+2026-09-29 23:18:08.520 [main] [] [] INFO  c.e.t.MyExamsListScopeIntegrationTest - The following 1 profile is active: "test"
+2026-09-29 23:18:16.350 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-29 23:18:16.361 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-29 23:18:16.579 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 163 ms. Found 0 Redis repository interfaces.
+2026-09-29 23:18:18.255 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig' of type [io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-09-29 23:18:18.268 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'mapConverter' of type [io.opentelemetry.instrumentation.spring.autoconfigure.internal.MapConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-09-29 23:18:19.775 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: DRAFT_CONFLICT -> DraftConflictEventCollector
+2026-09-29 23:18:19.778 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: PAGE_REFRESH -> PageRefreshEventCollector
+2026-09-29 23:18:19.779 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SUBMIT_ANOMALY -> SubmitAnomalyEventCollector
+2026-09-29 23:18:19.779 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SWITCH_SCREEN -> SwitchScreenEventCollector
+2026-09-29 23:18:19.779 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: WINDOW_BLUR -> WindowBlurEventCollector
+2026-09-29 23:18:19.902 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2026-09-29 23:18:20.667 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection conn0: url=jdbc:h2:mem:exam user=SA
+2026-09-29 23:18:20.673 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2026-09-29 23:18:20.679 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Starting...
+2026-09-29 23:18:20.682 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - slave - Added connection conn1: url=jdbc:h2:mem:exam user=SA
+2026-09-29 23:18:20.682 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Start completed.
+2026-09-29 23:18:20.682 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [slave] success
+2026-09-29 23:18:20.682 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2026-09-29 23:18:20.683 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [2] datasource,primary datasource named [master]
+2026-09-29 23:18:23.901 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: JUDGE -> JudgeGradingStrategy
+2026-09-29 23:18:23.901 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: MULTIPLE -> MultipleChoiceGradingStrategy
+2026-09-29 23:18:23.901 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SHORT_ANSWER -> ShortAnswerGradingStrategy
+2026-09-29 23:18:23.901 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SINGLE -> SingleChoiceGradingStrategy
+2026-09-29 23:18:27.488 [main] [] [] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-09-29 23:18:27.489 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-09-29 23:18:27.504 [main] [] [] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 3 endpoints beneath base path '/actuator'
+2026-09-29 23:18:27.520 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Completed initialization in 31 ms
+2026-09-29 23:18:27.639 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-29 23:18:27.663 [main] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused: getsockopt
+2026-09-29 23:18:27.676 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-29 23:18:27.681 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:632)
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726)
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2262)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2235)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2215)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1972)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1936)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1481)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1322)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.net.ConnectException: Connection refused: getsockopt
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:690)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:678)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:647)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:593)
+	... 12 common frames omitted
+2026-09-29 23:18:27.695 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-29 23:18:27.734 [main] [] [] INFO  c.e.t.MyExamsListScopeIntegrationTest - Started MyExamsListScopeIntegrationTest in 19.86 seconds (process running for 22.214)
+2026-09-29 23:18:28.198 [main] [] [] INFO  c.exam.config.RolePermissionInitializer - RBAC 角色/权限预置完成
+2026-09-29 23:18:28.318 [main] [] [] INFO  com.exam.config.AdminInitializer - 首次启动：已创建默认管理员 username=admin（请尽快通过环境变量 ADMIN_PASSWORD 修改）
+2026-09-29 23:18:28.319 [main] [] [] INFO  com.exam.config.ApplicationConfig - JWT_SECRET validated successfully (length: 58)
+2026-09-29 23:18:28.320 [main] [] [] INFO  com.exam.config.ApplicationConfig - Application configuration validated successfully
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\code\examOnline\.m2-repo\net\bytebuddy\byte-buddy-agent\1.17.7\byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-09-29 23:18:32.796 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-09-29 23:18:32.803 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@10cd0338: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-09-29 23:18:32.806 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-29 23:18:32.806 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-09-29 23:18:32.807 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-09-29 23:18:33.281 [main] [a21194607b3940f89b9906903615af5a] [c49a3d4659023814d6fd754984b92fa8] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-09-29 23:18:33.335 [main] [a21194607b3940f89b9906903615af5a] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (749ms)
+2026-09-29 23:18:33.468 [main] [b5f2005d2b5a4ee0a75db3ca052b1846] [f6fe9e4bcbf4c6ef1810393c987d21bc] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 KMWCG3MR
+2026-09-29 23:18:33.474 [main] [b5f2005d2b5a4ee0a75db3ca052b1846] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (112ms)
+2026-09-29 23:18:33.815 [main] [6869647271954860965163de9b261ed1] [d933ebf3ebb69e4816acde70e10b92cb] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_1, inviteCode=KMWCG3MR
+2026-09-29 23:18:33.818 [main] [6869647271954860965163de9b261ed1] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (340ms)
+2026-09-29 23:18:34.175 [main] [b493887ff60341f5b6cb132000e8afd9] [b3c53d95f01dc6dd8fc1ddee70ff4c86] INFO  com.exam.auth.service.AuthService - 用户 tea_1 登录成功，签发双 Token
+2026-09-29 23:18:34.176 [main] [b493887ff60341f5b6cb132000e8afd9] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (356ms)
+2026-09-29 23:18:34.457 [main] [061187a0b3b542d4aad642b47f069759] [98ad939832c2e274328a7e33847e1959] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_2
+2026-09-29 23:18:34.458 [main] [061187a0b3b542d4aad642b47f069759] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (278ms)
+2026-09-29 23:18:34.699 [main] [f0e06bd6d2804801a51c506028ce2ef3] [e1d81ddad41513b1823c4c860bfc6d03] INFO  com.exam.auth.service.AuthService - 用户 stu_2 登录成功，签发双 Token
+2026-09-29 23:18:34.701 [main] [f0e06bd6d2804801a51c506028ce2ef3] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (242ms)
+2026-09-29 23:18:34.718 [main] [78ce06c62ce345338a85b4de45a1c1fb] [] INFO  com.exam.common.RequestIdFilter - GET /api/auth/me -> 200 (16ms)
+2026-09-29 23:18:34.743 [main] [24b218091a29469a8acacb4ceec9d86e] [ecc74d50ac0cb58b6d4692ab03de5d2f] INFO  com.exam.clazz.service.ClassService - 教师 2 创建班级 id=1 name=班-3
+2026-09-29 23:18:34.749 [main] [24b218091a29469a8acacb4ceec9d86e] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes -> 200 (27ms)
+2026-09-29 23:18:34.785 [main] [79e83bb51b5a488884ef02ac0a6f711e] [8edb025b40a268a357a59bbde35bd483] INFO  com.exam.clazz.service.ClassService - 学生 3 加入班级 1
+2026-09-29 23:18:34.787 [main] [79e83bb51b5a488884ef02ac0a6f711e] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes/1/students -> 200 (36ms)
+java.lang.instrument.IllegalClassFormatException: Error while instrumenting net/sf/jsqlparser/parser/CCJSqlParserTokenManager with JaCoCo 0.8.12.202403310830/dbfb6f2.
+	at org.jacoco.agent.rt.internal_aeaf9ab.CoverageTransformer.transform(CoverageTransformer.java:94)
+	at java.instrument/java.lang.instrument.ClassFileTransformer.transform(ClassFileTransformer.java:244)
+	at java.instrument/sun.instrument.TransformerManager.transform(TransformerManager.java:188)
+	at java.instrument/sun.instrument.InstrumentationImpl.transform(InstrumentationImpl.java:610)
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027)
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:862)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassOnClassPathOrNull(BuiltinClassLoader.java:760)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:681)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at net.sf.jsqlparser.parser.CCJSqlParser.<init>(CCJSqlParser.java:42028)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.newParser(CCJSqlParserUtil.java:138)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:107)
+	at com.baomidou.mybatisplus.extension.parser.JsqlParserGlobal.lambda$static$1(JsqlParserGlobal.java:58)
+	at com.baomidou.mybatisplus.extension.parser.JsqlParserGlobal.parse(JsqlParserGlobal.java:68)
+	at com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor.autoCountSql(PaginationInnerInterceptor.java:264)
+	at com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor.willDoQuery(PaginationInnerInterceptor.java:128)
+	at com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor.intercept(MybatisPlusInterceptor.java:75)
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59)
+	at jdk.proxy2/jdk.proxy2.$Proxy207.query(Unknown Source)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:154)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:147)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:142)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:333)
+	at jdk.proxy2/jdk.proxy2.$Proxy131.selectList(Unknown Source)
+	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:194)
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.executeForMany(MybatisMapperMethod.java:164)
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:77)
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152)
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89)
+	at jdk.proxy2/jdk.proxy2.$Proxy140.selectList(Unknown Source)
+	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectPage(BaseMapper.java:458)
+	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:733)
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$DefaultMethodInvoker.invoke(MybatisMapperProxy.java:166)
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89)
+	at jdk.proxy2/jdk.proxy2.$Proxy140.selectPage(Unknown Source)
+	at com.exam.taking.service.ExamTakingService.myExams(ExamTakingService.java:150)
+	at com.exam.taking.controller.ExamTakingController.myExams(ExamTakingController.java:56)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.aop.aspectj.MethodInvocationProceedingJoinPoint.proceed(MethodInvocationProceedingJoinPoint.java:89)
+	at com.exam.auth.security.RoleValidationAspect.checkPermission(RoleValidationAspect.java:55)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethodWithGivenArgs(AbstractAspectJAdvice.java:649)
+	at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethod(AbstractAspectJAdvice.java:631)
+	at org.springframework.aop.aspectj.AspectJAroundAdvice.invoke(AspectJAroundAdvice.java:71)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:173)
+	at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:97)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728)
+	at com.exam.taking.controller.ExamTakingController$$SpringCGLIB$$0.myExams(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at io.opentelemetry.instrumentation.spring.webmvc.v6_0.WebMvcTelemetryProducingFilter.doFilterInternal(WebMvcTelemetryProducingFilter.java:58)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at com.exam.common.RequestIdFilter.doFilterInternal(RequestIdFilter.java:47)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:223)
+	at com.exam.taking.MyExamsListScopeIntegrationTest.myExams(MyExamsListScopeIntegrationTest.java:190)
+	at com.exam.taking.MyExamsListScopeIntegrationTest.listOrdersByGroupPriorityThenProximity(MyExamsListScopeIntegrationTest.java:177)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+Caused by: java.io.IOException: Error while instrumenting net/sf/jsqlparser/parser/CCJSqlParserTokenManager with JaCoCo 0.8.12.202403310830/dbfb6f2.
+	at org.jacoco.agent.rt.internal_aeaf9ab.core.instr.Instrumenter.instrumentError(Instrumenter.java:161)
+	at org.jacoco.agent.rt.internal_aeaf9ab.core.instr.Instrumenter.instrument(Instrumenter.java:111)
+	at org.jacoco.agent.rt.internal_aeaf9ab.CoverageTransformer.transform(CoverageTransformer.java:92)
+	... 179 more
+Caused by: org.jacoco.agent.rt.internal_aeaf9ab.asm.MethodTooLargeException: Method too large: net/sf/jsqlparser/parser/CCJSqlParserTokenManager.jjMoveNfa_0 (II)I
+	at org.jacoco.agent.rt.internal_aeaf9ab.asm.MethodWriter.computeMethodInfoSize(MethodWriter.java:2088)
+	at org.jacoco.agent.rt.internal_aeaf9ab.asm.ClassWriter.toByteArray(ClassWriter.java:512)
+	at org.jacoco.agent.rt.internal_aeaf9ab.core.instr.Instrumenter.instrument(Instrumenter.java:92)
+	at org.jacoco.agent.rt.internal_aeaf9ab.core.instr.Instrumenter.instrument(Instrumenter.java:109)
+	... 180 more
+2026-09-29 23:18:35.052 [main] [d35b22c8bf57409fa59b77f90cf1b701] [] INFO  com.exam.common.RequestIdFilter - GET /api/exam-taking/exams -> 200 (236ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"a21194607b3940f89b9906903615af5a", X-Trace-Id:"c49a3d4659023814d6fd754984b92fa8", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjIzZWUyZTE1ODA2ZTQ5OTNiZWYyYjUzNjUzZDA3ZDMzIiwiaWF0IjoxNzkwNjk1MTEzLCJleHAiOjE3OTA2OTY5MTN9.rYCHWI8DiBqItalTLhIuUOdOwt-uF3lTqbP4m6wVZUQ","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiIzYjNmMWNjNjc5OTQ0YmQ0OGUwOTJjMjI4MDg3N2Y1ZSIsImlhdCI6MTc5MDY5NTExMywiZXhwIjoxNzkxMjk5OTEzfQ.2lxnk7RoTYeLzpbml_DzaS1hy_HTTcYNcodmMvPQ3yg","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjIzZWUyZTE1ODA2ZTQ5OTNiZWYyYjUzNjUzZDA3ZDMzIiwiaWF0IjoxNzkwNjk1MTEzLCJleHAiOjE3OTA2OTY5MTN9.rYCHWI8DiBqItalTLhIuUOdOwt-uF3lTqbP4m6wVZUQ", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"b5f2005d2b5a4ee0a75db3ca052b1846", X-Trace-Id:"f6fe9e4bcbf4c6ef1810393c987d21bc", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"code":"KMWCG3MR","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-09-29T23:18:33.4652032"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_1","password":"Pass1234","name":"教师-tea_1","email":"tea_1@test.com","roleType":"TEACHER","inviteCode":"KMWCG3MR"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"6869647271954860965163de9b261ed1", X-Trace-Id:"d933ebf3ebb69e4816acde70e10b92cb", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_1","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"b493887ff60341f5b6cb132000e8afd9", X-Trace-Id:"b3c53d95f01dc6dd8fc1ddee70ff4c86", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzI4NzVjYjI3MDEwNDY3M2I0ODhiYzc3NmMxODRhMDYiLCJpYXQiOjE3OTA2OTUxMTQsImV4cCI6MTc5MDY5NjkxNH0.XgixfYnllexKdwnRSxjsEzWz8v1BlYmY1uJ5OUiwO0Y","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiIzZTA2YTJmY2YyNGY0MGRmYTY2OTIwNDMxYTE3NDAzMiIsImlhdCI6MTc5MDY5NTExNCwiZXhwIjoxNzkxMjk5OTE0fQ.dsvkUcmT2iToGR1lWTdiQAYERs2nPWHozkvrFtLqaGc","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"110"]
+             Body = {"username":"stu_2","password":"Pass1234","name":"学生-stu_2","email":"stu_2@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"061187a0b3b542d4aad642b47f069759", X-Trace-Id:"98ad939832c2e274328a7e33847e1959", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"stu_2","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"f0e06bd6d2804801a51c506028ce2ef3", X-Trace-Id:"e1d81ddad41513b1823c4c860bfc6d03", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzIiLCJuYW1lIjoi5a2m55SfLXN0dV8yIiwiZW1haWwiOiJzdHVfMkB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiJlYTRjMjhhY2IwZTQ0NzVjYWRmZjU4MmQ4MzhiNjRmOCIsImlhdCI6MTc5MDY5NTExNCwiZXhwIjoxNzkwNjk2OTE0fQ.uJIE3jMq390Zg9Yr9ooG0yv62fEZEnZ3xGREX5t51oY","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiI2YWVlMmRjOGJmNWU0NjAyYTk1YzMwODA5NjI2ODY1ZiIsImlhdCI6MTc5MDY5NTExNCwiZXhwIjoxNzkxMjk5OTE0fQ.NLFzdzJ6toF5nqIL9g62geHOvUYhWnQb7c0Lx1N1EVM","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /api/auth/me
+       Parameters = {}
+          Headers = [Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzIiLCJuYW1lIjoi5a2m55SfLXN0dV8yIiwiZW1haWwiOiJzdHVfMkB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiJlYTRjMjhhY2IwZTQ0NzVjYWRmZjU4MmQ4MzhiNjRmOCIsImlhdCI6MTc5MDY5NTExNCwiZXhwIjoxNzkwNjk2OTE0fQ.uJIE3jMq390Zg9Yr9ooG0yv62fEZEnZ3xGREX5t51oY"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#me()
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"78ce06c62ce345338a85b4de45a1c1fb", X-Trace-Id:"7917e00dd4d3fd50f034285a0c6f68c4", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":3,"username":"stu_2","name":"学生-stu_2","email":"stu_2@test.com","roles":["STUDENT"],"permissions":["score:view","exam:take"],"mustChangePassword":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/classes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzI4NzVjYjI3MDEwNDY3M2I0ODhiYzc3NmMxODRhMDYiLCJpYXQiOjE3OTA2OTUxMTQsImV4cCI6MTc5MDY5NjkxNH0.XgixfYnllexKdwnRSxjsEzWz8v1BlYmY1uJ5OUiwO0Y", Content-Length:"16"]
+             Body = {"name":"班-3"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.clazz.controller.ClassController
+           Method = com.exam.clazz.controller.ClassController#create(ClassCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"24b218091a29469a8acacb4ceec9d86e", X-Trace-Id:"ecc74d50ac0cb58b6d4692ab03de5d2f", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"name":"班-3","teacherId":2,"createdBy":2,"createdTime":"2026-09-29T23:18:34.7420975"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/classes/1/students
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzI4NzVjYjI3MDEwNDY3M2I0ODhiYzc3NmMxODRhMDYiLCJpYXQiOjE3OTA2OTUxMTQsImV4cCI6MTc5MDY5NjkxNH0.XgixfYnllexKdwnRSxjsEzWz8v1BlYmY1uJ5OUiwO0Y", Content-Length:"12"]
+             Body = {"userId":3}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.clazz.controller.ClassController
+           Method = com.exam.clazz.controller.ClassController#joinStudent(Long, JoinStudentRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"79e83bb51b5a488884ef02ac0a6f711e", X-Trace-Id:"8edb025b40a268a357a59bbde35bd483", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /api/exam-taking/exams
+       Parameters = {}
+          Headers = [Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzIiLCJuYW1lIjoi5a2m55SfLXN0dV8yIiwiZW1haWwiOiJzdHVfMkB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiJlYTRjMjhhY2IwZTQ0NzVjYWRmZjU4MmQ4MzhiNjRmOCIsImlhdCI6MTc5MDY5NTExNCwiZXhwIjoxNzkwNjk2OTE0fQ.uJIE3jMq390Zg9Yr9ooG0yv62fEZEnZ3xGREX5t51oY"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.taking.controller.ExamTakingController
+           Method = com.exam.taking.controller.ExamTakingController#myExams()
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"d35b22c8bf57409fa59b77f90cf1b701", X-Trace-Id:"6ab6f0ce503ae6c7c1ae36cc412185a1", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":[{"examId":980400202,"title":"护栏-待考-远","startTime":"2026-10-01T01:18:34.788739","endTime":"2026-10-01T03:18:34.788739","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400201,"title":"护栏-待考-近","startTime":"2026-09-30T01:18:34.788739","endTime":"2026-09-30T03:18:34.788739","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400203,"title":"护栏-进行中-新","startTime":"2026-09-29T23:13:34.788739","endTime":"2026-09-30T01:18:34.788739","durationMinutes":60,"examStatus":1,"group":"ONGOING","canEnter":true,"submissionStatus":1,"remainingSeconds":3299},{"examId":980400204,"title":"护栏-进行中-早","startTime":"2026-09-29T22:48:34.788739","endTime":"2026-09-30T01:18:34.788739","durationMinutes":60,"examStatus":1,"group":"ONGOING","canEnter":true,"submissionStatus":1,"remainingSeconds":1799},{"examId":980400205,"title":"护栏-已完成-近","startTime":"2026-09-28T23:18:34.788739","endTime":"2026-09-29T01:18:34.788739","durationMinutes":60,"examStatus":2,"group":"FINISHED","canEnter":false},{"examId":980400206,"title":"护栏-已完成-久","startTime":"2026-08-30T23:18:34.788739","endTime":"2026-08-31T01:18:34.788739","durationMinutes":60,"examStatus":2,"group":"FINISHED","canEnter":false}]}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-09-29 23:18:35.202 [main] [4b5afba54e33475e87ad60417c5554e5] [69ec02e17c72596b9cb495bdaf9d62d3] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-09-29 23:18:35.204 [main] [4b5afba54e33475e87ad60417c5554e5] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (103ms)
+2026-09-29 23:18:35.214 [main] [298027a15f9f4aaa8e741f6fafa39bad] [e40f899ece83026f6c72439ccbec39b3] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 S39BQ5RU
+2026-09-29 23:18:35.216 [main] [298027a15f9f4aaa8e741f6fafa39bad] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (10ms)
+2026-09-29 23:18:35.501 [main] [5e4a910dc3f7453e9e6b0abeccfd223d] [fae3ebd52902e7ffddb6f979bc6e112a] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_4, inviteCode=S39BQ5RU
+2026-09-29 23:18:35.502 [main] [5e4a910dc3f7453e9e6b0abeccfd223d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (284ms)
+2026-09-29 23:18:35.736 [main] [76a68b74e42d462fb99c31f7e2acee4d] [b8f21b57e5cdca06e56e536fca6a208d] INFO  com.exam.auth.service.AuthService - 用户 tea_4 登录成功，签发双 Token
+2026-09-29 23:18:35.737 [main] [76a68b74e42d462fb99c31f7e2acee4d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (234ms)
+2026-09-29 23:18:36.021 [main] [5ba7ca0843c94c80b651a957bef27d18] [85cf315733274595aaf99427f9517e5a] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_5
+2026-09-29 23:18:36.023 [main] [5ba7ca0843c94c80b651a957bef27d18] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (285ms)
+2026-09-29 23:18:36.358 [main] [7c7b69b03a4a470890cb657be2dc2089] [eff6a9d89f442b41f01a794084b7d202] INFO  com.exam.auth.service.AuthService - 用户 stu_5 登录成功，签发双 Token
+2026-09-29 23:18:36.360 [main] [7c7b69b03a4a470890cb657be2dc2089] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (337ms)
+2026-09-29 23:18:36.690 [main] [26f34a1bd0e54cdbadf73a7d3c83458b] [f95b3f34a826db9e90a8579fba166c08] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_6
+2026-09-29 23:18:36.691 [main] [26f34a1bd0e54cdbadf73a7d3c83458b] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (330ms)
+2026-09-29 23:18:36.966 [main] [51de8724bac04ac7b43c91e8ddb82171] [08a6d338ef2b576fc24c1e1c4a3c8e57] INFO  com.exam.auth.service.AuthService - 用户 stu_6 登录成功，签发双 Token
+2026-09-29 23:18:36.968 [main] [51de8724bac04ac7b43c91e8ddb82171] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (276ms)
+2026-09-29 23:18:36.976 [main] [8ce235e83d10495b89dea1b630b48d74] [] INFO  com.exam.common.RequestIdFilter - GET /api/auth/me -> 200 (8ms)
+2026-09-29 23:18:36.987 [main] [79f3c0c958b94e0ab689deceec4be041] [] INFO  com.exam.common.RequestIdFilter - GET /api/auth/me -> 200 (10ms)
+2026-09-29 23:18:36.995 [main] [36fe0269d6a1429fab20528cdcd3ac5d] [a39104c60f83995f0ce14745e63c73a0] INFO  com.exam.clazz.service.ClassService - 教师 4 创建班级 id=2 name=班-7
+2026-09-29 23:18:36.997 [main] [36fe0269d6a1429fab20528cdcd3ac5d] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes -> 200 (9ms)
+2026-09-29 23:18:37.010 [main] [fa8fce038fd545bb9d6150715c033229] [c12aeaf782270a8feda1910cf36d6824] INFO  com.exam.clazz.service.ClassService - 学生 5 加入班级 2
+2026-09-29 23:18:37.011 [main] [fa8fce038fd545bb9d6150715c033229] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes/2/students -> 200 (13ms)
+2026-09-29 23:18:37.020 [main] [639d5b395cdc47d98e064bd0dcee9647] [2b91b481e88fdf7c15b4fca1f36a226e] INFO  com.exam.clazz.service.ClassService - 学生 6 加入班级 2
+2026-09-29 23:18:37.021 [main] [639d5b395cdc47d98e064bd0dcee9647] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes/2/students -> 200 (9ms)
+2026-09-29 23:18:37.086 [main] [3d7ec09e34b944efbd3e1d5008d50a19] [] INFO  com.exam.common.RequestIdFilter - GET /api/exam-taking/exams -> 200 (36ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"4b5afba54e33475e87ad60417c5554e5", X-Trace-Id:"69ec02e17c72596b9cb495bdaf9d62d3", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImM0NWQzNDQ3M2M2MTQ2MGZhOTc5YTM1YTBjOGUyOGEyIiwiaWF0IjoxNzkwNjk1MTE1LCJleHAiOjE3OTA2OTY5MTV9.KPFi2Zz51EXnI-jx-EHe31yppjr3ob6pMRQYZtcbPCY","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJhNDg4MmRkZmMwMzg0NTgzOThmYzVhODhmNGFjNmVlNSIsImlhdCI6MTc5MDY5NTExNSwiZXhwIjoxNzkxMjk5OTE1fQ.b6mWv6mFqTsKpsq1fjHJ6wLMTu0afRpxz1W89yvIUuk","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImM0NWQzNDQ3M2M2MTQ2MGZhOTc5YTM1YTBjOGUyOGEyIiwiaWF0IjoxNzkwNjk1MTE1LCJleHAiOjE3OTA2OTY5MTV9.KPFi2Zz51EXnI-jx-EHe31yppjr3ob6pMRQYZtcbPCY", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"298027a15f9f4aaa8e741f6fafa39bad", X-Trace-Id:"e40f899ece83026f6c72439ccbec39b3", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"code":"S39BQ5RU","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-09-29T23:18:35.2130655"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_4","password":"Pass1234","name":"教师-tea_4","email":"tea_4@test.com","roleType":"TEACHER","inviteCode":"S39BQ5RU"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"5e4a910dc3f7453e9e6b0abeccfd223d", X-Trace-Id:"fae3ebd52902e7ffddb6f979bc6e112a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_4","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"76a68b74e42d462fb99c31f7e2acee4d", X-Trace-Id:"b8f21b57e5cdca06e56e536fca6a208d", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYzc1NzYzMTQzZmU4NDZlZjhjN2YwYmZjOTk2YzhiYjMiLCJpYXQiOjE3OTA2OTUxMTUsImV4cCI6MTc5MDY5NjkxNX0.4BAhdmPMn4t-6Kigu3NDtqjKfAW5l82GtwDVaSyW_5Q","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiI4YmNiMjRlOTc0NzU0OGZkOWM2MWU0YWFlM2QwMzkyYiIsImlhdCI6MTc5MDY5NTExNSwiZXhwIjoxNzkxMjk5OTE1fQ.s3S3S27Myl4_1krbaxITHyeq0Fv0jZPcu2iUr-N4Ib8","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"110"]
+             Body = {"username":"stu_5","password":"Pass1234","name":"学生-stu_5","email":"stu_5@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"5ba7ca0843c94c80b651a957bef27d18", X-Trace-Id:"85cf315733274595aaf99427f9517e5a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"stu_5","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"7c7b69b03a4a470890cb657be2dc2089", X-Trace-Id:"eff6a9d89f442b41f01a794084b7d202", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzUiLCJuYW1lIjoi5a2m55SfLXN0dV81IiwiZW1haWwiOiJzdHVfNUB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiI4OWQ1NDE5MzI0OGM0MjkwYjkyYjJiODU0Y2U2MjBlYiIsImlhdCI6MTc5MDY5NTExNiwiZXhwIjoxNzkwNjk2OTE2fQ.B8nBDEvb9AaRe6RY_o4svqrJq3iOOkBzdzyqrfwrufo","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiI2NmZhMDEwOGRjMzk0MWE0OTUzYjQyNDRmNzRjZTZlMCIsImlhdCI6MTc5MDY5NTExNiwiZXhwIjoxNzkxMjk5OTE2fQ.Ryg_5v1LXzXKjcTTFPANEqOf0A3JUtA0RqtHbtYFa3U","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"110"]
+             Body = {"username":"stu_6","password":"Pass1234","name":"学生-stu_6","email":"stu_6@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"26f34a1bd0e54cdbadf73a7d3c83458b", X-Trace-Id:"f95b3f34a826db9e90a8579fba166c08", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"stu_6","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"51de8724bac04ac7b43c91e8ddb82171", X-Trace-Id:"08a6d338ef2b576fc24c1e1c4a3c8e57", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzYiLCJuYW1lIjoi5a2m55SfLXN0dV82IiwiZW1haWwiOiJzdHVfNkB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiI1OWNiNzM3OWQ3MmU0NDYzOWMxNjYyNGQ5NzlmOTE3YiIsImlhdCI6MTc5MDY5NTExNiwiZXhwIjoxNzkwNjk2OTE2fQ.WAeOrvKQ5g5AzC5xl2RKigKdokb1GE7Qh6cEmmf1kIc","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJmMWU3NTg2OTVhODU0MDY1OTc2NjI4YTE0MmExYjc0ZCIsImlhdCI6MTc5MDY5NTExNiwiZXhwIjoxNzkxMjk5OTE2fQ.fOhzVYo4UudQIaJNhTisZV5y1UJgJgfMi5oCT6xtH4c","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /api/auth/me
+       Parameters = {}
+          Headers = [Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzUiLCJuYW1lIjoi5a2m55SfLXN0dV81IiwiZW1haWwiOiJzdHVfNUB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiI4OWQ1NDE5MzI0OGM0MjkwYjkyYjJiODU0Y2U2MjBlYiIsImlhdCI6MTc5MDY5NTExNiwiZXhwIjoxNzkwNjk2OTE2fQ.B8nBDEvb9AaRe6RY_o4svqrJq3iOOkBzdzyqrfwrufo"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#me()
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"8ce235e83d10495b89dea1b630b48d74", X-Trace-Id:"ac84d273b5518139df1c60ee94d158d8", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":5,"username":"stu_5","name":"学生-stu_5","email":"stu_5@test.com","roles":["STUDENT"],"permissions":["score:view","exam:take"],"mustChangePassword":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /api/auth/me
+       Parameters = {}
+          Headers = [Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzYiLCJuYW1lIjoi5a2m55SfLXN0dV82IiwiZW1haWwiOiJzdHVfNkB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiI1OWNiNzM3OWQ3MmU0NDYzOWMxNjYyNGQ5NzlmOTE3YiIsImlhdCI6MTc5MDY5NTExNiwiZXhwIjoxNzkwNjk2OTE2fQ.WAeOrvKQ5g5AzC5xl2RKigKdokb1GE7Qh6cEmmf1kIc"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#me()
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"79f3c0c958b94e0ab689deceec4be041", X-Trace-Id:"bbf2d0a5ec0f9aa610aa7832d5aeefec", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":6,"username":"stu_6","name":"学生-stu_6","email":"stu_6@test.com","roles":["STUDENT"],"permissions":["score:view","exam:take"],"mustChangePassword":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/classes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYzc1NzYzMTQzZmU4NDZlZjhjN2YwYmZjOTk2YzhiYjMiLCJpYXQiOjE3OTA2OTUxMTUsImV4cCI6MTc5MDY5NjkxNX0.4BAhdmPMn4t-6Kigu3NDtqjKfAW5l82GtwDVaSyW_5Q", Content-Length:"16"]
+             Body = {"name":"班-7"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.clazz.controller.ClassController
+           Method = com.exam.clazz.controller.ClassController#create(ClassCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"36fe0269d6a1429fab20528cdcd3ac5d", X-Trace-Id:"a39104c60f83995f0ce14745e63c73a0", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"name":"班-7","teacherId":4,"createdBy":4,"createdTime":"2026-09-29T23:18:36.9947113"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/classes/2/students
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYzc1NzYzMTQzZmU4NDZlZjhjN2YwYmZjOTk2YzhiYjMiLCJpYXQiOjE3OTA2OTUxMTUsImV4cCI6MTc5MDY5NjkxNX0.4BAhdmPMn4t-6Kigu3NDtqjKfAW5l82GtwDVaSyW_5Q", Content-Length:"12"]
+             Body = {"userId":5}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.clazz.controller.ClassController
+           Method = com.exam.clazz.controller.ClassController#joinStudent(Long, JoinStudentRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"fa8fce038fd545bb9d6150715c033229", X-Trace-Id:"c12aeaf782270a8feda1910cf36d6824", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/classes/2/students
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYzc1NzYzMTQzZmU4NDZlZjhjN2YwYmZjOTk2YzhiYjMiLCJpYXQiOjE3OTA2OTUxMTUsImV4cCI6MTc5MDY5NjkxNX0.4BAhdmPMn4t-6Kigu3NDtqjKfAW5l82GtwDVaSyW_5Q", Content-Length:"12"]
+             Body = {"userId":6}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.clazz.controller.ClassController
+           Method = com.exam.clazz.controller.ClassController#joinStudent(Long, JoinStudentRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"639d5b395cdc47d98e064bd0dcee9647", X-Trace-Id:"2b91b481e88fdf7c15b4fca1f36a226e", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /api/exam-taking/exams
+       Parameters = {}
+          Headers = [Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzUiLCJuYW1lIjoi5a2m55SfLXN0dV81IiwiZW1haWwiOiJzdHVfNUB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiI4OWQ1NDE5MzI0OGM0MjkwYjkyYjJiODU0Y2U2MjBlYiIsImlhdCI6MTc5MDY5NTExNiwiZXhwIjoxNzkwNjk2OTE2fQ.B8nBDEvb9AaRe6RY_o4svqrJq3iOOkBzdzyqrfwrufo"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.taking.controller.ExamTakingController
+           Method = com.exam.taking.controller.ExamTakingController#myExams()
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"3d7ec09e34b944efbd3e1d5008d50a19", X-Trace-Id:"0494ccc47ac409dc297bf0a2fad55306", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":[{"examId":980400154,"title":"护栏-无关考试-54","startTime":"2026-10-04T05:18:37.022839","endTime":"2026-10-04T06:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400153,"title":"护栏-无关考试-53","startTime":"2026-10-04T04:18:37.022839","endTime":"2026-10-04T05:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400152,"title":"护栏-无关考试-52","startTime":"2026-10-04T03:18:37.022839","endTime":"2026-10-04T04:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400151,"title":"护栏-无关考试-51","startTime":"2026-10-04T02:18:37.022839","endTime":"2026-10-04T03:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400150,"title":"护栏-无关考试-50","startTime":"2026-10-04T01:18:37.022839","endTime":"2026-10-04T02:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400149,"title":"护栏-无关考试-49","startTime":"2026-10-04T00:18:37.022839","endTime":"2026-10-04T01:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400148,"title":"护栏-无关考试-48","startTime":"2026-10-03T23:18:37.022839","endTime":"2026-10-04T00:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400147,"title":"护栏-无关考试-47","startTime":"2026-10-03T22:18:37.022839","endTime":"2026-10-03T23:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400146,"title":"护栏-无关考试-46","startTime":"2026-10-03T21:18:37.022839","endTime":"2026-10-03T22:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400145,"title":"护栏-无关考试-45","startTime":"2026-10-03T20:18:37.022839","endTime":"2026-10-03T21:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400144,"title":"护栏-无关考试-44","startTime":"2026-10-03T19:18:37.022839","endTime":"2026-10-03T20:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400143,"title":"护栏-无关考试-43","startTime":"2026-10-03T18:18:37.022839","endTime":"2026-10-03T19:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400142,"title":"护栏-无关考试-42","startTime":"2026-10-03T17:18:37.022839","endTime":"2026-10-03T18:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400141,"title":"护栏-无关考试-41","startTime":"2026-10-03T16:18:37.022839","endTime":"2026-10-03T17:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400140,"title":"护栏-无关考试-40","startTime":"2026-10-03T15:18:37.022839","endTime":"2026-10-03T16:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400139,"title":"护栏-无关考试-39","startTime":"2026-10-03T14:18:37.022839","endTime":"2026-10-03T15:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400138,"title":"护栏-无关考试-38","startTime":"2026-10-03T13:18:37.022839","endTime":"2026-10-03T14:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400137,"title":"护栏-无关考试-37","startTime":"2026-10-03T12:18:37.022839","endTime":"2026-10-03T13:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400136,"title":"护栏-无关考试-36","startTime":"2026-10-03T11:18:37.022839","endTime":"2026-10-03T12:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400135,"title":"护栏-无关考试-35","startTime":"2026-10-03T10:18:37.022839","endTime":"2026-10-03T11:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400134,"title":"护栏-无关考试-34","startTime":"2026-10-03T09:18:37.022839","endTime":"2026-10-03T10:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400133,"title":"护栏-无关考试-33","startTime":"2026-10-03T08:18:37.022839","endTime":"2026-10-03T09:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400132,"title":"护栏-无关考试-32","startTime":"2026-10-03T07:18:37.022839","endTime":"2026-10-03T08:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400131,"title":"护栏-无关考试-31","startTime":"2026-10-03T06:18:37.022839","endTime":"2026-10-03T07:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400130,"title":"护栏-无关考试-30","startTime":"2026-10-03T05:18:37.022839","endTime":"2026-10-03T06:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400129,"title":"护栏-无关考试-29","startTime":"2026-10-03T04:18:37.022839","endTime":"2026-10-03T05:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400128,"title":"护栏-无关考试-28","startTime":"2026-10-03T03:18:37.022839","endTime":"2026-10-03T04:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400127,"title":"护栏-无关考试-27","startTime":"2026-10-03T02:18:37.022839","endTime":"2026-10-03T03:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400126,"title":"护栏-无关考试-26","startTime":"2026-10-03T01:18:37.022839","endTime":"2026-10-03T02:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400125,"title":"护栏-无关考试-25","startTime":"2026-10-03T00:18:37.022839","endTime":"2026-10-03T01:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400124,"title":"护栏-无关考试-24","startTime":"2026-10-02T23:18:37.022839","endTime":"2026-10-03T00:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400123,"title":"护栏-无关考试-23","startTime":"2026-10-02T22:18:37.022839","endTime":"2026-10-02T23:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400122,"title":"护栏-无关考试-22","startTime":"2026-10-02T21:18:37.022839","endTime":"2026-10-02T22:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400121,"title":"护栏-无关考试-21","startTime":"2026-10-02T20:18:37.022839","endTime":"2026-10-02T21:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400120,"title":"护栏-无关考试-20","startTime":"2026-10-02T19:18:37.022839","endTime":"2026-10-02T20:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400119,"title":"护栏-无关考试-19","startTime":"2026-10-02T18:18:37.022839","endTime":"2026-10-02T19:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400118,"title":"护栏-无关考试-18","startTime":"2026-10-02T17:18:37.022839","endTime":"2026-10-02T18:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400117,"title":"护栏-无关考试-17","startTime":"2026-10-02T16:18:37.022839","endTime":"2026-10-02T17:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400116,"title":"护栏-无关考试-16","startTime":"2026-10-02T15:18:37.022839","endTime":"2026-10-02T16:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400115,"title":"护栏-无关考试-15","startTime":"2026-10-02T14:18:37.022839","endTime":"2026-10-02T15:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400114,"title":"护栏-无关考试-14","startTime":"2026-10-02T13:18:37.022839","endTime":"2026-10-02T14:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400113,"title":"护栏-无关考试-13","startTime":"2026-10-02T12:18:37.022839","endTime":"2026-10-02T13:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400112,"title":"护栏-无关考试-12","startTime":"2026-10-02T11:18:37.022839","endTime":"2026-10-02T12:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400111,"title":"护栏-无关考试-11","startTime":"2026-10-02T10:18:37.022839","endTime":"2026-10-02T11:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400110,"title":"护栏-无关考试-10","startTime":"2026-10-02T09:18:37.022839","endTime":"2026-10-02T10:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400109,"title":"护栏-无关考试-9","startTime":"2026-10-02T08:18:37.022839","endTime":"2026-10-02T09:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400108,"title":"护栏-无关考试-8","startTime":"2026-10-02T07:18:37.022839","endTime":"2026-10-02T08:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400107,"title":"护栏-无关考试-7","startTime":"2026-10-02T06:18:37.022839","endTime":"2026-10-02T07:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400106,"title":"护栏-无关考试-6","startTime":"2026-10-02T05:18:37.022839","endTime":"2026-10-02T06:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false},{"examId":980400105,"title":"护栏-无关考试-5","startTime":"2026-10-02T04:18:37.022839","endTime":"2026-10-02T05:18:37.022839","durationMinutes":60,"examStatus":0,"group":"UPCOMING","canEnter":false}]}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 30.15 s <<< FAILURE! -- in com.exam.taking.MyExamsListScopeIntegrationTest
+[ERROR] com.exam.taking.MyExamsListScopeIntegrationTest.listOrdersByGroupPriorityThenProximity -- Time elapsed: 6.678 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: §12.1：待考→进行中→已完成；组内按开始时间距当前时刻近→远（待考先考的先显示，进行中/已完成最近开始的先显示） ==> expected: <[980400201, 980400202, 980400203, 980400204, 980400205, 980400206]> but was: <[980400202, 980400201, 980400203, 980400204, 980400205, 980400206]>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)
+	at com.exam.taking.MyExamsListScopeIntegrationTest.listOrdersByGroupPriorityThenProximity(MyExamsListScopeIntegrationTest.java:178)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.taking.MyExamsListScopeIntegrationTest.myEarlierExamStaysVisibleWhenSystemPublishedExamsExceedCap -- Time elapsed: 2.004 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 本人的较早考试必须仍在列表（缺陷：全局窗口取数把它挤出了第 1 页 50 条）；实际=[980400154, 980400153, 980400152, 980400151, 980400150, 980400149, 980400148, 980400147, 980400146, 980400145, 980400144, 980400143, 980400142, 980400141, 980400140, 980400139, 980400138, 980400137, 980400136, 980400135, 980400134, 980400133, 980400132, 980400131, 980400130, 980400129, 980400128, 980400127, 980400126, 980400125, 980400124, 980400123, 980400122, 980400121, 980400120, 980400119, 980400118, 980400117, 980400116, 980400115, 980400114, 980400113, 980400112, 980400111, 980400110, 980400109, 980400108, 980400107, 980400106, 980400105] ==> expected: <true> but was: <false>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:63)
+	at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:36)
+	at org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:214)
+	at com.exam.taking.MyExamsListScopeIntegrationTest.myEarlierExamStaysVisibleWhenSystemPublishedExamsExceedCap(MyExamsListScopeIntegrationTest.java:121)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   MyExamsListScopeIntegrationTest.listOrdersByGroupPriorityThenProximity:178 §12.1：待考→进行中→已完成；组内按开始时间距当前时刻近→远（待考先考的先显示，进行中/已完成最近开始的先显示） ==> expected: <[980400201, 980400202, 980400203, 980400204, 980400205, 980400206]> but was: <[980400202, 980400201, 980400203, 980400204, 980400205, 980400206]>
+[ERROR]   MyExamsListScopeIntegrationTest.myEarlierExamStaysVisibleWhenSystemPublishedExamsExceedCap:121 本人的较早考试必须仍在列表（缺陷：全局窗口取数把它挤出了第 1 页 50 条）；实际=[980400154, 980400153, 980400152, 980400151, 980400150, 980400149, 980400148, 980400147, 980400146, 980400145, 980400144, 980400143, 980400142, 980400141, 980400140, 980400139, 980400138, 980400137, 980400136, 980400135, 980400134, 980400133, 980400132, 980400131, 980400130, 980400129, 980400128, 980400127, 980400126, 980400125, 980400124, 980400123, 980400122, 980400121, 980400120, 980400119, 980400118, 980400117, 980400116, 980400115, 980400114, 980400113, 980400112, 980400111, 980400110, 980400109, 980400108, 980400107, 980400106, 980400105] ==> expected: <true> but was: <false>
+[INFO] 
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:18 min
+[INFO] Finished at: 2026-09-29T23:18:38+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] See D:\code\examOnline\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+EXIT=1

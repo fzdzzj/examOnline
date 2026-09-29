@@ -120,9 +120,17 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
 
     private long createExam(String token, long paperId, LocalDateTime start,
                             LocalDateTime end, int duration) throws Exception {
+        return createExam(token, paperId, null, start, end, duration);
+    }
+
+    private long createExam(String token, long paperId, Long classId, LocalDateTime start,
+                            LocalDateTime end, int duration) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("title", unique("考试"));
         body.put("paperId", paperId);
+        if (classId != null) {
+            body.put("classId", classId);
+        }
         body.put("startTime", start.toString());
         body.put("endTime", end.toString());
         body.put("durationMinutes", duration);
@@ -510,12 +518,22 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
     void examListGroups() throws Exception {
         String teacher = registerTeacher();
         String student = registerStudent();
+        long studentId = jwtUtil.parseAccessToken(student).getId();
+        ObjectNode classBody = objectMapper.createObjectNode();
+        classBody.put("name", unique("班级"));
+        long classId = perform(jsonPost("/api/classes", teacher,
+                objectMapper.writeValueAsString(classBody)), 200).get("data").get("id").asLong();
+        ObjectNode joinBody = objectMapper.createObjectNode();
+        joinBody.put("userId", studentId);
+        perform(jsonPost("/api/classes/" + classId + "/students", teacher,
+                objectMapper.writeValueAsString(joinBody)), 200);
+
         long paperId = preparePaper(teacher);
 
-        long ongoing = createExam(teacher, paperId,
+        long ongoing = createExam(teacher, paperId, classId,
                 LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
         perform(jsonPost("/api/exams/" + ongoing + "/publish", teacher, null), 200);
-        long upcoming = createExam(teacher, paperId,
+        long upcoming = createExam(teacher, paperId, classId,
                 LocalDateTime.now().plusHours(1), LocalDateTime.now().plusHours(3), 30);
         perform(jsonPost("/api/exams/" + upcoming + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
@@ -542,7 +560,7 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
         } finally {
             SecurityUtil.clear();
         }
-        long ended = createExam(teacher, paperId,
+        long ended = createExam(teacher, paperId, classId,
                 LocalDateTime.now().minusHours(2), LocalDateTime.now().minusHours(1), 30);
         perform(jsonPost("/api/exams/" + ended + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();

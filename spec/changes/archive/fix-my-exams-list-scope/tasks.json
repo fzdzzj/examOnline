@@ -1,0 +1,64 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：前置核对（开工门）",
+    "task": "核对 K1–K5，任一不符即停手回报；本变更不需要 Docker、不连共享 dev、不写 dev 库、不 push、不建 PR",
+    "steps": [
+      { "step": "K1 分支正确（feature/update-monitor-overview-submission-projection）", "completed": true },
+      { "step": "K2 git rev-parse HEAD = 7ceabef", "completed": true },
+      { "step": "K3 git status --porcelain 只有 ?? docs/backend-optimization-candidates.md（全程不读不改不暂存），本变更新增目录除外", "completed": true },
+      { "step": "K4 spec/changes 仅 archive/ 与 IMPLEMENTATION_STATUS.md（其后按本变更预期新增 fix-my-exams-list-scope/）", "completed": true },
+      { "step": "K5 基线 327/0/0/1：不预跑，由阶段 3 门禁现场取证", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "K1–K4 现场核对（2026-09-29，开工时与本阶段回报前各复核一次）：`git rev-parse --abbrev-ref HEAD` = feature/update-monitor-overview-submission-projection；`git rev-parse HEAD` = 7ceabef291162bbcce634689a1f2852b34405cc2（短 7ceabef，提交标题 docs(spec): reattribute-monitor-overview-projection 收口——GO、合入 anti-cheat 基线并归档）；`git status --porcelain` 仅 `?? docs/backend-optimization-candidates.md`（全程未读未改未暂存；本变更目录 spec/changes/fix-my-exams-list-scope/ 为预期新增，亦见此处输出）；K4 开工时核对 spec/changes 下仅 `archive/` 与 `IMPLEMENTATION_STATUS.md`。K5 未预跑（按任务书允许），其证据由阶段 3 门禁产出。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：口径核定（只读）",
+    "task": "产出「我的考试」范围/排序职责/上界三项判定并落 evidence；无出处者写明并停手",
+    "steps": [
+      { "step": "读码复核现行为与三项问题陈述（含前端是否补齐分组/排序），核实成立才继续", "completed": true },
+      { "step": "按 docs/需求决策记录.md、spec/specs/*、现码与前端逐渠道给归属判定与出处；边界与「近→远」读法登记为显式推定", "completed": true },
+      { "step": "写 evidence/scope-judgment.md 与 proposal.md（含停手条款自查）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "口径判定已落 evidence/scope-judgment.md（2026-09-29，7ceabef 工作树）。核实结论：三项问题陈述（全局窗口挤掉本人考试；列表序无 §12.1 分组优先级/组内近→远；前端零分组零排序）均成立——myExams 现码 Page(1,50)+published=1+start_time DESC 全局取数后再交本人答卷；前端 useStudentTaking.ts 注释「后端已经分好组，前端不再按时间重排或过滤」、StudentExamList.vue「三态只读后端 group……一处都不推」。判定 A：范围=published=1 ∧ 未软删 ∧ (本人有答卷 ∪ 本人当前班级绑定的非补考考试 ∪ 本人为候选人的补考)，逐渠道出处（端点语义我的考试、说明书 4.2 发布可见、§12.6 转班成绩随人、class-management 应考名单地基、absence-makeup 名单限制与实现注记）见判定文；两处登记推定（补考非候选不可见、无班级且无答卷不可不见）按并集直接推论并以红测试显式钉住。判定 B：分组与排序职责都在后端（前端不补，§12.1 须在 myExams 实现）；「近→远」字面读法=开始时间距当前时刻近→远。判定 C：保留 50 上界但改为「我的考试」集合内（排序后截断）。撤回路径不存在（setPublished 仅 create=0 与 publish=1）、软删由 @TableLogic 过滤维持。既有测试影响预登记：ExamTakingIntegrationTest.examListGroups 与 ScalarProjectionGuardTest S1 需按新口径补真实指派夹具（断言不削弱）。停手条款自查：无停手项。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：红测试（先红留日志）",
+    "task": "新增护栏用例断言新口径（超过上限时本人较早考试仍在列表；分组优先级与组内近→远），在现实现上确定性红并保留原始红日志",
+    "steps": [
+      { "step": "写自析构夹具用例（@AfterEach 清场上自建考试/答卷/名单/班级；夹具不挤占他例窗口）", "completed": true },
+      { "step": "在现实现上跑红：红因须指向取数窗口，而非夹具/环境失败；保留原始红日志", "completed": true },
+      { "step": "红日志与运行命令落 evidence/（短 SHA、四计数、退出码）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "新增 src/test/java/com/exam/taking/MyExamsListScopeIntegrationTest.java（带 @AfterEach 逐表自清理；夹具采用 980_400_000L 以上专有段位，不与既有窗口冲突）。在现实现上以 ./mvnw test -Dtest=MyExamsListScopeIntegrationTest 执行：Tests run: 2, Failures: 2, Errors: 0, Skipped: 0，BUILD FAILURE，退出码 1（2026-09-29T23:18:38+08:00）。红因指认：① myEarlierExamStaysVisibleWhenSystemPublishedExamsExceedCap 失败信息：本人的较早考试必须仍在列表（缺陷：全局窗口取数把它挤出了第 1 页 50 条）；② listOrdersByGroupPriorityThenProximity 失败信息：§12.1：待考→进行中→已完成；组内按开始时间距当前时刻近→远（待考先考的先显示，进行中/已完成最近开始的先显示） ==> expected: <[980400201, 980400202, 980400203, 980400204, 980400205, 980400206]> but was: <[980400202, 980400201, 980400203, 980400204, 980400205, 980400206]>。原始红日志落 evidence/red-run1.log（96548B），短 SHA 7ceabef。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：最小实现 + 门禁",
+    "task": "取数范围/排序一类的最小实现；s1 列投影不回退；受影响既有夹具按新口径修（断言不削弱）；仓库根 mvnw.cmd clean test 四计数+BUILD+退出码+revision",
+    "steps": [
+      { "step": "改 ExamTakingService.myExams：范围=答卷∪班级∪名单∧published；排序=分组优先级+组内近→远（同距确定性兜底）；50 上界作用于本人集合内；空集合短路", "completed": true },
+      { "step": "受影响既有夹具修口径：examListGroups 建班入班+classId（断言保留）；ScalarProjectionGuardTest S1 补 class_id+user_class、顺序断言改分组优先级（投影三断言不动）", "completed": true },
+      { "step": "新用例转绿；门禁四计数 + BUILD + 退出码 + revision 落 evidence/；偶发红按协议原样重跑并记录两次", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "最小实现完成：(1) ExamTakingService.myExams() 注入 UserClassMapper 与 ExamCandidateMapper，先以单次标量投影窄读本人全部答卷获取已答 exam_id/status/deadline_time，再查本人班级非补考已发布考试与本人补考候选名单求并集，空集短路；随后以 IN 查询已发布未软删考试实体，内存按 §12.1 分组优先级（UPCOMING->ONGOING->FINISHED）及开始时间距当前近->远排序（同距按开始时间与 ID 兜底），截断 50 条输出；(2) 夹具适配：ExamTakingIntegrationTest.examListGroups 增加建班入班与考试 classId 关联（断言全保留）；ScalarProjectionGuardTest 补建班入班及班级关联，顺序断言按新分组优先级对齐，列投影 3 断言保持不变；(3) s1 投影未回退证据：ScalarProjectionGuardTest 执行时捕获到目标 SQL 为 CAPTURED_S1_SQL=SELECT exam_id,status,deadline_time FROM exam_submissions WHERE (student_id = ?)，长字段 null 断言与执行次数 1、返回行数 2 均全绿；(4) 仓库根 ./mvnw clean test 门禁首跑即绿：Tests run: 329, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，退出码 0，Finished at: 2026-09-30T01:52:54+08:00，基线 327 -> 329（+2 护栏用例，Skipped 1 不变），原始日志落 evidence/gate-green.log。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：收口",
+    "task": "GO 才合入 spec-delta；README 归档行与遗留 #20 更新；两处一行注记；tasks 回勾；sha256 清单 rc=0；AGENTS 自查；显式暂存提交",
+    "steps": [
+      { "step": "spec/specs/exam-taking/spec.md 合入 delta（仅 GO 且验收成立）；spec/README.md 归档行 + 遗留 #20 更新为真实状态（不删历史事实与两次红记录）", "completed": true },
+      { "step": "两处一行注记：reattribute archive 目录 PREREGISTRATION 冻结入口/测量 rev 与 src 零差异；data-access 基线 implemented-sites 括注补 anti-cheat 监考总览同款条款指针", "completed": true },
+      { "step": "tasks.json 回勾（未做留 false）；evidence sha256 清单 `sha256sum -c` rc=0 且只列 git 跟踪文件（*.log 按负向规则入库）；AGENTS 四条自查 + wrapper 自查；仅显式暂存本任务文件后提交", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "收口执行完毕：(1) spec/specs/exam-taking/spec.md 合入 Requirement「学生考试列表」及 5 个 Scenario，更新来源说明；(2) spec/README.md 在当前状态追加收口记录、能力域表补登记 fix-my-exams-list-scope、归档表新增归档行、遗留 #20 标注「根因＝列表取数窗口口径，已收口」并完整保留既有历史事实与两次红记录，已收口清单补第 15 项；(3) 两处一行注记已补：archive/reattribute-monitor-overview-projection/proposal.md 补 PREREGISTRATION 冻结入口与测量 rev 零差异注记，spec/specs/data-access/spec.md 标量列投影已实施站点括注补 anti-cheat 监考大屏条款指针；(4) 变更目录移入 spec/changes/archive/fix-my-exams-list-scope/，spec/changes/ 下仅 archive/ 与 IMPLEMENTATION_STATUS.md；(5) evidence sha256 清单经 sha256sum -c 校验全部 OK，rc=0，仅列入 git 跟踪文件；(6) AGENTS 四条自查与 wrapper 自查全绿；(7) 仅显式暂存本任务文件后提交。"
+  }
+]
