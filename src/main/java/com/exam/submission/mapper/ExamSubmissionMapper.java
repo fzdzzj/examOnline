@@ -96,4 +96,13 @@ public interface ExamSubmissionMapper extends BaseMapper<ExamSubmission> {
                 .eq(ExamSubmission::getExamId, examId)
                 .eq(ExamSubmission::getStudentId, studentId));
     }
+
+    /**
+     * 题数分母的窄读：只取一行个人快照（{@code paper_json}），供监考总览在答卷主语句
+     * 列投影后解析题目总数——主语句不再载入长字段，读带宽从 O(人数×快照) 降为 O(1)。
+     * 无可用快照返回 null（调用方按 0 题处理），谓词与站点 s6 冻结测量形态一致。
+     */
+    @Select("SELECT paper_json FROM exam_submissions WHERE exam_id = #{examId} "
+            + "AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1")
+    String selectFirstPaperJson(@Param("examId") Long examId);
 }

@@ -76,12 +76,15 @@ public class MonitorService {
     /** 监考大屏总览：人数统计 + 逐学生进度 + 异常高亮（异常学生排前）。 */
     public MonitorOverviewResponse overview(Long examId) {
         Exam exam = requireOwnedExam(examId);
+        // 列投影：本方法只消费 student_id/status 两个标量列，不带 answers/paper_json 长字段
+        // （单行快照可 ~20KB，全量取回是纯读带宽浪费）——题数分母改由至多一次窄读获取。
         List<ExamSubmission> submissions = submissionMapper.selectList(
-                Wrappers.<ExamSubmission>lambdaQuery().eq(ExamSubmission::getExamId, examId));
+                Wrappers.<ExamSubmission>lambdaQuery().eq(ExamSubmission::getExamId, examId)
+                        .select(ExamSubmission::getStudentId, ExamSubmission::getStatus));
 
         List<Long> studentIds = submissions.stream().map(ExamSubmission::getStudentId).distinct().toList();
         Map<Long, String> names = resolveNames(studentIds);
-        int totalQuestions = resolveTotalQuestions(submissions);
+        int totalQuestions = resolveTotalQuestions(examId, submissions);
 
         // 在线判定只针对进行中学生（已交卷不再有心跳，直接归入已交卷态）
         List<Long> activeIds = submissions.stream()
@@ -188,16 +191,22 @@ public class MonitorService {
     }
 
     /**
-     * 题目总数：任取一份个人快照解析 questions 数组长度——同一场考试题数一致，
+     * 题目总数：窄读任取一份个人快照解析 questions 数组长度——同一场考试题数一致，
      * 且快照即学生作答所见（进入时锁定），比试卷表更贴近真实进度分母。
+     *
+     * <p>主语句列投影后不再携带 paper_json，题数改由一次窄读（LIMIT 1）获取；
+     * 主语句 0 行时不发起窄读（无行集可言），无可用快照按 0 题处理——
+     * 与投影前"取首份非空快照、找不到记 0"的既有口径一致。
      */
-    private int resolveTotalQuestions(List<ExamSubmission> submissions) {
-        return submissions.stream()
-                .map(ExamSubmission::getPaperJson)
-                .filter(json -> json != null && !json.isBlank())
-                .findFirst()
-                .map(this::countQuestions)
-                .orElse(0);
+    private int resolveTotalQuestions(Long examId, List<ExamSubmission> submissions) {
+        if (submissions.isEmpty()) {
+            return 0;
+        }
+        String paperJson = submissionMapper.selectFirstPaperJson(examId);
+        if (paperJson == null || paperJson.isBlank()) {
+            return 0;
+        }
+        return countQuestions(paperJson);
     }
 
     private int countQuestions(String paperJson) {
