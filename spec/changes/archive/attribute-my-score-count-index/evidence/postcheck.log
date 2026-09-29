@@ -1,0 +1,22 @@
+atIso=2026-09-29T04:27:41.335Z
+--- counts:
+exam_id	c
+930000050	50
+930000200	200
+930001000	1000
+930003000	3000
+
+--- SHOW INDEX:
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+exam_submissions	0	PRIMARY	1	id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	0	uk_exam_student	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	0	uk_exam_student	2	student_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_sweep	1	status	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_sweep	2	deadline_time	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_exam_submit	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_exam_submit	2	submit_time	A	0	NULL	NULL	YES	BTREE			YES	NULL
+exam_submissions	1	idx_submissions_grading	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_grading	2	grading_status	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_republish	1	status	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_republish	2	answers_missing	A	0	NULL	NULL	YES	BTREE			YES	NULL
+

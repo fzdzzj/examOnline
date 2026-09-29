@@ -1,0 +1,72 @@
+=== FORCE EXPLAIN shape=1000 x=40.0 exit=0
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	exam_submissions	NULL	range	idx_submissions_score_rank	idx_submissions_score_rank	13	NULL	996	100.00	Using where; Using index
+
+=== FORCE ANALYZE shape=1000 x=40.0 round=1 exit=0 at=2026-09-29T04:25:26.909Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=300 rows=1) (actual time=0.23..0.23 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.exam_id = 930001000) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=200 rows=996) (actual time=0.0322..0.203 rows=996 loops=1)\n        -> Covering index range scan on exam_submissions using idx_submissions_score_rank over (exam_id = 930001000 AND status = 3 AND 40.0 < total_score)  (cost=200 rows=996) (actual time=0.0296..0.125 rows=996 loops=1)\n
+
+=== FORCE ANALYZE shape=1000 x=40.0 round=2 exit=0 at=2026-09-29T04:25:27.071Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=300 rows=1) (actual time=0.223..0.223 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.exam_id = 930001000) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=200 rows=996) (actual time=0.0224..0.197 rows=996 loops=1)\n        -> Covering index range scan on exam_submissions using idx_submissions_score_rank over (exam_id = 930001000 AND status = 3 AND 40.0 < total_score)  (cost=200 rows=996) (actual time=0.0205..0.118 rows=996 loops=1)\n
+
+=== FORCE ANALYZE shape=1000 x=40.0 round=3 exit=0 at=2026-09-29T04:25:27.249Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=300 rows=1) (actual time=0.34..0.34 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.exam_id = 930001000) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=200 rows=996) (actual time=0.0724..0.304 rows=996 loops=1)\n        -> Covering index range scan on exam_submissions using idx_submissions_score_rank over (exam_id = 930001000 AND status = 3 AND 40.0 < total_score)  (cost=200 rows=996) (actual time=0.0666..0.197 rows=996 loops=1)\n
+
+=== FORCE EXPLAIN shape=3000 x=40.0 exit=0
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	exam_submissions	NULL	range	idx_submissions_score_rank	idx_submissions_score_rank	13	NULL	2990	100.00	Using where; Using index
+
+=== FORCE ANALYZE shape=3000 x=40.0 round=1 exit=0 at=2026-09-29T04:25:27.693Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=899 rows=1) (actual time=1.21..1.21 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.exam_id = 930003000) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=600 rows=2990) (actual time=0.198..1.08 rows=2990 loops=1)\n        -> Covering index range scan on exam_submissions using idx_submissions_score_rank over (exam_id = 930003000 AND status = 3 AND 40.0 < total_score)  (cost=600 rows=2990) (actual time=0.191..0.676 rows=2990 loops=1)\n
+
+=== FORCE ANALYZE shape=3000 x=40.0 round=2 exit=0 at=2026-09-29T04:25:27.916Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=899 rows=1) (actual time=1.05..1.05 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.exam_id = 930003000) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=600 rows=2990) (actual time=0.0749..0.923 rows=2990 loops=1)\n        -> Covering index range scan on exam_submissions using idx_submissions_score_rank over (exam_id = 930003000 AND status = 3 AND 40.0 < total_score)  (cost=600 rows=2990) (actual time=0.0716..0.528 rows=2990 loops=1)\n
+
+=== FORCE ANALYZE shape=3000 x=40.0 round=3 exit=0 at=2026-09-29T04:25:28.132Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=899 rows=1) (actual time=1.17..1.17 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.exam_id = 930003000) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=600 rows=2990) (actual time=0.143..1.03 rows=2990 loops=1)\n        -> Covering index range scan on exam_submissions using idx_submissions_score_rank over (exam_id = 930003000 AND status = 3 AND 40.0 < total_score)  (cost=600 rows=2990) (actual time=0.136..0.614 rows=2990 loops=1)\n
+
+=== FORCE EXPLAIN shape=3000 x=51.9 exit=0
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	exam_submissions	NULL	range	idx_submissions_score_rank	idx_submissions_score_rank	13	NULL	1800	100.00	Using where; Using index
+
+=== FORCE ANALYZE shape=3000 x=51.9 round=1 exit=0 at=2026-09-29T04:25:28.605Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=541 rows=1) (actual time=0.763..0.763 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.exam_id = 930003000) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 51.9))  (cost=361 rows=1800) (actual time=0.0654..0.679 rows=1800 loops=1)\n        -> Covering index range scan on exam_submissions using idx_submissions_score_rank over (exam_id = 930003000 AND status = 3 AND 51.9 < total_score)  (cost=361 rows=1800) (actual time=0.062..0.355 rows=1800 loops=1)\n
+
+=== FORCE ANALYZE shape=3000 x=51.9 round=2 exit=0 at=2026-09-29T04:25:28.806Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=541 rows=1) (actual time=0.646..0.646 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.exam_id = 930003000) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 51.9))  (cost=361 rows=1800) (actual time=0.0431..0.566 rows=1800 loops=1)\n        -> Covering index range scan on exam_submissions using idx_submissions_score_rank over (exam_id = 930003000 AND status = 3 AND 51.9 < total_score)  (cost=361 rows=1800) (actual time=0.0403..0.323 rows=1800 loops=1)\n
+
+=== FORCE ANALYZE shape=3000 x=51.9 round=3 exit=0 at=2026-09-29T04:25:29.013Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=541 rows=1) (actual time=0.67..0.67 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.exam_id = 930003000) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 51.9))  (cost=361 rows=1800) (actual time=0.0484..0.589 rows=1800 loops=1)\n        -> Covering index range scan on exam_submissions using idx_submissions_score_rank over (exam_id = 930003000 AND status = 3 AND 51.9 < total_score)  (cost=361 rows=1800) (actual time=0.0447..0.352 rows=1800 loops=1)\n
+
+=== NOHINT ANALYZE shape=1000 x=40.0 round=1 exit=0 at=2026-09-29T04:25:29.234Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=91.7 rows=1) (actual time=1.47..1.47 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=78.8 rows=128) (actual time=0.191..1.42 rows=996 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=78.8 rows=1000) (actual time=0.185..1.28 rows=1000 loops=1)\n
+
+=== NOHINT ANALYZE shape=1000 x=40.0 round=2 exit=0 at=2026-09-29T04:25:29.449Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=91.7 rows=1) (actual time=0.985..0.985 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=78.8 rows=128) (actual time=0.15..0.94 rows=996 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=78.8 rows=1000) (actual time=0.145..0.817 rows=1000 loops=1)\n
+
+=== NOHINT ANALYZE shape=1000 x=40.0 round=3 exit=0 at=2026-09-29T04:25:29.671Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=91.7 rows=1) (actual time=1.04..1.04 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=78.8 rows=128) (actual time=0.188..0.995 rows=996 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=78.8 rows=1000) (actual time=0.182..0.872 rows=1000 loops=1)\n
+
+=== NOHINT ANALYZE shape=3000 x=40.0 round=1 exit=0 at=2026-09-29T04:25:29.897Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=143 rows=1) (actual time=2.76..2.77 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=105 rows=385) (actual time=0.264..2.64 rows=2990 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=105 rows=3000) (actual time=0.258..2.26 rows=3000 loops=1)\n
+
+=== NOHINT ANALYZE shape=3000 x=40.0 round=2 exit=0 at=2026-09-29T04:25:30.138Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=143 rows=1) (actual time=2.83..2.83 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=105 rows=385) (actual time=0.299..2.71 rows=2990 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=105 rows=3000) (actual time=0.293..2.34 rows=3000 loops=1)\n
+
+=== NOHINT ANALYZE shape=3000 x=40.0 round=3 exit=0 at=2026-09-29T04:25:30.364Z
+EXPLAIN
+-> Aggregate: count(0)  (cost=143 rows=1) (actual time=2.7..2.7 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=105 rows=385) (actual time=0.27..2.57 rows=2990 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=105 rows=3000) (actual time=0.264..2.21 rows=3000 loops=1)\n
+

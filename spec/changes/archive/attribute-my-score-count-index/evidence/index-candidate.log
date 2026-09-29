@@ -1,0 +1,36 @@
+atIso=2026-09-29T04:21:57.745Z exit=0
+ALTER TABLE exam_submissions ADD INDEX idx_submissions_score_rank (exam_id, status, total_score);
+
+--- SHOW CREATE TABLE:
+*************************** 1. row ***************************
+       Table: exam_submissions
+Create Table: CREATE TABLE `exam_submissions` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `exam_id` bigint NOT NULL,
+  `student_id` bigint NOT NULL,
+  `start_time` datetime NOT NULL,
+  `deadline_time` datetime NOT NULL,
+  `submit_time` datetime DEFAULT NULL,
+  `submit_type` tinyint DEFAULT NULL,
+  `paper_json` longtext,
+  `answers` longtext,
+  `status` tinyint NOT NULL DEFAULT '1',
+  `version` int NOT NULL DEFAULT '0',
+  `objective_score` decimal(5,1) DEFAULT NULL,
+  `subjective_score` decimal(5,1) DEFAULT NULL,
+  `total_score` decimal(5,1) DEFAULT NULL,
+  `grading_status` tinyint NOT NULL DEFAULT '0',
+  `grading_error` varchar(512) DEFAULT NULL,
+  `partial_graded` tinyint NOT NULL DEFAULT '0',
+  `answers_missing` tinyint GENERATED ALWAYS AS ((case when (`answers` is null) then 1 else 0 end)) VIRTUAL,
+  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_exam_student` (`exam_id`,`student_id`),
+  KEY `idx_submissions_sweep` (`status`,`deadline_time`),
+  KEY `idx_submissions_exam_submit` (`exam_id`,`submit_time`),
+  KEY `idx_submissions_grading` (`exam_id`,`grading_status`),
+  KEY `idx_submissions_score_rank` (`exam_id`,`status`,`total_score`),
+  KEY `idx_submissions_republish` (`status`,`answers_missing`)
+) ENGINE=InnoDB AUTO_INCREMENT=19251 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+

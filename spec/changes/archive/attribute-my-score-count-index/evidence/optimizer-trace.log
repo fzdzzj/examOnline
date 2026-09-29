@@ -1,0 +1,450 @@
+atIso=2026-09-29T04:25:26.533Z shape=3000 x=40.0 (no hint)
+exit=0
+total
+2990
+*************************** 1. row ***************************
+TRACE: {
+  "steps": [
+    {
+      "join_preparation": {
+        "select#": 1,
+        "steps": [
+          {
+            "expanded_query": "/* select#1 */ select count(0) AS `total` from `exam_submissions` where ((`exam_submissions`.`exam_id` = 930003000) and (`exam_submissions`.`status` = 3) and (`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0))"
+          }
+        ]
+      }
+    },
+    {
+      "join_optimization": {
+        "select#": 1,
+        "steps": [
+          {
+            "condition_processing": {
+              "condition": "WHERE",
+              "original_condition": "((`exam_submissions`.`exam_id` = 930003000) and (`exam_submissions`.`status` = 3) and (`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0))",
+              "steps": [
+                {
+                  "transformation": "equality_propagation",
+                  "resulting_condition": "((`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0) and multiple equal(930003000, `exam_submissions`.`exam_id`) and multiple equal(3, `exam_submissions`.`status`))"
+                },
+                {
+                  "transformation": "constant_propagation",
+                  "resulting_condition": "((`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0) and multiple equal(930003000, `exam_submissions`.`exam_id`) and multiple equal(3, `exam_submissions`.`status`))"
+                },
+                {
+                  "transformation": "trivial_condition_removal",
+                  "resulting_condition": "((`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0) and multiple equal(930003000, `exam_submissions`.`exam_id`) and multiple equal(3, `exam_submissions`.`status`))"
+                }
+              ]
+            }
+          },
+          {
+            "substitute_generated_columns": {
+              "resulting_condition": "((`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0) and multiple equal(930003000, `exam_submissions`.`exam_id`) and multiple equal(3, `exam_submissions`.`status`))"
+            }
+          },
+          {
+            "table_dependencies": [
+              {
+                "table": "`exam_submissions`",
+                "row_may_be_null": false,
+                "map_bit": 0,
+                "depends_on_map_bits": [
+                ]
+              }
+            ]
+          },
+          {
+            "ref_optimizer_key_uses": [
+              {
+                "table": "`exam_submissions`",
+                "field": "exam_id",
+                "equals": "930003000",
+                "null_rejecting": true
+              },
+              {
+                "table": "`exam_submissions`",
+                "field": "status",
+                "equals": "3",
+                "null_rejecting": true
+              },
+              {
+                "table": "`exam_submissions`",
+                "field": "exam_id",
+                "equals": "930003000",
+                "null_rejecting": true
+              },
+              {
+                "table": "`exam_submissions`",
+                "field": "exam_id",
+                "equals": "930003000",
+                "null_rejecting": true
+              },
+              {
+                "table": "`exam_submissions`",
+                "field": "exam_id",
+                "equals": "930003000",
+                "null_rejecting": true
+              },
+              {
+                "table": "`exam_submissions`",
+                "field": "status",
+                "equals": "3",
+                "null_rejecting": true
+              },
+              {
+                "table": "`exam_submissions`",
+                "field": "status",
+                "equals": "3",
+                "null_rejecting": true
+              }
+            ]
+          },
+          {
+            "rows_estimation": [
+              {
+                "table": "`exam_submissions`",
+                "range_analysis": {
+                  "table_scan": {
+                    "rows": 9926,
+                    "cost": 1016.7
+                  },
+                  "potential_range_indexes": [
+                    {
+                      "index": "PRIMARY",
+                      "usable": false,
+                      "cause": "not_applicable"
+                    },
+                    {
+                      "index": "uk_exam_student",
+                      "usable": true,
+                      "key_parts": [
+                        "exam_id",
+                        "student_id"
+                      ]
+                    },
+                    {
+                      "index": "idx_submissions_sweep",
+                      "usable": true,
+                      "key_parts": [
+                        "status",
+                        "deadline_time",
+                        "id"
+                      ]
+                    },
+                    {
+                      "index": "idx_submissions_exam_submit",
+                      "usable": true,
+                      "key_parts": [
+                        "exam_id",
+                        "submit_time",
+                        "id"
+                      ]
+                    },
+                    {
+                      "index": "idx_submissions_grading",
+                      "usable": true,
+                      "key_parts": [
+                        "exam_id",
+                        "grading_status",
+                        "id"
+                      ]
+                    },
+                    {
+                      "index": "idx_submissions_score_rank",
+                      "usable": true,
+                      "key_parts": [
+                        "exam_id",
+                        "status",
+                        "total_score",
+                        "id"
+                      ]
+                    },
+                    {
+                      "index": "idx_submissions_republish",
+                      "usable": true,
+                      "key_parts": [
+                        "status",
+                        "answers_missing",
+                        "id"
+                      ]
+                    }
+                  ],
+                  "best_covering_index_scan": {
+                    "index": "idx_submissions_score_rank",
+                    "cost": 999.196,
+                    "chosen": true
+                  },
+                  "setup_range_conditions": [
+                  ],
+                  "group_index_range": {
+                    "chosen": false,
+                    "cause": "not_group_by_or_distinct"
+                  },
+                  "skip_scan_range": {
+                    "potential_skip_scan_indexes": [
+                      {
+                        "index": "uk_exam_student",
+                        "usable": false,
+                        "cause": "query_references_nonkey_column"
+                      },
+                      {
+                        "index": "idx_submissions_sweep",
+                        "usable": false,
+                        "cause": "query_references_nonkey_column"
+                      },
+                      {
+                        "index": "idx_submissions_exam_submit",
+                        "usable": false,
+                        "cause": "query_references_nonkey_column"
+                      },
+                      {
+                        "index": "idx_submissions_grading",
+                        "usable": false,
+                        "cause": "query_references_nonkey_column"
+                      },
+                      {
+                        "index": "idx_submissions_score_rank",
+                        "usable": false,
+                        "cause": "prefix_not_const_equality"
+                      },
+                      {
+                        "index": "idx_submissions_republish",
+                        "usable": false,
+                        "cause": "query_references_nonkey_column"
+                      }
+                    ]
+                  },
+                  "analyzing_range_alternatives": {
+                    "range_scan_alternatives": [
+                      {
+                        "index": "uk_exam_student",
+                        "ranges": [
+                          "exam_id = 930003000"
+                        ],
+                        "index_dives_for_eq_ranges": true,
+                        "rowid_ordered": false,
+                        "using_mrr": false,
+                        "index_only": false,
+                        "in_memory": 1,
+                        "rows": 3000,
+                        "cost": 1050.26,
+                        "chosen": false,
+                        "cause": "cost"
+                      },
+                      {
+                        "index": "idx_submissions_sweep",
+                        "ranges": [
+                          "status = 3"
+                        ],
+                        "index_dives_for_eq_ranges": true,
+                        "rowid_ordered": false,
+                        "using_mrr": false,
+                        "index_only": false,
+                        "in_memory": 1,
+                        "rows": 4250,
+                        "cost": 1487.76,
+                        "chosen": false,
+                        "cause": "cost"
+                      },
+                      {
+                        "index": "idx_submissions_exam_submit",
+                        "ranges": [
+                          "exam_id = 930003000"
+                        ],
+                        "index_dives_for_eq_ranges": true,
+                        "rowid_ordered": false,
+                        "using_mrr": false,
+                        "index_only": false,
+                        "in_memory": 1,
+                        "rows": 3000,
+                        "cost": 1050.26,
+                        "chosen": false,
+                        "cause": "cost"
+                      },
+                      {
+                        "index": "idx_submissions_grading",
+                        "ranges": [
+                          "exam_id = 930003000"
+                        ],
+                        "index_dives_for_eq_ranges": true,
+                        "rowid_ordered": false,
+                        "using_mrr": false,
+                        "index_only": false,
+                        "in_memory": 1,
+                        "rows": 3000,
+                        "cost": 1050.26,
+                        "chosen": false,
+                        "cause": "cost"
+                      },
+                      {
+                        "index": "idx_submissions_score_rank",
+                        "ranges": [
+                          "exam_id = 930003000 AND status = 3 AND 40.0 < total_score"
+                        ],
+                        "index_dives_for_eq_ranges": true,
+                        "rowid_ordered": false,
+                        "using_mrr": false,
+                        "index_only": true,
+                        "in_memory": 1,
+                        "rows": 2990,
+                        "cost": 301.171,
+                        "chosen": true
+                      },
+                      {
+                        "index": "idx_submissions_republish",
+                        "ranges": [
+                          "status = 3"
+                        ],
+                        "index_dives_for_eq_ranges": true,
+                        "rowid_ordered": false,
+                        "using_mrr": false,
+                        "index_only": false,
+                        "in_memory": 1,
+                        "rows": 4250,
+                        "cost": 1487.76,
+                        "chosen": false,
+                        "cause": "cost"
+                      }
+                    ],
+                    "analyzing_roworder_intersect": {
+                      "usable": false,
+                      "cause": "too_few_roworder_scans"
+                    }
+                  },
+                  "chosen_range_access_summary": {
+                    "range_access_plan": {
+                      "type": "range_scan",
+                      "index": "idx_submissions_score_rank",
+                      "rows": 2990,
+                      "ranges": [
+                        "exam_id = 930003000 AND status = 3 AND 40.0 < total_score"
+                      ]
+                    },
+                    "rows_for_plan": 2990,
+                    "cost_for_plan": 301.171,
+                    "chosen": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "considered_execution_plans": [
+              {
+                "plan_prefix": [
+                ],
+                "table": "`exam_submissions`",
+                "best_access_path": {
+                  "considered_access_paths": [
+                    {
+                      "access_type": "ref",
+                      "index": "uk_exam_student",
+                      "rows": 3000,
+                      "cost": 366,
+                      "chosen": true
+                    },
+                    {
+                      "access_type": "ref",
+                      "index": "idx_submissions_sweep",
+                      "rows": 4250,
+                      "cost": 491,
+                      "chosen": false
+                    },
+                    {
+                      "access_type": "ref",
+                      "index": "idx_submissions_exam_submit",
+                      "rows": 3000,
+                      "cost": 366,
+                      "chosen": false
+                    },
+                    {
+                      "access_type": "ref",
+                      "index": "idx_submissions_grading",
+                      "rows": 3000,
+                      "cost": 366,
+                      "chosen": false
+                    },
+                    {
+                      "access_type": "ref",
+                      "index": "idx_submissions_score_rank",
+                      "chosen": false,
+                      "cause": "range_uses_more_keyparts"
+                    },
+                    {
+                      "access_type": "ref",
+                      "index": "idx_submissions_republish",
+                      "rows": 4250,
+                      "cost": 491,
+                      "chosen": false
+                    },
+                    {
+                      "rows_to_scan": 2990,
+                      "access_type": "range",
+                      "range_details": {
+                        "used_index": "idx_submissions_score_rank"
+                      },
+                      "resulting_rows": 2990,
+                      "cost": 600.171,
+                      "chosen": false
+                    }
+                  ]
+                },
+                "condition_filtering_pct": 100,
+                "rows_for_plan": 3000,
+                "cost_for_plan": 366,
+                "chosen": true
+              }
+            ]
+          },
+          {
+            "attaching_conditions_to_tables": {
+              "original_condition": "((`exam_submissions`.`status` = 3) and (`exam_submissions`.`exam_id` = 930003000) and (`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0))",
+              "attached_conditions_computation": [
+              ],
+              "attached_conditions_summary": [
+                {
+                  "table": "`exam_submissions`",
+                  "attached": "((`exam_submissions`.`status` = 3) and (`exam_submissions`.`exam_id` = 930003000) and (`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0))"
+                }
+              ]
+            }
+          },
+          {
+            "optimizing_distinct_group_by_order_by": {
+            }
+          },
+          {
+            "finalizing_table_conditions": [
+              {
+                "table": "`exam_submissions`",
+                "original_table_condition": "((`exam_submissions`.`status` = 3) and (`exam_submissions`.`exam_id` = 930003000) and (`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0))",
+                "final_table_condition   ": "((`exam_submissions`.`status` = 3) and (`exam_submissions`.`total_score` is not null) and (`exam_submissions`.`total_score` > 40.0))"
+              }
+            ]
+          },
+          {
+            "refine_plan": [
+              {
+                "table": "`exam_submissions`"
+              }
+            ]
+          },
+          {
+            "considering_tmp_tables": [
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "join_execution": {
+        "select#": 1,
+        "steps": [
+        ]
+      }
+    }
+  ]
+}
+

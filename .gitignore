@@ -22,6 +22,10 @@ target/
 *.tmp
 *.bak
 logs/
+# 证据日志例外：spec/changes 下归档证据清单（evidence-sha256.txt）承诺可在新克隆上
+# 用 `grep -v '^#' evidence-sha256.txt | sha256sum -c -` 复验，证据日志本身必须入库；
+# 该负向规则只放开 evidence/ 目录一层，不涉及其他运行日志。
+!spec/changes/**/evidence/*.log
 
 # ==== 系统文件 ====
 .DS_Store
