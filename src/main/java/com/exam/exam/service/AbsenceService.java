@@ -78,8 +78,10 @@ public class AbsenceService {
         }
 
         // 有答卷的学生（老师可跨班拉名单，这里仅需当前应考名单内的答卷）
+        // 列投影：差集判定只用 student_id，不载入 paper_json/answers
         List<ExamSubmission> submitted = submissionMapper.selectList(
                 Wrappers.<ExamSubmission>lambdaQuery()
+                        .select(ExamSubmission::getStudentId)
                         .eq(ExamSubmission::getExamId, examId)
                         .in(ExamSubmission::getStudentId, expectedIds));
         java.util.Set<Long> submittedIds = submitted.stream()

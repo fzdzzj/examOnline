@@ -154,7 +154,10 @@ public class ExamTakingService {
 
         Map<Long, ExamSubmission> mine = new HashMap<>();
         if (!exams.isEmpty()) {
+            // 列投影：分组只消费这三个标量列，不载入 paper_json/answers
             submissionMapper.selectList(Wrappers.<ExamSubmission>lambdaQuery()
+                            .select(ExamSubmission::getExamId, ExamSubmission::getStatus,
+                                    ExamSubmission::getDeadlineTime)
                             .eq(ExamSubmission::getStudentId, studentId)
                             .in(ExamSubmission::getExamId, exams.stream().map(Exam::getId).toList()))
                     .forEach(s -> mine.put(s.getExamId(), s));
