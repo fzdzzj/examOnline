@@ -1,0 +1,205 @@
+{
+  "rev" : "84d25a2",
+  "label" : "cap1",
+  "generatedAtIso" : "2026-09-29T12:13:21.6077132",
+  "engineNote" : "capture-only: statements are captured on the H2 test context (transport only); back-to-table attribution evidence comes from the temporary MySQL container run, not from H2 timing or H2 EXPLAIN.",
+  "dataRule" : "不登录（无 users 行；myScore 不读 users）；exams 行直插 id=930000000+n、status=4/published=1、paper_id=930000001(占位无外键)；exam_submissions 逐份直插 exam_id=930000000+n、status=3(已批改)、grading_status=1、total_score=objective_score=score(i)=BigDecimal.valueOf(400+(i*7919)%300, 1)（值域 40.0–69.9、300 个取值，大量并列且全非 null）、subjective_score=0.0；student_id=930000000+n*100000+i（全部合成；本人取下标 0，对应本人分=40.0=全场最低分）。paper_json/answers 保持 NULL（同既有 IT 口径；生产已批改行这两列非空、行更宽，回表代价只高不低，故本测量对候选收益的估计偏保守）。",
+  "captureMechanism" : "StatementHandler.prepare interceptor reading the final BoundSql + DefaultParameterHandler-equivalent value resolution; no hand-written SQL.",
+  "shapes" : [ {
+    "n" : 50,
+    "examId" : 930000050,
+    "ownStudentId" : 935000000,
+    "ownTotalScore" : "40.0",
+    "expectedRank" : 50,
+    "responseRank" : 50,
+    "reviewing" : false,
+    "statements" : [ {
+      "msId" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "sql" : "SELECT id,title,description,paper_id,course_id,class_id,parent_exam_id,makeup_score_rule,start_time,end_time,duration_minutes,allow_late_minutes,status,published,force_end,anti_cheat_config,snapshot_id,version,created_by,created_time,updated_time FROM exams WHERE id=? AND is_deleted=0",
+      "values" : {
+        "id" : "930000050"
+      }
+    }, {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "sql" : "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930000050",
+        "ew.paramNameValuePairs.MPGENVAL2" : "935000000"
+      }
+    }, {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = ? AND status = ? AND total_score IS NOT NULL AND total_score > ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930000050",
+        "ew.paramNameValuePairs.MPGENVAL2" : "3",
+        "ew.paramNameValuePairs.MPGENVAL3" : "40.0"
+      }
+    }, {
+      "msId" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM score_review      WHERE  (exam_id = ? AND student_id = ? AND status IN (?,?))",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930000050",
+        "ew.paramNameValuePairs.MPGENVAL2" : "935000000",
+        "ew.paramNameValuePairs.MPGENVAL3" : "0",
+        "ew.paramNameValuePairs.MPGENVAL4" : "1"
+      }
+    } ],
+    "countStatement" : {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = ? AND status = ? AND total_score IS NOT NULL AND total_score > ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930000050",
+        "ew.paramNameValuePairs.MPGENVAL2" : "3",
+        "ew.paramNameValuePairs.MPGENVAL3" : "40.0"
+      },
+      "literalSql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = 930000050 AND status = 3 AND total_score IS NOT NULL AND total_score > 40.0)"
+    }
+  }, {
+    "n" : 200,
+    "examId" : 930000200,
+    "ownStudentId" : 950000000,
+    "ownTotalScore" : "40.0",
+    "expectedRank" : 200,
+    "responseRank" : 200,
+    "reviewing" : false,
+    "statements" : [ {
+      "msId" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "sql" : "SELECT id,title,description,paper_id,course_id,class_id,parent_exam_id,makeup_score_rule,start_time,end_time,duration_minutes,allow_late_minutes,status,published,force_end,anti_cheat_config,snapshot_id,version,created_by,created_time,updated_time FROM exams WHERE id=? AND is_deleted=0",
+      "values" : {
+        "id" : "930000200"
+      }
+    }, {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "sql" : "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930000200",
+        "ew.paramNameValuePairs.MPGENVAL2" : "950000000"
+      }
+    }, {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = ? AND status = ? AND total_score IS NOT NULL AND total_score > ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930000200",
+        "ew.paramNameValuePairs.MPGENVAL2" : "3",
+        "ew.paramNameValuePairs.MPGENVAL3" : "40.0"
+      }
+    }, {
+      "msId" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM score_review      WHERE  (exam_id = ? AND student_id = ? AND status IN (?,?))",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930000200",
+        "ew.paramNameValuePairs.MPGENVAL2" : "950000000",
+        "ew.paramNameValuePairs.MPGENVAL3" : "0",
+        "ew.paramNameValuePairs.MPGENVAL4" : "1"
+      }
+    } ],
+    "countStatement" : {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = ? AND status = ? AND total_score IS NOT NULL AND total_score > ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930000200",
+        "ew.paramNameValuePairs.MPGENVAL2" : "3",
+        "ew.paramNameValuePairs.MPGENVAL3" : "40.0"
+      },
+      "literalSql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = 930000200 AND status = 3 AND total_score IS NOT NULL AND total_score > 40.0)"
+    }
+  }, {
+    "n" : 1000,
+    "examId" : 930001000,
+    "ownStudentId" : 1030000000,
+    "ownTotalScore" : "40.0",
+    "expectedRank" : 997,
+    "responseRank" : 997,
+    "reviewing" : false,
+    "statements" : [ {
+      "msId" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "sql" : "SELECT id,title,description,paper_id,course_id,class_id,parent_exam_id,makeup_score_rule,start_time,end_time,duration_minutes,allow_late_minutes,status,published,force_end,anti_cheat_config,snapshot_id,version,created_by,created_time,updated_time FROM exams WHERE id=? AND is_deleted=0",
+      "values" : {
+        "id" : "930001000"
+      }
+    }, {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "sql" : "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930001000",
+        "ew.paramNameValuePairs.MPGENVAL2" : "1030000000"
+      }
+    }, {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = ? AND status = ? AND total_score IS NOT NULL AND total_score > ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930001000",
+        "ew.paramNameValuePairs.MPGENVAL2" : "3",
+        "ew.paramNameValuePairs.MPGENVAL3" : "40.0"
+      }
+    }, {
+      "msId" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM score_review      WHERE  (exam_id = ? AND student_id = ? AND status IN (?,?))",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930001000",
+        "ew.paramNameValuePairs.MPGENVAL2" : "1030000000",
+        "ew.paramNameValuePairs.MPGENVAL3" : "0",
+        "ew.paramNameValuePairs.MPGENVAL4" : "1"
+      }
+    } ],
+    "countStatement" : {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = ? AND status = ? AND total_score IS NOT NULL AND total_score > ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930001000",
+        "ew.paramNameValuePairs.MPGENVAL2" : "3",
+        "ew.paramNameValuePairs.MPGENVAL3" : "40.0"
+      },
+      "literalSql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = 930001000 AND status = 3 AND total_score IS NOT NULL AND total_score > 40.0)"
+    }
+  }, {
+    "n" : 3000,
+    "examId" : 930003000,
+    "ownStudentId" : 1230000000,
+    "ownTotalScore" : "40.0",
+    "expectedRank" : 2991,
+    "responseRank" : 2991,
+    "reviewing" : false,
+    "statements" : [ {
+      "msId" : "com.exam.exam.mapper.ExamMapper.selectById",
+      "sql" : "SELECT id,title,description,paper_id,course_id,class_id,parent_exam_id,makeup_score_rule,start_time,end_time,duration_minutes,allow_late_minutes,status,published,force_end,anti_cheat_config,snapshot_id,version,created_by,created_time,updated_time FROM exams WHERE id=? AND is_deleted=0",
+      "values" : {
+        "id" : "930003000"
+      }
+    }, {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+      "sql" : "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930003000",
+        "ew.paramNameValuePairs.MPGENVAL2" : "1230000000"
+      }
+    }, {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = ? AND status = ? AND total_score IS NOT NULL AND total_score > ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930003000",
+        "ew.paramNameValuePairs.MPGENVAL2" : "3",
+        "ew.paramNameValuePairs.MPGENVAL3" : "40.0"
+      }
+    }, {
+      "msId" : "com.exam.score.mapper.ScoreReviewMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM score_review      WHERE  (exam_id = ? AND student_id = ? AND status IN (?,?))",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930003000",
+        "ew.paramNameValuePairs.MPGENVAL2" : "1230000000",
+        "ew.paramNameValuePairs.MPGENVAL3" : "0",
+        "ew.paramNameValuePairs.MPGENVAL4" : "1"
+      }
+    } ],
+    "countStatement" : {
+      "msId" : "com.exam.grading.mapper.GradingSubmissionMapper.selectCount",
+      "sql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = ? AND status = ? AND total_score IS NOT NULL AND total_score > ?)",
+      "values" : {
+        "ew.paramNameValuePairs.MPGENVAL1" : "930003000",
+        "ew.paramNameValuePairs.MPGENVAL2" : "3",
+        "ew.paramNameValuePairs.MPGENVAL3" : "40.0"
+      },
+      "literalSql" : "SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = 930003000 AND status = 3 AND total_score IS NOT NULL AND total_score > 40.0)"
+    }
+  } ]
+}

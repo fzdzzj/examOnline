@@ -1,6 +1,8 @@
 # 提案：myScore 名次聚合计数的覆盖索引候选先归因，再裁决是否加索引
 
-> 状态：**进行中（归因-only，未实施）**。本笔只做归因与裁决：`src/main`、`src/main/resources/schema.sql`、`docker/mysql/migrations/` 零改动。归因不成立即如实 NO-GO 并按未采用草案归档；成立则另写一份**独立**实施提案，本笔仍不实施。
+> 状态：**已归档（NO-GO）**（2026-09-29）。捕获基于 `84d25a2`（生产路径基线）、门禁基于 `c97e420`（本变更唯一代码提交，仅 src/test 测量工具；`src/main`/`schema.sql`/`docker/mysql/migrations/` 与基线零 diff）。收口：按本提案预登记判据（`evidence/PREREGISTRATION.md`，sha256 `4bdc237b…11ed8`，写定于正式测量前）在真 MySQL 引擎（一次性 mysql:8.0.46 容器）上裁决 **NO-GO，未实施**——测量有效（M1–M3 全过：捕获原文/容器结构/轮次完整），但候选索引未被优化器在门禁形状采纳：n=1000/3000@捕获参数 X=40.0 计划与基线相同（optimizer_trace：ref cost=366 chosen=true vs 覆盖 range cost=600.171 chosen=false），speedup_low 0.965/0.910 ≤ 1 ＝ 无可见收益（计划未变所致，非波动问题）；收益仅在 n=50/200 与选择性 X 下兑现（辅助臂 1.7–6.7×、FORCE 诊断潜力 2.23×），属「被优化器选择性阻断」，兑现需改 SQL（hint）——那是另一类候选，须另行归因立项。写路径无回归（D4 过）、两臂 COUNT 值逐轮全等（D3 过，E1–E8 门禁 9/0/0/0）。仓库根 `mvnw.cmd clean test` @ `c97e420` → 323/0/0/1 BUILD SUCCESS 退出码 0（首跑即绿）。拟实施条款（spec-delta）按**未采用草案**随本目录归档、**未合入** score-management 基线。逐轮原始数值、EXPLAIN/EXPLAIN ANALYZE 原文、optimizer_trace、写路径代价与机械裁决见 `evidence/`（`attribution-verdict.md`、`verdict.json`、`evidence-sha256.txt`）。
+
+原提案正文（立项时态，保留不改）：
 
 ## Why
 

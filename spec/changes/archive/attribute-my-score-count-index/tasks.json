@@ -1,0 +1,60 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：立项、事实链与预登记",
+    "task": "核对现场事实并冻结判据，工具只落 src/test",
+    "steps": [
+      {"step": "开工核对 HEAD/分支/工作树/Docker 可用性；现场核实 COUNT 出处（ScoreService.myScore → GradingSubmissionMapper.selectCount → @TableName(\"exam_submissions\")）、schema.sql 答卷表全部既有索引、既有 RankAttributionMeasureIT 分布规则与 MyScoreRankEquivalenceTest E1–E8；确认 src/main、schema.sql、docker/mysql/migrations/ 在本笔零改动", "completed": true},
+      {"step": "编写 MyBatis 侧捕获测量 IT（类名 IT 结尾不进 Surefire 门禁）：同口径造数、拦截器捕获 myScore 全部语句原文与绑定参数、语义自检、结果写 -Dmeasure.out 指向的仓库外目录", "completed": true},
+      {"step": "正式测量前冻结 evidence/PREREGISTRATION.md（M1–M3/D1–D4 算子、轮次、写路径语句原文、证据落位），记录 sha256；提案阶段 tasks.json 全 false 快照随提案目录提交", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "开工核对：HEAD=84d25a2、分支 feature/update-monitor-overview-submission-projection、工作树仅未跟踪 docs/backend-optimization-candidates.md（全程未暂存未提交）；Docker 29.6.2 可用（daemon 运行、无共享 dev 容器在跑）。现场核实（非转述）：ScoreService.java:300 `gradingSubmissionMapper.selectCount(Wrappers.eq(examId).eq(status,STATUS_GRADED).isNotNull(totalScore).gt(totalScore,本人总分))`；GradingSubmission `@TableName(\"exam_submissions\")`（同表双实体视图，实体头注自述）；schema.sql:227 起 exam_submissions 既有 6 索引（PRIMARY/uk_exam_student/idx_submissions_sweep/idx_submissions_exam_submit/idx_submissions_grading/idx_submissions_republish），total_score 不在任何索引中（提案未把无索引写成已被覆盖）；RankAttributionMeasureIT DATA_RULE（SIZES={50,200,1000,3000}、exam_id=930000000+n、status=3、grading_status=1、total_score=objective_score=score(i)=BigDecimal.valueOf(400+(i*7919)%300,1) 值域 40.0–69.9、300 取值大量并列且全非 null、REAL_STUDENT_INDEX=0）；MyScoreRankEquivalenceTest E1–E8 存在（src/test/java/com/exam/score/service/MyScoreRankEquivalenceTest.java）。工具：src/test/java/com/exam/score/measure/MyScoreCountCaptureMeasureIT.java（IT 结尾，Surefire 默认不含；StatementHandler.prepare 拦截 + Plugin 代理解链 + DefaultParameterHandler 同序绑定值解析）。预登记：evidence/PREREGISTRATION.md 冻结于测量前，sha256=4bdc237b0ace435866cc41459025df3e7a6d28fda40ac35faa1e5a89ee311ed8（冻结后未改；立项时对 score(i) 值域的一处口径修正在冻结提交前完成并写明）。提案+工具提交 c97e420（5 文件 579 行，仅 src/test 与 spec/changes/attribute-my-score-count-index/）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：B1 基线臂（真 MySQL 引擎）",
+    "task": "临时容器原样建表灌数，对捕获原文逐规模逐轮测量",
+    "steps": [
+      {"step": "运行捕获 IT，取得 selectCount 原文与绑定参数（含 X=40.0 的现场核对）；机械生成字面量 SQL", "completed": true},
+      {"step": "启动一次性 mysql:8.0 临时容器（tmpfs、高位端口、独立库、记录镜像 digest 与容器 id），整库执行 schema.sql，SHOW CREATE TABLE 核对 6 索引，按同口径灌入 50/200/1000/3000 并逐形状核对行数", "completed": true},
+      {"step": "基线臂逐形状：2 预热 + 1 EXPLAIN + 5 轮「COUNT 取值 + EXPLAIN ANALYZE」（逐轮原始输出、时间戳落证），另跑辅助臂 X_mid；随后写路径基线 3 操作 × 3 轮（INSERT/casSummarize/casSubmit 原文）", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "捕获（-Dtest=MyScoreCountCaptureMeasureIT -Dmeasure.rev=84d25a2 -Dmeasure.label=cap1，退出码 0，日志 evidence/capture-run1.log、结果 myscore-count-capture-cap1.json）：目标语句 id com.exam.grading.mapper.GradingSubmissionMapper.selectCount 每次调用恰好一条，原文 `SELECT COUNT( * ) AS total FROM exam_submissions      WHERE  (exam_id = ? AND status = ? AND total_score IS NOT NULL AND total_score > ?)`，绑定 [9300000{50,200,1000,3000}, 3, 40.0]（40.0 与种子行/返回值现场核对，非手填），rank 自检 50/200/997/2991 全过、reviewing=false；字面量 SQL 机械替换无残留 ?。容器：docker run -d mysql:8.0（镜像 digest mysql@sha256:7dcddc01f13b…ae2b、容器 id c13e2779ca03、MySQL 8.0.46、tmpfs /var/lib/mysql、独立库 attr_measure、127.0.0.1 高位端口；不连共享 dev、不写 dev 库）；setup 相位整库执行 src/main/resources/schema.sql 退出码 0（container-setup.log 含 SELECT VERSION()=8.0.46 与 SHOW CREATE TABLE 全文，6 索引齐全、无候选索引）；seed 相位逐形状行数精确 50/200/1000/3000 + 写路径专用场 2×3000（seed-counts.json）。基线臂读路径（reads-baseline.log/.json，逐轮 ISO 时间戳+原始输出）：全形状 EXPLAIN key=uk_exam_student、type=ref、Extra=Using where（无 Using index ⇒ 回表成立）；逐轮 ANALYZE 实际行数=n。写路径基线（writes-baseline.log/.json）：INSERT 3000 行 281/230/245ms、casSummarize（GradingSubmissionMapper.casSummarize 原文，2→3 首写 total_score）680/652/672ms、casSubmit（ExamSubmissionMapper.casSubmit 原文，1→2）667/648/645ms；CAS 生效性探针（write-effect-probe.log）100 行 1→2 实证后复位；批模式无 rows affected 回显已用探针补证。辅助臂 X_mid 基线同批落盘。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：B2 对照臂与 B3 副作用",
+    "task": "同容器同数据只加候选覆盖索引重跑同口径，并同批核写路径与漂移",
+    "steps": [
+      {"step": "同容器 ALTER TABLE 建候选索引 (exam_id, status, total_score)（只建在临时容器），SHOW CREATE TABLE 留证；重跑 B1 同口径读路径与写路径（各 5/3 轮，不挑轮）", "completed": true},
+      {"step": "DROP 候选索引后每形状复测 2 轮基线作为同代码顺序漂移读数（判定带用其与基线臂 5 轮的并集）", "completed": true},
+      {"step": "销毁容器（docker rm -f）；核对 SchemaSqlMysqlCompatibilityTest 在门禁中仍绿、docker/mysql/migrations/ 目录零改动；确认「脚本提交≠生效」的责任说明将进入实施提案（仅 GO）", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "候选索引：ALTER TABLE exam_submissions ADD INDEX idx_submissions_score_rank (exam_id, status, total_score) exit=0（index-candidate.log 含 SHOW CREATE TABLE：7 索引含候选）。候选臂读路径（reads-candidate.log/.json）：n=50/200 优化器切换 idx_submissions_score_rank（range、key_len=13、Extra=Using where; Using index，无回表）；**n=1000/3000@X=40.0 优化器留在 uk_exam_student ref（rows=n、Using where，计划与基线相同）**；辅助臂 X_mid 全形状采纳候选索引。候选臂写路径（writes-candidate.log/.json）：INSERT 291/248/235ms、casSummarize 678/584/588ms、casSubmit 604/585/617ms；臂末非计时 DELETE 恢复同一起测行数。漂移复测（reads-drift.log/.json，DROP INDEX 后每形状 2 轮）：n=1000 0.965/1.520ms、n=3000 2.650/2.550ms。诊断（diagnose-optimizer.mjs，标注为非裁决臂）：optimizer-trace.log 显示 n=3000@X=40.0 ref on uk_exam_student rows=3000 cost=366 chosen=true、range on idx_submissions_score_rank rows_to_scan=2990 cost=600.171 chosen=false；force-index.log 显示强制覆盖 n=1000 0.223–0.340ms（vs 无提示 0.985–1.470ms）、n=3000 1.05–1.21ms（vs 无提示 2.70–2.83ms，潜力 2.231×）。容器销毁：docker rm -f myscore-count-attr 后 docker ps -a --filter name 零匹配。SchemaSqlMysqlCompatibilityTest 门禁 1/0/0/0（见阶段 5）；git status 核对 schema.sql 与 docker/mysql/ 零改动；NO-GO ⇒ 无实施提案、无迁移脚本，「脚本提交≠生效」责任说明不适用（未来实施提案须携带）。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：B4 裁决与交付",
+    "task": "机械复算 M/D 判据，测量有效性与主导因素分开裁",
+    "steps": [
+      {"step": "运行 analyze-count-attrib.cjs 按 PREREGISTRATION 算子复算 M1–M3/D1–D4，产出 verdict.json 与控制台记录；测量有效性与主导因素分节陈述", "completed": true},
+      {"step": "GO ⇒ 另立独立实施提案（schema.sql 变更草案 + docker/mysql/migrations/ 脚本草案 + 实体零改动论证 + 等价性论证（MyScoreRankEquivalenceTest E1–E8）+ 迁移应用与验证责任说明），本笔不改代码；NO-GO ⇒ 按未采用草案归档，无实施提案", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "机械复算（node evidence/analyze-count-attrib.cjs <rawDir> <capture.json>，退出码 0，verdict.json + verdict-console.txt）：**测量有效性 M1/M2/M3 全 PASS**（捕获原文与绑定参数核对、容器 6 索引+行数精确+基线非覆盖、全部轮次完整可解析）；**主导因素 D1 部分成立**（候选臂覆盖仅 n=50/200；门禁形状未出现）、**D2 fail**（门禁形状 n=1000 speedup_low=0.9647、n=3000 speedup_low=0.9103，均 ≤1 ⇒ 按措辞纪律记「无可见收益」——计划未变所致，非波动问题；n=50 的 1.1526 未过判定带 1.3185，记「波动吞没收益」；n=200 3.2245>2.0419 达标但不属门禁形状，只记录）、D3 PASS（两臂 COUNT 值逐轮全等 49/199/996/2990）、D4 PASS（INSERT 中位比 1.0356/max 1.0783、casSummarize 0.8957/0.9971、casSubmit 0.9055/0.9566，均 ≤1.30/2.00 界）。裁决主式 GO ⇔ M1∧M2∧M3∧D1∧D2(1000)∧D2(3000)∧D3∧D4 = **false ⇒ NO-GO，不实施、不另立实施提案**。分节陈述见 evidence/attribution-verdict.md（测量是否有效 / 是否找到稳定主导因素两节独立成文，含逐轮原始数值表、optimizer_trace 代价证据、X_mid 与 FORCE 诊断边界声明）。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：门禁与归档",
+    "task": "已提交 revision 全量门禁与收尾五步",
+    "steps": [
+      {"step": "在已提交 revision 仓库根 ./mvnw clean test：记录命令、四计数、BUILD、退出码、revision、原始日志；若失败全部落在已知偶发四类（AuthIntegrationTest/AntiCheatIntegrationTest/DataRetentionIntegrationTest/ExamTakingIntegrationTest）内，原样保留日志并立即重跑一次，两次都记入证据、以绿次作凭据；两次都红或红在其他类 ⇒ 停手回报，不改测试凑绿；AGENTS.md 四条自查同批记录", "completed": true},
+      {"step": "收尾：evidence-sha256.txt 复算 sha256sum -c 全 OK；tasks 按实际完成度回勾；proposal 状态回勾；变更目录移入 archive（显式路径暂存）；spec/README.md 归档表登记；一次性回报（裁决、逐轮原始数值与波动区间、EXPLAIN/EXPLAIN ANALYZE 原文、写路径代价、门禁两次计数与 revision、提交 SHA、未验证项）", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "门禁：仓库根 D:\\code\\examOnline 执行 mvnw.cmd clean test @ c97e420（已提交；src 树与提交一致，工作树仅本变更 spec 文档与未跟踪台账），输出 **Tests run: 323, Failures: 0, Errors: 0, Skipped: 1、BUILD SUCCESS、退出码 0、Total time 04:32 min**，原始日志 evidence/gate-mvn.log；首跑即绿，未触发偶发四类协议（AuthIntegrationTest/AntiCheatIntegrationTest/DataRetentionIntegrationTest/ExamTakingIntegrationTest 均未失败，无需重跑分支）；MyScoreRankEquivalenceTest 9/0/0/0、SchemaSqlMysqlCompatibilityTest 1/0/0/0；测量 IT 以 IT 结尾不进 Surefire，未计入 323。AGENTS 四条自查当次全绿：grep -c flyway pom.xml=0；test ! -e src/main/resources/db=OK；@Sql 注解命中（过滤 javadoc 自述行后）=0；实体 @TableName ↔ schema.sql 表级差集=0；另核 git status 无 schema.sql/docker/mysql 改动。门禁在 clean 之后运行，原始测量产物从未落 target（直写仓库外 D:\\code\\examOnline-measure\\myscore-count-attr\\ 后拷入本目录），clean 不曾触及；收口生成 evidence-sha256.txt 并 sha256sum -c 全 OK。归档：变更目录（proposal.md、tasks.json、specs/score-management/spec-delta.md、evidence/ 全套）移入 spec/changes/archive/attribute-my-score-count-index/，显式路径暂存；未夹带 docs/backend-optimization-candidates.md（保持未跟踪）。一次性回报按卡随收口提交给出：NO-GO 裁决、逐轮原始数值与波动区间（attribution-verdict.md 表）、EXPLAIN/EXPLAIN ANALYZE 原文（reads-*.log）、写路径代价（writes-*.json）、门禁单次 323/0/0/1 @ c97e420、提交 SHA 见收口提交。"
+  }
+]
