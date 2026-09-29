@@ -1,0 +1,586 @@
+{
+  "generatedAtIso": "2026-09-29T13:09:10.039Z",
+  "rev": "bede6c8",
+  "label": "run1",
+  "preregOk": true,
+  "itProblemsEmpty": true,
+  "itExit": 0,
+  "schemaApplyOk": true,
+  "containersDestroyed": true,
+  "verdict": "GO",
+  "shapes": {
+    "200": {
+      "M1": true,
+      "M2": true,
+      "M3": true,
+      "S1": true,
+      "S2": true,
+      "S3": true,
+      "S4": true,
+      "verdict": "GO",
+      "reasons": [],
+      "detail": {
+        "m1Parts": {
+          "projSelectEqualsFrozen": true,
+          "oldSelectDiffersFromProj": true,
+          "oldSelectContainsLongFields": true,
+          "narrowSelectOk": true,
+          "substitutionOk": true,
+          "oldrepSameTextAsOld": true,
+          "itProblemsEmpty": true,
+          "preregOk": true
+        },
+        "m2Parts": {
+          "schemaApplyOk": true,
+          "digestLogged": true,
+          "showCreateLogged": true,
+          "showIndexLogged": true,
+          "seedOk": true,
+          "containerVerifyRows": true,
+          "containerVerifyAnswers": true,
+          "containerVerifyLogs": true,
+          "containerExitsOk": true
+        },
+        "m3successfulRounds": {
+          "OLD": 5,
+          "PROJ": 5,
+          "OLDrep": 5
+        },
+        "s1Parts": {
+          "ownerEqual": true,
+          "adminEqual": true,
+          "nonOwnerSame": true,
+          "captureGuardsOk": true,
+          "roundGuardsOk": true,
+          "envChecksOk": true,
+          "degenerateD1": true,
+          "degenerateD2": true,
+          "degenerateD3": true,
+          "degenerateNarrowAccounting": true
+        },
+        "s2": {
+          "bytesOld": 4281440,
+          "bytesProj": 22480,
+          "bytesProjMain": 2000,
+          "bytesProjNarrow": 20480,
+          "ratio": 190.46,
+          "threshold": 5,
+          "pass": true
+        },
+        "s3": {
+          "noiseUpperNs": 104226200,
+          "projRoundsNs": [
+            33338900,
+            36135700,
+            25443800,
+            55012000,
+            31707300
+          ],
+          "oldRoundsNs": [
+            89367800,
+            71045900,
+            62747300,
+            104226200,
+            59769000
+          ],
+          "oldrepRoundsNs": [
+            82104000,
+            74379500,
+            61467800,
+            64224300,
+            94624700
+          ],
+          "violations": [],
+          "pass": true
+        },
+        "s4": {
+          "itMainOld": true,
+          "itMainProj": true,
+          "projNarrow": true,
+          "projRoundNarrowAccounting": true,
+          "containerMainRows": true,
+          "containerNarrowRows": true
+        },
+        "seed": {
+          "shape": 200,
+          "examId": 976000200,
+          "designRows": 200,
+          "actualRows": 200,
+          "designInProgress": 120,
+          "designPaperJsonNonNull": 200,
+          "actualPaperJsonNonNull": 200,
+          "paperJsonLenMin": 20480,
+          "paperJsonLenMax": 20480,
+          "designAnswersNonNull": 80,
+          "actualAnswersNonNull": 80,
+          "answersLenMin": 2048,
+          "answersLenMax": 2048,
+          "designLogs": 100,
+          "actualLogs": 100,
+          "ok": true
+        },
+        "guards": {
+          "old": {
+            "arm": "OLD",
+            "expectForbidden": false,
+            "expectedStudents": 200,
+            "mainQueries": 1,
+            "mainRows": 200,
+            "narrowQueries": 0,
+            "narrowRows": 0,
+            "rawAnswersNonNull": 80,
+            "rawPaperNonNull": 200,
+            "suppliedReads": 0,
+            "answersReadAttempts": 0,
+            "paperJsonReadIndices": [
+              0
+            ],
+            "narrowParams": [],
+            "narrowSql": "SELECT paper_json FROM exam_submissions WHERE exam_id = ? AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1",
+            "dbPaperJsonNonNull": 200,
+            "dbAnswersNonNull": 80,
+            "expMainQueries": 1,
+            "expMainRows": 200,
+            "expNarrowQueries": 0,
+            "expNarrowRows": 0,
+            "expSuppliedReads": 0,
+            "paperJsonReadPrefix": true,
+            "targetSelectLists": [
+              "id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time"
+            ],
+            "targetSelectListOk": true,
+            "mainOk": true,
+            "narrowOk": true,
+            "longFieldOk": true,
+            "answersOk": true,
+            "ok": true
+          },
+          "proj": {
+            "arm": "PROJ",
+            "expectForbidden": false,
+            "expectedStudents": 200,
+            "mainQueries": 1,
+            "mainRows": 200,
+            "narrowQueries": 1,
+            "narrowRows": 1,
+            "rawAnswersNonNull": 0,
+            "rawPaperNonNull": 0,
+            "suppliedReads": 1,
+            "answersReadAttempts": 0,
+            "paperJsonReadIndices": [
+              0
+            ],
+            "narrowParams": [
+              976000200
+            ],
+            "narrowSql": "SELECT paper_json FROM exam_submissions WHERE exam_id = ? AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1",
+            "dbPaperJsonNonNull": 200,
+            "dbAnswersNonNull": 80,
+            "expMainQueries": 1,
+            "expMainRows": 200,
+            "expNarrowQueries": 1,
+            "expNarrowRows": 1,
+            "expSuppliedReads": 1,
+            "paperJsonReadPrefix": true,
+            "targetSelectLists": [
+              "student_id,status"
+            ],
+            "targetSelectListOk": true,
+            "mainOk": true,
+            "narrowOk": true,
+            "longFieldOk": true,
+            "answersOk": true,
+            "ok": true
+          }
+        },
+        "containerRows": {
+          "oldMain": 200,
+          "projMain": 200,
+          "narrow": 1
+        }
+      }
+    },
+    "1000": {
+      "M1": true,
+      "M2": true,
+      "M3": true,
+      "S1": true,
+      "S2": true,
+      "S3": true,
+      "S4": true,
+      "verdict": "GO",
+      "reasons": [],
+      "detail": {
+        "m1Parts": {
+          "projSelectEqualsFrozen": true,
+          "oldSelectDiffersFromProj": true,
+          "oldSelectContainsLongFields": true,
+          "narrowSelectOk": true,
+          "substitutionOk": true,
+          "oldrepSameTextAsOld": true,
+          "itProblemsEmpty": true,
+          "preregOk": true
+        },
+        "m2Parts": {
+          "schemaApplyOk": true,
+          "digestLogged": true,
+          "showCreateLogged": true,
+          "showIndexLogged": true,
+          "seedOk": true,
+          "containerVerifyRows": true,
+          "containerVerifyAnswers": true,
+          "containerVerifyLogs": true,
+          "containerExitsOk": true
+        },
+        "m3successfulRounds": {
+          "OLD": 5,
+          "PROJ": 5,
+          "OLDrep": 5
+        },
+        "s1Parts": {
+          "ownerEqual": true,
+          "adminEqual": true,
+          "nonOwnerSame": true,
+          "captureGuardsOk": true,
+          "roundGuardsOk": true,
+          "envChecksOk": true,
+          "degenerateD1": true,
+          "degenerateD2": true,
+          "degenerateD3": true,
+          "degenerateNarrowAccounting": true
+        },
+        "s2": {
+          "bytesOld": 21407200,
+          "bytesProj": 30480,
+          "bytesProjMain": 10000,
+          "bytesProjNarrow": 20480,
+          "ratio": 702.34,
+          "threshold": 5,
+          "pass": true
+        },
+        "s3": {
+          "noiseUpperNs": 512574300,
+          "projRoundsNs": [
+            72814900,
+            72089800,
+            82309700,
+            51512600,
+            60767400
+          ],
+          "oldRoundsNs": [
+            512574300,
+            269971900,
+            257381800,
+            479680200,
+            279341700
+          ],
+          "oldrepRoundsNs": [
+            244784300,
+            259485000,
+            257750600,
+            242069200,
+            286960400
+          ],
+          "violations": [],
+          "pass": true
+        },
+        "s4": {
+          "itMainOld": true,
+          "itMainProj": true,
+          "projNarrow": true,
+          "projRoundNarrowAccounting": true,
+          "containerMainRows": true,
+          "containerNarrowRows": true
+        },
+        "seed": {
+          "shape": 1000,
+          "examId": 976001000,
+          "designRows": 1000,
+          "actualRows": 1000,
+          "designInProgress": 600,
+          "designPaperJsonNonNull": 1000,
+          "actualPaperJsonNonNull": 1000,
+          "paperJsonLenMin": 20480,
+          "paperJsonLenMax": 20480,
+          "designAnswersNonNull": 400,
+          "actualAnswersNonNull": 400,
+          "answersLenMin": 2048,
+          "answersLenMax": 2048,
+          "designLogs": 500,
+          "actualLogs": 500,
+          "ok": true
+        },
+        "guards": {
+          "old": {
+            "arm": "OLD",
+            "expectForbidden": false,
+            "expectedStudents": 1000,
+            "mainQueries": 1,
+            "mainRows": 1000,
+            "narrowQueries": 0,
+            "narrowRows": 0,
+            "rawAnswersNonNull": 400,
+            "rawPaperNonNull": 1000,
+            "suppliedReads": 0,
+            "answersReadAttempts": 0,
+            "paperJsonReadIndices": [
+              0
+            ],
+            "narrowParams": [],
+            "narrowSql": "SELECT paper_json FROM exam_submissions WHERE exam_id = ? AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1",
+            "dbPaperJsonNonNull": 1000,
+            "dbAnswersNonNull": 400,
+            "expMainQueries": 1,
+            "expMainRows": 1000,
+            "expNarrowQueries": 0,
+            "expNarrowRows": 0,
+            "expSuppliedReads": 0,
+            "paperJsonReadPrefix": true,
+            "targetSelectLists": [
+              "id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time"
+            ],
+            "targetSelectListOk": true,
+            "mainOk": true,
+            "narrowOk": true,
+            "longFieldOk": true,
+            "answersOk": true,
+            "ok": true
+          },
+          "proj": {
+            "arm": "PROJ",
+            "expectForbidden": false,
+            "expectedStudents": 1000,
+            "mainQueries": 1,
+            "mainRows": 1000,
+            "narrowQueries": 1,
+            "narrowRows": 1,
+            "rawAnswersNonNull": 0,
+            "rawPaperNonNull": 0,
+            "suppliedReads": 1,
+            "answersReadAttempts": 0,
+            "paperJsonReadIndices": [
+              0
+            ],
+            "narrowParams": [
+              976001000
+            ],
+            "narrowSql": "SELECT paper_json FROM exam_submissions WHERE exam_id = ? AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1",
+            "dbPaperJsonNonNull": 1000,
+            "dbAnswersNonNull": 400,
+            "expMainQueries": 1,
+            "expMainRows": 1000,
+            "expNarrowQueries": 1,
+            "expNarrowRows": 1,
+            "expSuppliedReads": 1,
+            "paperJsonReadPrefix": true,
+            "targetSelectLists": [
+              "student_id,status"
+            ],
+            "targetSelectListOk": true,
+            "mainOk": true,
+            "narrowOk": true,
+            "longFieldOk": true,
+            "answersOk": true,
+            "ok": true
+          }
+        },
+        "containerRows": {
+          "oldMain": 1000,
+          "projMain": 1000,
+          "narrow": 1
+        }
+      }
+    },
+    "3000": {
+      "M1": true,
+      "M2": true,
+      "M3": true,
+      "S1": true,
+      "S2": true,
+      "S3": true,
+      "S4": true,
+      "verdict": "GO",
+      "reasons": [],
+      "detail": {
+        "m1Parts": {
+          "projSelectEqualsFrozen": true,
+          "oldSelectDiffersFromProj": true,
+          "oldSelectContainsLongFields": true,
+          "narrowSelectOk": true,
+          "substitutionOk": true,
+          "oldrepSameTextAsOld": true,
+          "itProblemsEmpty": true,
+          "preregOk": true
+        },
+        "m2Parts": {
+          "schemaApplyOk": true,
+          "digestLogged": true,
+          "showCreateLogged": true,
+          "showIndexLogged": true,
+          "seedOk": true,
+          "containerVerifyRows": true,
+          "containerVerifyAnswers": true,
+          "containerVerifyLogs": true,
+          "containerExitsOk": true
+        },
+        "m3successfulRounds": {
+          "OLD": 5,
+          "PROJ": 5,
+          "OLDrep": 5
+        },
+        "s1Parts": {
+          "ownerEqual": true,
+          "adminEqual": true,
+          "nonOwnerSame": true,
+          "captureGuardsOk": true,
+          "roundGuardsOk": true,
+          "envChecksOk": true,
+          "degenerateD1": true,
+          "degenerateD2": true,
+          "degenerateD3": true,
+          "degenerateNarrowAccounting": true
+        },
+        "s2": {
+          "bytesOld": 64221600,
+          "bytesProj": 50480,
+          "bytesProjMain": 30000,
+          "bytesProjNarrow": 20480,
+          "ratio": 1272.22,
+          "threshold": 5,
+          "pass": true
+        },
+        "s3": {
+          "noiseUpperNs": 899997000,
+          "projRoundsNs": [
+            63530700,
+            106902100,
+            79503300,
+            115851500,
+            77596900
+          ],
+          "oldRoundsNs": [
+            648812800,
+            621784900,
+            612233400,
+            899997000,
+            782078600
+          ],
+          "oldrepRoundsNs": [
+            760619000,
+            545011100,
+            588339000,
+            649005200,
+            694688700
+          ],
+          "violations": [],
+          "pass": true
+        },
+        "s4": {
+          "itMainOld": true,
+          "itMainProj": true,
+          "projNarrow": true,
+          "projRoundNarrowAccounting": true,
+          "containerMainRows": true,
+          "containerNarrowRows": true
+        },
+        "seed": {
+          "shape": 3000,
+          "examId": 976003000,
+          "designRows": 3000,
+          "actualRows": 3000,
+          "designInProgress": 1800,
+          "designPaperJsonNonNull": 3000,
+          "actualPaperJsonNonNull": 3000,
+          "paperJsonLenMin": 20480,
+          "paperJsonLenMax": 20480,
+          "designAnswersNonNull": 1200,
+          "actualAnswersNonNull": 1200,
+          "answersLenMin": 2048,
+          "answersLenMax": 2048,
+          "designLogs": 1500,
+          "actualLogs": 1500,
+          "ok": true
+        },
+        "guards": {
+          "old": {
+            "arm": "OLD",
+            "expectForbidden": false,
+            "expectedStudents": 3000,
+            "mainQueries": 1,
+            "mainRows": 3000,
+            "narrowQueries": 0,
+            "narrowRows": 0,
+            "rawAnswersNonNull": 1200,
+            "rawPaperNonNull": 3000,
+            "suppliedReads": 0,
+            "answersReadAttempts": 0,
+            "paperJsonReadIndices": [
+              0
+            ],
+            "narrowParams": [],
+            "narrowSql": "SELECT paper_json FROM exam_submissions WHERE exam_id = ? AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1",
+            "dbPaperJsonNonNull": 3000,
+            "dbAnswersNonNull": 1200,
+            "expMainQueries": 1,
+            "expMainRows": 3000,
+            "expNarrowQueries": 0,
+            "expNarrowRows": 0,
+            "expSuppliedReads": 0,
+            "paperJsonReadPrefix": true,
+            "targetSelectLists": [
+              "id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time"
+            ],
+            "targetSelectListOk": true,
+            "mainOk": true,
+            "narrowOk": true,
+            "longFieldOk": true,
+            "answersOk": true,
+            "ok": true
+          },
+          "proj": {
+            "arm": "PROJ",
+            "expectForbidden": false,
+            "expectedStudents": 3000,
+            "mainQueries": 1,
+            "mainRows": 3000,
+            "narrowQueries": 1,
+            "narrowRows": 1,
+            "rawAnswersNonNull": 0,
+            "rawPaperNonNull": 0,
+            "suppliedReads": 1,
+            "answersReadAttempts": 0,
+            "paperJsonReadIndices": [
+              0
+            ],
+            "narrowParams": [
+              976003000
+            ],
+            "narrowSql": "SELECT paper_json FROM exam_submissions WHERE exam_id = ? AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1",
+            "dbPaperJsonNonNull": 3000,
+            "dbAnswersNonNull": 1200,
+            "expMainQueries": 1,
+            "expMainRows": 3000,
+            "expNarrowQueries": 1,
+            "expNarrowRows": 1,
+            "expSuppliedReads": 1,
+            "paperJsonReadPrefix": true,
+            "targetSelectLists": [
+              "student_id,status"
+            ],
+            "targetSelectListOk": true,
+            "mainOk": true,
+            "narrowOk": true,
+            "longFieldOk": true,
+            "answersOk": true,
+            "ok": true
+          }
+        },
+        "containerRows": {
+          "oldMain": 3000,
+          "projMain": 3000,
+          "narrow": 1
+        }
+      }
+    }
+  }
+}

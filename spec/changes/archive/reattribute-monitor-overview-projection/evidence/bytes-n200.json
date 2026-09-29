@@ -1,0 +1,137 @@
+{
+  "shape": 200,
+  "atIso": "2026-09-29T13:08:59.237Z",
+  "ok": true,
+  "checks": {
+    "oldSelectContainsLongFields": true,
+    "projSelectEqualsFrozen": true,
+    "narrowSelectOk": true,
+    "oldrepSameTextAsOld": true,
+    "oldrepSameTextAsRoundsOld": true,
+    "mainRowsOk": true,
+    "narrowRowsOk": true,
+    "verifyRowsOk": true,
+    "verifyAnswersOk": true,
+    "verifyLogsOk": true,
+    "exitsOk": true
+  },
+  "verification": {
+    "examId": 976000200,
+    "designRows": 200,
+    "rowsTotal": 200,
+    "designPaperJsonNonNull": 200,
+    "paperJsonNonNull": 200,
+    "paperJsonLenMin": 20480,
+    "paperJsonLenMax": 20480,
+    "designAnswersNonNull": 80,
+    "answersNonNull": 80,
+    "answersLenMin": 2048,
+    "answersLenMax": 2048,
+    "designLogs": 100,
+    "logsActual": 100,
+    "exit": 0
+  },
+  "arms": {
+    "OLD": {
+      "bytes": 4281440,
+      "rows": 200,
+      "statements": [
+        {
+          "msId": "com.exam.submission.mapper.ExamSubmissionMapper.selectList",
+          "sql": "SELECT  id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ?)",
+          "values": [
+            "976000200"
+          ],
+          "literal": "SELECT  id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 976000200)",
+          "substitution": {
+            "placeholderCount": 1,
+            "paramCount": 1,
+            "replaced": 1
+          },
+          "selectList": "id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time",
+          "bytes": 4281440,
+          "rows": 200,
+          "exit": 0,
+          "carrier": "SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(start_time AS CHAR)),0) + COALESCE(LENGTH(CAST(deadline_time AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_type AS CHAR)),0) + COALESCE(LENGTH(CAST(paper_json AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM (SELECT  id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 976000200)) t;",
+          "sqlSha256": "122699fddb6a5264edcd8afd9a1ffd715270343495557d76c64b299f802aa69b",
+          "atIso": "2026-09-29T13:08:58.106Z"
+        }
+      ]
+    },
+    "PROJ": {
+      "bytes": 22480,
+      "mainBytes": 2000,
+      "narrowBytes": 20480,
+      "mainRows": 200,
+      "narrowRows": 1,
+      "statements": [
+        {
+          "msId": "com.exam.submission.mapper.ExamSubmissionMapper.selectList",
+          "sql": "SELECT   student_id,status   FROM exam_submissions      WHERE  (exam_id = ?)",
+          "values": [
+            "976000200"
+          ],
+          "literal": "SELECT   student_id,status   FROM exam_submissions      WHERE  (exam_id = 976000200)",
+          "substitution": {
+            "placeholderCount": 1,
+            "paramCount": 1,
+            "replaced": 1
+          },
+          "selectList": "student_id,status",
+          "bytes": 2000,
+          "rows": 200,
+          "exit": 0,
+          "carrier": "SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM (SELECT   student_id,status   FROM exam_submissions      WHERE  (exam_id = 976000200)) t;",
+          "sqlSha256": "6ebf44b7991c94d6a1e1e10e4b3026abebbd221fb83da72ace453b772b16daae",
+          "atIso": "2026-09-29T13:08:58.327Z"
+        },
+        {
+          "msId": "com.exam.submission.mapper.ExamSubmissionMapper.selectList",
+          "sql": "SELECT paper_json FROM exam_submissions WHERE exam_id = ? AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1",
+          "values": [
+            976000200
+          ],
+          "literal": "SELECT paper_json FROM exam_submissions WHERE exam_id = 976000200 AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1",
+          "substitution": {
+            "placeholderCount": 1,
+            "paramCount": 1,
+            "replaced": 1
+          },
+          "selectList": "paper_json",
+          "bytes": 20480,
+          "rows": 1,
+          "exit": 0,
+          "carrier": "SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(paper_json AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM (SELECT paper_json FROM exam_submissions WHERE exam_id = 976000200 AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1) t;",
+          "sqlSha256": "33e6d5bc7d7b5e23a205f2e744f572b753eb64038b124674a4c5f1261d14da48",
+          "atIso": "2026-09-29T13:08:58.510Z"
+        }
+      ]
+    },
+    "OLDrep": {
+      "bytes": 4281440,
+      "rows": 200,
+      "statements": [
+        {
+          "msId": "com.exam.submission.mapper.ExamSubmissionMapper.selectList",
+          "sql": "SELECT  id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ?)",
+          "values": [
+            "976000200"
+          ],
+          "literal": "SELECT  id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 976000200)",
+          "substitution": {
+            "placeholderCount": 1,
+            "paramCount": 1,
+            "replaced": 1
+          },
+          "selectList": "id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time",
+          "bytes": 4281440,
+          "rows": 200,
+          "exit": 0,
+          "carrier": "SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(start_time AS CHAR)),0) + COALESCE(LENGTH(CAST(deadline_time AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_type AS CHAR)),0) + COALESCE(LENGTH(CAST(paper_json AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM (SELECT  id,exam_id,student_id,start_time,deadline_time,submit_time,submit_type,paper_json,answers,status,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 976000200)) t;",
+          "sqlSha256": "122699fddb6a5264edcd8afd9a1ffd715270343495557d76c64b299f802aa69b",
+          "atIso": "2026-09-29T13:08:58.759Z"
+        }
+      ]
+    }
+  }
+}

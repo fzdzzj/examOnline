@@ -1,0 +1,30 @@
+监考总览答卷取数再归因（站点 s6）— 阶段 2 机械复算
+rev=bede6c8 label=run1 generatedAtIso=2026-09-29T13:07:46.353230700Z
+preregOk=true (recorded=1481d739c8e830969c139e2d124ebf17219231503a076ab4ff5f6ef097e59fcb recomputed=1481d739c8e830969c139e2d124ebf17219231503a076ab4ff5f6ef097e59fcb)
+itExit=0 problemsEmpty=true schemaApplyOk=true
+判据：M1 捕获有效 ∧ M2 容器有效 ∧ M3 轮次完整 ∧ S1 两臂语义等价 ∧ S2 ratio≥5.0 ∧ S3 PROJ 每轮 ≤ 噪声带上界 ∧ S4 形状账目（含窄读）
+
+n=200: GO
+  M1=P M2=P M3=P S1=P S2=P S3=P S4=P
+  S2 bytes: OLD=4281440 PROJ=22480(main=2000+narrow=20480) ratio=190.46 threshold=5
+  S3 ns: noiseUpper=104226200 proj=[33338900,36135700,25443800,55012000,31707300]
+  S3 额外往返是否抵消字段节省：未抵消（S2 ∧ S3 均通过）
+  S4 账目：主语句 OLD 1条/200行，PROJ 1条/200行；窄读 PROJ 1条/1行（同轮记账）
+
+n=1000: GO
+  M1=P M2=P M3=P S1=P S2=P S3=P S4=P
+  S2 bytes: OLD=21407200 PROJ=30480(main=10000+narrow=20480) ratio=702.34 threshold=5
+  S3 ns: noiseUpper=512574300 proj=[72814900,72089800,82309700,51512600,60767400]
+  S3 额外往返是否抵消字段节省：未抵消（S2 ∧ S3 均通过）
+  S4 账目：主语句 OLD 1条/1000行，PROJ 1条/1000行；窄读 PROJ 1条/1行（同轮记账）
+
+n=3000: GO
+  M1=P M2=P M3=P S1=P S2=P S3=P S4=P
+  S2 bytes: OLD=64221600 PROJ=50480(main=30000+narrow=20480) ratio=1272.22 threshold=5
+  S3 ns: noiseUpper=899997000 proj=[63530700,106902100,79503300,115851500,77596900]
+  S3 额外往返是否抵消字段节省：未抵消（S2 ∧ S3 均通过）
+  S4 账目：主语句 OLD 1条/3000行，PROJ 1条/3000行；窄读 PROJ 1条/1行（同轮记账）
+
+裁决：GO（n=200:GO，n=1000:GO，n=3000:GO）
+容器销毁证据（零匹配）：true
+边界：一次性本地容器、单机、空并发、MockMvc 测试上下文；结论不外推生产 MySQL/Tomcat，不构成交卷或监考 P99 结论。

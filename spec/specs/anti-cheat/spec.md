@@ -101,7 +101,7 @@ THEN 系统返回 403 拒绝
 
 WHEN 教师进入监考大屏,
 
-系统 SHALL 展示在线/离线/已交卷人数、答题进度，并 SHALL 高亮异常行为。WHEN 总览需要读取进行中学生的草稿进度时，系统 SHALL 按本场进行中学生批量读取草稿，而 SHALL NOT 在成功路径按学生逐个发起 Redis GET；系统 SHALL 保持缺失/损坏草稿、Redis 失败、权限校验、进度近似口径与其他总览字段的既有语义。无进行中学生时 SHALL NOT 为草稿发起批量读。
+系统 SHALL 展示在线/离线/已交卷人数、答题进度，并 SHALL 高亮异常行为。WHEN 总览需要读取进行中学生的草稿进度时，系统 SHALL 按本场进行中学生批量读取草稿，而 SHALL NOT 在成功路径按学生逐个发起 Redis GET；系统 SHALL 保持缺失/损坏草稿、Redis 失败、权限校验、进度近似口径与其他总览字段的既有语义。无进行中学生时 SHALL NOT 为草稿发起批量读。WHEN 总览读取整场答卷以生成逐人状态时，系统 SHALL 只读取逐人状态所需的标量列，而 SHALL NOT 为每份答卷载入 `paper_json` 与 `answers`；题目总数所需的个人快照 SHALL 经至多一条只取所需列的窄读取得，而 SHALL NOT 按学生回查；系统 SHALL 保持权限校验、进度近似口径、异常高亮与排序、在线/离线判定及响应形状的既有语义。
 
 #### Scenario: 实时状态展示
 
@@ -165,6 +165,22 @@ AND 原有统计和已交卷进度语义不变
 
 ---
 
+#### Scenario: 逐人状态取数不载入长字段且题数至多一次窄读
+
+GIVEN 本场有多份答卷且存在非空个人快照
+
+WHEN 有权限的教师轮询监考总览
+
+THEN 生成逐人状态的主查询只取标量列，不取 `paper_json` 与 `answers`
+
+AND 题目总数经至多一条只取所需列的窄读取得，不按学生回查
+
+AND 无进行中学生或无非空快照时，题数与进度的既有降级语义不变
+
+AND 在线/离线/已交卷计数、草稿进度口径、异常高亮与排序、教师归属校验及响应形状不变
+
+---
+
 > 评估结论注记（2026-09-26，`update-monitor-overview-submission-projection` 归档）：本基线
 > **未合入**该提案的任何 Requirement——其 spec-delta（总览逐人答卷投影 + 至多一次窄快照读题数）
 > 按**未采用草案**随目录归档。要点：在专用隔离环境（H2 内存库 + Redis db15，非共享 dev、不启
@@ -198,3 +214,33 @@ AND 原有统计和已交卷进度语义不变
 > 并与归档对齐；本注记与 tasks.json 的数值取自归档原始 JSON（首轮数值亦如实留存作对照）。逐轮原始
 > JSON（含 sha256 清单）见 `spec/changes/archive/update-monitor-overview-draft-batch-read/evidence/`，
 > 命令与判读见同目录 `tasks.json`。
+
+> 合入注记（2026-09-29，`reattribute-monitor-overview-projection` 归档，GO）：上方 2026-09-26 的
+> **评估结论注记（NO-GO）已被本次测量取代**——它绑定的两个前提都已消失：①前序主因「逐人 Redis
+> 草稿 GET（120 次/请求）」已由 `update-monitor-overview-draft-batch-read` 消除（现码
+> `draftService.getBatch` 一次 MGET）；②前序引擎是 H2 内存库，**结构上看不见网络字节成本**
+> （答卷长字段 20KB 级在进程内取数下不可能显现）。本次另立变更按 performance 基线「先归因、
+> 一次只改一类」重做，判据在任何测量运行前冻结（`evidence/PREREGISTRATION.md`，sha256
+> `1481d739c8e830969c139e2d124ebf17219231503a076ab4ff5f6ef097e59fcb`），在**一次性 mysql:8.0
+> 容器**（tmpfs、127.0.0.1:13319、独立库 `monitor_projection_measure`、整库 `schema.sql` 退出码 0、
+> 镜像 digest `mysql@sha256:7dcddc01…ae2b`、容器 `67add6f16527`；用毕 `docker rm -f` 并留
+> `docker ps -a` 零匹配证据）对三形状 n=200/1000/3000 × 三臂（OLD 现状全列 / PROJ 投影+至多一条
+> 窄读 / OLDrep 等价副本）× 2 预热 + 5 计时轮、逐轮左轮转、不挑轮。机械账目（容器侧 `SUM(LENGTH)`，
+> 确定性、非计时）：**S2 字节比 190.46 / 702.34 / 1272.22**（阈值 5.0）；**S3** 端到端 PROJ 逐轮
+> wall-clock 全落 `max(OLD ∪ OLDrep 全部成功轮)` 噪声带内、S2∧S3 均成立 ⇒「额外往返抵消字段节省」
+> **不成立**（窄读计入同一计时窗口）；**S4** 主语句两臂均 1 条/n 行、窄读 PROJ 1 条/1 行；**S1**
+> 逐字段对拍等价（时钟字段只比有无/正负）；三形状 M1–M3 全成立 ⇒ 裁决 **GO**。量级锚＝s2 在同表
+> 同谓词同两列上的已入库读数 `67941000 → 27000` 字节。实现（只动读形态这一类）：
+> `MonitorService.overview` 主语句投影 `student_id, status`；题数分母改由
+> `ExamSubmissionMapper.selectFirstPaperJson`（`paper_json` 非空且 `LIMIT 1`）**至多一条**窄单行读
+> 取得，无答卷/无非空快照时按现码口径 0 题且不多发查询；在线/离线降级、进度近似口径、异常高亮
+> 与排序、教师归属校验、草稿批读、Redis 键与 TTL、索引、`schema.sql`、缓存、JVM/线程池/连接池、
+> MQ、前端及其余站点（s3/s4/s5）零改动。护栏 `MonitorOverviewProjectionGuardTest` 先红后绿
+> （旧实现 `expected: <0> but was: <3>`），常驻门禁。仓库根 `mvnw.cmd clean test` @ 实施提交
+> `69617a9` → **327/0/0/1 BUILD SUCCESS 退出码 0**（325→327 = +2 护栏用例，Skipped 1 不变；测量 IT
+> 以 `IT` 结尾不进 Surefire）。**过程披露**：门禁两次为确定性红（共享 H2 下新护栏夹具 4 条
+> `published=1` 考试挤占「学生考试列表第 1 页 50 条」窗口，令 `ExamTakingIntegrationTest.examListGroups`
+> 的目标考试落第 2 页），最小修正夹具 `published` 位后转绿；两次红、归因与修正依据见
+> `evidence/gate-runs.md`，机制登记为 spec/README 遗留 #20。**边界**：一次性本地容器、单机、
+> 空并发、MockMvc 测试上下文；不外推生产 MySQL/Tomcat，不构成交卷或监考 P99 结论。逐轮原始 JSON、
+> 裁决书、容器日志与 sha256 清单见 `spec/changes/archive/reattribute-monitor-overview-projection/evidence/`。
