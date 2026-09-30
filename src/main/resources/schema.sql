@@ -256,7 +256,9 @@ CREATE TABLE IF NOT EXISTS exam_submissions (
     -- 补发对账扫描：只找"已交卷但 answers 仍为 NULL"。健康系统里该集合恒空，
     -- 没有这条索引就要扫完整个 status=2 区间才敢返回 0 行（10 万答卷实测 411–519ms，每 10 秒一次）。
     KEY idx_submissions_republish (status, answers_missing),
-    -- 学生考试列表答卷渠道取数：按学生查询本人全部答卷（attribute-my-exams-list-index 实测 GO 采纳，降本 560~2400 倍）
+    -- 学生考试列表答卷渠道取数：按 student_id 查本人全部答卷。无此索引时 MySQL 走全表扫，
+    -- 真 8.0 容器双形状实测逐轮扫描行数比恒定（万倍量级），单次耗时由百毫秒级降至亚毫秒级；
+    -- 判据冻结、逐轮原件与机械裁决见 spec/changes/archive/attribute-my-exams-list-index/。
     KEY idx_submissions_student (student_id)
 );
 
