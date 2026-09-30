@@ -60,6 +60,9 @@ import java.util.Set;
 @Service
 public class ExamTakingService {
 
+    /** 学生考试列表默认最大条数上限（需求决策记录 §12.1）。 */
+    private static final long MY_EXAMS_DEFAULT_LIMIT = 50L;
+
     private final ExamMapper examMapper;
     private final ExamSubmissionMapper submissionMapper;
     private final UserClassMapper userClassMapper;
@@ -245,7 +248,7 @@ public class ExamTakingService {
                 .thenComparingLong((ExamListItem item) -> item.getStartTime() == null ? Long.MAX_VALUE : Math.abs(Duration.between(now, item.getStartTime()).toMillis()))
                 .thenComparing((ExamListItem item) -> item.getStartTime(), Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparingLong(ExamListItem::getExamId))
-        .limit(50)
+        .limit(MY_EXAMS_DEFAULT_LIMIT)
         .toList();
     }
 
