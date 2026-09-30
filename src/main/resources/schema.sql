@@ -255,7 +255,9 @@ CREATE TABLE IF NOT EXISTS exam_submissions (
     KEY idx_submissions_grading (exam_id, grading_status),    -- 判分扫描：按考试筛待判/失败答卷
     -- 补发对账扫描：只找"已交卷但 answers 仍为 NULL"。健康系统里该集合恒空，
     -- 没有这条索引就要扫完整个 status=2 区间才敢返回 0 行（10 万答卷实测 411–519ms，每 10 秒一次）。
-    KEY idx_submissions_republish (status, answers_missing)
+    KEY idx_submissions_republish (status, answers_missing),
+    -- 学生考试列表答卷渠道取数：按学生查询本人全部答卷（attribute-my-exams-list-index 实测 GO 采纳，降本 560~2400 倍）
+    KEY idx_submissions_student (student_id)
 );
 
 -- =============================================================
