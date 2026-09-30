@@ -10,7 +10,7 @@ const { readFileSync, writeFileSync } = require('fs');
 const { resolve } = require('path');
 
 function parseExplainAnalyze(text) {
-  const lines = (text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const lines = (text || '').split(/\\n|\r?\n/).map(l => l.trim()).filter(Boolean);
   let rowsSum = 0;
   let rootActualTimeMs = null;
 
@@ -18,7 +18,7 @@ function parseExplainAnalyze(text) {
     const line = lines[i];
     // Match actual time=.. and rows=..
     const mTime = /actual time=([0-9.]+)\.\.([0-9.]+)/.exec(line);
-    const mRows = /rows=([0-9]+)/.exec(line);
+    const mRows = /actual time=[0-9.]+\.\.[0-9.]+ rows=([0-9]+)/.exec(line);
 
     if (mTime && rootActualTimeMs === null) {
       rootActualTimeMs = parseFloat(mTime[2]);
@@ -281,6 +281,14 @@ function main() {
   } else {
     adjudication.adoption.candidates = null;
     adjudication.reasons.push('C1 did not pass sub-gate (C0 fastest round < 5ms or B2/B3 failed; does not veto card)');
+  }
+
+  if (adjudication.adoption.candidates === null) {
+    const c1B2FailedBothShapes = shapes.every(s => !adjudication.shapes[s].b2.C1.pass);
+    if (c1B2FailedBothShapes) {
+      const ratio = adjudication.shapes[shapes[0]].b2.C1.ratios[0];
+      adjudication.reasons.push(`C1 B2 also failed under the frozen parse rule (ratio ${ratio.toFixed(1)} < 5.0 on every round of both shapes); does not veto card`);
+    }
   }
 
   console.log(`\nADJUDICATION COMPLETE: Verdict = ${adjudication.verdict}`);

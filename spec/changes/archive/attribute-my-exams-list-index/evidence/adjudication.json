@@ -1,10 +1,11 @@
 {
-  "generatedAtIso": "2026-09-30T14:07:40.748Z",
+  "generatedAtIso": "2026-09-30T15:33:48.519Z",
   "rev": "4c007c5",
   "verdict": "GO",
   "reasons": [
     "A1 (single-column student_id index) passed B1-B5 across both n1 and n2 shapes",
-    "C1 did not pass sub-gate (C0 fastest round < 5ms or B2/B3 failed; does not veto card)"
+    "C1 did not pass sub-gate (C0 fastest round < 5ms or B2/B3 failed; does not veto card)",
+    "C1 B2 also failed under the frozen parse rule (ratio 2.0 < 5.0 on every round of both shapes); does not veto card"
   ],
   "adoption": {
     "submissions": "A1",
@@ -29,33 +30,33 @@
       "b2": {
         "A1": {
           "ratios": [
-            622.7,
-            622.7,
-            582.5,
-            602.6,
-            562.4
+            10051,
+            10051,
+            10051,
+            10051,
+            10051
           ],
           "pass": true
         },
         "A2": {
           "ratios": [
-            622.7,
-            622.7,
-            582.5,
-            602.6,
-            562.4
+            10051,
+            10051,
+            10051,
+            10051,
+            10051
           ],
           "pass": true
         },
         "C1": {
           "ratios": [
-            500,
-            500,
-            500,
-            500,
-            500
+            2,
+            2,
+            2,
+            2,
+            2
           ],
-          "pass": true
+          "pass": false
         }
       },
       "b3": {
@@ -111,33 +112,33 @@
       "b2": {
         "A1": {
           "ratios": [
-            2320.3,
-            2400.3,
-            2480.3,
-            2480.3,
-            2480.3
+            40001,
+            40001,
+            40001,
+            40001,
+            40001
           ],
           "pass": true
         },
         "A2": {
           "ratios": [
-            2320.3,
-            2400.3,
-            2480.3,
-            2480.3,
-            2480.3
+            40001,
+            40001,
+            40001,
+            40001,
+            40001
           ],
           "pass": true
         },
         "C1": {
           "ratios": [
-            2009,
-            1959,
-            1959,
-            1959,
-            2009
+            2,
+            2,
+            2,
+            2,
+            2
           ],
-          "pass": true
+          "pass": false
         }
       },
       "b3": {
@@ -185,7 +186,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 62265,
-            "rowsSum": 6227,
+            "rowsSum": 100510,
             "actualTimeMs": 260,
             "elapsedUs": 70904
           },
@@ -194,7 +195,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 62265,
-            "rowsSum": 6227,
+            "rowsSum": 100510,
             "actualTimeMs": 303,
             "elapsedUs": 117638
           },
@@ -203,7 +204,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 58247,
-            "rowsSum": 5825,
+            "rowsSum": 100510,
             "actualTimeMs": 304,
             "elapsedUs": 145129
           },
@@ -212,7 +213,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 60256,
-            "rowsSum": 6026,
+            "rowsSum": 100510,
             "actualTimeMs": 275,
             "elapsedUs": 37839
           },
@@ -221,7 +222,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 56239,
-            "rowsSum": 5624,
+            "rowsSum": 100510,
             "actualTimeMs": 265,
             "elapsedUs": 33877
           }
@@ -235,7 +236,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 62265,
-            "rowsSum": 6227,
+            "rowsSum": 100510,
             "actualTimeMs": 333,
             "elapsedUs": 31681
           },
@@ -244,7 +245,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 62265,
-            "rowsSum": 6227,
+            "rowsSum": 100510,
             "actualTimeMs": 267,
             "elapsedUs": 42266
           },
@@ -253,7 +254,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 58247,
-            "rowsSum": 5825,
+            "rowsSum": 100510,
             "actualTimeMs": 272,
             "elapsedUs": 45693
           },
@@ -262,7 +263,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 60256,
-            "rowsSum": 6026,
+            "rowsSum": 100510,
             "actualTimeMs": 229,
             "elapsedUs": 30459
           },
@@ -271,7 +272,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 56239,
-            "rowsSum": 5624,
+            "rowsSum": 100510,
             "actualTimeMs": 311,
             "elapsedUs": 25298
           }
@@ -327,11 +328,11 @@
           }
         ],
         "ratios": [
-          622.7,
-          622.7,
-          582.5,
-          602.6,
-          562.4
+          10051,
+          10051,
+          10051,
+          10051,
+          10051
         ]
       },
       "A2": {
@@ -383,11 +384,11 @@
           }
         ],
         "ratios": [
-          622.7,
-          622.7,
-          582.5,
-          602.6,
-          562.4
+          10051,
+          10051,
+          10051,
+          10051,
+          10051
         ]
       },
       "C0": {
@@ -397,7 +398,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.188
           },
           {
@@ -405,7 +406,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.11
           },
           {
@@ -413,7 +414,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.183
           },
           {
@@ -421,7 +422,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.174
           },
           {
@@ -429,7 +430,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.168
           }
         ],
@@ -442,7 +443,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.103
           },
           {
@@ -450,7 +451,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.124
           },
           {
@@ -458,7 +459,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.167
           },
           {
@@ -466,7 +467,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.198
           },
           {
@@ -474,7 +475,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 500,
-            "rowsSum": 500,
+            "rowsSum": 2,
             "actualTimeMs": 0.191
           }
         ],
@@ -524,11 +525,11 @@
           }
         ],
         "ratios": [
-          500,
-          500,
-          500,
-          500,
-          500
+          2,
+          2,
+          2,
+          2,
+          2
         ]
       }
     },
@@ -540,7 +541,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 232027,
-            "rowsSum": 23203,
+            "rowsSum": 400010,
             "actualTimeMs": 1119,
             "elapsedUs": 46988
           },
@@ -549,7 +550,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 240028,
-            "rowsSum": 24003,
+            "rowsSum": 400010,
             "actualTimeMs": 1228,
             "elapsedUs": 89696
           },
@@ -558,7 +559,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 248029,
-            "rowsSum": 24803,
+            "rowsSum": 400010,
             "actualTimeMs": 1295,
             "elapsedUs": 112626
           },
@@ -567,7 +568,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 248029,
-            "rowsSum": 24803,
+            "rowsSum": 400010,
             "actualTimeMs": 1327,
             "elapsedUs": 55516
           },
@@ -576,7 +577,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 248029,
-            "rowsSum": 24803,
+            "rowsSum": 400010,
             "actualTimeMs": 1442,
             "elapsedUs": 88102
           }
@@ -590,7 +591,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 232027,
-            "rowsSum": 23203,
+            "rowsSum": 400010,
             "actualTimeMs": 1099,
             "elapsedUs": 32406
           },
@@ -599,7 +600,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 240028,
-            "rowsSum": 24003,
+            "rowsSum": 400010,
             "actualTimeMs": 1103,
             "elapsedUs": 49713
           },
@@ -608,7 +609,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 248029,
-            "rowsSum": 24803,
+            "rowsSum": 400010,
             "actualTimeMs": 1132,
             "elapsedUs": 33273
           },
@@ -617,7 +618,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 248029,
-            "rowsSum": 24803,
+            "rowsSum": 400010,
             "actualTimeMs": 1152,
             "elapsedUs": 23866
           },
@@ -626,7 +627,7 @@
             "type": "ALL",
             "key": null,
             "explainRows": 248029,
-            "rowsSum": 24803,
+            "rowsSum": 400010,
             "actualTimeMs": 1152,
             "elapsedUs": 61117
           }
@@ -682,11 +683,11 @@
           }
         ],
         "ratios": [
-          2320.3,
-          2400.3,
-          2480.3,
-          2480.3,
-          2480.3
+          40001,
+          40001,
+          40001,
+          40001,
+          40001
         ]
       },
       "A2": {
@@ -738,11 +739,11 @@
           }
         ],
         "ratios": [
-          2320.3,
-          2400.3,
-          2480.3,
-          2480.3,
-          2480.3
+          40001,
+          40001,
+          40001,
+          40001,
+          40001
         ]
       },
       "C0": {
@@ -752,7 +753,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 2009,
-            "rowsSum": 2009,
+            "rowsSum": 2,
             "actualTimeMs": 0.338
           },
           {
@@ -760,7 +761,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 1959,
-            "rowsSum": 1959,
+            "rowsSum": 2,
             "actualTimeMs": 0.486
           },
           {
@@ -768,7 +769,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 1959,
-            "rowsSum": 1959,
+            "rowsSum": 2,
             "actualTimeMs": 0.482
           },
           {
@@ -776,7 +777,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 1959,
-            "rowsSum": 1959,
+            "rowsSum": 2,
             "actualTimeMs": 0.486
           },
           {
@@ -784,7 +785,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 2009,
-            "rowsSum": 2009,
+            "rowsSum": 2,
             "actualTimeMs": 0.461
           }
         ],
@@ -797,7 +798,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 2009,
-            "rowsSum": 2009,
+            "rowsSum": 2,
             "actualTimeMs": 0.404
           },
           {
@@ -805,7 +806,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 1959,
-            "rowsSum": 1959,
+            "rowsSum": 2,
             "actualTimeMs": 0.524
           },
           {
@@ -813,7 +814,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 1959,
-            "rowsSum": 1959,
+            "rowsSum": 2,
             "actualTimeMs": 0.371
           },
           {
@@ -821,7 +822,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 1959,
-            "rowsSum": 1959,
+            "rowsSum": 2,
             "actualTimeMs": 0.567
           },
           {
@@ -829,7 +830,7 @@
             "type": "range",
             "key": "uk_candidate_exam_student",
             "explainRows": 2009,
-            "rowsSum": 2009,
+            "rowsSum": 2,
             "actualTimeMs": 0.393
           }
         ],
@@ -879,11 +880,11 @@
           }
         ],
         "ratios": [
-          2009,
-          1959,
-          1959,
-          1959,
-          2009
+          2,
+          2,
+          2,
+          2,
+          2
         ]
       }
     }
