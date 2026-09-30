@@ -1,0 +1,891 @@
+{
+  "generatedAtIso": "2026-09-30T14:07:40.748Z",
+  "rev": "4c007c5",
+  "verdict": "GO",
+  "reasons": [
+    "A1 (single-column student_id index) passed B1-B5 across both n1 and n2 shapes",
+    "C1 did not pass sub-gate (C0 fastest round < 5ms or B2/B3 failed; does not veto card)"
+  ],
+  "adoption": {
+    "submissions": "A1",
+    "candidates": null
+  },
+  "shapes": {
+    "n1": {
+      "b1": {
+        "submissions": {
+          "typeAll": true,
+          "keyNull": true,
+          "fastestRoundMs": 260,
+          "pass": true
+        },
+        "candidates": {
+          "typeAll": false,
+          "keyNull": false,
+          "fastestRoundMs": 0.11,
+          "pass": false
+        }
+      },
+      "b2": {
+        "A1": {
+          "ratios": [
+            622.7,
+            622.7,
+            582.5,
+            602.6,
+            562.4
+          ],
+          "pass": true
+        },
+        "A2": {
+          "ratios": [
+            622.7,
+            622.7,
+            582.5,
+            602.6,
+            562.4
+          ],
+          "pass": true
+        },
+        "C1": {
+          "ratios": [
+            500,
+            500,
+            500,
+            500,
+            500
+          ],
+          "pass": true
+        }
+      },
+      "b3": {
+        "bandA0": 333,
+        "bandC0": 0.198,
+        "A1": {
+          "pass": true,
+          "maxMs": 0.144
+        },
+        "A2": {
+          "pass": true,
+          "maxMs": 0.0346
+        },
+        "C1": {
+          "pass": true,
+          "maxMs": 0.0272
+        }
+      },
+      "b4": {
+        "writeBandA0": 145129,
+        "writeThreshold": 152385.45,
+        "A1": {
+          "pass": true,
+          "maxElapsedUs": 40885
+        },
+        "A2": {
+          "pass": true,
+          "maxElapsedUs": 39624
+        }
+      },
+      "b5": {
+        "b51_seedData": true,
+        "b52_analyzeTables": true,
+        "b53_explainParsable": true,
+        "pass": true
+      }
+    },
+    "n2": {
+      "b1": {
+        "submissions": {
+          "typeAll": true,
+          "keyNull": true,
+          "fastestRoundMs": 1119,
+          "pass": true
+        },
+        "candidates": {
+          "typeAll": false,
+          "keyNull": false,
+          "fastestRoundMs": 0.338,
+          "pass": false
+        }
+      },
+      "b2": {
+        "A1": {
+          "ratios": [
+            2320.3,
+            2400.3,
+            2480.3,
+            2480.3,
+            2480.3
+          ],
+          "pass": true
+        },
+        "A2": {
+          "ratios": [
+            2320.3,
+            2400.3,
+            2480.3,
+            2480.3,
+            2480.3
+          ],
+          "pass": true
+        },
+        "C1": {
+          "ratios": [
+            2009,
+            1959,
+            1959,
+            1959,
+            2009
+          ],
+          "pass": true
+        }
+      },
+      "b3": {
+        "bandA0": 1442,
+        "bandC0": 0.567,
+        "A1": {
+          "pass": true,
+          "maxMs": 0.162
+        },
+        "A2": {
+          "pass": true,
+          "maxMs": 0.0408
+        },
+        "C1": {
+          "pass": true,
+          "maxMs": 0.0197
+        }
+      },
+      "b4": {
+        "writeBandA0": 112626,
+        "writeThreshold": 118257.3,
+        "A1": {
+          "pass": true,
+          "maxElapsedUs": 63531
+        },
+        "A2": {
+          "pass": true,
+          "maxElapsedUs": 54867
+        }
+      },
+      "b5": {
+        "b51_seedData": true,
+        "b52_analyzeTables": true,
+        "b53_explainParsable": true,
+        "pass": true
+      }
+    }
+  },
+  "perArm": {
+    "n1": {
+      "A0": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 62265,
+            "rowsSum": 6227,
+            "actualTimeMs": 260,
+            "elapsedUs": 70904
+          },
+          {
+            "round": 2,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 62265,
+            "rowsSum": 6227,
+            "actualTimeMs": 303,
+            "elapsedUs": 117638
+          },
+          {
+            "round": 3,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 58247,
+            "rowsSum": 5825,
+            "actualTimeMs": 304,
+            "elapsedUs": 145129
+          },
+          {
+            "round": 4,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 60256,
+            "rowsSum": 6026,
+            "actualTimeMs": 275,
+            "elapsedUs": 37839
+          },
+          {
+            "round": 5,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 56239,
+            "rowsSum": 5624,
+            "actualTimeMs": 265,
+            "elapsedUs": 33877
+          }
+        ],
+        "band": 333
+      },
+      "A0rep": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 62265,
+            "rowsSum": 6227,
+            "actualTimeMs": 333,
+            "elapsedUs": 31681
+          },
+          {
+            "round": 2,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 62265,
+            "rowsSum": 6227,
+            "actualTimeMs": 267,
+            "elapsedUs": 42266
+          },
+          {
+            "round": 3,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 58247,
+            "rowsSum": 5825,
+            "actualTimeMs": 272,
+            "elapsedUs": 45693
+          },
+          {
+            "round": 4,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 60256,
+            "rowsSum": 6026,
+            "actualTimeMs": 229,
+            "elapsedUs": 30459
+          },
+          {
+            "round": 5,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 56239,
+            "rowsSum": 5624,
+            "actualTimeMs": 311,
+            "elapsedUs": 25298
+          }
+        ],
+        "band": 333
+      },
+      "A1": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.072,
+            "elapsedUs": 22038
+          },
+          {
+            "round": 2,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0602,
+            "elapsedUs": 40885
+          },
+          {
+            "round": 3,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0874,
+            "elapsedUs": 35545
+          },
+          {
+            "round": 4,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.144,
+            "elapsedUs": 31159
+          },
+          {
+            "round": 5,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.124,
+            "elapsedUs": 35209
+          }
+        ],
+        "ratios": [
+          622.7,
+          622.7,
+          582.5,
+          602.6,
+          562.4
+        ]
+      },
+      "A2": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0177,
+            "elapsedUs": 37959
+          },
+          {
+            "round": 2,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0216,
+            "elapsedUs": 31344
+          },
+          {
+            "round": 3,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0243,
+            "elapsedUs": 21882
+          },
+          {
+            "round": 4,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0343,
+            "elapsedUs": 39624
+          },
+          {
+            "round": 5,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0346,
+            "elapsedUs": 28091
+          }
+        ],
+        "ratios": [
+          622.7,
+          622.7,
+          582.5,
+          602.6,
+          562.4
+        ]
+      },
+      "C0": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.188
+          },
+          {
+            "round": 2,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.11
+          },
+          {
+            "round": 3,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.183
+          },
+          {
+            "round": 4,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.174
+          },
+          {
+            "round": 5,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.168
+          }
+        ],
+        "band": 0.198
+      },
+      "C0rep": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.103
+          },
+          {
+            "round": 2,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.124
+          },
+          {
+            "round": 3,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.167
+          },
+          {
+            "round": 4,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.198
+          },
+          {
+            "round": 5,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 500,
+            "rowsSum": 500,
+            "actualTimeMs": 0.191
+          }
+        ],
+        "band": 0.198
+      },
+      "C1": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0135
+          },
+          {
+            "round": 2,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0165
+          },
+          {
+            "round": 3,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0191
+          },
+          {
+            "round": 4,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0272
+          },
+          {
+            "round": 5,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0193
+          }
+        ],
+        "ratios": [
+          500,
+          500,
+          500,
+          500,
+          500
+        ]
+      }
+    },
+    "n2": {
+      "A0": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 232027,
+            "rowsSum": 23203,
+            "actualTimeMs": 1119,
+            "elapsedUs": 46988
+          },
+          {
+            "round": 2,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 240028,
+            "rowsSum": 24003,
+            "actualTimeMs": 1228,
+            "elapsedUs": 89696
+          },
+          {
+            "round": 3,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 248029,
+            "rowsSum": 24803,
+            "actualTimeMs": 1295,
+            "elapsedUs": 112626
+          },
+          {
+            "round": 4,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 248029,
+            "rowsSum": 24803,
+            "actualTimeMs": 1327,
+            "elapsedUs": 55516
+          },
+          {
+            "round": 5,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 248029,
+            "rowsSum": 24803,
+            "actualTimeMs": 1442,
+            "elapsedUs": 88102
+          }
+        ],
+        "band": 1442
+      },
+      "A0rep": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 232027,
+            "rowsSum": 23203,
+            "actualTimeMs": 1099,
+            "elapsedUs": 32406
+          },
+          {
+            "round": 2,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 240028,
+            "rowsSum": 24003,
+            "actualTimeMs": 1103,
+            "elapsedUs": 49713
+          },
+          {
+            "round": 3,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 248029,
+            "rowsSum": 24803,
+            "actualTimeMs": 1132,
+            "elapsedUs": 33273
+          },
+          {
+            "round": 4,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 248029,
+            "rowsSum": 24803,
+            "actualTimeMs": 1152,
+            "elapsedUs": 23866
+          },
+          {
+            "round": 5,
+            "type": "ALL",
+            "key": null,
+            "explainRows": 248029,
+            "rowsSum": 24803,
+            "actualTimeMs": 1152,
+            "elapsedUs": 61117
+          }
+        ],
+        "band": 1442
+      },
+      "A1": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.15,
+            "elapsedUs": 63531
+          },
+          {
+            "round": 2,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0968,
+            "elapsedUs": 25627
+          },
+          {
+            "round": 3,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0932,
+            "elapsedUs": 41098
+          },
+          {
+            "round": 4,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.162,
+            "elapsedUs": 34077
+          },
+          {
+            "round": 5,
+            "type": "ref",
+            "key": "idx_submissions_student",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0761,
+            "elapsedUs": 23291
+          }
+        ],
+        "ratios": [
+          2320.3,
+          2400.3,
+          2480.3,
+          2480.3,
+          2480.3
+        ]
+      },
+      "A2": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0184,
+            "elapsedUs": 40041
+          },
+          {
+            "round": 2,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0203,
+            "elapsedUs": 41989
+          },
+          {
+            "round": 3,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0355,
+            "elapsedUs": 35548
+          },
+          {
+            "round": 4,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0408,
+            "elapsedUs": 54867
+          },
+          {
+            "round": 5,
+            "type": "ref",
+            "key": "idx_submissions_student_list",
+            "explainRows": 10,
+            "rowsSum": 10,
+            "actualTimeMs": 0.0223,
+            "elapsedUs": 46899
+          }
+        ],
+        "ratios": [
+          2320.3,
+          2400.3,
+          2480.3,
+          2480.3,
+          2480.3
+        ]
+      },
+      "C0": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 2009,
+            "rowsSum": 2009,
+            "actualTimeMs": 0.338
+          },
+          {
+            "round": 2,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 1959,
+            "rowsSum": 1959,
+            "actualTimeMs": 0.486
+          },
+          {
+            "round": 3,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 1959,
+            "rowsSum": 1959,
+            "actualTimeMs": 0.482
+          },
+          {
+            "round": 4,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 1959,
+            "rowsSum": 1959,
+            "actualTimeMs": 0.486
+          },
+          {
+            "round": 5,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 2009,
+            "rowsSum": 2009,
+            "actualTimeMs": 0.461
+          }
+        ],
+        "band": 0.567
+      },
+      "C0rep": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 2009,
+            "rowsSum": 2009,
+            "actualTimeMs": 0.404
+          },
+          {
+            "round": 2,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 1959,
+            "rowsSum": 1959,
+            "actualTimeMs": 0.524
+          },
+          {
+            "round": 3,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 1959,
+            "rowsSum": 1959,
+            "actualTimeMs": 0.371
+          },
+          {
+            "round": 4,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 1959,
+            "rowsSum": 1959,
+            "actualTimeMs": 0.567
+          },
+          {
+            "round": 5,
+            "type": "range",
+            "key": "uk_candidate_exam_student",
+            "explainRows": 2009,
+            "rowsSum": 2009,
+            "actualTimeMs": 0.393
+          }
+        ],
+        "band": 0.567
+      },
+      "C1": {
+        "rounds": [
+          {
+            "round": 1,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0134
+          },
+          {
+            "round": 2,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0178
+          },
+          {
+            "round": 3,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0194
+          },
+          {
+            "round": 4,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0197
+          },
+          {
+            "round": 5,
+            "type": "ref",
+            "key": "idx_candidates_student",
+            "explainRows": 1,
+            "rowsSum": 1,
+            "actualTimeMs": 0.0149
+          }
+        ],
+        "ratios": [
+          2009,
+          1959,
+          1959,
+          1959,
+          2009
+        ]
+      }
+    }
+  }
+}

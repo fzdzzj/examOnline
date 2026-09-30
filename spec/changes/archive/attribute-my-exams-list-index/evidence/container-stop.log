@@ -1,0 +1,12 @@
+Stopping container my-exams-index-mysql at 2026-09-30T14:06:45.797Z
+docker rm -f exit=0 stdout=my-exams-index-mysql
+--- 零匹配证据 docker ps -a --filter name=my-exams-index-mysql:
+stdout=CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+stderr=
+--- docker ps 销毁后列表:
+sport-verify-rocketmq-broker 0.0.0.0:10909->10909/tcp, [::]:10909->10909/tcp, 0.0.0.0:10911->10911/tcp, [::]:10911->10911/tcp
+sport-verify-mysql 0.0.0.0:3307->3306/tcp, [::]:3307->3306/tcp
+sport-verify-redis 0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+sport-verify-nacos 0.0.0.0:8848->8848/tcp, [::]:8848->8848/tcp, 0.0.0.0:9848->9848/tcp, [::]:9848->9848/tcp
+sport-verify-rocketmq-namesrv 0.0.0.0:9876->9876/tcp, [::]:9876->9876/tcp
+SUCCESS: Other project containers remained completely untouched!

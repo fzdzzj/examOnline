@@ -244,3 +244,5 @@ AND 在线/离线/已交卷计数、草稿进度口径、异常高亮与排序�
 > `evidence/gate-runs.md`，机制登记为 spec/README 遗留 #20。**边界**：一次性本地容器、单机、
 > 空并发、MockMvc 测试上下文；不外推生产 MySQL/Tomcat，不构成交卷或监考 P99 结论。逐轮原始 JSON、
 > 裁决书、容器日志与 sha256 清单见 `spec/changes/archive/reattribute-monitor-overview-projection/evidence/`。
+>
+> 观察项（2026-09-30，F-F）：`MonitorService.resolveTotalQuestions` 的窄读 `paper_json IS NOT NULL AND <> '' LIMIT 1` 无显式 `ORDER BY`，若命中行的快照为纯空白字符串（`isBlank() == true`），当前实现直接返回题数 0 而不再找下一行；因生产答卷创建与交卷链路中 `paper_json` 恒为完整 JSON 结构串、不会写入纯空白字符串，该分支在构造上不可达，此处仅作语义边界登记，不修改代码。
