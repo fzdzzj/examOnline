@@ -17,6 +17,8 @@ import com.exam.submission.entity.ExamSubmission;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 判分读侧服务：进度总览与批改工作台查询（教师视角，只读不写）。
@@ -74,9 +76,15 @@ public class GradingQueryService {
             }
         });
         // 未批行数 > 0 的答卷即"部分批改"（未运行判分的答卷不计入）
-        long partial = submissions.stream().filter(submission ->
-                subjectiveRows.stream().anyMatch(row -> row.getSubmissionId().equals(submission.getId())
-                        && row.getScore() == null)).count();
+        // 单遍哈希替代 O(n*m) 嵌套匹配：先收集存在未批主观题（score == null）的答卷 ID，
+        // 再单遍过滤答卷；n=答卷数、m=主观行数，整体降为 O(n+m)。
+        Set<Long> ungradedSubmissionIds = subjectiveRows.stream()
+                .filter(row -> row.getScore() == null)
+                .map(SubjectiveGrade::getSubmissionId)
+                .collect(Collectors.toSet());
+        long partial = submissions.stream()
+                .filter(submission -> ungradedSubmissionIds.contains(submission.getId()))
+                .count();
         response.setPartialGradedCount((int) partial);
         return response;
     }
