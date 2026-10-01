@@ -1,16 +1,14 @@
 # exam-taking 规范
 
 > 能力域：在线考试与交卷（阶段 5，W4-W6）。
-> 来源：`spec/changes/archive/add-exam-taking` 合入（进入考试、答题导航与采集、交卷幂等、交卷削峰落库、超时交卷、自动保存与断线恢复）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（交卷落库容量与时延）+ `spec/changes/archive/fix-my-exams-list-scope` 合入（学生考试列表取数范围、分组与排序、上限）。
+> 来源：`spec/changes/archive/add-exam-taking` 合入（进入考试、答题导航与采集、交卷幂等、交卷削峰落库、超时交卷、自动保存与断线恢复）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（交卷落库容量与时延）+ `spec/changes/archive/fix-my-exams-list-scope` 合入（学生考试列表取数范围、分组与排序、上限）+ `spec/changes/archive/enforce-exam-enter-class-affiliation` 合入（进入考试的班级归属准入强校验，2026-10-01 归档）。
 > 验收遗留：交卷链路 JMeter 5000 并发压测与硬指标验收（P99 < 2s / 0 丢单 / 批量落库 < 30s）尚未完成，见 `tasks.json` task 8。
 
 ## Requirements
 
 ### Requirement: 进入考试
 
-WHEN 学生进入考试,
-
-系统 SHALL 校验考试处于进行中，生成个人快照锁定题目与顺序，并 SHALL 以点击开始时间启动个人倒计时。
+WHEN 学生进入考试, 系统 SHALL 校验考试处于进行中；对**首次进入**（该考试尚无本人答卷）的学生 SHALL 执行准入校验——普通考试（非补考）要求考试已指派班级且学生当前属于该班级，补考要求学生在名单内——校验通过后 SHALL 生成个人快照锁定题目与顺序，并 SHALL 以点击开始时间启动个人倒计时。学生已有本场答卷时 SHALL 直接放行进入答题上下文（断线重连/刷新恢复），SHALL NOT 因事后班级归属变动拒绝。
 
 #### Scenario: 进入考试成功
 
@@ -41,6 +39,62 @@ GIVEN 考试未开始或已结束
 WHEN 学生尝试进入考试
 
 THEN 系统拒绝进入并返回对应错误
+
+#### Scenario: 班级内学生进入普通考试
+
+GIVEN 一场进行中的普通考试已指派班级 A
+
+AND 学生当前属于班级 A
+
+AND 学生尚未开始该考试
+
+WHEN 学生点击进入并开始
+
+THEN 系统生成个人快照并启动个人倒计时
+
+#### Scenario: 非本班学生跨班级进入被拒
+
+GIVEN 一场进行中的普通考试已指派班级 A
+
+AND 学生当前不属于班级 A
+
+WHEN 学生尝试进入考试
+
+THEN 系统拒绝进入并返回 403
+
+AND 错误提示指明其不属于该考试指定的班级
+
+AND 系统不为其创建答卷
+
+#### Scenario: 未指派班级的普通考试禁止进入
+
+GIVEN 一场进行中的普通考试未指派班级
+
+WHEN 学生尝试进入考试
+
+THEN 系统拒绝进入并返回 403
+
+AND 错误提示指明该考试未指派班级
+
+#### Scenario: 补考按名单准入
+
+GIVEN 一场进行中的补考有指定名单
+
+WHEN 名单内学生与名单外学生分别尝试进入
+
+THEN 名单内学生进入成功
+
+AND 名单外学生被拒并返回 403
+
+#### Scenario: 已进入学生断线重进放行
+
+GIVEN 学生已首次进入考试并生成答卷
+
+WHEN 学生被移出该考试班级后刷新或重新进入
+
+THEN 系统放行进入并返回与首次一致的快照与草稿
+
+AND 不重新抽题
 
 ---
 
