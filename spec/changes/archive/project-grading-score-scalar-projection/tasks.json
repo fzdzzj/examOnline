@@ -1,0 +1,111 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对与判据冻结（先归因后裁决）",
+    "task": "K1–K5 核对、M1–M7 机械归因、变更目录与 PREREGISTRATION 冻结（任何测量运行前）",
+    "steps": [
+      {
+        "step": "K1–K5 开工核对（分支/HEAD/工作树/Docker/门禁基线锚）；任一不符即停手",
+        "completed": true
+      },
+      {
+        "step": "阶段 1 只读归因：M1–M5 消费字段机械重导（含私有 helper/record/DTO/逃逸 lambda），M6/M7 逐个判纳入排除，既有测试覆盖检索，实体↔表机械导出",
+        "completed": true
+      },
+      {
+        "step": "建 spec/changes/project-grading-score-scalar-projection/{proposal.md,tasks.json,specs/data-access-delta.md,evidence/}；evidence/PREREGISTRATION.md 在任何测量运行前写定并记 sha256",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1 分支=feature/update-monitor-overview-submission-projection、K2 HEAD=d6232e5（git rev-parse --short 现场输出）；K3 git status --porcelain 现场输出 4 行 ??：卡面 3 行 + .zcodeignore（ZCode 会话工具自身生成的上下文忽略配置，mtime 2026-10-01T11:23，内容为 .gitignore 同步规则；按「不动它、不暂存、不提交」处理并显著披露——未触发停手：该文件非工作树改动、不可能进入任何提交（全程显式路径暂存）、不影响门禁与测量）；K4 docker ps 连通（Docker Desktop 已起，仅别项目 sport-verify-mysql 容器在跑，未触碰）；K5 门禁基线锚经归档证据核对：attribute-my-exams-list-index/tasks.json 记载本分支最近两次门禁 bf93c3f 与 83459aa 均 329/0/0/1。阶段 1 归因底稿（库外 D:/code/examOnline-verify/grading-score-projection/stage1-attribution.md）：M1={id,grading_status}、M2={submission_id,score}、M3={id,grading_status,objective_score}、M4={submission_id,question_id,score} 与指导草案一致；M5 重导={student_id,objective_score,subjective_score,total_score,partial_graded}，与草案不一致——草案漏 objective_score，机械证据 ScoreService.java L250 `item.setObjectiveScore(submission.getObjectiveScore())`，按卡面 1.1 以机械证据为准并显著登记（PREREG §0）；M6 排除（forEachSubmissionPage 的消费方 exportQuestionDetail/exportQuestionStats 经 resolveQuietly→QuestionScoreResolver.resolveBatch 对页内每份答卷读 getAnswers()，L104/L62）；M7 按卡面默认排除（判分热写路径）。progress 端点无既有测试覆盖（机械检索：src/test 无 /grading/progress 命中，其余 progress 命中均为 anticheat progressPercent）；summarize/publishPreview 有 ScoreServiceTest + GradingScoreIntegrationTest(MockMvc) + ScorePublishTransactionIntegrationTest。PREREGISTRATION.md 冻结于任何捕获 IT/容器脚本运行前：2026-10-01T11:46:07+08:00，sha256=bb4f289b787e76736004a8db20ef275ad99e38513d3d865576f73fb3e8f22e39（记于 evidence/preregistration.sha256.txt）。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：测量装置落地（静态验证，零 src/main 改动）",
+    "task": "测量 IT、容器配方脚本、机械裁决脚本写定并通过 node --check / test-compile 静态验证",
+    "steps": [
+      {
+        "step": "写测量 IT GradingScoreProjectionMeasureIT：PROJ 臂拦截器施加冻结列（M1–M5）、读取即失败包装+canary、逐轮计时/退出码/ISO/attempt、S1 oracle、casSummarize 逐参捕获、@DynamicPropertySource 指容器（缺 URL fail fast）、PREREG sha256 现场复算",
+        "completed": true
+      },
+      {
+        "step": "写容器配方脚本 run-grading-score-projection-mysql.mjs：start/start-redis/setup/rounds/bytes/stop 六相位，一次性 mysql:8.0（tmpfs、13321、独立库 grading_score_projection_measure、utf8mb4、整库 schema.sql 退出码 0、digest/SHOW 落证）+ 一次性 redis 高位端口 db15，用毕销毁留零匹配证据",
+        "completed": true
+      },
+      {
+        "step": "写机械裁决脚本 analyze-grading-score-projection.cjs：按 PREREG §3 算子输出逐单元 M1–M5 裁决与 adjudication.json（脚本为唯一产出者）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "待实施后回填（装置写定不等于测量运行）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：真引擎三臂测量与机械裁决",
+    "task": "一次性 MySQL 容器上跑齐 3 端点 × 3 形状 × 三臂（2 预热 + 5 计时轮、左轮转），容器侧字节账，机械裁决",
+    "steps": [
+      {
+        "step": "起容器并整库执行 schema.sql（退出码 0）、记 digest/VERSION()/SHOW CREATE TABLE/SHOW INDEX；运行 IT 跑齐全部轮次并留存逐轮原始 JSON",
+        "completed": true,
+        "evidence": "attempt-9：`node run-grading-score-projection-mysql.mjs --phase rounds`（复用运行中的 gsproj_mysql_measure）→ `itExit=0 / PHASE rounds OK`；产出 rounds-n{200,1000,3000}.json 与 capture-manifest.json，`problems: []`、prereg recomputedSha256==bb4f289b…e39（match=true）、canary 两真。容器事实见 evidence/container-start.log（inspect.PortBindings/Tmpfs/Config.Cmd + @@log_bin=0，硬校验通过）。rev=d6232e5。"
+      },
+      {
+        "step": "容器侧字节账（两臂 SELECT 列表机械解析 + SUM(COALESCE(LENGTH))）与 V1 逐形状复核；销毁容器留零匹配证据",
+        "completed": true,
+        "evidence": "`node run-grading-score-projection-mysql.mjs --phase bytes` → `PHASE bytes OK`；逐单元字节比 M1 356.17 / M2 91.25 / M3 214.54 / M4 42.94 / M5 97.45（三形状恒定，全部 ≥5.0），V1 逐形状 checks 全 true。原件 evidence/bytes-accounting.log、measurement-rounds.md。`--phase stop` 见阶段 4。rev=d6232e5。"
+      },
+      {
+        "step": "运行 analyze-grading-score-projection.cjs 出逐单元 S1–S4 与裁决主式结果（adjudication.json）；S1 任一不等价或 M 组任一不成立即按停手条款处理",
+        "completed": true,
+        "evidence": "`node analyze-grading-score-projection.cjs` → `measurementInvalid=false problems=0`；逐单元 M5=GO、M1–M4=NO-GO（S3 逐形状超带）、M6/M7=EXCLUDE。adjudication.json 由脚本唯一产出（evidence/adjudication.json）。**复核修正**：初版脚本按「旧实体 studentAnswer/comment 非 null 计数>0」闸 S1，preview 无主观行故恒不可满足——按冻结 §2.2（OLD 臂只要求 answers>0）改为端点感知后复跑，方得 M5 GO；两版裁决均已如实登记。rev=d6232e5。"
+      }
+    ],
+    "passes": true,
+    "evidence": "待测量后回填。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：护栏先红后绿与仅 GO 实施",
+    "task": "新增常驻护栏（先红后绿）并对 GO 单元加 .select(...)（列集==冻结列一字不差）",
+    "steps": [
+      {
+        "step": "写 GradingScoreProjectionGuardTest（长字段读取即失败 + PROJ 长字段必 null 而库内非 null 计数>0 + 捕获 SELECT 列表==冻结列集）；实施前跑一次留红色原文签名",
+        "completed": true,
+        "evidence": "`mvnw.cmd -o test -Dtest=GradingScoreProjectionGuardTest`（未实施前）→ `Tests run: 1, Failures: 1`：`列投影后目标语句返回实体的 answers 必须为 null ==> expected: <0> but was: <3>`（红色原文 evidence/guard-red.log）。rev=6a33faf 前的工作树。"
+      },
+      {
+        "step": "仅对 GO 单元实施 .select(...)（NO-GO 单元保持原样）；护栏转绿留原文",
+        "completed": true,
+        "evidence": "仅对 M5 实施 `ScoreService.publishPreview` 主语句 `.select(student_id,objective_score,subjective_score,total_score,partial_graded)`（M1–M4 NO-GO 保持原样）；护栏转绿 `Tests run: 1, Failures: 0`，CAPTURED_M5_SQL=`SELECT student_id,objective_score,subjective_score,total_score,partial_graded FROM exam_submissions WHERE …`（evidence/guard-green.log）。rev=6a33faf。"
+      }
+    ],
+    "passes": true,
+    "evidence": "待实施后回填。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：收口（两笔提交、spec 合入、归档、自查）",
+    "task": "提交 1＝实施+护栏+测量 IT（已提交状态跑门禁）；提交 2＝spec/README/归档/证据（零 src 改动凭豁免凭据）",
+    "steps": [
+      {
+        "step": "提交 1 后在已提交状态跑 mvnw.cmd clean test：四计数 + 短 SHA + 退出码 + Finished at 记入",
+        "completed": true,
+        "evidence": "实施笔 `6a33faf`（3 文件 1474+/0-：ScoreService.java、GradingScoreProjectionGuardTest.java、GradingScoreProjectionMeasureIT.java）；已提交状态跑 `mvnw.cmd clean test` @ 6a33faf → **330/0/0/1** BUILD SUCCESS 退出码 0，Finished at 2026-10-01T19:05:31+08:00（基线 329→330，+1 常驻护栏）。日志 evidence 外库 D:\\code\\examOnline-verify\\grading-score-projection\\gate-6a33faf.log。"
+      },
+      {
+        "step": "spec/specs/data-access/spec.md 追加 Scenario（逐 GO 单元）+ 尾部合入注记；spec/README.md 当前状态行 + 归档行；变更目录移入 archive/ 并刷 evidence-sha256.txt（sha256sum -c rc=0）",
+        "completed": true,
+        "evidence": "spec/specs/data-access/spec.md「标量读取的列投影」追加 Scenario（仅 M5，标注 M1–M4 NO-GO 不据此判违规）+ 尾部合入注记；spec/README.md 当前状态行 + 归档表新增一行；变更目录整体移入 spec/changes/archive/project-grading-score-scalar-projection/ 并刷 evidence-sha256.txt（sha256sum -c rc=0 见阶段 4 自查）。"
+      },
+      {
+        "step": "收口自查逐条贴当次输出（AGENTS.md 四条、wrapper 四件套、flyway 0、db 目录不存在、实体↔schema 差集空、docker-compose 命中仅 master/init 与 slave/init、git status 终态）",
+        "completed": true,
+        "evidence": "收口自查逐条贴当次输出（见终报 ⑦）：AGENTS.md 四条、wrapper 四件套、flyway=0、src/main/resources/db 不存在、实体↔schema 表级差集空、docker-compose docker/mysql 仅 master/init 与 slave/init、git status 终态。"
+      }
+    ],
+    "passes": true,
+    "evidence": "待收口后回填。"
+  }
+]

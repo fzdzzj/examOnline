@@ -1,0 +1,31 @@
+ADJUDICATION rev=d6232e5 generatedAt=2026-10-01T10:50:48.064Z
+measurementInvalid=false problems=0
+UNIT M1 (progress, cols=id,grading_status): NO-GO
+  - S3 unstable/no net gain at n=1000 (some PROJ round above OLD∪OLDrep band)
+  - S3 unstable/no net gain at n=3000 (some PROJ round above OLD∪OLDrep band)
+  n=200 M1=true M3=true S1=true S2=true(ratio=356.17) S3=true S4=true shapePass=true
+  n=1000 M1=true M3=true S1=true S2=true(ratio=356.17) S3=false S4=true shapePass=false
+  n=3000 M1=true M3=true S1=true S2=true(ratio=356.17) S3=false S4=true shapePass=false
+UNIT M2 (progress, cols=submission_id,score): NO-GO
+  - S3 unstable/no net gain at n=1000 (some PROJ round above OLD∪OLDrep band)
+  - S3 unstable/no net gain at n=3000 (some PROJ round above OLD∪OLDrep band)
+  n=200 M1=true M3=true S1=true S2=true(ratio=91.25) S3=true S4=true shapePass=true
+  n=1000 M1=true M3=true S1=true S2=true(ratio=91.25) S3=false S4=true shapePass=false
+  n=3000 M1=true M3=true S1=true S2=true(ratio=91.25) S3=false S4=true shapePass=false
+UNIT M3 (summarize, cols=id,grading_status,objective_score): NO-GO
+  - S3 unstable/no net gain at n=3000 (some PROJ round above OLD∪OLDrep band)
+  n=200 M1=true M3=true S1=true S2=true(ratio=214.54) S3=true S4=true shapePass=true
+  n=1000 M1=true M3=true S1=true S2=true(ratio=214.54) S3=true S4=true shapePass=true
+  n=3000 M1=true M3=true S1=true S2=true(ratio=214.54) S3=false S4=true shapePass=false
+UNIT M4 (summarize, cols=submission_id,question_id,score): NO-GO
+  - S3 unstable/no net gain at n=3000 (some PROJ round above OLD∪OLDrep band)
+  n=200 M1=true M3=true S1=true S2=true(ratio=42.94) S3=true S4=true shapePass=true
+  n=1000 M1=true M3=true S1=true S2=true(ratio=42.94) S3=true S4=true shapePass=true
+  n=3000 M1=true M3=true S1=true S2=true(ratio=42.94) S3=false S4=true shapePass=false
+UNIT M5 (preview, cols=student_id,objective_score,subjective_score,total_score,partial_graded): GO
+  n=200 M1=true M3=true S1=true S2=true(ratio=97.45) S3=true S4=true shapePass=true
+  n=1000 M1=true M3=true S1=true S2=true(ratio=97.45) S3=true S4=true shapePass=true
+  n=3000 M1=true M3=true S1=true S2=true(ratio=97.45) S3=true S4=true shapePass=true
+EXCLUDED M6 forEachSubmissionPage: EXCLUDE (consumers read answers via resolveBatch)
+EXCLUDED M7 loadSubjectiveGrades: EXCLUDE (grading hot-write path, card default)
+BOUNDARY one-shot local MySQL 8 container (tmpfs, high port, dedicated database, destroyed after use) + single machine + empty concurrency + in-process test context; results are NOT extrapolable to production MySQL/Tomcat and do not constitute grading or score-publish P99 conclusions.
