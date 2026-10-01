@@ -225,6 +225,11 @@ public class ScoreService {
 
         List<GradingSubmission> submissions = gradingSubmissionMapper.selectList(
                 Wrappers.<GradingSubmission>lambdaQuery()
+                        // M5 列投影（冻结列集见 evidence/PREREGISTRATION.md §0）：预览只消费这 5 个标量字段，
+                        // 不再载入 answers 长字段。裁决见 evidence/adjudication.json（本卡唯一 GO 单元）。
+                        .select(GradingSubmission::getStudentId, GradingSubmission::getObjectiveScore,
+                                GradingSubmission::getSubjectiveScore, GradingSubmission::getTotalScore,
+                                GradingSubmission::getPartialGraded)
                         .eq(GradingSubmission::getExamId, examId)
                         .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_GRADED)
                         .isNotNull(GradingSubmission::getTotalScore)
