@@ -436,7 +436,9 @@ class PostExamClosureIntegrationTest extends IntegrationTestBase {
 
     /** 造一场"已发布成绩"的考试：A 交卷 → 提前结束 → 判分 → 汇总 → 发布（复核类边界用例共用）。 */
     private long publishedExamWithScore(String teacher, String student) throws Exception {
-        long examId = inProgressExam(teacher, null);
+        // 绑定测试班级并把该生入班：进入考试需班级归属（F-B/F-C 收口）
+        long classId = createClassWithStudents(teacher, studentIdOf(student));
+        long examId = inProgressExam(teacher, classId);
         JsonNode enterData = enter(student, examId, 200);
         submitAndConsume(student, examId, questionIds(enterData).get(0), "A");
         perform(jsonPost("/api/exams/" + examId + "/force-end", teacher, null), 200);

@@ -118,7 +118,8 @@ class ReadWriteSeparationIntegrationTest extends IntegrationTestBase {
         long examId = preparedInProgressExam(teacher);
         long studentId = jwtUtil.parseAccessToken(student).getId();
 
-        // 进入考试（创建答卷：进行中）
+        // 进入考试（创建答卷：进行中）——夹具补入考试班级归属（进入考试的班级准入）
+        ensureExamClassMembership(student, examId);
         JsonNode enterData = perform(jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null), 200)
                 .get("data");
         long q1 = enterData.get("questions").get(0).get("questionId").asLong();
@@ -148,7 +149,8 @@ class ReadWriteSeparationIntegrationTest extends IntegrationTestBase {
 
     private long preparedInProgressExam(String teacher) throws Exception {
         long paperId = preparePaper(teacher);
-        long examId = createExam(teacher, paperId,
+        long classId = createClassForExam(teacher);
+        long examId = createExam(teacher, paperId, classId,
                 LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
         perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
@@ -174,11 +176,14 @@ class ReadWriteSeparationIntegrationTest extends IntegrationTestBase {
                 objectMapper.writeValueAsString(body)), 200);
     }
 
-    private long createExam(String token, long paperId, LocalDateTime start,
+    private long createExam(String token, long paperId, Long classId, LocalDateTime start,
                             LocalDateTime end, int duration) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("title", unique("考试"));
         body.put("paperId", paperId);
+        if (classId != null) {
+            body.put("classId", classId);
+        }
         body.put("startTime", start.toString());
         body.put("endTime", end.toString());
         body.put("durationMinutes", duration);

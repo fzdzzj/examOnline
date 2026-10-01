@@ -96,11 +96,14 @@ class MonitorDraftBatchReadTest extends IntegrationTestBase {
         return paperId;
     }
 
-    private long createExam(String token, long paperId, LocalDateTime start,
+    private long createExam(String token, long paperId, Long classId, LocalDateTime start,
                             LocalDateTime end, int duration) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("title", unique("考试"));
         body.put("paperId", paperId);
+        if (classId != null) {
+            body.put("classId", classId);
+        }
         body.put("startTime", start.toString());
         body.put("endTime", end.toString());
         body.put("durationMinutes", duration);
@@ -110,7 +113,8 @@ class MonitorDraftBatchReadTest extends IntegrationTestBase {
     }
 
     private long preparedInProgressExam(String teacher, long paperId) throws Exception {
-        long examId = createExam(teacher, paperId,
+        long classId = createClassForExam(teacher);
+        long examId = createExam(teacher, paperId, classId,
                 LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
         perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
@@ -118,6 +122,8 @@ class MonitorDraftBatchReadTest extends IntegrationTestBase {
     }
 
     private void enter(String student, long examId) throws Exception {
+        // 既有用例夹具适配：进入成功路径先确保学生已入班（不改变任何断言语义）
+        ensureExamClassMembership(student, examId);
         perform(jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null), 200);
     }
 

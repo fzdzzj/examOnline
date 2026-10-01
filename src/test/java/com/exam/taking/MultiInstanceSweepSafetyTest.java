@@ -345,7 +345,8 @@ class MultiInstanceSweepSafetyTest extends IntegrationTestBase {
 
     private long preparedInProgressExam(String teacher) throws Exception {
         long paperId = preparePaper(teacher);
-        long examId = createExam(teacher, paperId, null,
+        long classId = createClassForExam(teacher);
+        long examId = createExam(teacher, paperId, classId,
                 LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
         perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
@@ -377,6 +378,10 @@ class MultiInstanceSweepSafetyTest extends IntegrationTestBase {
     }
 
     private JsonNode enter(String student, long examId, int expectedStatus) throws Exception {
+        if (expectedStatus == 200) {
+            // 既有用例夹具适配：进入成功路径先确保学生已入班（不改变任何断言语义）
+            ensureExamClassMembership(student, examId);
+        }
         return perform(jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null),
                 expectedStatus).get("data");
     }

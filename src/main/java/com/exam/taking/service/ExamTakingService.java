@@ -103,16 +103,40 @@ public class ExamTakingService {
         Long studentId = requireStudent();
         Exam exam = requireEnterableExam(examId);
 
-        // 补考名单限制（仅补考生效，§12.5「名单限制进入」场景）：名单外学生拒绝进入，
-        // 不影响既有进入逻辑主体。非补考考试（parent_exam_id=null）此处直接放行。
-        makeupService.assertCanEnter(exam, studentId);
-
         ExamSubmission submission = submissionMapper.selectByExamStudent(examId, studentId);
         if (submission == null) {
+            // 首次进入才做准入校验：已有答卷说明本人早已进入本场（在考中或已交卷），
+            // 断线重连/刷新恢复必须放行——事后转班不得把在考学生挡在门外。
+            assertAdmission(exam, studentId);
             submission = createSubmission(exam, studentId);
         }
         presenceService.touch(examId, studentId);
         return buildAnsweringContext(exam, submission, studentId);
+    }
+
+    /**
+     * 首次进入考试的准入校验（F-B/F-C 安全收口）：
+     * <ul>
+     *   <li><b>补考</b>（parent_exam_id != null）：维持名单限制，名单外拒绝（§12.5）；</li>
+     *   <li><b>普通考试</b>（parent_exam_id == null）：强制班级归属——
+     *       未指派班级的考试一律拒绝；绑定了班级则学生当前必须属于该班级，
+     *       否则即便拿到 examId 也进不去（"列表看不见但接口进得去"的越权口子）。</li>
+     * </ul>
+     */
+    private void assertAdmission(Exam exam, Long studentId) {
+        if (exam.getParentExamId() != null) {
+            makeupService.assertCanEnter(exam, studentId);
+            return;
+        }
+        if (exam.getClassId() == null) {
+            throw new BusinessException(ResponseCode.FORBIDDEN, "该考试未指派班级，无法参加");
+        }
+        Long inClass = userClassMapper.selectCount(Wrappers.<UserClass>lambdaQuery()
+                .eq(UserClass::getUserId, studentId)
+                .eq(UserClass::getClassId, exam.getClassId()));
+        if (inClass == null || inClass == 0) {
+            throw new BusinessException(ResponseCode.FORBIDDEN, "您不属于该考试指定的班级，无法参加");
+        }
     }
 
     /**

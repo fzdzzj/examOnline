@@ -95,11 +95,14 @@ class AntiCheatIntegrationTest extends IntegrationTestBase {
         return paperId;
     }
 
-    private long createExam(String token, long paperId, LocalDateTime start,
+    private long createExam(String token, long paperId, Long classId, LocalDateTime start,
                             LocalDateTime end, int duration) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("title", unique("考试"));
         body.put("paperId", paperId);
+        if (classId != null) {
+            body.put("classId", classId);
+        }
         body.put("startTime", start.toString());
         body.put("endTime", end.toString());
         body.put("durationMinutes", duration);
@@ -108,9 +111,11 @@ class AntiCheatIntegrationTest extends IntegrationTestBase {
         return data.get("id").asLong();
     }
 
-    /** 造一场"进行中"考试：开始时间拨到过去 → 发布 → 手动触发状态机推进。 */
+    /** 造一场"进行中"考试：开始时间拨到过去 → 发布 → 手动触发状态机推进。
+     *  绑定测试班级以满足进入考试的班级准入（学生入班由 enter 夹具按需补入）。 */
     private long preparedInProgressExam(String teacher, long paperId) throws Exception {
-        long examId = createExam(teacher, paperId,
+        long classId = createClassForExam(teacher);
+        long examId = createExam(teacher, paperId, classId,
                 LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
         perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
@@ -118,6 +123,10 @@ class AntiCheatIntegrationTest extends IntegrationTestBase {
     }
 
     private JsonNode enter(String student, long examId, int expectedStatus) throws Exception {
+        if (expectedStatus == 200) {
+            // 既有用例夹具适配：进入成功路径先确保学生已入班（不改变任何断言语义）
+            ensureExamClassMembership(student, examId);
+        }
         return perform(jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null),
                 expectedStatus).get("data");
     }

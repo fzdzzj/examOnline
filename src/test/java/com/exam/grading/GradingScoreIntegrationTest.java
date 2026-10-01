@@ -128,10 +128,13 @@ class GradingScoreIntegrationTest extends IntegrationTestBase {
         return paperId;
     }
 
-    private long createExam(String teacher, long paperId) throws Exception {
+    private long createExam(String teacher, long paperId, Long classId) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("title", unique("考试"));
         body.put("paperId", paperId);
+        if (classId != null) {
+            body.put("classId", classId);
+        }
         body.put("startTime", LocalDateTime.now().minusMinutes(1).toString());
         body.put("endTime", LocalDateTime.now().plusHours(2).toString());
         body.put("durationMinutes", 30);
@@ -140,10 +143,12 @@ class GradingScoreIntegrationTest extends IntegrationTestBase {
         return data.get("id").asLong();
     }
 
-    /** 造一场"进行中"考试（开始时间拨到过去 → 发布 → 状态机推进）。 */
+    /** 造一场"进行中"考试（开始时间拨到过去 → 发布 → 状态机推进）。
+     *  绑定测试班级以满足进入考试的班级准入（学生入班由 enter 夹具按需补入）。 */
     private long preparedInProgressExam(String teacher) throws Exception {
         long paperId = preparePaper(teacher);
-        long examId = createExam(teacher, paperId);
+        long classId = createClassForExam(teacher);
+        long examId = createExam(teacher, paperId, classId);
         perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
         return examId;
@@ -151,6 +156,8 @@ class GradingScoreIntegrationTest extends IntegrationTestBase {
 
     /** 学生进入考试并按题型定位题目 ID（个人快照题序随机，须按类型识别）。 */
     private Map<Integer, Long> enterAndMapQuestions(String student, long examId) throws Exception {
+        // 既有用例夹具适配：进入成功路径先确保学生已入班（不改变任何断言语义）
+        ensureExamClassMembership(student, examId);
         JsonNode data = perform(jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null), 200)
                 .get("data");
         Map<Integer, Long> byType = new HashMap<>();

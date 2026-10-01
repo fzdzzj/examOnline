@@ -101,8 +101,9 @@ class MakeupFinalScoreIntegrationTest extends IntegrationTestBase {
         // 1. 建卷（全客观卷，判分/汇总无简答分支）
         long paperId = preparePaper(teacher);
 
-        // 2. 建主考 → 发布 → 进行中
-        long mainId = createExam(teacher, paperId, LocalDateTime.now().minusMinutes(1),
+        // 2. 建主考（绑定班级并把 A 入班：进入考试需班级归属）→ 发布 → 进行中
+        long classId = createClassForExam(teacher, studentA);
+        long mainId = createExam(teacher, paperId, classId, LocalDateTime.now().minusMinutes(1),
                 LocalDateTime.now().plusHours(2), 30);
         perform(jsonPost("/api/exams/" + mainId + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
@@ -214,11 +215,14 @@ class MakeupFinalScoreIntegrationTest extends IntegrationTestBase {
                 objectMapper.writeValueAsString(body)), 200);
     }
 
-    private long createExam(String token, long paperId, LocalDateTime start, LocalDateTime end, int duration)
-            throws Exception {
+    private long createExam(String token, long paperId, Long classId, LocalDateTime start, LocalDateTime end,
+                            int duration) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("title", unique("考试"));
         body.put("paperId", paperId);
+        if (classId != null) {
+            body.put("classId", classId);
+        }
         body.put("startTime", start.toString());
         body.put("endTime", end.toString());
         body.put("durationMinutes", duration);
@@ -229,7 +233,7 @@ class MakeupFinalScoreIntegrationTest extends IntegrationTestBase {
     /** 造一场归属教师的"进行中"考试（越权边界用例共用）。 */
     private long inProgressOwnedExam(String teacher) throws Exception {
         long paperId = preparePaper(teacher);
-        long examId = createExam(teacher, paperId, LocalDateTime.now().minusMinutes(1),
+        long examId = createExam(teacher, paperId, null, LocalDateTime.now().minusMinutes(1),
                 LocalDateTime.now().plusHours(2), 30);
         perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
