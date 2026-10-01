@@ -478,8 +478,23 @@ AND 判分进度与成绩汇总（M1–M4）本卡裁决为「不稳定/无净�
 
 AND 未实施投影的站点（NO-GO 单元、`forEachSubmissionPage`、判分预取 `loadSubjectiveGrades`）取数语句不变
 
+#### Scenario: 兜底扫描候选行的投影站点（project-sweep-candidates-scalar-projection）
+
+GIVEN 交卷链路定时兜底扫描（`ExamSweepService.forceSubmitOverdue`，分批多轮）扫描「进行中且（个人已超时 或 所属考试已结束/已批改）」的候选答卷，下游对候选行仅消费 `examId`/`studentId`（经 `forceSubmitByBackend` 按 (examId, studentId) 重新定位答卷）——消费字段经机械归因唯一且确定（全仓单调用方、两个 getter），无三臂测量裁决点
+
+WHEN `ExamSubmissionMapper.selectForceSubmitCandidates` 执行取数
+
+THEN SELECT 列表限定为 `s.exam_id, s.student_id`（冻结列集）
+
+AND 不含 `paper_json` / `answers` 等长字段；谓词（`s.status = 1 AND (s.deadline_time < ? OR e.status IN (2, 3))`）、`JOIN_INDEX(s idx_submissions_sweep)` 提示、JOIN、LIMIT 与返回行数不变
+
+AND 兜底强制交卷行为与三路竞态幂等语义不变（`MultiInstanceSweepSafetyTest` 端到端回归全绿）
+
+AND 对账补发 `selectSubmittedWithoutAnswers`（命中量为个位数行）维持全列读取、不据此判为违规
+
 ---
 
+> 合入注记（2026-10-01，`project-sweep-candidates-scalar-projection`，**GO**）：机械归因驱动的单站点投影，**无三臂测量**——消费字段唯一且确定（全仓唯一调用方 `ExamSweepService.forceSubmitOverdue` 仅读 `getExamId()`/`getStudentId()`，`forceSubmitByBackend` 按 (examId, studentId) 重新定位答卷），不存在需测量裁决的 GO/NO-GO 不确定点；本卡为 `project-grading-score-scalar-projection` 确立的「列投影 + 常驻护栏」形态在 `exam_submissions` 上的直接应用，字节收益以判据表述（长字段退出 SELECT 列表＝每行必省 `paper_json` 全量，机械事实），时间侧该语句已有归档实测（JOIN_INDEX 提示优化，grep 锚 `JOIN_INDEX`）。**实施**：`selectForceSubmitCandidates` 由 `s.*` 冻结为 `s.exam_id, s.student_id`，提示/谓词/LIMIT 原样保留、执行计划不变仅减传输。`SweepCandidatesProjectionGuardTest` 先红后绿（旧实现 `expected: <0> but was: <3>`，投影后绿）常驻全量门禁，`mvnw.cmd clean test` @ 实施笔 `e14fd68` → **350/0/0/1** BUILD SUCCESS（基线 349→350；`MultiInstanceSweepSafetyTest` 端到端回归全绿，三路竞态幂等语义不变）。**验收边界＝本地 H2 测试上下文 + 仓库门禁——不外推生产 MySQL/Tomcat，不构成交卷链路 P99 结论。**
 > 合入注记（2026-10-01，`project-grading-score-scalar-projection`，逐单元裁决 **GO 1/5**：仅 M5 发布预览）：判据测量前冻结于该变更 `evidence/PREREGISTRATION.md`（sha256 `bb4f289b…e39`），机械复算脚本 `analyze-grading-score-projection.cjs` 按 M1–M5／S1–S4 算子出裁决。**M5（`ScoreService.publishPreview` 主语句）GO 并实施 `.select(student_id,objective_score,subjective_score,total_score,partial_graded)`**：应传字节比 97.45（三形状恒定），逐轮 wall-clock 均在 OLD∪OLDrep 噪声带上界内，语义 oracle 逐形状严格相等，语句条数/返回行数不变。**M1–M4 NO-GO 未实施**——字节收益成立（356.17／91.25／214.54／42.94 倍）但时间侧「**不稳定/无净收益**」（progress n=1000 与 n=3000、summarize n=3000 各有投影臂单轮超噪声带上界，按冻结算子逐轮判、不挑轮、不取中位数；progress 端点耗时由其自身嵌套换算主导，字段节省不显形）。`GradingScoreProjectionGuardTest` 先红后绿（旧实现 `expected: <0> but was: <3>`，投影后绿）常驻全量门禁，`mvnw.cmd clean test` @ 实施笔 `6a33faf` → **330/0/0/1** BUILD SUCCESS。**装置级披露**：测量装置在出裁决前做三处装置级修正（tmpfs 3g→8g；容器加 `--skip-log-bin`；护栏实体包裹由 `Mockito.spy` 改 stub-only mock），逐条落证于该变更 `evidence/apparatus-correction-note.md`；裁决输入为单一完整装置上的全量重跑。**验收边界＝一次性本地 MySQL 8 容器（tmpfs 数据目录、127.0.0.1 高位端口、独立库，用毕 `docker rm -f` 销毁）+ 单机 + 空并发（逐条语句串行计时）+ H2 测试上下文——不外推生产 MySQL/Tomcat，不构成判分或成绩发布 P99 结论。**
 > 合入注记（2026-09-30，`attribute-my-exams-list-index`，整卡裁决 **GO**，分渠道采用 **submissions=A1, candidates=未采纳**）：判据测量前冻结于该变更 `evidence/PREREGISTRATION.md`（sha256 `1b3a5f0e…2ea9d`），机械裁决脚本 `analyze-index-arms.cjs` 按 B1–B5 算子出裁决。**答卷渠道（T1，`exam_submissions` 按 `student_id` 单列查询）实施 A1 臂单列索引 `idx_submissions_student (student_id)`**：基线 A0 为全表扫且耗时远超门槛（B1 过）；A1 臂扫描行数比两形状逐轮恒定（n1 10051 倍 / n2 40001 倍，远超下界要求，B2 过）；单次耗时降至亚毫秒级且无单轮回归（B3 过）；热写批耗时均在基线噪声带上界内，未见写放大（B4 过）；选臂遵循最小充分原则（A1 与 A2 读端收益等价，单列 A1 维护成本低于复合索引 A2）。**补考渠道（T2，`exam_candidates` 按 `student_id` 单列查询）C1 未采纳**：基线 C0 并非全表扫——MySQL 8.0 对 `exam_candidates` 走 Covering index skip scan（既有唯一键 `uk_candidate_exam_student`，type=range，actual rows=1），最快轮耗时低于瓶颈门槛（亚毫秒级）；不采纳 C1 的完整理由＝既有唯一键已通过 skip scan 服务该谓词 + 基线亚毫秒未达门槛，小表场景无需增建索引增加写负担；按分渠道 gate 规则，C0 不满足瓶颈门槛只否决 C1 采纳，不否决整卡。由此落成判据：**既有索引可能已通过 skip scan 服务该谓词，新增索引前必须以真实引擎的 EXPLAIN 认定，不得凭结构推演**。实施提交为 `02d933e`（实施门禁 @ `02d933e` 329/0/0/1，原记录保留）；2026-09-30 证据返修（解析器违背冻结 §6 的 cost/actual 段取值已修正、以保留 rounds.json 重算未重测，C1 的 B2 改判 false）后注释口径复验门禁 @ 第 2 笔 `bf93c3f` → 329/0/0/1，指导 agent 曾在已提交状态 `83459aa` 独立复跑全绿。**验收边界＝一次性本地 MySQL 8 容器（tmpfs 数据目录、高位端口、独立库，用毕 `docker rm -f` 销毁）+ 单机 + 空并发串行测量 + H2 测试上下文——不外推生产参数、真实数据量与并发负载。**
 

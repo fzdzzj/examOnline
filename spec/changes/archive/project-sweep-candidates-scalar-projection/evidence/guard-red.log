@@ -1,0 +1,18 @@
+-------------------------------------------------------------------------------
+Test set: com.exam.scalar.guard.SweepCandidatesProjectionGuardTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 17.73 s <<< FAILURE! -- in com.exam.scalar.guard.SweepCandidatesProjectionGuardTest
+com.exam.scalar.guard.SweepCandidatesProjectionGuardTest.sweepCandidatesProjectScalarColumnsOnly -- Time elapsed: 2.747 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 列投影后目标语句返回实体的 paperJson 必须为 null ==> expected: <0> but was: <3>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:563)
+	at com.exam.scalar.guard.SweepCandidatesProjectionGuardTest.sweepCandidatesProjectScalarColumnsOnly(SweepCandidatesProjectionGuardTest.java:134)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+--- 命令：JAVA_HOME=D:\develop1\jdk21; mvnw.cmd -o test -Dtest=SweepCandidatesProjectionGuardTest（仓库根）
+--- rev=586a365 后的工作树（护栏新增、未实施投影）；当次输出 Tests run: 1, Failures: 1, Errors: 0, Skipped: 0；失败原文：列投影后目标语句返回实体的 paperJson 必须为 null ==> expected: <0> but was: <3>；Finished at 2026-10-01T23:10:28+08:00
