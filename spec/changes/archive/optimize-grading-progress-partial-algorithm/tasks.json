@@ -1,0 +1,83 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对（K1–K4）与判据冻结",
+    "task": "K1–K4 核对、既有覆盖检索、变更目录与判据冻结；任一不符即停手",
+    "steps": [
+      {
+        "step": "K1 仓库路径与分支、K2 HEAD、K3 git status --porcelain、K4 门禁基线锚（现场跑 mvnw.cmd clean test）",
+        "completed": true,
+        "evidence": "K1=D:/code/examOnline 分支 feature/update-monitor-overview-submission-projection；K2 git rev-parse --short HEAD → 1b00673；K3 git status --porcelain 现场输出 4 行 ??（.zcodeignore、docs/backend-optimization-candidates.md、docs/指导主Agent交接文档-2026-09-30.md、docs/指导主Agent交接文档-2026-10-01.md），与卡面 K3 一致；K4 现场跑仓库根 mvnw.cmd clean test（JAVA_HOME=D:/develop1/jdk21）@ 1b00673 → Tests run: 330, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS 退出码 0，Total time 03:44 min，Finished at 2026-10-01T20:12:17+08:00（Skipped 1 = com.exam.support.OpenApiContractTest）。日志 D:/code/examOnline-verify/grading-progress-partial/gate-baseline.log。"
+      },
+      {
+        "step": "既有覆盖检索与语义基线：progress 端点既有测试、调用点、实体↔表机械核对",
+        "completed": true,
+        "evidence": "机械检索 src/test：grading 域仅 GradingScoreIntegrationTest、ObjectiveGradingServiceTest、GradingStrategyTest，无 GradingQueryService/progress 端点既有覆盖；GradingQueryService.progress 经 GradingController 调用。实体↔表：SubjectiveGrade 映射 subjective_grades（schema.sql 建表，submission_id BIGINT NOT NULL）——判定「主观行 null 键」库内不可达的依据。"
+      },
+      {
+        "step": "建 spec/changes/optimize-grading-progress-partial-algorithm/{proposal.md,tasks.json,specs/grading/spec-delta.md}",
+        "completed": true,
+        "evidence": "proposal.md 记 Why/What/语义与边界（含 null 键前提更正）/Impact/验收与停止条件；specs/grading/spec-delta.md 为 grading 基线 ADDED Requirement 候选。"
+      }
+    ],
+    "passes": true,
+    "evidence": "K1–K4 全符；基线锚 330/0/0/1 与卡面一致。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：等价性测试（oracle 先于实施）",
+    "task": "新增 GradingProgressAlgorithmTest：以改动前原文为 oracle 的等价性断言 + 边界覆盖 + 真实端点断言",
+    "steps": [
+      {
+        "step": "写 GradingProgressAlgorithmTest（参考实现=改动前原文 partialByNestedScan；目标写法 partialByHashSet；边界+随机+卡面规模+真实端点）",
+        "completed": true,
+        "evidence": "15 例：空答卷列表/空主观行列表/score 全非空/score 全为 null/部分未批/同卷多题混合（按答卷计 1 次）/行属他卷/答卷列表重复项/答卷项 id 为 null/主观行 null 键越界（断言旧抛 NPE、新返回 0、真实端点同新）/随机 400 组固定种子/卡面规模 n=3000&m=6000/真实端点混合夹具/真实端点随机 30 组/真实端点卡面规模。真实端点经 Mockito 隔离（mock 三 Mapper + SecurityUtil ThreadLocal + TableInfoHelper 初始化 lambda 元数据）。"
+      }
+    ],
+    "passes": true,
+    "evidence": "定向 mvnw.cmd test -Dtest=GradingProgressAlgorithmTest → Tests run: 15, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS 退出码 0（工作树、实施前状态）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：实施（仅改计数块）与门禁",
+    "task": "改 GradingQueryService.progress 计数块为单遍哈希；提交实施笔后在已提交状态跑全量门禁",
+    "steps": [
+      {
+        "step": "改 GradingQueryService.java：import 新增 Set/Collectors；计数块改「先归集未批答卷 ID 集合、再单遍过滤」",
+        "completed": true,
+        "evidence": "git diff --stat 仅 14 处改动（+import 2 行、计数块 11 行替换旧 3 行）；两条 selectList 语句、subjectiveTotal/subjectiveGraded 与其他业务类零改动（git diff --name-only 仅 1 个 main 文件）。"
+      },
+      {
+        "step": "提交实施笔（GradingQueryService.java + GradingProgressAlgorithmTest.java），在已提交状态跑 mvnw.cmd clean test",
+        "completed": true,
+        "evidence": "实施笔 5d089c9（2 文件 326+/3-）。已提交状态跑仓库根 mvnw.cmd clean test（JAVA_HOME=D:/develop1/jdk21）@ 5d089c9 → Tests run: 345, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS 退出码 0，Total time 03:06 min，Finished at 2026-10-01T20:21:58+08:00；基线锚 330/0/0/1 → 345/0/0/1（+15 = 新增用例），Skipped 恒为 1（com.exam.support.OpenApiContractTest）。日志 D:/code/examOnline-verify/grading-progress-partial/gate-5d089c9.log。"
+      }
+    ],
+    "passes": true,
+    "evidence": "实施笔 5d089c9；门禁 345/0/0/1 BUILD SUCCESS 退出码 0。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：收口（spec 合入、归档、两笔提交、自查）",
+    "task": "提交 2 = spec/specs/grading/spec.md + spec/README.md + 变更目录归入 archive/（零 src 改动）",
+    "steps": [
+      {
+        "step": "grading 基线合入 ADDED Requirement「判分进度部分批改计数」+ 合入注记",
+        "completed": true,
+        "evidence": "spec/specs/grading/spec.md 追加 ADDED Requirement（等价 Scenario + 越界口径条款）+ 合入注记（实施笔 5d089c9 → 345/0/0/1，验收边界=Mockito 隔离单测 + H2 上下文门禁，未做真机性能测量）。"
+      },
+      {
+        "step": "spec/README.md 当前状态段 + 归档表新增行；变更目录整体移入 spec/changes/archive/",
+        "completed": true,
+        "evidence": "spec/README.md 状态段插入本卡收口句、归档表新增一行；spec/changes/optimize-grading-progress-partial-algorithm/ 整体移入 spec/changes/archive/（含 proposal.md、tasks.json、specs/grading/spec-delta.md）。"
+      },
+      {
+        "step": "收口自查逐条贴当次输出（AGENTS.md 四条、wrapper 四件套、flyway 0、db 目录不存在、实体↔schema 差集空、@Sql 空、git status 终态）",
+        "completed": true,
+        "evidence": "见终报第 ⑤ 项与 README/AGENTS 自查段（四条自查命中数均为 0）。"
+      }
+    ],
+    "passes": true,
+    "evidence": "收口笔零 src 改动（git diff --name-only 空输出）为豁免凭据。"
+  }
+]
