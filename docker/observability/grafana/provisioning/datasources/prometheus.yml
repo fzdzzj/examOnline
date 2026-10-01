@@ -1,0 +1,12 @@
+# Grafana 数据源 provisioning：固定 uid=prometheus，
+# 面板 JSON 中引用的 datasource uid 必须与此完全一致，否则「面板能打开但全 No data」。
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    # 容器内通过服务名访问 prometheus 容器
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

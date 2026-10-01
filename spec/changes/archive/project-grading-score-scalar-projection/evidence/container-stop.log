@@ -1,0 +1,26 @@
+=== stop 2026-10-01T11:10:57.059Z ===
+redisDb15SizeBefore=0 flushExit=0 sizeAfter=0
+docker rm -f mysql exit=0 out=gsproj_mysql_measure 
+docker rm -f redis exit=0 out=gsproj_redis_measure 
+gsproj filter zero-match stdout=[] exit=0
+remaining containers (other projects, untouched):
+sport-verify-rocketmq-broker	0.0.0.0:10909->10909/tcp, [::]:10909->10909/tcp, 0.0.0.0:10911->10911/tcp, [::]:10911->10911/tcp
+sport-verify-mysql	0.0.0.0:3307->3306/tcp, [::]:3307->3306/tcp
+task131-scratch-mysql	33060/tcp, 0.0.0.0:13318->3306/tcp
+sport-verify-redis	0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+sport-verify-postgis	0.0.0.0:5433->5432/tcp
+sport-verify-nacos	0.0.0.0:8848->8848/tcp, [::]:8848->8848/tcp, 0.0.0.0:9848->9848/tcp, [::]:9848->9848/tcp
+sport-verify-rocketmq-namesrv	0.0.0.0:9876->9876/tcp, [::]:9876->9876/tcp
+exam-mysql-slave	
+exam-mysql-master	
+sport-verify-grafana	
+sport-verify-prometheus	
+exam-prometheus	0.0.0.0:9090->9090/tcp
+exam-grafana	0.0.0.0:3000->3000/tcp
+exam-rabbitmq	
+exam-redis	0.0.0.0:6379->6379/tcp
+myrag-postgres	
+myrag-qdrant	
+myrag-redis	
+myrag-minio	
+

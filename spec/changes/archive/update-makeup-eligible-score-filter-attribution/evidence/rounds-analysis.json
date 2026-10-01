@@ -1,0 +1,622 @@
+{
+  "generatedFrom": [
+    "run1",
+    "run2",
+    "run3"
+  ],
+  "revisions": [
+    "31a5ff8",
+    "31a5ff8",
+    "31a5ff8"
+  ],
+  "preregistrationRule": "evidence/PREREGISTRATION.md（写定于正式测量前，sha256 记录于 evidence-sha256.txt）",
+  "validity": {
+    "runs": [
+      {
+        "label": "run1",
+        "revision": "31a5ff8",
+        "jdk": "21.0.9 (Oracle Corporation)",
+        "maxHeapMB": 3952,
+        "processors": 20,
+        "combos": [
+          "s200-p10-a2k",
+          "s1000-p10-a2k",
+          "s1000-p50-a2k",
+          "s1000-p90-a2k",
+          "s1000-p10-a20k",
+          "s3000-p10-a2k"
+        ],
+        "roundsPerCombo": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "dataRule": "每 combo 一场考试：exams.status=4（已发布）、created_by=合成 owner；exam_submissions 直插 status=3、grading_status=1、total_score 前 belowRatio 比例=50.0（低于 60）、其余=80.0、answers=定长 ASCII JSON（长度 answersChars，内容为单键长字符串，端点只整体搬运不解析）、objective/subjective_score 同 total；缺考学生在同一 combo 独占 ID 块内、无答卷行、users 有姓名、exam_absence 各一行；users 逐生一行姓名。边界夹具另有：边缘考试（总分 null、总分=60.0 与 60.00、缺考∩低分同 ID 覆盖、无 users 行、users.is_deleted=1 软删姓名）、已软删考试（exams.is_deleted=1，应得 404）、空候选考试（无缺考、唯一答卷在线上，应短路且不发起姓名查询）。combo 之间与边缘 ID 段互不重叠（users 主键/用户名全局唯一，重叠即插入失败）。",
+        "runtimeFrequencyUnknown": "本端点真实请求频度、真实考试人数与 answers 分布无获准来源（未读共享 dev、未读未授权运行时日志、未采信前端调用点或 dev 演示记录），记为未知；本测量不外推生产 P99 或调用量",
+        "semanticsOk": true,
+        "oracleOk": true,
+        "equivOk": true,
+        "armShapeOk": true,
+        "captureOk": true,
+        "concOk": true
+      },
+      {
+        "label": "run2",
+        "revision": "31a5ff8",
+        "jdk": "21.0.9 (Oracle Corporation)",
+        "maxHeapMB": 3952,
+        "processors": 20,
+        "combos": [
+          "s200-p10-a2k",
+          "s1000-p10-a2k",
+          "s1000-p50-a2k",
+          "s1000-p90-a2k",
+          "s1000-p10-a20k",
+          "s3000-p10-a2k"
+        ],
+        "roundsPerCombo": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "dataRule": "每 combo 一场考试：exams.status=4（已发布）、created_by=合成 owner；exam_submissions 直插 status=3、grading_status=1、total_score 前 belowRatio 比例=50.0（低于 60）、其余=80.0、answers=定长 ASCII JSON（长度 answersChars，内容为单键长字符串，端点只整体搬运不解析）、objective/subjective_score 同 total；缺考学生在同一 combo 独占 ID 块内、无答卷行、users 有姓名、exam_absence 各一行；users 逐生一行姓名。边界夹具另有：边缘考试（总分 null、总分=60.0 与 60.00、缺考∩低分同 ID 覆盖、无 users 行、users.is_deleted=1 软删姓名）、已软删考试（exams.is_deleted=1，应得 404）、空候选考试（无缺考、唯一答卷在线上，应短路且不发起姓名查询）。combo 之间与边缘 ID 段互不重叠（users 主键/用户名全局唯一，重叠即插入失败）。",
+        "runtimeFrequencyUnknown": "本端点真实请求频度、真实考试人数与 answers 分布无获准来源（未读共享 dev、未读未授权运行时日志、未采信前端调用点或 dev 演示记录），记为未知；本测量不外推生产 P99 或调用量",
+        "semanticsOk": true,
+        "oracleOk": true,
+        "equivOk": true,
+        "armShapeOk": true,
+        "captureOk": true,
+        "concOk": true
+      },
+      {
+        "label": "run3",
+        "revision": "31a5ff8",
+        "jdk": "21.0.9 (Oracle Corporation)",
+        "maxHeapMB": 3952,
+        "processors": 20,
+        "combos": [
+          "s200-p10-a2k",
+          "s1000-p10-a2k",
+          "s1000-p50-a2k",
+          "s1000-p90-a2k",
+          "s1000-p10-a20k",
+          "s3000-p10-a2k"
+        ],
+        "roundsPerCombo": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "dataRule": "每 combo 一场考试：exams.status=4（已发布）、created_by=合成 owner；exam_submissions 直插 status=3、grading_status=1、total_score 前 belowRatio 比例=50.0（低于 60）、其余=80.0、answers=定长 ASCII JSON（长度 answersChars，内容为单键长字符串，端点只整体搬运不解析）、objective/subjective_score 同 total；缺考学生在同一 combo 独占 ID 块内、无答卷行、users 有姓名、exam_absence 各一行；users 逐生一行姓名。边界夹具另有：边缘考试（总分 null、总分=60.0 与 60.00、缺考∩低分同 ID 覆盖、无 users 行、users.is_deleted=1 软删姓名）、已软删考试（exams.is_deleted=1，应得 404）、空候选考试（无缺考、唯一答卷在线上，应短路且不发起姓名查询）。combo 之间与边缘 ID 段互不重叠（users 主键/用户名全局唯一，重叠即插入失败）。",
+        "runtimeFrequencyUnknown": "本端点真实请求频度、真实考试人数与 answers 分布无获准来源（未读共享 dev、未读未授权运行时日志、未采信前端调用点或 dev 演示记录），记为未知；本测量不外推生产 P99 或调用量",
+        "semanticsOk": true,
+        "oracleOk": true,
+        "equivOk": true,
+        "armShapeOk": true,
+        "captureOk": true,
+        "concOk": true
+      }
+    ],
+    "pass": true,
+    "checks": [
+      {
+        "name": "run1: 12 条语义用例全绿",
+        "ok": true,
+        "detail": "cases=12"
+      },
+      {
+        "name": "run1: 6 个 combo 夹具 oracle 全绿",
+        "ok": true,
+        "detail": "oracles=6"
+      },
+      {
+        "name": "run1: 全部轮次结果等价（G3）",
+        "ok": true,
+        "detail": "rounds=24"
+      },
+      {
+        "name": "run1: 受控臂 SQL 形状（G4）",
+        "ok": true,
+        "detail": "rounds=24"
+      },
+      {
+        "name": "run1: SQL 捕获生效（G5 前置）",
+        "ok": true,
+        "detail": "rounds=24"
+      },
+      {
+        "name": "run1: 并发臂完整（8×8=64 次/臂）",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "run1: 形状/轮数完整（6 combo × 4 轮）",
+        "ok": true,
+        "detail": "roundsPerCombo=4,4,4,4,4,4"
+      },
+      {
+        "name": "run2: 12 条语义用例全绿",
+        "ok": true,
+        "detail": "cases=12"
+      },
+      {
+        "name": "run2: 6 个 combo 夹具 oracle 全绿",
+        "ok": true,
+        "detail": "oracles=6"
+      },
+      {
+        "name": "run2: 全部轮次结果等价（G3）",
+        "ok": true,
+        "detail": "rounds=24"
+      },
+      {
+        "name": "run2: 受控臂 SQL 形状（G4）",
+        "ok": true,
+        "detail": "rounds=24"
+      },
+      {
+        "name": "run2: SQL 捕获生效（G5 前置）",
+        "ok": true,
+        "detail": "rounds=24"
+      },
+      {
+        "name": "run2: 并发臂完整（8×8=64 次/臂）",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "run2: 形状/轮数完整（6 combo × 4 轮）",
+        "ok": true,
+        "detail": "roundsPerCombo=4,4,4,4,4,4"
+      },
+      {
+        "name": "run3: 12 条语义用例全绿",
+        "ok": true,
+        "detail": "cases=12"
+      },
+      {
+        "name": "run3: 6 个 combo 夹具 oracle 全绿",
+        "ok": true,
+        "detail": "oracles=6"
+      },
+      {
+        "name": "run3: 全部轮次结果等价（G3）",
+        "ok": true,
+        "detail": "rounds=24"
+      },
+      {
+        "name": "run3: 受控臂 SQL 形状（G4）",
+        "ok": true,
+        "detail": "rounds=24"
+      },
+      {
+        "name": "run3: SQL 捕获生效（G5 前置）",
+        "ok": true,
+        "detail": "rounds=24"
+      },
+      {
+        "name": "run3: 并发臂完整（8×8=64 次/臂）",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "run3: 形状/轮数完整（6 combo × 4 轮）",
+        "ok": true,
+        "detail": "roundsPerCombo=4,4,4,4,4,4"
+      }
+    ]
+  },
+  "verdicts": {
+    "s200-p10-a2k": {
+      "primary": true,
+      "samples": 12,
+      "noiseBandOLD": [
+        0.746,
+        1.797
+      ],
+      "orderDriftBand": [
+        0.579,
+        1.584
+      ],
+      "pushdownRatio": {
+        "min": 1.317,
+        "median": 1.915,
+        "max": 3.484
+      },
+      "projectionRatio": {
+        "min": 1.201,
+        "median": 1.549,
+        "max": 2.223
+      },
+      "oldRatio": {
+        "min": 0.746,
+        "median": 1.234,
+        "max": 1.797
+      },
+      "decidabilityBar": 1.797,
+      "D1a_groupShareLargest": false,
+      "D1b_eliminatedGtRetained": true,
+      "D2_pushBenefitAboveNoiseEveryRound": false,
+      "D5_projectionDominatesRounds": 4,
+      "D5_projectionDominates": false,
+      "medianAbsMillis": {
+        "OLD": 1.139,
+        "PUSHDOWN": 0.585,
+        "PROJECTION": 0.955,
+        "prodRef": 1.504
+      },
+      "structural": {
+        "eligibleSize": 30,
+        "gradingRowsOutOLD": 200,
+        "gradingRowsEliminatedByPushdown": 180,
+        "gradingCharsEliminatedByPushdown": 368640,
+        "gradingAnswersCharsTotalOLD": 409600,
+        "gradingAnswersCharsTotalPUSHDOWN": 40960,
+        "gradingAnswersCharsTotalPROJECTION": 0,
+        "absenceRows": 10,
+        "nameRows": 30
+      },
+      "phaseMillisMedian": {
+        "ownerLoad": 0.321,
+        "absenceLoad": 0.44,
+        "gradingSelect": 0.663,
+        "absencePutAndJavaFilter": 0.022,
+        "nameLoad": 0.432
+      },
+      "concThroughputMedian": {
+        "OLD": 1077.606,
+        "PUSHDOWN": 3977.149,
+        "ratio": 3.691
+      }
+    },
+    "s1000-p10-a2k": {
+      "primary": true,
+      "samples": 12,
+      "noiseBandOLD": [
+        0.805,
+        1.474
+      ],
+      "orderDriftBand": [
+        0.682,
+        1.488
+      ],
+      "pushdownRatio": {
+        "min": 2.316,
+        "median": 3.484,
+        "max": 3.87
+      },
+      "projectionRatio": {
+        "min": 1.626,
+        "median": 2.042,
+        "max": 2.469
+      },
+      "oldRatio": {
+        "min": 0.805,
+        "median": 1.173,
+        "max": 1.474
+      },
+      "decidabilityBar": 1.488,
+      "D1a_groupShareLargest": true,
+      "D1b_eliminatedGtRetained": true,
+      "D2_pushBenefitAboveNoiseEveryRound": true,
+      "D5_projectionDominatesRounds": 0,
+      "D5_projectionDominates": false,
+      "medianAbsMillis": {
+        "OLD": 2.863,
+        "PUSHDOWN": 1.011,
+        "PROJECTION": 1.642,
+        "prodRef": 3.132
+      },
+      "structural": {
+        "eligibleSize": 150,
+        "gradingRowsOutOLD": 1000,
+        "gradingRowsEliminatedByPushdown": 900,
+        "gradingCharsEliminatedByPushdown": 1843200,
+        "gradingAnswersCharsTotalOLD": 2048000,
+        "gradingAnswersCharsTotalPUSHDOWN": 204800,
+        "gradingAnswersCharsTotalPROJECTION": 0,
+        "absenceRows": 50,
+        "nameRows": 150
+      },
+      "phaseMillisMedian": {
+        "ownerLoad": 0.231,
+        "absenceLoad": 0.344,
+        "gradingSelect": 2.332,
+        "absencePutAndJavaFilter": 0.108,
+        "nameLoad": 0.771
+      },
+      "concThroughputMedian": {
+        "OLD": 224.74,
+        "PUSHDOWN": 1090.431,
+        "ratio": 4.852
+      }
+    },
+    "s1000-p10-a20k": {
+      "primary": true,
+      "samples": 12,
+      "noiseBandOLD": [
+        0.9,
+        1.565
+      ],
+      "orderDriftBand": [
+        0.595,
+        3.518
+      ],
+      "pushdownRatio": {
+        "min": 2.399,
+        "median": 3.757,
+        "max": 7.239
+      },
+      "projectionRatio": {
+        "min": 1.396,
+        "median": 2.315,
+        "max": 2.945
+      },
+      "oldRatio": {
+        "min": 0.9,
+        "median": 1.211,
+        "max": 1.565
+      },
+      "decidabilityBar": 3.518,
+      "D1a_groupShareLargest": true,
+      "D1b_eliminatedGtRetained": true,
+      "D2_pushBenefitAboveNoiseEveryRound": false,
+      "D5_projectionDominatesRounds": 0,
+      "D5_projectionDominates": false,
+      "medianAbsMillis": {
+        "OLD": 2.305,
+        "PUSHDOWN": 0.698,
+        "PROJECTION": 1.182,
+        "prodRef": 2.741
+      },
+      "structural": {
+        "eligibleSize": 150,
+        "gradingRowsOutOLD": 1000,
+        "gradingRowsEliminatedByPushdown": 900,
+        "gradingCharsEliminatedByPushdown": 18432000,
+        "gradingAnswersCharsTotalOLD": 20480000,
+        "gradingAnswersCharsTotalPUSHDOWN": 2048000,
+        "gradingAnswersCharsTotalPROJECTION": 0,
+        "absenceRows": 50,
+        "nameRows": 150
+      },
+      "phaseMillisMedian": {
+        "ownerLoad": 0.18,
+        "absenceLoad": 0.269,
+        "gradingSelect": 2.48,
+        "absencePutAndJavaFilter": 0.119,
+        "nameLoad": 0.755
+      },
+      "concThroughputMedian": {
+        "OLD": 211.423,
+        "PUSHDOWN": 1048.97,
+        "ratio": 4.961
+      }
+    },
+    "s3000-p10-a2k": {
+      "primary": true,
+      "samples": 12,
+      "noiseBandOLD": [
+        0.419,
+        1.304
+      ],
+      "orderDriftBand": [
+        0.738,
+        1.594
+      ],
+      "pushdownRatio": {
+        "min": 2.267,
+        "median": 2.97,
+        "max": 4.314
+      },
+      "projectionRatio": {
+        "min": 1.348,
+        "median": 1.75,
+        "max": 2.802
+      },
+      "oldRatio": {
+        "min": 0.419,
+        "median": 0.91,
+        "max": 1.304
+      },
+      "decidabilityBar": 1.594,
+      "D1a_groupShareLargest": true,
+      "D1b_eliminatedGtRetained": true,
+      "D2_pushBenefitAboveNoiseEveryRound": true,
+      "D5_projectionDominatesRounds": 0,
+      "D5_projectionDominates": false,
+      "medianAbsMillis": {
+        "OLD": 8.293,
+        "PUSHDOWN": 2.258,
+        "PROJECTION": 3.651,
+        "prodRef": 7.008
+      },
+      "structural": {
+        "eligibleSize": 450,
+        "gradingRowsOutOLD": 3000,
+        "gradingRowsEliminatedByPushdown": 2700,
+        "gradingCharsEliminatedByPushdown": 5529600,
+        "gradingAnswersCharsTotalOLD": 6144000,
+        "gradingAnswersCharsTotalPUSHDOWN": 614400,
+        "gradingAnswersCharsTotalPROJECTION": 0,
+        "absenceRows": 150,
+        "nameRows": 450
+      },
+      "phaseMillisMedian": {
+        "ownerLoad": 0.169,
+        "absenceLoad": 0.347,
+        "gradingSelect": 6.117,
+        "absencePutAndJavaFilter": 0.309,
+        "nameLoad": 1.858
+      },
+      "concThroughputMedian": {
+        "OLD": 75.315,
+        "PUSHDOWN": 365.36,
+        "ratio": 4.851
+      }
+    },
+    "s1000-p50-a2k": {
+      "primary": false,
+      "samples": 12,
+      "noiseBandOLD": [
+        0.671,
+        1.703
+      ],
+      "orderDriftBand": [
+        0.542,
+        1.988
+      ],
+      "pushdownRatio": {
+        "min": 1.163,
+        "median": 1.652,
+        "max": 2.573
+      },
+      "projectionRatio": {
+        "min": 1.177,
+        "median": 1.671,
+        "max": 2.563
+      },
+      "oldRatio": {
+        "min": 0.671,
+        "median": 1.169,
+        "max": 1.703
+      },
+      "decidabilityBar": 1.988,
+      "D1a_groupShareLargest": false,
+      "D1b_eliminatedGtRetained": false,
+      "D2_pushBenefitAboveNoiseEveryRound": false,
+      "D5_projectionDominatesRounds": 7,
+      "D5_projectionDominates": true,
+      "medianAbsMillis": {
+        "OLD": 3.604,
+        "PUSHDOWN": 2.569,
+        "PROJECTION": 2.642,
+        "prodRef": 4.065
+      },
+      "structural": {
+        "eligibleSize": 550,
+        "gradingRowsOutOLD": 1000,
+        "gradingRowsEliminatedByPushdown": 500,
+        "gradingCharsEliminatedByPushdown": 1024000,
+        "gradingAnswersCharsTotalOLD": 2048000,
+        "gradingAnswersCharsTotalPUSHDOWN": 1024000,
+        "gradingAnswersCharsTotalPROJECTION": 0,
+        "absenceRows": 50,
+        "nameRows": 550
+      },
+      "phaseMillisMedian": {
+        "ownerLoad": 0.238,
+        "absenceLoad": 0.318,
+        "gradingSelect": 2.171,
+        "absencePutAndJavaFilter": 0.165,
+        "nameLoad": 2.259
+      },
+      "concThroughputMedian": {
+        "OLD": 166.65,
+        "PUSHDOWN": 282.822,
+        "ratio": 1.697
+      }
+    },
+    "s1000-p90-a2k": {
+      "primary": false,
+      "samples": 12,
+      "noiseBandOLD": [
+        0.663,
+        2.13
+      ],
+      "orderDriftBand": [
+        0.476,
+        1.513
+      ],
+      "pushdownRatio": {
+        "min": 0.818,
+        "median": 1.063,
+        "max": 2.039
+      },
+      "projectionRatio": {
+        "min": 0.859,
+        "median": 1.503,
+        "max": 2.022
+      },
+      "oldRatio": {
+        "min": 0.663,
+        "median": 1.131,
+        "max": 2.13
+      },
+      "decidabilityBar": 2.13,
+      "D1a_groupShareLargest": false,
+      "D1b_eliminatedGtRetained": false,
+      "D2_pushBenefitAboveNoiseEveryRound": false,
+      "D5_projectionDominatesRounds": 10,
+      "D5_projectionDominates": true,
+      "medianAbsMillis": {
+        "OLD": 4.871,
+        "PUSHDOWN": 5.537,
+        "PROJECTION": 3.851,
+        "prodRef": 5.345
+      },
+      "structural": {
+        "eligibleSize": 950,
+        "gradingRowsOutOLD": 1000,
+        "gradingRowsEliminatedByPushdown": 100,
+        "gradingCharsEliminatedByPushdown": 204800,
+        "gradingAnswersCharsTotalOLD": 2048000,
+        "gradingAnswersCharsTotalPUSHDOWN": 1843200,
+        "gradingAnswersCharsTotalPROJECTION": 0,
+        "absenceRows": 50,
+        "nameRows": 950
+      },
+      "phaseMillisMedian": {
+        "ownerLoad": 0.227,
+        "absenceLoad": 0.31,
+        "gradingSelect": 2.315,
+        "absencePutAndJavaFilter": 0.216,
+        "nameLoad": 3.766
+      },
+      "concThroughputMedian": {
+        "OLD": 141.652,
+        "PUSHDOWN": 152.352,
+        "ratio": 1.076
+      }
+    }
+  },
+  "decision": {
+    "validityPass": true,
+    "D1_highestProportionControllableFactor": false,
+    "D2_benefitAboveNoiseEveryRound": false,
+    "D3_equivalence": true,
+    "D4_notOnlyExtremeShapes": false,
+    "D5_projectionOrOtherDominates": false,
+    "D6_reliable": true,
+    "primaryFamilyGO": false,
+    "sensitiveFamilyNote": {
+      "s1000_p50": {
+        "D1": false,
+        "D2": false,
+        "pushdownRatio": {
+          "min": 1.163,
+          "median": 1.652,
+          "max": 2.573
+        }
+      },
+      "s1000_p90": {
+        "D1": false,
+        "D2": false,
+        "pushdownRatio": {
+          "min": 0.818,
+          "median": 1.063,
+          "max": 2.039
+        }
+      }
+    }
+  }
+}

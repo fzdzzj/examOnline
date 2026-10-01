@@ -1,0 +1,81 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：基线与失败分类",
+    "task": "核对现有护栏和两条历史失败的证据边界",
+    "steps": [
+      {
+        "step": "确认开工 HEAD、工作树及 8bd04c2/41f8298 的实现与门禁证据；证明现有 UniqueSeqGuardTest 的紧凑循环不是对旧实现数学上必红的护栏，不把历史 #14/#15 归因于取号修复",
+        "completed": true,
+        "evidence": "开工 HEAD=41f8298（git rev-parse --short HEAD 现场核对），工作树含指导 agent 预写的四份文档改动（spec/README.md 与本变更三件套），原样保留未回退。8bd04c2 把 IntegrationTestBase 取号器从实例级 new AtomicLong(System.currentTimeMillis() % 100_000) 改为 JVM 级 static AtomicLong；随该提交新增的 UniqueSeqGuardTest 靠紧凑构造 1000 个 Probe 碰同毫秒——1000 个构造落进 100000 个毫秒桶不构成鸽笼必红（8bd04c2 提交信息里旧实现 1000 probes -> 3 unique names 是当次时序观测，非数学必然），执行变慢时旧实现可能保持绿。历史 #14/#15 不归因于取号修复，护栏返修与两条偶发各自独立归类。revision 41f8298"
+      },
+      {
+        "step": "在当前已提交 HEAD 上逐次重复 DataRetentionIntegrationTest（至少三次）并记录命令、次数、每次原始输出与短 revision；失败时保留完整报告，未复现则标为观察",
+        "completed": true,
+        "evidence": "命令：./mvnw clean test -Dtest=DataRetentionIntegrationTest（仓库根，逐次独立执行，共 3 次）。每次原始输出：Tests run: 6, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS，退出码 0（第 1 次 Time elapsed 17.06 s）。短 revision 41f8298。结论：未复现（历史上 expected 4 was 8 未再出现），登记为观察项；未改该测试与产品代码"
+      },
+      {
+        "step": "同样逐次重复 ExamTakingIntegrationTest（至少三次，包含 enterGateAndCountdown）并记录同样证据；单类通过不能抹去全量中的历史失败",
+        "completed": true,
+        "evidence": "命令：./mvnw clean test -Dtest=ExamTakingIntegrationTest（仓库根，逐次独立执行，共 3 次，含 enterGateAndCountdown 在内 10 例）。每次原始输出：Tests run: 10, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS，退出码 0。短 revision 41f8298。结论：未复现（历史上 registerTeacher 期望 200 得 400 未再出现），登记为观察项；单类绿不撤销全量历史失败记载"
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：确定性护栏与最小处置",
+    "task": "修好已定位的护栏缺口；历史失败只在复现并查明原因后改动",
+    "steps": [
+      {
+        "step": "只改 UniqueSeqGuardTest 的护栏使其不依赖时钟分辨率、循环速度或睡眠：可通过测试侧反射验证两个 IntegrationTestBase 实例引用同一 AtomicLong，同时保留跨实例取名不同的行为断言；不重置静态计数或修改生产代码",
+        "completed": true,
+        "evidence": "UniqueSeqGuardTest 重写为 instancesShareOneSeqGeneratorAndDrawDistinctNames：反射读 IntegrationTestBase.seq（getDeclaredField + setAccessible 后按实例 field.get），assertSame 断言两个裸 new 的 Probe 实例引用同一取号器对象（实例级播种下必为两个不同 AtomicLong，旧基座无条件失败，与毫秒落点无关），另保留两次 unique(\"guard-probe\") 取名 assertNotEquals 的行为断言。不重置共享静态计数、不睡眠、无新增依赖；git show d1dfcb6 --stat 仅 UniqueSeqGuardTest.java 一个文件（1 file changed），IntegrationTestBase 未动"
+      },
+      {
+        "step": "在隔离的旧实现工作树用 ed06f42 基座与新护栏实跑定向红灯，再在当前共享计数实现实跑定向绿灯；分别记命令、失败断言/原始输出、退出码、源 revision/工作树状态；不在主工作树切换基座",
+        "completed": true,
+        "evidence": "红灯：git worktree add D:/examOnline-tmp-guardred ed06f42（核对：该树 IntegrationTestBase 第 49 行为实例级 private final AtomicLong seq = new AtomicLong(System.currentTimeMillis() % 100_000)，原树无 UniqueSeqGuardTest 文件），覆盖复制重写后的护栏文件后执行命令 ./mvnw clean test -Dtest=UniqueSeqGuardTest -Dmaven.repo.local=D:/code/examOnline/.m2-repo → Tests run: 1, Failures: 1, Errors: 0, Skipped: 0，BUILD FAILURE，退出码 1；失败断言在 UniqueSeqGuardTest.java:35 的 assertSame：AssertionFailedError（两个测试实例持有不同的取号器实例）expected: java.util.concurrent.atomic.AtomicLong@2e029d61<36554> but was: java.util.concurrent.atomic.AtomicLong@482d776b<36554>——两个不同对象身份，确定性失败。绿灯：主工作树（取号器实现=41f8298 已提交的共享 static AtomicLong + 重写后护栏，工作树态），命令 ./mvnw clean test -Dtest=UniqueSeqGuardTest → Tests run: 1, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS，退出码 0。证据留存后 git worktree remove --force 清理该临时树，复核 git worktree list 仅剩主树；主工作树全程未切换基座"
+      },
+      {
+        "step": "历史两条若复现：先定位数据来源与触发条件、保留或补稳定失败断言，针对证据指到的最小处所修复并先红后绿；若未复现则不碰这两条测试与产品代码，不把重跑绿写成已修复",
+        "completed": true,
+        "evidence": "两条各 3 次定向运行均绿（阶段 1 证据，revision 41f8298），未复现 → 未触碰 DataRetentionIntegrationTest、ExamTakingIntegrationTest 与任何 src/main 代码；遗留 #14/#15 按观察口径更新并保持开放（见阶段 3 第 2 步），未写\"已修复\""
+      },
+      {
+        "step": "不使用 @Sql 自建表、不放宽断言为或然行数；记录本轮代码改动范围，不夹带 JVM/连接池/交卷/共享 dev 改动",
+        "completed": true,
+        "evidence": "自查 grep -rn '@Sql' src/test（按 AGENTS.md 口径排除 javadoc 续行）输出为空；本轮代码改动范围仅 src/test/java/com/exam/support/UniqueSeqGuardTest.java（提交 d1dfcb6）；护栏断言为取号器对象身份 + 两次取名不同，无或然断言；无 JVM/连接池/交卷/schema/共享 dev 改动"
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：门禁、真值与收口",
+    "task": "在已提交代码上验证，再按“护栏修复”和“历史观察”不同状态合入或留待观察",
+    "steps": [
+      {
+        "step": "先定向运行护栏与两条历史类，再在已提交实现 revision 执行仓库根唯一后端门禁 mvnw.cmd clean test（Windows）；记录命令、四计数、BUILD 状态、退出码、短 revision；全量失败则停下，不用再次重跑变绿覆盖第一次失败",
+        "completed": true,
+        "evidence": "定向：UniqueSeqGuardTest 1/0/0/0（绿）+ DataRetentionIntegrationTest 6/0/0/0 ×3 + ExamTakingIntegrationTest 10/0/0/0 ×3（命令与 revision 见阶段 1/2 证据）。全量门禁：命令 mvnw.cmd clean test（cmd 于仓库根执行），revision d1dfcb6（护栏返修已提交的实现 revision，代码树与该提交零差异）→ Tests run: 305, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，退出码 0（Skipped 1 为契约导出测试既有设计，非新增跳过）"
+      },
+      {
+        "step": "逐条更新 spec/README.md 遗留 #14/#15：能证明同源并修复才关闭该条；未复现须留下次数、命令、revision 并保持开放。护栏红绿仅证明护栏本身，不自动关闭两条历史项",
+        "completed": true,
+        "evidence": "spec/README.md 遗留 #14、#15 各追加 2026-09-26 逐次复核注记：命令（./mvnw clean test -Dtest=<类名>）、次数（3 次）、每次四计数与退出码、revision 41f8298；两条均保持开放。注记明确护栏返修与两条偶发失败无归因关系，未声称消除"
+      },
+      {
+        "step": "只有确定性护栏修复与定向/全量门禁满足时，才合入 reliability spec-delta、归档本变更并按证据回勾 tasks.json；归档说明明确区分“护栏已修”和“历史项未复现仍开放”。若条件不满足，保留进行中，不合入“已消除偶发”之类假结论",
+        "completed": true,
+        "evidence": "条件满足（护栏旧基座确定性红 + 共享计数绿 + 全量门禁 305/0/0/1 @ d1dfcb6 + 两条历史按证据归类为未复现观察）后执行：spec-delta 两条 ADDED Requirement（含\"护栏已修而历史失败未复现\"场景）整段合入 spec/specs/reliability/spec.md 并加合入注记；变更目录整体移入 spec/changes/archive/fix-flaky-integration-baselines；proposal 状态改为已归档并写验收边界；spec/README.md 已归档表、已合入规范表、能力地图、进行中表同步登记。合入注记与 README 归档行明确：只声称护栏已修与观察方法收口，#14/#15 未复现仍开放，不声称历史偶发已消除"
+      },
+      {
+        "step": "显式路径暂存并核对 git diff --cached --name-only、git diff --cached --check 后提交；不得夹带其他待审批目录、共享 dev/browser/docker 产物；回报每次命令原始输出、提交 SHA 与剩余观察项",
+        "completed": true,
+        "evidence": "实现提交 d1dfcb6：git add 显式路径仅 src/test/java/com/exam/support/UniqueSeqGuardTest.java，git diff --cached --name-only 输出仅该文件，git diff --cached --check 干净。归档提交（即本 tasks.json 所在提交）：显式暂存 spec/specs/reliability/spec.md、spec/README.md、spec/changes/fix-flaky-integration-baselines 旧路径（删除）与 spec/changes/archive/fix-flaky-integration-baselines 新路径（新增），两次 git diff --cached --name-only 与 --check 核对通过，未夹带 isolate-submit-load-generator 等其他目录与 dev/browser/docker 产物。剩余观察项：遗留 #14/#15（未复现，开放）、#16（复位脚本字符集，本轮未涉及）"
+      }
+    ],
+    "passes": true
+  }
+]

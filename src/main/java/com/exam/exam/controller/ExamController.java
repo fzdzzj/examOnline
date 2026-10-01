@@ -3,15 +3,23 @@ package com.exam.exam.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
+import com.exam.exam.dto.AbsenceItemResponse;
 import com.exam.exam.dto.ExamCreateRequest;
 import com.exam.exam.dto.ExamDetailResponse;
 import com.exam.exam.dto.ExamResponse;
 import com.exam.exam.dto.ExamSnapshotResponse;
 import com.exam.exam.dto.ExamUpdateRequest;
+import com.exam.exam.dto.MakeupCandidateItem;
+import com.exam.exam.dto.MakeupCreateRequest;
+import com.exam.exam.dto.MakeupCreateResponse;
 import com.exam.exam.entity.Exam;
+import com.exam.exam.service.AbsenceService;
 import com.exam.exam.service.ExamService;
 import com.exam.exam.service.ExamSnapshotService;
+import com.exam.exam.service.MakeupService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +29,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -37,14 +47,24 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/exams")
 @RequirePermission("exam:manage")
+// 类级 @Validated 决定 page/size 上 @Min/@Max 走哪条异常路：有它，方法校验代理抛
+// ConstraintViolationException（GlobalExceptionHandler 已映射 400）；去掉它，Spring 6.1
+// 的内建校验照样拦，但抛 HandlerMethodValidationException——未映射，落到 500 兜底。
+// 故此注解是"400 还是 500"的开关，不是"校验与否"的开关（实测：去掉后 size=101 返回 500）。
+@Validated
 public class ExamController {
 
     private final ExamService examService;
     private final ExamSnapshotService examSnapshotService;
+    private final AbsenceService absenceService;
+    private final MakeupService makeupService;
 
-    public ExamController(ExamService examService, ExamSnapshotService examSnapshotService) {
+    public ExamController(ExamService examService, ExamSnapshotService examSnapshotService,
+                          AbsenceService absenceService, MakeupService makeupService) {
         this.examService = examService;
         this.examSnapshotService = examSnapshotService;
+        this.absenceService = absenceService;
+        this.makeupService = makeupService;
     }
 
     /** 创建考试：绑定试卷/课程班级，设定时间窗与个人时长；初始状态未开始 */
@@ -55,8 +75,9 @@ public class ExamController {
 
     /** 考试分页（教师仅见自己的考试） */
     @GetMapping
-    public ApiResponse<List<ExamResponse>> page(@RequestParam(defaultValue = "1") long page,
-                                                @RequestParam(defaultValue = "10") long size) {
+    public ApiResponse<List<ExamResponse>> page(
+            @RequestParam(defaultValue = "1") @Min(1) long page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) long size) {
         Page<Exam> result = examService.page(page, size);
         return ApiResponse.success(result.getRecords().stream().map(this::toResponse).toList());
     }
@@ -97,6 +118,28 @@ public class ExamController {
     @GetMapping("/{id}/snapshot")
     public ApiResponse<ExamSnapshotResponse> getSnapshot(@PathVariable Long id) {
         return ApiResponse.success(examSnapshotService.getCurrent(id));
+    }
+
+    /** 教师按考试查缺考学生名单（占位入口，勾选进入补考名单：spec「缺考名单可筛选」场景）。
+     *  越权校验在 AbsenceService 内：仅归属教师（ADMIN 放行）。 */
+    @GetMapping("/{id}/absences")
+    public ApiResponse<List<AbsenceItemResponse>> absences(@PathVariable Long id) {
+        return ApiResponse.success(absenceService.listAbsences(id));
+    }
+
+    /** 教师组织补考前查询可筛选学生（缺考 ∪ 低于分数线的有成绩者），供勾选（spec §8.2）。 */
+    @GetMapping("/{id}/makeup-eligible")
+    public ApiResponse<List<MakeupCandidateItem>> makeupEligible(
+            @PathVariable Long id,
+            @RequestParam(required = false) BigDecimal passLine) {
+        return ApiResponse.success(makeupService.listEligibleStudents(id, passLine));
+    }
+
+    /** 创建补考：独立考试记录（parent_exam_id 指向主考，§12.5）+ 名单限制进入（exam_candidates）。 */
+    @PostMapping("/{id}/makeups")
+    public ApiResponse<MakeupCreateResponse> createMakeup(@PathVariable Long id,
+                                                          @Valid @RequestBody MakeupCreateRequest request) {
+        return ApiResponse.success(makeupService.createMakeup(id, request));
     }
 
     private ExamResponse toResponse(Exam exam) {

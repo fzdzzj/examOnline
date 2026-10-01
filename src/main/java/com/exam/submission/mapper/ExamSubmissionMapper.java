@@ -45,8 +45,24 @@ public interface ExamSubmissionMapper extends BaseMapper<ExamSubmission> {
      * 兜底扫描（服务端时间为准）：进行中且"个人已超时"或"所属考试已结束/已批改"的答卷，
      * 由定时任务强制交卷（spec「后端兜底」场景；教师提前结束 force_end 后考试态为已结束，同样命中）。
      * 联表判断考试状态——答卷表不冗余考试状态，以 exams 为唯一事实源。
+     *
+     * <p><b>{@code JOIN_INDEX} 提示是必需的，不是装饰。</b>不加时优化器常改从 exams 驱动
+     * （全表扫考试 → 按 {@code idx_submissions_exam_submit} 逐场回表）；钉住
+     * {@code idx_submissions_sweep} 后走 status=1 索引查找 + 主键回查考试。
+     * 10 万答卷 / 4KB paper_json / MySQL 8.0.46 实测（EXPLAIN ANALYZE 各 3–4 轮）：
+     * <ul>
+     *   <li>5k 进行中、4.4k 到期（常态忙轮）：41–50ms → 1.7–2.7ms（≈18×）；</li>
+     *   <li>25k 进行中、一条不命中（空闲轮，每 10 秒一次）：312–366ms → 159–169ms。</li>
+     * </ul>
+     * 写进 SQL 注释而非 {@code FORCE INDEX}，因为 H2（MODE=MySQL，测试库）**不认**
+     * {@code FORCE INDEX}，直接抛语法错误；而注释形态被 H2 当普通注释忽略、被 MySQL 8
+     * 优化器读取，两端同一句 SQL。注意带 {@code @select_1} 查询块限定符的写法会被 MySQL
+     * **静默忽略**（实测计划不变），故这里不加限定符。
+     *
+     * <p><b>耦合代价</b>：索引名进了 SQL，改名/删 {@code idx_submissions_sweep} 会让提示
+     * 失效（不报错，退回上面的慢计划），改 {@code schema.sql} 时需同步这里。
      */
-    @Select("SELECT s.* FROM exam_submissions s "
+    @Select("SELECT /*+ JOIN_INDEX(s idx_submissions_sweep) */ s.* FROM exam_submissions s "
             + "JOIN exams e ON e.id = s.exam_id AND e.is_deleted = 0 "
             + "WHERE s.status = 1 AND (s.deadline_time < #{now} OR e.status IN (2, 3)) "
             + "LIMIT #{limit}")
@@ -56,8 +72,22 @@ public interface ExamSubmissionMapper extends BaseMapper<ExamSubmission> {
     /**
      * 对账补发扫描：已交卷但 answers 尚未落库（MQ 发送失败/消费重试耗尽进死信等极端场景），
      * 定时任务重新投递交卷消息，消费端 casFillAnswers 幂等，不会重复写。
+     *
+     * <p><b>谓词写在 {@code answers_missing} 而不是 {@code answers IS NULL}，是为了索引能定位。</b>
+     * 该列是 {@code schema.sql} 里的虚拟生成列（值由 {@code answers} 算出，两者永不可能不一致，
+     * 也无需任何代码维护），{@code idx_submissions_republish (status, answers_missing)} 建在它上面。
+     * 10 万答卷 / 95k 已交卷 / 3 条真待补（MySQL 8.0.46，EXPLAIN ANALYZE）：
+     * 写 {@code answers IS NULL} 时无索引可用，优化器只能沿 {@code idx_submissions_sweep} 的
+     * {@code status=2} 区间把 95,000 行读穿才敢返回 0 行，实测 <b>411–519ms</b>；
+     * 写 {@code answers_missing = 1} 走新索引，{@code rows=3}、实测 <b>0.05ms</b>。
+     * 而这条扫描每 10 秒就跑一轮（{@code exam.taking.sweep.fixed-delay-ms}），
+     * 且旧写法的成本随交卷总量线性增长——稳态下纯粹是空转。
+     *
+     * <p>为什么不用前缀索引 {@code (status, answers(2))}：MySQL 上同样有效（实测 rows=3），
+     * 但 <b>H2 不认前缀语法</b>（建表直接 42001 语法错，{@code continue-on-error=false}
+     * 会让全部集成测试起不来），而本项目两端共用一份 {@code schema.sql}。
      */
-    @Select("SELECT * FROM exam_submissions WHERE status = 2 AND answers IS NULL LIMIT #{limit}")
+    @Select("SELECT * FROM exam_submissions WHERE status = 2 AND answers_missing = 1 LIMIT #{limit}")
     List<ExamSubmission> selectSubmittedWithoutAnswers(@Param("limit") int limit);
 
     /** 按 (考试, 学生) 定位答卷——幂等进入/交卷/自动保存的统一查询入口。 */
@@ -66,4 +96,13 @@ public interface ExamSubmissionMapper extends BaseMapper<ExamSubmission> {
                 .eq(ExamSubmission::getExamId, examId)
                 .eq(ExamSubmission::getStudentId, studentId));
     }
+
+    /**
+     * 题数分母的窄读：只取一行个人快照（{@code paper_json}），供监考总览在答卷主语句
+     * 列投影后解析题目总数——主语句不再载入长字段，读带宽从 O(人数×快照) 降为 O(1)。
+     * 无可用快照返回 null（调用方按 0 题处理），谓词与站点 s6 冻结测量形态一致。
+     */
+    @Select("SELECT paper_json FROM exam_submissions WHERE exam_id = #{examId} "
+            + "AND paper_json IS NOT NULL AND paper_json <> '' LIMIT 1")
+    String selectFirstPaperJson(@Param("examId") Long examId);
 }

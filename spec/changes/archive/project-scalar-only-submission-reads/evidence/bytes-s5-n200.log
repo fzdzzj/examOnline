@@ -1,0 +1,48 @@
+=== site=s5 n=200 arm=OLD stmt=1 bytes=NaN rows=NaN exit=1
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(objective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(subjective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_status AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_error AS CHAR)),0) + COALESCE(LENGTH(CAST(partial_graded AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS rows FROM exam_submissions WHERE  (exam_id = 970200200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+=== site=s5 n=200 arm=OLD stmt=2 bytes=NaN rows=NaN exit=1
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(objective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(subjective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_status AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_error AS CHAR)),0) + COALESCE(LENGTH(CAST(partial_graded AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS rows FROM exam_submissions WHERE  (exam_id = 970300200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+--- arm=OLD total bytes=NaN rows=NaN side(stdoutBytes=4320, stdoutLines=2, exit=0)
+
+=== site=s5 n=200 arm=PROJ stmt=1 bytes=NaN rows=NaN exit=1
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS rows FROM exam_submissions WHERE  (exam_id = 970200200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+=== site=s5 n=200 arm=PROJ stmt=2 bytes=NaN rows=NaN exit=1
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS rows FROM exam_submissions WHERE  (exam_id = 970300200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+--- arm=PROJ total bytes=NaN rows=NaN side(stdoutBytes=50, stdoutLines=2, exit=0)
+
+=== site=s5 n=200 arm=OLDrep stmt=1 bytes=NaN rows=NaN exit=1
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(objective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(subjective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_status AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_error AS CHAR)),0) + COALESCE(LENGTH(CAST(partial_graded AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS rows FROM exam_submissions WHERE  (exam_id = 970200200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+=== site=s5 n=200 arm=OLDrep stmt=2 bytes=NaN rows=NaN exit=1
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(objective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(subjective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_status AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_error AS CHAR)),0) + COALESCE(LENGTH(CAST(partial_graded AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS rows FROM exam_submissions WHERE  (exam_id = 970300200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+--- arm=OLDrep total bytes=NaN rows=NaN side(stdoutBytes=4320, stdoutLines=2, exit=0)
+
+=== site=s5 n=200 arm=OLD stmt=1 bytes=2141 rows=1 exit=0
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(objective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(subjective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_status AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_error AS CHAR)),0) + COALESCE(LENGTH(CAST(partial_graded AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM exam_submissions WHERE  (exam_id = 970200200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+=== site=s5 n=200 arm=OLD stmt=2 bytes=2141 rows=1 exit=0
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(objective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(subjective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_status AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_error AS CHAR)),0) + COALESCE(LENGTH(CAST(partial_graded AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM exam_submissions WHERE  (exam_id = 970300200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+--- arm=OLD total bytes=4282 rows=2 side(stdoutBytes=4320, stdoutLines=2, exit=0)
+
+=== site=s5 n=200 arm=PROJ stmt=1 bytes=23 rows=1 exit=0
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM exam_submissions WHERE  (exam_id = 970200200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+=== site=s5 n=200 arm=PROJ stmt=2 bytes=23 rows=1 exit=0
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM exam_submissions WHERE  (exam_id = 970300200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+--- arm=PROJ total bytes=46 rows=2 side(stdoutBytes=50, stdoutLines=2, exit=0)
+
+=== site=s5 n=200 arm=OLDrep stmt=1 bytes=2141 rows=1 exit=0
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(objective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(subjective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_status AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_error AS CHAR)),0) + COALESCE(LENGTH(CAST(partial_graded AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM exam_submissions WHERE  (exam_id = 970200200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+=== site=s5 n=200 arm=OLDrep stmt=2 bytes=2141 rows=1 exit=0
+carrier: SELECT COALESCE(SUM(COALESCE(LENGTH(CAST(id AS CHAR)),0) + COALESCE(LENGTH(CAST(exam_id AS CHAR)),0) + COALESCE(LENGTH(CAST(student_id AS CHAR)),0) + COALESCE(LENGTH(CAST(submit_time AS CHAR)),0) + COALESCE(LENGTH(CAST(answers AS CHAR)),0) + COALESCE(LENGTH(CAST(status AS CHAR)),0) + COALESCE(LENGTH(CAST(objective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(subjective_score AS CHAR)),0) + COALESCE(LENGTH(CAST(total_score AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_status AS CHAR)),0) + COALESCE(LENGTH(CAST(grading_error AS CHAR)),0) + COALESCE(LENGTH(CAST(partial_graded AS CHAR)),0) + COALESCE(LENGTH(CAST(version AS CHAR)),0) + COALESCE(LENGTH(CAST(created_time AS CHAR)),0) + COALESCE(LENGTH(CAST(updated_time AS CHAR)),0)),0) AS bytes, COUNT(*) AS `rows` FROM exam_submissions WHERE  (exam_id = 970300200 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1;
+
+--- arm=OLDrep total bytes=4282 rows=2 side(stdoutBytes=4320, stdoutLines=2, exit=0)
+

@@ -1,0 +1,49 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：评估（门控步）",
+    "task": "有数字地评估移出收益与失败语义",
+    "steps": [
+      {
+        "step": "盘点 audit_log 既有调用点与失败语义（写失败当前如何处理），git grep 现场定位",
+        "completed": true,
+        "evidence": "短 SHA 359c1ca。git grep -rn audit -- src/main + git grep -n 'auditLogService\\.'：audit_log 的 INSERT 全仓唯一入口是 AuditLogService.record() → auditLogMapper.insert()（src/main/java/com/exam/service/AuditLogService.java:87-101）。调用方仅 3 处、全在登录链路：AuthService.login 失败分支 src/main/java/com/exam/auth/service/AuthService.java:144、成功分支 :152、LoginGuardService.recordFailure 达阈值锁定 src/main/java/com/exam/auth/service/LoginGuardService.java:77。交卷路径（exam controller/service）grep audit 为 0 命中——交卷不写审计。实体 ACTION_PERMISSION_CHANGE / ACTION_JWT_VALIDATION 两常量无任何写入方。失败语义=catch(Exception) 吞掉 + log.error，绝不回滚业务（AuditLogService.java:25-26 与 98-100，类注释明示这是设计：『写失败不阻断业务…代价是这类缺口只能靠 ERROR 日志发现』）；且 AuthService.login（:136-154）无 @Transactional，审计 INSERT 是独立 auto-commit 语句——提案担忧的『审计写失败回滚业务/业务事务等待审计落库』在现状均不存在。score_audit_logs（ScoreService 打分审计）是另一张表，不在本议题范围。"
+      },
+      {
+        "step": "测量同步审计写占关键路径的时延（含/不含对比或等价证据，三要素纪律）",
+        "completed": true,
+        "evidence": "未做新压测（不动共享 dev、不 docker up/down、不改阈值），引用既有报告数字并标注出处：①docs/submit-loadtest-report.md §7.1（:178；run2，执行 2026-09-22 13:23–13:47，短 revision 4c3b7d7，loadtest/ 资产，JMeter 与应用同机）：17 条慢 SQL 全部是 INSERT INTO audit_log、1003–1145ms、发生在 http-nio-8080-exec-* 工作线程；run1/run3/run4 为 0 条。归属修正（本次现场核对）：loadtest/jmeter/submit-5000.jmx TestPlan.serialize_threadgroups=true，阶段1 登录（5000 并发 POST /api/auth/login，SetupThreadGroup）先跑完、阶段2 交卷才开始 ⇒ 慢审计 INSERT 全部发生在登录阶段，交卷阶段全程零审计写；提案『交卷等写操作的事务内/请求内落审计行』的前提与代码不符。②docs/submit-capacity-tuning-report.md:562（G6 行；修订方法学每臂 3 轮共 9 轮，2026-09-23，短 revision b1fa8a2，src/main 零改动）：旧报告 §7.1 的秒级语句本轮未复现。③量级对照：5000 并发登录 P50 33.5/35.5s 由 BCrypt CPU 饱和主导（旧报告 §7.2），单条审计 INSERT 常态毫秒级、仅 IO/fsync 竞争下偶发秒级且四轮仅一轮出现——在登录时延中不构成可测贡献。缺口如实记录：没有『含/不含审计写』的隔离对比测量；若要补，需在共享 dev 栈按修订方法学（每臂 ≥3 轮 + 预热 + 轮间 TIME_WAIT 排空）跑登录臂 ×2（审计写开/关），会占用 20 核宿主（JMeter 与应用同机）、MySQL 主库与 Redis，跑完需按 loadtest/db/03-cleanup.sql 复位；该测量不改变下述裁决方向，属为已足够小的量测更精确的数。短 SHA 359c1ca。"
+      },
+      {
+        "step": "裁决：移出 / 不移出，数字依据入报告；不移出则如实关闭本提案并记录，不硬改",
+        "completed": true,
+        "evidence": "裁决=不移出（证据充分，非证据不足）。依据：①audit_log 不在交卷路径——G6 所指『交卷关键路径』根本没有审计写，受影响的只有登录路径（盘点证据）；②登录路径时延由 BCrypt CPU 饱和主导（P50 33.5s），审计写无可测收益空间（17 条偶发慢 INSERT、9 轮新压测未复现）；③失败语义已是旁路（吞掉+ERROR、不回滚业务），异步化拟解决的问题不存在；④同步写是有理由的设计决定：AuditLogService.java:20-23 记录旧异步实现静默丢 traceId/用户的教训（MDC/SecurityContext 不跨异步边界），全仓 src/main 无 @Async/ApplicationEvent 先例（唯一命中即该注释）；⑤提案自设底线『失败补偿分支必须有测试，否则宁可不移出』——为一条不构成瓶颈的 INSERT 承担异步化+补偿+测试的成本，收益为负。保留策略查重：已覆盖，无需补 delta——spec/specs/data-access/spec.md:97-107『无业务生命周期键的审计表按自身窗口清理』明确 audit_log 按 audit-log.retention-days 独立窗口清（引用即可）；实现已落地：RetentionService.java:202-209、AuditLogMapper.java:19-33（countOlderThan/deleteOlderThanBatch）、schema.sql:447-463（idx_audit_time，注释含缺索引 34ms vs 有索引 0.16-0.7ms 实测）、docker/mysql/migrations/2026-W38-add-audit-log-time-index.sql、application.yml:176-177；旧报告 §7.1『无保留策略』在其时点 4c3b7d7 属实，其后 add-data-retention 已收口。关闭理由（归档动作留指导 agent）：G6 两问均有答案——不移出（有数字依据）、保留策略已由 data-access 基线覆盖并落地；阶段 2 无实施对象、阶段 3 的『移出前后对比』因不移出不存在。短 SHA 359c1ca。"
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：实施（仅当裁决=移出）",
+    "task": "审计异步化且不丢",
+    "note": "裁决=不移出（2026-09-25 归档），门控未解除，本阶段不适用——非漏做；未做任何异步化。",
+    "steps": [
+      { "step": "按仓库既有异步风格移出关键路径（@Async/事件/队列），业务事务不等待审计落库", "completed": false },
+      { "step": "失败补偿：审计写失败不静默丢（重试/暂存/死信，与 reliability 基线对齐）", "completed": false },
+      { "step": "集成测试：异步化后审计仍落库 + 失败补偿分支有覆盖（变异可红）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：保留策略与性能证据",
+    "task": "查重后裁决保留策略，留移出前后对比",
+    "note": "裁决=不移出，本阶段不适用——非漏做：保留策略查重已在阶段 1 完成且结论为「已由 data-access 基线覆盖并落地」（引用不补 delta）；「移出前后时延对比」因不移出不存在；门禁复跑不适用（本次零代码改动）。",
+    "steps": [
+      { "step": "对照 data-access 基线既有保留策略 Requirement 查重：覆盖则引用，不覆盖且确需清理才补（迁移走既有判据）", "completed": false },
+      { "step": "移出前后关键路径时延对比证据（命令 + 原始输出 + 短 revision）", "completed": false },
+      { "step": "全量门禁复跑，surefire 计数只增不减", "completed": false }
+    ],
+    "passes": false
+  }
+]

@@ -1,0 +1,114 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：OpenTelemetry 集成（W13）",
+    "task": "添加 OpenTelemetry 依赖与配置",
+    "steps": [
+      {
+        "step": "在 pom.xml 添加 opentelemetry-api、opentelemetry-sdk 依赖",
+        "completed": false
+      },
+      {
+        "step": "创建 TracerConfig 类，配置 TracerProvider",
+        "completed": false
+      },
+      {
+        "step": "配置 HTTP 拦截器自动采集 Controller 层 Span",
+        "completed": false
+      },
+      {
+        "step": "配置 MyBatis 插件采集 Mapper 层 Span",
+        "completed": false
+      },
+      {
+        "step": "验证 Trace ID 自动生成并注入请求头",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：Jaeger 部署（W13）",
+    "task": "部署 Jaeger 后端与 UI",
+    "steps": [
+      {
+        "step": "编写 docker-compose.yml 启动 Jaeger All-in-One",
+        "completed": false
+      },
+      {
+        "step": "配置 application.yml: otel.traces.exporter=jaeger",
+        "completed": false
+      },
+      {
+        "step": "设置采样率 10%（生产降低开销）",
+        "completed": false
+      },
+      {
+        "step": "访问 http://localhost:16686 验证 Jaeger UI",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：链路可视化（W14）",
+    "task": "验证完整请求链路追踪",
+    "steps": [
+      {
+        "step": "发起考试查询请求，记录 Trace ID",
+        "completed": false
+      },
+      {
+        "step": "在 Jaeger UI 搜索该 Trace ID",
+        "completed": false
+      },
+      {
+        "step": "验证 Span 层级：Controller → Service → Mapper",
+        "completed": false
+      },
+      {
+        "step": "查看每个 Span 的耗时分解",
+        "completed": false
+      },
+      {
+        "step": "模拟异常，验证错误传播路径",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：监控与文档（W14）",
+    "task": "接入监控指标与规范更新",
+    "steps": [
+      {
+        "step": "添加 Micrometer 计数器 otel_traces_exported_total",
+        "completed": false
+      },
+      {
+        "step": "设计 Grafana Dashboard 展示 Trace 数量趋势",
+        "completed": false
+      },
+      {
+        "step": "修改 spec/specs/observability/spec.md，新增分布式追踪要求",
+        "completed": false
+      },
+      {
+        "step": "在 docs/需求决策记录.md 添加可观测性分层注记",
+        "completed": false
+      },
+      {
+        "step": "编写运维手册（Jaeger 部署、Trace 查询）",
+        "completed": false
+      },
+      {
+        "step": "提交代码：feat(distributed-tracing) + 中文描述",
+        "completed": false
+      }
+    ],
+    "passes": true
+  }
+]

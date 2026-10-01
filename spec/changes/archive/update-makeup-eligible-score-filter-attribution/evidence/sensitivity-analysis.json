@@ -1,0 +1,112 @@
+{
+  "primaryFamily": [
+    "s200-p10-a2k",
+    "s1000-p10-a2k",
+    "s1000-p10-a20k",
+    "s3000-p10-a2k"
+  ],
+  "perComboBars": {
+    "s200-p10-a2k": {
+      "oldBandMax": 1.7965481171548117,
+      "driftMax": 1.584,
+      "pushMin": 1.3172284644194756,
+      "pushMedian": 1.9144984220774859,
+      "projWins": 4,
+      "samples": 12,
+      "aggregatePhases": {
+        "ownerLoad": 0.3205,
+        "absenceLoad": 0.44,
+        "gradingSelect": 0.663,
+        "absencePutAndJavaFilter": 0.022,
+        "nameLoad": 0.4315
+      }
+    },
+    "s1000-p10-a2k": {
+      "oldBandMax": 1.4744640605296342,
+      "driftMax": 1.488,
+      "pushMin": 2.315910837817064,
+      "pushMedian": 3.4839595619271475,
+      "projWins": 0,
+      "samples": 12,
+      "aggregatePhases": {
+        "ownerLoad": 0.23149999999999998,
+        "absenceLoad": 0.3435,
+        "gradingSelect": 2.3315,
+        "absencePutAndJavaFilter": 0.1075,
+        "nameLoad": 0.7705
+      }
+    },
+    "s1000-p10-a20k": {
+      "oldBandMax": 1.5646988670244484,
+      "driftMax": 3.518,
+      "pushMin": 2.3993203058623616,
+      "pushMedian": 3.7569166666666662,
+      "projWins": 0,
+      "samples": 12,
+      "aggregatePhases": {
+        "ownerLoad": 0.18,
+        "absenceLoad": 0.269,
+        "gradingSelect": 2.4795,
+        "absencePutAndJavaFilter": 0.1185,
+        "nameLoad": 0.7545
+      }
+    },
+    "s3000-p10-a2k": {
+      "oldBandMax": 1.3044161284691917,
+      "driftMax": 1.594,
+      "pushMin": 2.2670821791320406,
+      "pushMedian": 2.9693267788255464,
+      "projWins": 0,
+      "samples": 12,
+      "aggregatePhases": {
+        "ownerLoad": 0.16949999999999998,
+        "absenceLoad": 0.3465,
+        "gradingSelect": 6.1165,
+        "absencePutAndJavaFilter": 0.309,
+        "nameLoad": 1.8575
+      }
+    }
+  },
+  "d1aPerSample": {
+    "s200-p10-a2k": false,
+    "s1000-p10-a2k": true,
+    "s1000-p10-a20k": true,
+    "s3000-p10-a2k": true
+  },
+  "d1aAggregate": {
+    "s200-p10-a2k": true,
+    "s1000-p10-a2k": true,
+    "s1000-p10-a20k": true,
+    "s3000-p10-a2k": true
+  },
+  "readings": [
+    {
+      "name": "A 冻结读法（D1a 逐样本 + D2 极值：min(下推) > max(OLD带, 顺序漂移）)",
+      "d1": false,
+      "d2": false,
+      "d5_projectionDominates": false,
+      "verdict": "NO-GO"
+    },
+    {
+      "name": "B D1a 聚合 + D2 极值（只松开 D1a 的实现口径）",
+      "d1": true,
+      "d2": false,
+      "d5_projectionDominates": false,
+      "verdict": "NO-GO"
+    },
+    {
+      "name": "C D1a 聚合 + D2 只用 OLD 等价臂噪声带（去掉顺序漂移这一项）",
+      "d1": true,
+      "d2": false,
+      "d5_projectionDominates": false,
+      "verdict": "NO-GO"
+    },
+    {
+      "name": "D D1a 聚合 + D2 中位统计（pushMedian > max(OLD带, 顺序漂移）)",
+      "d1": true,
+      "d2": true,
+      "d5_projectionDominates": false,
+      "verdict": "GO"
+    }
+  ]
+}

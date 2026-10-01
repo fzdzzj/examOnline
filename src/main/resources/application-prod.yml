@@ -7,6 +7,29 @@ spring:
     hikari:
       maximum-pool-size: ${DB_POOL_MAX:50}
       minimum-idle: 10
+    # ===== 读写分离（add-performance-deepening task3+4）=====
+    # 生产多数据源：master=主库、slave=从库（GTID 复制）；主从连接串分别由 DB_URL / SLAVE_DB_URL 注入。
+    # 默认(不加 @DS)走 master（写与强一致读），非强一致读加 @DS("slave") 走从库；原 spring.datasource 兜底保留。
+    dynamic:
+      primary: master
+      strict: false
+      datasource:
+        master:
+          url: ${DB_URL}
+          username: ${DB_USERNAME}
+          password: ${DB_PASSWORD}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          hikari:
+            maximum-pool-size: ${DB_POOL_MAX:50}
+            minimum-idle: 10
+        slave:
+          url: ${SLAVE_DB_URL}
+          username: ${SLAVE_DB_USERNAME}
+          password: ${SLAVE_DB_PASSWORD}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          hikari:
+            maximum-pool-size: ${SLAVE_DB_POOL_MAX:20}
+            minimum-idle: 4
   data:
     redis:
       host: ${REDIS_HOST}
@@ -26,3 +49,10 @@ spring:
     init:
       # 生产用独立 DDL 迁移脚本管理（此处关闭应用内自动建表）
       mode: never
+
+# OpenAPI 契约暴露（add-backend-openapi）：生产环境默认关闭 swagger-ui（可通过配置覆盖）
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: true

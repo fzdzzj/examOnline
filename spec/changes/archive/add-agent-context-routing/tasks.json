@@ -1,0 +1,166 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 E1-1：根入口去事实化",
+    "task": "README.md 从「阶段 1 快照」改为路由表",
+    "steps": [
+      {
+        "step": "删除 README.md 的环境事实副本段落：:14 的「dev 默认连 127.0.0.1:3306/6379」注释、:25-31 的变量表里 DB_URL/DB_USERNAME/DB_PASSWORD 的默认值列。替换为一句「dev 默认值以 src/main/resources/application-dev.yml 为准，本文件不复制其字面值」，不得写入任何端口号或口令 — 证据：README.md:14,28 现状；src/main/resources/application-dev.yml:7,9,34 真源",
+        "completed": true
+      },
+      {
+        "step": "把 README.md 的「工程结构」段（:33-48，只列 common/ 与 user/）改为指向 spec/README.md 的能力地图与 docs/ 目录，不重新列举包名与表名、**也不写能力域数量**（本提案自己就要新增一行，写死计数即违反 R4） — 证据：README.md:33-48；spec/README.md:104-123",
+        "completed": true
+      },
+      {
+        "step": "把 README.md:60 的「下一变更 add-authentication」改为「进行中阶段见 spec/README.md 的当前状态表」，并新增一段「新成员/新 agent 阅读顺序」：AGENTS.md → spec/README.md → docs/指导Agent交接文档.md → 目标能力域 spec — 证据：README.md:60；spec/README.md:19-27",
+        "completed": true
+      },
+      {
+        "step": "自查：grep -nE '3306|13316|13317|root123|root/root' README.md 命中为 0；grep -c 'spec/' README.md 与 grep -c 'docs/' README.md 均大于 0 — 证据：本变更前两项计数均为 0",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 E1-1：约定的必经索引",
+    "task": "新增仓库根 AGENTS.md（索引文件，不是正文副本）",
+    "steps": [
+      {
+        "step": "写入 4 条硬约定，每条格式固定为「一句话规则 + canonical 出处 + 自查命令」：(a) 未接 Flyway，建表唯一入口是 src/main/resources/schema.sql（出处 docs/需求决策记录.md:384；自查 grep -n flyway pom.xml 命中保持 0）；(b) 集成测试不得用 @Sql 自建表（出处 spec/README.md:158；自查 grep -rn '@Sql' src/test 的非注释命中为 0）；(c) 实体字段与建表定义必须双向一致（出处 spec/README.md:159）；(d) 存量库改表走 docker/mysql/migrations 手工脚本且该目录不自动执行（出处 docs/需求决策记录.md:384 + 本目录新增 README） — 证据：docs/需求决策记录.md:384-385；spec/README.md:158-159",
+        "completed": true
+      },
+      {
+        "step": "追加两条禁忌以指针形式引用，不复制正文：「不要做」清单见 docs/指导Agent交接文档.md:26-34；dev 库 rep_test 表与启动期对账异常的处置见同文件 :193,:236 — 证据：docs/指导Agent交接文档.md:26-34,193,236",
+        "completed": true
+      },
+      {
+        "step": "写「本文件不承载易变事实」条款：禁止出现端口、口令、测试用例数、覆盖率、表清单等数值；唯一门禁命令一项写明「待 update-agent-gate-single-source 落地后回填」，本阶段不得抄入任何一种现存命令 — 证据：spec/README.md:29 与 docs/指导Agent交接文档.md:175-182 目前是三种互斥说法之一，抄哪个都是错",
+        "completed": true
+      },
+      {
+        "step": "自查：grep -nE '13316|13317|root123|Tests run|覆盖率|21[0-9]' AGENTS.md 命中为 0 — 证据：R2 Scenario「索引本身不得复制易变事实」",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 E1-2：无执行者目录自述",
+    "task": "新增 docker/mysql/migrations/README.md",
+    "steps": [
+      {
+        "step": "首段写明事实：本目录 10 个 2026-WNN-add-*.sql 不会被任何启动或测试路径自动执行——docker-compose.yml 只挂载 ./docker/mysql/master/init(:40) 与 ./docker/mysql/slave/init(:65)，而 schema.sql 是 CREATE TABLE IF NOT EXISTS，存量库不会因此补表 — 证据：git ls-files docker/mysql/migrations 计数 10；docker-compose.yml:40,65",
+        "completed": true
+      },
+      {
+        "step": "写明「放进本目录 ≠ 变更已生效」并引用真实先例：audit_log 在 dev 库缺失且异常被 catch 静默吞掉（docs/指导Agent交接文档.md:220、docs/需求决策记录.md:501）；H2 测试每轮重建 schema，永远看不见这类问题 — 证据：同前两处引文",
+        "completed": true
+      },
+      {
+        "step": "写明手工应用的顺序、验证方式与「新库无需执行」边界；并引用需求决策记录:385 的反例（idx_sweep_candidate 与既有 idx_submissions_sweep 列组合完全相同）要求「先查 schema.sql 再写脚本」 — 证据：docs/需求决策记录.md:385",
+        "completed": true
+      },
+      {
+        "step": "确认本任务未修改本目录任何 .sql 文件：git diff --name-only 中不得出现 docker/mysql/migrations/*.sql — 证据：写入边界「不改其中任何脚本」",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 E1-2：治理文档登记与去常量",
+    "task": "spec/README.md 登记 agent-harness 能力域并去掉硬编码计数",
+    "steps": [
+      {
+        "step": "能力地图（:104-123）新增第 17 行 agent-harness，范围写「根入口路由、硬约定可达性、无执行者目录自述、文档判据优先于常量」 — 证据：spec/README.md:104-123 现为 16 行",
+        "completed": true
+      },
+      {
+        "step": "进行中变更表（:21-27）新增本变更行，前置列写明「排在 add-frontend-skeleton-auth 返修收口之后，或独立工作树完成后由指导 agent 合并」；同时在表头补一句「工程性变更不进入 19-23 的业务串行链，但受同一工作树不并行的约束」 — 证据：spec/README.md:19 的串行纪律",
+        "completed": true
+      },
+      {
+        "step": "把 :52 的「已归档变更（共 22 个）」改为「数量以 find spec/changes/archive -mindepth 1 -maxdepth 1 -type d | wc -l 为准」，避免下一轮再漂 — 证据：该实测值为 30",
+        "completed": true
+      },
+      {
+        "step": "工作流「收尾五步」（:157）后补一步：变更归档时若新增了易变事实，须同步检查 AGENTS.md 是否因此需要新增指针（只加指针，不加正文） — 证据：spec/README.md:152-159",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 E1-3：变异验证（本项目既有纪律）",
+    "task": "证明本提案的三条自查命令真的能变红",
+    "steps": [
+      {
+        "step": "在 README.md 临时抄回一行「dev 默认端口 3306」，执行任务 1 第 4 步的 grep 自查，确认命中非 0（变红），随后撤销 — 证据：docs/需求决策记录.md 与 spec/changes/IMPLEMENTATION_STATUS.md 记录的「变异验证」惯例（改回旧实现→只对应用例变红）",
+        "completed": true
+      },
+      {
+        "step": "在 AGENTS.md 临时加入一个测试用例数常量，执行任务 2 第 4 步自查，确认变红后撤销 — 证据：同上",
+        "completed": true
+      },
+      {
+        "step": "在 src/test 任一测试类临时加一行真实 @Sql 注解，执行自查确认能被识别为违规（注释命中与注解命中需可区分），随后撤销并确认 git status 干净 — 证据：当前 src/test 内 @Sql 唯一命中是 src/test/java/com/exam/monitoring/retention/DataRetentionIntegrationTest.java:30 的注释正文，属合规",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 6,
+    "category": "阶段 E1-3：独立复核",
+    "task": "指导 agent 独立复核，不采信子 agent 回报",
+    "steps": [
+      {
+        "step": "逐文件读 diff：README.md、AGENTS.md、docker/mysql/migrations/README.md、spec/README.md；确认四者互相指向一致且都不含易变事实字面值 — 证据：docs/指导Agent交接文档.md:10「子 agent 的回报不是事实；每轮交付必须独立查看 git status、git diff、关键代码和测试报告」",
+        "completed": true
+      },
+      {
+        "step": "确认写入边界未被突破：git diff --name-only 只出现上述四个路径，无 src/**、pom.xml、.mvn/**、frontend/**、docker-compose.yml、schema.sql — 证据：proposal.md 的「不要触碰」清单",
+        "completed": true
+      },
+      {
+        "step": "确认本变更不需要跑构建即可验收；如指导 agent 选择跑门禁以增强证据，须在同一轮记录 Tests run 的实际输出（不得引用文档常量） — 证据：本次评审实测 target/surefire-reports 中 2026-09-21 的 46 个报告类求和为 Tests run 276 / Failures 0 / Errors 0 / Skipped 1，而 docs/指导Agent交接文档.md:8 首屏仍是 213，说明引用常量不可靠",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 7,
+    "category": "阶段 E1-3：收尾",
+    "task": "按本项目 openspec 收尾五步归档",
+    "steps": [
+      {
+        "step": "把 spec-delta 的 4 条 ADDED 需求合入新建的 spec/specs/agent-harness/spec.md（基线文件）",
+        "completed": true
+      },
+      {
+        "step": "git mv spec/changes/add-agent-context-routing spec/changes/archive/",
+        "completed": true
+      },
+      {
+        "step": "按代码实际完成度回勾 tasks.json，不得凭印象勾满",
+        "completed": true
+      },
+      {
+        "step": "更新 spec/README.md 三处：进行中表移除本行、归档表新增本行（含「README 不再承载运行事实」注记）、能力地图**条目**与实际目录一致（本提案已把计数改成可复算表述，收尾时不得再写回计数常量）",
+        "completed": true
+      },
+      {
+        "step": "commit，并在提交信息里引用产生验收结论的命令与那次输出，而不是复述数字",
+        "completed": true
+      }
+    ],
+    "passes": true
+  }
+]

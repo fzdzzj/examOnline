@@ -1,0 +1,58 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：立项与口径",
+    "task": "复核 myScore 现状、归档依据与边界，冻结测量口径",
+    "steps": [
+      { "step": "确认开工 HEAD、工作树、AGENTS.md 四条硬约定、performance「Java 优化先归因、一次只改一类」与 spec/README.md「工作流」「验收记录三要素」；核对归档 update-score-ranking-calculation 的剩余热点结论（引用其 revision 与数值口径）与 RankAttributionMeasureIT 在位", "completed": true },
+      { "step": "核对 exam_submissions 实际 DDL（total_score DECIMAL 精度/可空、status TINYINT、uk_exam_student）与 GradingSubmission 实体，确认 404 隐式判定改显式判 status 的逐条等价条件；写 proposal/tasks/spec-delta 三件套，证据留空待填", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "命令：git rev-parse --abbrev-ref HEAD && git rev-parse --short HEAD && git status --porcelain → 输出 feature/update-monitor-overview-submission-projection、bfa8082、仅 ?? docs/backend-optimization-candidates.md（与卡面预检完全一致）。DDL 原文（schema.sql:227-259）：`total_score DECIMAL(5,1) DEFAULT NULL`（可空，精度 5 标度 1）、`status TINYINT NOT NULL DEFAULT 1`（1进行中 2已交卷 3已批改）、`uk_exam_student UNIQUE (exam_id, student_id)`、objective_score/subjective_score 同为 DECIMAL(5,1)。实体 GradingSubmission @TableName(\"exam_submissions\")（表级自查 26/26 对应）。归档依据：update-score-ranking-calculation（2026-09-26 归档，证据 revision cde1e15）剩余热点=MyBatis 反射结果映射（slowVerifyAccess/applyAutomaticMappings）与 H2 取数，改后请求内 rank 分账占比 4.176/4.840/4.360%（n=3000 并发1）。三件套提交 3a5c532（proposal/tasks.json/spec-delta，任务 2 步骤证据同此）。返修补录（2026-09-29，rev 584fbb0，本 step 回勾 completed=false→true；命令+当次输出）：grep -n @TableName src/main/java/com/exam/grading/entity/GradingSubmission.java → 26:@TableName(\"exam_submissions\")——实体实际映射 exam_submissions 表；grading_submission 表不存在（grep -rn grading_submission src/ 无任何命中、rc=1），上一轮按该名字检索未命中即因此；awk 抽取 src/main/resources/schema.sql:227-259 exam_submissions 块 → 第237行 status TINYINT NOT NULL DEFAULT 1、第242行 total_score DECIMAL(5,1) DEFAULT NULL、第252行 CONSTRAINT uk_exam_student UNIQUE (exam_id, student_id)；ls spec/changes/archive/optimize-my-score-rank-fetch → proposal.md、specs/、tasks.json、evidence/，其中 specs/score-management/spec-delta.md 为 delta——三件套已在归档目录内。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：同口径归因基线（先量后改）",
+    "task": "确认「取数+映射」仍是 myScore 请求内占比最高的一类，否则停手",
+    "steps": [
+      { "step": "扩展 RankAttributionMeasureIT：新增 myScore 请求内分账臂 ①「全班取数+结果映射」②「rank 计算」③「其余」，测试侧 MyBatis 拦截器按语句 id 分账；同数据同负载同预热，SIZES 50/200/1000/3000、逐轮至少 3 次、不取单次最好值；记录每请求 SQL 条数与返回行数、堆峰值；探针开销单列不并入生产段", "completed": true },
+      { "step": "按停止条件裁决：S1 取数+映射非占比最高、S2 占比未稳定高于轮间波动、S3 探针开销不可忽略——命中即停手回报不改生产代码；达标才进阶段 3。逐轮数值与波动区间写入 evidence", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "工具扩展随 3a5c532 入库（测试侧 Interceptor Bean 按语句 id 分账 + HeapSampler 堆峰值采样 + probeOverhead 单列微基准 + serviceDirect 直调 Service 臂绕过 MockMvc 约4-5ms 固定底座）。命令（隔离工作树 D:\\\\code\\\\examOnline-myscore-old detach 于 3a5c532，src/main 为旧实现）：./mvnw test -Dtest=RankAttributionMeasureIT -DfailIfNoTests=false -Dmeasure.rev=3a5c532 -Dmeasure.label=old-run{1,2,3} -Dmeasure.out=D:\\\\code\\\\examOnline-measure\\\\old-run -Dmaven.repo.local=D:\\\\code\\\\examOnline\\\\.m2-repo → 三轮均 Tests run:1/Failures:0/Errors:0、BUILD SUCCESS。逐轮 JSON=evidence/rank-attribution-old-run{1,2,3}.json（sha256 见 evidence-sha256.txt）。裁决（详见 evidence/measurement-rounds.md）：serviceDirect 三轮×四规模 fetchMap（取数+映射）份额 51.7–84.2% 全部最高（n=50=51.708/52.036/51.992%、极差 0.328pp；n=200=59.530/60.094/62.312%、极差 2.782pp；n=1000=78.414/76.383/74.223%、极差 4.191pp；n=3000=82.941/84.248/83.497%、极差 1.307pp，领先次高段 72.3/74.7/74.0pp——次高段=rankSharePct、otherSqlMeanMs/meanMs、restMeanMs/meanMs 三者最大，三轮均为 rest 份额；三轮值可机械复算自 evidence/rank-attribution-old-run{1,2,3}.json 的 e2e[arm=serviceDirect].fetchMapSharePct）→ S1/S2 未命中；探针 145.0/115.9/111.9 ns/语句×4语句≈0.45–0.58μs/请求（占请求均值 ~0.005%，单列未并入）→ S3 未命中。每请求 SQL 4.0 条、答卷行级取数 51/201/1001/3001 行（随 n 线性）、MockMvc 臂 rankShare 3.4–4.1% 与归档 4.2–4.8% 同量级互证。插曲（如实登记）：首轮基线写入主树 target/measure 后被不明原因清空（pom 无 clean 绑定，成因未定），按归档先例改隔离工作树重跑，丢失产物不作证据。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：条件成立后只改这一类",
+    "task": "myScore 名次改一条聚合 COUNT，404 显式判定逐条等价，E1–E8 先红后绿",
+    "steps": [
+      { "step": "先写等价性测试 E1（90,85,85,80→1,2,2,4）E2（60 与 60.00 数值等价，按入库后实际 scale 形态断言）E3（本人 null→404）E4（本人 status≠GRADED→404，新增显式判定）E5（本人最高分→1、全场同分全 1）E6（差分对拍旧 rankCalculator oracle，n 覆盖 1/2/50/3000）E7（行级取数条数不随班级人数增长的护栏，旧实现必须红）E8（复核隐藏与强一致读各一条）；E6/E7 在旧实现上跑出红灯，跑不出即停手", "completed": true },
+      { "step": "实现：myScore 名次 = COUNT(exam_id=? AND status=GRADED AND total_score IS NOT NULL AND total_score>本人总分)+1 一条聚合，不再取全班；404 改显式判 status 且无行/totalScore null/status 非 GRADED 逐条等价；不加 @DS(\"slave\")、不改复核隐藏分支、不改发布状态门、不改 preview/导出/schema/RankCalculator/Mapper 既有 SQL", "completed": true },
+      { "step": "核对代码 diff 与既有测试适配：ScoreServiceTest/ScoreServiceReviewHideTest 的 mock 适配新调用形态（断言不放宽），既有断言零放宽；E1–E8 全绿", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "红（旧实现 3a5c532 工作树，mvnw test -Dtest=MyScoreRankEquivalenceTest，退出码 1）：Tests run: 9, Failures: 2——E6 红「myScore 路径存在成批取回答卷行的查询（单次语句最多返回 3000 行）」、E7 红「行级取数应恒为常数，实测=201」（1000 人班=1001）；其余 7 用例（E1–E5/E8a/E8b）旧实现即绿（断言的是须保持语义）。E6 结构判据说明：MyBatis-Plus selectOne 内部走 selectList 语句，故用「单次语句返回行数上限≤4」而非「selectList 语句数=0」。实现提交 39d64d0（diff 仅 ScoreService.myScore 方法体 + 3 个测试文件；复用 BaseMapper.selectCount，Mapper 零改动）。绿（39d64d0）：mvnw test \"-Dtest=MyScoreRankEquivalenceTest,ScoreServiceTest,ScoreServiceReviewHideTest\" → 9/0/0 + 2/0/0 + 40/0/0（合计 51/0/0/0，退出码 0）。E2 断言入库实际形态：DECIMAL(5,1) 归一后 60 与 60.00 读回均 scale=1 且并列第 1。E8b：反射断言 ScoreService/GradingSubmissionMapper 类与方法无 @DS 注解 + 主库写后立即可见。原日志存 D:\\\\code\\\\examOnline-measure\\\\red-e.log、green-e.log（转录见 evidence/measurement-rounds.md）。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：同口径复测与门禁",
+    "task": "同数据同负载复测并跑唯一门禁，三要素回勾",
+    "steps": [
+      { "step": "同数据同负载逐轮 3 次复测：报告新旧 best/mean/p99 比值、SQL 条数与返回行数变化、堆峰值变化、映射段份额变化；指标无变化就如实写无收益并回到度量，不叠加别的参数", "completed": true },
+      { "step": "在已提交实现 revision 上仓库根跑唯一门禁 ./mvnw clean test（Windows mvnw.cmd clean test），记录四计数+BUILD+退出码+短 revision；跑 AGENTS.md 四条自查与实体↔schema 表级自查；clean 前把 target 原始证据移进变更目录 evidence/，生成 evidence-sha256.txt 并 sha256sum -c 全 OK", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "复测（主树提交 39d64d0，同工具/同数据/同预热）：./mvnw test -Dtest=RankAttributionMeasureIT -DfailIfNoTests=false -Dmeasure.rev=39d64d0 -Dmeasure.label=new-run{1,2,3} -Dmeasure.out=D:\\\\code\\\\examOnline-measure\\\\new-run → 三轮均 Tests run:1/Failures:0/Errors:0、BUILD SUCCESS；JSON=evidence/rank-attribution-new-run{1,2,3}.json。serviceDirect 请求级 mean 比值（旧/新，逐轮）：n=3000=14.97×/24.15×/15.44×（p99 3.40×/18.91×/11.80×）、n=1000=6.76×/7.60×/5.79×、n=200=1.43×/1.57×/1.60×、n=50=1.13×/0.83×/0.99×（小规模落在轮间波动内=无可见收益，如实报告）；fetchMap 段 n=3000 8.394/8.749/6.769→0.143/0.100/0.121ms、rank 段→0；答卷行级取数 51/201/1001/3001→2（selectOne 1 行 + COUNT 标量 1 行），SQL 条数保持 4.0；堆峰值 234.6/239.9/247.6→160.9/162.2/158.0MB；MockMvc 端到端 n=3000 并发1 mean 2.35×/2.04×/1.65×（被 MockMvc 固定底座稀释，分开报告）；语义指纹 ranksum=4488000、expectedRank={50=50,200=200,1000=997,3000=2991} 与归档一致、12 臂 errors 全 0。门禁：仓库根 ./mvnw clean test @ 39d64d0 → Tests run: 323, Failures: 0, Errors: 0, Skipped: 1、BUILD SUCCESS、退出码 0（Skipped 1 为契约导出既有设计；314 基线+9 新用例；日志 D:\\\\code\\\\examOnline-measure\\\\gate-39d64d0.log）。自查全绿：AGENTS 四条（端口/口令/计数 0、README 连接事实 0、@Sql 过滤后 0、裸行号 0）+ flyway 0 + db 目录不存在 + 实体↔schema 表级双向集合差空 + wrapper 四件套 OK。evidence 已固化（6 JSON+measurement-rounds.md，sha256sum -c 全 OK）。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：规范真值与收口",
+    "task": "GO 且等价才合入行为规范，否则按未采用草案归档",
+    "steps": [
+      { "step": "据实回勾 tasks.json（命令+当次输出+短 revision）；GO 且等价才把 delta 合入 spec/specs/score-management/spec.md，更新 spec/README.md（当前状态行+归档表新增一行+能力地图/映射表按现有体例）；NO-GO 或不等价则按未采用草案归档、src/main 零改动", "completed": true },
+      { "step": "显式路径暂存提交（禁 git add -A、禁提交 docs/backend-optimization-candidates.md），核对 git status / git diff --cached --name-only；回报提交 SHA、逐轮数值、红绿输出、未验证项与阻塞", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "裁决=GO：归因达标（阶段 2）+ 等价全绿（E1–E8，红绿证据齐）+ 门禁 323/0/0/1 绿 + 同口径复测有收益（n≥200 mean 1.4–24×、行级取数常数化）。MODIFIED「成绩排名」Requirement（保留既有四场景原文 + 新增名次聚合计数/404 显式等价/取数形态替换须先归因且改后验收三场景 + 合入注记）已合入 spec/specs/score-management/spec.md。spec/README.md 已更新（当前状态行、归档表新增 optimize-my-score-rank-fetch 行、已合入规范表 score-management 行追加来源）。变更目录移入 spec/changes/archive/。AGENTS.md 无需新增指针（未新增易变事实载体/门禁命令/SQL 目录）。提交纪律：三笔显式路径提交（3a5c532 立项+工具、39d64d0 实现+测试、收口提交），全程未触碰 docs/backend-optimization-candidates.md（保持 ?? 未跟踪）、未 push、未建 PR；验收记录三要素逐 step 落在本文件 evidence 字段。"
+  }
+]

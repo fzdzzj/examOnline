@@ -8,11 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -42,21 +40,17 @@ import java.util.function.Supplier;
 @Component
 public class CacheMutexLoader {
 
-    /**
-     * 原子解锁脚本：校验锁 token 一致才删除——防止自己的锁已过期、被其他线程持有时误删他人锁。
-     */
-    private static final RedisScript<Long> UNLOCK_SCRIPT = RedisScript.of(
-            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
-            Long.class);
-
     private final StringRedisTemplate redis;
     private final CacheManager cacheManager;
     private final CacheProperties props;
+    private final RedisLockHelper lockHelper;
 
-    public CacheMutexLoader(StringRedisTemplate redis, CacheManager cacheManager, CacheProperties props) {
+    public CacheMutexLoader(StringRedisTemplate redis, CacheManager cacheManager, CacheProperties props,
+                            RedisLockHelper lockHelper) {
         this.redis = redis;
         this.cacheManager = cacheManager;
         this.props = props;
+        this.lockHelper = lockHelper;
     }
 
     /**
@@ -87,13 +81,12 @@ public class CacheMutexLoader {
         // ② 防击穿：SETNX 互斥锁（带 TTL 防持锁线程崩溃后死锁），同一 key 全局仅一个线程回源
         String lockKey = lockKey(cacheName, key);
         String token = UUID.randomUUID().toString();
-        Boolean locked = redis.opsForValue()
-                .setIfAbsent(lockKey, token, Duration.ofSeconds(props.getLockTtlSeconds()));
-        if (Boolean.TRUE.equals(locked)) {
+        if (lockHelper.tryLock(lockKey, token, Duration.ofSeconds(props.getLockTtlSeconds()))) {
             try {
                 return loadAndFill(cacheName, key, cache, loader);
             } finally {
-                unlock(lockKey, token);
+                // 必须按 token 解锁：TTL 到期后锁可能已易主，无条件 del 会删掉别人的锁
+                lockHelper.unlock(lockKey, token);
             }
         }
 
@@ -154,10 +147,6 @@ public class CacheMutexLoader {
     @SuppressWarnings("unchecked")
     private <T> T uncheckedValue(Cache.ValueWrapper wrapper) {
         return (T) wrapper.get();
-    }
-
-    private void unlock(String lockKey, String token) {
-        redis.execute(UNLOCK_SCRIPT, List.of(lockKey), token);
     }
 
     /** 互斥锁 key：exam:cache:lock:{缓存名}:{key}（单测断言与排障用） */

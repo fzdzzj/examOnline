@@ -1,0 +1,59 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：教师批改工作台（W23）",
+    "task": "主观题可批改且并发冲突可见",
+    "steps": [
+      { "step": "待批改答卷队列（分页/筛选）", "completed": true },
+      { "step": "逐题打分 + 评语提交", "completed": true },
+      { "step": "乐观锁冲突：提示「已被他人批改」并刷新，绝不静默覆盖；有 vitest 用例覆盖冲突分支", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：成绩汇总、发布与导出（W23-W24）",
+    "task": "成绩可预览、可发布、可撤回、可导出",
+    "steps": [
+      { "step": "客观 + 主观汇总预览", "completed": true },
+      { "step": "发布前预览 + 批量发布；可用动作按后端状态与权限渲染", "completed": true },
+      { "step": "撤回入口按后端权限返回渲染，不自行放宽", "completed": true },
+      { "step": "导出：触发后端流式导出 + blob 下载 + 进度提示；不在前端拼装 Excel", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：缺考与补考（W24）",
+    "task": "缺考可见、补考可建，但不越界声称最终成绩",
+    "steps": [
+      { "step": "缺考名单按考试查看（自然到点与 force-end 两条路径均由后端标记）", "completed": true },
+      { "step": "补考创建：为特定学生建独立考试记录，界面按后端现有能力渲染准入", "completed": true },
+      { "step": "不做「主考 vs 补考最终成绩合并展示」（后端 finalScore 零调用，遗留 #5）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：学生成绩查询与复核（W24）",
+    "task": "成绩可见性以后端为准，复核可闭环",
+    "steps": [
+      { "step": "成绩查询：已发布可见；复核中隐藏成绩按后端返回渲染，前端不本地推断", "completed": true },
+      { "step": "复核申请：剩余次数与窗口状态取后端返回，前端不本地计数判定资格", "completed": true },
+      { "step": "复核状态可查（待处理/已处理）+ 复核结果与调整说明呈现", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：闭环演示与质量（W24-W25）",
+    "task": "考后闭环可端到端演示",
+    "steps": [
+      { "step": "可复现演示脚本：交卷 → 批改（含一次并发冲突）→ 发布 → 学生查询 → 申请复核 → 教师处理 → 结果可见", "completed": true },
+      { "step": "lint + type-check + vitest 全绿", "completed": true },
+      { "step": "不改后端；发现接口缺口停下回报并建议单独立项", "completed": true },
+      { "step": "未夹带 PDF 报告 / 学情分析 / 错题本 / 排行榜", "completed": true }
+    ],
+    "passes": true
+  }
+]

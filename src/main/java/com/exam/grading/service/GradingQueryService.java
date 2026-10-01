@@ -1,6 +1,7 @@
 package com.exam.grading.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.exam.auth.security.OwnershipGuard;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
@@ -16,6 +17,8 @@ import com.exam.submission.entity.ExamSubmission;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 判分读侧服务：进度总览与批改工作台查询（教师视角，只读不写）。
@@ -38,7 +41,12 @@ public class GradingQueryService {
     /**
      * 判分进度总览：客观判分按答卷 grading_status 统计；
      * 主观批改按 subjective_grades 是否有终分统计（未运行判分时两列均为 0）。
+     *
+     * <p>读写分离（add-performance-deepening task3）：进度总览是<b>非强一致读</b>
+     * （统计数字滞后一瞬无碍，前端会刷新）——{@code @DS("slave")} 走从库卸读压力。
+     * 注意：判分/批改的<b>写</b>不经此服务（教师批改走 SubjectiveGradingService，明文走主库）。
      */
+    @DS("slave")
     public GradingProgressResponse progress(Long examId) {
         requireOwnedExam(examId);
         GradingProgressResponse response = new GradingProgressResponse();
@@ -68,9 +76,15 @@ public class GradingQueryService {
             }
         });
         // 未批行数 > 0 的答卷即"部分批改"（未运行判分的答卷不计入）
-        long partial = submissions.stream().filter(submission ->
-                subjectiveRows.stream().anyMatch(row -> row.getSubmissionId().equals(submission.getId())
-                        && row.getScore() == null)).count();
+        // 单遍哈希替代 O(n*m) 嵌套匹配：先收集存在未批主观题（score == null）的答卷 ID，
+        // 再单遍过滤答卷；n=答卷数、m=主观行数，整体降为 O(n+m)。
+        Set<Long> ungradedSubmissionIds = subjectiveRows.stream()
+                .filter(row -> row.getScore() == null)
+                .map(SubjectiveGrade::getSubmissionId)
+                .collect(Collectors.toSet());
+        long partial = submissions.stream()
+                .filter(submission -> ungradedSubmissionIds.contains(submission.getId()))
+                .count();
         response.setPartialGradedCount((int) partial);
         return response;
     }

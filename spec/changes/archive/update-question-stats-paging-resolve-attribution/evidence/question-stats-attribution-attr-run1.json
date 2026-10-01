@@ -1,0 +1,1994 @@
+{
+  "revision" : "94ca842",
+  "label" : "attr-run1",
+  "startedAt" : "2026-09-27T20:44:31.651793400",
+  "jdk" : "21.0.9 (Oracle Corporation)",
+  "vm" : "Java HotSpot(TM) 64-Bit Server VM / 21.0.9+7-LTS-338",
+  "os" : "Windows 11 10.0 amd64",
+  "processors" : 20,
+  "maxHeapMB" : 3952,
+  "heapCapNote" : "堆上限由运行 JVM 决定，多轮必须同设置；本工具不注入 -Xmx",
+  "dataRule" : "每 combo 一场考试：exams.status=4/published=1；exam_snapshots.paper_json 含 questions（前 80% 为 SINGLE，choices=[A,B,C,D]，correctAnswer=A，score=2；其余为 SHORT_ANSWER，choices=null，correctAnswer=参考答案，score=5）；exam_submissions 逐份直插 status=3、grading_status=1，answers JSON：客观题 answer=((i+qi)%3==0)?B:A ⇒ 得 2 或 0，简答题无 subjective_grades 行 ⇒ 未批计 0；total_score=objective_score=2×(该生答对的客观题数)，subjective_score=0；坏答卷为最后 badAnswers 份，answers=?{ 非法 JSON 或 NULL ⇒ 解析抛错被跳过；不建 users 行（exportQuestionStats 不读 users），登录上下文用合成 ADMIN LoginUser（只过 owner 校验）。",
+  "metricDefinitions" : {
+    "cellsEqualProduction" : "副本 XLSX 与生产 XLSX 用 DataFormatter 逐格比对结果",
+    "production.allocatedMB" : "该调用期间当前线程分配字节差分（精确分配，非采样）",
+    "replica.pagingRowsOut" : "分页 selectList 返回的答卷行数合计",
+    "replica.buckets" : "正常页与坏卷降级页分桶：页数/耗时/分配/SQL；降级页另记逐份 resolve 次数，异常页不混入正常页归因",
+    "production.outputBytes" : "返回的 XLSX 字节数",
+    "note" : "隔离 H2 + 进程内直调 Service，非真实 MySQL/Tomcat 性能；不外推生产 P99；不对跨轮/跨窗口量相减或相除；墙钟含 GC/JIT/调度/探针，H2 进程内，残差不得冒称纯 CPU",
+    "replica.sql.pagingSelect/resolve" : "分页取数 SQL 次数；resolveQuietly 段 SQL 次数（正常页=整批 1 次主观分读取；降级页=逐份 resolve）",
+    "production.heapPeakMB" : "整段调用期间采样线程观测的 used 堆最大值（上界，含夹具）",
+    "replica.nestedResolve" : "test-only 受控副本在同一 resolve 调用内的嵌套分账：主观分读取/答案解析/解析评分 + 未归属段；分母为副本自身 resolve 总耗时，不与生产 resolveTotal 跨调用相除",
+    "production.tempPeakBytes/tempGrowthPeakBytes/tempFilesPeak" : "java.io.tmpdir/poifiles 下文件字节/相对相位起点增量/个数的峰值",
+    "production.sqlQueries" : "MyBatis Executor.query 调用次数（Interceptor 计数）",
+    "production.heapUsedAfterGcBeforeMB/AfterMB" : "调用前后多次 System.gc() 后 used 堆的最小值",
+    "oracle.*" : "测试侧独立重算的题序/平均分/得分率/答对率/作答人数/区分度与生产单元格对照",
+    "replica.probe" : "受控副本作为额外一遍 resolve 的探针开销，及与生产 resolveBatch 逐页 result.equals 校验（不等即判本轮证据无效）",
+    "production.millis" : "生产 exportQuestionStats 单次调用墙钟耗时",
+    "replica.phases[].millis/allocatedMB" : "分相位耗时与精确分配；pagingSelect（答卷分页 selectList）与 resolveTotal（resolveQuietly）已分开；副本步骤与生产逐句对齐，输出单元格逐格比对",
+    "replica.pairsRetainedMB" : "建成 pairs 并 GC 后堆 − 释放 pairs 并 GC 后堆（GC 后差分，逐轮上报）"
+  },
+  "loadParams" : {
+    "pageSize" : 500,
+    "sxssfWindow" : 100,
+    "rounds" : 3,
+    "objectiveRatio" : 0.8,
+    "objectiveScore" : 2.0,
+    "shortAnswerScore" : 5.0,
+    "combos" : [ {
+      "students" : 1000,
+      "badAnswers" : 0,
+      "questions" : 20,
+      "note" : "基线：学生数中等、题量小于 SXSSF 窗口",
+      "label" : "s1000-q20"
+    }, {
+      "students" : 1000,
+      "badAnswers" : 0,
+      "questions" : 150,
+      "note" : "题量大于 SXSSF 窗口：触发临时刷盘",
+      "label" : "s1000-q150"
+    }, {
+      "students" : 3000,
+      "badAnswers" : 0,
+      "questions" : 60,
+      "note" : "学生数放大：pairs = N×Q",
+      "label" : "s3000-q60"
+    }, {
+      "students" : 100,
+      "badAnswers" : 2,
+      "questions" : 20,
+      "note" : "含 2 份损坏答卷：走逐份降级路径",
+      "label" : "s100-q20-bad2"
+    }, {
+      "students" : 3,
+      "badAnswers" : 1,
+      "questions" : 20,
+      "note" : "少样本：n=2 → 区分度「样本不足」",
+      "label" : "s3-q20-bad1"
+    } ],
+    "allocMeasurement" : "com.sun.management.ThreadMXBean.getCurrentThreadAllocatedBytes 差分",
+    "heapPeakMeasurement" : "1ms 采样线程读 MemoryMXBean used 取最大（上界，含夹具）",
+    "pairsRetainedMeasurement" : "GC 后 used 堆差分（含/不含 pairs），逐轮上报",
+    "sqlMeasurement" : "MyBatis Executor.query Interceptor 计数",
+    "tempMeasurement" : "java.io.tmpdir/poifiles 递归字节/文件数峰值",
+    "phaseSplit" : "replica.phases 把原 pagingResolve 拆为 pagingSelect（selectList）与 resolveTotal（resolveQuietly），各自记耗时/分配/SQL/返回行数",
+    "nestedTiming" : "test-only 受控副本镜像 resolveBatch，在同一调用内嵌套计时主观分读取/答案解析/解析评分；另跑生产等价 resolveQuietly 供归因，副本与生产逐页 result.equals 校验",
+    "probeOverhead" : "受控副本为额外一遍 resolve，计为探针开销，不并入生产段；其总耗时与三段之和的差记为未归属（框架/映射/探针），不作 CPU 也不作生产 DB 耗时",
+    "badPaperBucket" : "按整批是否降级逐份分成 normal/fallback 两桶，异常页不混入正常页归因",
+    "noCrossWindowClaim" : "不对跨轮/跨窗口量相减或相除；只报同次调用内绝对量与同调用内份额；墙钟含 GC/JIT/调度，H2 为进程内；隔离结果不外推生产",
+    "coldStartExcluded" : "Spring 上下文启动与数据准备在测量窗口之外；预热 2 轮不计入"
+  },
+  "prepareDataMillis" : 605,
+  "oracle" : [ {
+    "combo" : "s1000-q20",
+    "goodSubmissions" : 1000,
+    "badAnswers" : 0,
+    "objectiveQuestions" : 16,
+    "rowCount" : 20,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  }, {
+    "combo" : "s1000-q150",
+    "goodSubmissions" : 1000,
+    "badAnswers" : 0,
+    "objectiveQuestions" : 120,
+    "rowCount" : 150,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  }, {
+    "combo" : "s3000-q60",
+    "goodSubmissions" : 3000,
+    "badAnswers" : 0,
+    "objectiveQuestions" : 48,
+    "rowCount" : 60,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  }, {
+    "combo" : "s100-q20-bad2",
+    "goodSubmissions" : 98,
+    "badAnswers" : 2,
+    "objectiveQuestions" : 16,
+    "rowCount" : 20,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  }, {
+    "combo" : "s3-q20-bad1",
+    "goodSubmissions" : 2,
+    "badAnswers" : 1,
+    "objectiveQuestions" : 16,
+    "rowCount" : 20,
+    "headerRow" : [ "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数" ],
+    "oracleMatch" : true
+  } ],
+  "rounds" : [ {
+    "round" : 1,
+    "combos" : [ {
+      "combo" : "s1000-q20",
+      "students" : 1000,
+      "questions" : 20,
+      "badAnswers" : 0,
+      "round" : 1,
+      "production" : {
+        "millis" : 118.026,
+        "allocatedMB" : 20.386,
+        "heapPeakMB" : 89.477,
+        "heapUsedAfterGcBeforeMB" : 69.477,
+        "heapUsedAfterGcAfterMB" : 69.485,
+        "heapUsedDeltaAfterGcMB" : 0.008,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4570,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 5.524,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 13.783,
+          "allocatedMB" : 2.631
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 17.184,
+          "allocatedMB" : 10.475
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 6.632,
+          "allocatedMB" : 0.931
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 3.89,
+          "allocatedMB" : 0.108
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 20.313,
+          "allocatedMB" : 1.756
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 64.581,
+          "allocatedMB" : 3.868
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.004,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 3,
+        "sql.resolve" : 2,
+        "pagingPages" : 2,
+        "pagingRowsOut" : 1000,
+        "fallbackPages" : 0,
+        "resolveFallbackExtraSql" : 0,
+        "buckets" : {
+          "normal" : {
+            "pages" : 2,
+            "resolveMillis" : 17.184,
+            "resolveAllocatedMB" : 10.475,
+            "resolveSql" : 2,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "submissionResolveAttempts" : 0,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 2,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 17.874,
+          "replicaResolveAllocMB" : 10.545,
+          "subjectiveRead" : {
+            "millis" : 6.222,
+            "allocatedMB" : 3.463,
+            "sqlCount" : 2,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 6.814,
+            "allocatedMB" : 4.693
+          },
+          "grade" : {
+            "millis" : 4.536,
+            "allocatedMB" : 2.384
+          },
+          "unaccountedMillis" : 0.302,
+          "unaccountedAllocMB" : 0.005
+        },
+        "probe" : {
+          "replicaResolveMillis" : 17.879,
+          "replicaResolveAllocMB" : 10.545,
+          "pagesCompared" : 2,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 0.704,
+        "heapWithPairsAfterGcMB" : 70.21,
+        "heapWithoutPairsAfterGcMB" : 69.506,
+        "wallMillis" : 1259.727,
+        "sqlTotal" : 8,
+        "outputBytes" : 4569,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 95.486,
+        "heapUsedAfterGcBeforeMB" : 69.486,
+        "heapUsedAfterGcAfterMB" : 69.595,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : false
+    }, {
+      "combo" : "s1000-q150",
+      "students" : 1000,
+      "questions" : 150,
+      "badAnswers" : 0,
+      "round" : 1,
+      "production" : {
+        "millis" : 302.632,
+        "allocatedMB" : 86.905,
+        "heapPeakMB" : 155.493,
+        "heapUsedAfterGcBeforeMB" : 69.493,
+        "heapUsedAfterGcAfterMB" : 69.505,
+        "heapUsedDeltaAfterGcMB" : 0.012,
+        "tempPeakBytes" : 16384,
+        "tempGrowthPeakBytes" : 16384,
+        "tempFilesPeak" : 1,
+        "outputBytes" : 9238,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.007,
+          "allocatedMB" : 0.25
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 8.9,
+          "allocatedMB" : 2.62
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 39.639,
+          "allocatedMB" : 46.951
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 16.89,
+          "allocatedMB" : 6.787
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.491,
+          "allocatedMB" : 0.8
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 70.666,
+          "allocatedMB" : 14.486
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 120.073,
+          "allocatedMB" : 14.201
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.009,
+          "allocatedMB" : 0.009
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 3,
+        "sql.resolve" : 2,
+        "pagingPages" : 2,
+        "pagingRowsOut" : 1000,
+        "fallbackPages" : 0,
+        "resolveFallbackExtraSql" : 0,
+        "buckets" : {
+          "normal" : {
+            "pages" : 2,
+            "resolveMillis" : 39.639,
+            "resolveAllocatedMB" : 46.951,
+            "resolveSql" : 2,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "submissionResolveAttempts" : 0,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 2,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 45.639,
+          "replicaResolveAllocMB" : 49.401,
+          "subjectiveRead" : {
+            "millis" : 5.263,
+            "allocatedMB" : 3.465,
+            "sqlCount" : 2,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 26.381,
+            "allocatedMB" : 28.634
+          },
+          "grade" : {
+            "millis" : 13.479,
+            "allocatedMB" : 17.296
+          },
+          "unaccountedMillis" : 0.515,
+          "unaccountedAllocMB" : 0.005
+        },
+        "probe" : {
+          "replicaResolveMillis" : 45.662,
+          "replicaResolveAllocMB" : 49.401,
+          "pagesCompared" : 2,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 5.282,
+        "heapWithPairsAfterGcMB" : 74.89,
+        "heapWithoutPairsAfterGcMB" : 69.608,
+        "wallMillis" : 1428.16,
+        "sqlTotal" : 8,
+        "outputBytes" : 9238,
+        "tempPeakBytes" : 57344,
+        "tempGrowthPeakBytes" : 57344,
+        "tempFilesPeak" : 1,
+        "heapPeakMB" : 175.506,
+        "heapUsedAfterGcBeforeMB" : 69.506,
+        "heapUsedAfterGcAfterMB" : 69.586,
+        "rowCount" : 150,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3000-q60",
+      "students" : 3000,
+      "questions" : 60,
+      "badAnswers" : 0,
+      "round" : 1,
+      "production" : {
+        "millis" : 275.089,
+        "allocatedMB" : 98.934,
+        "heapPeakMB" : 169.501,
+        "heapUsedAfterGcBeforeMB" : 69.501,
+        "heapUsedAfterGcAfterMB" : 69.51,
+        "heapUsedDeltaAfterGcMB" : 0.009,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 5987,
+        "sqlQueries" : 15
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.151,
+          "allocatedMB" : 0.126
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 30.144,
+          "allocatedMB" : 8.617
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 63.02,
+          "allocatedMB" : 67.107
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 12.669,
+          "allocatedMB" : 8.472
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.433,
+          "allocatedMB" : 0.783
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 18.415,
+          "allocatedMB" : 4.402
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 71.909,
+          "allocatedMB" : 8.995
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.014,
+          "allocatedMB" : 0.006
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 7,
+        "sql.resolve" : 6,
+        "pagingPages" : 6,
+        "pagingRowsOut" : 3000,
+        "fallbackPages" : 0,
+        "resolveFallbackExtraSql" : 0,
+        "buckets" : {
+          "normal" : {
+            "pages" : 6,
+            "resolveMillis" : 63.02,
+            "resolveAllocatedMB" : 67.107,
+            "resolveSql" : 6,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "submissionResolveAttempts" : 0,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 6,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 66.832,
+          "replicaResolveAllocMB" : 69.514,
+          "subjectiveRead" : {
+            "millis" : 12.839,
+            "allocatedMB" : 10.396,
+            "sqlCount" : 6,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 33.41,
+            "allocatedMB" : 37.517
+          },
+          "grade" : {
+            "millis" : 19.988,
+            "allocatedMB" : 21.585
+          },
+          "unaccountedMillis" : 0.595,
+          "unaccountedAllocMB" : 0.015
+        },
+        "probe" : {
+          "replicaResolveMillis" : 67.075,
+          "replicaResolveAllocMB" : 69.514,
+          "pagesCompared" : 6,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 6.445,
+        "heapWithPairsAfterGcMB" : 76.001,
+        "heapWithoutPairsAfterGcMB" : 69.556,
+        "wallMillis" : 1390.973,
+        "sqlTotal" : 20,
+        "outputBytes" : 5987,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 203.511,
+        "heapUsedAfterGcBeforeMB" : 69.511,
+        "heapUsedAfterGcAfterMB" : 69.549,
+        "rowCount" : 60,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s100-q20-bad2",
+      "students" : 100,
+      "questions" : 20,
+      "badAnswers" : 2,
+      "round" : 1,
+      "production" : {
+        "millis" : 163.554,
+        "allocatedMB" : 11.181,
+        "heapPeakMB" : 83.514,
+        "heapUsedAfterGcBeforeMB" : 69.514,
+        "heapUsedAfterGcAfterMB" : 69.542,
+        "heapUsedDeltaAfterGcMB" : 0.028,
+        "tempPeakBytes" : 9256,
+        "tempGrowthPeakBytes" : 9256,
+        "tempFilesPeak" : 1,
+        "outputBytes" : 4590,
+        "sqlQueries" : 102
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.978,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 1.649,
+          "allocatedMB" : 0.285
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 40.277,
+          "allocatedMB" : 4.754
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.792,
+          "allocatedMB" : 0.093
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.375,
+          "allocatedMB" : 0.022
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 17.206,
+          "allocatedMB" : 1.701
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 60.732,
+          "allocatedMB" : 3.732
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.003,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 1,
+        "sql.resolve" : 99,
+        "pagingPages" : 1,
+        "pagingRowsOut" : 100,
+        "fallbackPages" : 1,
+        "resolveFallbackExtraSql" : 98,
+        "buckets" : {
+          "normal" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 1,
+            "resolveMillis" : 40.277,
+            "resolveAllocatedMB" : 4.754,
+            "resolveSql" : 99,
+            "submissionResolveAttempts" : 100,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 0,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 0.0,
+          "replicaResolveAllocMB" : 0.0,
+          "subjectiveRead" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0,
+            "sqlCount" : 0,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "grade" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "unaccountedMillis" : 0.0,
+          "unaccountedAllocMB" : 0.0
+        },
+        "probe" : {
+          "replicaResolveMillis" : 28.378,
+          "replicaResolveAllocMB" : 4.754,
+          "pagesCompared" : 1,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 0.068,
+        "heapWithPairsAfterGcMB" : 69.665,
+        "heapWithoutPairsAfterGcMB" : 69.597,
+        "wallMillis" : 1281.253,
+        "sqlTotal" : 200,
+        "outputBytes" : 4590,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 79.543,
+        "heapUsedAfterGcBeforeMB" : 69.543,
+        "heapUsedAfterGcAfterMB" : 69.649,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3-q20-bad1",
+      "students" : 3,
+      "questions" : 20,
+      "badAnswers" : 1,
+      "round" : 1,
+      "production" : {
+        "millis" : 82.945,
+        "allocatedMB" : 6.31,
+        "heapPeakMB" : 75.548,
+        "heapUsedAfterGcBeforeMB" : 69.548,
+        "heapUsedAfterGcAfterMB" : 69.543,
+        "heapUsedDeltaAfterGcMB" : -0.005,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4577,
+        "sqlQueries" : 6
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.091,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 0.557,
+          "allocatedMB" : 0.068
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 1.12,
+          "allocatedMB" : 0.14
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.117,
+          "allocatedMB" : 0.007
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.048,
+          "allocatedMB" : 0.002
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 10.791,
+          "allocatedMB" : 1.756
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 77.223,
+          "allocatedMB" : 3.847
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.003,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 1,
+        "sql.resolve" : 3,
+        "pagingPages" : 1,
+        "pagingRowsOut" : 3,
+        "fallbackPages" : 1,
+        "resolveFallbackExtraSql" : 2,
+        "buckets" : {
+          "normal" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 1,
+            "resolveMillis" : 1.12,
+            "resolveAllocatedMB" : 0.14,
+            "resolveSql" : 3,
+            "submissionResolveAttempts" : 3,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 0,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 0.0,
+          "replicaResolveAllocMB" : 0.0,
+          "subjectiveRead" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0,
+            "sqlCount" : 0,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "grade" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "unaccountedMillis" : 0.0,
+          "unaccountedAllocMB" : 0.0
+        },
+        "probe" : {
+          "replicaResolveMillis" : 0.691,
+          "replicaResolveAllocMB" : 0.14,
+          "pagesCompared" : 1,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 0.002,
+        "heapWithPairsAfterGcMB" : 69.516,
+        "heapWithoutPairsAfterGcMB" : 69.514,
+        "wallMillis" : 1228.202,
+        "sqlTotal" : 10,
+        "outputBytes" : 4577,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 75.514,
+        "heapUsedAfterGcBeforeMB" : 69.544,
+        "heapUsedAfterGcAfterMB" : 69.599,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    } ]
+  }, {
+    "round" : 2,
+    "combos" : [ {
+      "combo" : "s1000-q20",
+      "students" : 1000,
+      "questions" : 20,
+      "badAnswers" : 0,
+      "round" : 2,
+      "production" : {
+        "millis" : 94.772,
+        "allocatedMB" : 20.081,
+        "heapPeakMB" : 89.498,
+        "heapUsedAfterGcBeforeMB" : 69.498,
+        "heapUsedAfterGcAfterMB" : 69.545,
+        "heapUsedDeltaAfterGcMB" : 0.047,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4570,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.767,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 7.89,
+          "allocatedMB" : 2.608
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 10.199,
+          "allocatedMB" : 10.474
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 1.539,
+          "allocatedMB" : 0.931
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.071,
+          "allocatedMB" : 0.107
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 9.805,
+          "allocatedMB" : 1.704
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 62.328,
+          "allocatedMB" : 3.741
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 3,
+        "sql.resolve" : 2,
+        "pagingPages" : 2,
+        "pagingRowsOut" : 1000,
+        "fallbackPages" : 0,
+        "resolveFallbackExtraSql" : 0,
+        "buckets" : {
+          "normal" : {
+            "pages" : 2,
+            "resolveMillis" : 10.199,
+            "resolveAllocatedMB" : 10.474,
+            "resolveSql" : 2,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "submissionResolveAttempts" : 0,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 2,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 9.352,
+          "replicaResolveAllocMB" : 10.545,
+          "subjectiveRead" : {
+            "millis" : 3.462,
+            "allocatedMB" : 3.463,
+            "sqlCount" : 2,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 3.813,
+            "allocatedMB" : 4.693
+          },
+          "grade" : {
+            "millis" : 1.87,
+            "allocatedMB" : 2.384
+          },
+          "unaccountedMillis" : 0.207,
+          "unaccountedAllocMB" : 0.005
+        },
+        "probe" : {
+          "replicaResolveMillis" : 9.369,
+          "replicaResolveAllocMB" : 10.545,
+          "pagesCompared" : 2,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 0.704,
+        "heapWithPairsAfterGcMB" : 70.269,
+        "heapWithoutPairsAfterGcMB" : 69.565,
+        "wallMillis" : 1247.749,
+        "sqlTotal" : 8,
+        "outputBytes" : 4570,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 89.546,
+        "heapUsedAfterGcBeforeMB" : 69.546,
+        "heapUsedAfterGcAfterMB" : 69.566,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s1000-q150",
+      "students" : 1000,
+      "questions" : 150,
+      "badAnswers" : 0,
+      "round" : 2,
+      "production" : {
+        "millis" : 207.142,
+        "allocatedMB" : 85.576,
+        "heapPeakMB" : 157.551,
+        "heapUsedAfterGcBeforeMB" : 69.551,
+        "heapUsedAfterGcAfterMB" : 69.56,
+        "heapUsedDeltaAfterGcMB" : 0.01,
+        "tempPeakBytes" : 58219,
+        "tempGrowthPeakBytes" : 58219,
+        "tempFilesPeak" : 2,
+        "outputBytes" : 9238,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.419,
+          "allocatedMB" : 0.25
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 9.917,
+          "allocatedMB" : 2.619
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 49.532,
+          "allocatedMB" : 46.95
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 15.622,
+          "allocatedMB" : 6.787
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.361,
+          "allocatedMB" : 0.796
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 56.479,
+          "allocatedMB" : 13.841
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 80.684,
+          "allocatedMB" : 13.969
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.017,
+          "allocatedMB" : 0.009
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 3,
+        "sql.resolve" : 2,
+        "pagingPages" : 2,
+        "pagingRowsOut" : 1000,
+        "fallbackPages" : 0,
+        "resolveFallbackExtraSql" : 0,
+        "buckets" : {
+          "normal" : {
+            "pages" : 2,
+            "resolveMillis" : 49.532,
+            "resolveAllocatedMB" : 46.95,
+            "resolveSql" : 2,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "submissionResolveAttempts" : 0,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 2,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 53.165,
+          "replicaResolveAllocMB" : 49.401,
+          "subjectiveRead" : {
+            "millis" : 4.672,
+            "allocatedMB" : 3.465,
+            "sqlCount" : 2,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 30.358,
+            "allocatedMB" : 28.634
+          },
+          "grade" : {
+            "millis" : 17.889,
+            "allocatedMB" : 17.296
+          },
+          "unaccountedMillis" : 0.246,
+          "unaccountedAllocMB" : 0.005
+        },
+        "probe" : {
+          "replicaResolveMillis" : 53.223,
+          "replicaResolveAllocMB" : 49.401,
+          "pagesCompared" : 2,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 5.282,
+        "heapWithPairsAfterGcMB" : 74.945,
+        "heapWithoutPairsAfterGcMB" : 69.663,
+        "wallMillis" : 1431.073,
+        "sqlTotal" : 8,
+        "outputBytes" : 9238,
+        "tempPeakBytes" : 60804,
+        "tempGrowthPeakBytes" : 60804,
+        "tempFilesPeak" : 2,
+        "heapPeakMB" : 175.561,
+        "heapUsedAfterGcBeforeMB" : 69.561,
+        "heapUsedAfterGcAfterMB" : 69.639,
+        "rowCount" : 150,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3000-q60",
+      "students" : 3000,
+      "questions" : 60,
+      "badAnswers" : 0,
+      "round" : 2,
+      "production" : {
+        "millis" : 194.492,
+        "allocatedMB" : 98.748,
+        "heapPeakMB" : 167.562,
+        "heapUsedAfterGcBeforeMB" : 69.562,
+        "heapUsedAfterGcAfterMB" : 69.568,
+        "heapUsedDeltaAfterGcMB" : 0.006,
+        "tempPeakBytes" : 25447,
+        "tempGrowthPeakBytes" : 25447,
+        "tempFilesPeak" : 2,
+        "outputBytes" : 5987,
+        "sqlQueries" : 15
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.121,
+          "allocatedMB" : 0.126
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 22.139,
+          "allocatedMB" : 8.615
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 55.015,
+          "allocatedMB" : 67.105
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 12.846,
+          "allocatedMB" : 8.472
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.324,
+          "allocatedMB" : 0.783
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 24.681,
+          "allocatedMB" : 4.399
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 61.687,
+          "allocatedMB" : 8.941
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.001,
+          "allocatedMB" : 0.006
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 7,
+        "sql.resolve" : 6,
+        "pagingPages" : 6,
+        "pagingRowsOut" : 3000,
+        "fallbackPages" : 0,
+        "resolveFallbackExtraSql" : 0,
+        "buckets" : {
+          "normal" : {
+            "pages" : 6,
+            "resolveMillis" : 55.015,
+            "resolveAllocatedMB" : 67.105,
+            "resolveSql" : 6,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "submissionResolveAttempts" : 0,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 6,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 60.851,
+          "replicaResolveAllocMB" : 69.513,
+          "subjectiveRead" : {
+            "millis" : 9.275,
+            "allocatedMB" : 10.395,
+            "sqlCount" : 6,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 36.116,
+            "allocatedMB" : 37.517
+          },
+          "grade" : {
+            "millis" : 15.164,
+            "allocatedMB" : 21.585
+          },
+          "unaccountedMillis" : 0.297,
+          "unaccountedAllocMB" : 0.015
+        },
+        "probe" : {
+          "replicaResolveMillis" : 60.89,
+          "replicaResolveAllocMB" : 69.513,
+          "pagesCompared" : 6,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 6.445,
+        "heapWithPairsAfterGcMB" : 76.059,
+        "heapWithoutPairsAfterGcMB" : 69.613,
+        "wallMillis" : 1411.122,
+        "sqlTotal" : 20,
+        "outputBytes" : 5987,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 203.569,
+        "heapUsedAfterGcBeforeMB" : 69.569,
+        "heapUsedAfterGcAfterMB" : 69.607,
+        "rowCount" : 60,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s100-q20-bad2",
+      "students" : 100,
+      "questions" : 20,
+      "badAnswers" : 2,
+      "round" : 2,
+      "production" : {
+        "millis" : 102.52,
+        "allocatedMB" : 11.124,
+        "heapPeakMB" : 81.572,
+        "heapUsedAfterGcBeforeMB" : 69.572,
+        "heapUsedAfterGcAfterMB" : 69.595,
+        "heapUsedDeltaAfterGcMB" : 0.023,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4590,
+        "sqlQueries" : 102
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.379,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 1.393,
+          "allocatedMB" : 0.284
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 16.144,
+          "allocatedMB" : 4.735
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.23,
+          "allocatedMB" : 0.093
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.385,
+          "allocatedMB" : 0.022
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 16.816,
+          "allocatedMB" : 1.701
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 61.883,
+          "allocatedMB" : 3.73
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 1,
+        "sql.resolve" : 99,
+        "pagingPages" : 1,
+        "pagingRowsOut" : 100,
+        "fallbackPages" : 1,
+        "resolveFallbackExtraSql" : 98,
+        "buckets" : {
+          "normal" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 1,
+            "resolveMillis" : 16.144,
+            "resolveAllocatedMB" : 4.735,
+            "resolveSql" : 99,
+            "submissionResolveAttempts" : 100,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 0,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 0.0,
+          "replicaResolveAllocMB" : 0.0,
+          "subjectiveRead" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0,
+            "sqlCount" : 0,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "grade" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "unaccountedMillis" : 0.0,
+          "unaccountedAllocMB" : 0.0
+        },
+        "probe" : {
+          "replicaResolveMillis" : 19.635,
+          "replicaResolveAllocMB" : 4.724,
+          "pagesCompared" : 1,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 0.068,
+        "heapWithPairsAfterGcMB" : 69.684,
+        "heapWithoutPairsAfterGcMB" : 69.616,
+        "wallMillis" : 1249.922,
+        "sqlTotal" : 200,
+        "outputBytes" : 4590,
+        "tempPeakBytes" : 12717,
+        "tempGrowthPeakBytes" : 12717,
+        "tempFilesPeak" : 2,
+        "heapPeakMB" : 77.596,
+        "heapUsedAfterGcBeforeMB" : 69.596,
+        "heapUsedAfterGcAfterMB" : 69.617,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3-q20-bad1",
+      "students" : 3,
+      "questions" : 20,
+      "badAnswers" : 1,
+      "round" : 2,
+      "production" : {
+        "millis" : 63.754,
+        "allocatedMB" : 6.309,
+        "heapPeakMB" : 75.601,
+        "heapUsedAfterGcBeforeMB" : 69.601,
+        "heapUsedAfterGcAfterMB" : 69.596,
+        "heapUsedDeltaAfterGcMB" : -0.005,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4577,
+        "sqlQueries" : 6
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.803,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 1.013,
+          "allocatedMB" : 0.068
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 1.693,
+          "allocatedMB" : 0.139
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.029,
+          "allocatedMB" : 0.007
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.024,
+          "allocatedMB" : 0.002
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 15.904,
+          "allocatedMB" : 1.756
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 81.457,
+          "allocatedMB" : 3.847
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 1,
+        "sql.resolve" : 3,
+        "pagingPages" : 1,
+        "pagingRowsOut" : 3,
+        "fallbackPages" : 1,
+        "resolveFallbackExtraSql" : 2,
+        "buckets" : {
+          "normal" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 1,
+            "resolveMillis" : 1.693,
+            "resolveAllocatedMB" : 0.139,
+            "resolveSql" : 3,
+            "submissionResolveAttempts" : 3,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 0,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 0.0,
+          "replicaResolveAllocMB" : 0.0,
+          "subjectiveRead" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0,
+            "sqlCount" : 0,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "grade" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "unaccountedMillis" : 0.0,
+          "unaccountedAllocMB" : 0.0
+        },
+        "probe" : {
+          "replicaResolveMillis" : 0.918,
+          "replicaResolveAllocMB" : 0.14,
+          "pagesCompared" : 1,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 0.002,
+        "heapWithPairsAfterGcMB" : 69.618,
+        "heapWithoutPairsAfterGcMB" : 69.615,
+        "wallMillis" : 1047.53,
+        "sqlTotal" : 8,
+        "outputBytes" : 4577,
+        "tempPeakBytes" : 12855,
+        "tempGrowthPeakBytes" : 12855,
+        "tempFilesPeak" : 2,
+        "heapPeakMB" : 75.615,
+        "heapUsedAfterGcBeforeMB" : 69.597,
+        "heapUsedAfterGcAfterMB" : 69.617,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    } ]
+  }, {
+    "round" : 3,
+    "combos" : [ {
+      "combo" : "s1000-q20",
+      "students" : 1000,
+      "questions" : 20,
+      "badAnswers" : 0,
+      "round" : 3,
+      "production" : {
+        "millis" : 95.917,
+        "allocatedMB" : 20.079,
+        "heapPeakMB" : 89.556,
+        "heapUsedAfterGcBeforeMB" : 69.556,
+        "heapUsedAfterGcAfterMB" : 69.602,
+        "heapUsedDeltaAfterGcMB" : 0.046,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4570,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.487,
+          "allocatedMB" : 0.071
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 9.593,
+          "allocatedMB" : 2.607
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 12.676,
+          "allocatedMB" : 10.474
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 2.687,
+          "allocatedMB" : 0.931
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 1.275,
+          "allocatedMB" : 0.107
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 14.11,
+          "allocatedMB" : 1.703
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 53.941,
+          "allocatedMB" : 3.741
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 3,
+        "sql.resolve" : 2,
+        "pagingPages" : 2,
+        "pagingRowsOut" : 1000,
+        "fallbackPages" : 0,
+        "resolveFallbackExtraSql" : 0,
+        "buckets" : {
+          "normal" : {
+            "pages" : 2,
+            "resolveMillis" : 12.676,
+            "resolveAllocatedMB" : 10.474,
+            "resolveSql" : 2,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "submissionResolveAttempts" : 0,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 2,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 12.254,
+          "replicaResolveAllocMB" : 10.544,
+          "subjectiveRead" : {
+            "millis" : 4.36,
+            "allocatedMB" : 3.462,
+            "sqlCount" : 2,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 5.0,
+            "allocatedMB" : 4.693
+          },
+          "grade" : {
+            "millis" : 2.774,
+            "allocatedMB" : 2.384
+          },
+          "unaccountedMillis" : 0.12,
+          "unaccountedAllocMB" : 0.005
+        },
+        "probe" : {
+          "replicaResolveMillis" : 12.269,
+          "replicaResolveAllocMB" : 10.544,
+          "pagesCompared" : 2,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 0.704,
+        "heapWithPairsAfterGcMB" : 70.326,
+        "heapWithoutPairsAfterGcMB" : 69.622,
+        "wallMillis" : 1034.403,
+        "sqlTotal" : 8,
+        "outputBytes" : 4570,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 85.603,
+        "heapUsedAfterGcBeforeMB" : 69.603,
+        "heapUsedAfterGcAfterMB" : 69.622,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s1000-q150",
+      "students" : 1000,
+      "questions" : 150,
+      "badAnswers" : 0,
+      "round" : 3,
+      "production" : {
+        "millis" : 209.337,
+        "allocatedMB" : 85.61,
+        "heapPeakMB" : 155.607,
+        "heapUsedAfterGcBeforeMB" : 69.607,
+        "heapUsedAfterGcAfterMB" : 69.618,
+        "heapUsedDeltaAfterGcMB" : 0.011,
+        "tempPeakBytes" : 57344,
+        "tempGrowthPeakBytes" : 57344,
+        "tempFilesPeak" : 1,
+        "outputBytes" : 9238,
+        "sqlQueries" : 7
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.26,
+          "allocatedMB" : 0.249
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 7.795,
+          "allocatedMB" : 2.619
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 44.106,
+          "allocatedMB" : 46.95
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 10.283,
+          "allocatedMB" : 6.787
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 2.481,
+          "allocatedMB" : 0.796
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 43.838,
+          "allocatedMB" : 13.839
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 93.726,
+          "allocatedMB" : 13.969
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.003,
+          "allocatedMB" : 0.009
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 3,
+        "sql.resolve" : 2,
+        "pagingPages" : 2,
+        "pagingRowsOut" : 1000,
+        "fallbackPages" : 0,
+        "resolveFallbackExtraSql" : 0,
+        "buckets" : {
+          "normal" : {
+            "pages" : 2,
+            "resolveMillis" : 44.106,
+            "resolveAllocatedMB" : 46.95,
+            "resolveSql" : 2,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "submissionResolveAttempts" : 0,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 2,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 42.049,
+          "replicaResolveAllocMB" : 49.401,
+          "subjectiveRead" : {
+            "millis" : 3.748,
+            "allocatedMB" : 3.465,
+            "sqlCount" : 2,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 26.606,
+            "allocatedMB" : 28.634
+          },
+          "grade" : {
+            "millis" : 11.378,
+            "allocatedMB" : 17.296
+          },
+          "unaccountedMillis" : 0.317,
+          "unaccountedAllocMB" : 0.005
+        },
+        "probe" : {
+          "replicaResolveMillis" : 42.069,
+          "replicaResolveAllocMB" : 49.401,
+          "pagesCompared" : 2,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 5.282,
+        "heapWithPairsAfterGcMB" : 75.003,
+        "heapWithoutPairsAfterGcMB" : 69.72,
+        "wallMillis" : 1200.382,
+        "sqlTotal" : 8,
+        "outputBytes" : 9238,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 171.618,
+        "heapUsedAfterGcBeforeMB" : 69.618,
+        "heapUsedAfterGcAfterMB" : 69.696,
+        "rowCount" : 150,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3000-q60",
+      "students" : 3000,
+      "questions" : 60,
+      "badAnswers" : 0,
+      "round" : 3,
+      "production" : {
+        "millis" : 186.1,
+        "allocatedMB" : 98.744,
+        "heapPeakMB" : 169.62,
+        "heapUsedAfterGcBeforeMB" : 69.62,
+        "heapUsedAfterGcAfterMB" : 69.628,
+        "heapUsedDeltaAfterGcMB" : 0.008,
+        "tempPeakBytes" : 28036,
+        "tempGrowthPeakBytes" : 28036,
+        "tempFilesPeak" : 2,
+        "outputBytes" : 5987,
+        "sqlQueries" : 15
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.658,
+          "allocatedMB" : 0.126
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 26.593,
+          "allocatedMB" : 8.614
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 62.476,
+          "allocatedMB" : 67.104
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 15.117,
+          "allocatedMB" : 8.472
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 3.01,
+          "allocatedMB" : 0.783
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 23.42,
+          "allocatedMB" : 4.396
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 75.719,
+          "allocatedMB" : 8.942
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.006
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 7,
+        "sql.resolve" : 6,
+        "pagingPages" : 6,
+        "pagingRowsOut" : 3000,
+        "fallbackPages" : 0,
+        "resolveFallbackExtraSql" : 0,
+        "buckets" : {
+          "normal" : {
+            "pages" : 6,
+            "resolveMillis" : 62.476,
+            "resolveAllocatedMB" : 67.104,
+            "resolveSql" : 6,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "submissionResolveAttempts" : 0,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 6,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 68.485,
+          "replicaResolveAllocMB" : 69.511,
+          "subjectiveRead" : {
+            "millis" : 10.416,
+            "allocatedMB" : 10.393,
+            "sqlCount" : 6,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 40.864,
+            "allocatedMB" : 37.517
+          },
+          "grade" : {
+            "millis" : 16.889,
+            "allocatedMB" : 21.585
+          },
+          "unaccountedMillis" : 0.316,
+          "unaccountedAllocMB" : 0.015
+        },
+        "probe" : {
+          "replicaResolveMillis" : 68.522,
+          "replicaResolveAllocMB" : 69.511,
+          "pagesCompared" : 6,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 6.445,
+        "heapWithPairsAfterGcMB" : 76.119,
+        "heapWithoutPairsAfterGcMB" : 69.674,
+        "wallMillis" : 1223.578,
+        "sqlTotal" : 20,
+        "outputBytes" : 5987,
+        "tempPeakBytes" : 16384,
+        "tempGrowthPeakBytes" : 16384,
+        "tempFilesPeak" : 1,
+        "heapPeakMB" : 205.629,
+        "heapUsedAfterGcBeforeMB" : 69.629,
+        "heapUsedAfterGcAfterMB" : 69.667,
+        "rowCount" : 60,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s100-q20-bad2",
+      "students" : 100,
+      "questions" : 20,
+      "badAnswers" : 2,
+      "round" : 3,
+      "production" : {
+        "millis" : 92.934,
+        "allocatedMB" : 11.079,
+        "heapPeakMB" : 79.632,
+        "heapUsedAfterGcBeforeMB" : 69.632,
+        "heapUsedAfterGcAfterMB" : 69.656,
+        "heapUsedDeltaAfterGcMB" : 0.023,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4590,
+        "sqlQueries" : 104
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 3.274,
+          "allocatedMB" : 0.07
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 1.155,
+          "allocatedMB" : 0.284
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 21.77,
+          "allocatedMB" : 4.705
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.336,
+          "allocatedMB" : 0.093
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.389,
+          "allocatedMB" : 0.022
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 14.01,
+          "allocatedMB" : 1.699
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 55.918,
+          "allocatedMB" : 3.731
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 1,
+        "sql.resolve" : 99,
+        "pagingPages" : 1,
+        "pagingRowsOut" : 100,
+        "fallbackPages" : 1,
+        "resolveFallbackExtraSql" : 98,
+        "buckets" : {
+          "normal" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 1,
+            "resolveMillis" : 21.77,
+            "resolveAllocatedMB" : 4.705,
+            "resolveSql" : 99,
+            "submissionResolveAttempts" : 100,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 0,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 0.0,
+          "replicaResolveAllocMB" : 0.0,
+          "subjectiveRead" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0,
+            "sqlCount" : 0,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "grade" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "unaccountedMillis" : 0.0,
+          "unaccountedAllocMB" : 0.0
+        },
+        "probe" : {
+          "replicaResolveMillis" : 34.112,
+          "replicaResolveAllocMB" : 4.705,
+          "pagesCompared" : 1,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 0.068,
+        "heapWithPairsAfterGcMB" : 69.744,
+        "heapWithoutPairsAfterGcMB" : 69.676,
+        "wallMillis" : 1069.243,
+        "sqlTotal" : 200,
+        "outputBytes" : 4590,
+        "tempPeakBytes" : 11653,
+        "tempGrowthPeakBytes" : 11653,
+        "tempFilesPeak" : 2,
+        "heapPeakMB" : 79.656,
+        "heapUsedAfterGcBeforeMB" : 69.656,
+        "heapUsedAfterGcAfterMB" : 69.676,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    }, {
+      "combo" : "s3-q20-bad1",
+      "students" : 3,
+      "questions" : 20,
+      "badAnswers" : 1,
+      "round" : 3,
+      "production" : {
+        "millis" : 70.415,
+        "allocatedMB" : 6.307,
+        "heapPeakMB" : 75.662,
+        "heapUsedAfterGcBeforeMB" : 69.662,
+        "heapUsedAfterGcAfterMB" : 69.607,
+        "heapUsedDeltaAfterGcMB" : -0.055,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "outputBytes" : 4577,
+        "sqlQueries" : 6
+      },
+      "replica" : {
+        "phases" : [ {
+          "phase" : "paperLoad",
+          "millis" : 4.243,
+          "allocatedMB" : 0.07
+        }, {
+          "phase" : "pagingSelect",
+          "millis" : 0.621,
+          "allocatedMB" : 0.067
+        }, {
+          "phase" : "resolveTotal",
+          "millis" : 1.308,
+          "allocatedMB" : 0.139
+        }, {
+          "phase" : "aggregatePairs",
+          "millis" : 0.028,
+          "allocatedMB" : 0.007
+        }, {
+          "phase" : "discriminationSort",
+          "millis" : 0.023,
+          "allocatedMB" : 0.002
+        }, {
+          "phase" : "xlsxCompose",
+          "millis" : 13.41,
+          "allocatedMB" : 1.754
+        }, {
+          "phase" : "xlsxSerialize",
+          "millis" : 41.605,
+          "allocatedMB" : 3.847
+        }, {
+          "phase" : "toByteArray",
+          "millis" : 0.002,
+          "allocatedMB" : 0.004
+        } ],
+        "sql.paperLoad" : 1,
+        "sql.pagingSelect" : 1,
+        "sql.resolve" : 3,
+        "pagingPages" : 1,
+        "pagingRowsOut" : 3,
+        "fallbackPages" : 1,
+        "resolveFallbackExtraSql" : 2,
+        "buckets" : {
+          "normal" : {
+            "pages" : 0,
+            "resolveMillis" : 0.0,
+            "resolveAllocatedMB" : 0.0,
+            "resolveSql" : 0,
+            "note" : "整批 resolveBatch 成功页；嵌套分账取自此桶"
+          },
+          "fallback" : {
+            "pages" : 1,
+            "resolveMillis" : 1.308,
+            "resolveAllocatedMB" : 0.139,
+            "resolveSql" : 3,
+            "submissionResolveAttempts" : 3,
+            "note" : "整批解析失败后逐份 resolve（坏卷跳过）；异常页不并入正常页归因"
+          }
+        },
+        "nestedResolve" : {
+          "pages" : 0,
+          "denominatorNote" : "三段在同一受控副本调用内计时，分母为副本自身 resolve 总耗时；与生产 phases.resolveTotal 属不同调用，不跨调用相除；未归属段含框架/映射/探针开销，不作纯 CPU",
+          "replicaResolveMillis" : 0.0,
+          "replicaResolveAllocMB" : 0.0,
+          "subjectiveRead" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0,
+            "sqlCount" : 0,
+            "rowsOut" : 0
+          },
+          "answerParse" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "grade" : {
+            "millis" : 0.0,
+            "allocatedMB" : 0.0
+          },
+          "unaccountedMillis" : 0.0,
+          "unaccountedAllocMB" : 0.0
+        },
+        "probe" : {
+          "replicaResolveMillis" : 0.809,
+          "replicaResolveAllocMB" : 0.139,
+          "pagesCompared" : 1,
+          "unequalPages" : 0,
+          "note" : "受控副本是额外一遍 resolve，其耗时为探针开销，不并入生产 phases.resolveTotal；等价性以逐页 result.equals 校验，不等即抛错判本轮证据无效"
+        },
+        "pairsRetainedMB" : 0.002,
+        "heapWithPairsAfterGcMB" : 69.628,
+        "heapWithoutPairsAfterGcMB" : 69.625,
+        "wallMillis" : 1004.632,
+        "sqlTotal" : 8,
+        "outputBytes" : 4577,
+        "tempPeakBytes" : 0,
+        "tempGrowthPeakBytes" : 0,
+        "tempFilesPeak" : 0,
+        "heapPeakMB" : 75.625,
+        "heapUsedAfterGcBeforeMB" : 69.608,
+        "heapUsedAfterGcAfterMB" : 69.627,
+        "rowCount" : 20,
+        "sxssfWindow" : 100
+      },
+      "cellsEqualProduction" : true,
+      "zipContentEqual" : true,
+      "outputBytesEqual" : true
+    } ]
+  } ],
+  "finishedAt" : "2026-09-27T20:45:34.386506"
+}

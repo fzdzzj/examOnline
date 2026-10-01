@@ -1,0 +1,72 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：班级体系地基（W10）",
+    "task": "班级实体 + 学生-班级关联",
+    "steps": [
+      { "step": "设计 classes 表（name/course_id/teacher_id/created_by）与 user_class 关联表（user_id/class_id/joined_time）", "completed": true },
+      { "step": "编写幂等建表 SQL 与索引（user_id+class_id 唯一、class_id 索引）", "completed": true },
+      { "step": "定义实体/Mapper（注意 class 是关键字，实体用 ClassEntity/Clazz 命名）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 1：班级体系地基（W10）",
+    "task": "班级 CRUD + 入班/转班",
+    "steps": [
+      { "step": "实现班级创建/查询/更新/删除（教师 owner 校验，复用 OwnershipGuard 模式）", "completed": true },
+      { "step": "实现学生入班（管理员/教师指定）、移除、转班（转班=更新 user_class.class_id，成绩随人 §12.6）", "completed": true },
+      { "step": "实现班级学生列表查询（支撑后续应考名单推导）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 2：缺考标记（W10-W11）",
+    "task": "应考名单推导 + 缺考标记",
+    "steps": [
+      { "step": "实现应考名单推导：考试绑 class_id → user_class 查该班当前学生", "completed": true },
+      { "step": "实现缺考识别：考试状态机 进行中→已结束 时，应考名单 − 有答卷者 = 缺考，写 exam_absence", "completed": true },
+      { "step": "实现缺考名单查询（教师按考试查缺考学生，可勾选进入补考名单）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 3：补考（W11）",
+    "task": "补考独立记录 + 名单限制 + 成绩规则",
+    "steps": [
+      { "step": "exams 表加 parent_exam_id + 补考成绩规则字段（takeHighest/takeLatest/takeAverage），补考为独立考试记录", "completed": true },
+      { "step": "实现补考创建：教师按主考成绩筛选（缺考/未交卷/低于分数线）→ 勾选指定 → 生成 exam_candidates 名单", "completed": true },
+      { "step": "实现补考名单限制：只有名单内学生可进入补考", "completed": true },
+      { "step": "实现补考成绩规则合并：取最终成绩时按规则（最高/最近/平均），历史成绩保留不覆盖", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 4：成绩复核（W11）",
+    "task": "复核申请 + 限次限时 + 隐藏",
+    "steps": [
+      { "step": "设计 score_review 表（exam_id/student_id/status/reason/result/apply_time/handle_time/handler_id，唯一索引 exam_id+student_id）", "completed": true },
+      { "step": "实现复核申请：限 1 次（唯一索引）+ 7 天内（apply_time vs 成绩发布时间）", "completed": true },
+      { "step": "实现复核中隐藏成绩：学生端查成绩时若有进行中复核，返回\"复核中\"而非分数（§5.4）", "completed": true },
+      { "step": "实现教师处理：同意（重新批改/调分）→ 更新成绩显示，驳回 → 恢复显示", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 6,
+    "category": "阶段 5：验收（W11）",
+    "task": "考后闭环验收",
+    "steps": [
+      { "step": "班级/入班/转班集成测试（转班后成绩随人）", "completed": true },
+      { "step": "缺考标记单测（应考-有答卷=缺考，考试结束触发）", "completed": true },
+      { "step": "补考名单限制 + 成绩规则合并单测（最高/最近/平均）", "completed": true },
+      { "step": "复核限次限时 + 隐藏单测（1次、7天、复核中隐藏）", "completed": true },
+      { "step": "端到端验收：建班→入班→考试结束→缺考标记→指定补考→复核申请→处理（遗留：未单独编写串联用例；各环节仅由 steps 1-4 的独立测试分别覆盖。真实 user_class→listStudentIds 链路目前只被 Mockito 单测覆盖，集成层待补）", "completed": false }
+    ],
+    "passes": false
+  }
+]

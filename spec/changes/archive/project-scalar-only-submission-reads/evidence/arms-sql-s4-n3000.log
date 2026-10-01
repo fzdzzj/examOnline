@@ -1,0 +1,53 @@
+{
+  "site": "s4",
+  "shape": 3000,
+  "atIso": "2026-09-29T11:39:34.187Z",
+  "arms": {
+    "OLD": [
+      {
+        "msId": "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+        "sql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ?)",
+        "literal": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970203000 AND student_id = 973200001)",
+        "substitution": {
+          "placeholderCount": 2,
+          "paramCount": 2,
+          "replaced": 2
+        },
+        "captureLiteralSql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970203000 AND student_id = 973200001)",
+        "captureLiteralMatches": true,
+        "sqlSha256": "3a114276b7db3fd2ad5c422ec42ada39022105f64ceeac6cfd2db1f9b998d188"
+      }
+    ],
+    "PROJ": [
+      {
+        "msId": "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+        "sql": "SELECT   id   FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ?)",
+        "literal": "SELECT   id   FROM exam_submissions      WHERE  (exam_id = 970203000 AND student_id = 973200001)",
+        "substitution": {
+          "placeholderCount": 2,
+          "paramCount": 2,
+          "replaced": 2
+        },
+        "captureLiteralSql": "SELECT   id   FROM exam_submissions      WHERE  (exam_id = 970203000 AND student_id = 973200001)",
+        "captureLiteralMatches": true,
+        "sqlSha256": "bedb586203d79cfc6366e31846445a44c21238e2231faec18819adfea133c1be"
+      }
+    ],
+    "OLDrep": [
+      {
+        "msId": "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+        "sql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ?)",
+        "literal": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970203000 AND student_id = 973200001)",
+        "substitution": {
+          "placeholderCount": 2,
+          "paramCount": 2,
+          "replaced": 2
+        },
+        "captureLiteralSql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970203000 AND student_id = 973200001)",
+        "captureLiteralMatches": true,
+        "sqlSha256": "3a114276b7db3fd2ad5c422ec42ada39022105f64ceeac6cfd2db1f9b998d188"
+      }
+    ]
+  },
+  "oldrepSameTextAsOld": true
+}

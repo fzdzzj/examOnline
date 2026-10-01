@@ -2,9 +2,12 @@ package com.exam.taking.service;
 
 import com.exam.anticheat.collector.BehaviorEventTypes;
 import com.exam.anticheat.service.BehaviorEventCollectService;
+import com.exam.common.cache.RedisLockHelper;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.auth.security.SecurityUtil;
+import com.exam.config.ReadYourWriteMark;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.entity.ExamSubmitDedup;
 import com.exam.submission.mapper.ExamSubmitDedupMapper;
@@ -15,6 +18,7 @@ import com.exam.taking.dto.SubmitResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
@@ -59,6 +63,9 @@ public class ExamSubmitService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final BehaviorEventCollectService eventCollectService;
+    private final ReadYourWriteMark readYourWriteMark;
+    private final BusinessMetrics metrics;
+    private final RedisLockHelper lockHelper;
 
     @Value("${exam.taking.submit.lock-ttl-seconds:30}")
     private int lockTtlSeconds;
@@ -66,7 +73,10 @@ public class ExamSubmitService {
     public ExamSubmitService(ExamSubmissionService submissionService, ExamSubmitDedupMapper dedupMapper,
                              ExamDraftService draftService, ExamSubmitSender sender,
                              StringRedisTemplate redisTemplate, ObjectMapper objectMapper,
-                             BehaviorEventCollectService eventCollectService) {
+                             BehaviorEventCollectService eventCollectService,
+                             ReadYourWriteMark readYourWriteMark,
+                             BusinessMetrics metrics,
+                             RedisLockHelper lockHelper) {
         this.submissionService = submissionService;
         this.dedupMapper = dedupMapper;
         this.draftService = draftService;
@@ -74,6 +84,9 @@ public class ExamSubmitService {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.eventCollectService = eventCollectService;
+        this.readYourWriteMark = readYourWriteMark;
+        this.metrics = metrics;
+        this.lockHelper = lockHelper;
     }
 
     /** 学生侧交卷入口：手动交卷与前端倒计时归零强制提交共用。 */
@@ -91,6 +104,8 @@ public class ExamSubmitService {
 
     /** 三路竞态共用核心：幂等快速路径 → SETNX 锁 → 防重表 → 状态机 CAS → MQ 削峰。 */
     private SubmitResponse doSubmit(Long examId, Long studentId, int submitType, JsonNode payloadAnswers) {
+        // 可观测性打点：计时覆盖整个交卷流程（含 MQ confirm），成功/失败在唯一出口记录
+        Timer.Sample sample = metrics.startSubmit();
         // 幂等快速路径：已交卷直接返回首次结果（spec「重复交卷幂等」场景），不抢锁不发消息
         ExamSubmission submission = submissionService.getByExamStudent(examId, studentId);
         if (submission == null) {
@@ -101,14 +116,28 @@ public class ExamSubmitService {
         }
 
         String answersJson = resolveAnswers(examId, studentId, payloadAnswers);
-
-        // 第一重：SETNX 一次性锁（单飞）——三路竞态并发提交在此收敛为一个执行流
+// 第一重：SETNX 一次性锁（单飞）——三路竞态并发提交在此收敛为一个执行流。
+        // token 必须先赋给局部变量：finally 按 token 解锁；TTL=exam.taking.submit.lock-ttl-seconds（默认 30）。
+        // 为何必须校验 token：TTL 到期后锁可能已易主，无条件 del 会删掉别人的锁，单飞语义直接被破坏。
+        // 诚实定性：误删锁不构成数据错误（CAS + 唯一索引仍保证一次交卷），修它是为了让单飞名副其实、
+        // 并避免 TTL 过期后多线程同时进锁区打 DB/MQ。
         String lockKey = LOCK_PREFIX + examId + ":" + studentId;
+        String token = UUID.randomUUID().toString();
+        
+        // 并发监控：记录锁等待时间
+        long lockAcquireStart = System.nanoTime();
         Boolean locked = redisTemplate.opsForValue()
-                .setIfAbsent(lockKey, UUID.randomUUID().toString(), Duration.ofSeconds(lockTtlSeconds));
+                .setIfAbsent(lockKey, token, Duration.ofSeconds(lockTtlSeconds));
+        
         if (!Boolean.TRUE.equals(locked)) {
+            // 锁竞争失败
+            metrics.recordLockContention();
             return waitForConcurrentSubmit(examId, studentId);
         }
+        
+        // 锁获取成功，记录等待时长：纳秒直传给指标，不在这里换算成秒（会截成 0）
+        metrics.recordLockWait(System.nanoTime() - lockAcquireStart);
+        
         try {
             // 锁内二次确认：等锁窗口内可能已被并发路径提交
             submission = submissionService.getByExamStudent(examId, studentId);
@@ -136,6 +165,8 @@ public class ExamSubmitService {
             } catch (Exception e) {
                 log.error("交卷消息发送失败，答案暂存草稿等待补发: submission={} exam={} student={}",
                         submission.getId(), examId, studentId, e);
+                // 可观测性打点：交卷失败（MQ confirm 失败），记录耗时 + 失败计数
+                metrics.recordSubmitFailure(sample);
                 // 阶段 7 防作弊：交卷异常事件采集（策略判定严重度为"高"），旁路不改变原有兜底流程
                 recordSubmitAnomaly(examId, studentId, e);
                 draftService.overwriteAnswers(examId, studentId, answersJson);
@@ -145,11 +176,16 @@ public class ExamSubmitService {
 
             log.info("学生 {} 交卷成功: exam={} submission={} type={} 答案字节={}",
                     studentId, examId, submission.getId(), submitType, answersJson.length());
+            // 读己之写（add-performance-deepening task4）：交卷是写操作，成功后给当前线程打点，
+            // 短窗口内本线程的 @DS("slave") 读（快照等）会被强制转主库，避免从库复制滞后读到旧状态
+            readYourWriteMark.mark();
+            // 可观测性打点：真正的成功出口（幂等/并发路径不算新交卷），记录耗时 + 成功计数
+            metrics.recordSubmitSuccess(sample);
             return new SubmitResponse(submission.getId(), examId, studentId,
                     ExamSubmission.STATUS_SUBMITTED, now, submitType);
         } finally {
-            // 主动释放锁（TTL 兜底防持有者崩溃后死锁）
-            redisTemplate.delete(lockKey);
+            // 按 token 安全解锁（TTL 到期后锁可能已易主；无条件 del 会删掉别人的锁）
+            lockHelper.unlock(lockKey, token);
         }
     }
 

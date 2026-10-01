@@ -1,0 +1,79 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：产品裁决与开工边界",
+    "task": "明确是否采用推荐 A 的服务端汇总护栏，再开实施片",
+    "steps": [
+      {
+        "step": "用户书面裁决 A（推荐：未判/失败答卷阻断整场汇总，合法零分与部分主观继续允许）或 B（仅前端入口、保留直调汇总风险）；若选 B 先修订 proposal 和 delta，不按 A 施工",
+        "completed": true,
+        "evidence": "2026-09-24 本线程用户对主 Agent 的“是否批准推荐 A？”明确回复“是”；批准范围是服务端汇总写前拒绝未判/失败答卷 + 前端显式运行判分，合法客观零分与 §7.5 主观部分批改仍可汇总。审批时 HEAD=337c85e；提案未提交、业务代码未实施。"
+      },
+      {
+        "step": "现场核对 HEAD、已有工作树归属、现有 null 客观分测试和成绩/判分规范；记录开工门禁命令、原始输出、短 revision，不使用历史测试计数",
+        "completed": true,
+        "evidence": "2026-09-24，用户已书面批准推荐 A；开工 HEAD=337c85e4929d2a4decda8de5d5f20c92f2d11a3e。开工当天没有执行全量后端门禁，不能把后续定向测试冒称为全量基线。旧门禁的既有原出处仍是 docs/project-overview-for-agents.md:51-53 与 docs/指导Agent交接文档.md §6.1 （已记录的 mvn -o clean test 验证方式及 Failures=0、Errors=0、Skipped 判据）。开工 HEAD 与旧门禁 revision 的后端树比较命令为 `git diff --name-only 3b8bcfa 337c85e -- pom.xml src/main src/test`，原始输出为空、退出码 0；不再使用 `git diff --quiet HEAD` 声称开工树与旧门禁 revision 一致。"
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：后端汇总护栏（推荐 A）",
+    "task": "未判分不能汇总写零，且不破坏合法零分/部分主观规则",
+    "steps": [
+      {
+        "step": "先写可红用例：存在 grading_status 未完成或 objective_score 为空的待汇总答卷时拒绝且未调用 casSummarize/考试状态迁移；保持状态、权限、无答卷等既有边界",
+        "completed": true,
+        "evidence": "先写测试后运行：mvn.cmd -Dtest=ScoreServiceTest test；首次原始结果 BUILD FAILURE，Tests run: 37, Failures: 3, Errors: 0。护栏实现后补充“合法答卷在前、未判分答卷在后”顺序用例，验证整批预检不会先调用合法答卷的 casSummarize；本次原始结果 BUILD SUCCESS，Tests run: 38, Failures: 0, Errors: 0。测试同时验证考试状态 CAS 与主观成绩查询均未发生。"
+      },
+      {
+        "step": "实现整场写前校验；覆盖判分失败、成功客观 0 分、纯主观试卷判分后客观 0 分、手动给分 0 分、主观未批仍按 §7.5 partial 汇总，并调整原 null=0 旧测试的冲突断言",
+        "completed": true,
+        "evidence": "实现位于提交 2717fce06106bcd6a71a60f383edf06d7a0b0853：ScoreService 在任何 casSummarize/考试状态 CAS 前整场拒绝 grading_status 非 1 或 objective_score NULL；覆盖判分失败、成功客观 0 分、主观 0 分+未批部分批改，以及“好答卷在前、未判分答卷在后仍零汇总写入”。在 fd21549e56ae22f206f59428a5addee1688f40bf（短 revision fd21549）上执行定向 clean test：`mvn.cmd clean -Dtest=ScoreServiceTest test`；原始结果 `Tests run: 38, Failures: 0, Errors: 0, Skipped: 0`，`BUILD SUCCESS`，退出码 0。未执行共享 dev 成绩汇总。"
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：教师端判分入口",
+    "task": "显式运行判分后可进入工作台，不把失败与空结果误报成功",
+    "steps": [
+      {
+        "step": "在教师批改工作台对已结束且未汇总考试提供运行判分动作，调用现有生成 SDK；已批改/已发布不冒称可整场重判，重复点击被收敛且重跑影响说明可见",
+        "completed": true,
+        "evidence": "实现位于提交 e743c976cd5b983794ace062dc9819813b64cb77（短 revision e743c97）：批改工作台仅在后端状态为 ENDED 时显示运行判分，调用现有生成 SDK run，按钮 loading + 运行中守卫收敛重复点击，并明确说明重算客观题且不覆盖已保存主观分；运行结果按捕获的 examId 隔离，切换考试不会把旧请求结果落到新考试。2026-09-25 在 3a389dce09da36fe1f11bba88bcec0d441fcc0d6（短 revision 3a389dc）上现场复跑全量前端测试：`node node_modules/vitest/vitest.mjs run`，原始结果 `Test Files 41 passed (41), Tests 344 passed (344)`，退出码 0，其中含批改工作台与成绩页页面测试。"
+      },
+      {
+        "step": "响应 total/success/failed/失败清单如实渲染，total=0 与 failed>0 有独立状态；运行后刷新题级进度/学生行，无主观题卷不误报无需客观判分；补页面测试",
+        "completed": true,
+        "evidence": "实现位于提交 e743c97：页面如实渲染 total/success/failed 与 failures，total=0 单独提示“无已交卷答卷”，failed>0 单独提示失败且不显示“判分完成”；运行后刷新题级进度，只有当前考试且已选 questionId 时才 refetch 学生行，避免向必填 questionId 传 undefined。2026-09-25 在 3a389dce09da36fe1f11bba88bcec0d441fcc0d6（短 revision 3a389dc）上现场复跑全量前端测试：`node node_modules/vitest/vitest.mjs run`，原始结果 `Test Files 41 passed (41), Tests 344 passed (344)`，退出码 0。"
+      },
+      {
+        "step": "成绩汇总被服务端拒绝时展示可操作提示并引导回判分工作台；前端不本地推算判分状态、不伪造成功；补对应测试",
+        "completed": true,
+        "evidence": "成绩页前置错误处理经 cdc3137、94fde24、99a358c 连续修复，收口于提交 3a389dce09da36fe1f11bba88bcec0d441fcc0d6（短 revision 3a389dc）：成绩页将判分/客观分前置错误与网络等通用汇总错误分开呈现，只有前置错误展示“前往批改工作台”，不在前端推算判分状态。2026-09-25 在 3a389dc 上现场复跑定向测试：`node node_modules/vitest/vitest.mjs run \"src/pages/(dashboard)/teacher/scores/__tests__/summaryPrerequisiteAlert.spec.ts\" --reporter=verbose`，原始结果 `Tests 7 passed (7)`，退出码 0；同 revision 复跑 `npx eslint src e2e *.config.ts`、`npx vue-tsc --project ./tsconfig.app.json --noEmit`、`npx tsc --project ./tsconfig.config.json --noEmit`，退出码均为 0。"
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：验收与归档",
+    "task": "以提交后的证据证明功能和安全边界，按工作流合入规范",
+    "steps": [
+      {
+        "step": "前端 lint/type-check/vitest 与后端相关测试、全量门禁按各自工具链现场执行；证据字段保留命令、当次原始输出和短 revision，范围外代码/共享数据零改动",
+        "completed": true,
+        "evidence": "2026-09-25 在已提交 HEAD 006bb9c5985892c4eebc056941311f85b13551ab（短 revision 006bb9c；当时工作树仅 spec/README.md 文档草稿差异，src/ 与 frontend/ 代码与 HEAD 一致）上现场执行全量门禁。后端：`mvn.cmd clean test`，当次原始结果 `Tests run: 296, Failures: 0, Errors: 0, Skipped: 1`（Skipped: 1 为契约导出开关设计使然），`BUILD SUCCESS`，退出码 0，判据 Failures=0 且 Errors=0 成立。自查：`grep -rn '@Sql' src/test | sed -E 's/^[^:]+:[0-9]+://' | grep -vE '^[[:space:]]*\\*'` 无命中；AGENTS.md 三条自查同跑均无命中。前端（frontend/）四条命令现场执行、退出码均为 0：`node node_modules/vitest/vitest.mjs run` → `Test Files 41 passed (41), Tests 344 passed (344)`；`node node_modules/eslint/bin/eslint.js src e2e *.config.ts` → 退出码 0、无输出；`npx --no-install vue-tsc --project ./tsconfig.app.json --noEmit` → 退出码 0；`npx --no-install tsc --project ./tsconfig.config.json --noEmit` → 退出码 0。共享 dev 未写成绩、未启动浏览器、未 docker up/down。"
+      },
+      {
+        "step": "核对教师端从运行判分到主观题行可见的真实链路证据；若共享 dev 写入不可安全复位则只凭可复现的隔离集成用例验收并标注边界，不制造脏成绩；证据充分后合入两个 delta、回勾并归档、同步 spec/README.md 的 D2 状态",
+        "completed": true,
+        "evidence": "共享 dev 写入不可安全复位且本轮约束禁止启动浏览器与容器：真实 Chromium 与共享 dev 真汇总未执行；验收边界=隔离单测/页面测 + 已提交 HEAD（006bb9c）门禁。隔离证据：后端 `mvn.cmd clean test` 全绿（`Tests run: 296, Failures: 0, Errors: 0, Skipped: 1`，BUILD SUCCESS，006bb9c）覆盖汇总写前护栏（未判/失败答卷整场拒绝、合法客观零分与 §7.5 主观部分批改放行、拒绝时零写入零状态迁移）与判分服务链路；前端 vitest 41 文件 344 例全绿（006bb9c）覆盖批改工作台运行判分入口（仅 ENDED 显示、防重复点击、total/success/failed 如实呈现、total=0 不报成功、按 examId 隔离旧结果）与成绩页前置错误「前往批改工作台」指引（summaryPrerequisiteAlert 等），未向共享 dev 制造任何脏成绩。据此合入 frontend「主观题批改工作台」与 score-management「成绩汇总」两个 MODIFIED delta，变更目录移入 `spec/changes/archive/fix-grading-entry-and-summary-prerequisite/`，`spec/README.md` 同步 D2 状态（归档表新增该行、原遗留 #18 整条移入「已收口」、frontend/score-management 能力域行补登），以上均由本次收口提交落盘。"
+      }
+    ],
+    "passes": true
+  }
+]

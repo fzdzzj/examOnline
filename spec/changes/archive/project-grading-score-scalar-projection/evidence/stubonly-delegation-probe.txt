@@ -1,0 +1,18 @@
+StubOnlyProbeTest — Mockito spiedInstance/stubOnly delegation probe (2026-10-01, JDK 21.0.9, Mockito via Spring Boot 3.5.x)
+Command: mvnw.cmd -o test -Dtest=StubOnlyProbeTest   (BUILD SUCCESS, Tests run: 1)
+
+PROBE A_spy                        id=7 gradingStatus=1 objectiveScore=55.5 answers=THROW:AssertionError
+PROBE B_mock_spiedInstance_stubOnly id=0 gradingStatus=0 objectiveScore=null answers=THROW:AssertionError
+PROBE C_mock_spiedInstance_CRM_stubOnly id=7 gradingStatus=1 objectiveScore=55.5 answers=THROW:AssertionError
+PROBE D_mock_spiedInstance_CRM     id=7 gradingStatus=1 objectiveScore=55.5 answers=THROW:AssertionError
+
+Forms:
+  A = Mockito.spy(g)
+  B = Mockito.mock(cls, Mockito.withSettings().spiedInstance(g).stubOnly())
+  C = Mockito.mock(cls, Mockito.withSettings().spiedInstance(g).defaultAnswer(Mockito.CALLS_REAL_METHODS).stubOnly())
+  D = Mockito.mock(cls, Mockito.withSettings().spiedInstance(g).defaultAnswer(Mockito.CALLS_REAL_METHODS))
+
+Finding: MockSettings.spiedInstance(g) ALONE does NOT flip the default answer; the mock still returns RETURNS_DEFAULTS (id=0/gradingStatus=0/objectiveScore=null) => unstubbed getters do not delegate to g.
+Only with an explicit defaultAnswer(CALLS_REAL_METHODS) do unstubbed getters delegate to the spied instance (forms C, D match form A's values).
+=> Form C (= spy semantics + stubOnly memory optimisation) is the faithful "semantics unchanged" implementation.
+Consequence observed in the measurement IT when form B was used: ScoreService.summarize threw "存在未完成判分的答卷，不能汇总成绩" for every arm/shape (gradingStatus read as 0, objectiveScore as null).

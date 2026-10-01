@@ -3,6 +3,7 @@ package com.exam.taking.service;
 import com.exam.submission.entity.ExamBehaviorLog;
 import com.exam.submission.mapper.ExamBehaviorLogMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +40,7 @@ public class ExamBehaviorLogService {
             row.setStudentId(studentId);
             row.setEventType(eventType);
             row.setEventData(eventData == null ? null : eventData.toString());
-            row.setSeverity(severity == null ? 1 : severity);
+            row.setSeverity(Objects.requireNonNullElse(severity, 1));
             row.setEventTime(eventTime == null ? LocalDateTime.now() : eventTime);
             behaviorLogMapper.insert(row);
             log.info("行为事件: exam={} student={} type={} severity={}",

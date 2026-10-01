@@ -4,7 +4,11 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.exam.exam.entity.Exam;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 考试 Mapper：常规 CRUD 走 MyBatis-Plus，状态流转走自定义 CAS SQL。
@@ -27,4 +31,13 @@ public interface ExamMapper extends BaseMapper<Exam> {
                         @Param("expectedStatus") int expectedStatus,
                         @Param("newStatus") int newStatus,
                         @Param("version") int version);
+
+    /**
+     * 数据保留候选考试：status &gt;= 2（已结束/已批改/已发布）且 end_time 早于 cutoff。
+     * 进行中（status=1）一律不返回，哪怕 end_time 已过——异常态交给人处理，清理任务不替它决定。
+     * 用 end_time 不用 updated_time：updated_time 会被任意编辑刷新，不表达终结时刻。
+     */
+    @Select("SELECT id FROM exams WHERE status >= 2 AND end_time < #{cutoff} ORDER BY end_time ASC, id ASC LIMIT #{limit}")
+    List<Long> selectRetentionCandidateExamIds(@Param("cutoff") LocalDateTime cutoff,
+                                               @Param("limit") int limit);
 }

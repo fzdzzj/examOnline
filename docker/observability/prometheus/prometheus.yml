@@ -1,0 +1,19 @@
+# 抓取配置：只消费 examOnline 已暴露的指标（BusinessMetrics + actuator）。
+# 指标名刻意不写 hikaricp_connections_*：本项目用 dynamic-datasource，
+# 其 Hikari 指标能否被 Boot 自动绑定未经实测，写错会让规则永久静默。
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# 加载告警规则（容器内挂载到 /etc/prometheus/rules）
+rule_files:
+  - /etc/prometheus/rules/exam-online-alerts.yml
+
+scrape_configs:
+  # job 名固定为 exam-online：告警规则与面板中的 job 标签都引用它
+  - job_name: exam-online
+    metrics_path: /actuator/prometheus
+    static_configs:
+      # host.docker.internal 在 Docker Desktop 开箱即用；
+      # Linux 上需配合 compose 里的 extra_hosts 才可解析到宿主
+      - targets: ["host.docker.internal:8080"]

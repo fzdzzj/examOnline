@@ -1,0 +1,61 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 0：冻结判据",
+    "task": "在测量前写定 PREREGISTRATION 并入库 sha256",
+    "steps": [
+      { "step": "建变更目录与四件套；写定 evidence/PREREGISTRATION.md：五站点清单与锚点、造数形状与分布、臂定义与轮数、S1–S4 冻结算子与倍数、措辞纪律、证据落位；记录 sha256", "completed": true },
+      { "step": "确认 spec-delta 仅为草案（未 GO 不合入基线）、tasks.json 证据格留空不预填；本阶段起任何测量前 PREREGISTRATION 冻结不改", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "变更目录四件套建立（proposal.md、tasks.json、specs/data-access/spec-delta.md、evidence/）；tasks.json 证据格空置不预填、步骤按实际完成度回勾。PREREGISTRATION.md 冻结于任何测量开始之前：sha256=3366b1eb97c1aacd85ddfc130342ead24731592aac477aad18ec02e65ac03805（记录于 evidence/preregistration.sha256.txt）；含一条冻结时刻前修订记录（订正站点 2 返回行数为 n——应考名单 n+5 人 ∩ E 上 n 行答卷；判据算子未变、sha256 同步重记，修订写明于文件头）。收口复核 `sha256sum -c preregistration.sha256.txt` → `PREREGISTRATION.md: OK`（rc=0），冻结后未再修改。spec-delta 头注写明「仅在实际实施且验收成立时按 GO 站点范围合入基线；否则按未采用草案归档」。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 1：静态归因（只读，零 src/main 改动）",
+    "task": "逐站点产出调用链、getter 清单、捕获 SQL 与运行时护栏",
+    "steps": [
+      { "step": "核对 HEAD/工作树与五站点锚点；逐站点记录入口方法与调用链、对被取实体实际调用的 getter（附代码引用）、捕获的 SQL 原文与 SELECT 列表（StatementHandler.prepare 拦截器，不手写近似）", "completed": true },
+      { "step": "测试上下文运行时护栏：PROJ 臂实体 answers/paperJson 为 null 而库内该行非 null；返回实体「读取即失败」包装（真读长字段即红）；产物落仓库外并登记", "completed": true },
+      { "step": "产出受版本控制的「新候选清单」（替代已过期且禁改的 docs/backend-optimization-candidates.md），并写明排除项（MonitorService.overview、一切需 answers 做逐题得分的路径）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "开工核对：HEAD=f6e336c、分支 feature/update-monitor-overview-submission-projection、工作树仅未跟踪 docs/backend-optimization-candidates.md（**全程未读、未改、未暂存、未提交**）。五站点锚点现场核对并与 PREREGISTRATION §0 一致（s1 myExams、s2 markAbsence、s3 myScore、s4 ScoreReviewService.handle AGREE 分支、s5 MakeupScoreService.collectFamilyScores）。getter 机械清单（file:line）与冻结列逐列对应、捕获 SQL 原文与 SELECT 列表机械落盘：工具 src/test/java/com/exam/scalar/measure/ScalarReadsAttributionMeasureIT.java（IT 结尾不进 Surefire），运行 `JAVA_HOME=/d/develop1/jdk21 ./mvnw -q test -Dtest=ScalarReadsAttributionMeasureIT -DfailIfNoTests=false -Dmeasure.rev=f6e336c -Dmeasure.label=cap1 -Dmeasure.out=D:\\code\\examOnline-measure\\project-scalar-reads` → `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0` / BUILD SUCCESS（mvn-cap1.log）；产物 scalar-reads-capture-cap1.json 逐站点含 SQL 原文、绑定参数、ms id（s1/s2 = com.exam.submission.mapper.ExamSubmissionMapper.selectList；s3/s4/s5 = com.exam.grading.mapper.GradingSubmissionMapper.selectList）。运行时护栏三种（captureMechanism/guardMechanism 字段自述于产物）：目标实体 Mockito spy「读取即失败」包装（真读 getAnswers/getPaperJson 即抛 AssertionError）；PROJ 臂长字段必 null 而库内同谓词行非 null（机械计数 >0）；PROJ SELECT 列表 == 冻结列且 ≠ OLD 列表。候选台账 evidence/candidate-ledger.md（受版本控制）含五站点表、调用链、getter 清单与复现命令、排除项（MonitorService.overview 与一切需 answers/paper_json 做逐题得分的路径）；阶段 1 零 src/main 改动（`git status` 仅新增 src/test 工具与 spec 目录）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 2：真引擎分账（一次性 MySQL 8 容器）",
+    "task": "同口径两臂轮转分账，机械复算 S1–S4 逐站点裁决",
+    "steps": [
+      { "step": "起一次性本地容器（mysql:8.0，tmpfs 数据目录、整库执行仓库 schema.sql 且 exit=0、记录镜像 digest 与 SHOW CREATE TABLE exam_submissions），造数 3 形状并实测 SUM(LENGTH(paper_json)+LENGTH(answers))", "completed": true },
+      { "step": "每站点两臂（OLD 全列 / PROJECTED 投影）×≥5 轮 + OLD 等价副本臂，臂序逐轮轮转；逐轮记录 wall-clock、应传字节、返回行数、SQL 条数、退出码、ISO 时间戳；不挑轮、不跨轮相减、失败轮保留", "completed": true },
+      { "step": "机械脚本按冻结算子复算 S1–S4 并输出逐站点裁决（允许部分 GO）；用毕 docker rm -f 销毁并留 docker ps -a 零匹配证据", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "容器（container-start.log / container-setup.log）：`docker run -d mysql:8.0` → 镜像 digest `mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b`（8.0.46）、容器 id `6c713bec2af269d5f64c611542cdd54c795f9c2089cf326bb75e578a82b568e8`、127.0.0.1:13411、独立库 `scalar_reads_measure`、tmpfs /var/lib/mysql；整库执行仓库 src/main/resources/schema.sql 退出码 0、SHOW CREATE TABLE exam_submissions 全文落证；**不连共享 dev、不写 dev 库**。造数 3 形状（seed.log / seed-counts.json）：逐区块 COUNT(*) 等于设计值、长字段长度机械核对恰 2048/20480、answers/paper_json 非空行数等于区块行数；应传字节载体 = 机械解析两臂 SELECT 列表后 `SUM(COALESCE(LENGTH(col),0))`（bytes-n{shape}.json + bytes-*.log，确定性非计时）。轮次（rounds-*.json/.log，5 站点 × 3 形状 × 3 臂位 OLD/PROJ/OLDrep × 5 轮 + 2 预热）：臂序逐轮左轮转，逐轮记 ns/退出码/ISO 时间戳；全轮 exit=0、无失败轮（无需 retry）、不挑轮。机械复算 `node evidence/analyze-scalar-reads.cjs <rawDir> scalar-reads-capture-cap1.json` → adjudication.json + verdict-console.txt：**s1 GO、s2 GO**（S1/S2/S3/S4 三形状全过；s1 字节 1018161→1305=780.2× / 1018215→1305=780.24× / 1018260→1305=780.28×；s2 4529200→1800=2516.22× / 22647000→9000=2516.33× / 67941000→27000=2516.33×）；**s3/s4/s5 NO-GO**——S2 字节成立（164.69–164.77× / 535.5–713.67× / 93.09–93.13×）但 S3 逐轮判有一轮超噪声带上界：s3 n=3000 proj 8219414 > noiseUpper 7369921；s4 n200 r1 13678851>9728598、n1000 r3 12602140>8078782、n3000 r4 7530285>7185412；s5 n200 r5 9520613>8913454 ⇒ 按冻结措辞记「不稳定/无净收益」（不取中位数、不挑轮、不下调 5.0 倍数）。容器销毁（container-stop.log）：`docker rm -f scalar-reads-mysql` exit=0；`docker ps -a --filter name=scalar-reads-mysql` 零匹配（stdout=[]），并附全量容器名对照。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 3：条件实施（仅 GO_site）",
+    "task": "对 GO 站点加列投影并补护栏；门禁四计数",
+    "steps": [
+      { "step": "仅 GO 站点按仓库既有写法加 .select(...)；一次只改这一类，禁改 SQL 语义/谓词/排序、索引、schema、缓存、JVM/线程池/连接池/MQ/前端、MonitorService.overview、MakeupScoreService 家族 N+1", "completed": true },
+      { "step": "补测试侧护栏：投影后长字段为 null 断言 + 各站点响应等价断言；不放宽既有断言、不 @Disabled、不加睡眠/重试，用例总数只增不减、Skipped 不增", "completed": true },
+      { "step": "仓库根 mvnw.cmd clean test：记录四计数 + BUILD + 退出码 + revision；偶发红按既有协议原样重跑一次并如实记录两次结果", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "实施（仅 GO 站点 s1/s2，共 2 文件 +5 行；`git diff --stat` = AbsenceService.java 2 ++、ExamTakingService.java 3 +++）：ExamTakingService.myExams 加 `.select(ExamSubmission::getExamId, ExamSubmission::getStatus, ExamSubmission::getDeadlineTime)`、AbsenceService.markAbsence 加 `.select(ExamSubmission::getStudentId)`（写法对齐仓库既有 `.select(...)` 形态；谓词与排序一字未动；s3–s5 未实施、未采用）。禁改清单零触碰：无 schema.sql/索引/缓存/JVM/线程池/连接池/MQ/前端改动，未动 MonitorService.overview，未动 MakeupScoreService 家族 N+1（`git diff --stat` 仅上述 2 文件）。护栏：新增 src/test/java/com/exam/scalar/guard/ScalarProjectionGuardTest.java（Executor.query 4/6 参签名拦截器按 ms id 记账 + 长字段非空机械计数 + 响应等价断言：分组/可进入/剩余秒数区间、缺考集合与二次调用幂等）。**先红**：旧实现下 `mvnw -q test -Dtest=ScalarProjectionGuardTest` 两用例失败于同一判据 `列投影后目标语句返回实体的 answers/paper_json 必须为 null ==> expected: <0> but was: <2>`（myExams）与 `<1>`（markAbsence）⇒ `Tests run: 2, Failures: 2, Errors: 0` / BUILD FAILURE（guard-red2.log；首跑另有 seed 阶段 paper_id 非空取样错误，原样留证于 guard-red.log，修种子后复红）。**后绿**：加投影后同命令 `Tests run: 2, Failures: 0, Errors: 0, Skipped: 0` / BUILD SUCCESS 退出码 0（guard-green.log）。**门禁两次**（同命令、不同 revision，均绿）：① 未提交工作树（HEAD=f6e336c + 本变更 src 改动）`JAVA_HOME=/d/develop1/jdk21 ./mvnw clean test` → `Tests run: 325, Failures: 0, Errors: 0, Skipped: 1` / BUILD SUCCESS / 退出码 0（gate-post-impl.log）；② 实施提交 `9182a5d` 上复跑同命令 → 同四计数 `325/0/0/1` / BUILD SUCCESS / 退出码 0 / 02:16 min（gate-impl-commit.log；启动时 `git status --porcelain` 仅两行未跟踪项、src 树干净，见 gate-impl-commit.meta.txt）。两次均首跑即绿、未触发偶发四类协议。323 → 325 = +2 护栏用例，Skipped 1 不变；测量 IT 以 IT 结尾不进 Surefire、未计入。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 4：收口",
+    "task": "回勾、清单、归档登记、基线合入/未采用、自查与提交",
+    "steps": [
+      { "step": "tasks.json 按真实结果回勾（未做留 false）；evidence 出 sha256 清单并 sha256sum -c rc=0；明确列未验证项与不确定项", "completed": true },
+      { "step": "spec/README.md 归档行写验收边界（一次性本地容器、单机、非生产、不外推）与逐站点裁决；仅 GO 且实施验收成立才把 delta 合入 data-access 基线，否则按未采用草案归档", "completed": true },
+      { "step": "跑 AGENTS.md 四条自查与 wrapper 自查；仅显式暂存本任务文件并核对 git diff --cached --name-only 与 --check；分逻辑提交并一次性回报", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "回勾按真实完成度（本文件）；evidence-sha256.txt 覆盖 evidence/ 全部件（含被仓库 `.gitignore` 忽略的 `*.log` 控制台原件，全部 88 件逐件哈希），工作树内 `sha256sum -c evidence-sha256.txt` → 全 OK、rc=0；控制台关键行转录见同目录 `measurement-rounds.md`（`*.log` 原件不入版本库，与既有归档同例）。基线合入：`spec/specs/data-access/spec.md` 合入 ADDED Requirement「标量读取的列投影」（5 个 Scenario，按 GO 站点范围注明适用范围与未 GO 站点不据此判为违规）+ 2026-09-29 合入注记（逐站点裁决与验收边界）；spec/README.md 当前状态注 + data-access 源变更列 + 归档表新增行（验收边界与未验证项同排）。变更目录 `git mv` 入 `spec/changes/archive/project-scalar-only-submission-reads/`（显式路径暂存，未夹带 docs/backend-optimization-candidates.md——该文件全程保持未跟踪、未提交，`git log -- docs/backend-optimization-candidates.md` 零提交）。自查当次输出（全绿）：AGENTS 四条——① AGENTS.md 禁含端口/口令/用例数/百分比 `grep -nE '1331[67]|330[67]|root12[3]|[T]ests run|[0-9]+%' AGENTS.md` 无输出；② 根入口 `grep -nE '330[67]|1331[67]|root12[3]|root/[r]oot' README.md` 无输出；③ `grep -rn '@Sql' src/test | sed -E 's/^[^:]+:[0-9]+://' | grep -vE '^[[:space:]]*\\*'` 无输出；④ `grep -nE '\\.md:[0-9]' AGENTS.md` 无输出。四条硬约定——`grep -n flyway pom.xml` 零命中；`test ! -e src/main/resources/db` → OK；实体↔schema 表级差集空；`grep -n 'docker/mysql' docker-compose.yml` 仅 master/init 与 slave/init 两处（migrations 目录无自动执行者）。wrapper 自查 `test -x mvnw && test -f mvnw.cmd && test -f .mvn/wrapper/maven-wrapper.properties && test -f .mvn/wrapper/maven-wrapper.jar` → OK。提交：C1 `9182a5d`（实施 + 测量工具 + 护栏，4 文件）、C2（本收口：spec 三件 + 归档移动，提交 SHA 见收口提交）。**未验证项与不确定项**：（a）s3–s5 的时间侧结论只来自「单机 + 空并发 + 逐条语句串行计时」的一次性容器，未做并发或跨机复验；（b）容器具体版本 8.0.46 与生产版本未必一致，结论不外推生产 MySQL/Tomcat；（c）s3–s5 未实施，其 S1 语义等价性只在 H2 测试上下文验证过（实施前为必要条件、未进入实施）；（d）测量形状 n=200/1000/3000 为合成分布（分数并列密集、长字段等长），与真实考试数据分布未必一致。"
+  }
+]

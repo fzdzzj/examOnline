@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_time         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted           TINYINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     CONSTRAINT uk_users_username UNIQUE (username)
 );
 
@@ -25,6 +26,7 @@ CREATE TABLE IF NOT EXISTS roles (
     level      INT         NOT NULL,
     created_time DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted TINYINT     NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     CONSTRAINT uk_roles_code UNIQUE (code)
 );
 
@@ -34,6 +36,7 @@ CREATE TABLE IF NOT EXISTS permissions (
     name       VARCHAR(64) NOT NULL,
     created_time DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted TINYINT     NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     CONSTRAINT uk_permissions_code UNIQUE (code)
 );
 
@@ -41,6 +44,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
     id      BIGINT NOT NULL AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
     CONSTRAINT uk_user_roles UNIQUE (user_id, role_id),
     CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_user_roles_role FOREIGN KEY (role_id) REFERENCES roles (id)
@@ -50,6 +54,7 @@ CREATE TABLE IF NOT EXISTS role_permissions (
     id            BIGINT NOT NULL AUTO_INCREMENT,
     role_id       BIGINT NOT NULL,
     permission_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
     CONSTRAINT uk_role_permissions UNIQUE (role_id, permission_id),
     CONSTRAINT fk_role_permissions_role FOREIGN KEY (role_id) REFERENCES roles (id),
     CONSTRAINT fk_role_permissions_perm FOREIGN KEY (permission_id) REFERENCES permissions (id)
@@ -66,6 +71,7 @@ CREATE TABLE IF NOT EXISTS invite_codes (
     created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted   TINYINT     NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     CONSTRAINT uk_invite_codes_code UNIQUE (code)
 );
 
@@ -88,6 +94,7 @@ CREATE TABLE IF NOT EXISTS questions (
     created_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted     TINYINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     KEY idx_questions_created_by (created_by)         -- 教师个人题库列表
 );
 
@@ -101,6 +108,7 @@ CREATE TABLE IF NOT EXISTS tags (
     created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted   TINYINT     NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     KEY idx_tags_type (type)
 );
 
@@ -109,6 +117,7 @@ CREATE TABLE IF NOT EXISTS question_tags (
     id          BIGINT NOT NULL AUTO_INCREMENT,
     question_id BIGINT NOT NULL,
     tag_id      BIGINT NOT NULL,
+    PRIMARY KEY (id),
     CONSTRAINT uk_question_tags UNIQUE (question_id, tag_id),
     KEY idx_question_tags_tag (tag_id)              -- 按标签筛题目
 );
@@ -126,6 +135,7 @@ CREATE TABLE IF NOT EXISTS papers (
     created_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted     TINYINT       NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
     KEY idx_papers_created_by (created_by)
 );
 
@@ -136,6 +146,7 @@ CREATE TABLE IF NOT EXISTS paper_questions (
     question_id BIGINT       NOT NULL,
     number      INT          NOT NULL,
     score       DECIMAL(5,1) NOT NULL,
+    PRIMARY KEY (id),
     CONSTRAINT uk_paper_question UNIQUE (paper_id, question_id),
     CONSTRAINT uk_paper_number UNIQUE (paper_id, number),
     KEY idx_paper_questions_question (question_id)
@@ -151,6 +162,7 @@ CREATE TABLE IF NOT EXISTS paper_snapshots (
     version        INT          NOT NULL DEFAULT 1, -- 预留版本号：同一试卷不重复生成，当前固定 1
     created_by     BIGINT       NOT NULL,
     created_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     KEY idx_paper_snapshots_paper (paper_id)
 );
 
@@ -168,6 +180,8 @@ CREATE TABLE IF NOT EXISTS exams (
     paper_id           BIGINT       NOT NULL,            -- 绑定试卷（发布时生成考试快照，快照与试卷从此解耦）
     course_id          BIGINT                DEFAULT NULL, -- 课程 ID（课程实体后续阶段提供，先存 ID）
     class_id           BIGINT                DEFAULT NULL, -- 班级 ID（同上）
+    parent_exam_id     BIGINT                DEFAULT NULL, -- 关联主考 ID（§12.5 补考独立记录：非补考为 NULL）
+    makeup_score_rule  VARCHAR(20)           DEFAULT NULL, -- 补考成绩规则（takeHighest/takeLatest/takeAverage，非补考 NULL）
     start_time         DATETIME     NOT NULL,            -- 时间窗起点：定时发布的触发点（服务端时间为准，§1.1）
     end_time           DATETIME     NOT NULL,            -- 时间窗终点：到达即自然结束
     duration_minutes   INT          NOT NULL,            -- 个人答题时长：学生点击"开始考试"后倒计时（§7.9，阶段 5 消费）
@@ -182,6 +196,7 @@ CREATE TABLE IF NOT EXISTS exams (
     created_time       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted         TINYINT      NOT NULL DEFAULT 0,  -- 软删（§7.7：仅未开始可删，历史可追溯）
+    PRIMARY KEY (id),
     KEY idx_exams_created_by (created_by),               -- 教师考试列表
     KEY idx_exams_status (status)                        -- 定时任务扫表：按状态 + 时间窗筛选待推进考试
 );
@@ -196,6 +211,7 @@ CREATE TABLE IF NOT EXISTS exam_snapshots (
     version      INT      NOT NULL DEFAULT 1,  -- 一场考试只生成一次快照，当前固定 1
     created_by   BIGINT   NOT NULL,
     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_exam_snapshots_exam UNIQUE (exam_id)  -- exam_id 唯一：发布是快照生成的唯一时机
 );
 
@@ -227,12 +243,23 @@ CREATE TABLE IF NOT EXISTS exam_submissions (
     grading_status  TINYINT  NOT NULL DEFAULT 0, -- 判分状态：0未判分 1判分成功 2判分失败（失败可重判/手动给分，§9.8）
     grading_error   VARCHAR(512)         DEFAULT NULL, -- 判分失败原因（判分成功时置 NULL）
     partial_graded  TINYINT  NOT NULL DEFAULT 0, -- 1=部分批改：存在未批简答（允许发布，未批按 0 分，§7.5）
+    -- 补发对账索引用：answers 是 LONGTEXT，MySQL 只能建前缀索引、H2 直接不认前缀语法，
+    -- 而"是否未落库"是补发扫描唯一的筛选条件，把它物化成一列才能让两端共用一份 DDL。
+    answers_missing TINYINT  AS (CASE WHEN answers IS NULL THEN 1 ELSE 0 END),
     created_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_exam_student UNIQUE (exam_id, student_id),  -- 三重幂等之一：一人一场至多一条答卷
     KEY idx_submissions_sweep (status, deadline_time),        -- 兜底扫描：按状态筛进行中/已交卷未落库
     KEY idx_submissions_exam_submit (exam_id, submit_time),
-    KEY idx_submissions_grading (exam_id, grading_status)     -- 判分扫描：按考试筛待判/失败答卷
+    KEY idx_submissions_grading (exam_id, grading_status),    -- 判分扫描：按考试筛待判/失败答卷
+    -- 补发对账扫描：只找"已交卷但 answers 仍为 NULL"。健康系统里该集合恒空，
+    -- 没有这条索引就要扫完整个 status=2 区间才敢返回 0 行（10 万答卷实测 411–519ms，每 10 秒一次）。
+    KEY idx_submissions_republish (status, answers_missing),
+    -- 学生考试列表答卷渠道取数：按 student_id 查本人全部答卷。无此索引时 MySQL 走全表扫，
+    -- 真 8.0 容器双形状实测逐轮扫描行数比恒定（万倍量级），单次耗时由百毫秒级降至亚毫秒级；
+    -- 判据冻结、逐轮原件与机械裁决见 spec/changes/archive/attribute-my-exams-list-index/。
+    KEY idx_submissions_student (student_id)
 );
 
 -- =============================================================
@@ -258,6 +285,7 @@ CREATE TABLE IF NOT EXISTS subjective_grades (
     version          INT          NOT NULL DEFAULT 0, -- 乐观锁版本号：并发批改 CAS 护栏
     created_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_subjective_grades UNIQUE (submission_id, question_id),
     KEY idx_subjective_exam_question (exam_id, question_id)   -- 工作台：同题列出全部学生
 );
@@ -271,6 +299,7 @@ CREATE TABLE IF NOT EXISTS score_audit_logs (
     reason       VARCHAR(512)          DEFAULT NULL, -- 撤回原因（撤回必填）
     detail       VARCHAR(512)          DEFAULT NULL, -- 摘要（如发布人数/失败跳过明细）
     created_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     KEY idx_score_audit_exam (exam_id)
 );
 
@@ -282,6 +311,7 @@ CREATE TABLE IF NOT EXISTS exam_submit_dedups (
     submission_id BIGINT   NOT NULL,
     submit_type   TINYINT  NOT NULL DEFAULT 1,
     created_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     CONSTRAINT uk_submit_dedup UNIQUE (exam_id, student_id)  -- 同一场考试同一学生仅记录首次提交
 );
 
@@ -295,6 +325,144 @@ CREATE TABLE IF NOT EXISTS exam_behavior_logs (
     severity     TINYINT     NOT NULL DEFAULT 1, -- 1提示 2警告 3严重
     event_time   DATETIME    NOT NULL,
     created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     KEY idx_behavior_exam_student (exam_id, student_id),
     KEY idx_behavior_exam_time (exam_id, event_time)
+);
+
+-- =============================================================
+-- 班级体系 + 考后闭环：班级 / 缺考 / 补考 / 成绩复核（add-class-and-post-exam-closure, W10）
+-- 与迁移文件对齐（存量库手工执行，新建库由本脚本一次建全）：
+--   classes / user_class            → docker/mysql/migrations/2026-W10-add-class.sql
+--   exam_absence / exam_candidates  → docker/mysql/migrations/2026-W10-add-absence-makeup.sql
+--   score_review                    → docker/mysql/migrations/2026-W10-add-score-review.sql
+-- 注：本脚本在 exams 表上方已补 class_id / parent_exam_id / makeup_score_rule 三列
+-- 注：classes 是应考名单推导的地基（ClassService.listStudentIds），
+--     exam_absence 的名单口径依赖 user_class 的当前归属，故本节置于最前
+-- =============================================================
+
+-- 班级表：归属教师（teacher_id 为 owner 校验依据，可能不同于创建人 created_by，
+-- 如管理员代建时两者不同）；course_id 预留课程实体（后续阶段提供，先存 ID）。
+-- 软删除（is_deleted），与题目/考试同模式：历史考试引用不受影响。
+CREATE TABLE IF NOT EXISTS classes (
+    id           BIGINT       NOT NULL AUTO_INCREMENT,
+    name         VARCHAR(64)  NOT NULL,
+    course_id    BIGINT                DEFAULT NULL, -- 课程 ID（课程实体后续阶段提供，先存 ID）
+    teacher_id   BIGINT       NOT NULL,              -- 归属教师 ID（owner 校验依据）
+    created_by   BIGINT       NOT NULL,              -- 创建人用户 ID
+    created_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted   TINYINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    KEY idx_classes_teacher (teacher_id)             -- 教师班级列表
+);
+
+-- 学生-班级关联表：一人一班一条关联（uk_user_class 唯一索引兜底幂等）；
+-- 转班 = 更新本表 class_id（成绩随人 §12.6：答卷已绑 student_id，成绩不依赖班级，无需迁移成绩）；
+-- idx_class_id 支撑"查某班当前全部学生"→ 应考名单推导（AbsenceService 消费）
+CREATE TABLE IF NOT EXISTS user_class (
+    id          BIGINT   NOT NULL AUTO_INCREMENT,
+    user_id     BIGINT   NOT NULL,
+    class_id    BIGINT   NOT NULL,
+    joined_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 入班时间（转班时刷新为转班时间）
+    PRIMARY KEY (id),
+    CONSTRAINT uk_user_class UNIQUE (user_id, class_id),
+    KEY idx_class_id (class_id)
+);
+
+-- 缺考表：考试结束时 应考名单 − 有答卷者 = 缺考，唯一索引 + INSERT IGNORE 幂等
+CREATE TABLE IF NOT EXISTS exam_absence (
+    id           BIGINT   NOT NULL AUTO_INCREMENT,
+    exam_id      BIGINT   NOT NULL,
+    student_id   BIGINT   NOT NULL,
+    status       TINYINT  NOT NULL DEFAULT 0,    -- 0=已标记缺考（预留扩展）
+    marked_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    -- 一处一场一条缺考（幂等）；与迁移文件同名，避免与 exam_submissions 的 uk_exam_student 在 H2 全局约束名碰撞
+    CONSTRAINT uk_absence_exam_student UNIQUE (exam_id, student_id),
+    KEY idx_exam (exam_id)
+);
+
+-- 补考名单表：限制仅名单内学生可进入补考，独立于答卷（进入前准入闸）
+CREATE TABLE IF NOT EXISTS exam_candidates (
+    id           BIGINT   NOT NULL AUTO_INCREMENT,
+    exam_id      BIGINT   NOT NULL,
+    student_id   BIGINT   NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_candidate_exam_student UNIQUE (exam_id, student_id),
+    KEY idx_candidates_exam (exam_id)
+);
+
+-- 成绩复核表（spec score-review §5.4/§10.7；与迁移文件 docker/mysql/migrations/2026-W10-add-score-review.sql 对齐）：
+-- status 0待处理 1处理中 2已同意 3已驳回（0/1 视为"进行中"，隐藏成绩期间命中）；
+-- 唯一索引 uk_review_exam_student 一场一学生限 1 次（幂等兜底，索引名规避与 exam_submissions 的
+-- uk_exam_student 在 H2 全局约束名碰撞）；idx_review_exam_status 支撑教师按考试/状态查复核清单。
+-- created_time 必须保留：补列而不是删实体字段。
+-- MybatisPlusConfig 全局 MetaObjectHandler.insertFill 自动填充 createdTime，
+-- 全库 19 个实体 / 18 张表都依此约定，score_review 不能成为唯一例外。
+-- 存量库另需执行 docker/mysql/migrations/2026-W15-add-score-review-created-time.sql
+-- （CREATE TABLE IF NOT EXISTS 不会为已存在的表补列）。
+CREATE TABLE IF NOT EXISTS score_review (
+    id          BIGINT       NOT NULL AUTO_INCREMENT,
+    exam_id     BIGINT       NOT NULL,
+    student_id  BIGINT       NOT NULL,
+    status      TINYINT      NOT NULL DEFAULT 0,
+    reason      VARCHAR(512)          DEFAULT NULL,
+    result      VARCHAR(512)          DEFAULT NULL,
+    apply_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    handle_time DATETIME              DEFAULT NULL,
+    handler_id  BIGINT                DEFAULT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_review_exam_student UNIQUE (exam_id, student_id),
+    KEY idx_review_exam_status (exam_id, status)
+);
+
+
+-- =============================================================
+-- 死信消息留档表（add-dlq-observability-and-replay, W15）：
+-- 重投前先落档，status=REPLAYED|PARKED；idx_dlq_status_time 支撑按状态/时间排查。
+-- 存量库手工执行 docker/mysql/migrations/2026-W15-add-dlq-messages.sql。
+-- =============================================================
+CREATE TABLE IF NOT EXISTS exam_dlq_messages (
+    id            BIGINT       NOT NULL AUTO_INCREMENT,
+    queue         VARCHAR(128) NOT NULL,
+    payload       LONGTEXT     NOT NULL,
+    headers_json  TEXT                  DEFAULT NULL,
+    retry_count   INT          NOT NULL DEFAULT 0,
+    replay_count  INT          NOT NULL DEFAULT 0,
+    status        VARCHAR(16)  NOT NULL,
+    error_message VARCHAR(512)          DEFAULT NULL,
+    created_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_dlq_status_time (status, created_time)
+);
+
+
+-- =============================================================
+-- 安全审计日志表（harden-security-config）：
+-- 登录成功/失败、账户锁定、权限变更等安全事件落库，满足日志留存与事后追溯。
+-- 注：本项目无 Flyway，建表统一走本脚本（dev 与测试共用）；
+--     存量库需手工执行 docker/mysql/migrations/2026-W16-add-audit-log.sql。
+-- trace_id 取 OTel traceId（无 span 时回落 requestId），便于从日志直接跳 Jaeger。
+-- =============================================================
+CREATE TABLE IF NOT EXISTS audit_log (
+    id           BIGINT      NOT NULL AUTO_INCREMENT,
+    trace_id     VARCHAR(64)          DEFAULT NULL,
+    user_id      BIGINT               DEFAULT NULL,          -- 系统事件为 NULL
+    username     VARCHAR(64) NOT NULL,
+    action       VARCHAR(32) NOT NULL,                       -- LOGIN / LOGIN_LOCKED / PERMISSION_CHANGE ...
+    ip_address   VARCHAR(45)          DEFAULT NULL,          -- 兼容 IPv6
+    status       VARCHAR(16) NOT NULL,                       -- SUCCESS / FAILURE / WARNING
+    details      VARCHAR(512)         DEFAULT NULL,
+    created_time DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_audit_user_time (username, created_time),
+    KEY idx_audit_action_time (action, created_time),
+    KEY idx_audit_trace (trace_id),
+    -- 保留清理按年龄删（WHERE created_time < ?）。缺这条索引时，"没有东西可删"这一稳态
+    -- 也要把整张表读穿才敢返回 0：10 万行实测 34ms 且随行数线性增长；有索引 0.16-0.7ms 且与表大小无关。
+    KEY idx_audit_time (created_time)
 );

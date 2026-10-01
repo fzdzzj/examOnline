@@ -4,6 +4,7 @@ import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,6 +32,12 @@ class ExamStateMachineServiceTest {
 
     @Mock
     private ExamMapper examMapper;
+
+    @Mock
+    private AbsenceService absenceService;
+
+    @Mock
+    private BusinessMetrics metrics;
 
     @InjectMocks
     private ExamStateMachineService service;
@@ -103,6 +110,8 @@ class ExamStateMachineServiceTest {
                 .thenReturn(1);
 
         assertEquals(2, service.autoAdvance());
+        // 进行中→已结束 迁移成功即触发缺考标记（缺考锚定"时间窗彻底关闭"这一刻，§8.10）
+        verify(absenceService).markAbsence(20L);
     }
 
     @Test

@@ -1,0 +1,25 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：事务注解统一（W10）",
+    "task": "统一 26 处裸 @Transactional 为显式 rollbackFor",
+    "steps": [
+      { "step": "用 grep 精确清单逐类改：ExamStateMachineService(2)、ExamSnapshotService(1)、ExamService(5)、PaperSnapshotService(1)、PaperService(8)、TagService(2)、QuestionService(3)、ScoreService(3)、SubjectiveGradingService(1)", "completed": true },
+      { "step": "每处改为 @Transactional(rollbackFor = Exception.class)，不引入其他属性（传播/隔离/只读保持默认）", "completed": true },
+      { "step": "在涉及类的类级 Javadoc 补一句「事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚」", "completed": true },
+      { "step": "改后 grep 复检：'^\\s*@Transactional\\s*$' 应为 0 处残留", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：文档与验收（W10）",
+    "task": "补齐规范说明 + 全量回归",
+    "steps": [
+      { "step": "docs/需求决策记录.md 新增「事务回滚策略」注记：所有 @Transactional 显式 rollbackFor=Exception.class，受检异常须转 BusinessException，禁止裸 @Transactional", "completed": true },
+      { "step": "跑 mvn clean test 全量回归，确认无行为变化（测试只增不减）", "completed": true },
+      { "step": "提交：feat(transaction) + 中文描述", "completed": true }
+    ],
+    "passes": true
+  }
+]

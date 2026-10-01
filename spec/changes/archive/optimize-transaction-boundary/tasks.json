@@ -1,0 +1,110 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：事务边界重构",
+    "task": "拆分 ScoreService.publish() 的事务边界",
+    "steps": [
+      {
+        "step": "将 @Transactional 从 publish() 移至 publishOne() 方法",
+        "completed": false
+      },
+      {
+        "step": "保留 publish() 的 catch 块，确保异常捕获逻辑不变",
+        "completed": false
+      },
+      {
+        "step": "添加日志记录每个考试的发布结果（成功/失败原因）",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：监控指标接入",
+    "task": "添加事务相关 Micrometer 计数器",
+    "steps": [
+      {
+        "step": "在 MetricsConfig 中定义 exam.publish.success.count 和 exam.publish.fail.count",
+        "completed": false
+      },
+      {
+        "step": "在 publishOne() 方法中使用 MeterRegistry 统计成功/失败",
+        "completed": false
+      },
+      {
+        "step": "验证 Prometheus 端点可获取新指标",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：全局配置优化",
+    "task": "添加事务超时默认配置",
+    "steps": [
+      {
+        "step": "在 application.yml 中添加 spring.transaction.default-timeout=30s",
+        "completed": false
+      },
+      {
+        "step": "检查所有 @Transactional 注解，补充 timeout 参数（如未设置）",
+        "completed": false
+      },
+      {
+        "step": "更新 docs/需求决策记录.md 中的事务策略说明",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：测试与验证",
+    "task": "回归测试与性能验证",
+    "steps": [
+      {
+        "step": "编写批量发布测试用例（10 个考试，中间插入失败场景）",
+        "completed": false
+      },
+      {
+        "step": "验证部分失败不影响其他考试提交",
+        "completed": false
+      },
+      {
+        "step": "压力测试：100 并发调用 publish()，观察事务等待时间",
+        "completed": false
+      },
+      {
+        "step": "运行 mvn clean test 全量回归",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：文档与规范",
+    "task": "更新规范文档与决策记录",
+    "steps": [
+      {
+        "step": "修改 spec/specs/data-consistency/spec.md，新增事务粒度要求",
+        "completed": false
+      },
+      {
+        "step": "新建 spec/specs/observability/spec.md 或扩展现有文件",
+        "completed": false
+      },
+      {
+        "step": "在 docs/需求决策记录.md 添加事务超时与原子性决策注记",
+        "completed": false
+      },
+      {
+        "step": "提交代码：feat(transaction) + 中文描述",
+        "completed": false
+      }
+    ],
+    "passes": true
+  }
+]

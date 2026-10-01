@@ -1,5 +1,11 @@
 package com.exam.support;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.exam.auth.service.JwtUtil;
+import com.exam.clazz.entity.UserClass;
+import com.exam.clazz.mapper.UserClassMapper;
+import com.exam.exam.entity.Exam;
+import com.exam.exam.mapper.ExamMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -15,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -33,7 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 public abstract class IntegrationTestBase {
 
-    protected static final String PASSWORD = "pass1234";
+    /** 须满足 AuthService 的强密码规则（大小写+数字、≥8 位），故不能退化成小写。 */
+    protected static final String PASSWORD = "Pass1234";
 
     @Autowired
     protected MockMvc mockMvc;
@@ -44,8 +52,21 @@ public abstract class IntegrationTestBase {
     @Autowired
     private StringRedisTemplate redis;
 
-    /** 账号唯一序号（跨用例递增，避免 H2 中账号冲突） */
-    private final AtomicLong seq = new AtomicLong(System.currentTimeMillis() % 100_000);
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private ExamMapper examMapper;
+
+    @Autowired
+    private UserClassMapper userClassMapper;
+
+    /**
+     * 账号/造数取号器：JVM 级单调递增，所有测试实例共享同一计数，不随实例重新播种。
+     * 不能改回实例级毫秒种子——紧凑构造的实例会同毫秒撞桶，跨类注册出同名账号。
+     * H2 是进程内存库、每轮随 JVM 新建，同轮内唯一即可，故不取模、不带时间种子。
+     */
+    private static final AtomicLong seq = new AtomicLong();
 
     @BeforeEach
     void flushRedis() {
@@ -132,6 +153,53 @@ public abstract class IntegrationTestBase {
             tagIds.forEach(arr::add);
         }
         return objectMapper.writeValueAsString(body);
+    }
+
+    /**
+     * 造数：建一个班级（可同时把给定学生加入 user_class），返回班级 ID。
+     * 进入考试需班级归属（F-B/F-C 收口）：普通考试的既有用例借助本方法获得合法班级。
+     */
+    protected long createClassForExam(String teacherToken, String... studentTokens) throws Exception {
+        ObjectNode body = objectMapper.createObjectNode();
+        body.put("name", unique("班级"));
+        long classId = perform(jsonPost("/api/classes", teacherToken,
+                objectMapper.writeValueAsString(body)), 200).get("data").get("id").asLong();
+        for (String studentToken : studentTokens) {
+            joinClass(teacherToken, classId, studentToken);
+        }
+        return classId;
+    }
+
+    /** 把学生加入指定班级（user_class）。 */
+    protected void joinClass(String teacherToken, long classId, String studentToken) throws Exception {
+        ObjectNode join = objectMapper.createObjectNode();
+        join.put("userId", jwtUtil.parseAccessToken(studentToken).getId());
+        perform(jsonPost("/api/classes/" + classId + "/students", teacherToken,
+                objectMapper.writeValueAsString(join)), 200);
+    }
+
+    /**
+     * 进入考试的班级归属夹具（既有用例适配）：考试绑定了班级且为普通考试时，
+     * 若学生尚未入班则补一条 user_class，避免历史用例因新增的班级准入校验而失败。
+     * 补考（parent_exam_id != null）走名单限制，不做班级补入。
+     */
+    protected void ensureExamClassMembership(String studentToken, long examId) {
+        Exam exam = examMapper.selectById(examId);
+        if (exam == null || exam.getParentExamId() != null || exam.getClassId() == null) {
+            return;
+        }
+        Long studentId = jwtUtil.parseAccessToken(studentToken).getId();
+        Long existing = userClassMapper.selectCount(Wrappers.<UserClass>lambdaQuery()
+                .eq(UserClass::getUserId, studentId)
+                .eq(UserClass::getClassId, exam.getClassId()));
+        if (existing != null && existing > 0) {
+            return;
+        }
+        UserClass membership = new UserClass();
+        membership.setUserId(studentId);
+        membership.setClassId(exam.getClassId());
+        membership.setJoinedTime(LocalDateTime.now());
+        userClassMapper.insert(membership);
     }
 
     /** 创建题目（默认分 5、难度 1），返回题目 ID。 */
@@ -222,7 +290,8 @@ public abstract class IntegrationTestBase {
         return body.isBlank() ? null : objectMapper.readTree(body);
     }
 
-    private String loginToken(String username, String password) throws Exception {
+    /** 登录取 Access Token（子类用它登录预置 admin，或以任意已注册账号取身份）。 */
+    protected String loginToken(String username, String password) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("username", username);
         body.put("password", password);

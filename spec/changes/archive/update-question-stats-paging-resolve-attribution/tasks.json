@@ -1,0 +1,46 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：基线与测量契约",
+    "task": "核对历史 NO-GO 的证据边界，并设计同页独立分账",
+    "steps": [
+      {"step": "核对 HEAD、工作树、旧归档 JSON/SHA-256、ScoreExportService 与 QuestionScoreResolver 当前实现；保留既有未跟踪台账", "completed": true},
+      {"step": "固定旧负载形状、正常/坏卷分桶、同页查询与解析计时边界、SQL/行数/分配口径和 oracle；记录预热与测量开销判据", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "开工核对：HEAD=01be4292f7849b91dbfb5efd9502468de4f23891（与预期 01be4292 一致；分支 feature/update-monitor-overview-submission-projection）；git status 仅三项——已修改 src/test/java/com/exam/score/measure/QuestionStatsExportAttributionMeasureIT.java、未跟踪 docs/backend-optimization-candidates.md、未跟踪 spec/changes/update-question-stats-paging-resolve-attribution/；前者台账全程未修改/未暂存/未提交，变更三件套（proposal.md/tasks.json/specs/performance/spec-delta.md）属本任务。已完整阅读本报变更三件套与上一份归档 spec/changes/archive/update-question-stats-export-memory（proposal.md 状态 NO-GO 已归档、revision=8085c57 为被测旧业务基线、工具提交 91bf892；tasks.json 阶段2 逐轮绝对 MB；evidence/question-stats-attribution-old-run{1,2,3}.json 与 evidence-sha256.txt）。现场核对（非台账）当前实现：ScoreExportService.exportQuestionStats(:174-237) 走 forEachSubmissionPage（PAGE_SIZE=500、WHERE id>lastId ORDER BY id LIMIT 500）取页后调 resolveQuietly，holders=sums/counts/pairs，落 SXSSF 流式写；resolveQuietly(:432-448) 先 scoreResolver.resolveBatch(page,paper)，整批失败则逐份 scoreResolver.resolve 并跳过坏卷；QuestionScoreResolver.resolve 单份=parseAnswers + subjectiveGradeMapper.selectList(eq submissionId) + 逐题 resolveOne；resolveBatch=每页 1 次 subjective_grades IN(submissionIds) 查询 + parseAnswers 循环 + 逐题 resolveOne 循环；resolveOne 简答取主观行（row!=null&&score!=null 为已批）否则 strategyRegistry.dispatch(question).grade。固定契约：COMBOS 沿用 s1000-q20/s1000-q150/s3000-q60/s100-q20-bad2/s3-q20-bad1；ROUNDS=3、PAGE_SIZE=500、SXSSF_WINDOW=100、objectiveRatio=0.8、objectiveScore=2.0、shortAnswerScore=5.0；同一页内分页取数（生产 selectList）与解析（生产等价 resolveQuietly 探针）分别计时/计分配/计 SQL 次数与返回行数；坏卷按整批是否降级分 normal/fallback 两桶，异常页不并入正常页归因；oracle=既有 XLSX 单元格 DataFormatter 逐格 + 逐 zip 条目内容（忽略 docProps/core.xml）+ 生产导出与测量副本逐页 result.equals；预热 2 轮与 Spring 上下文启动、造数在测量窗口之外。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：隔离测试侧测量工具",
+    "task": "只在测试侧拆分 pagingResolve，保持生产输出等价",
+    "steps": [
+      {"step": "扩展 IT 的逐页分页 selectList、resolveQuietly 与汇总分账；仅在解析占主导时进一步区分主观分查询和解析/评分，记录 SQL 次数及行数、坏卷降级额外 SQL", "completed": true},
+      {"step": "同一数据分别核对生产导出与测量副本的题序、单元格/ZIP 内容及正常和坏卷语义；探针关闭时不污染其余测试", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "仅改测试侧工具 src/test/java/com/exam/score/measure/QuestionStatsExportAttributionMeasureIT.java（+361/-30，提交 revision=94ca842c20a771246a3cbf7c90c13906e01c6a5d；src/main 零触碰）。改动：① runPhased 的逐页循环把原合并相位 pagingResolve 拆为 pagingSelect（跑生产 gradingSubmissionMapper.selectList(...LIMIT PAGE_SIZE)，记 millis/allocatedMB/SQL 增量/返回行数）与 resolveTotal（跑生产等价 resolveQuietlyProbed，返回 result+fallback 标记，记 millis/allocatedMB/SQL 增量），并保留 aggregatePairs；新增次键 sql.pagingSelect/sql.resolve/pagingPages/pagingRowsOut/fallbackPages/resolveFallbackExtraSql/buckets/nestedResolve/probe 与更新后的 METRIC_DEFS（note 明写不对跨轮/跨窗口量相减相除、墙钟残差不得冒称纯 CPU）。② 解析段稳定主导后的嵌套分账用 test-only 受控副本 resolveSplitReplica→resolveBatchReplica/resolveOneReplica，逐行镜像 QuestionScoreResolver.resolveBatch/resolveOne，在同一调用内嵌套计时主观分读取（subjectiveGradeMapper.selectList IN + 分组）/答案解析（parseAnswers 循环 + 主观映射构建）/评分（逐题 resolveOne 循环），并记 unaccountedMillis/AllocMB（框架/映射/计时插桩残差，不作纯 CPU）；额外一遍副本的探针成本另记 probe.replicaResolveMillis，与未归属段分列。③ 等价护栏：受控副本与生产等价 resolveQuietlyProbed 逐页 result.equals，unequalPages>0 即抛错判本轮证据无效；坏卷分桶护栏 badAnswers>0 必 fallbackPages>0、badAnswers==0 必 fallbackPages==0，否则抛错。④ 坏卷降级额外 SQL 单列（resolveFallbackExtraSql=fallback 桶 resolve SQL 次数−fallback 页数），与既有归档口径对照。等价与语义核对（dry run + 3 次正式运行共 4×每个 combo；dry run 无归档 JSON，下列计数只含 3 次正式运行的 45 样本）：内容语义侧 cellsEqualProduction=true、zipContentEqual=true（排除 docProps/core.xml 后逐条目）、probe.unequalPages=0 全通过；原始长度侧 outputBytesEqual 只比较两数组长度，同一 45 样本中 39 true / 6 false（6 次长度差恰 1 字节，成因未定），内容等价不以原始长度相等为前提；坏卷形状 s100-q20-bad2 fallbackPages=1、resolveFallbackExtraSql=98（与上一份归档一致），s3-q20-bad1 fallbackPages=1、resolveFallbackExtraSql=2；其余形状 fallbackPages=0。探针与其余测试隔离：类名以 IT 结尾，不进 Surefire 全量门禁（仅显式 -Dtest 运行），仓库门禁仍为 314/0/0/1（见阶段 4）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：多轮归因与裁决",
+    "task": "在隔离负载上生成原始证据并确定下一候选或未定",
+    "steps": [
+      {"step": "至少三轮运行，逐轮记录命令、revision、退出码、测试四计数、预热、JDK/堆、相位耗时与分配、SQL 次数/行数、oracle、异常分桶；保存原始 JSON 与 sha256", "completed": true},
+      {"step": "只对同次同窗口做份额比较，核对探针开销和轮间噪声；裁决下一独立提案的单一候选或归因未定，不实施 src/main 优化", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "三次独立 JVM 调用（revision=94ca842；隔离口径 @SpringBootTest + @ActiveProfiles(test) → H2 mem:exam MODE=MySQL 进程内直调 Service；不启 Docker、不写共享 dev）。命令（仓库根，逐轮仅 label 不同；-D 参数须带引号，否则 PowerShell 会拆坏 -Dmeasure.rev）：.\\mvnw.cmd -o test \"-Dtest=QuestionStatsExportAttributionMeasureIT\" \"-DfailIfNoTests=false\" \"-Dmeasure.rev=94ca842\" \"-Dmeasure.label=attr-run{1,2,3}\" \"-Dmeasure.out=target/measure\"。逐轮：attr-run1 退出码 0、Tests run:1/Failures:0/Errors:0/Skipped:0、BUILD SUCCESS、80.70s；attr-run2 同四计数、BUILD SUCCESS、79.21s；attr-run3 同四计数、BUILD SUCCESS、78.94s。环境：jdk=21.0.9 (Oracle)、vm=HotSpot 21.0.9+7-LTS-338、os=Windows 11 10.0 amd64、processors=20、maxHeapMB=3952、DB=H2 memory；每轮内部 ROUNDS=3、预热 2 轮不计入。原始 JSON 存归档 evidence/question-stats-attribution-attr-run{1,2,3}.json，sha256 见 evidence/evidence-sha256.txt（复算 3/3 与清单一致）；控制台原件未随归档保留（在库文件只有 3 份 JSON + sha256 清单 + measurement-rounds.md），四计数与退出码以同目录 measurement-rounds.md 的转录表格为准。**裁决一（测量有效）**：内容语义校验全通过——probe.unequalPages=0（45/45 逐页 result.equals）、cellsEqualProduction=true（逐格文本）、zipContentEqual=true（排除 docProps/core.xml 逐条目）、oracle 15/15（每轮 5 combo 独立重算对照）；原始长度校验 outputBytesEqual 只比较两数组长度、不能当内容等价，45 样本中 39 true / 6 false（run1 14/1、run2 11/4、run3 14/1；6 次长度差恰 1 字节，4 次 +1、2 次 −1，成因未定）；坏卷分桶正确（s100-q20-bad2 与 s3-q20-bad1 各 fallbackPages=1，其余 0；额外 SQL 98/2 与既有归档一致）；副本内部未归属段（框架/映射/计时插桩残差）占副本自身 resolve 总耗时约 0.28%–2.24%（min 0.2839%、max 2.2402%）。**裁决二（存在稳定主导因素）**：仅同一次调用内做份额比较。分页 vs 解析（resolveShare=pagingSelect/(pagingSelect+resolveTotal)）：s1000-q20 paging 0.388/0.431/0.490、resolve 0.510/0.569/0.612；s1000-q150 paging 0.135/0.167/0.203、resolve 0.797/0.833/0.865；s3000-q60 paging 0.262/0.287/0.324、resolve 0.676/0.713/0.738；s100-q20-bad2 paging 0.027/0.050/0.079、resolve 0.921/0.950/0.973；s3-q20-bad1 paging 0.318/0.341/0.442、resolve 0.558/0.659/0.682 —— 全局 min 解析份额 0.510 > 全局 max 分页份额 0.490，解析段稳定主导分页取数（min/med/max 为 9 样本分布），故进入嵌套分账。嵌套（normal 桶；两个坏卷形状整批降级、normal 桶为空故无嵌套值）：27/27 个 normal 样本中 answerParse 复合段（parseAnswers 循环 + 主观分映射构建，不等同于纯解析 CPU）为最大段，份额 med s1000-q20 0.408 / s1000-q150 0.578 / s3000-q60 0.541，全局 min 0.381、全局 max 0.656；主观分读取 med 0.317/0.103/0.192（全局 0.073–0.370）、评分 med 0.248/0.307/0.253（全局 0.200–0.359）。探针成本=受控副本额外一遍 resolve，计为 probe.replicaResolveMillis（逐形状 min–max：s1000-q20 7.442–24.400ms、s1000-q150 42.069–56.788ms、s3000-q60 60.890–78.740ms、s100-q20-bad2 11.342–34.112ms、s3-q20-bad1 0.596–1.251ms），它是额外一次的整遍 resolve、不是未归属段，不并入生产 phases.resolveTotal，且与生产 resolveTotal 属不同调用、不能跨调用作精确占比；未归属段（框架/映射/计时插桩残差，占副本自身 resolve 总耗时约 0.28%–2.24%）不作纯 CPU、不作生产 DB 耗时。**结论**：隔离 H2 负载下最稳定最大段 = resolveQuietly 内的 answerParse 复合段（parseAnswers 循环 + 主观分映射构建），仅作下一份独立提案候选；本变更不实施任何 src/main/Mapper SQL/schema/JVM/线程池/导出行为改动，也不外推真实 MySQL/Tomcat 或生产 P99。（2026-09-27 证据返修：按归档 JSON 逐份复算校正本字段的 outputBytesEqual、未归属段与探针成本口径，并注明控制台原件未入库；原始 JSON、evidence-sha256.txt、测量工具均未改动。）"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：门禁与规范收口",
+    "task": "以已提交测量工具态执行唯一门禁并如实归档",
+    "steps": [
+      {"step": "先将 target 下的证据移出，再在仓库根执行 mvnw.cmd clean test；记录完整输出、退出码、测试四计数和 revision，运行 AGENTS.md 自查", "completed": true},
+      {"step": "核对归档 JSON 的 SHA-256，按真实结论合入或保留未采用 spec-delta、更新 spec/README.md、回勾证据、归档目录；仅显式暂存本变更文件", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "step1：clean 前先把 target/measure 下 6 个原始产物（3 JSON + 3 控制台）复制到 spec/changes/update-question-stats-paging-resolve-attribution/evidence/ 并逐一核对 SHA-256 与 target 原件一致（全部 match=True；最终归档仅保留 3 份 JSON 与 evidence-sha256.txt、measurement-rounds.md，控制台原件未入库，见阶段 3 注记）。仓库根执行 .\\mvnw.cmd clean test，退出码 0、Tests run: 314, Failures: 0, Errors: 0, Skipped: 1、BUILD SUCCESS（Skipped 1 在 com.exam.support.OpenApiContractTest，属既有基线；测量 IT 以 IT 结尾未计入）；revision=94ca842（已提交的测量工具态）。AGENTS.md 自查（同 revision）：① flyway 在 pom.xml 命中 0；② src/main/resources/db 不存在；③ @Sql 在 src/test 过滤 javadoc 续行后为空（仅 DataRetentionIntegrationTest 类注释自述）；④ 实体 @TableName 26 与 schema.sql 26 张 CREATE TABLE 表级一一对应、Compare-Object 为空；AGENTS.md/README.md 易变事实自查（端口/口令/用例数/百分比）无命中。step2：按真实结论（归因方法有效且解析段稳定主导）合入——performance 基线 spec/specs/performance/spec.md 追加 ADDED Requirement「题目统计导出优化先拆分分页与解析」（两 Scenario）+ 合入注记，并在文件顶部「来源」行追加本变更；spec/README.md 归档表新增本变更一行、前表 performance 能力域「来源变更」行追加本变更。spec-delta.md 随目录归档。本变更目录（含 evidence/）整体移入 spec/changes/archive/update-question-stats-paging-resolve-attribution/。仅显式暂存本变更路径（src/test 测量工具 + spec 三件套 + 基线两文件），核对 git diff --cached --name-only 与 --check；未跟踪台账 docs/backend-optimization-candidates.md 全程未修改/未暂存/未提交；未 push、未建 PR、未碰 isolate-submit-load-generator。"
+  }
+]

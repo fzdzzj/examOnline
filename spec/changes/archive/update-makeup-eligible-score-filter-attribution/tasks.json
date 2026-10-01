@@ -1,0 +1,60 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：行为基线与隔离负载",
+    "task": "核实当前实现并使测量语义可对账",
+    "steps": [
+      {"step": "开工核对 HEAD/status/AGENTS.md、MakeupService/Controller/schema/现有测试和规范；保留未跟踪候选台账与其他变更目录，记录真实运行时频度/人数是否有获准来源；没有即记未知，不连共享 dev", "completed": true},
+      {"step": "在正式 schema.sql 初始化的隔离 H2/test profile 构造固定人数×低分比例×answers 大小的可复现样本；建立旧行为 oracle：passLine null/负值/边界/相等/不同 scale、totalScore null、缺考并集及同 ID 覆盖、软删/缺失姓名、空名单、403/404/ADMIN；不假设固定结果顺序", "completed": true},
+      {"step": "编写 test-only 工具并预登记 SQL/请求/资源指标、计时窗口、预热、重复次数、有效性护栏与 GO/NO-GO 判据；工具不进入常规 Surefire 计数，测量数据与日志先移出 target 避免 clean 删除", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "开工核对：HEAD=31a5ff8（=提案基线；分支 feature/update-monitor-overview-submission-projection）；git status 仅三项未跟踪（docs/backend-optimization-candidates.md、spec/changes/update-makeup-eligible-score-filter-attribution/、src/test/java/com/exam/exam/measure/），未跟踪候选台账全程未改、未暂存、未提交，isolate-submit-load-generator 未触碰；src/main 零改动（git diff --stat 31a5ff8 f88655a 仅 1 文件 +1223 行，全在 src/test）。现场核对（非台账）：MakeupService.listEligibleStudents 在 passLine!=null 时以 exam_id + total_score IS NOT NULL 取回全列（含 answers）后在 Java 用 compareTo(...)<0 过滤，缺考先入 LinkedHashMap 再由低分覆盖同 ID 原因，空候选短路不读 users，姓名走 selectBatchIds（User 有 @TableLogic）；GradingSubmission 的 @TableName 实为 exam_submissions；schema.sql 的 exam_submissions 上 total_score 无索引（提案未把无索引写成已被覆盖）；user_roles/role_permissions 是仅有的带 FK 的表，合成夹具可自由插入。运行时频度：本端点真实请求频度/真实考试人数/answers 分布无获准来源（未读共享 dev、未读未授权运行时日志、未采信前端调用点与 dev 演示记录），已在每份运行 JSON 的 runtimeFrequencyUnknown 字段声明为未知。oracle：工具内 12 条语义用例（passLine=null/负值/60、60.00、60.000 三 scale/严格小于边界/总分 null 排除/缺考∪低分/同 ID 低分覆盖缺考/缺失姓名与软删姓名/两个空候选形状且姓名查询次数=0/403 非归属/404 不存在/404 已软删/ADMIN 放行）+ 6 个 combo 夹具 oracle（规模与原因计数由夹具参数独立推算后与生产结果比对）在三次运行中全绿；等价判据为 (studentId|reason|name) 排序集合相等（现行查询无 ORDER BY，不制造排序契约）。夹具只使用仓库正式 schema.sql 建表（无 @Sql 自建表），隔离 H2（mem:exam，test profile）+ 进程内直调 Service，不写共享 dev、不启 Docker、不碰数据卷。工具与预登记：src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java（类名以 IT 结尾，Surefire 默认不含，只有显式 -Dtest 才运行；已提交 f88655a）；判据在正式测量前冻结为 evidence/PREREGISTRATION.md（sha256 801996e3…91fa6，写定后未改）；原始 JSON/日志在 mvnw clean 前先写入本变更 evidence/（target 之外），clean 后复算 sha256 一致。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：旧实现归因与裁决",
+    "task": "隔离低分过滤与长字段投影两个因素，先决定是否允许实施",
+    "steps": [
+      {"step": "旧代码至少三次独立运行、每次预热并按固定形状逐轮记录旧路径请求级延迟/吞吐/分配、答卷与其他 SQL 耗时/行数、Java 过滤、字段估计字节；记录原始命令、revision、输出、退出码、运行环境、波动范围与 oracle", "completed": true},
+      {"step": "在相同数据与测量口径下用 test-only 受控变体分别测仅 total_score < passLine 下推、仅窄列投影；与旧结果按集合/原因/姓名比较，单列探针开销，不混用两个变体或把 H2 字段估计称为网络传输；有语义反例则判该臂无效", "completed": true},
+      {"step": "按预登记判据裁决：仅当低分以外行取回及 Java 过滤是最大可控因素、单独下推的请求级改善超过轮间/探针波动且形状相关，才 GO；否则 NO-GO，不实施或转向投影；运行时使用频度未知与 H2 边界须明示，不编造生产结论", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "三次独立 JVM 调用（label=run1/run2/run3，revision 字段均=31a5ff8；H2 进程内、test profile、不启 Docker、不写共享 dev），每次 6 combo×4 轮=24 轮，每轮=2×生产入口请求级批量（前后夹逼）+3×受控臂+8×8 并发臂+3×分相位探针；原始命令为仓库根 `mvnw.cmd -o test -Dtest=MakeupEligibleAttributionMeasureIT -Dmeasure.rev=31a5ff8 -Dmeasure.label=runN -Dmeasure.out=spec/changes/update-makeup-eligible-score-filter-attribution/evidence`，退出码 0、BUILD SUCCESS、Tests run: 1/0/0/0（测量 IT 自身），原始日志 run1/2/3-mvn.log，逐轮机器可读结果 makeup-eligible-attribution-run{1,2,3}.json。形状（6 combo）：s200-p10-a2k、s1000-p10-a2k、s1000-p50-a2k、s1000-p90-a2k、s1000-p10-a20k、s3000-p10-a2k；环境：JDK 21.0.9 HotSpot 21.0.9+7-LTS-338 / Windows 11 amd64 / 20 逻辑处理器 / 最大堆 3952MB。测量有效性（三次运行 G1–G6 全部成立，rounds-analysis.json validity.pass=true，21 项检查逐条 OK）：语义 oracle 12/12、夹具 oracle 6/6、全轮四路 canonical 排序集合等价（24/24×3，不等价即工具抛错）、受控臂 SQL 形状硬校验 24/24×3（PUSHDOWN 有且仅多出 total_score < ?；PROJECTION 有且仅有去掉 answers 列）、SQL 捕获生效、并发臂 8×8=64/臂完整、预热 2 次不计入、四轮原样上报未挑轮。因素隔离（互不混用）：PUSHDOWN 臂只把 total_score < passLine 下推（列不变、Java 过滤保留为冗余护栏），PROJECTION 臂只改窄列投影（id/student_id/total_score，谓词不变）；探针是额外一遍完整路径、单列上报，不与请求级样本混算；answers 字符量是 Java 侧统计（ASCII 夹具 1 字符=1 字节），不是 MySQL 网络传输量，不跨轮/跨窗口相减求占比。噪声控制：臂序逐轮轮转（4 种排列）、每轮臂序列前后各夹一次生产入口（prodFirst/prodLast 给出顺序漂移直接读数）、OLD 等价副本臂作同工作量噪声带。裁决（按 PREREGISTRATION.md 算子，analyze-rounds.cjs 机械复算）：主族 GO ⇔ D1∧D2∧D3∧D4∧¬D5∧D6 = false（D1=false、D2=false、D3=true、D4=false、D5=false、D6=true）⇒ **NO-GO**。D1 反例：s200-p10-a2k 有 4/12 样本中 gradingSelect+Java 过滤组不是最大相位（run1 轮 1 组 0.653ms vs nameLoad 2.290ms；run2 轮 1 组 0.819ms vs nameLoad 2.345ms；run2 轮 4 组 0.566ms vs absenceLoad 0.697ms；run3 轮 1 组 0.941ms vs absenceLoad 1.918ms/nameLoad 1.423ms）＝200 人规模下低分取回非占比最高的可控因素。D2 反例一：s200 下推比值最小值 1.317 < 判定带 1.797（run1 轮 1：prodFirst 1.722/prodLast 1.795/OLD 2.358/PUSHDOWN 1.335/PROJECTION 1.213 ms；同轮 OLD 比值 0.746 ⇒ 是波动吞没收益而非下推无效）。D2 反例二：s1000-p10-a20k 判定带 3.518 由同代码顺序漂移样本 run3 轮 4（prodFirst 5.118→prodLast 1.455）设定，下推最小值 2.399（run1 轮 2：prodFirst 3.896/prodLast 1.752/PUSHDOWN 1.177）低于它；若只用 OLD 噪声带上界 1.565 则该形状越过——如实记为「稳定性不达标」而非「收益不存在」。方向性读数（不作 GO 依据）：下推中位比值 1.914/3.484/3.757/2.969，并发臂吞吐中位比 3.691/4.852/4.961/4.851；投影在敏感族多数轮次胜出（p50 7/12、p90 10/12，p90 相位中位由 nameLoad 3.766ms 主导）。敏感性读数（sensitivity-check.cjs）：四种读法 A 冻结/B 只松 D1a 聚合/C 聚合且去掉顺序漂移项/D 全中位统计 = NO-GO/NO-GO/NO-GO/GO，唯一翻绿读法用中位数替换「每一轮」，不再检验提案要求的逐轮稳定性，按「不得为追求 GO 放宽判据」不采用。结论见同目录 measurement-rounds.md（测量有效性与裁决分节）与 rounds-analysis.json；各轮原始 JSON 摘要含 canonicalDigest、armSqlCheck、相位/结构量与 sha256 校验清单 evidence-sha256.txt。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：只改低分谓词（仅 GO）",
+    "task": "用旧红新绿护栏证明等价下推，而非顺手优化其他因素",
+    "steps": [
+      {"step": "先加确定性护栏：旧实现的非 null passLine 分支未在 SQL 限定 total_score < passLine 因预期缺陷而红；确保编译/环境/桩错误不是红因；保留语义 oracle 与权限边界", "completed": false},
+      {"step": "只在 listEligibleStudents 低分查询下推严格小于谓词；不得同批做列投影、索引、排序、缓存、Mapper XML、自定义 SQL、schema、前端或其他补考路径；新护栏和既有测试转绿", "completed": false},
+      {"step": "显式路径暂存代码与测试并检查 diff，记录实现提交 SHA；不可保持旧语义则撤回实现并 NO-GO", "completed": false}
+    ],
+    "passes": false,
+    "evidence": "不适用（NO-GO）：阶段 2 按预登记判据在主族上 D1=false、D2=false（s200 波动吞没收益、低分取回非最大相位；a20k 顺序漂移上界使判定带不可达），命中提案停止条件「波动吞没收益」与「低分筛选非主导」。故不进入实施——未编写任何新护栏（不存在旧实现行为红），未改 MakeupService.listEligibleStudents 与 src/main 任何文件（git diff --stat 31a5ff8 f88655a 仅测试侧工具 1 文件），未做列投影/索引/排序/缓存/schema/前端/API/JVM/线程池改动，也未转手实施投影（D5=false，主族投影胜出轮次均未过半）。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：复测与唯一门禁",
+    "task": "证明同口径请求收益及最终代码态的后端门禁",
+    "steps": [
+      {"step": "仅 GO 实现后用相同夹具/预热/并发/轮次复测请求、SQL/资源及结果 oracle；改善不足、额外代价或结果变化即撤回并改判 NO-GO，不挑最好一轮", "completed": false},
+      {"step": "在已提交最终代码态于仓库根执行 mvnw.cmd clean test（或 ./mvnw clean test），记录命令、四计数、BUILD、退出码、revision 与原始日志；AGENTS.md 的 Flyway/@Sql/schema/实体自查按真值记录，测量 IT 不得代替全量门禁", "completed": true}
+    ],
+    "passes": false,
+    "evidence": "step1 不适用（NO-GO）：无 GO 实现可复测，未做「实现后」同负载对账，不以任何数值冒充优化收益；阶段 2 的三次旧实现测量即最终测量结论。step2 已执行：在仓库根 D:\\code\\examOnline 执行 mvnw.cmd clean test（JAVA_HOME=D:\\develop1\\jdk21），revision=f88655a（已提交，本变更唯一代码提交，仅 src/test 测量工具；src/main 与基线 31a5ff8 零 diff），输出 Tests run: 314, Failures: 0, Errors: 0, Skipped: 1、BUILD SUCCESS、退出码 0、Total time 03:02 min，原始日志 evidence/gate-mvn.log；测量 IT 以 IT 结尾不进 Surefire，未计入 314，未以定向通过或跳过代替全量门禁。AGENTS.md 自查当次四条全绿：grep -c flyway pom.xml=0；test ! -e src/main/resources/db=OK；@Sql 注解命中（过滤 javadoc 自述行后）为空；实体 @TableName ↔ schema.sql 表级差集为空。门禁在 clean 之后运行，原始测量 JSON 已在 clean 前移出 target 并复算 sha256 一致（evidence-sha256.txt）。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：规范与归档",
+    "task": "按证据真值而不是提案意图收口",
+    "steps": [
+      {"step": "GO 且语义/收益/门禁全部满足时，才合入本 delta 至 absence-makeup 基线并更新 spec/README.md 进行中/归档/已合入来源；NO-GO 只记录评估结论，delta 保持未采用草案，阶段 3/4 不适用步骤保持 false", "completed": true},
+      {"step": "归档变更目录与原始逐轮证据/校验清单，显式路径暂存且核对 name-only 与 --check；分别报告测量有效性、归因裁决、真实环境未知、当次门禁、提交 SHA、未覆盖项和最终 status，不夹带未跟踪台账或 isolate-submit-load-generator", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "按 NO-GO 分支执行：spec-delta 未合入 absence-makeup 基线（原样保留为未采用草案随目录归档），absence-makeup/spec.md 仅追加「评估结论注记」块（不改任何 Requirement）、performance 基线的「先归因、一次只改一类」门禁未动；提案状态回勾为「已归档（NO-GO）」并写明收口结论；spec/README.md 归档表新增本变更行（含四计数/退出码/revision/证据位置）。归档：变更目录（proposal.md、tasks.json、specs/absence-makeup/spec-delta.md、evidence/ 含三次运行原始 JSON、机械裁决脚本与输出、敏感性读数、PREREGISTRATION.md、gate-mvn.log、evidence-sha256.txt）整体移入 spec/changes/archive/update-makeup-eligible-score-filter-attribution/，显式路径暂存并核对 staged name-only 与 git diff --cached --check；未夹带 docs/backend-optimization-candidates.md（保持未跟踪、未暂存、未提交）与 isolate-submit-load-generator。真实环境未知：本端点请求频度、真实考试人数与 answers 分布、真实 MySQL 传输/连接池、Tomcat/GC、真实索引统计均未观测，隔离 H2 结果不外推生产 P99。"
+  }
+]

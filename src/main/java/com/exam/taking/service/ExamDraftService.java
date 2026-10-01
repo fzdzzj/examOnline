@@ -5,7 +5,6 @@ import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.monitoring.service.OnlinePresenceService;
-import com.exam.common.ResponseCode;
 import com.exam.taking.dto.AutoSaveRequest;
 import com.exam.taking.dto.AutoSaveResponse;
 import com.exam.submission.entity.ExamSubmission;
@@ -22,7 +21,9 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Redis 答题草稿服务（spec「自动保存与断线恢复」需求）：
@@ -88,7 +89,7 @@ public class ExamDraftService {
             return new AutoSaveResponse(false, stored.version(), stored.savedTime());
         }
 
-        int acceptedVersion = stored == null ? incoming : incoming;
+        int acceptedVersion = incoming;
         LocalDateTime now = LocalDateTime.now();
         ObjectNode root = objectMapper.createObjectNode();
         root.put("version", acceptedVersion);
@@ -107,7 +108,43 @@ public class ExamDraftService {
 
     /** 读取草稿（断线恢复/超时兜底答案来源）；无草稿或数据损坏返回 null。 */
     public DraftState get(Long examId, Long studentId) {
-        String json = redisTemplate.opsForValue().get(key(examId, studentId));
+        return parseDraft(examId, studentId, redisTemplate.opsForValue().get(key(examId, studentId)));
+    }
+
+    /**
+     * 批量读取草稿（监考大屏等只读聚合场景）：一次 MGET 取回全部学生，逐值走与 {@link #get}
+     * 完全相同的解析口径（{@link #parseDraft}）并按入参下标与学生对齐。
+     *
+     * <p>返回 Map 仅含"有草稿且解析成功"的学生；入参为空直接返回不触达 Redis。
+     * Redis 读取异常不吞（向上抛）；MGET 结果缺失或长度无法与请求学生一一对齐时抛错，
+     * 绝不把读取失败/错位伪装成"无草稿/全员零进度"。
+     */
+    public Map<Long, DraftState> getBatch(Long examId, List<Long> studentIds) {
+        if (studentIds == null || studentIds.isEmpty()) {
+            return Map.of();
+        }
+        List<String> keys = new ArrayList<>(studentIds.size());
+        for (Long studentId : studentIds) {
+            keys.add(key(examId, studentId));
+        }
+        List<String> values = redisTemplate.opsForValue().multiGet(keys);
+        if (values == null || values.size() != studentIds.size()) {
+            throw new IllegalStateException("草稿批量读取结果无法与请求学生对齐: exam=" + examId
+                    + " requested=" + studentIds.size()
+                    + " returned=" + (values == null ? "null" : String.valueOf(values.size())));
+        }
+        Map<Long, DraftState> drafts = new HashMap<>(studentIds.size());
+        for (int i = 0; i < studentIds.size(); i++) {
+            DraftState state = parseDraft(examId, studentIds.get(i), values.get(i));
+            if (state != null) {
+                drafts.put(studentIds.get(i), state);
+            }
+        }
+        return drafts;
+    }
+
+    /** 单份草稿 JSON → 快照；null/空白按无草稿、解析失败按损坏（记日志）返回 null。 */
+    private DraftState parseDraft(Long examId, Long studentId, String json) {
         if (json == null || json.isBlank()) {
             return null;
         }

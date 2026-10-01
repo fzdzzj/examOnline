@@ -1,0 +1,34 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：空库真机初始化",
+    "task": "schema.sql 在真实空 MySQL 8 上建全表",
+    "steps": [
+      { "step": "起真实空 MySQL 8 实例，人为执行 schema.sql", "completed": true },
+      { "step": "验证全部业务表建成、无报错；记录实际执行的命令与原始输出", "completed": true },
+      { "step": "若暴露缺陷：修 schema.sql 并同步既有约定测试（双兼容 + 主键同块约定不破）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：存量迁移真跑",
+    "task": "存量迁移在真实存量库上验证",
+    "steps": [
+      { "step": "按迁移前形态构造缺主键的存量库", "completed": true },
+      { "step": "执行 2026-W16-add-primary-keys.sql，验证缺主键表补上 PRIMARY KEY", "completed": true },
+      { "step": "重复执行一次，确认可忽略失败行为与脚本头注一致且不改业务数据", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：证据与登记",
+    "task": "验证证据入档、遗留 #9 收口",
+    "steps": [
+      { "step": "验证记录入 docs（命令 + 该次原始输出 + 当时短 revision）", "completed": true },
+      { "step": "结果登记回遗留清单：收口 #9 或如实记录失败原因", "completed": true }
+    ],
+    "passes": true
+  }
+]

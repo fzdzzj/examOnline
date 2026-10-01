@@ -1,0 +1,25 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：依赖与配置（W17）",
+    "task": "springdoc 可用且不影响现有行为",
+    "steps": [
+      { "step": "pom.xml 新增 springdoc-openapi-starter-webmvc-ui 2.8.x；启动成功；现有 210 测试全绿 — 证据：2.8.13（.m2-repo 离线可解析）；000bbf0 中 pom.xml 净变更 +8 行、文件 342 行（第 1 轮曾把整文件压成 3 行超长行，第 2 轮已恢复原格式，指导 agent 核 git show --stat 仅 8 insertions）；指导 agent 独立重跑全量 Tests run: 213, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS", "completed": true },
+      { "step": "新增 SpringDocConfig：BearerAuth scheme；login/register/refresh/password 免鉴权标注 — 证据：com.exam.common.config.SpringDocConfig（既有包，未新建顶层包）；全局 SecurityRequirement 挂 Authorization（http/bearer/JWT）；免鉴权由 OpenApiCustomizer publicEndpointCustomizer() 对 PUBLIC_PATHS 常量的 5 条路径置 security: []，未改任何 Controller、未用 @SecurityRequirements；导出 yaml 中 security: [] 恰好 5 处（指导 agent 核实）", "completed": true },
+      { "step": "不改任何 Controller 签名、DTO、业务逻辑 — 证据：000bbf0 仅 4 文件（openapi.yaml / pom.xml / SpringDocConfig / OpenApiContractTest）+ 47d42f8 仅 3 个 application*.yml（29 行纯追加），git show --stat 已核", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：契约覆盖与导出（W17）",
+    "task": "openapi.yaml 成为前端唯一契约来源",
+    "steps": [
+      { "step": "验证 /v3/api-docs 覆盖全部 14 个 Controller（逐个包名在 paths 中出现） — 证据：指导 agent 独立核 openapi.yaml 的 65 条 path 全量列表，auth/admin/anticheat/clazz/exam/grading/monitoring/paper/question/tag/score/score-review/dlq/exam-taking 逐个命中；并用真 dev 实例（13306/root123，health 全 UP）拉 /v3/api-docs 对比得 paths=65、openapi=3.1.0、scheme=Authorization，与导出 yaml 一致", "completed": true },
+      { "step": "导出 openapi.yaml 至仓库根；记录导出命令（可复现） — 证据：3748 行、openapi: 3.1.0、65 paths；第 2 轮由真 dev 实例 Invoke-WebRequest /v3/api-docs.yaml 导出（非 test profile、非手写）；命令与环境变量已写入 spec/specs/api-contract/spec.md 实施注记与 agent-prompt-round2.md", "completed": true },
+      { "step": "新增冒烟测试：api-docs 可达且 paths 规模不低于当前下限，防止新增端点后契约静默缺失 — 证据：com.exam.support.OpenApiContractTest，openApiContractSmoke() 断言 200 + paths>=55（实际 65）+ securitySchemes 含 Authorization bearer + /api/auth/login 的 security 为显式 [] + /api/exams 的 per-op security 为 null（继承全局）；staticReadExportedContractFile() 静态断言 openapi.yaml 存在/非空/含 openapi: 版本行", "completed": true },
+      { "step": "导出不污染常规测试运行（第 2 轮返修新增要求） — 证据：Files.write 仅存在于 exportOpenApiContract()，受 @EnabledIfSystemProperty(named=\"exportContract\", matches=\"true\") 控制；类加 @TestMethodOrder(OrderAnnotation) + @Order(1/2/3) 消除方法顺序依赖；常规全量下该方法 Skipped，CI 基线 Skipped: 1 属设计使然", "completed": true }
+    ],
+    "passes": true
+  }
+]

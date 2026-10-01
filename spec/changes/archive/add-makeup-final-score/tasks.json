@@ -1,0 +1,34 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：最终成绩端点",
+    "task": "已验收的合并规则有真实调用者",
+    "steps": [
+      { "step": "新增补考最终成绩查询端点（挂 ScoreController 或 ExamController，按能力域归属定），内部调用 MakeupScoreService.finalScore", "completed": true },
+      { "step": "不改 MakeupScoreService / ScoreService 既有方法体；新逻辑只入接口层或新方法", "completed": true },
+      { "step": "教师侧/学生侧可见范围按既有 RBAC 与越权防护约束，不新造权限模型", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：集成测试",
+    "task": "规则经真实链路被验证",
+    "steps": [
+      { "step": "经接口查询主考+补考均有成绩的学生，断言按考试配置规则合并的结果", "completed": true },
+      { "step": "断言历史成绩保留不覆盖；学生侧可见性符合既有规则（如复核中隐藏）", "completed": true },
+      { "step": "后端门禁回归，surefire 计数只增不减", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：契约与登记",
+    "task": "契约同步、遗留 #5 收口",
+    "steps": [
+      { "step": "重导出 openapi.yaml（提案⑧未合入则走路 B 真实例；已合入走路 A）并 diff 核对", "completed": true },
+      { "step": "结果登记回遗留清单（收口 #5）；前端 Alert 替换另立前端小变更", "completed": true }
+    ],
+    "passes": true
+  }
+]

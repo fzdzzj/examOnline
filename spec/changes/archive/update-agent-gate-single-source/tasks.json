@@ -1,0 +1,174 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 B-1（可立即插入）：先把真实基线测出来",
+    "task": "用当前仓库配置实测一次全量门禁，作为所有判据改写的唯一数值来源",
+    "steps": [
+      {
+        "step": "按 docs/指导Agent交接文档.md §6.1 的既有办法跑一次全量（或先执行 clean 以排除残留报告干扰），记录真实输出：Tests run / Failures / Errors / Skipped 与当时短 revision — 证据：【本轮实测，B-1 各判据的唯一数值来源】2026-09-21 由指导 agent 在 Git Bash 于仓库根执行（注意：起决定作用的是 JAVA_HOME 指向 JDK 21，该 shell 的 `java -version` 本身仍报 1.8；B-2 写工具链说明时不得把「PATH 里有 JDK 21」当判据） `mvn -o clean test`，原始输出为 `Tests run: 276, Failures: 0, Errors: 0, Skipped: 1` → `BUILD SUCCESS`（exit 0），当时短 revision `974248b`（工作树仅有 E1/B-1 的文档差异，`src/**`、`pom.xml` 与 HEAD 一致）；Skipped 的那一条是 `com.exam.support.OpenApiContractTest`，受 `exportContract` 开关控制，属设计使然、不得试图消除。该次执行同时证伪了治理文档里的 213 / 218 / 268 三个旧版本——276 只作历史证据留在本字段，不写进任何提示词正文、README、AGENTS.md、spec/README.md 或 docs 首屏（那些位置写判据）。另：此前评审从 target/surefire-reports 汇总 2026-09-21 的 46 个报告类得 276 / 0 / 0 / 1，但目录里混有 2 个 09-20 的残留报告（一起算会得 285），说明数值必须来自一次带 clean 的执行，残留产物拼出的数不作数",
+        "completed": true
+      },
+      {
+        "step": "确认 Skipped 的构成仍是唯一一处契约导出开关，而不是新增的被禁用断言 — 证据：spec/README.md:77 与 docs/指导Agent交接文档.md:8 记载 Skipped 属 exportContract 开关、设计使然",
+        "completed": true
+      },
+      {
+        "step": "把该次数值与 revision 只写入本 tasks.json 的证据字段，不写进任何治理文档正文 — 证据：proposal.md 期望状态第 3 条",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 B-1：验收常量改判据",
+    "task": "删除 5 份进行中提示词的基线常量与人肉更正段，换成可执行判据",
+    "steps": [
+      {
+        "step": "把 spec/changes/add-frontend-teacher-authoring/agent-prompt.md:18、add-frontend-exam-admin/agent-prompt.md:16、add-frontend-student-taking/agent-prompt.md:17、add-frontend-post-exam/agent-prompt.md:16、add-frontend-skeleton-auth/agent-prompt.md:31,67 的「必须仍是 210 / 基线 210」统一改写为：跑唯一门禁命令后 Failures=0 且 Errors=0、Skipped 保持 1、用例总数不得少于本阶段开工时实测并记录在案的数值 — 证据：五处行号本次逐一定位",
+        "completed": true
+      },
+      {
+        "step": "删除这五份文件顶部的「⚠️ 基线更正（以此为准，覆盖下文旧内容）……下文所有「210」一律读作 218」段落；判据不再需要被临时覆盖 — 证据：add-frontend-teacher-authoring/agent-prompt.md:7、add-frontend-student-taking/agent-prompt.md:8、add-frontend-post-exam/agent-prompt.md:7 等",
+        "completed": true
+      },
+      {
+        "step": "同步更正 spec/README.md:29 的「后端 210 基线独立」与 docs/指导Agent交接文档.md:8 首屏常量：前者改为「后端与前端计数口径互不并入，具体数值以当次执行记录为准」，后者改为判据表述并把 213 降级为带 revision 的历史记录 — 证据：spec/README.md:29、docs/指导Agent交接文档.md:8",
+        "completed": true
+      },
+      {
+        "step": "自查（须排除归档件与本变更自己的问题陈述，否则判据永不成立）：grep -rnE '必须仍是 2[0-9]{2}|基线 210|一律读作' spec/ | grep -vE 'archive|update-agent-gate-single-source' 命中为 0 — 证据：R-验收判据需求；本变更的 proposal/tasks/派发提示词会引用被清除的字符串本身，故必须在判据范围里排除",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 B-1：命令口径收口",
+    "task": "消解交接文档 §6.1 与 §6.2 的自相矛盾，并把 5 处「不要用 PATH 里的 mvn」改为引用同一路由",
+    "steps": [
+      {
+        "step": "把 §6.1（docs/指导Agent交接文档.md:173-184）改标题为「本机历史坑与当时的绕行办法」，保留其成因记述（PATH 里 java 为 1.8 而 javac 为 21），并明确该段不再是推荐的验证命令 — 证据：§6.1 现状以硬编码仓库外 JDK/Maven 目录给出可执行命令",
+        "completed": true
+      },
+      {
+        "step": "给 §6.2（:186-189）的「直接 mvn spring-boot:run 即可」加一条注记：它与 §6.1 的推荐互斥，唯一门禁命令以 agent-harness 规范的回填位为准 — 证据：两段位于同一文件且结论相反，本次评审一手核读确认",
+        "completed": true
+      },
+      {
+        "step": "把 5 处「不要用 PATH 里的 mvn」（spec/changes/add-frontend-skeleton-auth/agent-prompt.md:107 与 archive 下 add-backend-openapi/agent-prompt.md:74、add-backend-openapi/agent-prompt-round2.md、add-auth-must-change-password/agent-prompt.md:80、fix-schema-mysql-pk/agent-prompt.md:45）改为「使用仓库自有的唯一门禁命令（见 AGENTS.md 指针）」，归档件按本项目惯例不再改写的除外 — 证据：grep 精确计数为 5 个文件各 1 处",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 B-2（须排在阶段 23 之后或隔离工作树）：命令仓库化",
+    "task": "加入 Maven wrapper，使「用哪个 Maven」由仓库决定",
+    "steps": [
+      {
+        "step": "前置授权确认：wrapper 首次执行需联网下载 distribution。未获网络与磁盘授权前不得执行本任务 — 证据：proposal.md 风险「离线库不可复现」；授权来自 2026-09-25 本任务派发指令（明确要求提供仓库自有 wrapper 并在不带本机缓存的干净检出实测，成功或失败均记录）；网络前置实测：repo.maven.apache.org 可达（HTTP 200），distribution apache-maven-3.9.4-bin.zip 已由首次 wrapper 执行下载至本机用户级缓存 ~/.m2/wrapper/dists（2026-09-25 18:58 时间戳）",
+        "completed": true
+      },
+      {
+        "step": "新增 mvnw / mvnw.cmd / .mvn/wrapper 配置，并把唯一门禁命令写成 wrapper 调用；不为此修改 pom.xml — 证据：git ls-files 当前对 mvnw 为 0 命中、.mvn 下仅 maven.config；2026-09-25 落地：mvn wrapper:wrapper -Dtype=bin -Dmaven=3.9.4（wrapper-plugin 3.3.4）生成 mvnw / mvnw.cmd / .mvn/wrapper/maven-wrapper.properties / .mvn/wrapper/maven-wrapper.jar（distributionUrl 钉 3.9.4，即变更前实测可用版本；jar 依 .gitignore:3 既有反向规则入库，mvnw 在 index 记 100755）；未改 pom.xml；唯一门禁命令写成 ./mvnw clean test（Windows cmd 为 mvnw.cmd clean test），仓库根实测（HEAD 89e4984，工作树仅含本变更文档与构建配置差异，src/** 与 pom.xml 与 HEAD 一致）：Tests run: 304, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS（exit 0，03:51 min，2026-09-25T19:02:49+08:00 完成）",
+        "completed": true
+      },
+      {
+        "step": "回填 E1 在 AGENTS.md 预留的「唯一门禁命令」位（E1 明确要求在落地前留白，不得抄任何一种现存说法） — 证据：add-agent-context-routing 提案任务 2 第 3 步；2026-09-25 已回填：AGENTS.md「唯一门禁命令」写入 ./mvnw clean test + 前置（JAVA_HOME 须不低于 pom 的 maven.compiler.release、首次运行需联网、不承诺零准备离线可跑）+ 判据指针（agent-harness 规范，本文件不复述数值）+ 可执行自查（test -x mvnw && test -f mvnw.cmd && test -f .mvn/wrapper/* && echo OK，实测输出 OK）；同批把 README.md、docs/project-overview-for-agents.md、docs/指导Agent交接文档.md（首屏注记、遗留表 Maven 行、§6.1 注记、§6.2 注记、后续工作清单行、前端基线行）的「待回填」指针改为指向 AGENTS.md 的引用——依据 spec-delta「文档中出现第二种命令说法」的整改方式（改为引用而非对齐参数）及各注记自带的回填承诺；交接文档 §6.2 的 dev 启动行按其原承诺改为 wrapper 形态 ./mvnw spring-boot:run（未端到端起服复验，已在文中标注）",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 B-2：去机器绑定",
+    "task": ".mvn/maven.config 与 maven-settings.xml 不再指向仓库外或机器特定路径",
+    "steps": [
+      {
+        "step": "实测确认 Maven 解析 maven.config 内相对路径的基准目录（仓库根 vs 执行时 cwd），据此选定写法；结论写入本步证据而不是凭推断 — 证据：.mvn/maven.config 现为「-s」+ 指向仓库根的绝对盘符路径两行；2026-09-25 实测（Maven 3.9.4，mvn help:effective-settings 探针）：①裸相对 -s maven-settings.xml 从仓库根可解析，从 frontend/ 报 The specified user settings file does not exist: D:\\code\\examOnline\\frontend\\maven-settings.xml → 相对路径按执行时 cwd 解析，不可单独采用；②-s ${maven.multiModuleProjectDirectory}/maven-settings.xml 从仓库根与 frontend/ 均解析成功 → maven.config 支持系统属性展开，该属性由启动器按「从 cwd 向上找到 .mvn 的第一层」设置，与执行目录无关，据此采用；③从 frontend/ 执行确实读取仓库根的 .mvn/maven.config（否则不会尝试解析 settings 文件）",
+        "completed": true
+      },
+      {
+        "step": "把 maven-settings.xml:8 的 localRepository 改为仓库相对或可被环境变量覆盖；改造前先量 .m2-repo 体积并保留原目录不删，给出回滚路径（删除缓存目录不在本提案授权内） — 证据：.gitignore:7 已排除 .m2-repo/，git ls-files 对其为 0 命中；2026-09-25 实施与实测：改造前 du -sh .m2-repo = 2.4G（@ 89e4984）；目录未删除/未移动/未改写，原位保留即回滚路径组成部分；localRepository 改为 ${maven.multiModuleProjectDirectory}/.m2-repo，仓库根与 frontend/ 的 help:effective-settings 输出同为 D:\\code\\examOnline\\.m2-repo；CLI 显式覆盖实测：mvn -Dmaven.repo.local=<探测路径> help:effective-settings 输出变为探测路径（CLI -D 优先于 settings；探测产生的临时目录已清理）。整体回滚：git checkout 89e4984 -- .mvn/maven.config maven-settings.xml 即恢复绝对路径形态（.m2-repo 原位未动，旧配置立即可用）；wrapper 文件回滚 = revert 引入它的提交",
+        "completed": true
+      },
+      {
+        "step": "在仓库根与非根子目录各执行一次唯一门禁命令，确认两种 cwd 下 settings 与 localRepository 都能解析 — 证据：R-机器绑定不得入库 的 Scenario；2026-09-25 实测：仓库根 ./mvnw clean test → Tests run: 304, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS（exit 0）；frontend/ 下 D:/code/examOnline/mvnw help:effective-settings 输出 localRepository 与仓库根一致，D:/code/examOnline/mvnw clean test 在 settings 解析成功后报 no POM in this directory（Maven 3.9 语义：配置解析两种 cwd 一致，构建须在含 pom 的仓库根执行，已写入 AGENTS.md）",
+        "completed": true
+      },
+      {
+        "step": "自查：git ls-files .mvn maven-settings.xml 后 cat 两文件，确认不含绝对盘符路径 — 证据：本任务前后对照；2026-09-25 提交 7d0171b 后自查：git ls-files .mvn maven-settings.xml 命中 .mvn/maven.config、.mvn/wrapper/maven-wrapper.jar、.mvn/wrapper/maven-wrapper.properties、maven-settings.xml；盘符扫描 grep -nE '[A-Za-z]:[\\\\/]' 两文件初跑仅命中 maven-settings.xml:2 的 XML 命名空间 URL（http:// 中的 p:/ 误命中，假阳性），收窄判据后再接 grep -v '://' 零命中——两文件实际内容仅含 ${maven.multiModuleProjectDirectory} 引用与相对文件名",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 6,
+    "category": "阶段 B-2：让声明的门禁能失败",
+    "task": "修复 frontend/package.json 的 type-check 串接方式并确定 precommit:check 的去留",
+    "steps": [
+      {
+        "step": "把 :15 的 type-check 与 :16 的 type-check:check 中的单个后台符 & 改为 &&，使 vue-tsc 与 tsc 任一失败都能反映到脚本退出码；不改动其它脚本 — 证据：frontend/package.json:15,16,23",
+        "completed": true
+      },
+      {
+        "step": "变异验证：在 frontend/src 临时注入一个类型错误，执行 npm run type-check:check 确认退出码非 0（改前该失败被 & 吞掉），随后撤销并确认 git status 干净 — 证据：本项目既有「变异验证」纪律（spec/changes/IMPLEMENTATION_STATUS.md 记录的「改回旧实现→只对应用例变红」惯例）",
+        "completed": true
+      },
+      {
+        "step": "决定 :23 precommit:check 的去留：要么在本能力域判据里明确列为收尾必跑，要么删除。不留「看起来像门禁、实际无调用者」的脚本（当前无任何 tracked 机制调用它） — 证据：git ls-files 对 husky/lint-staged 为 0 命中；.git/hooks 下仅 IDE 自身 tracker 且未被 tracked",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 7,
+    "category": "阶段 B-2：验收记录绑定 revision",
+    "task": "把「命令 + 当次真实输出 + 短 revision」固化为 tasks.json 证据字段的强制格式",
+    "steps": [
+      {
+        "step": "在本变更与后续变更的 tasks.json 模板约定中写明：凡声明「全绿/通过」的 step，其证据必须含产生该结论的命令与该次输出数值，并附当时短 revision；缺任一项视为未验收 — 证据：docs/指导Agent交接文档.md:10「子 agent 的回报不是事实；每轮交付必须独立查看 git status、git diff、关键代码和测试报告」",
+        "completed": true
+      },
+      {
+        "step": "对照 da5b579 记录过的反例（b0eb18e 提交信息里的机制与数值均记错一次，事后不改写历史、只以状态文件为准）验证新格式可追溯：结论必须能定位到某次执行，而不是某段散文 — 证据：spec/changes/IMPLEMENTATION_STATUS.md 对该轮的更正记录",
+        "completed": true
+      },
+      {
+        "step": "确认不为此新增第二份「数字汇总文件」——那会重演本提案要修的多副本问题 — 证据：proposal.md「不做的事」",
+        "completed": true
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 8,
+    "category": "阶段 B-3：独立复核与收尾",
+    "task": "指导 agent 独立复核 B-1/B-2 并归档",
+    "steps": [
+      {
+        "step": "从一份新克隆（不含 .m2-repo、不含本机 JDK/Maven 绝对路径）按文档跑一次唯一门禁命令：跑通则记录，跑不通则如实记录缺的前置（网络、离线库、wrapper distribution），**不得为了让结论好看而改判据或回抄旧命令** — 证据：proposal.md 风险第 1 条明确要求不承诺「任何机器零准备可跑」；执行 agent 预验证（2026-09-25，非独立复核）：方法学自证——首次在 wrapper 提交前克隆实测得 ./mvnw: No such file or directory（未提交文件不入克隆，且当时管道 tail 的退出码 0 不代表 mvnw 退出码），故干净检出验证以提交 7d0171b 之后为准；git clone 本仓库至系统临时目录 exam-gate-clean2（HEAD 7d0171b；test ! -e .m2-repo && test ! -e target 通过），克隆内 ./mvnw --version（autocrlf 检出为 CRLF 形态，Git Bash 实测 exit 0，Maven home 指向 ~/.m2/wrapper/dists 用户级缓存，Java 走 JAVA_HOME=JDK 21）与 cmd //c mvnw.cmd --version（exit 0）均通过；随后克隆内 ./mvnw clean test → Tests run: 304, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS（exit 0，07:18 min 含全部依赖经网络下载至克隆内新建 .m2-repo，实测终值 120M；jacoco.exec 落在克隆内 target，证明配置解析均指向克隆自身而非本仓库）→ 缺失前置仅两项且已满足：联网（distribution 复用用户级缓存 + 依赖全新下载）、JAVA_HOME 指向可用 JDK — 证据：【指导 agent 独立复核（2026-09-25）：先在 D 盘新克隆 ed06f42（无 .m2-repo/target）运行 `mvnw.cmd clean test` → Tests run: 304, Failures: 1, Errors: 0, Skipped: 1，BUILD FAILURE，exit 1；QuestionBankIntegrationTest 注册教师返回 1002，日志证实与 AntiCheatIntegrationTest 同名，不能用执行 agent 的绿覆盖。独立修复提交 8bd04c2（仅 src/test 两文件）：UniqueSeqGuardTest 在旧实现红 1/1/0/0、新实现绿 1/0/0/0。再由指导 agent 另建新克隆 D:/code/examOnline-e2-independent-20260925（HEAD 8bd04c2，起跑前 NO_CACHE=True、NO_TARGET=True，JAVA_HOME 指向 JDK 21，首次依赖需联网），执行 `mvnw.cmd clean test` → Tests run: 305, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，exit 0；XML 报告求和相同，跳过项仅 OpenApiContractTest.exportOpenApiContract。原始日志在该克隆 e2-independent-gate.log；此数值仅对应 8bd04c2，不是收口提交自己的重新执行。】",
+        "completed": true
+      },
+      {
+        "step": "确认三件套仍不阻断：pom.xml 的 failOnError/failOnViolation 未被顺带翻转，JaCoCo 仍无 check 目标 — 证据：pom.xml:335,364 与 :312,319；执行 agent 预验证（2026-09-25，非独立复核）：git status 无 pom.xml（零改动）；failOnError=false（:335，spotbugs）与 failOnViolation=false（:364，checkstyle）原文未动；jacoco 仅有 prepare-agent 与 report（门禁输出含 jacoco:0.8.12:report (jacoco-report)，无 check 目标）；pom 中另两处 <goal>check</goal>（:347/:382）属 spotbugs/checkstyle 的既有执行，受 :335/:364 非阻断开关控制 — 证据：【指导 agent 独立静态核对（revision 8bd04c2）：从 pom.xml 解析插件 execution goals：JaCoCo 仅 prepare-agent、report，无 check；SpotBugs 的 failOnError=false、Checkstyle 的 failOnViolation=false，虽各有 check goal 仍按既有策略非阻断；`git diff --name-only 89e4984..ed06f42 -- pom.xml` 输出为空，退出码 0。】",
+        "completed": true
+      },
+      {
+        "step": "确认写入边界：git diff --name-only 只出现 proposal.md 列出的路径，无 src/**、无 pom.xml、无 docker/**、无 schema.sql — 执行 agent 预验证（2026-09-25，非独立复核）：本轮改动= .mvn/maven.config、maven-settings.xml、.mvn/wrapper/**、mvnw、mvnw.cmd（proposal B-2 清单内）+ AGENTS.md（任务 4 步 3 授权的回填位）+ README.md、docs/project-overview-for-agents.md、docs/指导Agent交接文档.md、spec/README.md、本 tasks.json（「改为引用」类指针修正与证据回写，依据 spec-delta 对第二命令出处的整改要求）；src/**、pom.xml、schema.sql、docker/**、openapi.yaml、frontend/** 零命中 — 证据：【指导 agent 独立写入边界核对（revision 8bd04c2）：`git diff --name-only 89e4984..ed06f42` 仅 B-1/B-2 的 .mvn/**、mvnw*、maven-settings.xml、AGENTS.md、README.md、docs/**、spec/README.md 与本 tasks.json，无 src/**、pom.xml、docker/**、schema.sql、openapi.yaml；`git diff --name-only ed06f42..8bd04c2` 恰为 src/test/java/com/exam/support/IntegrationTestBase.java 和 UniqueSeqGuardTest.java，这是另一个已提交的测试稳定性修复，不能谎称整条分支零 src/test 改动。收口时仅额外修正 maven-settings.xml 的归档路径注释，不改变构建语义。】",
+        "completed": true
+      },
+      {
+        "step": "收尾五步：spec-delta 的 4 条 ADDED 合入 spec/specs/agent-harness/spec.md → git mv 本目录进 archive → 按实际完成度回勾 tasks.json（不得凭印象勾满）→ 更新 spec/README.md 三处 → commit（提交信息引用命令与当次输出，不复述数字） — 证据：spec/README.md:157 — 证据：【指导 agent 收口（2026-09-25，门禁 revision 8bd04c2）：本变更四条 ADDED Requirement 原段合入 spec/specs/agent-harness/spec.md，目录整体 git mv 到 archive，tasks.json 八阶段按现场证据回勾，spec/README.md 的进行中/归档/已合入规范/能力地图均同步；暂存集合与提交见本收口提交的 git diff --cached --name-only 和 git show --stat。完整门禁原始输出以本阶段第 1 步记录为准，收口提交只改规范、文档和 maven-settings.xml 中的归档证据指针，不冒充在收口提交后重新运行全量门禁。】",
+        "completed": true
+      }
+    ],
+    "passes": true
+  }
+]

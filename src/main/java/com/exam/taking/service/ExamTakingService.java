@@ -11,6 +11,7 @@ import com.exam.exam.dto.ExamSnapshotResponse;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.exam.service.ExamSnapshotService;
+import com.exam.exam.service.MakeupService;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.taking.dto.AutoSaveRequest;
@@ -21,15 +22,24 @@ import com.exam.taking.dto.BehaviorReportResponse;
 import com.exam.taking.dto.EnterExamResponse;
 import com.exam.taking.dto.ExamListItem;
 import com.exam.taking.dto.QuestionView;
+import com.exam.clazz.entity.UserClass;
+import com.exam.clazz.mapper.UserClassMapper;
+import com.exam.exam.entity.ExamCandidate;
+import com.exam.exam.mapper.ExamCandidateMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * 进入考试与答题服务（spec「进入考试」「答题导航与采集」需求）：
@@ -50,27 +60,38 @@ import java.util.Map;
 @Service
 public class ExamTakingService {
 
+    /** 学生考试列表默认最大条数上限（需求决策记录 §12.1）。 */
+    private static final long MY_EXAMS_DEFAULT_LIMIT = 50L;
+
     private final ExamMapper examMapper;
     private final ExamSubmissionMapper submissionMapper;
+    private final UserClassMapper userClassMapper;
+    private final ExamCandidateMapper examCandidateMapper;
     private final ExamSnapshotService examSnapshotService;
     private final PersonalPaperService personalPaperService;
     private final ExamDraftService draftService;
     private final BehaviorEventCollectService eventCollectService;
     private final ExamSubmitService submitService;
     private final OnlinePresenceService presenceService;
+    private final MakeupService makeupService;
 
     public ExamTakingService(ExamMapper examMapper, ExamSubmissionMapper submissionMapper,
+                             UserClassMapper userClassMapper, ExamCandidateMapper examCandidateMapper,
                              ExamSnapshotService examSnapshotService, PersonalPaperService personalPaperService,
                              ExamDraftService draftService, BehaviorEventCollectService eventCollectService,
-                             ExamSubmitService submitService, OnlinePresenceService presenceService) {
+                             ExamSubmitService submitService, OnlinePresenceService presenceService,
+                             MakeupService makeupService) {
         this.examMapper = examMapper;
         this.submissionMapper = submissionMapper;
+        this.userClassMapper = userClassMapper;
+        this.examCandidateMapper = examCandidateMapper;
         this.examSnapshotService = examSnapshotService;
         this.personalPaperService = personalPaperService;
         this.draftService = draftService;
         this.eventCollectService = eventCollectService;
         this.submitService = submitService;
         this.presenceService = presenceService;
+        this.makeupService = makeupService;
     }
 
     /**
@@ -84,10 +105,38 @@ public class ExamTakingService {
 
         ExamSubmission submission = submissionMapper.selectByExamStudent(examId, studentId);
         if (submission == null) {
+            // 首次进入才做准入校验：已有答卷说明本人早已进入本场（在考中或已交卷），
+            // 断线重连/刷新恢复必须放行——事后转班不得把在考学生挡在门外。
+            assertAdmission(exam, studentId);
             submission = createSubmission(exam, studentId);
         }
         presenceService.touch(examId, studentId);
         return buildAnsweringContext(exam, submission, studentId);
+    }
+
+    /**
+     * 首次进入考试的准入校验（F-B/F-C 安全收口）：
+     * <ul>
+     *   <li><b>补考</b>（parent_exam_id != null）：维持名单限制，名单外拒绝（§12.5）；</li>
+     *   <li><b>普通考试</b>（parent_exam_id == null）：强制班级归属——
+     *       未指派班级的考试一律拒绝；绑定了班级则学生当前必须属于该班级，
+     *       否则即便拿到 examId 也进不去（"列表看不见但接口进得去"的越权口子）。</li>
+     * </ul>
+     */
+    private void assertAdmission(Exam exam, Long studentId) {
+        if (exam.getParentExamId() != null) {
+            makeupService.assertCanEnter(exam, studentId);
+            return;
+        }
+        if (exam.getClassId() == null) {
+            throw new BusinessException(ResponseCode.FORBIDDEN, "该考试未指派班级，无法参加");
+        }
+        Long inClass = userClassMapper.selectCount(Wrappers.<UserClass>lambdaQuery()
+                .eq(UserClass::getUserId, studentId)
+                .eq(UserClass::getClassId, exam.getClassId()));
+        if (inClass == null || inClass == 0) {
+            throw new BusinessException(ResponseCode.FORBIDDEN, "您不属于该考试指定的班级，无法参加");
+        }
     }
 
     /**
@@ -135,22 +184,62 @@ public class ExamTakingService {
 
     /**
      * 学生考试列表（spec：状态分组 待考/进行中/已完成）：
-     * 只展示已发布考试；分组口径见 {@link ExamListItem}（以学生下一步动作为准）。
+     * 范围：已发布 ∧ 未软删 ∧ (本人有答卷 ∪ 本人当前班级绑定的普通考试 ∪ 本人为候选人的补考)；
+     * 排序：按 §12.1——状态分组优先级 待考(UPCOMING) → 进行中(ONGOING) → 已完成(FINISHED)，
+     *       组内按开始时间距当前时刻近→远（待考先考的先显示，进行中/已完成最近开始的先显示）；
+     * 上限：截断至 50 场（作用于本人考试集合内）。
      */
     public List<ExamListItem> myExams() {
         Long studentId = requireStudent();
-        List<Exam> exams = examMapper.selectPage(new Page<>(1, 50), Wrappers.<Exam>lambdaQuery()
-                        .eq(Exam::getPublished, 1)
-                        .orderByDesc(Exam::getStartTime))
-                .getRecords();
 
+        // 1. 本人答卷（列投影：只消费这三个标量列，不载入 paper_json/answers，且仅查一次）
+        List<ExamSubmission> studentSubmissions = submissionMapper.selectList(Wrappers.<ExamSubmission>lambdaQuery()
+                .select(ExamSubmission::getExamId, ExamSubmission::getStatus, ExamSubmission::getDeadlineTime)
+                .eq(ExamSubmission::getStudentId, studentId));
         Map<Long, ExamSubmission> mine = new HashMap<>();
-        if (!exams.isEmpty()) {
-            submissionMapper.selectList(Wrappers.<ExamSubmission>lambdaQuery()
-                            .eq(ExamSubmission::getStudentId, studentId)
-                            .in(ExamSubmission::getExamId, exams.stream().map(Exam::getId).toList()))
-                    .forEach(s -> mine.put(s.getExamId(), s));
+        studentSubmissions.forEach(s -> mine.put(s.getExamId(), s));
+
+        // 2. 收集本人相关的考试 ID 集合：答卷 ∪ 本人所属班级绑定的非补考考试 ∪ 本人为候选人的补考
+        Set<Long> myExamIds = new HashSet<>(mine.keySet());
+
+        // 班级渠道：本人当前所在班级
+        List<UserClass> userClasses = userClassMapper.selectList(Wrappers.<UserClass>lambdaQuery()
+                .select(UserClass::getClassId)
+                .eq(UserClass::getUserId, studentId));
+        if (!userClasses.isEmpty()) {
+            List<Long> classIds = userClasses.stream()
+                    .map(UserClass::getClassId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+            if (!classIds.isEmpty()) {
+                List<Exam> classExams = examMapper.selectList(Wrappers.<Exam>lambdaQuery()
+                        .select(Exam::getId)
+                        .eq(Exam::getPublished, 1)
+                        .isNull(Exam::getParentExamId)
+                        .in(Exam::getClassId, classIds));
+                classExams.forEach(e -> myExamIds.add(e.getId()));
+            }
         }
+
+        // 补考渠道：本人被指定为候选人
+        List<ExamCandidate> candidates = examCandidateMapper.selectList(Wrappers.<ExamCandidate>lambdaQuery()
+                .select(ExamCandidate::getExamId)
+                .eq(ExamCandidate::getStudentId, studentId));
+        candidates.forEach(c -> {
+            if (c.getExamId() != null) {
+                myExamIds.add(c.getExamId());
+            }
+        });
+
+        if (myExamIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 3. 取出已发布考试实体（软删由 @TableLogic 自动过滤）
+        List<Exam> exams = examMapper.selectList(Wrappers.<Exam>lambdaQuery()
+                .eq(Exam::getPublished, 1)
+                .in(Exam::getId, myExamIds));
 
         LocalDateTime now = LocalDateTime.now();
         return exams.stream().map(exam -> {
@@ -177,7 +266,21 @@ public class ExamTakingService {
             return new ExamListItem(exam.getId(), exam.getTitle(), exam.getStartTime(), exam.getEndTime(),
                     exam.getDurationMinutes(), exam.getStatus(), group, canEnter,
                     submission == null ? null : submission.getStatus(), remaining);
-        }).toList();
+        })
+        .sorted(Comparator
+                .comparingInt((ExamListItem item) -> groupPriority(item.getGroup()))
+                .thenComparingLong((ExamListItem item) -> item.getStartTime() == null ? Long.MAX_VALUE : Math.abs(Duration.between(now, item.getStartTime()).toMillis()))
+                .thenComparing((ExamListItem item) -> item.getStartTime(), Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparingLong(ExamListItem::getExamId))
+        .limit(MY_EXAMS_DEFAULT_LIMIT)
+        .toList();
+    }
+
+    private static int groupPriority(String group) {
+        if (ExamListItem.GROUP_UPCOMING.equals(group)) return 1;
+        if (ExamListItem.GROUP_ONGOING.equals(group)) return 2;
+        if (ExamListItem.GROUP_FINISHED.equals(group)) return 3;
+        return 4;
     }
 
     // ==================== 内部组装 ====================

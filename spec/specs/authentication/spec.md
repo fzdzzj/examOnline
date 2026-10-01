@@ -1,7 +1,10 @@
 # authentication 规范
 
-> 能力域：认证与鉴权（含工程基础能力，阶段 1/2 W1）。
-> 来源：`spec/changes/add-project-skeleton` 合入（工程骨架阶段）。
+> 能力域：认证与鉴权（含工程基础能力，阶段 1/2 W1 + 阶段 18 后小阶段 W18）。
+> 来源：`spec/changes/add-project-skeleton` 合入（工程骨架阶段）；
+> `spec/changes/archive/add-auth-must-change-password` 合入（初始密码强制修改标记，0fb56b9）；
+> `spec/changes/archive/harden-security-config` 合入（安全事件审计落库、建表来源唯一）；
+> d2cbde9 直补（审计事件查询——非变更提案，见文末注记）。
 
 ## Requirements
 
@@ -344,3 +347,185 @@ AND 授予其 ADMIN 角色与全部权限
 GIVEN 数据库中已存在 ADMIN 角色账号
 WHEN 系统启动
 THEN 系统不重复创建管理员账号
+
+---
+
+### Requirement: 初始密码强制修改标记
+
+WHEN 系统自行创建带初始密码的特权账号,
+系统 SHALL 标记该账号必须修改密码，且 SHALL 使该标记可被客户端实时读取、在密码修改成功后解除。
+
+实施注记（0fb56b9）：标记落在 `CurrentUserResponse.mustChangePassword`（`Boolean`），由 `/api/auth/me` 实时读库装载（`Integer → boolean`，`null` 视为 `false`，故该字段恒有值）；**刻意不入 JWT claim**——它是可变状态，入无状态 token 会产生「已改密但旧 token 仍说必须改密」的窗口，只能靠黑名单 / `sessionVersion` 兜，语义不正确。`AdminInitializer` 仅在**首次创建**分支置 1（两道提前 return 在构造 `User` 之前，物理上不可能改写已存在账号）；`changePassword` 成功后置 0。**未改鉴权拦截器**：本能力只暴露标记，不在后端强拦「未改密却调业务接口」（那会波及全部既有集成测试且属行为变更，若要强拦需单独立项）。零 DDL、零数据迁移，**不追溯**把存量 admin 置 1。前端守卫接入属独立前端变更（守卫入口已收敛为 `frontend/src/router/access.ts` 的 `decideNavigation`）。
+
+#### Scenario: 首次创建的 admin 被标记
+
+GIVEN 系统首次启动并自动创建 admin 账号
+WHEN 该账号查询当前用户信息
+THEN 返回的必须改密标记为真
+
+#### Scenario: 标记可被客户端读取
+
+GIVEN 一个被标记为必须改密的账号
+WHEN 客户端请求当前用户信息接口
+THEN 响应体含该标记
+AND 该标记出现在对外契约中，可被类型化客户端生成
+
+#### Scenario: 改密成功后解除
+
+GIVEN 一个被标记为必须改密的账号
+WHEN 该账号成功修改密码
+THEN 标记被解除
+AND 再次查询当前用户信息返回假
+
+#### Scenario: 重复启动不打回已改密账号
+
+GIVEN 一个 admin 账号已完成密码修改
+WHEN 系统再次启动并执行初始化
+THEN 不重新置该账号的必须改密标记
+AND 该账号不会被反复要求改密
+
+#### Scenario: 标记不入无状态令牌
+
+GIVEN 必须改密标记属可变状态
+WHEN 系统签发访问令牌
+THEN 该标记不作为令牌声明携带
+AND 客户端通过实时查询获取其当前值
+
+#### Scenario: 存量账号不被追溯
+
+GIVEN 一个在标记能力上线前已存在的账号
+WHEN 系统升级后启动
+THEN 不追溯修改其必须改密标记
+AND 不因此把既有部署的管理员突然锁入强制改密
+
+---
+
+### Requirement: 安全事件审计落库
+
+WHEN 发生登录、账户锁定等安全事件,
+
+系统 SHALL 把事件持久化到 `audit_log`，含操作人、来源 IP、结果与链路标识。
+
+#### Scenario: 失败登录同样留痕
+
+GIVEN 一次账号不存在或密码错误的登录
+
+WHEN 登录被拒
+
+THEN 写入一条 FAILURE 审计
+
+AND 账号不存在时 `user_id` 为空，但对外提示与密码错误一致（防账号枚举）
+
+#### Scenario: 成功登录记下操作人
+
+GIVEN 一次凭据正确的登录
+
+WHEN 写入审计
+
+THEN `user_id` 为该账号 ID
+
+AND 操作人须由已持有用户对象的调用方显式传入——不得在异步工作线程里读安全上下文
+（那里上下文为空，会让操作人恒为 null 而无人察觉）
+
+#### Scenario: 链路标识可回溯
+
+GIVEN 审计行携带链路标识
+
+WHEN 用该标识去追踪系统查询
+
+THEN 命中的正是产生这次登录的那条链路
+
+AND 该标识取自当次请求的真实链路上下文，不得是当场生成的随机值
+
+#### Scenario: 审计失败不阻断登录
+
+GIVEN 审计存储临时不可用
+
+WHEN 写入抛出异常
+
+THEN 异常被吞并记 ERROR
+
+AND 不因旁路故障把正常登录变成 500
+
+---
+
+### Requirement: 审计事件查询
+
+WHEN 管理员排查近期安全事件,
+
+系统 SHALL 提供 `GET /api/admin/audit-logs`，按账号/事件类型过滤、以时间倒序分页返回审计记录。
+
+#### Scenario: 最近的事件排在最前
+
+GIVEN 同一账号存在多条审计记录
+
+WHEN 管理员查询
+
+THEN 记录按时间倒序返回（最新在前）
+
+AND 分页不得把最近的事件埋进末页——那是管理员最想看的部分
+
+#### Scenario: 过滤条件真正生效
+
+GIVEN 库中混有多个账号的审计记录
+
+WHEN 按 `username` 或 `action` 查询
+
+THEN 只返回匹配的记录，无一混入
+
+#### Scenario: 查询结果可跳查链路
+
+GIVEN 一条审计记录
+
+WHEN 管理员读取其响应体
+
+THEN 含完整 32 位 `traceId`，可直接拿去追踪系统定位那次请求
+
+#### Scenario: 非管理员不可读取
+
+GIVEN 教师或学生身份
+
+WHEN 访问该接口
+
+THEN 返回 403
+
+AND 门槛只由类级角色校验承担——不额外挂权限点，因为它只能归属同一批人，
+等于把一道门建两遍并多一处会漏配的初始化数据
+
+#### Scenario: 越界分页被拒而非静默夹紧
+
+GIVEN 请求携带超过上限的 `size`
+
+WHEN 参数校验执行
+
+THEN 返回 400（不是把 101 悄悄夹成 100 后返回 200）
+
+---
+
+### Requirement: 建表来源唯一
+
+WHEN 新增数据库表,
+
+系统 SHALL 把 DDL 落在 `schema.sql`（dev 与测试共用的唯一建表入口），并为存量库另给手工迁移脚本。
+
+#### Scenario: 未接线的迁移目录不产生表
+
+GIVEN 某 DDL 只放在 `db/migration/` 下
+
+WHEN 应用在新库上启动
+
+THEN 该表不会被创建（本项目未接 Flyway，该目录下的脚本从不执行）
+
+AND 应改由 `schema.sql` 承载，避免"表已存在"的错觉
+
+---
+
+> 合入注记（2026-09-20，`harden-security-config`）：本域只合入审计落库与建表来源两条。
+> JWT 启动期强度校验、密码复杂度规则、连续失败锁定均已在 HEAD 中生效，非本变更新增。
+> **未合入**（提案提出但尚未实现）：`/audit/logs` 查询接口（数据已入库但无读取路径，
+> 审计的追溯价值目前只到"能查库"为止）、密码有效期策略、KMS 托管密钥。
+>
+> 后续（2026-09-20，d2cbde9 直补，非变更提案）：上述"查询接口"一条已实现为
+> `GET /api/admin/audit-logs`，故新增"审计事件查询"Requirement。路径与提案写的
+> `/audit/logs` 不同——审计是管理员专属，放在既有 `/api/admin` 前缀下才吃得到类级
+> `@RequireRole(ADMIN)`，不必再造一套鉴权。剩余未实现：密码有效期策略、KMS 托管密钥。

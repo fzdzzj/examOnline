@@ -1,7 +1,6 @@
 package com.exam.auth;
 
 import com.exam.auth.dto.ChangePasswordRequest;
-import com.exam.auth.dto.InviteCodeCreateRequest;
 import com.exam.auth.dto.LoginRequest;
 import com.exam.auth.dto.RefreshRequest;
 import com.exam.auth.dto.RegisterRequest;
@@ -63,14 +62,14 @@ class AuthIntegrationTest {
 
     @Test
     void studentRegisterLoginAndDuplicateRejected() throws Exception {
-        register("stu_a1", "stu_a1@test.com", "STUDENT", null, "pass1234");
+        register("stu_a1", "stu_a1@test.com", "STUDENT", null, "Pass1234");
 
         // 重复注册 → 400 账号已存在
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(new RegisterRequest() {{
                             setUsername("stu_a1");
-                            setPassword("pass1234");
+                            setPassword("Pass1234");
                             setName("重复");
                             setRoleType("STUDENT");
                         }})))
@@ -91,8 +90,8 @@ class AuthIntegrationTest {
 
     @Test
     void loginSuccessReturnsBothTokens() throws Exception {
-        register("stu_a3", "stu_a3@test.com", "STUDENT", null, "pass1234");
-        JsonNode data = login("stu_a3", "pass1234");
+        register("stu_a3", "stu_a3@test.com", "STUDENT", null, "Pass1234");
+        JsonNode data = login("stu_a3", "Pass1234");
         assertNotNull(data.get("accessToken").asText());
         assertNotNull(data.get("refreshToken").asText());
         assertEquals("Bearer", data.get("tokenType").asText());
@@ -101,7 +100,7 @@ class AuthIntegrationTest {
 
     @Test
     void wrongPasswordAndUnknownAccountReturnSameMessage() throws Exception {
-        register("stu_a4", "stu_a4@test.com", "STUDENT", null, "pass1234");
+        register("stu_a4", "stu_a4@test.com", "STUDENT", null, "Pass1234");
         // 密码错误
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -127,9 +126,9 @@ class AuthIntegrationTest {
 
     @Test
     void refreshRotatesAndReuseInvalidatesAllSessions() throws Exception {
-        register("stu_b1", "stu_b1@test.com", "STUDENT", null, "pass1234");
-        String access1 = loginToken("stu_b1", "pass1234");
-        String refresh1 = loginRefresh("stu_b1", "pass1234");
+        register("stu_b1", "stu_b1@test.com", "STUDENT", null, "Pass1234");
+        String access1 = loginToken("stu_b1", "Pass1234");
+        String refresh1 = loginRefresh("stu_b1", "Pass1234");
 
         // 正常轮换
         JsonNode refreshed = refresh(refresh1);
@@ -149,7 +148,7 @@ class AuthIntegrationTest {
         me(access1).andExpect(status().isUnauthorized());
 
         // 重新登录恢复正常（版本从递增后的值继续），新会话的 Refresh 可正常轮换
-        JsonNode relogin = login("stu_b1", "pass1234");
+        JsonNode relogin = login("stu_b1", "Pass1234");
         String access3 = relogin.get("accessToken").asText();
         String refresh3 = relogin.get("refreshToken").asText();
         me(access3).andExpect(status().isOk());
@@ -170,8 +169,8 @@ class AuthIntegrationTest {
 
     @Test
     void logoutBlacklistsAccessToken() throws Exception {
-        register("stu_c1", "stu_c1@test.com", "STUDENT", null, "pass1234");
-        JsonNode tokens = login("stu_c1", "pass1234");
+        register("stu_c1", "stu_c1@test.com", "STUDENT", null, "Pass1234");
+        JsonNode tokens = login("stu_c1", "Pass1234");
         String access = tokens.get("accessToken").asText();
         String refresh = tokens.get("refreshToken").asText();
 
@@ -198,15 +197,15 @@ class AuthIntegrationTest {
 
     @Test
     void changePasswordInvalidatesOldSessions() throws Exception {
-        register("stu_d1", "stu_d1@test.com", "STUDENT", null, "pass1234");
-        String access = loginToken("stu_d1", "pass1234");
+        register("stu_d1", "stu_d1@test.com", "STUDENT", null, "Pass1234");
+        String access = loginToken("stu_d1", "Pass1234");
 
         mockMvc.perform(post("/api/auth/password/change")
                         .header("Authorization", bearer(access))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(new ChangePasswordRequest() {{
-                            setOldPassword("pass1234");
-                            setNewPassword("newpass99");
+                            setOldPassword("Pass1234");
+                            setNewPassword("Newpass99");
                         }})))
                 .andExpect(status().isOk());
 
@@ -217,23 +216,23 @@ class AuthIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(new LoginRequest() {{
                             setUsername("stu_d1");
-                            setPassword("pass1234");
+                            setPassword("Pass1234");
                         }})))
                 .andExpect(status().isUnauthorized());
         // 新密码可登录
-        login("stu_d1", "newpass99");
+        login("stu_d1", "Newpass99");
     }
 
     @Test
     void changePasswordWithWrongOldPasswordRejected() throws Exception {
-        register("stu_d2", "stu_d2@test.com", "STUDENT", null, "pass1234");
-        String access = loginToken("stu_d2", "pass1234");
+        register("stu_d2", "stu_d2@test.com", "STUDENT", null, "Pass1234");
+        String access = loginToken("stu_d2", "Pass1234");
         mockMvc.perform(post("/api/auth/password/change")
                         .header("Authorization", bearer(access))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(new ChangePasswordRequest() {{
                             setOldPassword("wrong999");
-                            setNewPassword("newpass99");
+                            setNewPassword("Newpass99");
                         }})))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(1011));
@@ -242,7 +241,7 @@ class AuthIntegrationTest {
     @Test
     void passwordResetViaEmailCodeIsSingleUse() throws Exception {
         String email = "reset1@test.com";
-        register("stu_d3", email, "STUDENT", null, "pass1234");
+        register("stu_d3", email, "STUDENT", null, "Pass1234");
 
         mockMvc.perform(post("/api/auth/password/reset-code")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -260,7 +259,7 @@ class AuthIntegrationTest {
                         .content(json(new ResetPasswordRequest() {{
                             setEmail(email);
                             setCode(code);
-                            setNewPassword("resetpass1");
+                            setNewPassword("Resetpass1");
                         }})))
                 .andExpect(status().isOk());
 
@@ -270,7 +269,7 @@ class AuthIntegrationTest {
                         .content(json(new ResetPasswordRequest() {{
                             setEmail(email);
                             setCode(code);
-                            setNewPassword("resetpass2");
+                            setNewPassword("Resetpass2");
                         }})))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(1010));
@@ -280,21 +279,21 @@ class AuthIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(new LoginRequest() {{
                             setUsername("stu_d3");
-                            setPassword("pass1234");
+                            setPassword("Pass1234");
                         }})))
                 .andExpect(status().isUnauthorized());
-        login("stu_d3", "resetpass1");
+        login("stu_d3", "Resetpass1");
     }
 
     @Test
     void resetWithWrongCodeRejected() throws Exception {
-        register("stu_d4", "reset2@test.com", "STUDENT", null, "pass1234");
+        register("stu_d4", "reset2@test.com", "STUDENT", null, "Pass1234");
         mockMvc.perform(post("/api/auth/password/reset")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(new ResetPasswordRequest() {{
                             setEmail("reset2@test.com");
                             setCode("000000");
-                            setNewPassword("resetpass1");
+                            setNewPassword("Resetpass1");
                         }})))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(1010));
@@ -316,14 +315,14 @@ class AuthIntegrationTest {
         assertNotNull(inviteCode);
 
         // 无效邀请码 → 400
-        register("tea_bad", "tea_bad@test.com", "TEACHER", "INVALIDCODE", "pass1234")
+        register("tea_bad", "tea_bad@test.com", "TEACHER", "INVALIDCODE", "Pass1234")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(1004));
 
         // 有效邀请码 → 注册成功且角色为 TEACHER
-        register("tea_good", "tea_good@test.com", "TEACHER", inviteCode, "pass1234")
+        register("tea_good", "tea_good@test.com", "TEACHER", inviteCode, "Pass1234")
                 .andExpect(status().isOk());
-        String teaAccess = loginToken("tea_good", "pass1234");
+        String teaAccess = loginToken("tea_good", "Pass1234");
         me(teaAccess)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.roles", hasItem("TEACHER")));
@@ -339,8 +338,8 @@ class AuthIntegrationTest {
 
     @Test
     void roleAspectBlocksStudentFromAdminEndpoint() throws Exception {
-        register("stu_e1", "stu_e1@test.com", "STUDENT", null, "pass1234");
-        String studentAccess = loginToken("stu_e1", "pass1234");
+        register("stu_e1", "stu_e1@test.com", "STUDENT", null, "Pass1234");
+        String studentAccess = loginToken("stu_e1", "Pass1234");
 
         // 学生访问邀请码管理（invite:manage）→ 403
         mockMvc.perform(post("/api/admin/invite-codes")
@@ -366,8 +365,8 @@ class AuthIntegrationTest {
                 .andExpect(status().isOk());
 
         // 踢人：目标用户全端下线
-        register("stu_e2", "stu_e2@test.com", "STUDENT", null, "pass1234");
-        String stuAccess = loginToken("stu_e2", "pass1234");
+        register("stu_e2", "stu_e2@test.com", "STUDENT", null, "Pass1234");
+        String stuAccess = loginToken("stu_e2", "Pass1234");
         me(stuAccess).andExpect(status().isOk());
 
         Long stuId = objectMapper.readTree(me(stuAccess).andReturn().getResponse().getContentAsString())
@@ -382,7 +381,7 @@ class AuthIntegrationTest {
 
     @Test
     void accountLockedAfterFiveFailures() throws Exception {
-        register("stu_f1", "stu_f1@test.com", "STUDENT", null, "pass1234");
+        register("stu_f1", "stu_f1@test.com", "STUDENT", null, "Pass1234");
 
         // 连续 5 次密码错误 → 401
         for (int i = 0; i < 5; i++) {
@@ -399,7 +398,7 @@ class AuthIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(new LoginRequest() {{
                             setUsername("stu_f1");
-                            setPassword("pass1234");
+                            setPassword("Pass1234");
                         }})))
                 .andExpect(status().is(423))
                 .andExpect(jsonPath("$.code").value(1007))
@@ -408,7 +407,7 @@ class AuthIntegrationTest {
 
     @Test
     void loginRateLimitReturns429() throws Exception {
-        register("stu_f2", "stu_f2@test.com", "STUDENT", null, "pass1234");
+        register("stu_f2", "stu_f2@test.com", "STUDENT", null, "Pass1234");
 
         // 前 10 次正常（成功不重置限流计数）
         for (int i = 0; i < 10; i++) {
@@ -416,7 +415,7 @@ class AuthIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json(new LoginRequest() {{
                                 setUsername("stu_f2");
-                                setPassword("pass1234");
+                                setPassword("Pass1234");
                             }})))
                     .andExpect(status().isOk());
         }
@@ -425,7 +424,7 @@ class AuthIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(new LoginRequest() {{
                             setUsername("stu_f2");
-                            setPassword("pass1234");
+                            setPassword("Pass1234");
                         }})))
                 .andExpect(status().is(429))
                 .andExpect(jsonPath("$.code").value(1008));

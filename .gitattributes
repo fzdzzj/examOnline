@@ -1,0 +1,4 @@
+# spec/changes/**/evidence/ 是归档证据：evidence-sha256.txt 清单以 sha256 承诺可复验，
+# 必须按磁盘原始字节入库。core.autocrlf=true 时 LF 会在签出时变 CRLF，使
+# `grep -v '^#' evidence-sha256.txt | sha256sum -c -` 在新克隆上失败。
+spec/changes/**/evidence/** -text

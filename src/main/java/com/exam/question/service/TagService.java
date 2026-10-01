@@ -23,6 +23,8 @@ import java.util.List;
  *
  * <p>标签定位为教师共享的全局资源：任何教师可创建/删除，删除题目关联随之清理。
  * 同名同类型查重在 Service 层完成（软删后允许重建同名标签，故不设数据库唯一键）。
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -37,7 +39,7 @@ public class TagService {
     }
 
     /** 创建标签：同类型下同名查重，重复创建报 1001。 */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Tag create(TagCreateRequest request) {
         LoginUser operator = requireLogin();
         if (!TagType.isValid(request.getType())) {
@@ -78,7 +80,7 @@ public class TagService {
      * 删除标签（软删）：关联行物理清理，避免残留脏关联；
      * 已打标的题目内容不受影响，只是不再带此标签。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         Tag tag = tagMapper.selectById(id);
         if (tag == null) {

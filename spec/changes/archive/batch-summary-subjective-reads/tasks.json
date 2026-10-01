@@ -1,0 +1,28 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：测试",
+    "task": "证明多份答卷的主观分只查一次，且语义不变",
+    "steps": [
+      { "step": "先写测试：两份已判完答卷汇总时，主观分查询只有一次，且两次 casSummarize 的分数与部分批改标记与逐份计算一致", "completed": true,
+        "evidence": "新增 summarizeQueriesSubjectiveGradesOnceForTwoSubmissionsAndKeepsPerSubmissionTotals（verify subjectiveGradeMapper.selectList times(1)，逐份断言 casSummarize(1L, 10.0, 40.0, 0) / (2L, 9.0, 39.0, 0)，主观分行按两份卷交错排列）与 summarizeTreatsMissingSubjectiveRowsAsUngradedWhenBatchLoadedWithAnotherSubmission（只有 1 号卷有主观分行，2 号卷断言 casSummarize(2L, 0, 30.0, 1) 即缺行仍按未批口径）。旧实现下红灯：mvn.cmd -Dtest=ScoreServiceTest test → Tests run: 40, Failures: 2, Errors: 0（两个新用例均为 TooManyActualInvocations：selectList 实际调用 2 次，出处 ScoreService.computeSummary）。revision e9a9568" },
+      { "step": "保留未判完整场拒绝、合法客观零分、主观未批部分批改的现有用例，不放宽断言", "completed": true,
+        "evidence": "未改动任何现有用例（summarizeRejectsSubmissionWithMissingObjectiveScoreBeforeAnyWrite、summarizeRejectsWholeBatchWhenUnfinishedSubmissionFollowsValidSubmissionWithoutAnyWrite、summarizeRejectsFailedSubmissionBeforeAnyWrite、summarizeAllowsSuccessfulObjectiveZeroAndPartialSubjectiveGrading、summarizeSumsGradedShortAnswersAndTreatsMissingRowAsZeroAndPartial、summarizeClearsPartialFlagWhenEveryShortAnswerIsGraded、summarizeKeepsFirstGradeRowWhenAShortAnswerHasDuplicates 原样保留，断言未放宽）。revision e9a9568" }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：实现",
+    "task": "汇总前按答卷 ID 一次取出主观分",
+    "steps": [
+      { "step": "在逐份 CAS 之前批量查询本场 subjective_grades，循环内不再按答卷 selectList", "completed": true,
+        "evidence": "ScoreService.summarize 在判分前置检查通过后、逐份 CAS 循环前调用新增私有方法 loadSubjectiveGradesBySubmission：subjectiveGradeMapper.selectList 一条 IN(submissionIds) 查询取回本场主观分，按答卷 ID 分组、组内按题 ID 取首行；computeSummary 改为接收预取的 Map，循环内不再查询。未新增 Mapper 方法（复用 BaseMapper.selectList + Wrappers.in）。revision e9a9568" },
+      { "step": "缺行和未批仍走原口径；不改交卷、JVM、线程池和表结构", "completed": true,
+        "evidence": "缺行答卷走 gradesBySubmission.getOrDefault(id, Map.of())，全部题目按缺行/未批记 0 分并打部分批改标记（§7.5），由 summarizeTreatsMissingSubjectiveRowsAsUngradedWhenBatchLoadedWithAnotherSubmission 覆盖；无简答题或无答卷时不发查询（verifyNoInteractions(subjectiveGradeMapper) 用例保持绿）。改动仅 ScoreService.java 与 ScoreServiceTest.java，不涉及交卷、JVM、线程池、schema。revision e9a9568" },
+      { "step": "运行 ScoreServiceTest，把命令、原始结果和 revision 写入证据", "completed": true,
+        "evidence": "命令：mvn.cmd -Dtest=ScoreServiceTest test；原始结果：Tests run: 40, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS；revision e9a9568（改后重跑，工作区含本次改动）" }
+    ],
+    "passes": true
+  }
+]

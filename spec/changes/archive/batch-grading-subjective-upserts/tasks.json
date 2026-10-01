@@ -1,0 +1,44 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：测试",
+    "task": "证明整场判分对主观行只查一次，且重判不覆盖终分",
+    "steps": [
+      { "step": "新增 ObjectiveGradingServiceTest：两份答卷各两道简答时，subjectiveGradeMapper.selectOne 为零次，selectList 最多一次；两份都写入对应初判行；客观分按题型策略照常落库", "completed": true,
+        "evidence": "新增 runExamGradingLoadsSubjectiveRowsOnceAndUpsertsBothSubmissions（verify subjectiveGradeMapper.selectList times(1) 且 selectOne never；insert 捕获 4 行逐行断言答卷/题目归属、答案快照与提示分 6.0、4.0、2.0、1.3；客观分 wrapper 断言 5.0 与 0.0 照常落库）。旧实现下红灯：mvn.cmd -Dtest=ObjectiveGradingServiceTest test → Tests run: 6, Failures: 4, Errors: 0, Skipped: 0，四个批取用例均为 Wanted but not invoked: subjectiveGradeMapper.selectList（旧实现为逐题 selectOne + 逐行 insert，共 8 次交互）。revision 0eeea70" },
+      { "step": "同一测试类覆盖：已有终分/评语/version 的行只刷新答案与提示分；一份答案损坏时只标记该份失败，另一份仍写入；无简答题时不查询 subjective_grades", "completed": true,
+        "evidence": "runExamGradingRefreshesOnlySuggestionColumnsOnExistingTeacherRows（已有行带终分 5.5/评语/批改人/批改时间/version=3：捕获 2 条刷新 wrapper 的 SET 列集合恰为 student_answer/suggested_score/suggested_detail/question_number/updated_time，不含 score/comment/grader_id/graded_time/version，且物化 WHERE 后按已有行 id 定位、insert 零次）；runExamGradingIsolatesBrokenSubmissionAndStillGradesTheOther（坏卷 wrapper 含 GRADING_FAILED 与原因，好卷 insert 照常且 wrapper 含 GRADING_OK）；runExamGradingSkipsSubjectiveQueryWhenPaperHasNoShortAnswers 与 runExamGradingSkipsSubjectiveQueryWhenNoSubmissions（verifyNoInteractions(subjectiveGradeMapper)，旧实现下即绿，作护栏）。同一红灯轮：Tests run: 6, Failures: 4, Errors: 0。revision 0eeea70" },
+      { "step": "不放宽 GradingScoreIntegrationTest 既有断言；不得使用 @Sql 自建表", "completed": true,
+        "evidence": "GradingScoreIntegrationTest 零改动（本次改动仅 ObjectiveGradingService.java、ExamGradingService.java 与新增 ObjectiveGradingServiceTest.java）；新增测试为纯 Mockito 单测，无 @Sql；AGENTS.md 三条自查各跑一遍全部无命中。revision 0eeea70" }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：实现",
+    "task": "整场判分前按答卷 ID 一次取出已有主观行",
+    "steps": [
+      { "step": "runExamGrading 在逐份判分前一次查出本场已有 subjective_grades；gradeSafely/upsert 从预取 Map 取行，循环内不再 selectOne", "completed": true,
+        "evidence": "ObjectiveGradingService 新增公开方法 loadSubjectiveGrades(submissions, paper)：subjectiveGradeMapper.selectList 一条 IN(submissionIds) 查询取回后按答卷 ID 分组、组内按题 ID 取首行（脏数据不中断）；gradeSafely 签名改为接收该份答卷的预取行 Map，upsertSubjectiveRow 从预取行取 existing，selectOne 整体移除。ExamGradingService.runExamGrading 在答卷清单取出后、逐份循环前调用预取。未新增 Mapper 方法（复用 BaseMapper.selectList + Wrappers.in，与汇总先例 batch-summary-subjective-reads 同口径）。revision 0eeea70" },
+      { "step": "单份 rejudge 对该 submissionId 一次取出；刷新已有行不得写 score/comment/grader_id/graded_time/version；无简答题或无答卷不查询", "completed": true,
+        "evidence": "rejudge 以 List.of(submission) 调 loadSubjectiveGrades 后把该份预取行传入 gradeSafely（rejudgeLoadsExistingRowsOnceForSingleSubmission 守 selectList 恰 1 次、selectOne 零次）；loadSubjectiveGrades 对 submissions 为空或 paper.shortAnswerQuestions() 为空直接返回 Map.of() 不发查询（两个 no-query 用例守）；刷新不覆盖终分由 SET 列集合断言守住。revision 0eeea70" },
+      { "step": "不把整场判分包进一个大事务；一份失败仍只 markGradingFailed 该份", "completed": true,
+        "evidence": "两个服务均未新增 @Transactional，单份判分仍是各自独立写、失败由 markGradingFailed 就地标记；预取是逐份 try 之外的一次读，失败按整场异常上抛（与 ScoreService.summarize 批量读取同口径），不构成整场大事务；runExamGradingIsolatesBrokenSubmissionAndStillGradesTheOther 在新实现下绿（失败 wrapper 只打坏卷、好卷照常）。revision 0eeea70" }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：验收与收口",
+    "task": "定向测试通过后提交、合入 delta、归档",
+    "steps": [
+      { "step": "运行 mvn.cmd -Dtest=ObjectiveGradingServiceTest,GradingScoreIntegrationTest test，把命令、原始四计数和 revision 写入证据", "completed": true,
+        "evidence": "命令：mvn.cmd -Dtest=ObjectiveGradingServiceTest,GradingScoreIntegrationTest test；原始结果：ObjectiveGradingServiceTest Tests run: 6, Failures: 0, Errors: 0, Skipped: 0；GradingScoreIntegrationTest Tests run: 3, Failures: 0, Errors: 0, Skipped: 0；合计 9/0/0/0，BUILD SUCCESS；revision 0eeea70（改后重跑，工作区含本次改动，实现见提交 10aba79）。验收边界=隔离单测+既有集成测试；不是交卷 P99 修复；未跑共享 dev 真判分" },
+      { "step": "显式路径提交实现与测试；提案三件套一并纳入（若尚未提交）。不改交卷、JVM、线程池、schema、前端、openapi，不碰另外三份待审批提案和 E2", "completed": true,
+        "evidence": "实现与测试提交 10aba79（src/main 两个服务文件 + 新增 src/test 单测，显式路径 git add，提交前 git diff --cached --name-only 核对恰好 3 个文件）；提案三件套随收口提交入库。pom.xml、schema.sql、frontend/、openapi.yaml 零改动；isolate-submit-load-generator、gate-java-change-on-measured-factor、fix-flaky-integration-baselines、update-agent-gate-single-source 四个目录未触碰" },
+      { "step": "合入 spec-delta 到 spec/specs/grading/spec.md，目录移入 archive，更新 spec/README.md（进行中删除本行、归档表新增、grading 已合入规范补登）。proposal 写明：验收边界=隔离单测+既有集成测试；不是交卷 P99；未跑共享 dev 真判分", "completed": true,
+        "evidence": "grading 基线「简答批改」合入 SHALL 增句与新场景「整场判分主观行一次取出」；「教师批改留痕」「并发批改防覆盖」两场景保留基线原文一字未改。变更目录整体移入 spec/changes/archive/batch-grading-subjective-upserts/；proposal 状态行改「已归档（2026-09-25）」并写明验收边界；spec/README.md 进行中表删除本行（另三条待审批与 E2 原样保留）、已合入规范表 grading 行补登来源、归档表新增本行" }
+    ],
+    "passes": true
+  }
+]

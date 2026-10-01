@@ -1,10 +1,10 @@
 package com.exam.taking.service;
 
+import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.submission.dto.SubmitMessage;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.submission.mq.ExamSubmitSender;
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 交卷链路兜底扫描（spec「超时交卷」需求，服务端时间为准）：
@@ -31,6 +32,16 @@ import java.util.List;
  *
  * <p>与考试状态机扫表同构：Spring @Scheduled 固定间隔 + 启动补偿扫表，
  * 不依赖外部调度中间件；单轮分批（500/批）防止大场面拖垮单次扫描。
+ *
+ * <p><b>多实例策略（刻意不加分布式调度锁）</b>：多实例下每个实例都会各扫一遍，正确性由下游幂等
+ * （SETNX + 状态机 CAS + 唯一索引 + 消费端 casFillAnswers）保证，并有
+ * {@code MultiInstanceSweepSafetyTest} 证明。代价是 N 实例重复扫描（重复投递、日志噪音）；
+ * 换来的是<b>定时兜底不依赖 Redis 可用性</b>——若加调度锁，Redis 故障会让兜底扫描整体停摆，
+ * 那比重复扫描严重得多。重复扫描可通过 {@code exam.sweep.duplicate_detected}（task=sweep）观测。
+ *
+ * <p>将来若要省资源的可选路径：Redis 调度锁必须 <b>fail-open</b>
+ * （抢不到锁或 Redis 异常时照常执行，退化回"重复扫但幂等"），
+ * <b>禁止</b>加 fail-close 的锁把兜底能力锁死。
  */
 @Slf4j
 @Service
@@ -40,6 +51,7 @@ public class ExamSweepService {
     private final ExamSubmitService submitService;
     private final ExamDraftService draftService;
     private final ExamSubmitSender sender;
+    private final BusinessMetrics metrics;
 
     @Value("${exam.taking.sweep.batch-size:500}")
     private int batchSize;
@@ -48,11 +60,13 @@ public class ExamSweepService {
     private int maxRounds;
 
     public ExamSweepService(ExamSubmissionMapper submissionMapper, ExamSubmitService submitService,
-                            ExamDraftService draftService, ExamSubmitSender sender) {
+                            ExamDraftService draftService, ExamSubmitSender sender,
+                            BusinessMetrics metrics) {
         this.submissionMapper = submissionMapper;
         this.submitService = submitService;
         this.draftService = draftService;
         this.sender = sender;
+        this.metrics = metrics;
     }
 
     /** 执行一轮兜底：超时强制交卷 + 答案补发对账。 */
@@ -90,6 +104,8 @@ public class ExamSweepService {
                     total++;
                 } catch (Exception e) {
                     // 并发窗口内已被其他路径提交/尚未进入等业务竞态：幂等跳过，不打断同批其他答卷
+                    // 重复扫描可观测：扫描命中但下游已处理（或业务竞态跳过）
+                    metrics.countSweepDuplicateDetected("sweep");
                     log.debug("兜底强制交卷跳过: exam={} student={} 原因={}",
                             submission.getExamId(), submission.getStudentId(), e.getMessage());
                 }
@@ -115,8 +131,7 @@ public class ExamSweepService {
             try {
                 sender.send(new SubmitMessage(
                         submission.getId(), submission.getExamId(), submission.getStudentId(),
-                        submission.getSubmitType() == null ? ExamSubmission.SUBMIT_TYPE_BACKEND
-                                : submission.getSubmitType(),
+                        Objects.requireNonNullElse(submission.getSubmitType(), ExamSubmission.SUBMIT_TYPE_BACKEND),
                         submission.getSubmitTime() == null ? LocalDateTime.now() : submission.getSubmitTime(),
                         draftAnswersOrEmpty(submission)));
                 republished++;

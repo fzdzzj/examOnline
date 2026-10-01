@@ -1,0 +1,24 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：守卫接线",
+    "task": "未改密用户的导航被限制在改密与登出",
+    "steps": [
+      { "step": "decideNavigation 增加 mustChangePassword 分支：true 时仅放行改密页与登出，其余路由重定向到改密页", "completed": true },
+      { "step": "判定数据接 /api/auth/me 既有会话查询；字段恒有值，直接按布尔值分支", "completed": true },
+      { "step": "改密成功后经既有会话刷新路径放开守卫，不在本地持久化「已改密」标记", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：单测与门禁",
+    "task": "守卫行为被自动化测试守住",
+    "steps": [
+      { "step": "access.spec.ts 补分支用例：未登录 / 正常 / 必须改密三分支，mustChangePassword=false 不误拦", "completed": true },
+      { "step": "lint + type-check + vitest 全绿；后端 mvn test 零改动回归", "completed": true },
+      { "step": "验收证据三要素（命令 + 该次原始输出 + 当时短 revision）记录在案", "completed": true }
+    ],
+    "passes": true
+  }
+]

@@ -1,6 +1,7 @@
 package com.exam.paper.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
@@ -42,6 +43,8 @@ import java.util.stream.Collectors;
  *   <li>不可变：快照是副本，之后题目被修改或软删除均不影响历史快照（spec「题目变更不影响快照」场景）；</li>
  *   <li>读取：供后续考试/答题/判分/回看统一消费。</li>
  * </ul>
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -78,7 +81,7 @@ public class PaperSnapshotService {
      * 生成快照并锁定试卷（一卷一快照，不允许重复生成/重抽）：
      * 前置校验——试卷非空、所有题目未被软删、各题分值之和等于申报总分。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public PaperSnapshotResponse generate(Long paperId) {
         Paper paper = paperService.getOwnedPaper(paperId);
         if (paper.getStatus() == Paper.STATUS_LOCKED) {
@@ -141,12 +144,18 @@ public class PaperSnapshotService {
      * 读取当前生效快照（考试/答题/判分/回看的统一入口）：
      * 每次读取都命中同一行记录，内容与首次生成完全一致。
      *
+     * <p>读写分离（add-performance-deepening task3）：快照发布后<i>只读不可变</i>，
+     * 属于<b>非强一致读</b>（拉卷高并发、可容忍秒级延迟）——加 {@code @DS("slave")} 走从库，
+     * 把热读压力从主库卸到从库；即使从库复制略有滞后，读到的也只是过期一瞬的不可变快照，无碍正确性。
+     * 若写后窗口内命中（ReadYourWriteRouter 处理）则临时转主库。
+     *
      * <p>缓存设计（add-performance-deepening 阶段 8）：快照生成后<b>只读不可变</b>
      * （题目/试卷再修改均不影响已生成副本），缓存与 DB 天然一致，可用长 TTL 且无需失效逻辑。
      * key = paperId + 请求者 ID（{@link #snapshotCacheKey}）：方法体内的归属校验（getOwnedPaper）
      * 在缓存命中时会被切面跳过，key 必须带上请求者，防止命中他人缓存绕过水平越权校验；
      * 未命中经 CacheMutexLoader 互斥回源（防击穿），查无结果写短 TTL 空标记（防穿透）。
      */
+    @DS("slave")
     @Cacheable(cacheNames = CacheConfig.CACHE_PAPER_SNAPSHOT,
             key = "T(com.exam.paper.service.PaperSnapshotService).snapshotCacheKey(#paperId)")
     public PaperSnapshotResponse getCurrent(Long paperId) {

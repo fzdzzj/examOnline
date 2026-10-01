@@ -1,0 +1,58 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：基线与口径",
+    "task": "复核排名语义、调用点及测量环境",
+    "steps": [
+      { "step": "确认开工 HEAD、工作树、现行成绩排名/Java 归因规范；列出 rank 三个调用点及学生查分全班 SQL，区分已证实 O(n²) 与未知的请求耗时占比", "completed": true },
+      { "step": "在不写共享 dev 的隔离环境准备固定人数、并列比例与确定性分数的可复现数据（六轮负载实际全部非 null、scale 固定 1；null 与 BigDecimal 不同 scale 的等价性由 RankCalculatorTest 覆盖，未进本负载）；记录负载、JDK/机器、数据库配置、预热和指标采集命令，说明临时数据清理方式", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "HEAD=31b70c3 开工核对，后实施提交 HEAD=7c11578。rank 三个调用点：ScoreService.publishPreview(:234)、ScoreService.myScore(:308，全班 SQL 在 :293-297，:280 需 status=PUBLISHED)、ScoreExportService(:394)。隔离测量用 RankAttributionMeasureIT（@SpringBootTest + @AutoConfigureMockMvc，同进程 MockMvc 直调，未启动 RANDOM_PORT 服务；H2 内存库，未触碰共享 dev/Docker/跨宿主）。SIZES={50,200,1000,3000}，确定性分数 score(i)=BigDecimal(400+(i*7919)%300,1)——六轮负载全部非 null、scale 固定 1、含大量并列；「不同 scale 数值等价」属 RankCalculatorTest 的功能覆盖，不是这六轮负载的数据特征；students/exam_submissions 均以 930000000+ 段位种子；预热+JFR(jdk.ExecutionSample/CPULoad/GC*)。环境 java=21.0.9 HotSpot、processors=20、maxHeapMB=3952、Windows 11、DB=H2 memory。临时数据仅在测试容器的共享 H2(mem) 内按 exam_id=EXAM_ID_BASE+size 绑定，进程退出即不存在，无共享库写入。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：同负载归因与裁决",
+    "task": "先量排名计算是否真是优先因素，不靠复杂度猜瓶颈",
+    "steps": [
+      { "step": "在旧代码上按固定负载逐次记录请求延迟分布、吞吐、资源占用及 SQL 取数/排名计算分段耗时；原始命令和输出绑定短 revision，不拿交卷同机历史压测代替成绩路径基线", "completed": true },
+      { "step": "按 spec/specs/performance/spec.md 判定排名计算是否为目标路径占比最高的可控因素；SQL/其他因素主导或测量不可用时停止代码实施，如实回报并保留本阶段不通过，不用微基准替代整体归因", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "旧实现逐轮测量（隔离工作树 D:\\\\code\\\\examOnline-rank-old，detach 于 31b70c3，src/main 为 O(n²) 二重遍历；六轮结果由工具 revision cde1e15 产出，该版 SHA256 D236179197AD0F1FFCAEF87C709FD08FA1E9F9E1442505203A49EFF6CF6E3B05，与当时主树逐字一致；其后仅订正指标口径说明文本（`metricDefs.e2e.rankSharePct` 的字符串；git diff cde1e15 HEAD -- 该文件仅此 1 行），不触及测量逻辑、数据生成、计时与预热，故六轮数值仍绑定 cde1e15）。\n命令（逐轮 old-run1/2/3）：mvnw.cmd test -Dtest=RankAttributionMeasureIT -DfailIfNoTests=false -Dmeasure.rev=31b70c3 -Dmeasure.label=old-run{1,2,3} -Dmeasure.out=D:\\\\code\\\\examOnline-rank-old\\\\target\\\\measure -Dmaven.repo.local=D:\\\\code\\\\examOnline\\\\.m2-repo（工作树根执行；旧树未生成自己的 .m2-repo，覆盖生效）。\n三轮均 Tests run:1/Failures:0/Errors:0/Skipped:0、BUILD SUCCESS、exit=0；语义自检三轮一致 expectedRank={50=50,200=200,1000=997,3000=2991}。\n逐轮原始结果（机器可读，存 spec/changes/archive/update-score-ranking-calculation/evidence/rank-attribution-old-run{1,2,3}.json；sha256 见同目录 evidence-sha256.txt）：微基准 rank() best/median —— n=1000：0.860/0.904、0.903/0.981、0.858/0.884ms；n=3000：8.043/8.935、7.992/8.289、12.376/14.639ms（三轮 ranksum 均 4488000）。SQL 取数（与 myScore 同语句 mapper.selectList）n=3000 best/median：3.143/3.795、3.216/4.233、4.257/9.125ms。端到端 /api/scores/my n=3000 并发1：mean 35.783/28.060/52.414ms、p95 46.987/33.408/72.950、p99 51.236/36.695/76.245、吞吐 27.75/35.40/18.98 req/s、请求内 rankMean 25.105/19.194/37.631ms、rankShare 70.159/68.402/71.795%；并发8：mean 105.963/103.907/112.959ms、p99 186.520/182.084/227.994、rankShare 23.132/23.452/33.077%、吞吐 72.50/74.45/68.05 req/s；n=1000 并发1 rankShare 24.26/24.31/24.68%。JFR 逐帧归因（jdk.ExecutionSample period=10ms，栈含 com.exam.score.service.RankCalculator 即计入）WHOLE rankShare 40.863/39.911/45.676%、FOCUSED(n=3000) 63.425/56.159/63.226%、RANK_HOT 97.931/98.684/96.178%；GCPhasePause 17/19/23 次、69.1/69.6/105.5ms。\n裁决：三条测量线相互佐证（请求内分账 68–72% 是墙钟占比、JFR FOCUSED 56–63% 是 CPU 栈采样份额、微基准 8.0–12.4ms 对 SQL 3.1–4.3ms 且随 n 扩展；三者分母与录制范围不同，只可彼此佐证、不可直接等值比较）→ n=3000 学生查分路径上排名计算为占比最高的可控因素，GO 成立。\n与归档原文的冲突（如实留存，不称其为噪声）：①归档「JFR n3000 rank 份额仅 2%（稀释噪声大）」在本工具口径下未复现——旧实现最低的 WHOLE 亦达 39.9%，而 0.74–2.55% 恰为新实现 WHOLE/FOCUSED 取值；旧录制的原始口径（事件配置、录制范围、归因判据）未留存，无法据此断定成因就是版本/作用域错配，只能判为「未复现、成因未定」，也不能作为「归因不可用」的依据；②归档旧微基准 n=1000≈2.06ms、n=3000≈19.61ms 未复现（实测 best 0.86–0.90ms、7.99–12.38ms，约 1.6–2.4× 差距）；③归档「SQL 取数 n=3000≈1.31ms」未复现（实测 best 3.14–4.26ms，约 2.4–3.2× 差距）——本工具 SQL 口径含 MyBatis 反射映射，与归档口径是否等价无凭据，列为未解释差异。\n口径边界：隔离 H2 内存库 + MockMvc 同进程 + 单人 token；不是真实 MySQL/Tomcat 生产性能，也不构成交卷 P99 结论。WHOLE 不含 Spring 上下文启动（程序化 Recording 无法覆盖，约 10s 级），此即「整轮聚合稀释」的已知来源；FOCUSED 作用域即为排除该稀释而设。原始 JFR 二进制由工具写到 target/measure/jfr/（约 18 个 0.1–0.5MB 文件）；该目录属构建产物，随本轮 mvnw.cmd clean test 的 clean 清除、重跑工具即再生，按约定不入版本库，其派生数值已含在上面的 JSON 内。入库 JSON 原样保留产出时的指标口径文本（含已被订正的「同臂同并发下可直接对账 JFR 份额」措辞），作为原始证据不改写、sha256 不变，口径表述以工具源码当前 `metricDefs` 文本为准。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：条件成立后才做计算层返修",
+    "task": "纯函数语义护栏先红后绿，单独降低比较增长",
+    "steps": [
+      { "step": "在 RankCalculatorTest 添加不依赖墙钟的比较次数增长护栏（测试侧可计数 BigDecimal.compareTo，确认可覆盖后使用）与旧函数语义对照：空列表、null、同分跳号、不同 scale 等价、输入顺序、确定性多规模样本；在旧实现上得到与二重比较对应的红灯", "completed": true },
+      { "step": "仅改 RankCalculator.rank 使比较次数增长不超过 O(n log n)，保持调用者入参和输出结构不变；原红灯在新实现变绿，既有 RankCalculatorTest、ScoreServiceTest 与必要导出/复核边界测试不得放宽", "completed": true },
+      { "step": "核对代码 diff：不改查询、Mapper/schema、前端、JVM/线程池/缓存或其他服务；如测量裁决不支持本阶段，则不执行并保持未完成、注明不适用原因", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "RankCalculatorTest 新增 CountingBigDecimal(ThreadLocal<AtomicLong> 重写 compareTo 计数)、referenceRank(测试内旧 O(n²) oracle)、semanticsMatchReferenceAcrossScalesAndNulls、comparisonGrowthGuard(n=2048, 混合并列+不同scale+null, bound=n*(2*ceilLog2(n)+2)=49152)。旧实现红灯：comparisons=4,110,756 > 49152（Tests run:8, Failures:1，对应二重遍历候选≈n(n-1)）。只改 RankCalculator.rank（O(n log n) sort 后按位定名次，维持 compareTo 数值并列/跳号/null→0/按入参位置映射），comparisons=21,681 ≤ 49152 全绿（≈190x 降低）。RankCalculatorTest 8、ScoreServiceTest 40、ScoreServiceReviewHideTest 2 无回归。diff 仅 RankCalculator.java+RankCalculatorTest.java，不改查询/Mapper/schema/前端/JVM/线程池/缓存。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：同口径复测与门禁",
+    "task": "证明优化的计算效果与请求级效果，而不是只让测试变绿",
+    "steps": [
+      { "step": "用与阶段 2 相同数据、负载、预热和环境重复测量；分别报告比较次数/计算耗时、SQL 耗时、端到端延迟/吞吐、CPU/GC 与原始结果；如果无收益或语义不一致，撤销实施并返回归因", "completed": true },
+      { "step": "在已提交实现 revision、仓库根执行唯一后端门禁（Windows mvnw.cmd clean test，或 Git Bash ./mvnw clean test）；记录当次四计数、BUILD 结论、退出码和短 revision，核对 AGENTS.md 的 schema/@Sql/实体自查；不把一次失败用重跑绿覆盖", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "同数据/负载/环境复测（隔离工作树与主树使用同一工具 revision cde1e15，SHA256 见阶段 2；该 revision 的 src/main 与 7c11578 为空 diff——git diff 7c11578 cde1e15 -- src/main 无输出，故该 revision 等价于 7c11578）。\n命令（逐轮 new-run1/2/3，仓库根）：mvnw.cmd test -Dtest=RankAttributionMeasureIT -DfailIfNoTests=false -Dmeasure.rev=cde1e15 -Dmeasure.label=new-run{1,2,3} -Dmeasure.out=D:\\\\code\\\\examOnline\\\\target\\\\measure（默认 localRepository=.m2-repo）。\n三轮均 Tests run:1/Failures:0/Errors:0/Skipped:0、BUILD SUCCESS、exit=0；语义自检 expectedRank 与旧实现逐字相同（{50=50,200=200,1000=997,3000=2991}）。\n逐轮原始结果（存 evidence/rank-attribution-new-run{1,2,3}.json）：微基准 best/median n=1000 0.182/0.225、0.119/0.167、0.181/0.191ms；n=3000 0.405/0.585、0.347/0.400、0.409/0.478ms，三轮 ranksum 均 4488000（与旧实现相同 ⇒ 跨版本语义指纹一致）。SQL 取数 n=3000 best/median 3.727/5.356、3.386/5.924、3.918/5.215ms（与旧实现同量级 ⇒ SQL 未改、持平）。端到端 n=3000 并发1：mean 10.381/8.986/8.516ms、p95 12.766/11.747/10.186、p99 15.920/19.917/12.405、吞吐 94.42/109.17/114.98 req/s、请求内 rankMean 0.434/0.435/0.371ms、rankShare 4.176/4.840/4.360%；并发8：mean 96.122/99.650/101.697ms、p99 156.514/152.147/175.548、吞吐 81.24/78.88/76.48 req/s、rankShare 0.607/0.577/0.620%；n=1000 并发1 rankShare 2.779/3.881/2.824%。JFR WHOLE rankShare 0.982/0.778/0.737%、FOCUSED 0.344/1.007/2.548%、RANK_HOT 98.701/95.062/93.407%（紧循环 6736/6065/6229 次/2s）；GCPhasePause 16/16/16 次、74.8/62.7/68.5ms。\n同负载逐轮收益（不取单次最好值）：微基准 n=3000 best 比值 19.86×/23.03×/30.26×（median 15.27×/20.72×/30.63×）；n=1000 best 4.73×/7.59×/4.74×。端到端 n=3000 并发1 mean 比值 3.45×/3.12×/6.15×、吞吐比值 3.40×/3.08×/6.06×；n=3000 并发8 仅 1.10×/1.04×/1.11×（吞吐 1.12×/1.06×/1.12×，落在轮间噪声内）；n≤1000 请求级改善小（rankShare 2.8–3.9%，旧 24%）。\n归因闭环与残差：JFR 栈顶帧（run2）显示新实现 FOCUSED 的 rank 帧已消失，热点转为 java.lang.reflect.AccessibleObject.slowVerifyAccess（104 样本）、MyBatis DefaultResultSetHandler.applyAutomaticMappings（55）、H2 JdbcResultSet.getInt/getBigDecimal（24）——剩余瓶颈为 MyBatis 反射结果映射与 H2 取数，属「其他因素」，不在本次改动范围、未顺手改。旧/新 RANK_HOT 栈顶分别为 java.util.Objects.checkIndex（ArrayList.get 内层帧）与 java.util.TimSort.mergeLo/mergeHi，两者都说明逐帧归因能认到 rank 帧，未因内联漏计。\n口径与冲突（不沿用归档的过强数值）：①归档「≈71×」未复现，同口径逐轮为 15–31×（微基准 n=3000），本文件不沿用 71×；②归档「SQL 持平≈0.837ms」量级未复现（实测 3.4–5.9ms），但「SQL 未改、与旧实现同量级」成立；③请求内 rankMean 0.37–0.44ms 与隔离微基准 0.35–0.41ms 一致（互证可信），而旧实现两者不一致（25.1/19.2/37.6ms vs 8.0–12.4ms），归因于缓存局部性与 JIT 状态，属口径差异、不得互相替代；④隔离 H2 + MockMvc 同进程结果 ≠ 真实 MySQL/Tomcat 生产性能，不得写成交卷 P99 收益。\n门禁：仓库根 mvnw.cmd clean test @ cde1e15 → Tests run:308, Failures:0, Errors:0, Skipped:1、BUILD SUCCESS、exit=0（日志 D:\\\\code\\\\examOnline-measure\\\\gate-cde1e15.log，仓库外保存以免 clean 清 target）。计数与归档同值即工具未进 Surefire 全量门禁（类名以 IT 结尾）。AGENTS 自查不变：@Sql 仅 DataRetentionIntegrationTest javadoc 自述、flyway 0 命中、schema.sql 与实体未改动、实体@TableName 26/26 对应 CREATE TABLE。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：规范真值与收口",
+    "task": "只有完成优化验收才合入行为规范，否则以评估结论关闭或保留",
+    "steps": [
+      { "step": "按阶段 2/4 裁决二选一如实收口：有归因、有收益且门禁通过才把 MODIFIED 成绩排名 Requirement 整段合入 score-management、归档并更新 spec/README.md；不实施或无收益则仅登记测量与未采用理由，不合入拟实施条款，保持待处理或按未采用草案例关闭；分支结果写入 evidence 后才回勾", "completed": true },
+      { "step": "仅显式路径暂存，核对 git diff --cached --name-only 与 --check；回报提交 SHA、数据/命令/原始结果、未做事项，并保留其他候选及隔离压测提案原样", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "归因、收益与门禁全部满足 → MODIFIED「成绩排名」Requirement 整段按 spec-delta 合入 spec/specs/score-management/spec.md（并列同名次/空值与数值等价/归因成立才替换/缺少归因或改后无收益四场景）。变更目录归档至 spec/changes/archive/update-score-ranking-calculation/，spec/README.md 登记本提案合入并移除待审批条目。临时测量工具当时为隔离产物、未提交；证据返修（performance-evidence rework）后已按「可复跑」要求提交至 src/test/java/com/exam/score/measure/RankAttributionMeasureIT.java（类名以 IT 结尾，不进 Surefire 全量门禁），逐轮机器可读结果与 sha256 清单随本变更 evidence/ 目录入库，原始 JFR 二进制（target/measure/jfr/）与临时数据库不入库。docs/backend-optimization-candidates.md 属独立台账，只读引用、未夹带进任何提交，按指示保留。"
+  }
+]

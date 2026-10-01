@@ -1,7 +1,6 @@
 package com.exam.taking.dto;
 
 import com.exam.anticheat.model.EventVerdict;
-import com.exam.anticheat.model.SeverityLevel;
 
 /**
  * 行为上报响应（spec「切屏警告不交卷」场景——前端据此弹警告提醒）：

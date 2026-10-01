@@ -3,7 +3,8 @@ package com.exam.taking;
 import com.exam.auth.security.LoginUser;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.auth.service.JwtUtil;
-import com.exam.exam.entity.Exam;
+import com.exam.clazz.entity.UserClass;
+import com.exam.clazz.mapper.UserClassMapper;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.exam.service.ExamStateMachineService;
 import com.exam.submission.entity.ExamSubmission;
@@ -13,12 +14,14 @@ import com.exam.submission.mapper.ExamSubmitDedupMapper;
 import com.exam.submission.dto.SubmitMessage;
 import com.exam.submission.mq.ExamSubmitConsumer;
 import com.exam.support.IntegrationTestBase;
+import com.exam.support.RabbitTemplateInvokeStubs;
 import com.exam.taking.dto.SubmitRequest;
 import com.exam.taking.service.ExamSubmitService;
 import com.exam.taking.service.ExamSweepService;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.amqp.core.Message;
@@ -65,6 +68,16 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
 
+    /**
+     * ExamSubmitSender 修复后「发送 + confirm 等待」整体移入 RabbitTemplate.invoke() 作用域；
+     * mock 的 invoke 默认不执行 callback，会漏掉 callback 内的 3 参 convertAndSend 调用。
+     * 本桩让 invoke 真实执行 callback，既有 verify 断言不变（fix-broker-confirm-and-dlq-roundtrip）。
+     */
+    @BeforeEach
+    void runRabbitInvokeCallbacks() {
+        RabbitTemplateInvokeStubs.runInvokeCallbacks(rabbitTemplate);
+    }
+
     @Autowired
     private ExamStateMachineService stateMachineService;
     @Autowired
@@ -83,6 +96,8 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
     private JwtUtil jwtUtil;
     @Autowired
     private ExamMapper examMapper;
+    @Autowired
+    private UserClassMapper userClassMapper;
 
     // ==================== 造数 ====================
 
@@ -109,9 +124,17 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
 
     private long createExam(String token, long paperId, LocalDateTime start,
                             LocalDateTime end, int duration) throws Exception {
+        return createExam(token, paperId, null, start, end, duration);
+    }
+
+    private long createExam(String token, long paperId, Long classId, LocalDateTime start,
+                            LocalDateTime end, int duration) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("title", unique("考试"));
         body.put("paperId", paperId);
+        if (classId != null) {
+            body.put("classId", classId);
+        }
         body.put("startTime", start.toString());
         body.put("endTime", end.toString());
         body.put("durationMinutes", duration);
@@ -120,10 +143,12 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
         return data.get("id").asLong();
     }
 
-    /** 造一场"进行中"考试：开始时间拨到过去 → 发布 → 手动触发状态机推进。 */
+    /** 造一场"进行中"考试：开始时间拨到过去 → 发布 → 手动触发状态机推进。
+     *  绑定测试班级以满足进入考试的班级准入（学生入班由 enter 夹具按需补入）。 */
     private long preparedInProgressExam(String teacher) throws Exception {
         long paperId = preparePaper(teacher);
-        long examId = createExam(teacher, paperId,
+        long classId = createClassForExam(teacher);
+        long examId = createExam(teacher, paperId, classId,
                 LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
         perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
@@ -131,8 +156,18 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
     }
 
     private JsonNode enter(String student, long examId, int expectedStatus) throws Exception {
+        if (expectedStatus == 200) {
+            // 既有用例夹具适配：进入成功路径先确保学生已入班（不改变任何断言语义）
+            ensureExamClassMembership(student, examId);
+        }
         return perform(jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null),
                 expectedStatus).get("data");
+    }
+
+    /** 直接请求进入接口（不补班级归属），返回完整 ApiResponse（含 code/message，便于校验拦截提示）。 */
+    private JsonNode rawEnter(String student, long examId, int expectedStatus) throws Exception {
+        return perform(jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null),
+                expectedStatus);
     }
 
     private List<Long> questionIds(JsonNode enterData) {
@@ -208,6 +243,107 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
         JsonNode paper = perform(jsonGet("/api/exam-taking/exams/" + examId + "/paper", student), 200)
                 .get("data");
         assertEquals(questionIds(first), questionIds(paper));
+    }
+
+    // ==================== 进入考试：班级归属与名单准入（F-B/F-C 安全收口） ====================
+
+    /** 班内学生可进入；非本班学生即便拿到 examId 也被 403 拦下（跨班级越权收口）。 */
+    @Test
+    void classAffiliationAdmissionEnforced() throws Exception {
+        String teacher = registerTeacher();
+        String member = registerStudent();
+        String outsider = registerStudent();
+        long classId = createClassForExam(teacher, member);
+        long examId = inProgressExamBoundToClass(teacher, classId);
+
+        // 班内学生正常进入
+        JsonNode ok = rawEnter(member, examId, 200).get("data");
+        assertEquals(ExamSubmission.STATUS_IN_PROGRESS, ok.get("status").asInt());
+        assertEquals(3, ok.get("questions").size());
+
+        // 非本班学生：列表看不见、接口也进不去
+        JsonNode rejected = rawEnter(outsider, examId, 403);
+        assertEquals(403, rejected.get("code").asInt());
+        assertTrue(rejected.get("message").asText().contains("不属于该考试指定的班级"),
+                "跨班级进入应给出明确提示");
+        assertNull(submissionMapper.selectByExamStudent(examId,
+                jwtUtil.parseAccessToken(outsider).getId()), "被拒学生不得留下答卷");
+    }
+
+    /** 无班级的普通考试一律拒绝进入（未指派班级 → 403）。 */
+    @Test
+    void examWithoutClassForbidsEnter() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        long paperId = preparePaper(teacher);
+        long examId = createExam(teacher, paperId,
+                LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
+        perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
+        stateMachineService.autoAdvance();
+
+        JsonNode rejected = rawEnter(student, examId, 403);
+        assertEquals(403, rejected.get("code").asInt());
+        assertTrue(rejected.get("message").asText().contains("未指派班级"), "无班级考试应明确拒绝");
+    }
+
+    /** 已开考学生断线重进/刷新放行：事后转班（失去班级归属）也不得中断在考答卷。 */
+    @Test
+    void reentryAfterStartSurvivesClassChange() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        long studentId = jwtUtil.parseAccessToken(student).getId();
+        long classId = createClassForExam(teacher, student);
+        long examId = inProgressExamBoundToClass(teacher, classId);
+
+        JsonNode first = rawEnter(student, examId, 200).get("data");
+
+        // 事后转班：学生不再属于该考试绑定班级
+        userClassMapper.delete(Wrappers.<UserClass>lambdaQuery()
+                .eq(UserClass::getUserId, studentId)
+                .eq(UserClass::getClassId, classId));
+
+        // 已有答卷 → 断线重进/刷新必须放行（不重复准入、不换题）
+        JsonNode second = rawEnter(student, examId, 200).get("data");
+        assertEquals(first.get("submissionId").asLong(), second.get("submissionId").asLong());
+        assertEquals(questionIds(first), questionIds(second));
+    }
+
+    /** 补考按名单准入：名单内进入成功，名单外 403（沿用 §12.5 名单限制）。 */
+    @Test
+    void makeupAdmissionFollowsCandidateList() throws Exception {
+        String teacher = registerTeacher();
+        String candidate = registerStudent();
+        String outsider = registerStudent();
+        long candidateId = jwtUtil.parseAccessToken(candidate).getId();
+        long classId = createClassForExam(teacher, candidate, outsider);
+        long mainExamId = inProgressExamBoundToClass(teacher, classId);
+
+        // 主考结束 → 组织补考（名单仅 candidate）
+        perform(jsonPost("/api/exams/" + mainExamId + "/force-end", teacher, null), 200);
+        ObjectNode makeupBody = objectMapper.createObjectNode();
+        makeupBody.put("startTime", LocalDateTime.now().minusMinutes(1).toString());
+        makeupBody.put("endTime", LocalDateTime.now().plusHours(2).toString());
+        makeupBody.put("durationMinutes", 20);
+        makeupBody.putArray("studentIds").add(candidateId);
+        long makeupId = perform(jsonPost("/api/exams/" + mainExamId + "/makeups", teacher,
+                objectMapper.writeValueAsString(makeupBody)), 200).get("data").get("examId").asLong();
+        perform(jsonPost("/api/exams/" + makeupId + "/publish", teacher, null), 200);
+        stateMachineService.autoAdvance();
+
+        rawEnter(candidate, makeupId, 200);
+        JsonNode rejected = rawEnter(outsider, makeupId, 403);
+        assertEquals(403, rejected.get("code").asInt());
+        assertTrue(rejected.get("message").asText().contains("名单"), "名单外学生应被拒绝");
+    }
+
+    /** 造一场绑定指定班级的"进行中"考试（学生入班由调用方保证）。 */
+    private long inProgressExamBoundToClass(String teacher, long classId) throws Exception {
+        long paperId = preparePaper(teacher);
+        long examId = createExam(teacher, paperId, classId,
+                LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
+        perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
+        stateMachineService.autoAdvance();
+        return examId;
     }
 
     // ==================== 自动保存与断线恢复 ====================
@@ -480,6 +616,9 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
 
         // MQ 消息"丢失"（Mock 未消费，answers 仍为 NULL）→ 扫描补发（跨用例遗留答卷也会被补发，按 examId 过滤）
         org.mockito.Mockito.reset(rabbitTemplate);
+        // reset 会清掉 invoke 桩：ExamSubmitSender 修复后发送+confirm 等待在 invoke 作用域内，
+        // 必须重打桩让 mock 的 invoke 执行 callback，verify(convertAndSend) 才可见（fix-broker-confirm-and-dlq-roundtrip）
+        RabbitTemplateInvokeStubs.runInvokeCallbacks(rabbitTemplate);
         sweepService.sweep();
         ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
         verify(rabbitTemplate, org.mockito.Mockito.atLeastOnce())
@@ -496,12 +635,22 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
     void examListGroups() throws Exception {
         String teacher = registerTeacher();
         String student = registerStudent();
+        long studentId = jwtUtil.parseAccessToken(student).getId();
+        ObjectNode classBody = objectMapper.createObjectNode();
+        classBody.put("name", unique("班级"));
+        long classId = perform(jsonPost("/api/classes", teacher,
+                objectMapper.writeValueAsString(classBody)), 200).get("data").get("id").asLong();
+        ObjectNode joinBody = objectMapper.createObjectNode();
+        joinBody.put("userId", studentId);
+        perform(jsonPost("/api/classes/" + classId + "/students", teacher,
+                objectMapper.writeValueAsString(joinBody)), 200);
+
         long paperId = preparePaper(teacher);
 
-        long ongoing = createExam(teacher, paperId,
+        long ongoing = createExam(teacher, paperId, classId,
                 LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
         perform(jsonPost("/api/exams/" + ongoing + "/publish", teacher, null), 200);
-        long upcoming = createExam(teacher, paperId,
+        long upcoming = createExam(teacher, paperId, classId,
                 LocalDateTime.now().plusHours(1), LocalDateTime.now().plusHours(3), 30);
         perform(jsonPost("/api/exams/" + upcoming + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
@@ -528,7 +677,7 @@ class ExamTakingIntegrationTest extends IntegrationTestBase {
         } finally {
             SecurityUtil.clear();
         }
-        long ended = createExam(teacher, paperId,
+        long ended = createExam(teacher, paperId, classId,
                 LocalDateTime.now().minusHours(2), LocalDateTime.now().minusHours(1), 30);
         perform(jsonPost("/api/exams/" + ended + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();

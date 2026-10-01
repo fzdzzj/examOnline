@@ -1,10 +1,22 @@
 spring:
   datasource:
-    # H2 MySQL 兼容模式：与 schema.sql 语法对齐
-    url: jdbc:h2:mem:exam;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    # ===== 读写分离（add-performance-deepening task3+4）测试数据源 =====
+    # dynamic-datasource 接管后主从都指向同一 H2 内存库（DB_CLOSE_DELAY=-1，schema 仅在 primary 初始化，
+    # master 与 slave 共享该库，保证既有用例与读写分离用例都能读到建表；路由正确性用 @DS(SlaveProbe) 断言）。
+    dynamic:
+      primary: master
+      strict: false
+      datasource:
+        master:
+          url: jdbc:h2:mem:exam;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+          driver-class-name: org.h2.Driver
+          username: sa
+          password:
+        slave:
+          url: jdbc:h2:mem:exam;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+          driver-class-name: org.h2.Driver
+          username: sa
+          password:
   sql:
     init:
       mode: always
@@ -70,3 +82,7 @@ management:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# 测试环境没有 OTLP collector：关掉链路导出，免得 BatchSpanProcessor 在后台刷连接失败日志。
+# 采样器仍照常装配，MybatisTracingInterceptor / TraceIdInterceptor 走的是本地 Span。
+otel.traces.exporter: none

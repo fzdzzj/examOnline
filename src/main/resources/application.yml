@@ -1,6 +1,12 @@
 server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
+  tomcat:
+    mbeanregistry:
+      # Tomcat 线程水位（add-submit-observability）：Spring Boot 默认不注册 Tomcat MBean，
+      # tomcat.threads.busy / tomcat.threads.config.max 因此不会出现在指标端点；
+      # 开启后 actuator 的 TomcatMetricsBinder 才能读到线程池 MBean。
+      enabled: true
 
 spring:
   application:
@@ -35,6 +41,9 @@ spring:
         prefetch: ${RABBIT_PREFETCH:200}
         concurrency: ${RABBIT_CONCURRENCY:2}
         auto-startup: ${RABBIT_LISTENER_AUTOSTARTUP:true}
+  # 全局默认事务超时（秒），防止长事务占用连接池
+  transaction:
+    default-timeout: 30
 
 mybatis-plus:
   configuration:
@@ -52,14 +61,16 @@ logging:
   level:
     com.exam: ${LOG_LEVEL:info}
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] %-5level %logger{40} - %msg%n"
+    # traceId 由 TraceIdInterceptor 从当前 OTel SpanContext 写入 MDC，用于跳 Jaeger 查链路；
+    # 非 HTTP 线程（定时兜底、MQ 消费）无 span，故用 :- 留空而非打印 null。
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] [%X{traceId:-}] %-5level %logger{40} - %msg%n"
 
 # 认证配置（add-authentication）
 exam:
   auth:
     jwt:
-      # HS256 签名密钥，长度必须 >= 32 字节；生产用环境变量 JWT_SECRET 覆盖
-      secret: ${JWT_SECRET:examOnline-dev-jwt-secret-please-change-in-prod-0123456789}
+      # HS256 签名密钥，长度必须 >= 32 字节；生产必须通过环境变量 JWT_SECRET 注入
+      secret: ${JWT_SECRET:}
       access-expire-minutes: 30
       refresh-expire-days: 7
     admin:
@@ -91,6 +102,10 @@ exam:
       # 消费者单批拉取消息数（DB 批量落库按此分批，rewriteBatchedStatements 生效前提）
       batch-size: 100
       prefetch: 200
+      # 批量容器并发（batchContainerFactory 消费）：默认 1 与改动前实际行为一致（此前手工 new 工厂、从未设并发，
+      # 实际并发=1），不借"修配置"之名隐式提速；容量模型见 RabbitMqConfig.batchContainerFactory 注释。
+      # 注意：spring.rabbitmq.listener.simple.concurrency 只作用于 Boot 自动装配的工厂，对交卷消费者无效。
+      concurrency: ${RABBIT_BATCH_CONCURRENCY:1}
       # 消费失败重试阈值：重发计数超过该值进死信队列
       retry-max: 3
     draft:
@@ -113,6 +128,15 @@ exam:
   monitor:
     # 监考在线心跳窗口（秒）：大于自动保存周期（30s）的合理超时，过期即离线（add-anti-cheat）
     online-ttl-seconds: 60
+    # 慢 SQL 阈值（毫秒）（add-performance-deepening 阶段8 可观测性 task6）：
+    # MyBatis 拦截器按此判断，单条 SQL 执行超过该值输出 WARN 日志（含耗时/SQL/requestId）
+    slow-sql-threshold-ms: ${SLOW_SQL_THRESHOLD_MS:1000}
+  datasource:
+    # 读写分离读己之写窗口（add-performance-deepening task3+4，ReadYourWriteMark 消费）：
+    # 写操作（交卷/发布/批改）完成后在当前线程置 ThreadLocal 标记，窗口(ms)内非强一致读强制转主库。
+    # 为什么是"短窗口"而非永久路由主库：主从同步通常毫秒~秒级，
+    # 永久走主库会让从库形同虚设、丢失读写分离收益；窗口恰好覆盖 GTID 复制延迟峰值。
+    read-your-write-window-ms: ${READ_YOUR_WRITE_WINDOW_MS:5000}
   cache:
     # 缓存三防配置（add-performance-deepening 阶段 8，CacheConfig/CacheMutexLoader 消费）：
     # 穿透=空值缓存（NOT_FOUND 短 TTL 空标记）、击穿=Redis SETNX 互斥锁重建、雪崩=TTL 随机抖动
@@ -130,12 +154,70 @@ exam:
     # 防穿透空值缓存开关与短 TTL：查无结果写入空标记，期间同 key 查询不再直击 DB
     null-cache-enabled: true
     null-ttl-seconds: 30
+  ratelimit:
+    # 接口限流（add-slow-sql-and-rate-limit task3，RedisTokenBucket 消费）：
+    # 令牌桶按接口维度，桶容量/速率在各 Controller 方法的 @RateLimit 注解声明（交卷/拉卷/抽题各独立阈值）；
+    # 此处仅配置桶 key 的 TTL：接口连续被访问即续期，长时间无请求后桶自动过期、下次重建满桶，
+    # 避免闲置桶残留占用内存。各接口具体 capacity/qps 取值见对应 Controller 方法上的中文注释依据。
+    key-ttl-seconds: ${RATELIMIT_KEY_TTL:120}
+    # 默认放行以保核心链路可用（fail-open）：Redis 异常时核心接口仍可用，降级计数 exam.ratelimit.degraded 暴露给告警；
+    # 置 false 则异常上抛（fail-close），Redis 故障时核心链路快速失败。
+    fail-open: ${RATE_LIMIT_FAIL_OPEN:true}
+
+  retention:
+    # 数据保留策略（add-data-retention）：按考试生命周期清理三张辅助表。
+    # 硬口径「宁可不删，不可错删」——默认关闭 + 默认 dry-run，真删须显式双开并会打启动 WARN。
+    # 目标表：exam_behavior_logs / exam_submit_dedups / score_audit_logs（仅按 exam_id 删，命中既有索引）。
+    # 不清理业务事实；不纳入 exam_dlq_messages（无 exam_id）。不声称磁盘释放。
+    # 另有第四张 audit_log（安全审计）按自身窗口只按年龄清，见下面 audit-log.*。
+    enabled: false
+    dry-run: true
+    retention-days: 180
+    audit-log:
+      # audit_log 没有 exam_id，不走考试生命周期，只按 created_time 清（走 idx_audit_time）。
+      # 365 只是"给增长一个上界"的占位口径：真实保留期属合规决策，须业务/安全口径确认后才改；
+      # 确认前由 enabled=false + dry-run=true 两道闸保证不会静默删掉审计。
+      retention-days: 365
+    batch-size: 1000
+    max-batches-per-run: 20
+    max-exams-per-run: 100
+    cron: "0 30 3 * * *"
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
+
+# OpenAPI 契约暴露（add-backend-openapi）：springdoc 配置
+# 仅追加，不改既有 spring 配置语义
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    # 按字母排序操作，便于前端查阅契约
+    operationsSorter: alpha
+  # 只扫描 exam 包下的 Controller
+  packages-to-scan: com.exam
+  # 匹配 /api/** 路径
+  paths-to-match: /api/**
+  # 安全 scheme 已在 SpringDocConfig 中定义
+
+# OpenTelemetry 追踪配置（add-distributed-tracing）
+# 全部用扁平点号键：OTel 自动装配按字面属性名读取 otel.*，不走 Spring 的 relaxed binding，
+# 写成 service_name / export.enabled 这类嵌套会被静默忽略。
+otel.service.name: ${OTEL_SERVICE_NAME:exam-online}
+# 链路走 OTLP gRPC -> Jaeger all-in-one:4317；不设 OTEL_TRACES_EXPORTER 时即关闭导出
+otel.traces.exporter: ${OTEL_TRACES_EXPORTER:otlp}
+otel.traces.sampler: parentbased_traceidratio
+# 采样比例：默认全采（dev），prod 用 OTEL_TRACES_SAMPLER_ARG=0.1 降到 10%
+otel.traces.sampler.arg: ${OTEL_TRACES_SAMPLER_ARG:1}
+# 指标仍由 Micrometer/Prometheus 出（actuator），日志仍由 logback 出，两条 exporter 关掉避免重复采集
+otel.metrics.exporter: none
+otel.logs.exporter: none

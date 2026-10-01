@@ -1,0 +1,92 @@
+{
+  "site": "s5",
+  "shape": 1000,
+  "atIso": "2026-09-29T11:39:03.908Z",
+  "arms": {
+    "OLD": [
+      {
+        "msId": "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+        "sql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ? AND total_score IS NOT NULL) LIMIT 1",
+        "literal": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970201000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "substitution": {
+          "placeholderCount": 2,
+          "paramCount": 2,
+          "replaced": 2
+        },
+        "captureLiteralSql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970201000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "captureLiteralMatches": true,
+        "sqlSha256": "c5cf8d401f53abfa76d64a6d93bdd5291292ce15a0396947929e76f73afc57c8"
+      },
+      {
+        "msId": "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+        "sql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ? AND total_score IS NOT NULL) LIMIT 1",
+        "literal": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970301000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "substitution": {
+          "placeholderCount": 2,
+          "paramCount": 2,
+          "replaced": 2
+        },
+        "captureLiteralSql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970301000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "captureLiteralMatches": true,
+        "sqlSha256": "56017d36b3f6874b6fd822122f519e598a42ce349defcd4048554051d5c669c4"
+      }
+    ],
+    "PROJ": [
+      {
+        "msId": "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+        "sql": "SELECT   total_score,submit_time   FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ? AND total_score IS NOT NULL) LIMIT 1",
+        "literal": "SELECT   total_score,submit_time   FROM exam_submissions      WHERE  (exam_id = 970201000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "substitution": {
+          "placeholderCount": 2,
+          "paramCount": 2,
+          "replaced": 2
+        },
+        "captureLiteralSql": "SELECT   total_score,submit_time   FROM exam_submissions      WHERE  (exam_id = 970201000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "captureLiteralMatches": true,
+        "sqlSha256": "d543d89803493ee09e7922e3186732363f6aaa5fe4883a4a73191837d0a9ac1b"
+      },
+      {
+        "msId": "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+        "sql": "SELECT   total_score,submit_time   FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ? AND total_score IS NOT NULL) LIMIT 1",
+        "literal": "SELECT   total_score,submit_time   FROM exam_submissions      WHERE  (exam_id = 970301000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "substitution": {
+          "placeholderCount": 2,
+          "paramCount": 2,
+          "replaced": 2
+        },
+        "captureLiteralSql": "SELECT   total_score,submit_time   FROM exam_submissions      WHERE  (exam_id = 970301000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "captureLiteralMatches": true,
+        "sqlSha256": "61452fc67d4edd898f3dd998aa2e288459cadbe2bbaf6409785de53dc01d9873"
+      }
+    ],
+    "OLDrep": [
+      {
+        "msId": "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+        "sql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ? AND total_score IS NOT NULL) LIMIT 1",
+        "literal": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970201000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "substitution": {
+          "placeholderCount": 2,
+          "paramCount": 2,
+          "replaced": 2
+        },
+        "captureLiteralSql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970201000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "captureLiteralMatches": true,
+        "sqlSha256": "c5cf8d401f53abfa76d64a6d93bdd5291292ce15a0396947929e76f73afc57c8"
+      },
+      {
+        "msId": "com.exam.grading.mapper.GradingSubmissionMapper.selectList",
+        "sql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = ? AND student_id = ? AND total_score IS NOT NULL) LIMIT 1",
+        "literal": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970301000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "substitution": {
+          "placeholderCount": 2,
+          "paramCount": 2,
+          "replaced": 2
+        },
+        "captureLiteralSql": "SELECT  id,exam_id,student_id,submit_time,answers,status,objective_score,subjective_score,total_score,grading_status,grading_error,partial_graded,version,created_time,updated_time  FROM exam_submissions      WHERE  (exam_id = 970301000 AND student_id = 973200002 AND total_score IS NOT NULL) LIMIT 1",
+        "captureLiteralMatches": true,
+        "sqlSha256": "56017d36b3f6874b6fd822122f519e598a42ce349defcd4048554051d5c669c4"
+      }
+    ]
+  },
+  "oldrepSameTextAsOld": true
+}

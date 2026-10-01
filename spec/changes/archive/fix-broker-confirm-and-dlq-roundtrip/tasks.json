@@ -1,0 +1,45 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：confirm 作用域修复",
+    "task": "真 broker 启动不再抛 IllegalStateException",
+    "steps": [
+      { "step": "waitForConfirmsOrDie 移入 RabbitTemplate.invoke() 作用域（或等价正确用法），保持超时/失败日志与指标行为", "completed": true },
+      { "step": "单测覆盖修复后的 confirm 路径", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：真 dev 启动对账验证",
+    "task": "启动期答案补发对账真实完成",
+    "steps": [
+      { "step": "真 dev 实例启动：日志无 IllegalStateException，对账待补/已补数字合理", "completed": true },
+      { "step": "待补发消息实际送达（消费侧证据）", "completed": true },
+      { "step": "记录实际执行的命令 + 该次原始输出 + 当时短 revision", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：DLQ 真往返",
+    "task": "死信链路端到端在真 broker 下验证",
+    "steps": [
+      { "step": "真发必死消息，确认进 DLQ（深度/进入指标变化）", "completed": true },
+      { "step": "经 DlqReplayService 重投，消费成功或留档，全程真 broker 无 mock", "completed": true },
+      { "step": "验证用数据可控清理，不污染 dev 库", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：回归护栏与登记",
+    "task": "同类违规被自动化手段挡住",
+    "steps": [
+      { "step": "护栏测试：confirm 类调用作用域违规在无真 broker 的 CI 里也能被检出", "completed": true },
+      { "step": "后端门禁回归，surefire 计数只增不减", "completed": true },
+      { "step": "结果登记回遗留清单（收口 #6/#10）", "completed": true }
+    ],
+    "passes": true
+  }
+]

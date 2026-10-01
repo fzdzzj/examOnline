@@ -24,14 +24,30 @@
 
         <!-- 版本矩阵集中锁定（dependencyManagement 引用，防依赖冲突） -->
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
+        <!-- 多数据源（读写分离 add-performance-deepening task3+4）：spring-boot3-starter 适配 Spring Boot 3.x（JDK17）。
+             4.3.1 经验证兼容 Spring Boot 3.5.x；切勿误用 spring-boot-starter（那是 Boot 2 的模块） -->
+        <dynamic-datasource.version>4.3.1</dynamic-datasource.version>
         <!-- 3.5.9 起分页插件拆分至独立 artifact（依赖 jsqlparser 实现 LIMIT 方言） -->
         <mybatis-plus-jsqlparser.version>3.5.9</mybatis-plus-jsqlparser.version>
         <jjwt.version>0.11.5</jjwt.version>
         <jbcrypt.version>0.4</jbcrypt.version>
         <mysql.version>9.3.0</mysql.version>
+        <!-- OpenTelemetry (add-distributed-tracing)：只声明 instrumentation starter 版本，
+             api/sdk/exporter 的配套版本交给 instrumentation-bom-alpha 决定（2.1.0-alpha -> core 1.35.0）。
+             不要再单独 pin core 版本：starter 的类按 1.35 API 编译，压到更老的 1.28 会在运行期
+             找不到 DoubleHistogramBuilder.setExplicitBucketBoundariesAdvice，直接打挂整个上下文。 -->
+        <opentelemetry.instrumentation.version>2.1.0-alpha</opentelemetry.instrumentation.version>
         <!-- 成绩导出（add-grading-score）：SXSSF 流式 Excel + 个人成绩单 PDF -->
         <poi.version>5.4.0</poi.version>
         <openpdf.version>1.3.43</openpdf.version>
+
+        <!-- 质量门禁（代码质量治理）：Spring Boot parent 不托管这三个插件，须显式锁定版本。
+             渐进策略——三件套只产出报告与基线数据，均不阻断构建（failOnViolation/failOnError=false），
+             目的是让"质量"从主观判断变成可量化、可跟踪的数字，而非给现有代码加一道会红的墙 -->
+        <jacoco.version>0.8.12</jacoco.version>
+        <spotbugs.plugin.version>4.10.4.1</spotbugs.plugin.version>
+        <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
+        <checkstyle.version>10.26.1</checkstyle.version>
     </properties>
 
     <!-- 依赖版本集中锁定：子模块/依赖引入时不写版本，继承此处锁定值 -->
@@ -87,6 +103,16 @@
                 <artifactId>openpdf-fonts-extra</artifactId>
                 <version>${openpdf.version}</version>
             </dependency>
+            <!-- OpenTelemetry 版本对齐（add-distributed-tracing）：
+                 导入 instrumentation 的 alpha BOM，由它统一决定 api / sdk / exporter 的配套版本，
+                 本项目不再出现第二个版本号。 -->
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-bom-alpha</artifactId>
+                <version>${opentelemetry.instrumentation.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -132,6 +158,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- Prometheus 指标导出（add-performance-deepening 阶段8 可观测性 task5）：
+             Micrometer 的 Prometheus 注册表，为 actuator 提供 /actuator/prometheus 端点，
+             业务自定义指标（交卷 QPS/耗时、MQ 队列深度、防作弊事件）经它暴露给采集端（Prometheus/Grafana）。
+             版本由 spring-boot-starter-parent 的 BOM 统一锁定，无需写版本号 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
 
         <!-- ORM -->
         <dependency>
@@ -147,6 +181,15 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- 多数据源（读写分离 add-performance-deepening task3+4）：
+             以 spring.datasource.dynamic.master/slave 配置两组数据源，@DS 注解声明式切换；
+             默认 primary=master（所有写与强一致读），非强一致读接口加 @DS("slave") 走从库 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>dynamic-datasource-spring-boot3-starter</artifactId>
+            <version>${dynamic-datasource.version}</version>
         </dependency>
 
         <!-- JWT（认证变更引入，骨架期锁定版本） -->
@@ -187,6 +230,20 @@
             <artifactId>openpdf-fonts-extra</artifactId>
         </dependency>
 
+        <!-- OpenTelemetry (add-distributed-tracing)：SDK、自动装配与导出器全部由 starter 负责，
+             版本统一走 instrumentation-bom-alpha，此处只声明代码直接 import 的 api。
+             不再引 opentelemetry-exporter-jaeger —— 该 artifact 已在上游废弃，
+             Jaeger all-in-one 直接收 OTLP（4317）。 -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-spring-boot-starter</artifactId>
+            <version>${opentelemetry.instrumentation.version}</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -205,6 +262,14 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- OpenAPI 契约暴露（add-backend-openapi 阶段18）：springdoc-openapi 为 Spring Boot 3
+             提供 /v3/api-docs 与 swagger-ui，是前端 @hey-api/openapi-ts 生成类型化客户端的唯一契约来源。
+             仅追加此依赖，不改现有依赖版本与配置；2.8.13 已在本地 .m2-repo 离线可用 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.13</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -221,6 +286,103 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+
+            <!-- 质量门禁 1/3：JaCoCo 覆盖率。
+                 prepare-agent 在 test 阶段挂字节码探针（自动写 surefire 的 argLine），report 生成
+                 target/site/jacoco/index.html + jacoco.csv。不配 check 规则 → 覆盖率只被度量、不被拦截，
+                 这样"核心链路覆盖率 X%"是可长期跟踪的数字，而不是某天突然变红的门 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <!-- 只排除无业务逻辑的样板代码（启动类 + 纯数据载体），
+                         不排除 service/controller —— 那会把真正要度量的东西藏起来 -->
+                    <excludes>
+                        <exclude>com/exam/ExamOnlineApplication.class</exclude>
+                        <exclude>com/exam/**/dto/**</exclude>
+                        <exclude>com/exam/**/entity/**</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 质量门禁 2/3：SpotBugs 静态缺陷检测（空指针、资源泄漏、并发误用、等值约定破坏等）。
+                 failOnError=false 是渐进策略的核心：查出缺陷仍然 BUILD SUCCESS，缺陷只进报告不算账，
+                 避免一次性给既有代码戴上会红的枷锁 -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.plugin.version}</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Medium</threshold>
+                    <failOnError>false</failOnError>
+                    <xmlOutput>true</xmlOutput>
+                    <htmlOutput>true</htmlOutput>
+                    <!-- 排除 Spring DI 等框架既定模式导致的必然误报，每条排除都写明理由；
+                         真实缺陷（无用赋值/重复分支/响应头注入/装箱拆箱）一律不排除 -->
+                    <excludeFilterFile>config/spotbugs/exclude.xml</excludeFilterFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>spotbugs-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 质量门禁 3/3：Checkstyle 编码规范（命名/import 卫生/空块/花括号等）。
+                 规则集见 config/checkstyle/checkstyle.xml —— 按本工程既有风格裁剪，
+                 不套 Sun/Google 全量规范（那在本项目会产生海量与风格无关的噪音）。
+                 failOnViolation=false：违规列出但不阻断，供逐步收敛 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle.plugin.version}</version>
+                <configuration>
+                    <configLocation>config/checkstyle/checkstyle.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failOnViolation>false</failOnViolation>
+                    <violationSeverity>warning</violationSeverity>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <linkXRef>false</linkXRef>
+                </configuration>
+                <dependencies>
+                    <!-- 插件默认绑定的 checkstyle 版本较旧，显式抬到 10.x（支持 JDK17 语法与 record） -->
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>checkstyle-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

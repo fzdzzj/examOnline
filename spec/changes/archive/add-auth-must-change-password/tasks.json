@@ -1,0 +1,38 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：读路径（W18）",
+    "task": "标记可被前端读到",
+    "steps": [
+      { "step": "CurrentUserResponse 新增 mustChangePassword（Boolean），不删不改既有字段 — 证据：0fb56b9 中该文件 +12/-…，既有 6 字段与 @Data/@NoArgsConstructor/@AllArgsConstructor 未动；指导 agent 核 openapi.yaml 的 CurrentUserResponse schema 新增 mustChangePassword: type boolean，且全文 diff 仅 2 行新增", "completed": true },
+      { "step": "AuthService.currentUser() 从 User 装载该字段（Integer → Boolean 转换明确，null 视为 false） — 证据：实时读库 userService.getById；flag != null && flag != 0；DTO 用包装 Boolean、装载用原始 boolean，故 /api/auth/me 恒有值，non_null 不会吞掉 false（子 agent 实跑 /api/auth/me 返回 mustChangePassword=false 印证）", "completed": true },
+      { "step": "不把该标记塞进 JWT claim；代码注释写明取舍 — 证据：JwtUtil 未改（在禁止路径内且 git show --stat 未出现）；集成测试 flagIsNotCarriedAsJwtClaim 解 Base64 载荷断言无 claim 名含 must；CurrentUserResponse 字段 Javadoc 写明刻意不入 claim", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：写路径（W18）",
+    "task": "该置 1 时置 1，改密后归 0，重启不打回",
+    "steps": [
+      { "step": "AdminInitializer 仅在首次创建 admin 时置 mustChangePassword=1 — 证据：指导 agent 亲读 AdminInitializer.java L34-L55，两道提前 return（countUsersWithRole(ADMIN)>0 / existsByUsername）均在构造 User 之前，setMustChangePassword(1) 物理上只可能在创建路径执行；L51-53 注释写明死循环风险", "completed": true },
+      { "step": "admin 已存在时不改写该字段（防重启死循环）；有测试守住 — 证据：MustChangePasswordIntegrationTest.passwordChangeClearsFlagAndRepeatedInitializationDoesNotRelockAdmin 注入真实 AdminInitializer bean 连续调 run() 两次，断言库内仍为 0、/me 仍 false、口令未被重置（新口令 200 / 初始口令 401）；运行日志实证「已存在管理员账号，跳过管理员初始化」×2", "completed": true },
+      { "step": "/api/auth/password/change 成功后置 0 — 证据：AuthService.changePassword 在 updatePassword 之后、blacklist/invalidate 之前用 lambdaUpdate 定向 set 0；测试断言改密后库内列归 0 且 /me 返回 false", "completed": true },
+      { "step": "零 DDL、零数据迁移；不追溯把存量 admin 置 1 — 证据：0fb56b9 未含 schema.sql 与 docker/mysql/migrations/**；子 agent 起真 dev 实例时 AdminInitializer 打「已存在管理员账号，跳过管理员初始化」，dev 库存量 admin 未被置 1", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：契约与回归（W18）",
+    "task": "前端能生成到该字段，基线只增不减",
+    "steps": [
+      { "step": "重新导出 openapi.yaml；确认 CurrentUserResponse schema 含 mustChangePassword — 证据：走路 B（真 dev 实例，health 全 UP：db MySQL / rabbit 3.13.7 / redis 3.0.504），Invoke-WebRequest /v3/api-docs.yaml；导出后已停应用。指导 agent 独立核：git diff 仅 +2 行（mustChangePassword: / type: boolean），paths 仍 65，security: [] 仍恰 5 处（阶段 18 免鉴权标注完好）。注：路 A（-DexportContract=true）经子 agent 实测有 ISO-8859-1 解码缺陷会损坏契约，已回滚未使用，记为遗留 #12", "completed": true },
+      { "step": "集成测试：新上下文 admin 的 /api/auth/me 返回 true → 改密 → 再查 false — 证据：MustChangePasswordIntegrationTest（@SpringBootTest + MockMvc + @ActiveProfiles(test) + 独立命名内存库 jdbc:h2:mem:exam_must_change_password，零 mock Service、零 @Sql）；独立库是为避免改掉 admin 口令污染全仓 6 处依赖 admin/admin123 的用例，且共享库中 admin 已存在会命中已存在分支、无法验证首次创建置 1", "completed": true },
+      { "step": "集成测试：重复启动/重复初始化不改写已存在 admin 的该标记 — 证据：同上 @Order(3) 用例，连续两次 adminInitializer.run()", "completed": true },
+      { "step": "全量回归只增不减全绿；Skipped 保持 1；@Sql 零命中保持 — 证据：子 agent 报 213 → 218（+5）；指导 agent 独立重跑 Tests run: 218, Failures: 0, Errors: 0, Skipped: 1 → BUILD SUCCESS；@Sql/@Disabled 注解零命中（唯一命中为 DataRetentionIntegrationTest L28 注释文字）", "completed": true },
+      { "step": "不改鉴权拦截器（不在后端强拦未改密的业务请求）；不改 schema.sql、不加迁移 — 证据：0fb56b9 仅 5 文件（openapi.yaml / CurrentUserResponse / AuthService / AdminInitializer / 新测试类），无 WebMvcConfig、AuthenticationInterceptor、JwtUtil、pom.xml、application*.yml、schema.sql、迁移脚本、docker/**、spec/**", "completed": true }
+    ],
+    "passes": true
+  }
+]

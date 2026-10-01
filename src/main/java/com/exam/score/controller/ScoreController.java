@@ -1,14 +1,23 @@
 package com.exam.score.controller;
 
+import com.exam.auth.security.OwnershipGuard;
 import com.exam.auth.security.RequirePermission;
 import com.exam.auth.security.RequireRole;
 import com.exam.auth.security.RoleHierarchy;
+import com.exam.auth.security.SecurityUtil;
 import com.exam.common.ApiResponse;
+import com.exam.common.BusinessException;
+import com.exam.common.ResponseCode;
+import com.exam.exam.entity.Exam;
+import com.exam.exam.mapper.ExamMapper;
+import com.exam.exam.service.MakeupScoreService;
 import com.exam.score.dto.BatchScoreRequest;
+import com.exam.score.dto.MakeupFinalScoreResponse;
 import com.exam.score.dto.MyScoreResponse;
 import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.dto.ScorePreviewResponse;
 import com.exam.score.service.ScoreExportService;
+import com.exam.score.service.ScoreReviewService;
 import com.exam.score.service.ScoreService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -20,9 +29,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -35,7 +44,8 @@ import java.util.List;
  *   <li>发布——已批改→已发布，支持批量，学生端立即可见；</li>
  *   <li>撤回——仅管理员（§5.3），原因必填 + 审计留痕，学生端立即隐藏；</li>
  *   <li>导出——全班成绩单/逐题明细/题目统计 Excel（SXSSF 流式）+ 个人成绩单 Excel/PDF；</li>
- *   <li>学生查询——仅本人成绩（§9.10），未发布统一"成绩待发布"。</li>
+ *   <li>学生查询——仅本人成绩（§9.10），未发布统一"成绩待发布"；</li>
+ *   <li>补考最终成绩——教师按考试查任一生、学生查本人（§5.1 合并规则经接口触达，收口遗留 #5）。</li>
  * </ul>
  */
 @RestController
@@ -47,10 +57,18 @@ public class ScoreController {
 
     private final ScoreService scoreService;
     private final ScoreExportService scoreExportService;
+    private final MakeupScoreService makeupScoreService;
+    private final ExamMapper examMapper;
+    private final ScoreReviewService scoreReviewService;
 
-    public ScoreController(ScoreService scoreService, ScoreExportService scoreExportService) {
+    public ScoreController(ScoreService scoreService, ScoreExportService scoreExportService,
+                           MakeupScoreService makeupScoreService, ExamMapper examMapper,
+                           ScoreReviewService scoreReviewService) {
         this.scoreService = scoreService;
         this.scoreExportService = scoreExportService;
+        this.makeupScoreService = makeupScoreService;
+        this.examMapper = examMapper;
+        this.scoreReviewService = scoreReviewService;
     }
 
     /** 成绩汇总（幂等：重判/补批后可重复执行刷新总分与部分批改标记）。 */
@@ -87,6 +105,56 @@ public class ScoreController {
     @GetMapping("/api/scores/my")
     public ApiResponse<MyScoreResponse> myScore(@RequestParam Long examId) {
         return ApiResponse.success(scoreService.myScore(examId));
+    }
+
+    // ==================== 补考最终成绩（§5.1 合并规则经接口触达，收口遗留 #5） ====================
+
+    /**
+     * 教师按考试查某学生补考最终成绩（spec「合并规则有真实调用者」场景）：
+     * 沿主考家族（主考 + 各次补考）按考试配置规则合并，历史各次成绩保留不覆盖
+     * （MakeupScoreService 只读计算，从不 update 答卷）。
+     *
+     * <p>权限：教师侧 {@code exam:manage}（TEACHER/ADMIN），水平越权由归属校验兜底
+     * （仅考试创建教师可查，ADMIN 放行）；学生无此权限被拦截。
+     */
+    @GetMapping("/api/exams/{examId}/scores/makeup-final/{studentId}")
+    @RequirePermission("exam:manage")
+    public ApiResponse<MakeupFinalScoreResponse> makeupFinalScore(@PathVariable Long examId,
+                                                                  @PathVariable Long studentId) {
+        requireOwnedExam(examId);
+        BigDecimal finalScore = makeupScoreService.finalScore(examId, studentId);
+        MakeupFinalScoreResponse response = new MakeupFinalScoreResponse();
+        response.setExamId(examId);
+        response.setStudentId(studentId);
+        response.setFinalScore(finalScore);
+        response.setReviewing(false);
+        return ApiResponse.success(response);
+    }
+
+    /**
+     * 学生查本人补考最终成绩（口径同 {@link #myScore}）：未发布统一"成绩待发布"、
+     * 进行中复核隐藏分数；不泄露他人信息（只查本人）。
+     */
+    @GetMapping("/api/scores/makeup-final")
+    public ApiResponse<MakeupFinalScoreResponse> myMakeupFinalScore(@RequestParam Long examId) {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        Exam root = requirePublishedRoot(examId);
+        BigDecimal finalScore = makeupScoreService.finalScore(examId, studentId);
+        MakeupFinalScoreResponse response = new MakeupFinalScoreResponse();
+        response.setExamId(examId);
+        response.setStudentId(studentId);
+        // 复核中隐藏（§5.4）：主考家族存在进行中复核则隐藏分数，防"看了分数再申请"
+        if (scoreReviewService.hasPendingReview(root.getId(), studentId)) {
+            response.setFinalScore(null);
+            response.setReviewing(true);
+            return ApiResponse.success(response);
+        }
+        response.setFinalScore(finalScore);
+        response.setReviewing(false);
+        return ApiResponse.success(response);
     }
 
     // ==================== 成绩导出（spec「成绩导出」需求） ====================
@@ -131,6 +199,8 @@ public class ScoreController {
                 scoreExportService.exportPersonalSheet(examId, studentId));
     }
 
+    // ==================== 私有工具 ====================
+
     /** 下载响应：Content-Disposition 文件名带考试 ID 与时间戳（RFC 5987 UTF-8 编码）。 */
     private ResponseEntity<byte[]> attachment(Long examId, String name, String ext,
                                               String mediaType, byte[] body) {
@@ -140,5 +210,35 @@ public class ScoreController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + filename)
                 .contentType(MediaType.parseMediaType(mediaType))
                 .body(body);
+    }
+
+    /** 教师侧越权校验：存在/软删 404，非归属教师 403（ADMIN 放行），口径同成绩预览/导出。 */
+    private Exam requireOwnedExam(Long examId) {
+        Exam exam = examMapper.selectById(examId);
+        if (exam == null) {
+            throw new BusinessException(ResponseCode.NOT_FOUND, "考试不存在");
+        }
+        OwnershipGuard.assertOwner(exam.getCreatedBy(), SecurityUtil.getCurrentUser(), "考试");
+        return exam;
+    }
+
+    /** 学生侧可见性：沿 parent_exam_id 找回主考，主考须已发布才放行（口径同 myScore §9.10）。 */
+    private Exam requirePublishedRoot(Long examId) {
+        Exam exam = examMapper.selectById(examId);
+        if (exam == null) {
+            throw new BusinessException(ResponseCode.NOT_FOUND, "考试不存在");
+        }
+        Exam root = exam;
+        while (root.getParentExamId() != null) {
+            Exam parent = examMapper.selectById(root.getParentExamId());
+            if (parent == null) {
+                break;
+            }
+            root = parent;
+        }
+        if (root.getStatus() != Exam.STATUS_PUBLISHED) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "成绩待发布");
+        }
+        return root;
     }
 }

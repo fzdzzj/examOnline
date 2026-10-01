@@ -1,0 +1,55 @@
+=== start 2026-10-01T04:00:23.674Z ===
+docker run exit=0
+d377962a77dfb329db882d7ec584c6482c1e4102f383cb640434769b5f3e0983
+containerId=d377962a77dfb329db882d7ec584c6482c1e4102f383cb640434769b5f3e0983
+imageDigest=mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b,docker.m.daocloud.io/library/mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+version=
+port=127.0.0.1:13321
+db=grading_score_projection_measure
+tmpfs=/var/lib/mysql:rw,size=3g
+version-requery-after-init(2026-10-01): SELECT VERSION()=8.0.46 exit=0 (initial probe during init window returned empty; re-queried directly)
+=== start-redis 2026-10-01T04:00:51.439Z ===
+docker run redis exit=0
+fb44b70839dbfe3f1bf4ebce84667d301155868defcf1960f1b87da79c975db3
+redisContainerId=fb44b70839dbfe3f1bf4ebce84667d301155868defcf1960f1b87da79c975db3
+redisImageDigest=redis@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+redisPort=127.0.0.1:16379
+redisPing=PONG
+=== start 2026-10-01T04:49:05.171Z ===
+docker run exit=0
+de775f689a11f179a896f5dd2c5496b3de86c4a5509959b555a487b812142677
+containerId=de775f689a11f179a896f5dd2c5496b3de86c4a5509959b555a487b812142677
+imageDigest=mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b,docker.m.daocloud.io/library/mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+version=
+port=127.0.0.1:13321
+db=grading_score_projection_measure
+tmpfs=/var/lib/mysql:rw,size=8g
+=== start 2026-10-01T04:49:39.034Z ===
+docker run exit=0
+55dd3741440a61fa183d9f614ff156e61dfaaa14abb89bfbc639cfe2cc8f2fdb
+containerId=55dd3741440a61fa183d9f614ff156e61dfaaa14abb89bfbc639cfe2cc8f2fdb
+imageDigest=mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b,docker.m.daocloud.io/library/mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+version=8.0.46
+port=127.0.0.1:13321
+db=grading_score_projection_measure
+tmpfs=/var/lib/mysql:rw,size=8g
+=== start 2026-10-01T06:15:12.320Z ===
+docker run exit=125
+unknown flag: --skip-log-bin
+
+Usage:  docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+
+Run 'docker run --help' for more information
+=== start 2026-10-01T08:35:35.118Z ===
+docker run exit=0
+597831dc5b2398bedb2d916b13f4c616c52079ebec7415f1b3fe82be95e3f272
+containerId=597831dc5b2398bedb2d916b13f4c616c52079ebec7415f1b3fe82be95e3f272
+imageDigest=mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b,docker.m.daocloud.io/library/mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+version=8.0.46
+db=grading_score_projection_measure
+requestedPort=127.0.0.1:13321
+requestedTmpfs=/var/lib/mysql:rw,size=8g
+inspect.PortBindings={"3306/tcp":[{"HostIp":"127.0.0.1","HostPort":"13321"}]}
+inspect.Tmpfs={"/var/lib/mysql":"rw,size=8g"}
+inspect.Config.Cmd=["--skip-log-bin"]
+SELECT @@log_bin,@@log_bin_basename=[0	NULL]

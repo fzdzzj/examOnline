@@ -8,6 +8,7 @@ import com.exam.common.ResponseCode;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.grading.entity.GradingSubmission;
+import com.exam.grading.entity.SubjectiveGrade;
 import com.exam.grading.mapper.GradingSubmissionMapper;
 import com.exam.grading.model.GradingConfig;
 import com.exam.grading.model.GradingPaper;
@@ -20,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 整场判分编排服务（教师触发）：
@@ -70,11 +72,19 @@ public class ExamGradingService {
                         .eq(GradingSubmission::getExamId, examId)
                         .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_SUBMITTED));
 
+        // 已有主观批改行一次取出（batch-grading-subjective-upserts）：与试卷快照同一思路，
+        // 整场只读一次，逐份判分循环内不再按「答卷 × 题目」selectOne；
+        // 无简答题或无答卷时不发查询。预取在逐份 try 之外——一次读失败按整场异常上抛
+        // （与汇总的批量读取口径一致），不把整场判分包进大事务。
+        Map<Long, Map<Long, SubjectiveGrade>> existingGrades =
+                objectiveGradingService.loadSubjectiveGrades(submissions, paper);
+
         int failed = 0;
         List<ObjectiveGradingService.GradeOutcome> failures = new ArrayList<>();
         for (GradingSubmission submission : submissions) {
             // 失败隔离：gradeSafely 内部已标记失败并吞掉异常，循环永不被打断
-            ObjectiveGradingService.GradeOutcome outcome = objectiveGradingService.gradeSafely(submission, paper);
+            ObjectiveGradingService.GradeOutcome outcome = objectiveGradingService.gradeSafely(
+                    submission, paper, existingGrades.getOrDefault(submission.getId(), Map.of()));
             if (!outcome.success()) {
                 failed++;
                 failures.add(outcome);
@@ -98,7 +108,11 @@ public class ExamGradingService {
             throw new BusinessException(ResponseCode.NOT_FOUND, "答卷不存在或不属于该考试");
         }
         GradingPaper paper = paperReader.readByExamId(examId);
-        return objectiveGradingService.gradeSafely(submission, paper);
+        // 该份答卷的已有主观行一次取出（batch-grading-subjective-upserts），不再按题各查
+        Map<Long, SubjectiveGrade> existingGrades = objectiveGradingService
+                .loadSubjectiveGrades(List.of(submission), paper)
+                .getOrDefault(submissionId, Map.of());
+        return objectiveGradingService.gradeSafely(submission, paper, existingGrades);
     }
 
     /**

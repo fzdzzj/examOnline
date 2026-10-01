@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "experimentalDecorators": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./src/*"],
+      /* vuex@4.1 的 package.json 只写了 exports 的 JS 条件，没有 types 条件，
+         也没在 exports 里暴露 types/index.d.ts；TS 尊重 exports 后就不再回退读
+         typings 字段（TS7016）。这里用 paths 显式指回官方声明文件：
+         比 declare module 'vuex' 的手写桩更准，也不动任何依赖。 */
+      "vuex": ["./node_modules/vuex/types/index.d.ts"]
+    },
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "jsx": "preserve",
+    "declaration": false,
+    "types": ["vite/client", "node"]
+  }
+}

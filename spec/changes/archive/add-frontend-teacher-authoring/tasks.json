@@ -1,0 +1,38 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：题库管理（W18）",
+    "task": "题目可查、可增改、可软删",
+    "steps": [
+      { "step": "题库列表页：分页 + 题型/标签/关键词筛选 + 批量选择", "completed": true },
+      { "step": "题型驱动的编辑表单（单选/多选/判断/简答），各自校验规则齐备；分值、难度、解析、标签可录入", "completed": true },
+      { "step": "软删除按后端语义呈现，前端不自行发明过滤规则", "completed": true },
+      { "step": "标签管理页（CRUD，按 TagController 现有能力，不扩表）", "completed": true }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：组卷（W18-W19）",
+    "task": "手动与随机抽题两条组卷路径可用",
+    "steps": [
+      { "step": "手动组卷：选题入卷、题号排序、逐题分值覆盖、总分实时汇总（D1 未勾：试卷题目表漏 import Table 组件自交付提交 060b012 起即不渲染，改分/调序/移出入口不存在——accept-frontend-19-23 真机走查 20-3b/20-5 实证；入卷 POST 本身 200；修复立项登记遗留 #17）", "completed": false },
+      { "step": "标签随机抽题：按标签+题型+数量配置，预览抽中结果后可重抽或确认入卷（随机算法在后端）", "completed": true },
+      { "step": "试卷列表与只读详情预览（题目与分值分布）（D1 未勾：分值分布标签真实可见（简答 10/判断 5/单选 5），题目内容区不渲染——同源缺陷，随遗留 #17 修复后补勾）", "completed": false }
+    ],
+    "passes": false
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：契约与质量（W19）",
+    "task": "不手写接口、不夹带砍掉项",
+    "steps": [
+      { "step": "全部调用走 gen:api 生成客户端；无手写重复接口定义", "completed": true },
+      { "step": "前端不在本地实现答案归一化或判分口径（后端职责）", "completed": true },
+      { "step": "lint + type-check + vitest 全绿；新增页面有对应用例", "completed": true },
+      { "step": "未夹带 Excel 导入 / 蓝图组卷 / 模板版本 / AI 生成题目", "completed": true },
+      { "step": "不改后端：若发现接口缺口则停下回报并建议单独立项", "completed": true }
+    ],
+    "passes": true
+  }
+]

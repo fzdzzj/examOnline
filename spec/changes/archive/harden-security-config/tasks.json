@@ -1,0 +1,142 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：密钥管理重构（W12）",
+    "task": "移除 JWT 弱默认值并强制环境变量校验",
+    "steps": [
+      {
+        "step": "修改 application.yml，删除 secret 的默认值",
+        "completed": false
+      },
+      {
+        "step": "在 ApplicationRunner 中添加启动校验，缺失 JWT_SECRET 则拒绝启动",
+        "completed": false
+      },
+      {
+        "step": "创建 application-prod.yml 示例，包含强密钥配置注释",
+        "completed": false
+      },
+      {
+        "step": "编写密钥生成脚本：openssl rand -base64 32",
+        "completed": false
+      },
+      {
+        "step": "更新 docs/部署手册，说明生产环境密钥设置流程",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：密码策略增强（W12）",
+    "task": "强化密码存储与校验逻辑",
+    "steps": [
+      {
+        "step": "在 AuthService 中添加密码复杂度校验（长度≥8，含大小写+数字）",
+        "completed": false
+      },
+      {
+        "step": "配置 BCrypt 轮次为 12（application.yml: security.bcrypt.rounds=12）",
+        "completed": false
+      },
+      {
+        "step": "添加密码强度评估接口（可选）",
+        "completed": false
+      },
+      {
+        "step": "测试：弱密码注册被拒绝，强密码正常注册",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：防爆破机制（W12）",
+    "task": "实现登录防爆破限流",
+    "steps": [
+      {
+        "step": "使用 Redis 存储登录失败计数（key: auth:fail:{username}, expire: 30min）",
+        "completed": false
+      },
+      {
+        "step": "配置最大尝试次数 5 次，超过则锁定账户",
+        "completed": false
+      },
+      {
+        "step": "添加管理员解锁接口（POST /admin/users/{id}/unlock）",
+        "completed": false
+      },
+      {
+        "step": "登录成功时清除失败计数",
+        "completed": false
+      },
+      {
+        "step": "测试：连续 5 次错误密码后返回\"账户已锁定\"提示",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：审计日志（W13）",
+    "task": "新建安全审计日志系统",
+    "steps": [
+      {
+        "step": "创建 audit_log 表结构（id, user_id, action, ip, timestamp, details）",
+        "completed": false
+      },
+      {
+        "step": "实现 AuditLogService 异步写入（@Async + 批量提交）",
+        "completed": false
+      },
+      {
+        "step": "记录关键事件：登录成功/失败、权限变更、敏感数据访问",
+        "completed": false
+      },
+      {
+        "step": "新增 GET /audit/logs 接口（需 ADMIN 权限）",
+        "completed": false
+      },
+      {
+        "step": "验证日志留存策略（自动归档 90 天前数据）",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：渗透测试与文档（W13）",
+    "task": "安全扫描与规范更新",
+    "steps": [
+      {
+        "step": "运行 OWASP ZAP 扫描，确认无高危漏洞",
+        "completed": false
+      },
+      {
+        "step": "运行 JHackerTarget 进行 SQL 注入/XSS 扫描",
+        "completed": false
+      },
+      {
+        "step": "新建 spec/specs/security/spec.md，定义安全配置规范",
+        "completed": false
+      },
+      {
+        "step": "在 docs/需求决策记录.md 添加安全审计与密钥管理注记",
+        "completed": false
+      },
+      {
+        "step": "编写安全运维手册（密钥轮换、审计查询）",
+        "completed": false
+      },
+      {
+        "step": "提交代码：feat(security) + 中文描述",
+        "completed": false
+      }
+    ],
+    "passes": true
+  }
+]

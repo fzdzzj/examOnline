@@ -1,0 +1,88 @@
+=== EXPLAIN shape=50 x=40.0 at=2026-09-29T04:27:35.039Z exit=0
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	exam_submissions	NULL	ref	uk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish	uk_exam_student	8	const	50	12.84	Using where
+
+=== ROUND shape=50 x=40.0 round=1 count=49 at=2026-09-29T04:27:35.447Z
+--- COUNT (exit 0):
+total
+49
+
+--- EXPLAIN ANALYZE (exit 0):
+EXPLAIN
+-> Aggregate: count(0)  (cost=13.8 rows=1) (actual time=0.0697..0.0697 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=13.1 rows=6.42) (actual time=0.0596..0.0659 rows=49 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=13.1 rows=50) (actual time=0.0545..0.0585 rows=50 loops=1)\n
+
+=== ROUND shape=50 x=40.0 round=2 count=49 at=2026-09-29T04:27:35.780Z
+--- COUNT (exit 0):
+total
+49
+
+--- EXPLAIN ANALYZE (exit 0):
+EXPLAIN
+-> Aggregate: count(0)  (cost=13.8 rows=1) (actual time=0.0723..0.0723 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=13.1 rows=6.42) (actual time=0.0609..0.0682 rows=49 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=13.1 rows=50) (actual time=0.0558..0.0604 rows=50 loops=1)\n
+
+=== EXPLAIN shape=200 x=40.0 at=2026-09-29T04:27:36.331Z exit=0
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	exam_submissions	NULL	ref	uk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish	uk_exam_student	8	const	200	12.84	Using where
+
+=== ROUND shape=200 x=40.0 round=1 count=199 at=2026-09-29T04:27:36.679Z
+--- COUNT (exit 0):
+total
+199
+
+--- EXPLAIN ANALYZE (exit 0):
+EXPLAIN
+-> Aggregate: count(0)  (cost=55.1 rows=1) (actual time=0.206..0.206 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=52.6 rows=25.7) (actual time=0.092..0.197 rows=199 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=52.6 rows=200) (actual time=0.0864..0.176 rows=200 loops=1)\n
+
+=== ROUND shape=200 x=40.0 round=2 count=199 at=2026-09-29T04:27:37.076Z
+--- COUNT (exit 0):
+total
+199
+
+--- EXPLAIN ANALYZE (exit 0):
+EXPLAIN
+-> Aggregate: count(0)  (cost=55.1 rows=1) (actual time=0.167..0.167 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=52.6 rows=25.7) (actual time=0.0535..0.16 rows=199 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=52.6 rows=200) (actual time=0.0492..0.139 rows=200 loops=1)\n
+
+=== EXPLAIN shape=1000 x=40.0 at=2026-09-29T04:27:37.678Z exit=0
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	exam_submissions	NULL	ref	uk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish	uk_exam_student	8	const	1000	12.84	Using where
+
+=== ROUND shape=1000 x=40.0 round=1 count=996 at=2026-09-29T04:27:38.168Z
+--- COUNT (exit 0):
+total
+996
+
+--- EXPLAIN ANALYZE (exit 0):
+EXPLAIN
+-> Aggregate: count(0)  (cost=91.7 rows=1) (actual time=0.964..0.965 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=78.8 rows=128) (actual time=0.122..0.92 rows=996 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=78.8 rows=1000) (actual time=0.116..0.797 rows=1000 loops=1)\n
+
+=== ROUND shape=1000 x=40.0 round=2 count=996 at=2026-09-29T04:27:38.676Z
+--- COUNT (exit 0):
+total
+996
+
+--- EXPLAIN ANALYZE (exit 0):
+EXPLAIN
+-> Aggregate: count(0)  (cost=91.7 rows=1) (actual time=1.52..1.52 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=78.8 rows=128) (actual time=0.125..1.45 rows=996 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=78.8 rows=1000) (actual time=0.118..1.22 rows=1000 loops=1)\n
+
+=== EXPLAIN shape=3000 x=40.0 at=2026-09-29T04:27:39.480Z exit=0
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	exam_submissions	NULL	ref	uk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish	uk_exam_student	8	const	3000	12.84	Using where
+
+=== ROUND shape=3000 x=40.0 round=1 count=2990 at=2026-09-29T04:27:39.982Z
+--- COUNT (exit 0):
+total
+2990
+
+--- EXPLAIN ANALYZE (exit 0):
+EXPLAIN
+-> Aggregate: count(0)  (cost=143 rows=1) (actual time=2.65..2.65 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=105 rows=385) (actual time=0.236..2.53 rows=2990 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=105 rows=3000) (actual time=0.229..2.17 rows=3000 loops=1)\n
+
+=== ROUND shape=3000 x=40.0 round=2 count=2990 at=2026-09-29T04:27:40.496Z
+--- COUNT (exit 0):
+total
+2990
+
+--- EXPLAIN ANALYZE (exit 0):
+EXPLAIN
+-> Aggregate: count(0)  (cost=143 rows=1) (actual time=2.55..2.55 rows=1 loops=1)\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=105 rows=385) (actual time=0.287..2.43 rows=2990 loops=1)\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=105 rows=3000) (actual time=0.28..2.09 rows=3000 loops=1)\n
+

@@ -1,0 +1,47 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：基线、共享语义与测量设计",
+    "task": "核对历史证据并定义 parseAnswers 与映射构建的同调用分账",
+    "steps": [
+      {"step": "核对 HEAD/工作树、旧归档 JSON 和 sha256、GradingPaperReader.parseAnswers 与全部生产调用者；复述内容 oracle 与 39/45 长度校验的边界", "completed": true},
+      {"step": "固定正常与坏卷数据形状、输入 JSON 语义、同副本计时/分配边界、额外探针成本和 GO/NO-GO 判据；测量数据与日志不得由 clean 清除", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "开工核对：HEAD=af602ff21358ac9556cfb2f0732e63444bab15d9（=预期 af602ff；分支 feature/update-monitor-overview-submission-projection）；git status 仅两项未跟踪（docs/backend-optimization-candidates.md 与 spec/changes/update-answer-json-parse-hotspot/），前者全程未动、未暂存。已读根 AGENTS.md、本变更三件套、上一份归档 spec/changes/archive/update-question-stats-paging-resolve-attribution（proposal/tasks/evidence 三份 JSON/evidence-sha256.txt/measurement-rounds.md/performance 基线注记）并对归档三份 JSON 重算 SHA-256，与 evidence-sha256.txt 逐项一致。现场核对（非台账）GradingPaperReader.parseAnswers（src/main/java/com/exam/grading/support/GradingPaperReader.java:95-117）与全部生产调用者三处：ObjectiveGradingService.doGrade（客观判分主链路）、QuestionScoreResolver.resolve（单份成绩解析）与 QuestionScoreResolver.resolveBatch（题目统计导出逐页批量）。须保持的输入语义：null/空白 answers → BusinessException(INTERNAL_ERROR,「答卷答案尚未落库」)；根节点非对象 →「答卷答案 JSON 结构非法」；键非 Long → Long.valueOf 异常被包装为「答卷答案解析失败」；值为 null → 对应题答案 null，否则 asText()；重复键按 Jackson readTree 的 ObjectNode 语义后者覆盖前者。上一份归档的长度校验边界如实复述：outputBytesEqual 只比较两数组长度（prod.length == replica.length），归档实测 39 true / 6 false（差 ±1 字节），**不是**字节或内容校验全等；内容/语义等价由 probe.unequalPages=0（逐页 result.equals）、cellsEqualProduction（DataFormatter 逐格）与 zipContentEqual（排除 docProps/core.xml 逐条目）承担。测量设计沿用同一夹具与口径（可复算对照）：pageSize=500、sxssfWindow=100、内部 rounds=3、预热 2 轮不计入、objectiveRatio=0.8、objectiveScore=2、shortAnswerScore=5，5 形状 s1000-q20/s1000-q150/s3000-q60/s100-q20-bad2/s3-q20-bad1；拆分点固定在 test-only 受控副本 resolveBatchReplica 的同一次调用内——子段 1=逐份 paperReader.parseAnswers 调用，子段 2=逐份主观分分组成 Map，父段 answerParse 原样保留供对照；正常/降级分桶、逐页 result.equals、内容 oracle、额外副本探针成本（probe，不并入生产段）全部保留；预登记 GO/NO-GO 判据：仅当 parseAnswers 单独稳定主导（高于其他并列嵌套段）且差异高于轮间及各轮抖动噪声、可保持共享语义时 GO，否则 NO-GO，不为制造红灯改判据。证据保全：measure 原始 JSON 在 clean 前复制入本目录 evidence/ 并核对 SHA-256；控制台日志另存 %TEMP%（不入库，与上一份归档同口径）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：仅测试侧归因",
+    "task": "拆分复合段并用旧实现测量、先裁决",
+    "steps": [
+      {"step": "test-only 同一次副本调用中将 parseAnswers 与主观分映射分开计时/分配；保持逐页 result.equals、内容 oracle、normal/fallback 分桶和探针开销声明", "completed": true},
+      {"step": "至少三次独立运行旧实现；保留逐轮 JSON、sha256、命令/退出码/revision，比较同窗口分账与轮间噪声；只在 parseAnswers 单独稳定主导且改善空间成立时 GO，否则 NO-GO", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "测量工具改动提交 revision=e23393618612daf4166b064dc6e71f64d1046610（「test(score): 题目统计导出测量工具拆分答案解析复合段」，1 文件 +66/-9，仅 src/test/java/com/exam/score/measure/QuestionStatsExportAttributionMeasureIT.java；src/main 零改动）。改动内容：受控副本 resolveBatchReplica 内把原 answerParse 复合段拆为互不重叠子段 parseAnswersCall（逐份 paperReader.parseAnswers）与 subjectiveMapBuild（逐份主观分分组成 Map），父段 answerParse 原样保留；新增硬护栏（子段之和超过父段即抛错判本轮证据无效，未触发，拆分回加残差 ≤1e-3ms）；NestedAccum.toJson 新增并列键 answerParseSplit；METRIC_DEFS 同步登记；等价与分桶护栏（逐页 result.equals、内容 oracle、badAnswers 与 fallbackPages 一致性）保持原样。三轮为三次独立 JVM 调用，命令仅 label 不同：.\\mvnw.cmd -o test \"-Dtest=QuestionStatsExportAttributionMeasureIT\" \"-DfailIfNoTests=false\" \"-Dmeasure.rev=e233936\" \"-Dmeasure.label=split-runN\" \"-Dmeasure.out=target/measure\"；逐轮均 Tests run:1/Failures:0/Errors:0/Skipped:0、BUILD SUCCESS、退出码 0（Maven 总耗时 01:10/01:09/01:06）。环境：jdk=21.0.9 (Oracle Corporation)、os=Windows 11 10.0 amd64、processors=20、maxHeapMB=3952、DB=H2 memory。原始逐轮 JSON 存本目录 evidence/question-stats-attribution-split-run{1,2,3}.json，sha256 见 evidence/evidence-sha256.txt（已复算一致），转录见 evidence/measurement-rounds.md。**裁决一（测量有效）**：3 调用 × 内部 3 轮 = 45 样本，probe.unequalPages=0（45/45 逐页 result.equals）、cellsEqualProduction=true 45/45、zipContentEqual=true 45/45（排除 docProps/core.xml）、oracleMatch=true 15/15（每轮 5 combo 独立重算）；坏卷分桶正确（s100-q20-bad2 与 s3-q20-bad1 每轮 fallbackPages=1、resolveFallbackExtraSql=98 与 2，其余形状为 0）；outputBytesEqual 仍为长度-only 校验：38 true / 7 false（run1 12/3、run2 12/3、run3 14/1），7 次 false 长度差均为 1 字节（prod−replica +1 六次、−1 一次），成因本轮未确定、不作推断，**不以长度相等冒充字节或内容全等**。**裁决二（不存在稳定主导因素 → NO-GO）**：复合段内部拆分 27 个 normal 样本（两个坏卷形状整批降级、normal 桶为空）中 parseAnswersCall 占复合段 0.8454–0.9758（逐形状：s1000-q20 0.8454–0.8984、s1000-q150 0.9472–0.9758、s3000-q60 0.9294–0.9541），subjectiveMapBuild 仅 0.0051–0.0553（pa/sm 比值 min 15.3–55.5），即「parseAnswers 对映射构建」成立；但作为副本 resolve 的并列嵌套段 {parseAnswers, subjectiveRead, grade} 比较时，parseAnswers 仅 24/27 为最大段：3 个反例全部在 s1000-q20（run1 r1 2.941 < 主观分读取 3.876；run2 r2 1.862 < 2.009；run2 r3 1.892 < 3.122），pa/次大段比值 min 0.61 med 1.44 max 2.05，份额区间 pa min 0.2896 < 主观分读取 max 0.4778（全局交替），最窄 5 个余量 −1.230/−0.935/−0.147/+0.032/+0.203 ms 全部落在同轮抖动 0.44–1.44ms 内（不可辨）；逐形状余量亦未稳定高于抖动（s1000-q20 −1.230–+0.468ms vs 抖动 1.26/1.44/0.44；s1000-q150 2.604–7.580ms vs 抖动最大 4.91；s3000-q60 4.217–13.664ms vs 抖动最大 5.78）。分配轴 parseAnswers 27/27 最大（1.25–1.69 倍）但与墙钟判据不一致，且本次 GO 判据要求墙钟稳定主导。按预登记判据（parseAnswers 单独稳定主导、差异高于轮间及探针噪声）**裁决 NO-GO**：不进入阶段 3，src/main 保持零改动，spec-delta.md 原样保留为未采用草案。复测边界：H2 进程内、MockMvc/Service 直调，不外推真实 MySQL/Tomcat 与生产 P99；夹具 objectiveRatio=0.8 仅决定题型构成、无 subjective_grades 数据行，主观分读取与映射构建在接近地板量级比较（该边界不改变裁决方向，也不能据此推断有主观分数据时的生产形态）；探针成本（额外一遍 resolve 副本）4.768–80.063ms 单列、不并入生产段，未归属段 0.052–0.569ms、loopOverhead ≤1.561ms，均不作纯 CPU。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：仅 GO 时单因素实现",
+    "task": "先红后绿保持共享解析器语义；NO-GO 不伪造实施",
+    "steps": [
+      {"step": "先用旧实现固定解析器的 JSON 边界、异常、重复键、null、正常/坏卷与共享调用者的语义 oracle；设立与已测热点一致的可复现资源红线，旧实现功能性红", "completed": false},
+      {"step": "仅优化 GradingPaperReader.parseAnswers，旧语义测试与资源红线转绿；不改主观分映射、SQL 或 JVM；若没有等价且可测的改法，撤销实现并 NO-GO", "completed": false}
+    ],
+    "passes": false,
+    "evidence": "不适用（NO-GO）：阶段 2 按预登记判据判定 parseAnswers 未单独稳定主导（3/27 样本被主观分读取超越、最窄余量落在同轮抖动内、全局份额区间交叠），预期改善与轮间噪声不可分辨；故不进入阶段 3——未编写语义 oracle 与资源红线、未改 GradingPaperReader.parseAnswers、未改主观分映射/SQL/schema/JVM/线程池，src/main 零改动，未合入任何拟实施 delta，spec-delta.md 原样保留为未采用草案。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：复测、门禁和规范收口",
+    "task": "同负载验收或据实 NO-GO 归档",
+    "steps": [
+      {"step": "仅 GO 有实现时，在同数据/负载/环境复测解析段、resolve、完整导出与资源及内容 oracle；收益与语义不成立则回退生产改动", "completed": false},
+      {"step": "在已提交最终代码态运行仓库根 mvnw.cmd clean test，记录原始输出、退出码、四计数、revision 与 AGENTS.md 自查；clean 前先保存逐轮证据", "completed": true},
+      {"step": "据实回勾、GO 才合入 spec-delta；NO-GO 保留未采用草案；更新 spec/README.md、归档及证据 SHA-256，仅显式暂存本任务文件", "completed": true}
+    ],
+    "passes": false,
+    "evidence": "step1 不适用（NO-GO）：无 GO 实现可复测，未做「实现后」同负载对账，不以任何数值冒充优化收益；阶段 2 三轮旧实现数字即最终测量结论。step2 已执行：clean 前先把 target/measure 下三份原始 JSON 复制入本目录 evidence/ 并复算 SHA-256 一致（控制台日志另存 %TEMP%）；在仓库根 d:/code/examOnline 执行 mvnw.cmd clean test，revision=e233936（已提交最终代码态；其 src/main 与基线 af602ff 零 diff，git diff --stat 为空，仅多出测试侧测量工具），输出 Tests run: 314, Failures: 0, Errors: 0, Skipped: 1、BUILD SUCCESS、退出码 0、Maven 总耗时 02:41 min；完整日志留存 %TEMP%\\exam-gate-e233936.log（1216980 字节、sha256=55bfc821634443f66986f57435d9c0a21a07158bb7d2b9f467801803e2633dc0；仓库外保存，免 clean 清除）；Skipped 1 在 com.exam.support.OpenApiContractTest，属既有基线（上与基线同为 314/0/0/1）；测量 IT 以 IT 结尾未计入 Surefire 全量。首次失败未发生（首跑即 314/0/0/1 绿）。AGENTS.md 自查（同 revision）：① flyway 在 pom.xml 命中 0；② test ! -e src/main/resources/db → OK；③ @Sql 在 src/test 过滤 javadoc 续行后命中 0＝无注解形态违规；④ 实体↔schema 表级：@TableName 唯一表集合与 schema.sql CREATE TABLE 集合 comm -23 为空。step3 已执行：按 NO-GO 收口——performance 基线 spec/specs/performance/spec.md 的既有「题目统计导出优化先拆分分页与解析」Requirement 未改，仅在其后追加「评估结论注记（NO-GO）」段落，未把本变更 delta 条款并入基线；spec-delta.md 原样保留为未采用草案；spec/README.md 已归档表新增本变更一行（标注未采用）；本目录（含 evidence/）整体移入 spec/changes/archive/update-answer-json-parse-hotspot/；显式路径暂存后核对 git diff --cached --name-only 与 --check；未跟踪的 docs/backend-optimization-candidates.md 全程未暂存、未修改；未 push、未建 PR、未启 Docker、未写共享 dev。"
+  }
+]

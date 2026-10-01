@@ -3,6 +3,7 @@ package com.exam.paper.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
+import com.exam.common.ratelimit.RateLimit;
 import com.exam.paper.dto.AddPaperQuestionRequest;
 import com.exam.paper.dto.PaperCreateRequest;
 import com.exam.paper.dto.PaperDetailResponse;
@@ -15,7 +16,6 @@ import com.exam.paper.dto.RandomDrawPreviewResponse;
 import com.exam.paper.dto.RandomDrawRequest;
 import com.exam.paper.dto.UpdatePaperQuestionScoreRequest;
 import com.exam.paper.entity.Paper;
-import com.exam.paper.entity.PaperQuestion;
 import com.exam.paper.service.PaperService;
 import com.exam.paper.service.PaperSnapshotService;
 import jakarta.validation.Valid;
@@ -127,7 +127,9 @@ public class PaperController {
         return ApiResponse.success(paperService.previewDraw(request));
     }
 
-    /** 随机抽题确认入卷：按规则抽取并追加到试卷（使用题目默认分） */
+    /** 随机抽题确认入卷：按规则抽取并追加到试卷（使用题目默认分）。
+     *  抽题限流（capacity=200, qps=50）——教师操作低频，仅需防异常/误操作刷爆，阈值取低即可。 */
+    @RateLimit(qps = 50, capacity = 200, key = "random-draw")
     @PostMapping("/{id}/questions/random")
     public ApiResponse<PaperDetailResponse> commitRandomDraw(@PathVariable Long id,
                                                              @Valid @RequestBody RandomDrawRequest request) {

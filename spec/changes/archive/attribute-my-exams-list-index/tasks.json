@@ -1,0 +1,77 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：只读核实（SQL 清单 / 量级锚 / 候选臂复核 / exams 纳入）",
+    "task": "不改仓库文件完成归因前核实；唯一新增仓库文件为捕获 IT",
+    "steps": [
+      {"step": "开工核对 K1–K9（K6 用卡面原文脚本）", "completed": true},
+      {"step": "SQL 清单：myExams() 五条 SQL 逐字捕获并逐条标注谓词/SELECT 列/LIMIT/可用索引/最左前缀", "completed": true},
+      {"step": "运行时捕获：新增 src/test/java/com/exam/taking/MyExamsSqlCaptureIT.java 并实跑落盘 BoundSql 原文", "completed": true},
+      {"step": "数据量锚：从 docs/需求决策记录.md §20、docs/submit-loadtest-report.md、docs/submit-capacity-tuning-report.md、已归档监考测量 PREREGISTRATION 抄录出处（grep 锚点，不写裸行号）", "completed": true},
+      {"step": "候选臂集合复核：『锚定形状不能保语义』结论=成立（§12.6 转班成绩随人 + fix-my-exams-list-scope 语义）；exams 表结论=不纳入", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "K1=feature/update-monitor-overview-submission-projection、K2=4c007c5、K3=恰两行未跟踪（docs/backend-optimization-candidates.md、docs/指导主Agent交接文档-2026-09-30.md）、K4 恰 1 行（:165）、K5=1、K6 脚本输出与卡面 §3 索引事实逐条一致、K7=27、K8 失败（docker ps 连接 npipe 失败，Docker Desktop 未运行）、K9=OK。K8 失败按卡面预定义分支处理：阶段 1、2 照做并冻结，然后停手（未尝试修复 Docker）。捕获 IT：mvnw.cmd test -Dtest=MyExamsSqlCaptureIT -DfailIfNoTests=false -Dmeasure.rev=4c007c5 -Dmeasure.out=D:/code/examOnline-measure/my-exams-index/raw → Tests run: 1, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS @ 4c007c5；产物 raw/my-exams-boundsql.json 共 5 条语句（T1 答卷/T3 班级/T4 班级考试/T2 补考/T5 主键 IN），T1=`SELECT   exam_id,status,deadline_time   FROM exam_submissions      WHERE  (student_id = ?)`、T2=`SELECT   exam_id   FROM exam_candidates      WHERE  (student_id = ?)`（逐字空白已冻入 PREREGISTRATION §0）。库外产物：stage1-sql-inventory.md、stage1-volume-anchors.md、k6-index-inventory.sh、cn-anchors*.sh、docs-ascii/ 副本（其中禁读的 backend-optimization-candidates.md 副本已删除且从未读取）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：冻结判据（任何测量之前）",
+    "task": "proposal + tasks.json + evidence/PREREGISTRATION 冻结并登记 sha256 与冻结时刻",
+    "steps": [
+      {"step": "写定 PREREGISTRATION：两形状、七臂、逐轮左轮转、造数公式、B1–B5 与阈值、analyze-index-arms.cjs 与 adjudication.json 格式", "completed": true},
+      {"step": "冻结后立即 sha256sum 并把 sha256 与冻结时刻记入本 tasks.json", "completed": true},
+      {"step": "确认冻结时刻早于阶段 3 首跑时刻（阶段 3 因 K8 未执行；该约束对续跑轮仍然生效）", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "evidence/PREREGISTRATION.md 冻结时刻 2026-09-30T21:14:07+08:00（写定），sha256=1b3a5f0ebc9b0082120f29b6cb1c601ec7b217edb9a133174d098b875bb2ea9d（sha256sum 于 21:16:26 计算并写入 evidence/preregistration.sha256.txt）；冻结后文件未再改动。阶段 3 首跑未发生（K8 停手），冻结早于一切测量的约束对续跑轮保持有效。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：真 MySQL 容器测量（H2 不得作为证据来源）",
+    "task": "一次性 mysql:8.0 容器 + 逐形状逐臂逐轮左轮转测量 + 机械裁决",
+    "steps": [
+      {"step": "容器启动与整库 schema.sql 执行（27 表核对）、镜像 digest/VERSION()/SHOW INDEX 留证", "completed": true},
+      {"step": "逐形状（n1→n2）造数并按 B5① 机械核行数/长度；开测前复跑捕获 IT 做 B5④ 逐字比对", "completed": true},
+      {"step": "读路径 5 轮 × 7 臂逐轮左轮转 + 热写路径 5 轮 × 4 臂，逐轮记录 EXPLAIN/EXPLAIN ANALYZE/elapsed", "completed": true},
+      {"step": "analyze-index-arms.cjs 产出 adjudication.json；销毁容器并留证", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "容器：一次性 mysql:8.0（镜像 digest sha256:7dcddc01f13be3b664fc8654c6c06df9a5658e370cf9d8ceec4aa0bebeff065f，容器 ID 9f7917d23e05626f4091c54111cbadc425066c07c43fca89e7330c8f57c6b9f5（2026-09-30 返修更正：rounds.json 全部 70 条读路径 + 40 条写路径记录 containerId 一致，且等于 container-start.log 第 4 次启动 2026-09-30T14:01:11.895Z 的容器），127.0.0.1:13320，tmpfs 数据目录，独立库 my_exams_index_measure，VERSION() 8.0.46）。整库执行 schema.sql 退出码 0，CREATE TABLE IF NOT EXISTS 匹配 27（实建表 26），基线 5 索引逐条核对一致。B5④ 核查：mvnw.cmd test -Dtest=MyExamsSqlCaptureIT -Dmeasure.rev=4c007c5，新 JSON 的 T1/T2 与 PREREG §0 逐字比对 exit=0 全等。B5① 造数核查：n1（答卷 100,500 行，paper_json 411,648,000 字节，answers 81,920,000 字节，目标学生 10 行；候选 5,000 行，目标学生 1 行）；n2（答卷 400,000 行，paper_json 1,638,400,000 字节，answers 327,680,000 字节，目标学生 10 行；候选 20,000 行，目标学生 1 行），断言全部通过。轮次测量：读路径 5 轮 × 7 臂（A0/A0rep/A1/A2/C0/C0rep/C1）左轮转 + 热写 5 轮 × 4 臂（100 INSERT + 100 UPDATE），原始数据落盘至 D:/code/examOnline-measure/my-exams-index/stage3/raw/rounds.json。机械裁决：node analyze-index-arms.cjs 退出码 0，产出 adjudication.json，整卡裁决 GO，分渠道采用 submissions=A1, candidates=null。容器销毁：docker rm -f 9f7917d23e05626f4091c54111cbadc425066c07c43fca89e7330c8f57c6b9f5 退出码 0，docker ps -a 零匹配；别项目 5 个容器前后清单完全一致（2026-09-30 返修注记：该论断已撤销——docker-ps-before.txt 的 mtime 22:07:03 晚于 docker-ps-after.txt 22:06:47 与销毁时刻 22:06:45，该对文件不构成事前基线；“别项目容器未被动”改由指导 agent 于 83459aa 独立执行 docker ps -a 复核成立，见任务 6）。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：仅 GO 时实施（NO-GO 则 src/ 零改动）",
+    "task": "schema.sql 仅 KEY 行 + docker/mysql/migrations/ 脚本 + 已提交状态门禁 329/0/0/1",
+    "steps": [
+      {"step": "GO：schema.sql 加冻结定义的 KEY 行（禁前缀索引/禁 FORCE INDEX，AUTO_INCREMENT 块含 PRIMARY KEY (id)）+ migrations 脚本（头注写明重复执行预期错误码与无自动执行者）", "completed": true},
+      {"step": "GO：已提交状态仓库根 mvnw.cmd clean test，须 329/0/0/1 BUILD SUCCESS，三要素记录", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "实施改动：src/main/resources/schema.sql 为 exam_submissions 增加 KEY idx_submissions_student (student_id)；新增 docker/mysql/migrations/2026-W40-add-submissions-student-index.sql，头注注明无自动执行者及重复执行预期错误码 1061。第一笔实施提交 02d933e（perf(data-access): 增加 exam_submissions 学生答卷查询索引 idx_submissions_student）。门禁验证：仓库根 $env:JAVA_HOME='D:\\develop1\\jdk21'; .\\mvnw.cmd clean test @ 02d933e -> Tests run: 329, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS 退出码 0，原始控制台日志转录入 evidence/gate-impl-commit.log。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口（归档 / spec 登记 / F-F、F-D / 四自查 / 分笔提交）",
+    "task": "归档变更目录、data-access 与 exam-taking 登记、evidence-sha256、提交",
+    "steps": [
+      {"step": "变更目录归档（proposal/tasks/spec-delta/evidence 全套）+ spec/README.md 三处登记", "completed": true},
+      {"step": "F-F 观察项登记（resolveTotalQuestions 窄读无 ORDER BY 的语义边界，只登记不改码）；F-D 处置（GO 有码改→第三笔常量提取；NO-GO→仅 spec-delta 措辞）", "completed": true},
+      {"step": "AGENTS 四自查 + wrapper 自查全绿；evidence-sha256.txt 复算 rc=0；分笔提交（-F 文件写提交信息）", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "归档资产完整：spec/changes/archive/attribute-my-exams-list-index/（包含 proposal.md、tasks.json、specs/data-access/spec-delta.md 与 evidence 全套日志及原始脚本）。spec 登记：spec/specs/data-access/spec.md 合入索引先行核查与最小充分原则 Scenario 及尾部合入注记；spec/README.md 更新当前状态行、能力域表 data-access 行、归档表新增 attribute-my-exams-list-index 行。F-F 观察项登记于 spec/specs/anti-cheat/spec.md 及收口注记。F-D 常量提取于 ExamTakingService.java（MY_EXAMS_DEFAULT_LIMIT = 50L）并独立为第三笔提交。捕获工具 src/test/java/com/exam/taking/MyExamsSqlCaptureIT.java 随收口第二笔提交入库。AGENTS 四自查与 wrapper 自查全绿；evidence-sha256.txt 校验 sha256sum -c rc=0。三笔提交划分：02d933e（实施）、第二笔（收口与规范）、第三笔（F-D 常量提取）。"
+  },
+  {
+    "number": 6,
+    "category": "返修（2026-09-30 用户裁决）：解析器违背冻结 §6 的更正、以保留 rounds.json 重算与登记",
+    "task": "R1 解析器按冻结 §6 原文修正并重算（未重测）；R2/R3 证据重写与哈希清单；R4 注释口径；本条登记全部三要素",
+    "steps": [
+      {"step": "R1：analyze-index-arms.cjs 两处解析缺陷修正（节点切分补字面量反斜杠 n；rows= 只认 actual 段）+ 重算 adjudication.json + 机械验收全绿", "completed": true},
+      {"step": "R2/R3：measurement-rounds.md 重写（容器 ID 更正、EXPLAIN 原文转录、废弃首轮登记、docker-ps 论断撤销）+ evidence-sha256.txt 刷新 → 第 1 笔提交 69d2950", "completed": true},
+      {"step": "R4：schema.sql 注释与迁移头注改判据式口径（仅注释文本）→ 第 2 笔提交 bf93c3f + 门禁 329/0/0/1", "completed": true},
+      {"step": "R5/R6/R7：proposal/tasks 返修登记、spec 基线更正、项目评估报告修正入库 → 第 3 笔提交", "completed": true}
+    ],
+    "passes": true,
+    "evidence": "【要素一：R1 重算】命令：node spec/changes/archive/attribute-my-exams-list-index/evidence/analyze-index-arms.cjs D:/code/examOnline-measure/my-exams-index/stage3/raw/rounds.json spec/changes/archive/attribute-my-exams-list-index/evidence/adjudication.json。当次输出（退出码 0）：ADJUDICATION COMPLETE: Verdict = GO；Adoption: submissions = A1, candidates = null；reasons 3 条，新增第 3 条 = C1 B2 also failed under the frozen parse rule (ratio 2.0 < 5.0 on every round of both shapes); does not veto card。重算数值（对照返修卡逐条机械验收全 PASS）：rowsSum n1 A0=A0rep=100510、n2 A0=A0rep=400010、A1=A2=10、C0=C0rep=2、C1=1；b2 比值 n1 A1=A2=10051（5 轮全同）、n2 A1=A2=40001（5 轮全同）、C1=2.0 且 b2.C1.pass=false；b1/b3/b4/b5 与全部 70 轮 actualTimeMs/elapsedUs 与返修前逐位相同（未重测；rounds.json sha256 b423138f…b0931 未变）；verdict/adoption/rev(4c007c5) 不变。短 revision：第 1 笔 69d2950。【要素二：第 2 笔门禁】命令：仓库根 JAVA_HOME=D:\\develop1\\jdk21 下 mvnw.cmd clean test @ bf93c3f。当次输出：Tests run: 329, Failures: 0, Errors: 0, Skipped: 1；BUILD SUCCESS；退出码 0；Total time 03:14 min；Finished at 2026-09-30T23:48:47+08:00。短 revision：bf93c3f；日志 D:\\code\\examOnline-verify\\gate-bf93c3f.log。【要素三：指导 agent 独立复核跑（83459aa）】已提交状态 83459aa 亲跑门禁：Tests run: 329, Failures: 0, Errors: 0, Skipped: 1；BUILD SUCCESS；退出码 0；02:36；Finished at 2026-09-30T22:35:46+08:00；日志 D:\\code\\examOnline-verify\\gate-83459aa.log。【容器 ID 与销毁证据更正】权威容器 ID 9f7917d23e05626f4091c54111cbadc425066c07c43fca89e7330c8f57c6b9f5（rounds.json 110 条记录 containerId 一致 + container-start.log 第 4 次启动 2026-09-30T14:01:11.895Z）；任务 3 证据中“别项目 5 个容器前后清单完全一致”论断撤销（docker-ps-before.txt mtime 22:07:03 晚于 docker-ps-after.txt 22:06:47 与销毁时刻 22:06:45，不构成事前基线），改由指导 agent 于 83459aa 独立执行 docker ps -a 复核：5 只 sport-verify-* 均 Up、端口未变。"
+  }
+]

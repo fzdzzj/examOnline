@@ -1,0 +1,142 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：JaCoCo 配置（W14）",
+    "task": "集成 JaCoCo 插件与覆盖率门禁",
+    "steps": [
+      {
+        "step": "在 pom.xml 添加 jacoco-maven-plugin 配置",
+        "completed": false
+      },
+      {
+        "step": "配置 coverage:check 目标，设置规则: branchRate < 60% 失败",
+        "completed": false
+      },
+      {
+        "step": "配置 report:report 生成 HTML 报告",
+        "completed": false
+      },
+      {
+        "step": "运行 mvn test jacoco:report 验证报告生成",
+        "completed": false
+      },
+      {
+        "step": "查看 target/site/jacoco/index.html 确认覆盖率数据",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：核心服务测试（W14）",
+    "task": "编写高优先级 Service 层测试用例",
+    "steps": [
+      {
+        "step": "编写 ScoreServiceTest，覆盖批量发布场景（含部分失败）",
+        "completed": false
+      },
+      {
+        "step": "编写 ExamSubmitServiceTest，覆盖并发提交流程",
+        "completed": false
+      },
+      {
+        "step": "编写 ExamSweepServiceTest，覆盖多实例重复扫描场景",
+        "completed": false
+      },
+      {
+        "step": "编写 PaperServiceTest，覆盖试卷组装逻辑",
+        "completed": false
+      },
+      {
+        "step": "确保每个测试类分支覆盖率 ≥70%",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：集成测试（W15）",
+    "task": "添加 MQ 消费者与数据库集成测试",
+    "steps": [
+      {
+        "step": "创建 application-test.yml（内存 DB + Testcontainers）",
+        "completed": false
+      },
+      {
+        "step": "使用 @DataJpaTest 测试 Repository 层查询",
+        "completed": false
+      },
+      {
+        "step": "使用 @ActiveMQTest 模拟 MQ 消息消费",
+        "completed": false
+      },
+      {
+        "step": "编写端到端测试：考试创建 → 学生提交 → 自动评分 → 成绩发布",
+        "completed": false
+      },
+      {
+        "step": "验证集成测试执行时间 < 5 分钟",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：CI/CD 流水线（W15）",
+    "task": "配置 GitHub Actions 自动化测试",
+    "steps": [
+      {
+        "step": "创建 .github/workflows/ci.yml",
+        "completed": false
+      },
+      {
+        "step": "配置 PR 触发：mvn clean test jacoco:report",
+        "completed": false
+      },
+      {
+        "step": "上传 JaCoCo 报告到 Codecov.io",
+        "completed": false
+      },
+      {
+        "step": "配置 SonarQube Scanner 分析代码质量",
+        "completed": false
+      },
+      {
+        "step": "设置 Quality Gate：覆盖率 < 70% 禁止合并",
+        "completed": false
+      }
+    ],
+    "passes": true
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：文档与规范（W15）",
+    "task": "更新测试规范与决策记录",
+    "steps": [
+      {
+        "step": "新建 spec/specs/testing/spec.md，定义测试质量规范",
+        "completed": false
+      },
+      {
+        "step": "在 docs/需求决策记录.md 添加测试门禁注记",
+        "completed": false
+      },
+      {
+        "step": "编写测试开发指南（如何写高效单元测试）",
+        "completed": false
+      },
+      {
+        "step": "运行 mvn verify 全量验证",
+        "completed": false
+      },
+      {
+        "step": "提交代码：feat(test-coverage) + 中文描述",
+        "completed": false
+      }
+    ],
+    "passes": true
+  }
+]

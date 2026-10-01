@@ -1,0 +1,3896 @@
+openapi: 3.1.0
+info:
+  title: examOnline API
+  description: 在线考试系统后端 API 契约。用于前端 @hey-api/openapi-ts 生成类型化 axios 客户端。契约如实描述当前 14
+    个 Controller 的现状，不改任何签名/DTO/逻辑。新增端点后必须重新运行导出命令更新 openapi.yaml。
+  version: "1.0"
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+security:
+- Authorization: []
+paths:
+  /api/questions/{id}:
+    get:
+      tags:
+      - question-controller
+      operationId: detail
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseQuestionResponse"
+    put:
+      tags:
+      - question-controller
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseQuestionResponse"
+    delete:
+      tags:
+      - question-controller
+      operationId: delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/papers/{id}:
+    get:
+      tags:
+      - paper-controller
+      operationId: detail_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperDetailResponse"
+    put:
+      tags:
+      - paper-controller
+      operationId: update_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaperUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperDetailResponse"
+    delete:
+      tags:
+      - paper-controller
+      operationId: delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/papers/{id}/questions/{questionId}/score:
+    put:
+      tags:
+      - paper-controller
+      operationId: updateQuestionScore
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: questionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePaperQuestionScoreRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/papers/{id}/questions/order:
+    put:
+      tags:
+      - paper-controller
+      operationId: updateOrder
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaperOrderRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperDetailResponse"
+  /api/exams/{id}:
+    get:
+      tags:
+      - exam-controller
+      operationId: detail_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExamDetailResponse"
+    put:
+      tags:
+      - exam-controller
+      operationId: update_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExamDetailResponse"
+    delete:
+      tags:
+      - exam-controller
+      operationId: delete_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/exam-taking/exams/{examId}/draft:
+    put:
+      tags:
+      - exam-taking-controller
+      operationId: saveDraft
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutoSaveRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAutoSaveResponse"
+  /api/classes/{id}:
+    get:
+      tags:
+      - class-controller
+      operationId: detail_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseClassResponse"
+    put:
+      tags:
+      - class-controller
+      operationId: update_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseClassResponse"
+    delete:
+      tags:
+      - class-controller
+      operationId: delete_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/classes/{id}/students/{userId}/transfer:
+    put:
+      tags:
+      - class-controller
+      operationId: transfer
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/tags:
+    get:
+      tags:
+      - tag-controller
+      operationId: list
+      parameters:
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTagResponse"
+    post:
+      tags:
+      - tag-controller
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTagResponse"
+  /api/scores/revoke:
+    post:
+      tags:
+      - score-controller
+      operationId: revoke
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchScoreRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListScoreActionItem"
+  /api/scores/publish:
+    post:
+      tags:
+      - score-controller
+      operationId: publish
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchScoreRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListScoreActionItem"
+  /api/score-reviews/{reviewId}/handle:
+    post:
+      tags:
+      - score-review-controller
+      operationId: handle
+      parameters:
+      - name: reviewId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewHandleRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/questions:
+    get:
+      tags:
+      - question-controller
+      operationId: page
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 10
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: difficulty
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: tagId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseQuestionPageResponse"
+    post:
+      tags:
+      - question-controller
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseQuestionResponse"
+  /api/papers:
+    get:
+      tags:
+      - paper-controller
+      operationId: page_1
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPaperResponse"
+    post:
+      tags:
+      - paper-controller
+      operationId: create_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaperCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperResponse"
+  /api/papers/{id}/snapshot:
+    get:
+      tags:
+      - paper-controller
+      operationId: getSnapshot
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperSnapshotResponse"
+    post:
+      tags:
+      - paper-controller
+      operationId: generateSnapshot
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperSnapshotResponse"
+  /api/papers/{id}/questions:
+    post:
+      tags:
+      - paper-controller
+      operationId: addQuestion
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPaperQuestionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperQuestionItemResponse"
+  /api/papers/{id}/questions/random:
+    post:
+      tags:
+      - paper-controller
+      operationId: commitRandomDraw
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RandomDrawRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperDetailResponse"
+  /api/papers/random-draw/preview:
+    post:
+      tags:
+      - paper-controller
+      operationId: previewDraw
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RandomDrawRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseRandomDrawPreviewResponse"
+  /api/exams:
+    get:
+      tags:
+      - exam-controller
+      operationId: page_2
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 1
+          minimum: 1
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 10
+          maximum: 100
+          minimum: 1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListExamResponse"
+    post:
+      tags:
+      - exam-controller
+      operationId: create_3
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExamResponse"
+  /api/exams/{id}/publish:
+    post:
+      tags:
+      - exam-controller
+      operationId: publish_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExamDetailResponse"
+  /api/exams/{id}/makeups:
+    post:
+      tags:
+      - exam-controller
+      operationId: createMakeup
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MakeupCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMakeupCreateResponse"
+  /api/exams/{id}/force-end:
+    post:
+      tags:
+      - exam-controller
+      operationId: forceEnd
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExamDetailResponse"
+  /api/exams/{examId}/scores/summarize:
+    post:
+      tags:
+      - score-controller
+      operationId: summarize
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseSummarizeStats"
+  /api/exams/{examId}/score-reviews:
+    get:
+      tags:
+      - score-review-controller
+      operationId: listByExam
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListScoreReview"
+    post:
+      tags:
+      - score-review-controller
+      operationId: apply
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScoreReviewApplyRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseScoreReview"
+  /api/exams/{examId}/grading/submissions/{submissionId}/rejudge:
+    post:
+      tags:
+      - grading-controller
+      operationId: rejudge
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: submissionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseFailureItem"
+  /api/exams/{examId}/grading/submissions/{submissionId}/manual-score:
+    post:
+      tags:
+      - grading-controller
+      operationId: manualScore
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: submissionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualScoreRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/exams/{examId}/grading/subjective/save:
+    post:
+      tags:
+      - grading-controller
+      operationId: saveSubjectiveScore
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubjectiveScoreRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseSubjectiveGradeRow"
+  /api/exams/{examId}/grading/run:
+    post:
+      tags:
+      - grading-controller
+      operationId: run
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseGradingRunResponse"
+  /api/exam-taking/exams/{examId}/submit:
+    post:
+      tags:
+      - exam-taking-controller
+      operationId: submit
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseSubmitResponse"
+  /api/exam-taking/exams/{examId}/enter:
+    post:
+      tags:
+      - exam-taking-controller
+      operationId: enter
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEnterExamResponse"
+  /api/exam-taking/exams/{examId}/behavior:
+    post:
+      tags:
+      - exam-taking-controller
+      operationId: reportBehavior
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BehaviorReportRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseBehaviorReportResponse"
+  /api/classes:
+    get:
+      tags:
+      - class-controller
+      operationId: page_3
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseClassPageResponse"
+    post:
+      tags:
+      - class-controller
+      operationId: create_4
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseClassResponse"
+  /api/classes/{id}/students:
+    get:
+      tags:
+      - class-controller
+      operationId: listStudents
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListClassStudentItem"
+    post:
+      tags:
+      - class-controller
+      operationId: joinStudent
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinStudentRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/auth/register:
+    post:
+      tags:
+      - auth-controller
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+      security: []
+  /api/auth/refresh:
+    post:
+      tags:
+      - auth-controller
+      operationId: refresh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTokenResponse"
+      security: []
+  /api/auth/password/reset:
+    post:
+      tags:
+      - auth-controller
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+      security: []
+  /api/auth/password/reset-code:
+    post:
+      tags:
+      - auth-controller
+      operationId: sendResetCode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendResetCodeRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+      security: []
+  /api/auth/password/change:
+    post:
+      tags:
+      - auth-controller
+      operationId: changePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/auth/logout:
+    post:
+      tags:
+      - auth-controller
+      operationId: logout
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/auth/login:
+    post:
+      tags:
+      - auth-controller
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTokenResponse"
+      security: []
+  /api/admin/users/{userId}/kick:
+    post:
+      tags:
+      - admin-controller
+      operationId: kickUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/admin/mq/dlq/replay:
+    post:
+      tags:
+      - dlq-admin-controller
+      operationId: replay
+      parameters:
+      - name: max
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseReplayReport"
+  /api/admin/invite-codes:
+    get:
+      tags:
+      - admin-controller
+      operationId: listInviteCodes
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListInviteCodeResponse"
+    post:
+      tags:
+      - admin-controller
+      operationId: createInviteCode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteCodeCreateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseInviteCodeResponse"
+  /api/admin/invite-codes/{id}/invalidate:
+    post:
+      tags:
+      - admin-controller
+      operationId: invalidateInviteCode
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/scores/my:
+    get:
+      tags:
+      - score-controller
+      operationId: myScore
+      parameters:
+      - name: examId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMyScoreResponse"
+  /api/scores/makeup-final:
+    get:
+      tags:
+      - score-controller
+      operationId: myMakeupFinalScore
+      parameters:
+      - name: examId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMakeupFinalScoreResponse"
+  /api/exams/{id}/snapshot:
+    get:
+      tags:
+      - exam-controller
+      operationId: getSnapshot_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExamSnapshotResponse"
+  /api/exams/{id}/makeup-eligible:
+    get:
+      tags:
+      - exam-controller
+      operationId: makeupEligible
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: passLine
+        in: query
+        required: false
+        schema:
+          type: number
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMakeupCandidateItem"
+  /api/exams/{id}/absences:
+    get:
+      tags:
+      - exam-controller
+      operationId: absences
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAbsenceItemResponse"
+  /api/exams/{examId}/scores/publish-preview:
+    get:
+      tags:
+      - score-controller
+      operationId: publishPreview
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseScorePreviewResponse"
+  /api/exams/{examId}/scores/makeup-final/{studentId}:
+    get:
+      tags:
+      - score-controller
+      operationId: makeupFinalScore
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: studentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMakeupFinalScoreResponse"
+  /api/exams/{examId}/scores/export/question-stats:
+    get:
+      tags:
+      - score-controller
+      operationId: exportQuestionStats
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /api/exams/{examId}/scores/export/personal/{studentId}:
+    get:
+      tags:
+      - score-controller
+      operationId: exportPersonal
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: studentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+          default: xlsx
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /api/exams/{examId}/scores/export/detail:
+    get:
+      tags:
+      - score-controller
+      operationId: exportQuestionDetail
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /api/exams/{examId}/scores/export/class-sheet:
+    get:
+      tags:
+      - score-controller
+      operationId: exportClassSheet
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /api/exams/{examId}/monitor/overview:
+    get:
+      tags:
+      - monitor-controller
+      operationId: overview
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMonitorOverviewResponse"
+  /api/exams/{examId}/grading/subjective:
+    get:
+      tags:
+      - grading-controller
+      operationId: subjectiveRows
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: questionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListSubjectiveGradeRow"
+  /api/exams/{examId}/grading/subjective/questions:
+    get:
+      tags:
+      - grading-controller
+      operationId: subjectiveQuestions
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListSubjectiveQuestionItem"
+  /api/exams/{examId}/grading/progress:
+    get:
+      tags:
+      - grading-controller
+      operationId: progress
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseGradingProgressResponse"
+  /api/exams/{examId}/behavior-logs:
+    get:
+      tags:
+      - behavior-log-controller
+      operationId: page_4
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: studentId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: eventType
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: severity
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseBehaviorLogPageResponse"
+  /api/exams/{examId}/behavior-logs/timeline:
+    get:
+      tags:
+      - behavior-log-controller
+      operationId: timeline
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: studentId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseBehaviorTimelineResponse"
+  /api/exam-taking/exams:
+    get:
+      tags:
+      - exam-taking-controller
+      operationId: myExams
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListExamListItem"
+  /api/exam-taking/exams/{examId}/paper:
+    get:
+      tags:
+      - exam-taking-controller
+      operationId: paper
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEnterExamResponse"
+  /api/auth/me:
+    get:
+      tags:
+      - auth-controller
+      operationId: me
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseCurrentUserResponse"
+  /api/admin/audit-logs:
+    get:
+      tags:
+      - admin-controller
+      operationId: auditLogs
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 1
+          minimum: 1
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: username
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: action
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAuditLogResponse"
+  /api/tags/{id}:
+    delete:
+      tags:
+      - tag-controller
+      operationId: delete_4
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/papers/{id}/questions/{questionId}:
+    delete:
+      tags:
+      - paper-controller
+      operationId: removeQuestion
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: questionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/classes/{id}/students/{userId}:
+    delete:
+      tags:
+      - class-controller
+      operationId: removeStudent
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+components:
+  schemas:
+    QuestionCreateRequest:
+      type: object
+      properties:
+        type:
+          type: integer
+          format: int32
+          maximum: 4
+          minimum: 1
+        content:
+          type: string
+          maxLength: 5000
+          minLength: 0
+        choices:
+          type: array
+          items:
+            type: string
+          maxItems: 26
+          minItems: 0
+        correctAnswer:
+          type: string
+          maxLength: 512
+          minLength: 0
+        score:
+          type: number
+          maximum: 999.9
+          minimum: 0.5
+        difficulty:
+          type: integer
+          format: int32
+          maximum: 3
+          minimum: 1
+        analysis:
+          type: string
+          maxLength: 2000
+          minLength: 0
+        tagIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+      required:
+      - content
+      - correctAnswer
+      - difficulty
+      - score
+      - type
+    ApiResponseQuestionResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/QuestionResponse"
+    QuestionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: integer
+          format: int32
+        typeName:
+          type: string
+        content:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+        correctAnswer:
+          type: string
+        score:
+          type: number
+        difficulty:
+          type: integer
+          format: int32
+        analysis:
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagResponse"
+        createdBy:
+          type: integer
+          format: int64
+        createdTime:
+          type: string
+          format: date-time
+        updatedTime:
+          type: string
+          format: date-time
+    TagResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          type: string
+    PaperUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 128
+          minLength: 0
+        description:
+          type: string
+          maxLength: 512
+          minLength: 0
+        totalScore:
+          type: number
+          maximum: 9999.9
+          minimum: 0
+    ApiResponsePaperDetailResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PaperDetailResponse"
+    PaperDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        totalScore:
+          type: number
+        questionCount:
+          type: integer
+          format: int32
+        status:
+          type: integer
+          format: int32
+        snapshotId:
+          type: integer
+          format: int64
+        createdBy:
+          type: integer
+          format: int64
+        createdTime:
+          type: string
+          format: date-time
+        updatedTime:
+          type: string
+          format: date-time
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaperQuestionItemResponse"
+    PaperQuestionItemResponse:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        number:
+          type: integer
+          format: int32
+        score:
+          type: number
+        questionType:
+          type: integer
+          format: int32
+        content:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+        correctAnswer:
+          type: string
+        defaultScore:
+          type: number
+        questionDeleted:
+          type: boolean
+    UpdatePaperQuestionScoreRequest:
+      type: object
+      properties:
+        score:
+          type: number
+          maximum: 999.9
+          minimum: 0.5
+      required:
+      - score
+    ApiResponseVoid:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data: {}
+    PaperOrderRequest:
+      type: object
+      properties:
+        questionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+      required:
+      - questionIds
+    ExamUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 128
+          minLength: 0
+        description:
+          type: string
+          maxLength: 512
+          minLength: 0
+        paperId:
+          type: integer
+          format: int64
+        courseId:
+          type: integer
+          format: int64
+        classId:
+          type: integer
+          format: int64
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          format: int32
+        allowLateMinutes:
+          type: integer
+          format: int32
+        antiCheatConfig:
+          $ref: "#/components/schemas/JsonNode"
+    JsonNode: {}
+    ApiResponseExamDetailResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ExamDetailResponse"
+    ExamDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        paperId:
+          type: integer
+          format: int64
+        paperTitle:
+          type: string
+        courseId:
+          type: integer
+          format: int64
+        classId:
+          type: integer
+          format: int64
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          format: int32
+        allowLateMinutes:
+          type: integer
+          format: int32
+        status:
+          type: integer
+          format: int32
+        published:
+          type: integer
+          format: int32
+        forceEnd:
+          type: integer
+          format: int32
+        antiCheatConfig:
+          $ref: "#/components/schemas/JsonNode"
+        snapshotId:
+          type: integer
+          format: int64
+        createdBy:
+          type: integer
+          format: int64
+        createdTime:
+          type: string
+          format: date-time
+        updatedTime:
+          type: string
+          format: date-time
+    AutoSaveRequest:
+      type: object
+      properties:
+        version:
+          type: integer
+          format: int32
+        answers:
+          $ref: "#/components/schemas/JsonNode"
+        marked:
+          type: array
+          items:
+            type: integer
+            format: int64
+      required:
+      - version
+    ApiResponseAutoSaveResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/AutoSaveResponse"
+    AutoSaveResponse:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+        version:
+          type: integer
+          format: int32
+        savedTime:
+          type: string
+          format: date-time
+    ClassUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 64
+          minLength: 0
+        courseId:
+          type: integer
+          format: int64
+    ApiResponseClassResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ClassResponse"
+    ClassResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        courseId:
+          type: integer
+          format: int64
+        teacherId:
+          type: integer
+          format: int64
+        createdBy:
+          type: integer
+          format: int64
+        createdTime:
+          type: string
+          format: date-time
+    TransferRequest:
+      type: object
+      properties:
+        targetClassId:
+          type: integer
+          format: int64
+      required:
+      - targetClassId
+    TagCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 64
+          minLength: 0
+        type:
+          type: string
+          minLength: 1
+          pattern: SUBJECT|DIFFICULTY|QUESTION_TYPE|CUSTOM
+      required:
+      - name
+      - type
+    ApiResponseTagResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/TagResponse"
+    BatchScoreRequest:
+      type: object
+      properties:
+        examIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+        reason:
+          type: string
+      required:
+      - examIds
+    ApiResponseListScoreActionItem:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreActionItem"
+    ScoreActionItem:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        success:
+          type: boolean
+        message:
+          type: string
+    ReviewHandleRequest:
+      type: object
+      properties:
+        action:
+          type: string
+        adjustedTotalScore:
+          type: number
+        reason:
+          type: string
+    PaperCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 128
+          minLength: 0
+        description:
+          type: string
+          maxLength: 512
+          minLength: 0
+        totalScore:
+          type: number
+          maximum: 9999.9
+          minimum: 0
+      required:
+      - title
+      - totalScore
+    ApiResponsePaperResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PaperResponse"
+    PaperResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        totalScore:
+          type: number
+        questionCount:
+          type: integer
+          format: int32
+        status:
+          type: integer
+          format: int32
+        snapshotId:
+          type: integer
+          format: int64
+        createdBy:
+          type: integer
+          format: int64
+        createdTime:
+          type: string
+          format: date-time
+    ApiResponsePaperSnapshotResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PaperSnapshotResponse"
+    PaperSnapshotResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        paperId:
+          type: integer
+          format: int64
+        version:
+          type: integer
+          format: int32
+        totalScore:
+          type: number
+        questionCount:
+          type: integer
+          format: int32
+        content:
+          $ref: "#/components/schemas/JsonNode"
+        createdTime:
+          type: string
+          format: date-time
+    AddPaperQuestionRequest:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        score:
+          type: number
+          maximum: 999.9
+          minimum: 0.5
+      required:
+      - questionId
+    ApiResponsePaperQuestionItemResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PaperQuestionItemResponse"
+    RandomDrawRequest:
+      type: object
+      properties:
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/Rule"
+          minItems: 1
+      required:
+      - rules
+    Rule:
+      type: object
+      properties:
+        type:
+          type: integer
+          format: int32
+          maximum: 4
+          minimum: 1
+        difficulty:
+          type: integer
+          format: int32
+          maximum: 3
+          minimum: 1
+        tagIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        count:
+          type: integer
+          format: int32
+          minimum: 1
+      required:
+      - count
+    ApiResponseRandomDrawPreviewResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/RandomDrawPreviewResponse"
+    DrawnQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: integer
+          format: int32
+        typeName:
+          type: string
+        content:
+          type: string
+        score:
+          type: number
+        difficulty:
+          type: integer
+          format: int32
+    RandomDrawPreviewResponse:
+      type: object
+      properties:
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleResult"
+        total:
+          type: integer
+          format: int32
+    RuleResult:
+      type: object
+      properties:
+        ruleIndex:
+          type: integer
+          format: int32
+        count:
+          type: integer
+          format: int32
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/DrawnQuestion"
+    ExamCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 128
+          minLength: 0
+        description:
+          type: string
+          maxLength: 512
+          minLength: 0
+        paperId:
+          type: integer
+          format: int64
+        courseId:
+          type: integer
+          format: int64
+        classId:
+          type: integer
+          format: int64
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          format: int32
+        allowLateMinutes:
+          type: integer
+          format: int32
+        antiCheatConfig:
+          $ref: "#/components/schemas/JsonNode"
+      required:
+      - durationMinutes
+      - endTime
+      - paperId
+      - startTime
+      - title
+    ApiResponseExamResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ExamResponse"
+    ExamResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        paperId:
+          type: integer
+          format: int64
+        courseId:
+          type: integer
+          format: int64
+        classId:
+          type: integer
+          format: int64
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          format: int32
+        allowLateMinutes:
+          type: integer
+          format: int32
+        status:
+          type: integer
+          format: int32
+        published:
+          type: integer
+          format: int32
+        forceEnd:
+          type: integer
+          format: int32
+        snapshotId:
+          type: integer
+          format: int64
+        createdBy:
+          type: integer
+          format: int64
+        createdTime:
+          type: string
+          format: date-time
+    MakeupCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          format: int32
+        allowLateMinutes:
+          type: integer
+          format: int32
+        makeupScoreRule:
+          type: string
+        studentIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+      required:
+      - durationMinutes
+      - endTime
+      - startTime
+      - studentIds
+    ApiResponseMakeupCreateResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/MakeupCreateResponse"
+    MakeupCreateResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        parentExamId:
+          type: integer
+          format: int64
+        makeupScoreRule:
+          type: string
+        candidateCount:
+          type: integer
+          format: int32
+    ApiResponseSummarizeStats:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/SummarizeStats"
+    SummarizeStats:
+      type: object
+      properties:
+        summarized:
+          type: integer
+          format: int32
+        skipped:
+          type: integer
+          format: int32
+        examGraded:
+          type: boolean
+    ScoreReviewApplyRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    ApiResponseScoreReview:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ScoreReview"
+    ScoreReview:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        examId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        status:
+          type: integer
+          format: int32
+        reason:
+          type: string
+        result:
+          type: string
+        applyTime:
+          type: string
+          format: date-time
+        handleTime:
+          type: string
+          format: date-time
+        handlerId:
+          type: integer
+          format: int64
+        createdTime:
+          type: string
+          format: date-time
+    ApiResponseFailureItem:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/FailureItem"
+    FailureItem:
+      type: object
+      properties:
+        submissionId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        error:
+          type: string
+    ManualScoreRequest:
+      type: object
+      properties:
+        objectiveScore:
+          type: number
+          minimum: 0
+      required:
+      - objectiveScore
+    SubjectiveScoreRequest:
+      type: object
+      properties:
+        submissionId:
+          type: integer
+          format: int64
+        questionId:
+          type: integer
+          format: int64
+        score:
+          type: number
+          minimum: 0
+        comment:
+          type: string
+        expectedVersion:
+          type: integer
+          format: int32
+      required:
+      - expectedVersion
+      - questionId
+      - score
+      - submissionId
+    ApiResponseSubjectiveGradeRow:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/SubjectiveGradeRow"
+    SubjectiveGradeRow:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        submissionId:
+          type: integer
+          format: int64
+        examId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        studentName:
+          type: string
+        questionId:
+          type: integer
+          format: int64
+        questionNumber:
+          type: integer
+          format: int32
+        studentAnswer:
+          type: string
+        suggestedScore:
+          type: number
+        suggestedDetail:
+          type: string
+        score:
+          type: number
+        comment:
+          type: string
+        graderId:
+          type: integer
+          format: int64
+        gradedTime:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int32
+        graded:
+          type: boolean
+    ApiResponseGradingRunResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/GradingRunResponse"
+    GradingRunResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int32
+        success:
+          type: integer
+          format: int32
+        failed:
+          type: integer
+          format: int32
+        failures:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailureItem"
+    SubmitRequest:
+      type: object
+      properties:
+        answers:
+          $ref: "#/components/schemas/JsonNode"
+        submitType:
+          type: string
+          maxLength: 32
+          minLength: 0
+    ApiResponseSubmitResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/SubmitResponse"
+    SubmitResponse:
+      type: object
+      properties:
+        submissionId:
+          type: integer
+          format: int64
+        examId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        status:
+          type: integer
+          format: int32
+        submitTime:
+          type: string
+          format: date-time
+        submitType:
+          type: integer
+          format: int32
+    ApiResponseEnterExamResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/EnterExamResponse"
+    EnterExamResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        submissionId:
+          type: integer
+          format: int64
+        status:
+          type: integer
+          format: int32
+        startTime:
+          type: string
+          format: date-time
+        deadlineTime:
+          type: string
+          format: date-time
+        serverTime:
+          type: string
+          format: date-time
+        remainingSeconds:
+          type: integer
+          format: int64
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionView"
+        answers:
+          $ref: "#/components/schemas/JsonNode"
+        marked:
+          type: array
+          items:
+            type: integer
+            format: int64
+        draftVersion:
+          type: integer
+          format: int32
+    QuestionView:
+      type: object
+      properties:
+        number:
+          type: integer
+          format: int32
+        questionId:
+          type: integer
+          format: int64
+        type:
+          type: integer
+          format: int32
+        content:
+          type: string
+        choices:
+          $ref: "#/components/schemas/JsonNode"
+        score:
+          type: number
+    BehaviorReportRequest:
+      type: object
+      properties:
+        eventType:
+          type: string
+          maxLength: 32
+          minLength: 0
+        eventData:
+          $ref: "#/components/schemas/JsonNode"
+        occurredTime:
+          type: string
+          format: date-time
+      required:
+      - eventType
+    ApiResponseBehaviorReportResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/BehaviorReportResponse"
+    BehaviorReportResponse:
+      type: object
+      properties:
+        warned:
+          type: boolean
+        severity:
+          type: integer
+          format: int32
+        severityName:
+          type: string
+        count:
+          type: integer
+          format: int32
+        message:
+          type: string
+    ClassCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 64
+          minLength: 0
+        courseId:
+          type: integer
+          format: int64
+      required:
+      - name
+    JoinStudentRequest:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+      required:
+      - userId
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 64
+          minLength: 0
+          pattern: "^[A-Za-z0-9_-]+$"
+        password:
+          type: string
+          maxLength: 64
+          minLength: 8
+        name:
+          type: string
+          maxLength: 64
+          minLength: 0
+        email:
+          type: string
+          format: email
+          maxLength: 128
+          minLength: 0
+        roleType:
+          type: string
+          minLength: 1
+        inviteCode:
+          type: string
+          maxLength: 32
+          minLength: 0
+      required:
+      - name
+      - password
+      - roleType
+      - username
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+      required:
+      - refreshToken
+    ApiResponseTokenResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/TokenResponse"
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+        accessExpiresIn:
+          type: integer
+          format: int64
+        refreshExpiresIn:
+          type: integer
+          format: int64
+    ResetPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        code:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          maxLength: 64
+          minLength: 8
+      required:
+      - code
+      - email
+      - newPassword
+    SendResetCodeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    ChangePasswordRequest:
+      type: object
+      properties:
+        oldPassword:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          maxLength: 64
+          minLength: 8
+      required:
+      - newPassword
+      - oldPassword
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+      required:
+      - password
+      - username
+    ApiResponseReplayReport:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ReplayReport"
+    ReplayReport:
+      type: object
+      properties:
+        replayed:
+          type: integer
+          format: int32
+        parked:
+          type: integer
+          format: int32
+        remaining:
+          type: integer
+          format: int32
+    InviteCodeCreateRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 128
+          minLength: 0
+    ApiResponseInviteCodeResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/InviteCodeResponse"
+    InviteCodeResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        note:
+          type: string
+        status:
+          type: integer
+          format: int32
+        usedCount:
+          type: integer
+          format: int32
+        createdBy:
+          type: integer
+          format: int64
+        createdTime:
+          type: string
+          format: date-time
+    ApiResponseListTagResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagResponse"
+    ApiResponseMyScoreResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/MyScoreResponse"
+    MyScoreResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        objectiveScore:
+          type: number
+        subjectiveScore:
+          type: number
+        totalScore:
+          type: number
+        rank:
+          type: integer
+          format: int32
+        partialGraded:
+          type: integer
+          format: int32
+        reviewing:
+          type: boolean
+    ApiResponseMakeupFinalScoreResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/MakeupFinalScoreResponse"
+    MakeupFinalScoreResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        finalScore:
+          type: number
+        reviewing:
+          type: boolean
+    ApiResponseQuestionPageResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/QuestionPageResponse"
+    QuestionPageResponse:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionResponse"
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int64
+    ApiResponseListPaperResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaperResponse"
+    ApiResponseListExamResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamResponse"
+    ApiResponseExamSnapshotResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ExamSnapshotResponse"
+    ExamSnapshotResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        examId:
+          type: integer
+          format: int64
+        version:
+          type: integer
+          format: int32
+        exam:
+          $ref: "#/components/schemas/JsonNode"
+        paper:
+          $ref: "#/components/schemas/JsonNode"
+        createdTime:
+          type: string
+          format: date-time
+    ApiResponseListMakeupCandidateItem:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MakeupCandidateItem"
+    MakeupCandidateItem:
+      type: object
+      properties:
+        studentId:
+          type: integer
+          format: int64
+        studentName:
+          type: string
+        reason:
+          type: string
+    AbsenceItemResponse:
+      type: object
+      properties:
+        studentId:
+          type: integer
+          format: int64
+        studentName:
+          type: string
+        markedTime:
+          type: string
+          format: date-time
+    ApiResponseListAbsenceItemResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AbsenceItemResponse"
+    ApiResponseScorePreviewResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ScorePreviewResponse"
+    ScoreItem:
+      type: object
+      properties:
+        studentId:
+          type: integer
+          format: int64
+        studentName:
+          type: string
+        objectiveScore:
+          type: number
+        subjectiveScore:
+          type: number
+        totalScore:
+          type: number
+        rank:
+          type: integer
+          format: int32
+        partialGraded:
+          type: integer
+          format: int32
+    ScorePreviewResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        summarizedCount:
+          type: integer
+          format: int32
+        partialGradedCount:
+          type: integer
+          format: int32
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreItem"
+    ApiResponseListScoreReview:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreReview"
+    ApiResponseMonitorOverviewResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/MonitorOverviewResponse"
+    MonitorOverviewResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        examStatus:
+          type: integer
+          format: int32
+        totalStudents:
+          type: integer
+          format: int32
+        onlineCount:
+          type: integer
+          format: int32
+        offlineCount:
+          type: integer
+          format: int32
+        submittedCount:
+          type: integer
+          format: int32
+        abnormalCount:
+          type: integer
+          format: int32
+        totalQuestions:
+          type: integer
+          format: int32
+        students:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonitorStudentItem"
+    MonitorStudentItem:
+      type: object
+      properties:
+        studentId:
+          type: integer
+          format: int64
+        studentName:
+          type: string
+        status:
+          type: string
+        answeredCount:
+          type: integer
+          format: int32
+        progressPercent:
+          type: integer
+          format: int32
+        abnormal:
+          type: boolean
+        abnormalEventCount:
+          type: integer
+          format: int64
+        maxSeverity:
+          type: integer
+          format: int32
+        lastAbnormalTime:
+          type: string
+          format: date-time
+    ApiResponseListSubjectiveGradeRow:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubjectiveGradeRow"
+    ApiResponseListSubjectiveQuestionItem:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubjectiveQuestionItem"
+    SubjectiveQuestionItem:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        number:
+          type: integer
+          format: int32
+        content:
+          type: string
+        score:
+          type: number
+        totalStudents:
+          type: integer
+          format: int32
+        gradedStudents:
+          type: integer
+          format: int32
+    ApiResponseGradingProgressResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/GradingProgressResponse"
+    GradingProgressResponse:
+      type: object
+      properties:
+        submittedCount:
+          type: integer
+          format: int32
+        gradedCount:
+          type: integer
+          format: int32
+        failedCount:
+          type: integer
+          format: int32
+        pendingCount:
+          type: integer
+          format: int32
+        subjectiveTotal:
+          type: integer
+          format: int32
+        subjectiveGraded:
+          type: integer
+          format: int32
+        partialGradedCount:
+          type: integer
+          format: int32
+    ApiResponseBehaviorLogPageResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/BehaviorLogPageResponse"
+    BehaviorLogItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        examId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        eventType:
+          type: string
+        severity:
+          type: integer
+          format: int32
+        severityName:
+          type: string
+        eventData:
+          $ref: "#/components/schemas/JsonNode"
+        eventTime:
+          type: string
+          format: date-time
+        createdTime:
+          type: string
+          format: date-time
+    BehaviorLogPageResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BehaviorLogItem"
+    ApiResponseBehaviorTimelineResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/BehaviorTimelineResponse"
+    BehaviorTimelineResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+        lowCount:
+          type: integer
+          format: int64
+        mediumCount:
+          type: integer
+          format: int64
+        highCount:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BehaviorLogItem"
+    ApiResponseListExamListItem:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamListItem"
+    ExamListItem:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          format: int32
+        examStatus:
+          type: integer
+          format: int32
+        group:
+          type: string
+        canEnter:
+          type: boolean
+        submissionStatus:
+          type: integer
+          format: int32
+        remainingSeconds:
+          type: integer
+          format: int64
+    ApiResponseClassPageResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ClassPageResponse"
+    ClassPageResponse:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClassResponse"
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int64
+    ApiResponseListClassStudentItem:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClassStudentItem"
+    ClassStudentItem:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        name:
+          type: string
+        joinedTime:
+          type: string
+          format: date-time
+    ApiResponseCurrentUserResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CurrentUserResponse"
+    CurrentUserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
+        permissions:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
+        mustChangePassword:
+          type: boolean
+    ApiResponseListInviteCodeResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/InviteCodeResponse"
+    ApiResponseListAuditLogResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLogResponse"
+    AuditLogResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        traceId:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        action:
+          type: string
+        ipAddress:
+          type: string
+        status:
+          type: string
+        details:
+          type: string
+        createdTime:
+          type: string
+          format: date-time
+  securitySchemes:
+    Authorization:
+      type: http
+      description: JWT Access Token，格式：Bearer <token>
+      name: Authorization
+      scheme: bearer
+      bearerFormat: JWT

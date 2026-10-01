@@ -1,0 +1,350 @@
+Starting MySQL measure container...
+image=mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+containerId=c50035da961c572a93e666be1e696f65f18c923751b1196fc0d86ad8e64e5c02
+version=
+Initializing database my_exams_index_measure at 2026-09-30T13:57:24.151Z
+Starting MySQL measure container...
+image=mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+containerId=a4d03617f343e5cec18c0e41e1b422b5b5356596aed0ba247655e5173efa47e1
+version=ver
+8.0.46
+Initializing database my_exams_index_measure at 2026-09-30T13:58:06.616Z
+Applying schema.sql (22956 bytes)...
+schema.sql apply exit=0
+table_count_output=
+tbl_count
+26
+Verified tables count: 26
+Starting MySQL measure container...
+image=mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+containerId=c1bf16be5479a9e685777fc3f44eb75b4dda371f9a6e3e139a0a392023787880
+version=ver
+8.0.46
+Initializing database my_exams_index_measure at 2026-09-30T13:58:47.410Z
+CREATE TABLE IF NOT EXISTS occurrences in schema.sql: 27
+Applying schema.sql (22956 bytes)...
+schema.sql apply exit=0
+table_count_output=
+tbl_count
+26
+Verified tables count in DB: 26
+Recording baseline table definitions...
+Baseline SHOW CREATE TABLE exam_submissions:
+Table	Create Table
+exam_submissions	CREATE TABLE `exam_submissions` (\n  `id` bigint NOT NULL AUTO_INCREMENT,\n  `exam_id` bigint NOT NULL,\n  `student_id` bigint NOT NULL,\n  `start_time` datetime NOT NULL,\n  `deadline_time` datetime NOT NULL,\n  `submit_time` datetime DEFAULT NULL,\n  `submit_type` tinyint DEFAULT NULL,\n  `paper_json` longtext COLLATE utf8mb4_unicode_ci,\n  `answers` longtext COLLATE utf8mb4_unicode_ci,\n  `status` tinyint NOT NULL DEFAULT '1',\n  `version` int NOT NULL DEFAULT '0',\n  `objective_score` decimal(5,1) DEFAULT NULL,\n  `subjective_score` decimal(5,1) DEFAULT NULL,\n  `total_score` decimal(5,1) DEFAULT NULL,\n  `grading_status` tinyint NOT NULL DEFAULT '0',\n  `grading_error` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `partial_graded` tinyint NOT NULL DEFAULT '0',\n  `answers_missing` tinyint GENERATED ALWAYS AS ((case when (`answers` is null) then 1 else 0 end)) VIRTUAL,\n  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uk_exam_student` (`exam_id`,`student_id`),\n  KEY `idx_submissions_sweep` (`status`,`deadline_time`),\n  KEY `idx_submissions_exam_submit` (`exam_id`,`submit_time`),\n  KEY `idx_submissions_grading` (`exam_id`,`grading_status`),\n  KEY `idx_submissions_republish` (`status`,`answers_missing`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+Baseline SHOW INDEX FROM exam_submissions:
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+exam_submissions	0	PRIMARY	1	id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	0	uk_exam_student	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	0	uk_exam_student	2	student_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_sweep	1	status	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_sweep	2	deadline_time	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_exam_submit	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_exam_submit	2	submit_time	A	0	NULL	NULL	YES	BTREE			YES	NULL
+exam_submissions	1	idx_submissions_grading	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_grading	2	grading_status	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_republish	1	status	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_republish	2	answers_missing	A	0	NULL	NULL	YES	BTREE			YES	NULL
+Baseline SHOW CREATE TABLE exam_candidates:
+Table	Create Table
+exam_candidates	CREATE TABLE `exam_candidates` (\n  `id` bigint NOT NULL AUTO_INCREMENT,\n  `exam_id` bigint NOT NULL,\n  `student_id` bigint NOT NULL,\n  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uk_candidate_exam_student` (`exam_id`,`student_id`),\n  KEY `idx_candidates_exam` (`exam_id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+Baseline SHOW INDEX FROM exam_candidates:
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+exam_candidates	0	PRIMARY	1	id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_candidates	0	uk_candidate_exam_student	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_candidates	0	uk_candidate_exam_student	2	student_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_candidates	1	idx_candidates_exam	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+
+========== Seeding shape n1 ==========
+examCount=500, studentCount=10000, expectedSubmissions=100500
+exam_submissions seeded for n1
+exam_candidates seeded for n1
+Retrieved 500 update pool IDs (min=100001, max=100500)
+Verifying B5.1 for shape n1...
+B5.1 results:
+{
+  "shape": "n1",
+  "submissions": {
+    "actual": 100500,
+    "expected": 100500,
+    "pass": true
+  },
+  "paperJsonLength": {
+    "actual": 411648000,
+    "expected": 411648000,
+    "pass": true
+  },
+  "answersCount": {
+    "actual": 40000,
+    "expected": 40000,
+    "pass": true
+  },
+  "answersLength": {
+    "actual": 81920000,
+    "expected": 81920000,
+    "pass": true
+  },
+  "candidates": {
+    "actual": 5000,
+    "expected": 5000,
+    "pass": true
+  },
+  "targetStudentSubmissions": {
+    "actual": 10,
+    "expected": 10,
+    "pass": true
+  },
+  "targetStudentCandidates": {
+    "actual": 1,
+    "expected": 1,
+    "pass": true
+  }
+}
+Running initial ANALYZE TABLE...
+ANALYZE TABLE exit=0: submissions=Table	Op	Msg_type	Msg_text my_exams_index_measure.exam_submissions	analyze	status	OK, candidates=Table	Op	Msg_type	Msg_text my_exams_index_measure.exam_candidates	analyze	status	OK
+
+Starting READ PATH for n1 (5 rounds x 7 arms)...
+Read path n1 Round 1...
+Read path n1 Round 2...
+Read path n1 Round 3...
+Read path n1 Round 4...
+Read path n1 Round 5...
+
+Starting WRITE PATH for n1 (5 rounds x 4 arms)...
+Write path n1 Round 1 Arm A0: elapsed_us=36982
+Write path n1 Round 1 Arm A0rep: elapsed_us=24464
+Write path n1 Round 1 Arm A1: elapsed_us=26794
+Write path n1 Round 1 Arm A2: elapsed_us=48914
+Write path n1 Round 2 Arm A0: elapsed_us=159154
+Write path n1 Round 2 Arm A0rep: elapsed_us=55882
+Write path n1 Round 2 Arm A1: elapsed_us=54282
+Write path n1 Round 2 Arm A2: elapsed_us=54604
+Write path n1 Round 3 Arm A0: elapsed_us=83117
+Write path n1 Round 3 Arm A0rep: elapsed_us=68707
+Write path n1 Round 3 Arm A1: elapsed_us=34308
+Write path n1 Round 3 Arm A2: elapsed_us=37691
+Write path n1 Round 4 Arm A0: elapsed_us=45557
+Write path n1 Round 4 Arm A0rep: elapsed_us=30262
+Write path n1 Round 4 Arm A1: elapsed_us=24566
+Write path n1 Round 4 Arm A2: elapsed_us=24227
+Write path n1 Round 5 Arm A0: elapsed_us=47074
+Write path n1 Round 5 Arm A0rep: elapsed_us=55549
+Write path n1 Round 5 Arm A1: elapsed_us=25274
+Write path n1 Round 5 Arm A2: elapsed_us=26376
+
+Resetting database between shapes (DROP/CREATE/schema.sql) for n2...
+Initializing database my_exams_index_measure at 2026-09-30T14:00:31.089Z
+CREATE TABLE IF NOT EXISTS occurrences in schema.sql: 27
+Applying schema.sql (22956 bytes)...
+schema.sql apply exit=0
+table_count_output=
+tbl_count
+26
+Verified tables count in DB: 26
+
+========== Seeding shape n2 ==========
+examCount=2000, studentCount=40000, expectedSubmissions=400000
+Starting MySQL measure container...
+image=mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+containerId=9f7917d23e05626f4091c54111cbadc425066c07c43fca89e7330c8f57c6b9f5
+version=ver
+8.0.46
+Initializing database my_exams_index_measure at 2026-09-30T14:01:21.428Z
+CREATE TABLE IF NOT EXISTS occurrences in schema.sql: 27
+Applying schema.sql (22956 bytes)...
+schema.sql apply exit=0
+table_count_output=
+tbl_count
+26
+Verified tables count in DB: 26
+Recording baseline table definitions...
+Baseline SHOW CREATE TABLE exam_submissions:
+Table	Create Table
+exam_submissions	CREATE TABLE `exam_submissions` (\n  `id` bigint NOT NULL AUTO_INCREMENT,\n  `exam_id` bigint NOT NULL,\n  `student_id` bigint NOT NULL,\n  `start_time` datetime NOT NULL,\n  `deadline_time` datetime NOT NULL,\n  `submit_time` datetime DEFAULT NULL,\n  `submit_type` tinyint DEFAULT NULL,\n  `paper_json` longtext COLLATE utf8mb4_unicode_ci,\n  `answers` longtext COLLATE utf8mb4_unicode_ci,\n  `status` tinyint NOT NULL DEFAULT '1',\n  `version` int NOT NULL DEFAULT '0',\n  `objective_score` decimal(5,1) DEFAULT NULL,\n  `subjective_score` decimal(5,1) DEFAULT NULL,\n  `total_score` decimal(5,1) DEFAULT NULL,\n  `grading_status` tinyint NOT NULL DEFAULT '0',\n  `grading_error` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `partial_graded` tinyint NOT NULL DEFAULT '0',\n  `answers_missing` tinyint GENERATED ALWAYS AS ((case when (`answers` is null) then 1 else 0 end)) VIRTUAL,\n  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uk_exam_student` (`exam_id`,`student_id`),\n  KEY `idx_submissions_sweep` (`status`,`deadline_time`),\n  KEY `idx_submissions_exam_submit` (`exam_id`,`submit_time`),\n  KEY `idx_submissions_grading` (`exam_id`,`grading_status`),\n  KEY `idx_submissions_republish` (`status`,`answers_missing`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+Baseline SHOW INDEX FROM exam_submissions:
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+exam_submissions	0	PRIMARY	1	id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	0	uk_exam_student	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	0	uk_exam_student	2	student_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_sweep	1	status	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_sweep	2	deadline_time	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_exam_submit	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_exam_submit	2	submit_time	A	0	NULL	NULL	YES	BTREE			YES	NULL
+exam_submissions	1	idx_submissions_grading	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_grading	2	grading_status	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_republish	1	status	A	0	NULL	NULL		BTREE			YES	NULL
+exam_submissions	1	idx_submissions_republish	2	answers_missing	A	0	NULL	NULL	YES	BTREE			YES	NULL
+Baseline SHOW CREATE TABLE exam_candidates:
+Table	Create Table
+exam_candidates	CREATE TABLE `exam_candidates` (\n  `id` bigint NOT NULL AUTO_INCREMENT,\n  `exam_id` bigint NOT NULL,\n  `student_id` bigint NOT NULL,\n  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uk_candidate_exam_student` (`exam_id`,`student_id`),\n  KEY `idx_candidates_exam` (`exam_id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+Baseline SHOW INDEX FROM exam_candidates:
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+exam_candidates	0	PRIMARY	1	id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_candidates	0	uk_candidate_exam_student	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_candidates	0	uk_candidate_exam_student	2	student_id	A	0	NULL	NULL		BTREE			YES	NULL
+exam_candidates	1	idx_candidates_exam	1	exam_id	A	0	NULL	NULL		BTREE			YES	NULL
+
+========== Seeding shape n1 ==========
+examCount=500, studentCount=10000, expectedSubmissions=100500
+exam_submissions seeded for n1
+exam_candidates seeded for n1
+Retrieved 500 update pool IDs (min=100001, max=100500)
+Verifying B5.1 for shape n1...
+B5.1 results:
+{
+  "shape": "n1",
+  "submissions": {
+    "actual": 100500,
+    "expected": 100500,
+    "pass": true
+  },
+  "paperJsonLength": {
+    "actual": 411648000,
+    "expected": 411648000,
+    "pass": true
+  },
+  "answersCount": {
+    "actual": 40000,
+    "expected": 40000,
+    "pass": true
+  },
+  "answersLength": {
+    "actual": 81920000,
+    "expected": 81920000,
+    "pass": true
+  },
+  "candidates": {
+    "actual": 5000,
+    "expected": 5000,
+    "pass": true
+  },
+  "targetStudentSubmissions": {
+    "actual": 10,
+    "expected": 10,
+    "pass": true
+  },
+  "targetStudentCandidates": {
+    "actual": 1,
+    "expected": 1,
+    "pass": true
+  }
+}
+Running initial ANALYZE TABLE...
+ANALYZE TABLE exit=0: submissions=Table	Op	Msg_type	Msg_text my_exams_index_measure.exam_submissions	analyze	status	OK, candidates=Table	Op	Msg_type	Msg_text my_exams_index_measure.exam_candidates	analyze	status	OK
+
+Starting READ PATH for n1 (5 rounds x 7 arms)...
+Read path n1 Round 1...
+Read path n1 Round 2...
+Read path n1 Round 3...
+Read path n1 Round 4...
+Read path n1 Round 5...
+
+Starting WRITE PATH for n1 (5 rounds x 4 arms)...
+Write path n1 Round 1 Arm A0: elapsed_us=70904
+Write path n1 Round 1 Arm A0rep: elapsed_us=31681
+Write path n1 Round 1 Arm A1: elapsed_us=22038
+Write path n1 Round 1 Arm A2: elapsed_us=37959
+Write path n1 Round 2 Arm A0: elapsed_us=117638
+Write path n1 Round 2 Arm A0rep: elapsed_us=42266
+Write path n1 Round 2 Arm A1: elapsed_us=40885
+Write path n1 Round 2 Arm A2: elapsed_us=31344
+Write path n1 Round 3 Arm A0: elapsed_us=145129
+Write path n1 Round 3 Arm A0rep: elapsed_us=45693
+Write path n1 Round 3 Arm A1: elapsed_us=35545
+Write path n1 Round 3 Arm A2: elapsed_us=21882
+Write path n1 Round 4 Arm A0: elapsed_us=37839
+Write path n1 Round 4 Arm A0rep: elapsed_us=30459
+Write path n1 Round 4 Arm A1: elapsed_us=31159
+Write path n1 Round 4 Arm A2: elapsed_us=39624
+Write path n1 Round 5 Arm A0: elapsed_us=33877
+Write path n1 Round 5 Arm A0rep: elapsed_us=25298
+Write path n1 Round 5 Arm A1: elapsed_us=35209
+Write path n1 Round 5 Arm A2: elapsed_us=28091
+
+Resetting database between shapes (DROP/CREATE/schema.sql) for n2...
+Initializing database my_exams_index_measure at 2026-09-30T14:02:56.217Z
+CREATE TABLE IF NOT EXISTS occurrences in schema.sql: 27
+Applying schema.sql (22956 bytes)...
+schema.sql apply exit=0
+table_count_output=
+tbl_count
+26
+Verified tables count in DB: 26
+
+========== Seeding shape n2 ==========
+examCount=2000, studentCount=40000, expectedSubmissions=400000
+exam_submissions seeded for n2
+exam_candidates seeded for n2
+Retrieved 500 update pool IDs (min=100001, max=100500)
+Verifying B5.1 for shape n2...
+B5.1 results:
+{
+  "shape": "n2",
+  "submissions": {
+    "actual": 400000,
+    "expected": 400000,
+    "pass": true
+  },
+  "paperJsonLength": {
+    "actual": 1638400000,
+    "expected": 1638400000,
+    "pass": true
+  },
+  "answersCount": {
+    "actual": 160000,
+    "expected": 160000,
+    "pass": true
+  },
+  "answersLength": {
+    "actual": 327680000,
+    "expected": 327680000,
+    "pass": true
+  },
+  "candidates": {
+    "actual": 20000,
+    "expected": 20000,
+    "pass": true
+  },
+  "targetStudentSubmissions": {
+    "actual": 10,
+    "expected": 10,
+    "pass": true
+  },
+  "targetStudentCandidates": {
+    "actual": 1,
+    "expected": 1,
+    "pass": true
+  }
+}
+Running initial ANALYZE TABLE...
+ANALYZE TABLE exit=0: submissions=Table	Op	Msg_type	Msg_text my_exams_index_measure.exam_submissions	analyze	status	OK, candidates=Table	Op	Msg_type	Msg_text my_exams_index_measure.exam_candidates	analyze	status	OK
+
+Starting READ PATH for n2 (5 rounds x 7 arms)...
+Read path n2 Round 1...
+Read path n2 Round 2...
+Read path n2 Round 3...
+Read path n2 Round 4...
+Read path n2 Round 5...
+
+Starting WRITE PATH for n2 (5 rounds x 4 arms)...
+Write path n2 Round 1 Arm A0: elapsed_us=46988
+Write path n2 Round 1 Arm A0rep: elapsed_us=32406
+Write path n2 Round 1 Arm A1: elapsed_us=63531
+Write path n2 Round 1 Arm A2: elapsed_us=40041
+Write path n2 Round 2 Arm A0: elapsed_us=89696
+Write path n2 Round 2 Arm A0rep: elapsed_us=49713
+Write path n2 Round 2 Arm A1: elapsed_us=25627
+Write path n2 Round 2 Arm A2: elapsed_us=41989
+Write path n2 Round 3 Arm A0: elapsed_us=112626
+Write path n2 Round 3 Arm A0rep: elapsed_us=33273
+Write path n2 Round 3 Arm A1: elapsed_us=41098
+Write path n2 Round 3 Arm A2: elapsed_us=35548
+Write path n2 Round 4 Arm A0: elapsed_us=55516
+Write path n2 Round 4 Arm A0rep: elapsed_us=23866
+Write path n2 Round 4 Arm A1: elapsed_us=34077
+Write path n2 Round 4 Arm A2: elapsed_us=54867
+Write path n2 Round 5 Arm A0: elapsed_us=88102
+Write path n2 Round 5 Arm A0rep: elapsed_us=61117
+Write path n2 Round 5 Arm A1: elapsed_us=23291
+Write path n2 Round 5 Arm A2: elapsed_us=46899
+All measurement rounds saved to d:\code\examOnline-measure\my-exams-index\stage3\raw\rounds.json

@@ -1,0 +1,438 @@
+{
+  "arm": "baseline",
+  "finishedAtIso": "2026-09-29T04:20:24.525Z",
+  "entries": [
+    {
+      "shape": 50,
+      "x": "40.0",
+      "startedAtIso": "2026-09-29T04:20:01.113Z",
+      "warmup": 2,
+      "rounds": [
+        {
+          "round": 1,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "49",
+          "countRaw": "total\n49\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=1.99 rows=1) (actual time=0.0907..0.0908 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=1.37 rows=6.22) (actual time=0.0726..0.0846 rows=49 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=1.37 rows=50) (actual time=0.0665..0.0733 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:02.196Z"
+        },
+        {
+          "round": 2,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "49",
+          "countRaw": "total\n49\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=1.99 rows=1) (actual time=0.0782..0.0783 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=1.37 rows=6.22) (actual time=0.0624..0.0729 rows=49 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=1.37 rows=50) (actual time=0.0572..0.0632 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:02.666Z"
+        },
+        {
+          "round": 3,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "49",
+          "countRaw": "total\n49\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=1.99 rows=1) (actual time=0.0895..0.0896 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=1.37 rows=6.22) (actual time=0.0715..0.0835 rows=49 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=1.37 rows=50) (actual time=0.0654..0.0722 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:03.142Z"
+        },
+        {
+          "round": 4,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "49",
+          "countRaw": "total\n49\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=1.99 rows=1) (actual time=0.0918..0.0919 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=1.37 rows=6.22) (actual time=0.0723..0.0847 rows=49 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=1.37 rows=50) (actual time=0.0646..0.0722 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:03.573Z"
+        },
+        {
+          "round": 5,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "49",
+          "countRaw": "total\n49\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=1.99 rows=1) (actual time=0.0724..0.0725 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=1.37 rows=6.22) (actual time=0.0584..0.0676 rows=49 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=1.37 rows=50) (actual time=0.0528..0.0581 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:04.012Z"
+        }
+      ],
+      "explainRaw": "id\tselect_type\ttable\tpartitions\ttype\tpossible_keys\tkey\tkey_len\tref\trows\tfiltered\tExtra\n1\tSIMPLE\texam_submissions\tNULL\tref\tuk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish\tuk_exam_student\t8\tconst\t50\t12.44\tUsing where\n"
+    },
+    {
+      "shape": 200,
+      "x": "40.0",
+      "startedAtIso": "2026-09-29T04:20:04.014Z",
+      "warmup": 2,
+      "rounds": [
+        {
+          "round": 1,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "199",
+          "countRaw": "total\n199\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=5.72 rows=1) (actual time=0.341..0.341 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=3.24 rows=24.9) (actual time=0.155..0.324 rows=199 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=3.24 rows=200) (actual time=0.139..0.288 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:05.117Z"
+        },
+        {
+          "round": 2,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "199",
+          "countRaw": "total\n199\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=5.72 rows=1) (actual time=0.288..0.288 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=3.24 rows=24.9) (actual time=0.0842..0.274 rows=199 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=3.24 rows=200) (actual time=0.0776..0.241 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:05.537Z"
+        },
+        {
+          "round": 3,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "199",
+          "countRaw": "total\n199\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=5.72 rows=1) (actual time=0.247..0.247 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=3.24 rows=24.9) (actual time=0.0773..0.234 rows=199 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=3.24 rows=200) (actual time=0.0711..0.203 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:05.947Z"
+        },
+        {
+          "round": 4,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "199",
+          "countRaw": "total\n199\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=5.72 rows=1) (actual time=0.285..0.285 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=3.24 rows=24.9) (actual time=0.101..0.272 rows=199 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=3.24 rows=200) (actual time=0.0939..0.238 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:06.360Z"
+        },
+        {
+          "round": 5,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "199",
+          "countRaw": "total\n199\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=5.72 rows=1) (actual time=0.269..0.269 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=3.24 rows=24.9) (actual time=0.0859..0.255 rows=199 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=3.24 rows=200) (actual time=0.078..0.222 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:06.807Z"
+        }
+      ],
+      "explainRaw": "id\tselect_type\ttable\tpartitions\ttype\tpossible_keys\tkey\tkey_len\tref\trows\tfiltered\tExtra\n1\tSIMPLE\texam_submissions\tNULL\tref\tuk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish\tuk_exam_student\t8\tconst\t200\t12.44\tUsing where\n"
+    },
+    {
+      "shape": 1000,
+      "x": "40.0",
+      "startedAtIso": "2026-09-29T04:20:06.809Z",
+      "warmup": 2,
+      "rounds": [
+        {
+          "round": 1,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "996",
+          "countRaw": "total\n996\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=25.6 rows=1) (actual time=0.95..0.95 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=13.2 rows=124) (actual time=0.117..0.905 rows=996 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=13.2 rows=1000) (actual time=0.111..0.781 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:07.995Z"
+        },
+        {
+          "round": 2,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "996",
+          "countRaw": "total\n996\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=25.6 rows=1) (actual time=0.93..0.93 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=13.2 rows=124) (actual time=0.103..0.886 rows=996 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=13.2 rows=1000) (actual time=0.0973..0.764 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:08.440Z"
+        },
+        {
+          "round": 3,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "996",
+          "countRaw": "total\n996\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=25.6 rows=1) (actual time=0.94..0.94 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=13.2 rows=124) (actual time=0.113..0.896 rows=996 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=13.2 rows=1000) (actual time=0.107..0.773 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:08.891Z"
+        },
+        {
+          "round": 4,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "996",
+          "countRaw": "total\n996\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=25.6 rows=1) (actual time=1.04..1.05 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=13.2 rows=124) (actual time=0.142..0.998 rows=996 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=13.2 rows=1000) (actual time=0.132..0.872 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:09.360Z"
+        },
+        {
+          "round": 5,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "996",
+          "countRaw": "total\n996\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=25.6 rows=1) (actual time=1.29..1.29 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=13.2 rows=124) (actual time=0.135..1.24 rows=996 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=13.2 rows=1000) (actual time=0.126..1.11 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:09.782Z"
+        }
+      ],
+      "explainRaw": "id\tselect_type\ttable\tpartitions\ttype\tpossible_keys\tkey\tkey_len\tref\trows\tfiltered\tExtra\n1\tSIMPLE\texam_submissions\tNULL\tref\tuk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish\tuk_exam_student\t8\tconst\t1000\t12.44\tUsing where\n"
+    },
+    {
+      "shape": 3000,
+      "x": "40.0",
+      "startedAtIso": "2026-09-29T04:20:09.783Z",
+      "warmup": 2,
+      "rounds": [
+        {
+          "round": 1,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "2990",
+          "countRaw": "total\n2990\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=75.4 rows=1) (actual time=2.92..2.92 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=38.1 rows=373) (actual time=0.32..2.79 rows=2990 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=38.1 rows=3000) (actual time=0.31..2.42 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:10.932Z"
+        },
+        {
+          "round": 2,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "2990",
+          "countRaw": "total\n2990\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=75.4 rows=1) (actual time=2.75..2.75 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=38.1 rows=373) (actual time=0.256..2.63 rows=2990 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=38.1 rows=3000) (actual time=0.25..2.26 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:11.399Z"
+        },
+        {
+          "round": 3,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "2990",
+          "countRaw": "total\n2990\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=75.4 rows=1) (actual time=2.95..2.95 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=38.1 rows=373) (actual time=0.277..2.81 rows=2990 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=38.1 rows=3000) (actual time=0.27..2.41 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:11.827Z"
+        },
+        {
+          "round": 4,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "2990",
+          "countRaw": "total\n2990\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=75.4 rows=1) (actual time=2.78..2.78 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=38.1 rows=373) (actual time=0.253..2.65 rows=2990 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=38.1 rows=3000) (actual time=0.247..2.26 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:12.269Z"
+        },
+        {
+          "round": 5,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "2990",
+          "countRaw": "total\n2990\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=146 rows=1) (actual time=2.64..2.64 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 40.0))  (cost=109 rows=365) (actual time=0.241..2.51 rows=2990 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=109 rows=3000) (actual time=0.235..2.15 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:12.745Z"
+        }
+      ],
+      "explainRaw": "id\tselect_type\ttable\tpartitions\ttype\tpossible_keys\tkey\tkey_len\tref\trows\tfiltered\tExtra\n1\tSIMPLE\texam_submissions\tNULL\tref\tuk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish\tuk_exam_student\t8\tconst\t3000\t12.44\tUsing where\n"
+    },
+    {
+      "shape": 50,
+      "x": "49.4",
+      "startedAtIso": "2026-09-29T04:20:12.747Z",
+      "warmup": 2,
+      "rounds": [
+        {
+          "round": 1,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "34",
+          "countRaw": "total\n34\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=13.7 rows=1) (actual time=0.0797..0.0798 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 49.4))  (cost=13.1 rows=6.09) (actual time=0.065..0.0753 rows=34 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=13.1 rows=50) (actual time=0.0594..0.0655 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:13.884Z"
+        },
+        {
+          "round": 2,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "34",
+          "countRaw": "total\n34\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=13.7 rows=1) (actual time=0.07..0.07 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 49.4))  (cost=13.1 rows=6.09) (actual time=0.0573..0.0659 rows=34 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=13.1 rows=50) (actual time=0.0519..0.0571 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:14.326Z"
+        },
+        {
+          "round": 3,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "34",
+          "countRaw": "total\n34\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=13.7 rows=1) (actual time=0.084..0.0841 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 49.4))  (cost=13.1 rows=6.09) (actual time=0.0693..0.0795 rows=34 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=13.1 rows=50) (actual time=0.0634..0.0693 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:14.739Z"
+        },
+        {
+          "round": 4,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "34",
+          "countRaw": "total\n34\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=13.7 rows=1) (actual time=0.0989..0.099 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 49.4))  (cost=13.1 rows=6.09) (actual time=0.081..0.0933 rows=34 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=13.1 rows=50) (actual time=0.0737..0.0812 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:15.206Z"
+        },
+        {
+          "round": 5,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "34",
+          "countRaw": "total\n34\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=13.7 rows=1) (actual time=0.0875..0.0876 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 49.4))  (cost=13.1 rows=6.09) (actual time=0.0705..0.0824 rows=34 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000050)  (cost=13.1 rows=50) (actual time=0.0645..0.0712 rows=50 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:15.632Z"
+        }
+      ],
+      "explainRaw": "id\tselect_type\ttable\tpartitions\ttype\tpossible_keys\tkey\tkey_len\tref\trows\tfiltered\tExtra\n1\tSIMPLE\texam_submissions\tNULL\tref\tuk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish\tuk_exam_student\t8\tconst\t50\t12.18\tUsing where\n"
+    },
+    {
+      "shape": 200,
+      "x": "41.9",
+      "startedAtIso": "2026-09-29T04:20:15.634Z",
+      "warmup": 2,
+      "rounds": [
+        {
+          "round": 1,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "187",
+          "countRaw": "total\n187\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=54.9 rows=1) (actual time=0.281..0.281 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 41.9))  (cost=52.4 rows=24.4) (actual time=0.0777..0.268 rows=187 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=52.4 rows=200) (actual time=0.0715..0.235 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:16.735Z"
+        },
+        {
+          "round": 2,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "187",
+          "countRaw": "total\n187\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=54.9 rows=1) (actual time=0.238..0.238 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 41.9))  (cost=52.4 rows=24.4) (actual time=0.0804..0.226 rows=187 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=52.4 rows=200) (actual time=0.0734..0.196 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:17.214Z"
+        },
+        {
+          "round": 3,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "187",
+          "countRaw": "total\n187\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=54.9 rows=1) (actual time=0.222..0.222 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 41.9))  (cost=52.4 rows=24.4) (actual time=0.0736..0.211 rows=187 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=52.4 rows=200) (actual time=0.0681..0.183 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:17.667Z"
+        },
+        {
+          "round": 4,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "187",
+          "countRaw": "total\n187\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=54.9 rows=1) (actual time=0.226..0.226 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 41.9))  (cost=52.4 rows=24.4) (actual time=0.0685..0.216 rows=187 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=52.4 rows=200) (actual time=0.0628..0.191 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:18.065Z"
+        },
+        {
+          "round": 5,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "187",
+          "countRaw": "total\n187\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=54.9 rows=1) (actual time=0.269..0.269 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 41.9))  (cost=52.4 rows=24.4) (actual time=0.0979..0.256 rows=187 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930000200)  (cost=52.4 rows=200) (actual time=0.0893..0.226 rows=200 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:18.490Z"
+        }
+      ],
+      "explainRaw": "id\tselect_type\ttable\tpartitions\ttype\tpossible_keys\tkey\tkey_len\tref\trows\tfiltered\tExtra\n1\tSIMPLE\texam_submissions\tNULL\tref\tuk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish\tuk_exam_student\t8\tconst\t200\t12.18\tUsing where\n"
+    },
+    {
+      "shape": 1000,
+      "x": "61.9",
+      "startedAtIso": "2026-09-29T04:20:18.493Z",
+      "warmup": 2,
+      "rounds": [
+        {
+          "round": 1,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "268",
+          "countRaw": "total\n268\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=97.1 rows=1) (actual time=1.01..1.01 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 61.9))  (cost=84.9 rows=122) (actual time=0.142..0.992 rows=268 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=84.9 rows=1000) (actual time=0.133..0.88 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:19.678Z"
+        },
+        {
+          "round": 2,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "268",
+          "countRaw": "total\n268\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=97.1 rows=1) (actual time=0.916..0.916 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 61.9))  (cost=84.9 rows=122) (actual time=0.133..0.901 rows=268 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=84.9 rows=1000) (actual time=0.126..0.794 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:20.161Z"
+        },
+        {
+          "round": 3,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "268",
+          "countRaw": "total\n268\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=97.1 rows=1) (actual time=0.92..0.921 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 61.9))  (cost=84.9 rows=122) (actual time=0.109..0.906 rows=268 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=84.9 rows=1000) (actual time=0.102..0.797 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:20.629Z"
+        },
+        {
+          "round": 4,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "268",
+          "countRaw": "total\n268\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=97.1 rows=1) (actual time=0.957..0.957 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 61.9))  (cost=84.9 rows=122) (actual time=0.11..0.941 rows=268 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=84.9 rows=1000) (actual time=0.104..0.833 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:21.046Z"
+        },
+        {
+          "round": 5,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "268",
+          "countRaw": "total\n268\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=97.1 rows=1) (actual time=0.955..0.955 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 61.9))  (cost=84.9 rows=122) (actual time=0.118..0.939 rows=268 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930001000)  (cost=84.9 rows=1000) (actual time=0.111..0.826 rows=1000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:21.548Z"
+        }
+      ],
+      "explainRaw": "id\tselect_type\ttable\tpartitions\ttype\tpossible_keys\tkey\tkey_len\tref\trows\tfiltered\tExtra\n1\tSIMPLE\texam_submissions\tNULL\tref\tuk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish\tuk_exam_student\t8\tconst\t1000\t12.18\tUsing where\n"
+    },
+    {
+      "shape": 3000,
+      "x": "51.9",
+      "startedAtIso": "2026-09-29T04:20:21.550Z",
+      "warmup": 2,
+      "rounds": [
+        {
+          "round": 1,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "1800",
+          "countRaw": "total\n1800\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=146 rows=1) (actual time=2.68..2.68 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 51.9))  (cost=109 rows=365) (actual time=0.268..2.6 rows=1800 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=109 rows=3000) (actual time=0.26..2.26 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:22.682Z"
+        },
+        {
+          "round": 2,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "1800",
+          "countRaw": "total\n1800\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=146 rows=1) (actual time=2.7..2.7 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 51.9))  (cost=109 rows=365) (actual time=0.276..2.62 rows=1800 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=109 rows=3000) (actual time=0.269..2.28 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:23.171Z"
+        },
+        {
+          "round": 3,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "1800",
+          "countRaw": "total\n1800\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=146 rows=1) (actual time=2.84..2.84 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 51.9))  (cost=109 rows=365) (actual time=0.385..2.76 rows=1800 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=109 rows=3000) (actual time=0.375..2.42 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:23.619Z"
+        },
+        {
+          "round": 4,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "1800",
+          "countRaw": "total\n1800\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=146 rows=1) (actual time=2.36..2.36 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 51.9))  (cost=109 rows=365) (actual time=0.217..2.29 rows=1800 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=109 rows=3000) (actual time=0.211..1.99 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:24.053Z"
+        },
+        {
+          "round": 5,
+          "countExit": 0,
+          "analyzeExit": 0,
+          "countValue": "1800",
+          "countRaw": "total\n1800\n",
+          "analyzeRaw": "EXPLAIN\n-> Aggregate: count(0)  (cost=146 rows=1) (actual time=2.23..2.23 rows=1 loops=1)\\n    -> Filter: ((exam_submissions.`status` = 3) and (exam_submissions.total_score is not null) and (exam_submissions.total_score > 51.9))  (cost=109 rows=365) (actual time=0.289..2.17 rows=1800 loops=1)\\n        -> Index lookup on exam_submissions using uk_exam_student (exam_id=930003000)  (cost=109 rows=3000) (actual time=0.282..1.89 rows=3000 loops=1)\\n\n",
+          "atIso": "2026-09-29T04:20:24.524Z"
+        }
+      ],
+      "explainRaw": "id\tselect_type\ttable\tpartitions\ttype\tpossible_keys\tkey\tkey_len\tref\trows\tfiltered\tExtra\n1\tSIMPLE\texam_submissions\tNULL\tref\tuk_exam_student,idx_submissions_sweep,idx_submissions_exam_submit,idx_submissions_grading,idx_submissions_republish\tuk_exam_student\t8\tconst\t3000\t12.18\tUsing where\n"
+    }
+  ]
+}

@@ -1,0 +1,438 @@
+{
+  "revision" : "cde1e15",
+  "label" : "new-run3",
+  "startedAt" : "2026-09-26T19:59:00.534045200",
+  "jdk" : "21.0.9 (Oracle Corporation)",
+  "vm" : "Java HotSpot(TM) 64-Bit Server VM / 21.0.9+7-LTS-338",
+  "os" : "Windows 11 10.0 amd64",
+  "processors" : 20,
+  "maxHeapMB" : 3952,
+  "dataRule" : "单人登录取 token（Pass1234）；exams 行直插 id=930000000+n、status=4/published=1、paper_id=930000001(占位无外键)；exam_submissions 逐份直插 exam_id=930000000+n、status=3(已批改)、grading_status=1、total_score=objective_score=score(i)、subjective_score=0.0；student_id：下标 0 为真实登录用户，其余 = 930000000 + n*100000 + i（无 users 行，myScore 不读 users）。分数含大量并列与 null 无关（全部非 null）。",
+  "sizes" : [ 50, 200, 1000, 3000 ],
+  "metricDefinitions" : {
+    "microbench.ranksum" : "该次排名数组求和（跨版本可比的语义指纹）",
+    "jfr.rankSharePct" : "jdk.ExecutionSample 样本中栈内含 com.exam.score.service.RankCalculator 帧的比例",
+    "e2e.rankSharePct" : "请求内 rank() 总耗时 / 全部请求墙钟总耗时（同臂同并发下可直接对账 JFR 份额）",
+    "e2e.meanMs" : "同上算术均值",
+    "e2e.rankMeanMs" : "计时包装器累计的请求内 rank() 耗时 / 请求数（口径=纯调用耗时，不含 SQL/框架）",
+    "e2e.p50/p95/p99Ms" : "MockMvc GET /api/scores/my 单请求墙钟耗时（含安全过滤链+JSON 序列化+mapper+rank），最近秩取值",
+    "microbench.medianMs" : "纯函数 rank() 逐次耗时中位数",
+    "sqlFetch.medianMs" : "同上，耗时中位数",
+    "microbench.p95Ms" : "纯函数 rank() 逐次耗时 p95",
+    "note" : "本工具跑隔离 H2 + MockMvc 同进程，不是真实 MySQL/Tomcat 生产性能，不得当作交卷 P99 收益",
+    "microbench.bestMs" : "纯函数 rank() 逐次 nanoTime 差分的最小值（bestOf30，抗调度噪声的乐观下界）",
+    "e2e.throughputRps" : "计时请求数 / 该臂墙钟秒数（并发>1 时为有效吞吐）",
+    "jfr.topFrames" : "栈顶（最内层）帧 class.method 直方图 Top8，用于判断采样落点与内联影响",
+    "sqlFetch.bestMs" : "与 myScore 全班查询同语句的 mapper.selectList 逐次耗时最小值"
+  },
+  "load" : {
+    "rankWarmup" : 10,
+    "rankReps" : 30,
+    "sqlWarmup" : 5,
+    "sqlReps" : 20,
+    "e2eWarmupRequests" : 10,
+    "e2eRequests" : 60,
+    "e2eConcurrency" : [ 1, 8 ],
+    "rankHotMillis" : 2000,
+    "jfrEvents" : [ "jdk.ExecutionSample(period=10ms)", "jdk.CPULoad(period=500ms)", "jdk.GCPhasePause(threshold=0ms)" ]
+  },
+  "setupLoginMillis" : 2464,
+  "setupDataMillis" : 273,
+  "microbench" : [ {
+    "n" : 50,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.009,
+    "medianMs" : 0.01,
+    "meanMs" : 0.015,
+    "p95Ms" : 0.066,
+    "worstMs" : 0.089,
+    "ranksum" : 1275
+  }, {
+    "n" : 200,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.044,
+    "medianMs" : 0.046,
+    "meanMs" : 0.05,
+    "p95Ms" : 0.082,
+    "worstMs" : 0.087,
+    "ranksum" : 20100
+  }, {
+    "n" : 1000,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.181,
+    "medianMs" : 0.191,
+    "meanMs" : 0.231,
+    "p95Ms" : 0.387,
+    "worstMs" : 0.493,
+    "ranksum" : 499300
+  }, {
+    "n" : 3000,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.409,
+    "medianMs" : 0.478,
+    "meanMs" : 0.868,
+    "p95Ms" : 1.356,
+    "worstMs" : 10.695,
+    "ranksum" : 4488000
+  } ],
+  "sqlFetch" : [ {
+    "n" : 50,
+    "warmup" : 5,
+    "reps" : 20,
+    "rowCount" : 50,
+    "bestMs" : 1.131,
+    "medianMs" : 1.612,
+    "meanMs" : 1.929,
+    "p95Ms" : 3.195
+  }, {
+    "n" : 200,
+    "warmup" : 5,
+    "reps" : 20,
+    "rowCount" : 200,
+    "bestMs" : 1.879,
+    "medianMs" : 2.388,
+    "meanMs" : 2.485,
+    "p95Ms" : 3.699
+  }, {
+    "n" : 1000,
+    "warmup" : 5,
+    "reps" : 20,
+    "rowCount" : 1000,
+    "bestMs" : 4.008,
+    "medianMs" : 4.988,
+    "meanMs" : 6.188,
+    "p95Ms" : 11.901
+  }, {
+    "n" : 3000,
+    "warmup" : 5,
+    "reps" : 20,
+    "rowCount" : 3000,
+    "bestMs" : 3.918,
+    "medianMs" : 5.215,
+    "meanMs" : 5.832,
+    "p95Ms" : 8.307
+  } ],
+  "e2e" : [ {
+    "n" : 50,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 50,
+    "errors" : 0,
+    "p50Ms" : 8.497,
+    "p95Ms" : 11.11,
+    "p99Ms" : 12.396,
+    "meanMs" : 8.874,
+    "worstMs" : 12.396,
+    "wallMillis" : 552.856,
+    "throughputRps" : 108.527,
+    "respBytesMean" : 204.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.037,
+    "rankTotalMs" : 2.201,
+    "rankSharePct" : 0.413
+  }, {
+    "n" : 50,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 50,
+    "errors" : 0,
+    "p50Ms" : 11.8,
+    "p95Ms" : 16.005,
+    "p99Ms" : 17.482,
+    "meanMs" : 11.963,
+    "worstMs" : 17.482,
+    "wallMillis" : 97.285,
+    "throughputRps" : 616.745,
+    "respBytesMean" : 204.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.033,
+    "rankTotalMs" : 2.003,
+    "rankSharePct" : 0.279
+  }, {
+    "n" : 200,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 200,
+    "errors" : 0,
+    "p50Ms" : 6.79,
+    "p95Ms" : 9.372,
+    "p99Ms" : 32.263,
+    "meanMs" : 7.517,
+    "worstMs" : 32.263,
+    "wallMillis" : 467.268,
+    "throughputRps" : 128.406,
+    "respBytesMean" : 206.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.055,
+    "rankTotalMs" : 3.31,
+    "rankSharePct" : 0.734
+  }, {
+    "n" : 200,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 200,
+    "errors" : 0,
+    "p50Ms" : 14.187,
+    "p95Ms" : 20.23,
+    "p99Ms" : 20.802,
+    "meanMs" : 14.168,
+    "worstMs" : 20.802,
+    "wallMillis" : 110.308,
+    "throughputRps" : 543.934,
+    "respBytesMean" : 206.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.058,
+    "rankTotalMs" : 3.456,
+    "rankSharePct" : 0.407
+  }, {
+    "n" : 1000,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 997,
+    "errors" : 0,
+    "p50Ms" : 7.107,
+    "p95Ms" : 12.681,
+    "p99Ms" : 37.664,
+    "meanMs" : 8.519,
+    "worstMs" : 37.664,
+    "wallMillis" : 524.01,
+    "throughputRps" : 114.502,
+    "respBytesMean" : 207.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.241,
+    "rankTotalMs" : 14.436,
+    "rankSharePct" : 2.824
+  }, {
+    "n" : 1000,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 997,
+    "errors" : 0,
+    "p50Ms" : 39.199,
+    "p95Ms" : 63.113,
+    "p99Ms" : 64.104,
+    "meanMs" : 39.402,
+    "worstMs" : 64.104,
+    "wallMillis" : 307.141,
+    "throughputRps" : 195.35,
+    "respBytesMean" : 207.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.243,
+    "rankTotalMs" : 14.584,
+    "rankSharePct" : 0.617
+  }, {
+    "n" : 3000,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 2991,
+    "errors" : 0,
+    "p50Ms" : 8.218,
+    "p95Ms" : 10.186,
+    "p99Ms" : 12.405,
+    "meanMs" : 8.516,
+    "worstMs" : 12.405,
+    "wallMillis" : 521.842,
+    "throughputRps" : 114.977,
+    "respBytesMean" : 208.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.371,
+    "rankTotalMs" : 22.275,
+    "rankSharePct" : 4.36
+  }, {
+    "n" : 3000,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 2991,
+    "errors" : 0,
+    "p50Ms" : 100.45,
+    "p95Ms" : 164.261,
+    "p99Ms" : 175.548,
+    "meanMs" : 101.697,
+    "worstMs" : 175.548,
+    "wallMillis" : 784.541,
+    "throughputRps" : 76.478,
+    "respBytesMean" : 208.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.631,
+    "rankTotalMs" : 37.854,
+    "rankSharePct" : 0.62
+  } ],
+  "focusedMicrobench" : {
+    "n" : 3000,
+    "warmup" : 10,
+    "reps" : 30,
+    "bestMs" : 0.48,
+    "medianMs" : 0.525,
+    "meanMs" : 0.553,
+    "p95Ms" : 0.704,
+    "worstMs" : 0.708,
+    "ranksum" : 4488000
+  },
+  "focusedE2e" : [ {
+    "n" : 3000,
+    "concurrency" : 1,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 2991,
+    "errors" : 0,
+    "p50Ms" : 11.649,
+    "p95Ms" : 18.417,
+    "p99Ms" : 20.489,
+    "meanMs" : 12.375,
+    "worstMs" : 20.489,
+    "wallMillis" : 752.841,
+    "throughputRps" : 79.698,
+    "respBytesMean" : 208.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.453,
+    "rankTotalMs" : 27.189,
+    "rankSharePct" : 3.662
+  }, {
+    "n" : 3000,
+    "concurrency" : 8,
+    "requests" : 60,
+    "warmupRequests" : 10,
+    "expectedRank" : 2991,
+    "errors" : 0,
+    "p50Ms" : 110.082,
+    "p95Ms" : 129.963,
+    "p99Ms" : 130.831,
+    "meanMs" : 108.409,
+    "worstMs" : 130.831,
+    "wallMillis" : 830.047,
+    "throughputRps" : 72.285,
+    "respBytesMean" : 208.0,
+    "rankCallsInRequest" : 60,
+    "rankMeanMs" : 0.498,
+    "rankTotalMs" : 29.897,
+    "rankSharePct" : 0.46
+  } ],
+  "rankHotCalls" : 6229,
+  "rankHotMillis" : 2000,
+  "jfr" : {
+    "whole" : {
+      "totalSamples" : 543,
+      "samplesWithoutStack" : 0,
+      "rankSamples" : 4,
+      "rankSharePct" : 0.737,
+      "cpuUserPctMean" : 17.371,
+      "cpuMachineTotalPctMean" : 66.012,
+      "cpuLoadEvents" : 11,
+      "cpuReadingUsable" : true,
+      "gcPauseCount" : 16,
+      "gcPauseMsTotal" : 68.53,
+      "topFrames" : [ {
+        "frame" : "java.util.HashMap.getNode",
+        "samples" : 92
+      }, {
+        "frame" : "java.lang.reflect.Method.invoke",
+        "samples" : 45
+      }, {
+        "frame" : "org.apache.ibatis.executor.resultset.DefaultResultSetHandler.applyAutomaticMappings",
+        "samples" : 28
+      }, {
+        "frame" : "java.lang.String.indexOf",
+        "samples" : 27
+      }, {
+        "frame" : "org.apache.ibatis.reflection.MetaObject.setValue",
+        "samples" : 24
+      }, {
+        "frame" : "org.mindrot.jbcrypt.BCrypt.key",
+        "samples" : 21
+      }, {
+        "frame" : "org.h2.util.StringUtils.toUpperEnglish",
+        "samples" : 18
+      }, {
+        "frame" : "jdk.internal.reflect.Reflection.verifyModuleAccess",
+        "samples" : 14
+      } ]
+    },
+    "focused" : {
+      "totalSamples" : 314,
+      "samplesWithoutStack" : 0,
+      "rankSamples" : 8,
+      "rankSharePct" : 2.548,
+      "cpuUserPctMean" : 20.761,
+      "cpuMachineTotalPctMean" : 61.07,
+      "cpuLoadEvents" : 4,
+      "cpuReadingUsable" : true,
+      "gcPauseCount" : 6,
+      "gcPauseMsTotal" : 13.09,
+      "topFrames" : [ {
+        "frame" : "java.util.HashMap.getNode",
+        "samples" : 53
+      }, {
+        "frame" : "org.apache.ibatis.executor.resultset.DefaultResultSetHandler.applyAutomaticMappings",
+        "samples" : 41
+      }, {
+        "frame" : "java.lang.String.indexOf",
+        "samples" : 25
+      }, {
+        "frame" : "org.h2.util.StringUtils.toUpperEnglish",
+        "samples" : 19
+      }, {
+        "frame" : "java.lang.reflect.Method.invoke",
+        "samples" : 18
+      }, {
+        "frame" : "org.apache.ibatis.reflection.MetaObject.setValue",
+        "samples" : 18
+      }, {
+        "frame" : "java.time.LocalDate.create",
+        "samples" : 13
+      }, {
+        "frame" : "java.lang.Integer.valueOf",
+        "samples" : 12
+      } ]
+    },
+    "rankHot" : {
+      "totalSamples" : 91,
+      "samplesWithoutStack" : 0,
+      "rankSamples" : 85,
+      "rankSharePct" : 93.407,
+      "cpuUserPctMean" : 14.198,
+      "cpuMachineTotalPctMean" : 47.143,
+      "cpuLoadEvents" : 4,
+      "cpuReadingUsable" : true,
+      "gcPauseCount" : 3,
+      "gcPauseMsTotal" : 3.773,
+      "topFrames" : [ {
+        "frame" : "java.util.TimSort.mergeLo",
+        "samples" : 34
+      }, {
+        "frame" : "java.util.TimSort.mergeHi",
+        "samples" : 17
+      }, {
+        "frame" : "java.util.Objects.checkIndex",
+        "samples" : 17
+      }, {
+        "frame" : "com.exam.score.service.RankCalculator.rank",
+        "samples" : 8
+      }, {
+        "frame" : "java.util.TimSort.binarySort",
+        "samples" : 5
+      }, {
+        "frame" : "java.util.concurrent.ThreadPoolExecutor.runWorker",
+        "samples" : 2
+      }, {
+        "frame" : "java.util.TimSort.gallopRight",
+        "samples" : 2
+      }, {
+        "frame" : "org.apache.maven.surefire.booter.spi.AbstractMasterProcessChannelProcessorFactory$1.run",
+        "samples" : 1
+      } ]
+    }
+  },
+  "finishedAt" : "2026-09-26T19:59:12.262388400"
+}

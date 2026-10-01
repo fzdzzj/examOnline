@@ -10,7 +10,6 @@ import com.exam.exam.mapper.ExamMapper;
 import com.exam.monitoring.dto.MonitorOverviewResponse;
 import com.exam.monitoring.dto.MonitorStudentItem;
 import com.exam.submission.dto.AbnormalBehaviorStat;
-import com.exam.submission.entity.ExamBehaviorLog;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamBehaviorLogMapper;
 import com.exam.submission.mapper.ExamSubmissionMapper;
@@ -19,6 +18,7 @@ import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -76,18 +76,25 @@ public class MonitorService {
     /** 监考大屏总览：人数统计 + 逐学生进度 + 异常高亮（异常学生排前）。 */
     public MonitorOverviewResponse overview(Long examId) {
         Exam exam = requireOwnedExam(examId);
+        // 列投影：本方法只消费 student_id/status 两个标量列，不带 answers/paper_json 长字段
+        // （单行快照可 ~20KB，全量取回是纯读带宽浪费）——题数分母改由至多一次窄读获取。
         List<ExamSubmission> submissions = submissionMapper.selectList(
-                Wrappers.<ExamSubmission>lambdaQuery().eq(ExamSubmission::getExamId, examId));
+                Wrappers.<ExamSubmission>lambdaQuery().eq(ExamSubmission::getExamId, examId)
+                        .select(ExamSubmission::getStudentId, ExamSubmission::getStatus));
 
         List<Long> studentIds = submissions.stream().map(ExamSubmission::getStudentId).distinct().toList();
         Map<Long, String> names = resolveNames(studentIds);
-        int totalQuestions = resolveTotalQuestions(submissions);
+        int totalQuestions = resolveTotalQuestions(examId, submissions);
 
         // 在线判定只针对进行中学生（已交卷不再有心跳，直接归入已交卷态）
         List<Long> activeIds = submissions.stream()
                 .filter(s -> s.getStatus() == ExamSubmission.STATUS_IN_PROGRESS)
                 .map(ExamSubmission::getStudentId).toList();
         Set<Long> onlineIds = new HashSet<>(presenceService.onlineOf(examId, activeIds));
+
+        // 草稿进度：进行中学生一次 MGET 批量取回（逐人往返改批量；无进行中学生则零调用）。
+        // 读取失败/结果无法对齐时由 getBatch 抛错，不降级成"全员零进度"。
+        Map<Long, ExamDraftService.DraftState> drafts = draftService.getBatch(examId, activeIds);
 
         // 异常聚合：severity>=2 的行为事件按学生一条 SQL 取回
         Map<Long, AbnormalBehaviorStat> abnormalStats = new HashMap<>();
@@ -104,7 +111,7 @@ public class MonitorService {
 
         List<MonitorStudentItem> students = new ArrayList<>(submissions.size());
         for (ExamSubmission submission : submissions) {
-            MonitorStudentItem item = buildStudentItem(submission, totalQuestions, names, onlineIds, abnormalStats);
+            MonitorStudentItem item = buildStudentItem(submission, totalQuestions, names, onlineIds, abnormalStats, drafts);
             students.add(item);
 
             if (MonitorStudentItem.STATUS_SUBMITTED.equals(item.getStatus())) {
@@ -121,7 +128,7 @@ public class MonitorService {
         // 大屏排序：异常优先（最高严重度降序 → 异常次数降序），其余按进度降序、学生号升序
         students.sort(Comparator
                 .comparing(MonitorStudentItem::isAbnormal).reversed()
-                .thenComparing(item -> item.getMaxSeverity() == null ? 0 : item.getMaxSeverity(),
+                .thenComparing(item -> Objects.requireNonNullElse(item.getMaxSeverity(), 0),
                         Comparator.reverseOrder())
                 .thenComparing(MonitorStudentItem::getAbnormalEventCount, Comparator.reverseOrder())
                 .thenComparing(MonitorStudentItem::getProgressPercent, Comparator.reverseOrder())
@@ -133,7 +140,8 @@ public class MonitorService {
     /** 单个答卷 → 学生行：状态（在线/离线/已交卷）+ 进度 + 异常字段。 */
     private MonitorStudentItem buildStudentItem(ExamSubmission submission, int totalQuestions,
                                                 Map<Long, String> names, Set<Long> onlineIds,
-                                                Map<Long, AbnormalBehaviorStat> abnormalStats) {
+                                                Map<Long, AbnormalBehaviorStat> abnormalStats,
+                                                Map<Long, ExamDraftService.DraftState> drafts) {
         MonitorStudentItem item = new MonitorStudentItem();
         item.setStudentId(submission.getStudentId());
         item.setStudentName(names.get(submission.getStudentId()));
@@ -149,7 +157,7 @@ public class MonitorService {
         // 进度：进行中读草稿答案字段数（近似）；已交卷即 100%
         int answered = 0;
         if (submission.getStatus() == ExamSubmission.STATUS_IN_PROGRESS) {
-            ExamDraftService.DraftState draft = draftService.get(submission.getExamId(), submission.getStudentId());
+            ExamDraftService.DraftState draft = drafts.get(submission.getStudentId());
             if (draft != null && draft.answers() != null && draft.answers().isObject()) {
                 answered = draft.answers().size();
             }
@@ -183,16 +191,22 @@ public class MonitorService {
     }
 
     /**
-     * 题目总数：任取一份个人快照解析 questions 数组长度——同一场考试题数一致，
+     * 题目总数：窄读任取一份个人快照解析 questions 数组长度——同一场考试题数一致，
      * 且快照即学生作答所见（进入时锁定），比试卷表更贴近真实进度分母。
+     *
+     * <p>主语句列投影后不再携带 paper_json，题数改由一次窄读（LIMIT 1）获取；
+     * 主语句 0 行时不发起窄读（无行集可言），无可用快照按 0 题处理——
+     * 与投影前"取首份非空快照、找不到记 0"的既有口径一致。
      */
-    private int resolveTotalQuestions(List<ExamSubmission> submissions) {
-        return submissions.stream()
-                .map(ExamSubmission::getPaperJson)
-                .filter(json -> json != null && !json.isBlank())
-                .findFirst()
-                .map(this::countQuestions)
-                .orElse(0);
+    private int resolveTotalQuestions(Long examId, List<ExamSubmission> submissions) {
+        if (submissions.isEmpty()) {
+            return 0;
+        }
+        String paperJson = submissionMapper.selectFirstPaperJson(examId);
+        if (paperJson == null || paperJson.isBlank()) {
+            return 0;
+        }
+        return countQuestions(paperJson);
     }
 
     private int countQuestions(String paperJson) {

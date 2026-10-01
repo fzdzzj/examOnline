@@ -1,0 +1,61 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：前置核对（开工门）",
+    "task": "核对 K1–K4，任一不符即停手回报；本变更不启 Docker、不连共享 dev、不写 dev 库、不 push、不建 PR",
+    "steps": [
+      { "step": "K1 分支 feature/update-monitor-overview-submission-projection", "completed": true },
+      { "step": "K2 git rev-parse --short HEAD = 37831c3", "completed": true },
+      { "step": "K3 git status --porcelain 只有 4 行 ??（.zcodeignore、docs/backend-optimization-candidates.md、两份交接文档；全程不读不改不暂存）", "completed": true },
+      { "step": "K4 门禁基线锚 345/0/0/1（Skipped 1 = com.exam.support.OpenApiContractTest）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "K1–K4 现场核对（2026-10-01 开工）：`git rev-parse --abbrev-ref HEAD` = feature/update-monitor-overview-submission-projection；`git rev-parse --short HEAD` = 37831c3；`git status --porcelain` 恰 4 行 `??`（.zcodeignore、docs/backend-optimization-candidates.md、docs/指导主Agent交接文档-2026-09-30.md、docs/指导主Agent交接文档-2026-10-01.md，全程未读未改未暂存）；基线四计数锚 345/0/0/1 取自本卡 K4，由阶段 3 门禁现场比对。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：准入逻辑改造（F-B/F-C 收口）",
+    "task": "改 ExamTakingService.enter：首次进入（submission==null）才做准入拦截；普通考试强制班级归属；补考维持名单；已有答卷直接放行",
+    "steps": [
+      { "step": "enter() 改为仅 submission==null 时调用 assertAdmission 后再 createSubmission；已有答卷放行", "completed": true },
+      { "step": "新增私有方法 assertAdmission(Exam, Long)：补考走 makeupService.assertCanEnter；普通考试 classId null → 403；user_class 无归属 → 403", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "核心改动落 src/main/java/com/exam/taking/service/ExamTakingService.java：`enter` 在 `submissionMapper.selectByExamStudent(examId, studentId)` 为 null 时调用新增 `assertAdmission(exam, studentId)` 再 `createSubmission`；`assertAdmission` 对 `exam.getParentExamId() != null` 转 `makeupService.assertCanEnter(exam, studentId)`，否则 `exam.getClassId() == null` 抛 `BusinessException(ResponseCode.FORBIDDEN, \"该考试未指派班级，无法参加\")`，`userClassMapper.selectCount(eq userId/classId)` 为 0 抛 `BusinessException(ResponseCode.FORBIDDEN, \"您不属于该考试指定的班级，无法参加\")`。依赖（userClassMapper、makeupService、Wrappers、UserClass）均既有注入，无新增依赖。实施笔 `aa3636a`。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：测试夹具适配 + 专项用例",
+    "task": "IntegrationTestBase 增加班级夹具；适配受影响既有集成测试夹具（断言不削弱）；新增安全准入专项用例覆盖 5 类场景",
+    "steps": [
+      { "step": "IntegrationTestBase 新增 createClassForExam / joinClass / ensureExamClassMembership 三个 protected 辅助方法", "completed": true },
+      { "step": "适配受影响既有集成测试夹具（AntiCheat / PostExamClosure / ReadWriteSeparation / GradingScore / MonitorDraftBatchRead / MakeupFinalScore / MultiInstanceSweepSafety 等），仅在夹具层补班级归属，断言与语义不变", "completed": true },
+      { "step": "ExamTakingIntegrationTest 新增 4 个 @Test：班级内进入 / 跨班级被拒 / 无班级被拒 / 补考名单 / 断线重进放行（含 rawEnter 读完整 envelope）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "夹具适配（均在夹具/基座层，无断言削弱）：src/test/java/com/exam/support/IntegrationTestBase.java 新增 @Autowired jwtUtil/examMapper/userClassMapper 与 createClassForExam/joinClass/ensureExamClassMembership；适配 AntiCheatIntegrationTest（8 例）、PostExamClosureIntegrationTest（9 例）、ReadWriteSeparationIntegrationTest（3 例）、GradingScoreIntegrationTest（3 例）、MonitorDraftBatchReadTest（6 例）、MakeupFinalScoreIntegrationTest（2 例）、MultiInstanceSweepSafetyTest（4 例）——首轮子集跑全部 0 Failures 0 Errors。新增用例落 src/test/java/com/exam/taking/ExamTakingIntegrationTest.java：classAffiliationAdmissionEnforced（班内 200 + 非本班 403「不属于该考试指定的班级」+ 被拒学生无答卷）、examWithoutClassForbidsEnter（无班级 403「未指派班级」）、makeupAdmissionFollowsCandidateList（名单内 200 / 名单外 403）、reentryAfterStartSurvivesClassChange（进入后删除 user_class 归属，重进仍 200 且 submissionId/题序一致）；定向跑 ExamTakingIntegrationTest 14/0/0/0 BUILD SUCCESS（耗时 32.51s）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：门禁（仓库根唯一命令）",
+    "task": "仓库根 mvnw.cmd clean test，四计数须 345 → 345+k、0 Failures、0 Errors、Skipped 恒 1、BUILD SUCCESS，记录退出码与 revision",
+    "steps": [
+      { "step": "实施笔提交后，在仓库根跑 $env:JAVA_HOME='D:\\develop1\\jdk21'; .\\mvnw.cmd clean test", "completed": true },
+      { "step": "核对四计数（345→349）、BUILD、退出码与 revision，原始日志落 evidence/", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "仓库根执行 `$env:JAVA_HOME='D:\\develop1\\jdk21'; .\\mvnw.cmd clean test` @ 实施笔 `aa3636a`：Tests run: 349, Failures: 0, Errors: 0, Skipped: 1（Skipped = com.exam.support.OpenApiContractTest），BUILD SUCCESS，退出码 0，Total time: 03:22 min（实测墙钟 205.3s）。基线 345 → 349（+4 专项准入用例，Skipped 1 不变）。原始日志落本目录 evidence/gate-green.log，sha256 见 evidence/evidence-sha256.txt。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：收口",
+    "task": "GO 才合入 spec-delta；README 归档登记；变更目录移入 archive；tasks 回勾；sha256 清单复验；零 src 改动凭据",
+    "steps": [
+      { "step": "spec/specs/exam-taking/spec.md 合入「进入考试」MODIFIED Requirement 与 5 个新增 Scenario，并补合入注记（来源说明）", "completed": true },
+      { "step": "spec/README.md 归档登记：当前状态收口记录 + 能力域表 exam-taking 来源补登 + 变更登记表新增归档行", "completed": true },
+      { "step": "变更目录归档至 spec/changes/archive/enforce-exam-enter-class-affiliation/；evidence sha256 清单复验；提交 2 零 src 改动（git diff --name-only 无 src/）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "收口笔见本目录 proposal.md 顶部记录的 commit。spec/specs/exam-taking/spec.md 合入 MODIFIED「进入考试」Requirement（首次进入才校验、普通考试班级归属、补考名单、已有答卷放行）与 5 个新增 Scenario，来源说明补本变更。spec/README.md：当前状态追加收口记录、能力域表行 4 补登本变更、变更登记表新增归档行。变更目录移入 spec/changes/archive/enforce-exam-enter-class-affiliation/（proposal.md/tasks.json/specs/exam-taking/spec-delta.md/evidence/）。提交 2 零 src 改动以 `git diff --name-only` 复核（无 src/ 前缀路径）。"
+  }
+]

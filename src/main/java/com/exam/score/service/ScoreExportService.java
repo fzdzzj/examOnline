@@ -13,6 +13,7 @@ import com.exam.grading.model.GradingPaper;
 import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.support.GradingPaperReader;
 import com.exam.question.entity.QuestionType;
+import com.exam.score.support.ExcelSheetWriter;
 import com.exam.score.support.QuestionScoreResolver;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.user.entity.User;
@@ -30,17 +31,11 @@ import com.lowagie.text.pdf.PdfWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -104,12 +99,12 @@ public class ScoreExportService {
 
     /** 全班成绩单：学号/姓名/客观/主观/总分/排名/批改状态。 */
     public byte[] exportClassSheet(Long examId) {
-        Exam exam = assertExportable(examId);
+        assertExportable(examId);
         Map<Long, Integer> rankBySubmission = rankBySubmissionId(examId);
 
-        return withStreamingWorkbook(workbook -> {
-            SXSSFSheet sheet = createSheet(workbook, "全班成绩单");
-            writeHeader(sheet, "学号", "姓名", "客观题得分", "主观题得分", "总分", "排名", "批改状态");
+        return ExcelSheetWriter.withStreamingWorkbook(workbook -> {
+            SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "全班成绩单");
+            ExcelSheetWriter.writeHeader(sheet, "学号", "姓名", "客观题得分", "主观题得分", "总分", "排名", "批改状态");
             int[] rowIndex = {1};
             forEachSubmissionPage(examId, page -> {
                 Map<Long, User> users = loadUsers(page);
@@ -125,18 +120,18 @@ public class ScoreExportService {
                     row.createCell(6).setCellValue(isPartial(submission) ? "部分批改" : "正常");
                 }
             });
-            autoSize(sheet, 7);
+            ExcelSheetWriter.autoSize(sheet, 7);
         });
     }
 
     /** 逐题得分明细：每生一行，逐题得分列 + 总分列。 */
     public byte[] exportQuestionDetail(Long examId) {
-        Exam exam = assertExportable(examId);
+        assertExportable(examId);
         GradingPaper paper = paperReader.readByExamId(examId);
         List<GradingQuestion> questions = paper.questions();
 
-        return withStreamingWorkbook(workbook -> {
-            SXSSFSheet sheet = createSheet(workbook, "逐题得分明细");
+        return ExcelSheetWriter.withStreamingWorkbook(workbook -> {
+            SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "逐题得分明细");
             Object[] headers = new Object[questions.size() + 3];
             headers[0] = "学号";
             headers[1] = "姓名";
@@ -145,7 +140,7 @@ public class ScoreExportService {
                 headers[i + 2] = "第" + question.number() + "题(" + question.score() + "分)";
             }
             headers[headers.length - 1] = "总分";
-            writeHeader(sheet, headers);
+            ExcelSheetWriter.writeHeader(sheet, headers);
 
             int[] rowIndex = {1};
             forEachSubmissionPage(examId, page -> {
@@ -171,13 +166,13 @@ public class ScoreExportService {
                     row.createCell(headers.length - 1).setCellValue(decimal(submission.getTotalScore()));
                 }
             });
-            autoSize(sheet, Math.min(headers.length, 20));
+            ExcelSheetWriter.autoSize(sheet, Math.min(headers.length, 20));
         });
     }
 
     /** 题目统计表：题号/题型/满分/平均分/得分率/答对率/区分度（前后 27% 高低分组法）。 */
     public byte[] exportQuestionStats(Long examId) {
-        Exam exam = assertExportable(examId);
+        assertExportable(examId);
         GradingPaper paper = paperReader.readByExamId(examId);
         List<GradingQuestion> questions = paper.questions();
 
@@ -215,9 +210,9 @@ public class ScoreExportService {
             }
         });
 
-        return withStreamingWorkbook(workbook -> {
-            SXSSFSheet sheet = createSheet(workbook, "题目统计");
-            writeHeader(sheet, "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数");
+        return ExcelSheetWriter.withStreamingWorkbook(workbook -> {
+            SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "题目统计");
+            ExcelSheetWriter.writeHeader(sheet, "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数");
             int rowIndex = 1;
             for (GradingQuestion question : questions) {
                 Row row = sheet.createRow(rowIndex++);
@@ -237,7 +232,7 @@ public class ScoreExportService {
                         pairs.getOrDefault(question.questionId(), List.of()), max));
                 row.createCell(8).setCellValue(n);
             }
-            autoSize(sheet, 9);
+            ExcelSheetWriter.autoSize(sheet, 9);
         });
     }
 
@@ -246,9 +241,9 @@ public class ScoreExportService {
         Exam exam = assertExportable(examId);
         PersonalReport report = loadPersonalReport(exam, studentId);
 
-        return withStreamingWorkbook(workbook -> {
-            SXSSFSheet sheet = createSheet(workbook, "个人成绩单");
-            CellStyle bold = boldStyle(workbook);
+        return ExcelSheetWriter.withStreamingWorkbook(workbook -> {
+            SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "个人成绩单");
+            CellStyle bold = ExcelSheetWriter.boldStyle(workbook);
 
             Row title = sheet.createRow(0);
             Cell titleCell = title.createCell(0);
@@ -265,7 +260,7 @@ public class ScoreExportService {
                     + (report.partial() ? "部分批改" : "正常"));
 
             int rowIndex = 3;
-            writeHeaderAt(sheet, rowIndex++, "题号", "题型", "题干", "满分", "得分", "批改状态", "评语/判分依据");
+            ExcelSheetWriter.writeHeaderAt(sheet, rowIndex++, "题号", "题型", "题干", "满分", "得分", "批改状态", "评语/判分依据");
             for (GradingQuestion question : report.questions()) {
                 QuestionScoreResolver.ResolvedQuestionScore score =
                         report.scores().get(question.questionId());
@@ -279,7 +274,7 @@ public class ScoreExportService {
                 String note = score.comment() != null ? score.comment() : score.detail();
                 row.createCell(6).setCellValue(note == null ? "" : note);
             }
-            autoSize(sheet, 7);
+            ExcelSheetWriter.autoSize(sheet, 7);
         });
     }
 
@@ -470,79 +465,7 @@ public class ScoreExportService {
         return round2((highSum / groupSize - lowSum / groupSize) / max);
     }
 
-    // ==================== POI / 工具 ====================
-
-    /** SXSSF 模板方法：创建滑动窗口工作簿 → 写入 → 单次序列化 → 清理临时文件。 */
-    private byte[] withStreamingWorkbook(java.util.function.Consumer<SXSSFWorkbook> writer) {
-        // SXSSF(100)：内存仅保留 100 行窗口，其余行压缩刷盘——防 OOM 的关键开关
-        SXSSFWorkbook workbook = new SXSSFWorkbook(SXSSF_WINDOW);
-        try {
-            writer.accept(workbook);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            workbook.write(out);
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new BusinessException(ResponseCode.INTERNAL_ERROR, "Excel 生成失败");
-        } finally {
-            // 必须显式 dispose：删除 SXSSF 刷盘产生的临时文件（否则堆积磁盘垃圾）
-            workbook.dispose();
-            try {
-                workbook.close();
-            } catch (IOException e) {
-                log.warn("工作簿关闭异常", e);
-            }
-        }
-    }
-
-    /**
-     * 建表并开启全列宽跟踪：SXSSF 的 autoSizeColumn 只能作用于已跟踪列，
-     * 且跟踪必须在写行之前开启（滑动窗口外的行已刷盘，事后无法测量）。
-     */
-    private SXSSFSheet createSheet(SXSSFWorkbook workbook, String name) {
-        SXSSFSheet sheet = workbook.createSheet(name);
-        sheet.trackAllColumnsForAutoSizing();
-        return sheet;
-    }
-
-    private void writeHeader(Sheet sheet, Object... headers) {
-        writeHeaderAt(sheet, 0, headers);
-    }
-
-    private void writeHeaderAt(Sheet sheet, int rowIndex, Object... headers) {
-        Row row = sheet.createRow(rowIndex);
-        CellStyle headerStyle = headerStyle(sheet.getWorkbook());
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = row.createCell(i);
-            cell.setCellValue(String.valueOf(headers[i]));
-            cell.setCellStyle(headerStyle);
-        }
-    }
-
-    private CellStyle headerStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle();
-        org.apache.poi.ss.usermodel.Font font = workbook.createFont();
-        font.setBold(true);
-        style.setFont(font);
-        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        return style;
-    }
-
-    private CellStyle boldStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle();
-        org.apache.poi.ss.usermodel.Font font = workbook.createFont();
-        font.setBold(true);
-        style.setFont(font);
-        return style;
-    }
-
-    /** 列宽自适应（列数截断防止超宽表耗时过长）。 */
-    private void autoSize(Sheet sheet, int columns) {
-        for (int i = 0; i < columns; i++) {
-            sheet.autoSizeColumn(i);
-        }
-    }
-
+    // ==================== 查询与校验辅助 ====================
     private Map<Long, User> loadUsers(List<GradingSubmission> page) {
         List<Long> studentIds = page.stream().map(GradingSubmission::getStudentId).distinct().toList();
         if (studentIds.isEmpty()) {

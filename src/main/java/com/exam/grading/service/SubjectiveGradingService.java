@@ -3,6 +3,7 @@ package com.exam.grading.service;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.config.ReadYourWriteMark;
 import com.exam.grading.dto.SubjectiveGradeRow;
 import com.exam.grading.dto.SubjectiveQuestionItem;
 import com.exam.grading.dto.SubjectiveScoreRequest;
@@ -21,7 +22,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
  *   <li>并发防覆盖：两教师同时批改同一答卷同题，以 version 乐观锁 CAS 裁决——
  *       仅一个成功，另一个收到 409 冲突重载（spec「并发批改防覆盖」场景）。</li>
  * </ul>
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Service
 public class SubjectiveGradingService {
@@ -43,15 +45,18 @@ public class SubjectiveGradingService {
     private final GradingPaperReader paperReader;
     private final SubjectiveGradeMapper subjectiveGradeMapper;
     private final GradingSubmissionMapper gradingSubmissionMapper;
+    private final ReadYourWriteMark readYourWriteMark;
 
     public SubjectiveGradingService(GradingQueryService gradingQueryService,
                                     GradingPaperReader paperReader,
                                     SubjectiveGradeMapper subjectiveGradeMapper,
-                                    GradingSubmissionMapper gradingSubmissionMapper) {
+                                    GradingSubmissionMapper gradingSubmissionMapper,
+                                    ReadYourWriteMark readYourWriteMark) {
         this.gradingQueryService = gradingQueryService;
         this.paperReader = paperReader;
         this.subjectiveGradeMapper = subjectiveGradeMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
+        this.readYourWriteMark = readYourWriteMark;
     }
 
     /** 待批题目清单：快照简答题 + 各题批改进度（判分未运行时进度为 0）。 */
@@ -97,7 +102,7 @@ public class SubjectiveGradingService {
      * <p>保存成功后同步刷新该答卷的主观分合计与部分批改标记（汇总时还会
      * 以同样口径权威重算，这里刷新只为工作台进度实时可见）。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SubjectiveGradeRow saveScore(Long examId, SubjectiveScoreRequest request) {
         gradingQueryService.requireOwnedExam(examId);
 
@@ -152,6 +157,9 @@ public class SubjectiveGradingService {
         }
 
         refreshSubmissionSubjectiveScore(request.getSubmissionId());
+        // 读己之写（add-performance-deepening task4）：人工批改是写操作，成功打点，
+        // 教师随即刷新工作台（返回结果本身即主库回读）与本线程其他读不因从库延迟失真
+        readYourWriteMark.mark();
         return subjectiveGradeMapper.selectWorkbenchRows(examId, request.getQuestionId()).stream()
                 .filter(candidate -> candidate.getSubmissionId().equals(request.getSubmissionId()))
                 .findFirst()

@@ -1,6 +1,7 @@
 package com.exam.exam.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.common.cache.CacheMutexLoader;
@@ -38,6 +39,8 @@ import java.util.stream.Collectors;
  * <p>发布是快照生成的唯一时机（exam_id 唯一约束兜底）——发布时把考试配置与
  * 绑定试卷的完整内容（题目/选项/归一化答案/试卷内分值/题号顺序）序列化落库；
  * 之后试卷或题目被修改均不影响快照（副本隔离），答题/判分/回看一律读快照（§10.10）。
+ *
+ * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
  */
 @Slf4j
 @Service
@@ -71,7 +74,7 @@ public class ExamSnapshotService {
      * <p>注意：不要求试卷先生成自己的试卷快照——考试快照自带完整试卷内容，
      * 是独立且自洽的副本；试卷侧快照是组卷锁定的手段，两者互不依赖。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ExamSnapshot generateForPublish(Exam exam) {
         Paper paper = paperMapper.selectById(exam.getPaperId());
         if (paper == null) {
@@ -128,7 +131,12 @@ public class ExamSnapshotService {
      * 可用长 TTL 且无需失效逻辑；key 用 examId（一场考试仅一份快照，与快照行一一对应）。
      * 未命中进入方法体后经 CacheMutexLoader 互斥回源：防击穿（开考 5000 人并发拉卷仅一个线程查 DB），
      * 查无结果（未发布/不存在）写短 TTL 空标记防穿透。
+     *
+     * <p>读写分离（add-performance-deepening task3）：快照<b>只读不可变</b>，属非强一致读
+     * （开考拉卷高并发、可容忍秒级延迟）——{@code @DS("slave")} 走从库卸热读压力；
+     * 写后窗口内命中由 ReadYourWriteRouter 临时转主库。
      */
+    @DS("slave")
     @Cacheable(cacheNames = CacheConfig.CACHE_EXAM_SNAPSHOT, key = "#examId")
     public ExamSnapshotResponse getCurrent(Long examId) {
         return cacheMutexLoader.load(CacheConfig.CACHE_EXAM_SNAPSHOT, examId, () -> {
