@@ -164,6 +164,7 @@ import {
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { EXAM_STATUS } from '@/constants/examStatus';
+import { createTeacherExamsQueryOptions } from '@/hooks/useTeacherExams';
 import { resolveScoreActions } from '@/utils/scoreActions';
 import SubjectiveGradingPanel from '@/components/postexam/SubjectiveGradingPanel.vue';
 
@@ -173,8 +174,6 @@ import SubjectiveGradingPanel from '@/components/postexam/SubjectiveGradingPanel
  * 批改入口只按后端返回的考试状态渲染（≥ ENDED），冲突处理见 SubjectiveGradingPanel。
  */
 
-const PAGE_SIZE = 50;
-
 const questionColumns: TableColumnsType = [
   { title: '题号', key: 'number', dataIndex: 'number', width: 80 },
   { title: '题干', key: 'content', dataIndex: 'content' },
@@ -183,27 +182,13 @@ const questionColumns: TableColumnsType = [
   { title: '操作', key: 'actions', width: 100 },
 ];
 
-// ===== 考试选择（教师自己的考试，翻页拉够常用量级）=====
-const examPage = ref(1);
-const { data: examsData, isFetching: examsFetching } = useQuery({
-  queryKey: computed(() => ['exams', 'grading', examPage.value] as const),
-  queryFn: () =>
-    unwrap<ExamResponse[]>(
-      pageExams({
-        client,
-        throwOnError: true,
-        query: { page: examPage.value, size: PAGE_SIZE },
-      })
-    ),
-});
-
+// ===== 考试选择（教师自己的考试：统一走多页累积收口，见 useTeacherExams）=====
+const { data: examsData, isFetching: examsFetching } = useQuery(
+  createTeacherExamsQueryOptions((page, size) =>
+    unwrap<ExamResponse[]>(pageExams({ client, throwOnError: true, query: { page, size } }))
+  )
+);
 const exams = computed<ExamResponse[]>(() => examsData.value ?? []);
-// 分页信封无 total：当页满页就再拉一页，攒出完整候选（教师考试数量级有限）
-watch(exams, (list) => {
-  if (list.length === examPage.value * PAGE_SIZE) {
-    examPage.value += 1;
-  }
-});
 
 const examOptions = computed(() =>
   exams.value.map((e) => ({

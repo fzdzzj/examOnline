@@ -79,6 +79,7 @@ import {
   type ExamResponse,
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
+import { createTeacherExamsQueryOptions } from '@/hooks/useTeacherExams';
 
 /**
  * 缺考名单（阶段 23）：GET /api/exams/{id}/absences。
@@ -87,7 +88,6 @@ import { client, unwrap } from '@/api/apiClient';
  */
 
 const router = useRouter();
-const PAGE_SIZE = 50;
 
 const columns: TableColumnsType = [
   { title: '学生 ID', key: 'studentId', dataIndex: 'studentId', width: 100 },
@@ -100,14 +100,11 @@ function formatTime(value: string | undefined): string {
   return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '—';
 }
 
-const examPage = ref(1);
-const { data: examsData, isFetching: examsFetching } = useQuery({
-  queryKey: computed(() => ['exams', 'absences', examPage.value] as const),
-  queryFn: () =>
-    unwrap<ExamResponse[]>(
-      pageExams({ client, throwOnError: true, query: { page: examPage.value, size: PAGE_SIZE } })
-    ),
-});
+const { data: examsData, isFetching: examsFetching } = useQuery(
+  createTeacherExamsQueryOptions((page, size) =>
+    unwrap<ExamResponse[]>(pageExams({ client, throwOnError: true, query: { page, size } }))
+  )
+);
 const exams = computed<ExamResponse[]>(() => examsData.value ?? []);
 const examOptions = computed(() =>
   exams.value.map((e) => ({ value: e.id as number, label: `#${e.id} ${e.title}` }))
