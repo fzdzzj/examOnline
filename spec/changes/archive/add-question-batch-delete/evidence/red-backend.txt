@@ -1,0 +1,2768 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.exam:exam-online >------------------------
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (jacoco-prepare-agent) @ exam-online ---
+[INFO] argLine set to -javaagent:D:\\code\\examOnline\\.m2-repo\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\code\\examOnline\\target\\jacoco.exec,excludes=com/exam/ExamOnlineApplication.class:com/exam/**/dto/**:com/exam/**/entity/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ exam-online ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ exam-online ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ exam-online ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 74 source files with javac [debug parameters release 17] to target\test-classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/service/AbsenceServiceTest.java: 某些输入文件使用了未经检查或不安全的操作。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/service/AbsenceServiceTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ exam-online ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.exam.question.QuestionBatchDeleteIntegrationTest
+20:56:52.886 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.exam.question.QuestionBatchDeleteIntegrationTest]: QuestionBatchDeleteIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+20:56:53.170 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.exam.ExamOnlineApplication for test class com.exam.question.QuestionBatchDeleteIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-10-02 20:56:53.916 [main] [] [] INFO  c.e.q.QuestionBatchDeleteIntegrationTest - Starting QuestionBatchDeleteIntegrationTest using Java 21.0.9 with PID 29220 (started by fzdzzj in D:\code\examOnline)
+2026-10-02 20:56:53.919 [main] [] [] INFO  c.e.q.QuestionBatchDeleteIntegrationTest - The following 1 profile is active: "test"
+2026-10-02 20:56:59.172 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-02 20:56:59.175 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-02 20:56:59.254 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 62 ms. Found 0 Redis repository interfaces.
+2026-10-02 20:57:00.124 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig' of type [io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-02 20:57:00.135 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'mapConverter' of type [io.opentelemetry.instrumentation.spring.autoconfigure.internal.MapConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-02 20:57:00.909 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: DRAFT_CONFLICT -> DraftConflictEventCollector
+2026-10-02 20:57:00.911 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: PAGE_REFRESH -> PageRefreshEventCollector
+2026-10-02 20:57:00.911 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SUBMIT_ANOMALY -> SubmitAnomalyEventCollector
+2026-10-02 20:57:00.911 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SWITCH_SCREEN -> SwitchScreenEventCollector
+2026-10-02 20:57:00.911 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: WINDOW_BLUR -> WindowBlurEventCollector
+2026-10-02 20:57:00.972 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2026-10-02 20:57:01.349 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection conn0: url=jdbc:h2:mem:exam user=SA
+2026-10-02 20:57:01.352 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2026-10-02 20:57:01.355 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Starting...
+2026-10-02 20:57:01.357 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - slave - Added connection conn1: url=jdbc:h2:mem:exam user=SA
+2026-10-02 20:57:01.358 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Start completed.
+2026-10-02 20:57:01.358 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [slave] success
+2026-10-02 20:57:01.358 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2026-10-02 20:57:01.358 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [2] datasource,primary datasource named [master]
+2026-10-02 20:57:03.405 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: JUDGE -> JudgeGradingStrategy
+2026-10-02 20:57:03.407 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: MULTIPLE -> MultipleChoiceGradingStrategy
+2026-10-02 20:57:03.407 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SHORT_ANSWER -> ShortAnswerGradingStrategy
+2026-10-02 20:57:03.407 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SINGLE -> SingleChoiceGradingStrategy
+2026-10-02 20:57:05.965 [main] [] [] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-02 20:57:05.966 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-10-02 20:57:05.975 [main] [] [] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 3 endpoints beneath base path '/actuator'
+2026-10-02 20:57:05.992 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Completed initialization in 26 ms
+2026-10-02 20:57:06.122 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-02 20:57:06.138 [main] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused: getsockopt
+2026-10-02 20:57:06.150 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-02 20:57:06.165 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:632)
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726)
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2262)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2235)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2215)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1972)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1936)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1481)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1322)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.net.ConnectException: Connection refused: getsockopt
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:690)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:678)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:647)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:593)
+	... 12 common frames omitted
+2026-10-02 20:57:06.172 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-02 20:57:06.222 [main] [] [] INFO  c.e.q.QuestionBatchDeleteIntegrationTest - Started QuestionBatchDeleteIntegrationTest in 12.845 seconds (process running for 14.586)
+2026-10-02 20:57:06.612 [main] [] [] INFO  c.exam.config.RolePermissionInitializer - RBAC 角色/权限预置完成
+2026-10-02 20:57:06.719 [main] [] [] INFO  com.exam.config.AdminInitializer - 首次启动：已创建默认管理员 username=admin（请尽快通过环境变量 ADMIN_PASSWORD 修改）
+2026-10-02 20:57:06.721 [main] [] [] INFO  com.exam.config.ApplicationConfig - JWT_SECRET validated successfully (length: 58)
+2026-10-02 20:57:06.721 [main] [] [] INFO  com.exam.config.ApplicationConfig - Application configuration validated successfully
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\code\examOnline\.m2-repo\net\bytebuddy\byte-buddy-agent\1.17.7\byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-10-02 20:57:10.444 [main] [3a8cce07f0e540699e538a50c8f99d33] [ae36470270b8b2a9d832825b224cf01e] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-02 20:57:10.472 [main] [3a8cce07f0e540699e538a50c8f99d33] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (375ms)
+2026-10-02 20:57:10.539 [main] [1024e80fd17744f18b353f743685af2d] [32a009d5a391705e792e300371c755bf] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 MM5RSQ2W
+2026-10-02 20:57:10.543 [main] [1024e80fd17744f18b353f743685af2d] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (60ms)
+2026-10-02 20:57:10.789 [main] [187308f5553347909728318e62c3168a] [9e55b0f1161a4da5df8a4b7fcb263e57] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_1, inviteCode=MM5RSQ2W
+2026-10-02 20:57:10.790 [main] [187308f5553347909728318e62c3168a] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (246ms)
+2026-10-02 20:57:10.983 [main] [9868c19901174267878feec3e42c56f0] [37f3ae551063ef527f6cf355ba7e194b] INFO  com.exam.auth.service.AuthService - 用户 tea_1 登录成功，签发双 Token
+2026-10-02 20:57:10.984 [main] [9868c19901174267878feec3e42c56f0] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (192ms)
+2026-10-02 20:57:11.012 [main] [abef01103eae425a89d7d83c1501aeec] [20d45f021d039293c3bba0af3b226ee7] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=1 type=SINGLE
+2026-10-02 20:57:11.020 [main] [abef01103eae425a89d7d83c1501aeec] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (34ms)
+2026-10-02 20:57:11.027 [main] [d82eb9dad08f443eba5201a442aa449d] [1f568ebd034d02c0d049fee9d88915c0] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=2 type=SINGLE
+2026-10-02 20:57:11.028 [main] [d82eb9dad08f443eba5201a442aa449d] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (6ms)
+2026-10-02 20:57:11.039 [main] [6493dfafac9c42ef91822e83e45531b3] [96344d2b1f76fb31556b1d9ce67530b1] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=3 type=JUDGE
+2026-10-02 20:57:11.042 [main] [6493dfafac9c42ef91822e83e45531b3] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (12ms)
+2026-10-02 20:57:11.048 [main] [054fd2fdfbea4fcda88534159ec9dc5a] [] ERROR com.exam.common.GlobalExceptionHandler - Unhandled exception
+org.springframework.web.HttpRequestMethodNotSupportedException: Request method 'POST' is not supported
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.handleNoMatch(RequestMappingInfoHandlerMapping.java:267)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.lookupHandlerMethod(AbstractHandlerMethodMapping.java:441)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.getHandlerInternal(AbstractHandlerMethodMapping.java:382)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:127)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:68)
+	at org.springframework.web.servlet.handler.AbstractHandlerMapping.getHandler(AbstractHandlerMapping.java:509)
+	at org.springframework.web.servlet.DispatcherServlet.getHandler(DispatcherServlet.java:1284)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.getHandler(TestDispatcherServlet.java:123)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1065)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at io.opentelemetry.instrumentation.spring.webmvc.v6_0.WebMvcTelemetryProducingFilter.doFilterInternal(WebMvcTelemetryProducingFilter.java:58)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at com.exam.common.RequestIdFilter.doFilterInternal(RequestIdFilter.java:47)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:286)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteAllSuccessRemovesAllFromList(QuestionBatchDeleteIntegrationTest.java:135)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-02 20:57:11.056 [main] [054fd2fdfbea4fcda88534159ec9dc5a] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions/batch-delete -> 500 (14ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"3a8cce07f0e540699e538a50c8f99d33", X-Trace-Id:"ae36470270b8b2a9d832825b224cf01e", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjAwYzYwNTZmNTNlMzRhMWFhMzc0ZWQ1Y2MyZDc3ZWVlIiwiaWF0IjoxNzkwOTQ1ODMwLCJleHAiOjE3OTA5NDc2MzB9.ibezVO11IQDaAwHuziKKBjYhBYfChD9xtFH5iTfF_lE","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJhMDM5Y2Y5MTBhNzM0ODUwYjcwYzYyZjIyNTEwMmZjNiIsImlhdCI6MTc5MDk0NTgzMCwiZXhwIjoxNzkxNTUwNjMwfQ.cdvdvfgNWEV6YLy4NO9tHGnie-X-gv9g8dbUYiO1foM","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjAwYzYwNTZmNTNlMzRhMWFhMzc0ZWQ1Y2MyZDc3ZWVlIiwiaWF0IjoxNzkwOTQ1ODMwLCJleHAiOjE3OTA5NDc2MzB9.ibezVO11IQDaAwHuziKKBjYhBYfChD9xtFH5iTfF_lE", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"1024e80fd17744f18b353f743685af2d", X-Trace-Id:"32a009d5a391705e792e300371c755bf", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"code":"MM5RSQ2W","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-02T20:57:10.5384707"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_1","password":"Pass1234","name":"教师-tea_1","email":"tea_1@test.com","roleType":"TEACHER","inviteCode":"MM5RSQ2W"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"187308f5553347909728318e62c3168a", X-Trace-Id:"9e55b0f1161a4da5df8a4b7fcb263e57", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_1","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"9868c19901174267878feec3e42c56f0", X-Trace-Id:"37f3ae551063ef527f6cf355ba7e194b", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNGJjMDZkN2YwNmQxNGRhNjgwODc5OWY3Njk5MDhjOWQiLCJpYXQiOjE3OTA5NDU4MzAsImV4cCI6MTc5MDk0NzYzMH0.6iKDVFU4iW_0_5hs0zDxmDXt0MQY1FRMkfbokZIhdPA","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJmZTljOGM2ZWIzNmI0OGFhYjk2NTNjMTFmMzAwMzEzNCIsImlhdCI6MTc5MDk0NTgzMCwiZXhwIjoxNzkxNTUwNjMwfQ.GtkgiOFS130srz1pvOU--zxS-9lDz5M-2hQK6uqlDqU","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNGJjMDZkN2YwNmQxNGRhNjgwODc5OWY3Njk5MDhjOWQiLCJpYXQiOjE3OTA5NDU4MzAsImV4cCI6MTc5MDk0NzYzMH0.6iKDVFU4iW_0_5hs0zDxmDXt0MQY1FRMkfbokZIhdPA", Content-Length:"111"]
+             Body = {"type":1,"content":"全成甲","correctAnswer":"A","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"abef01103eae425a89d7d83c1501aeec", X-Trace-Id:"20d45f021d039293c3bba0af3b226ee7", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"type":1,"typeName":"单选","content":"全成甲","choices":["A选项","B选项"],"correctAnswer":"A","score":5.0,"difficulty":1,"tags":[],"createdBy":2,"createdTime":"2026-10-02T20:57:11.0108876","updatedTime":"2026-10-02T20:57:11.0108876"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNGJjMDZkN2YwNmQxNGRhNjgwODc5OWY3Njk5MDhjOWQiLCJpYXQiOjE3OTA5NDU4MzAsImV4cCI6MTc5MDk0NzYzMH0.6iKDVFU4iW_0_5hs0zDxmDXt0MQY1FRMkfbokZIhdPA", Content-Length:"111"]
+             Body = {"type":1,"content":"全成乙","correctAnswer":"B","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"d82eb9dad08f443eba5201a442aa449d", X-Trace-Id:"1f568ebd034d02c0d049fee9d88915c0", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"type":1,"typeName":"单选","content":"全成乙","choices":["A选项","B选项"],"correctAnswer":"B","score":5.0,"difficulty":1,"tags":[],"createdBy":2,"createdTime":"2026-10-02T20:57:11.0274339","updatedTime":"2026-10-02T20:57:11.0274339"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNGJjMDZkN2YwNmQxNGRhNjgwODc5OWY3Njk5MDhjOWQiLCJpYXQiOjE3OTA5NDU4MzAsImV4cCI6MTc5MDk0NzYzMH0.6iKDVFU4iW_0_5hs0zDxmDXt0MQY1FRMkfbokZIhdPA", Content-Length:"81"]
+             Body = {"type":3,"content":"全成丙","correctAnswer":"对","score":5.0,"difficulty":1}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"6493dfafac9c42ef91822e83e45531b3", X-Trace-Id:"96344d2b1f76fb31556b1d9ce67530b1", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":3,"type":3,"typeName":"判断","content":"全成丙","choices":[],"correctAnswer":"T","score":5.0,"difficulty":1,"tags":[],"createdBy":2,"createdTime":"2026-10-02T20:57:11.0394943","updatedTime":"2026-10-02T20:57:11.0394943"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions/batch-delete
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNGJjMDZkN2YwNmQxNGRhNjgwODc5OWY3Njk5MDhjOWQiLCJpYXQiOjE3OTA5NDU4MzAsImV4cCI6MTc5MDk0NzYzMH0.6iKDVFU4iW_0_5hs0zDxmDXt0MQY1FRMkfbokZIhdPA", Content-Length:"15"]
+             Body = {"ids":[1,2,3]}
+    Session Attrs = {}
+
+Handler:
+             Type = null
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = org.springframework.web.HttpRequestMethodNotSupportedException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 500
+    Error message = null
+          Headers = [X-Request-Id:"054fd2fdfbea4fcda88534159ec9dc5a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":500,"message":"系统内部错误"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-02 20:57:11.165 [main] [7781a912cfc04451a2ed0de28c8b4b27] [da36ac3df4fe627bcdc1492b061b9930] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-02 20:57:11.167 [main] [7781a912cfc04451a2ed0de28c8b4b27] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (76ms)
+2026-10-02 20:57:11.178 [main] [3cf577cfb2134f938f45649ca4bf79f4] [a58dfa538da4bf68e3f27342ff6bac1c] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 3FM4MD2J
+2026-10-02 20:57:11.181 [main] [3cf577cfb2134f938f45649ca4bf79f4] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (13ms)
+2026-10-02 20:57:11.281 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-10-02 20:57:11.285 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@3d4d0260: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-10-02 20:57:11.287 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-02 20:57:11.312 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-10-02 20:57:11.312 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-02 20:57:11.428 [main] [7746dcf3d0f84734b715486a5f34ae16] [7befcd17ffb59297eaf7fbf166844cbf] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_2, inviteCode=3FM4MD2J
+2026-10-02 20:57:11.430 [main] [7746dcf3d0f84734b715486a5f34ae16] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (248ms)
+2026-10-02 20:57:11.665 [main] [2f2fcd107de2414abe62fa4043899aea] [606ff4085c4cb10985ff59b4d00ea5ec] INFO  com.exam.auth.service.AuthService - 用户 tea_2 登录成功，签发双 Token
+2026-10-02 20:57:11.666 [main] [2f2fcd107de2414abe62fa4043899aea] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (236ms)
+2026-10-02 20:57:11.736 [main] [34a48384bea04d6cb36c28398c5baa5d] [7a834ddb37d169bba8089f2489e0763b] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-02 20:57:11.737 [main] [34a48384bea04d6cb36c28398c5baa5d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (71ms)
+2026-10-02 20:57:11.743 [main] [4db30baa4edc41198f1bad95b3c1e3e1] [e8e4ca0cb34dff7672b14e97de6ed793] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 ZKQYDJ2X
+2026-10-02 20:57:11.745 [main] [4db30baa4edc41198f1bad95b3c1e3e1] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (6ms)
+2026-10-02 20:57:11.970 [main] [c646e34af2d34b028f46cc28d00dd2bc] [80afb9035c38ddef39f68590ee0456d7] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_3, inviteCode=ZKQYDJ2X
+2026-10-02 20:57:11.970 [main] [c646e34af2d34b028f46cc28d00dd2bc] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (224ms)
+2026-10-02 20:57:12.192 [main] [59ec018152e848d1aad1a430c55da2b7] [d16c2220ffab13d81a70b7847a46b7d9] INFO  com.exam.auth.service.AuthService - 用户 tea_3 登录成功，签发双 Token
+2026-10-02 20:57:12.193 [main] [59ec018152e848d1aad1a430c55da2b7] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (222ms)
+2026-10-02 20:57:12.202 [main] [b12aa1e353324424883d9ac973e37ae1] [d39f6f0a2488619f6f5cbcdc5e937050] INFO  c.exam.question.service.QuestionService - 教师 4 创建题目 id=4 type=SINGLE
+2026-10-02 20:57:12.203 [main] [b12aa1e353324424883d9ac973e37ae1] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (8ms)
+2026-10-02 20:57:12.205 [main] [4ffc70b0795649f5a6e70c4e7ddbd3a4] [] ERROR com.exam.common.GlobalExceptionHandler - Unhandled exception
+org.springframework.web.HttpRequestMethodNotSupportedException: Request method 'POST' is not supported
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.handleNoMatch(RequestMappingInfoHandlerMapping.java:267)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.lookupHandlerMethod(AbstractHandlerMethodMapping.java:441)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.getHandlerInternal(AbstractHandlerMethodMapping.java:382)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:127)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:68)
+	at org.springframework.web.servlet.handler.AbstractHandlerMapping.getHandler(AbstractHandlerMapping.java:509)
+	at org.springframework.web.servlet.DispatcherServlet.getHandler(DispatcherServlet.java:1284)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.getHandler(TestDispatcherServlet.java:123)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1065)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at io.opentelemetry.instrumentation.spring.webmvc.v6_0.WebMvcTelemetryProducingFilter.doFilterInternal(WebMvcTelemetryProducingFilter.java:58)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at com.exam.common.RequestIdFilter.doFilterInternal(RequestIdFilter.java:47)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:286)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteAllFailedDeletesNothing(QuestionBatchDeleteIntegrationTest.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-02 20:57:12.207 [main] [4ffc70b0795649f5a6e70c4e7ddbd3a4] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions/batch-delete -> 500 (3ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"7781a912cfc04451a2ed0de28c8b4b27", X-Trace-Id:"da36ac3df4fe627bcdc1492b061b9930", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImY4ODc2YWJiMjIyOTRjNTk4YTk5NTkwMzAzZGVjMTEzIiwiaWF0IjoxNzkwOTQ1ODMxLCJleHAiOjE3OTA5NDc2MzF9.TptxHZyGhddrATVF9lEM7mWW6oUpP9gwkrVUYsbAqto","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiIwN2M3YTIzODMzMjY0ZmQ5OGE1OGM4YmZhYTA1NDhmZSIsImlhdCI6MTc5MDk0NTgzMSwiZXhwIjoxNzkxNTUwNjMxfQ.qXFAYzgdHw6dP1ZOKFy6JnO-S41ucG3ayD0aOLemWjs","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImY4ODc2YWJiMjIyOTRjNTk4YTk5NTkwMzAzZGVjMTEzIiwiaWF0IjoxNzkwOTQ1ODMxLCJleHAiOjE3OTA5NDc2MzF9.TptxHZyGhddrATVF9lEM7mWW6oUpP9gwkrVUYsbAqto", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"3cf577cfb2134f938f45649ca4bf79f4", X-Trace-Id:"a58dfa538da4bf68e3f27342ff6bac1c", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"code":"3FM4MD2J","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-02T20:57:11.1779245"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_2","password":"Pass1234","name":"教师-tea_2","email":"tea_2@test.com","roleType":"TEACHER","inviteCode":"3FM4MD2J"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"7746dcf3d0f84734b715486a5f34ae16", X-Trace-Id:"7befcd17ffb59297eaf7fbf166844cbf", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_2","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"2f2fcd107de2414abe62fa4043899aea", X-Trace-Id:"606ff4085c4cb10985ff59b4d00ea5ec", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzIiLCJuYW1lIjoi5pWZ5biILXRlYV8yIiwiZW1haWwiOiJ0ZWFfMkB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMGI5OGIzNWFhZDdmNDkyYjllYzlkMWY2MGQyYWU3YzEiLCJpYXQiOjE3OTA5NDU4MzEsImV4cCI6MTc5MDk0NzYzMX0.vJiKgXrB_epZYRTgo2Q9mazr_0L7e8J7TYYPg3aCYqk","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiIzYWQzZjAwZDg0N2Q0MWJmOTlhYmI1MzliOTYzOTJlZSIsImlhdCI6MTc5MDk0NTgzMSwiZXhwIjoxNzkxNTUwNjMxfQ.Ed6OHoTHfe-lsmCSZoRSpJUC-rNmhLDWNiSWzVzVMm4","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"34a48384bea04d6cb36c28398c5baa5d", X-Trace-Id:"7a834ddb37d169bba8089f2489e0763b", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjgzMjdkZWNmMzVkMzRhMmRiMDA1MjA2ZDZkYWZmYTUwIiwiaWF0IjoxNzkwOTQ1ODMxLCJleHAiOjE3OTA5NDc2MzF9.Yqq1rtQfhj2hwGbT4lqhHr_-Pjg2T8CFQoXxmdreV9s","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJhNTMzNzZkZjUwMjM0MWZhOTRkMGJjNGVhZDdmMTgwZSIsImlhdCI6MTc5MDk0NTgzMSwiZXhwIjoxNzkxNTUwNjMxfQ.Q_3hKr4N7KwQYBP2y9yxQCdyhId9aSC5z45j9MRj60Q","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjgzMjdkZWNmMzVkMzRhMmRiMDA1MjA2ZDZkYWZmYTUwIiwiaWF0IjoxNzkwOTQ1ODMxLCJleHAiOjE3OTA5NDc2MzF9.Yqq1rtQfhj2hwGbT4lqhHr_-Pjg2T8CFQoXxmdreV9s", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"4db30baa4edc41198f1bad95b3c1e3e1", X-Trace-Id:"e8e4ca0cb34dff7672b14e97de6ed793", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":3,"code":"ZKQYDJ2X","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-02T20:57:11.7439214"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_3","password":"Pass1234","name":"教师-tea_3","email":"tea_3@test.com","roleType":"TEACHER","inviteCode":"ZKQYDJ2X"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"c646e34af2d34b028f46cc28d00dd2bc", X-Trace-Id:"80afb9035c38ddef39f68590ee0456d7", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_3","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"59ec018152e848d1aad1a430c55da2b7", X-Trace-Id:"d16c2220ffab13d81a70b7847a46b7d9", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzMiLCJuYW1lIjoi5pWZ5biILXRlYV8zIiwiZW1haWwiOiJ0ZWFfM0B0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNDYxOTU1OTUyZmZjNGUzNGI5Y2M5OWQzOTI0ZDc3NGQiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.6DD6HRR-Qn6h0HxEI4t3tqKVqFRPFAyvRJekDxU9HzM","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJlMzE4ZTM1NjRlMWY0ZTZlODk1NTg1OGQ3YzRlYjBiMCIsImlhdCI6MTc5MDk0NTgzMiwiZXhwIjoxNzkxNTUwNjMyfQ.sv3ywfeZxIlTJs05WyXEJH0OZtgGsXWVFGPYsKATDcE","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzMiLCJuYW1lIjoi5pWZ5biILXRlYV8zIiwiZW1haWwiOiJ0ZWFfM0B0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNDYxOTU1OTUyZmZjNGUzNGI5Y2M5OWQzOTI0ZDc3NGQiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.6DD6HRR-Qn6h0HxEI4t3tqKVqFRPFAyvRJekDxU9HzM", Content-Length:"114"]
+             Body = {"type":1,"content":"他人题目","correctAnswer":"A","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"b12aa1e353324424883d9ac973e37ae1", X-Trace-Id:"d39f6f0a2488619f6f5cbcdc5e937050", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":4,"type":1,"typeName":"单选","content":"他人题目","choices":["A选项","B选项"],"correctAnswer":"A","score":5.0,"difficulty":1,"tags":[],"createdBy":4,"createdTime":"2026-10-02T20:57:12.2016988","updatedTime":"2026-10-02T20:57:12.2016988"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions/batch-delete
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzIiLCJuYW1lIjoi5pWZ5biILXRlYV8yIiwiZW1haWwiOiJ0ZWFfMkB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMGI5OGIzNWFhZDdmNDkyYjllYzlkMWY2MGQyYWU3YzEiLCJpYXQiOjE3OTA5NDU4MzEsImV4cCI6MTc5MDk0NzYzMX0.vJiKgXrB_epZYRTgo2Q9mazr_0L7e8J7TYYPg3aCYqk", Content-Length:"21"]
+             Body = {"ids":[4,999999998]}
+    Session Attrs = {}
+
+Handler:
+             Type = null
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = org.springframework.web.HttpRequestMethodNotSupportedException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 500
+    Error message = null
+          Headers = [X-Request-Id:"4ffc70b0795649f5a6e70c4e7ddbd3a4", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":500,"message":"系统内部错误"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-02 20:57:12.300 [main] [6fa3138ec3494e6fb79326fe038ade9f] [b61d6e1740ad637f40b229ec5b7efa47] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-02 20:57:12.302 [main] [6fa3138ec3494e6fb79326fe038ade9f] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (81ms)
+2026-10-02 20:57:12.313 [main] [058cdfc784b644a78e672f91269ff928] [c72f1d4dd453f4a615db8d5607211173] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 BUHYT7GC
+2026-10-02 20:57:12.315 [main] [058cdfc784b644a78e672f91269ff928] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (11ms)
+2026-10-02 20:57:12.570 [main] [5f620ac65d7a4aa3aeba803883f335a0] [c1fb4f1b47b88fe613a5737a3217d377] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_4, inviteCode=BUHYT7GC
+2026-10-02 20:57:12.571 [main] [5f620ac65d7a4aa3aeba803883f335a0] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (254ms)
+2026-10-02 20:57:12.757 [main] [2f08c20c52da42da97adedcb33755bbf] [2468085375514834ca3331690cd10678] INFO  com.exam.auth.service.AuthService - 用户 tea_4 登录成功，签发双 Token
+2026-10-02 20:57:12.758 [main] [2f08c20c52da42da97adedcb33755bbf] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (186ms)
+2026-10-02 20:57:12.816 [main] [a2f0407a718546209435becce85023fc] [6a34738663e3975a712dd13ced05c33a] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-02 20:57:12.817 [main] [a2f0407a718546209435becce85023fc] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (58ms)
+2026-10-02 20:57:12.821 [main] [c89db3d142a74a54a6f0a7c7eb79b7ce] [ba0b3c7f441f94602aa6563f0a22a49c] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 ND8VWFRC
+2026-10-02 20:57:12.822 [main] [c89db3d142a74a54a6f0a7c7eb79b7ce] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (5ms)
+2026-10-02 20:57:13.021 [main] [18e6a44f64b04356815a5db0a284a58c] [df834b6f06787d1b3a8229fe0b700cd7] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_5, inviteCode=ND8VWFRC
+2026-10-02 20:57:13.023 [main] [18e6a44f64b04356815a5db0a284a58c] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (201ms)
+2026-10-02 20:57:13.216 [main] [202397da37bf419caeaca69f48100eaf] [16023db068292eb4fc6d8c1eb6701bed] INFO  com.exam.auth.service.AuthService - 用户 tea_5 登录成功，签发双 Token
+2026-10-02 20:57:13.216 [main] [202397da37bf419caeaca69f48100eaf] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (192ms)
+2026-10-02 20:57:13.225 [main] [3fd0edab166c4a79b3893bdfd5488d29] [b753a74944cd1ba013e1b6e97ccc7dd8] INFO  c.exam.question.service.QuestionService - 教师 5 创建题目 id=5 type=SINGLE
+2026-10-02 20:57:13.227 [main] [3fd0edab166c4a79b3893bdfd5488d29] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (10ms)
+2026-10-02 20:57:13.235 [main] [10ed0ec969fc4d7388a34a469cd446f2] [99714b0ed99ebe69a08b039a36b37ed7] INFO  c.exam.question.service.QuestionService - 教师 5 创建题目 id=6 type=JUDGE
+2026-10-02 20:57:13.236 [main] [10ed0ec969fc4d7388a34a469cd446f2] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (9ms)
+2026-10-02 20:57:13.241 [main] [ed8df6fa865b43bca2e7260ebb1e8bec] [b4dc1d4d28d106cf974657f748f1cbd6] INFO  c.exam.question.service.QuestionService - 教师 5 创建题目 id=7 type=SINGLE
+2026-10-02 20:57:13.242 [main] [ed8df6fa865b43bca2e7260ebb1e8bec] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (6ms)
+2026-10-02 20:57:13.248 [main] [2248dd80eac842caac9ed8e0f29e9fef] [3ccf400832cfeb6f252a17650d320918] INFO  c.exam.question.service.QuestionService - 教师 6 创建题目 id=8 type=SINGLE
+2026-10-02 20:57:13.249 [main] [2248dd80eac842caac9ed8e0f29e9fef] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (7ms)
+2026-10-02 20:57:13.258 [main] [6ae99b2bea10497fb4c6e0f68d919e66] [fb9f7873700f9bb84c3564e1c6c50377] INFO  c.exam.question.service.QuestionService - 教师 5 创建题目 id=9 type=MULTIPLE
+2026-10-02 20:57:13.260 [main] [6ae99b2bea10497fb4c6e0f68d919e66] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (9ms)
+2026-10-02 20:57:13.275 [main] [350c5844d3c24fcab7f33882f7fb4b0f] [3bec93ff03576c26b04424fb074c4caf] INFO  c.exam.question.service.QuestionService - 题目软删除: id=9
+2026-10-02 20:57:13.276 [main] [350c5844d3c24fcab7f33882f7fb4b0f] [] INFO  com.exam.common.RequestIdFilter - DELETE /api/questions/9 -> 200 (15ms)
+2026-10-02 20:57:13.289 [main] [8aa0f76518ed47c5bce68e7dcea785be] [7dd097828054dc6767bc48a4326cf869] INFO  com.exam.paper.service.PaperService - 教师 5 创建试卷 id=1 total=5.0
+2026-10-02 20:57:13.293 [main] [8aa0f76518ed47c5bce68e7dcea785be] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (16ms)
+2026-10-02 20:57:13.317 [main] [3cecd5c90e7c43b5b04ba976e91c41d4] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/1/questions -> 200 (24ms)
+2026-10-02 20:57:13.338 [main] [fbf6cc47953f453fb6bbf28bc7090a1a] [633aab75d822f8f2a0fba344ea700af2] INFO  com.exam.exam.service.ExamService - 教师 5 创建考试 id=1 paperId=1 窗口 2026-10-02T20:56:13.318605600 ~ 2026-10-02T22:57:13.318605600 时长 30 分钟
+2026-10-02 20:57:13.341 [main] [fbf6cc47953f453fb6bbf28bc7090a1a] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (23ms)
+2026-10-02 20:57:13.355 [main] [e47893deb50d4710b4befc2dbf9f7682] [96e116c82223cb79509e5ce3f657c309] INFO  c.exam.exam.service.ExamSnapshotService - 考试 1 发布生成快照 id=1（1 题）
+2026-10-02 20:57:13.358 [main] [e47893deb50d4710b4befc2dbf9f7682] [96e116c82223cb79509e5ce3f657c309] INFO  com.exam.exam.service.ExamService - 考试 1 发布（学生可见），等待定时开考
+2026-10-02 20:57:13.368 [main] [e47893deb50d4710b4befc2dbf9f7682] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/publish -> 200 (27ms)
+2026-10-02 20:57:13.373 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试 1 定时迁移 0 -> 1
+2026-10-02 20:57:13.380 [main] [98aa13aa366e4f3486da58f0c67f48a2] [] ERROR com.exam.common.GlobalExceptionHandler - Unhandled exception
+org.springframework.web.HttpRequestMethodNotSupportedException: Request method 'POST' is not supported
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.handleNoMatch(RequestMappingInfoHandlerMapping.java:267)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.lookupHandlerMethod(AbstractHandlerMethodMapping.java:441)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.getHandlerInternal(AbstractHandlerMethodMapping.java:382)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:127)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:68)
+	at org.springframework.web.servlet.handler.AbstractHandlerMapping.getHandler(AbstractHandlerMapping.java:509)
+	at org.springframework.web.servlet.DispatcherServlet.getHandler(DispatcherServlet.java:1284)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.getHandler(TestDispatcherServlet.java:123)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1065)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at io.opentelemetry.instrumentation.spring.webmvc.v6_0.WebMvcTelemetryProducingFilter.doFilterInternal(WebMvcTelemetryProducingFilter.java:58)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at com.exam.common.RequestIdFilter.doFilterInternal(RequestIdFilter.java:47)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:286)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeletePartialSuccessOnlyCompliantSubsetDeleted(QuestionBatchDeleteIntegrationTest.java:108)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-02 20:57:13.383 [main] [98aa13aa366e4f3486da58f0c67f48a2] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions/batch-delete -> 500 (4ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"6fa3138ec3494e6fb79326fe038ade9f", X-Trace-Id:"b61d6e1740ad637f40b229ec5b7efa47", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImYyZTQ1NzkyNDQ2ZjQ2NmE4MzkzYzg5MTY2YmM3YWVlIiwiaWF0IjoxNzkwOTQ1ODMyLCJleHAiOjE3OTA5NDc2MzJ9.Nwdmk_gEh8EQgi33EnD6HJGk2AZaKI9YVtZa2dTg5pg","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiI2NDE1MTNjMDRhMzg0ZGIwYTkzNGFmMjY5NTI2YTlhNyIsImlhdCI6MTc5MDk0NTgzMiwiZXhwIjoxNzkxNTUwNjMyfQ.BVMG-enLCZ3q-dURCjYTu_3he_nH6OU1wvstJ70MDOo","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImYyZTQ1NzkyNDQ2ZjQ2NmE4MzkzYzg5MTY2YmM3YWVlIiwiaWF0IjoxNzkwOTQ1ODMyLCJleHAiOjE3OTA5NDc2MzJ9.Nwdmk_gEh8EQgi33EnD6HJGk2AZaKI9YVtZa2dTg5pg", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"058cdfc784b644a78e672f91269ff928", X-Trace-Id:"c72f1d4dd453f4a615db8d5607211173", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":4,"code":"BUHYT7GC","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-02T20:57:12.3126219"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_4","password":"Pass1234","name":"教师-tea_4","email":"tea_4@test.com","roleType":"TEACHER","inviteCode":"BUHYT7GC"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"5f620ac65d7a4aa3aeba803883f335a0", X-Trace-Id:"c1fb4f1b47b88fe613a5737a3217d377", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_4","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"2f08c20c52da42da97adedcb33755bbf", X-Trace-Id:"2468085375514834ca3331690cd10678", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJiOGFjMmJjM2FlNjI0ZjA3OWU4MDg0YzAxZDM0NzU2YyIsImlhdCI6MTc5MDk0NTgzMiwiZXhwIjoxNzkxNTUwNjMyfQ.ozAI8N2cu9os_hNgz77J7JHp9wwUWTS5tQqkMDmfoTg","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"a2f0407a718546209435becce85023fc", X-Trace-Id:"6a34738663e3975a712dd13ced05c33a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjNlYzMwODgxMmY4MDQ0MWZhMWIwNjM4YjQ1ZGY5MTI5IiwiaWF0IjoxNzkwOTQ1ODMyLCJleHAiOjE3OTA5NDc2MzJ9.KOi6HZIXCvrkmxu1cHpCdkvk-FG0VxPEsbU2hcTxImE","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJmMjFjODFhODRjYjI0OTFjOGE4MDc0NTZiYmRmNmQwMyIsImlhdCI6MTc5MDk0NTgzMiwiZXhwIjoxNzkxNTUwNjMyfQ.iw46yldPurdyG99xjm5cN8osneNjUXrQbItDSXovEtI","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjNlYzMwODgxMmY4MDQ0MWZhMWIwNjM4YjQ1ZGY5MTI5IiwiaWF0IjoxNzkwOTQ1ODMyLCJleHAiOjE3OTA5NDc2MzJ9.KOi6HZIXCvrkmxu1cHpCdkvk-FG0VxPEsbU2hcTxImE", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"c89db3d142a74a54a6f0a7c7eb79b7ce", X-Trace-Id:"ba0b3c7f441f94602aa6563f0a22a49c", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":5,"code":"ND8VWFRC","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-02T20:57:12.8209751"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_5","password":"Pass1234","name":"教师-tea_5","email":"tea_5@test.com","roleType":"TEACHER","inviteCode":"ND8VWFRC"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"18e6a44f64b04356815a5db0a284a58c", X-Trace-Id:"df834b6f06787d1b3a8229fe0b700cd7", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_5","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"202397da37bf419caeaca69f48100eaf", X-Trace-Id:"16023db068292eb4fc6d8c1eb6701bed", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiZjE5OWI4MmQyZDM2NGU3ZGFjNGRkMDc0ODVmN2ExNjQiLCJpYXQiOjE3OTA5NDU4MzMsImV4cCI6MTc5MDk0NzYzM30.L4SVJu5NdWUGHeT7PZjIIes3R_GqX-lULL3KRGhPcjA","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiI0MzMzODg2NjZmZWY0YzBhOWJhNmVlNTI5YmYzY2QxNyIsImlhdCI6MTc5MDk0NTgzMywiZXhwIjoxNzkxNTUwNjMzfQ.xXRXzrcvxJzXIFk4pfNiATe5B48xkrF9wZWVY7rYPyw","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI", Content-Length:"114"]
+             Body = {"type":1,"content":"批量删甲","correctAnswer":"A","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"3fd0edab166c4a79b3893bdfd5488d29", X-Trace-Id:"b753a74944cd1ba013e1b6e97ccc7dd8", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":5,"type":1,"typeName":"单选","content":"批量删甲","choices":["A选项","B选项"],"correctAnswer":"A","score":5.0,"difficulty":1,"tags":[],"createdBy":5,"createdTime":"2026-10-02T20:57:13.2237645","updatedTime":"2026-10-02T20:57:13.2237645"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI", Content-Length:"84"]
+             Body = {"type":3,"content":"批量删乙","correctAnswer":"对","score":5.0,"difficulty":1}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"10ed0ec969fc4d7388a34a469cd446f2", X-Trace-Id:"99714b0ed99ebe69a08b039a36b37ed7", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":6,"type":3,"typeName":"判断","content":"批量删乙","choices":[],"correctAnswer":"T","score":5.0,"difficulty":1,"tags":[],"createdBy":5,"createdTime":"2026-10-02T20:57:13.2343564","updatedTime":"2026-10-02T20:57:13.2343564"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI", Content-Length:"126"]
+             Body = {"type":1,"content":"被进行中考试引用","correctAnswer":"A","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"ed8df6fa865b43bca2e7260ebb1e8bec", X-Trace-Id:"b4dc1d4d28d106cf974657f748f1cbd6", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":7,"type":1,"typeName":"单选","content":"被进行中考试引用","choices":["A选项","B选项"],"correctAnswer":"A","score":5.0,"difficulty":1,"tags":[],"createdBy":5,"createdTime":"2026-10-02T20:57:13.2404091","updatedTime":"2026-10-02T20:57:13.2404091"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiZjE5OWI4MmQyZDM2NGU3ZGFjNGRkMDc0ODVmN2ExNjQiLCJpYXQiOjE3OTA5NDU4MzMsImV4cCI6MTc5MDk0NzYzM30.L4SVJu5NdWUGHeT7PZjIIes3R_GqX-lULL3KRGhPcjA", Content-Length:"118"]
+             Body = {"type":1,"content":"教师B的题目","correctAnswer":"B","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"2248dd80eac842caac9ed8e0f29e9fef", X-Trace-Id:"3ccf400832cfeb6f252a17650d320918", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":8,"type":1,"typeName":"单选","content":"教师B的题目","choices":["A选项","B选项"],"correctAnswer":"B","score":5.0,"difficulty":1,"tags":[],"createdBy":6,"createdTime":"2026-10-02T20:57:13.2464531","updatedTime":"2026-10-02T20:57:13.2464531"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI", Content-Length:"122"]
+             Body = {"type":2,"content":"先走单删的题","correctAnswer":"A,B","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"6ae99b2bea10497fb4c6e0f68d919e66", X-Trace-Id:"fb9f7873700f9bb84c3564e1c6c50377", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":9,"type":2,"typeName":"多选","content":"先走单删的题","choices":["A选项","B选项"],"correctAnswer":"A,B","score":5.0,"difficulty":1,"tags":[],"createdBy":5,"createdTime":"2026-10-02T20:57:13.2578158","updatedTime":"2026-10-02T20:57:13.2578158"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = DELETE
+      Request URI = /api/questions/9
+       Parameters = {}
+          Headers = [Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#delete(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"350c5844d3c24fcab7f33882f7fb4b0f", X-Trace-Id:"3bec93ff03576c26b04424fb074c4caf", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI", Content-Length:"37"]
+             Body = {"title":"试卷-6","totalScore":5.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#create(PaperCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"8aa0f76518ed47c5bce68e7dcea785be", X-Trace-Id:"7dd097828054dc6767bc48a4326cf869", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"title":"试卷-6","description":"","totalScore":5.0,"questionCount":0,"status":0,"createdBy":5,"createdTime":"2026-10-02T20:57:13.2889186"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers/1/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI", Content-Length:"26"]
+             Body = {"questionId":7,"score":5}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#addQuestion(Long, AddPaperQuestionRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"3cecd5c90e7c43b5b04ba976e91c41d4", X-Trace-Id:"fb8c6fc1b33b5ad4b968745bde7dc68b", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"questionId":7,"number":1,"score":5,"questionType":1,"content":"被进行中考试引用","choices":["A选项","B选项"],"correctAnswer":"A","defaultScore":5.0,"questionDeleted":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI", Content-Length:"139"]
+             Body = {"title":"考试-7","paperId":1,"startTime":"2026-10-02T20:56:13.318605600","endTime":"2026-10-02T22:57:13.318605600","durationMinutes":30}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.exam.controller.ExamController
+           Method = com.exam.exam.controller.ExamController#create(ExamCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"fbf6cc47953f453fb6bbf28bc7090a1a", X-Trace-Id:"633aab75d822f8f2a0fba344ea700af2", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"title":"考试-7","paperId":1,"startTime":"2026-10-02T20:56:13.3186056","endTime":"2026-10-02T22:57:13.3186056","durationMinutes":30,"allowLateMinutes":0,"status":0,"published":0,"forceEnd":0,"createdBy":5,"createdTime":"2026-10-02T20:57:13.3377152"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams/1/publish
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.exam.controller.ExamController
+           Method = com.exam.exam.controller.ExamController#publish(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"e47893deb50d4710b4befc2dbf9f7682", X-Trace-Id:"96e116c82223cb79509e5ce3f657c309", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"title":"考试-7","description":"","paperId":1,"paperTitle":"试卷-6","startTime":"2026-10-02T20:56:13.318606","endTime":"2026-10-02T22:57:13.318606","durationMinutes":30,"allowLateMinutes":0,"status":0,"published":1,"forceEnd":0,"snapshotId":1,"createdBy":5,"createdTime":"2026-10-02T20:57:13.337715","updatedTime":"2026-10-02T20:57:13.337715"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions/batch-delete
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzQiLCJuYW1lIjoi5pWZ5biILXRlYV80IiwiZW1haWwiOiJ0ZWFfNEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMzkzMGVhMDkwZTQ0NDU3NWIzMWJiYzc3YmM1OGIxOTYiLCJpYXQiOjE3OTA5NDU4MzIsImV4cCI6MTc5MDk0NzYzMn0.9StHhlE94VzohgamoOcqXlg8MN3yjUNcje4MwGB7etI", Content-Length:"29"]
+             Body = {"ids":[5,7,8,9,999999999,6]}
+    Session Attrs = {}
+
+Handler:
+             Type = null
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = org.springframework.web.HttpRequestMethodNotSupportedException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 500
+    Error message = null
+          Headers = [X-Request-Id:"98aa13aa366e4f3486da58f0c67f48a2", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":500,"message":"系统内部错误"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-02 20:57:13.455 [main] [d88873c75ee3499587f7289d807d5ee6] [b31424a876e7dffabc8fdcecb365c23a] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-02 20:57:13.457 [main] [d88873c75ee3499587f7289d807d5ee6] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (65ms)
+2026-10-02 20:57:13.462 [main] [a0841b299c9d4980825db283b854591f] [4f2856a392fe3a5f975576c5f0aee0d2] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 FJ65GEFD
+2026-10-02 20:57:13.463 [main] [a0841b299c9d4980825db283b854591f] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (6ms)
+2026-10-02 20:57:13.641 [main] [0ac4c27404684208b76a817ea853503c] [78600e69c9caf4193bbff2d9590e85b1] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_8, inviteCode=FJ65GEFD
+2026-10-02 20:57:13.641 [main] [0ac4c27404684208b76a817ea853503c] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (177ms)
+2026-10-02 20:57:13.853 [main] [c8dc00eb1dd34804a561e2b91abf67d0] [346395ea399d82d44604d4d2fdd7c2a8] INFO  com.exam.auth.service.AuthService - 用户 tea_8 登录成功，签发双 Token
+2026-10-02 20:57:13.855 [main] [c8dc00eb1dd34804a561e2b91abf67d0] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (213ms)
+2026-10-02 20:57:13.864 [main] [1063de1c67654f0ca01d197cd0997dd2] [16374fe58dd3481dae1857c2bb9cb33d] INFO  c.exam.question.service.QuestionService - 教师 7 创建题目 id=10 type=SINGLE
+2026-10-02 20:57:13.867 [main] [1063de1c67654f0ca01d197cd0997dd2] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (10ms)
+2026-10-02 20:57:13.876 [main] [db5ab7c41586401a89d299da7d849dc1] [95422c1f6b3d25f368f3b0713957dda6] INFO  c.exam.question.service.QuestionService - 教师 7 创建题目 id=11 type=SINGLE
+2026-10-02 20:57:13.877 [main] [db5ab7c41586401a89d299da7d849dc1] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (9ms)
+2026-10-02 20:57:13.878 [main] [f847ccb17ec04d6e92a1a8d36d104bc0] [] ERROR com.exam.common.GlobalExceptionHandler - Unhandled exception
+org.springframework.web.HttpRequestMethodNotSupportedException: Request method 'POST' is not supported
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.handleNoMatch(RequestMappingInfoHandlerMapping.java:267)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.lookupHandlerMethod(AbstractHandlerMethodMapping.java:441)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.getHandlerInternal(AbstractHandlerMethodMapping.java:382)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:127)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:68)
+	at org.springframework.web.servlet.handler.AbstractHandlerMapping.getHandler(AbstractHandlerMapping.java:509)
+	at org.springframework.web.servlet.DispatcherServlet.getHandler(DispatcherServlet.java:1284)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.getHandler(TestDispatcherServlet.java:123)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1065)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at io.opentelemetry.instrumentation.spring.webmvc.v6_0.WebMvcTelemetryProducingFilter.doFilterInternal(WebMvcTelemetryProducingFilter.java:58)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at com.exam.common.RequestIdFilter.doFilterInternal(RequestIdFilter.java:47)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:286)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteRejectsDuplicateIds(QuestionBatchDeleteIntegrationTest.java:172)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-02 20:57:13.879 [main] [f847ccb17ec04d6e92a1a8d36d104bc0] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions/batch-delete -> 500 (2ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"d88873c75ee3499587f7289d807d5ee6", X-Trace-Id:"b31424a876e7dffabc8fdcecb365c23a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjY5NzNjZWYzOGQ5ZTQzOTFiYzMzNTNhNTdhMjRkY2YzIiwiaWF0IjoxNzkwOTQ1ODMzLCJleHAiOjE3OTA5NDc2MzN9.4l4aoOU_dUHX--oJHQBxPpkikFD25emo89BUS5z4QXQ","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJmMjQwY2YzZjdhOTM0MTY0YjRiYzhiYzY5NmY5Y2Y3NCIsImlhdCI6MTc5MDk0NTgzMywiZXhwIjoxNzkxNTUwNjMzfQ.udJJyWH5cx5nGqYq6EUSpT77xX6ox58s7pbu9zE7plw","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjY5NzNjZWYzOGQ5ZTQzOTFiYzMzNTNhNTdhMjRkY2YzIiwiaWF0IjoxNzkwOTQ1ODMzLCJleHAiOjE3OTA5NDc2MzN9.4l4aoOU_dUHX--oJHQBxPpkikFD25emo89BUS5z4QXQ", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"a0841b299c9d4980825db283b854591f", X-Trace-Id:"4f2856a392fe3a5f975576c5f0aee0d2", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":6,"code":"FJ65GEFD","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-02T20:57:13.4621013"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_8","password":"Pass1234","name":"教师-tea_8","email":"tea_8@test.com","roleType":"TEACHER","inviteCode":"FJ65GEFD"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"0ac4c27404684208b76a817ea853503c", X-Trace-Id:"78600e69c9caf4193bbff2d9590e85b1", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_8","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"c8dc00eb1dd34804a561e2b91abf67d0", X-Trace-Id:"346395ea399d82d44604d4d2fdd7c2a8", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI3IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzgiLCJuYW1lIjoi5pWZ5biILXRlYV84IiwiZW1haWwiOiJ0ZWFfOEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYWYzODllYTk5MDkwNDY2NWJiZWQ0ZGZmOWI2ZTdmMjIiLCJpYXQiOjE3OTA5NDU4MzMsImV4cCI6MTc5MDk0NzYzM30.TuWYBJR2BPvpkBZlRPs2ONAjCkrBkKq1nikALPDdiNc","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI3IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJkOGQ0NWRhODAyZmY0MmJkYmZiN2E5ZjMyNzBkYTEwYiIsImlhdCI6MTc5MDk0NTgzMywiZXhwIjoxNzkxNTUwNjMzfQ.0e_AuNrLjypQzyLFa-CT6a5kmuFE8NHRJttU3LioLFM","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI3IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzgiLCJuYW1lIjoi5pWZ5biILXRlYV84IiwiZW1haWwiOiJ0ZWFfOEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYWYzODllYTk5MDkwNDY2NWJiZWQ0ZGZmOWI2ZTdmMjIiLCJpYXQiOjE3OTA5NDU4MzMsImV4cCI6MTc5MDk0NzYzM30.TuWYBJR2BPvpkBZlRPs2ONAjCkrBkKq1nikALPDdiNc", Content-Length:"114"]
+             Body = {"type":1,"content":"重复批甲","correctAnswer":"A","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"1063de1c67654f0ca01d197cd0997dd2", X-Trace-Id:"16374fe58dd3481dae1857c2bb9cb33d", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":10,"type":1,"typeName":"单选","content":"重复批甲","choices":["A选项","B选项"],"correctAnswer":"A","score":5.0,"difficulty":1,"tags":[],"createdBy":7,"createdTime":"2026-10-02T20:57:13.8625407","updatedTime":"2026-10-02T20:57:13.8625407"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI3IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzgiLCJuYW1lIjoi5pWZ5biILXRlYV84IiwiZW1haWwiOiJ0ZWFfOEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYWYzODllYTk5MDkwNDY2NWJiZWQ0ZGZmOWI2ZTdmMjIiLCJpYXQiOjE3OTA5NDU4MzMsImV4cCI6MTc5MDk0NzYzM30.TuWYBJR2BPvpkBZlRPs2ONAjCkrBkKq1nikALPDdiNc", Content-Length:"114"]
+             Body = {"type":1,"content":"重复批乙","correctAnswer":"B","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"db5ab7c41586401a89d299da7d849dc1", X-Trace-Id:"95422c1f6b3d25f368f3b0713957dda6", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":11,"type":1,"typeName":"单选","content":"重复批乙","choices":["A选项","B选项"],"correctAnswer":"B","score":5.0,"difficulty":1,"tags":[],"createdBy":7,"createdTime":"2026-10-02T20:57:13.874634","updatedTime":"2026-10-02T20:57:13.874634"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions/batch-delete
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI3IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzgiLCJuYW1lIjoi5pWZ5biILXRlYV84IiwiZW1haWwiOiJ0ZWFfOEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYWYzODllYTk5MDkwNDY2NWJiZWQ0ZGZmOWI2ZTdmMjIiLCJpYXQiOjE3OTA5NDU4MzMsImV4cCI6MTc5MDk0NzYzM30.TuWYBJR2BPvpkBZlRPs2ONAjCkrBkKq1nikALPDdiNc", Content-Length:"18"]
+             Body = {"ids":[10,11,10]}
+    Session Attrs = {}
+
+Handler:
+             Type = null
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = org.springframework.web.HttpRequestMethodNotSupportedException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 500
+    Error message = null
+          Headers = [X-Request-Id:"f847ccb17ec04d6e92a1a8d36d104bc0", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":500,"message":"系统内部错误"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-02 20:57:13.967 [main] [58088690084c4b418de95bddd31237c9] [28c5f0f859bf556e47cd8b5c67684f1c] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-02 20:57:13.968 [main] [58088690084c4b418de95bddd31237c9] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (79ms)
+2026-10-02 20:57:13.974 [main] [276b92483a9044a897b1ebaac2df017d] [a3ce7c2ff4ac7baf4388c66e266374af] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 RFQ7KU23
+2026-10-02 20:57:13.975 [main] [276b92483a9044a897b1ebaac2df017d] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (6ms)
+2026-10-02 20:57:14.192 [main] [db08831a59e14090a50428c738c4939b] [de0e12dba480f618297b5c727d946774] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_9, inviteCode=RFQ7KU23
+2026-10-02 20:57:14.193 [main] [db08831a59e14090a50428c738c4939b] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (218ms)
+2026-10-02 20:57:14.373 [main] [4ca0a16f4e1543fe9f43b814a17ed671] [3f57efed592346c8a4230864c5e584d0] INFO  com.exam.auth.service.AuthService - 用户 tea_9 登录成功，签发双 Token
+2026-10-02 20:57:14.374 [main] [4ca0a16f4e1543fe9f43b814a17ed671] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (180ms)
+2026-10-02 20:57:14.380 [main] [65dd2b2211eb485eaad145d8974177cf] [9cd174c6307eb93353cafff61bfa993d] INFO  c.exam.question.service.QuestionService - 教师 8 创建题目 id=12 type=SINGLE
+2026-10-02 20:57:14.381 [main] [65dd2b2211eb485eaad145d8974177cf] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (6ms)
+2026-10-02 20:57:14.382 [main] [04495586268b49e9a058b3e23042fc0a] [] ERROR com.exam.common.GlobalExceptionHandler - Unhandled exception
+org.springframework.web.HttpRequestMethodNotSupportedException: Request method 'POST' is not supported
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.handleNoMatch(RequestMappingInfoHandlerMapping.java:267)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.lookupHandlerMethod(AbstractHandlerMethodMapping.java:441)
+	at org.springframework.web.servlet.handler.AbstractHandlerMethodMapping.getHandlerInternal(AbstractHandlerMethodMapping.java:382)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:127)
+	at org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping.getHandlerInternal(RequestMappingInfoHandlerMapping.java:68)
+	at org.springframework.web.servlet.handler.AbstractHandlerMapping.getHandler(AbstractHandlerMapping.java:509)
+	at org.springframework.web.servlet.DispatcherServlet.getHandler(DispatcherServlet.java:1284)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.getHandler(TestDispatcherServlet.java:123)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1065)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at io.opentelemetry.instrumentation.spring.webmvc.v6_0.WebMvcTelemetryProducingFilter.doFilterInternal(WebMvcTelemetryProducingFilter.java:58)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at com.exam.common.RequestIdFilter.doFilterInternal(RequestIdFilter.java:47)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:286)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteRejectsEmptyAndOverLimitIds(QuestionBatchDeleteIntegrationTest.java:186)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-02 20:57:14.383 [main] [04495586268b49e9a058b3e23042fc0a] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions/batch-delete -> 500 (1ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"58088690084c4b418de95bddd31237c9", X-Trace-Id:"28c5f0f859bf556e47cd8b5c67684f1c", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImMxMDAzMTRmZmRmMTRlZmRiNzUyOWI4Mzk4ODhlYzlmIiwiaWF0IjoxNzkwOTQ1ODMzLCJleHAiOjE3OTA5NDc2MzN9.ZghTgpGpF2BCz41HshWN97zBSDKUSXuSdQ-N58Z7lJE","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJiZTVhM2NkNzZjMzE0YmMxYTY4OTY2YzlmMDEwMDU4YiIsImlhdCI6MTc5MDk0NTgzMywiZXhwIjoxNzkxNTUwNjMzfQ.D42HuylQ45prfPykNet2h5TJyPaLbdTWWWXE2krhmHo","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyx1c2VyOm1hbmFnZSxpbnZpdGU6bWFuYWdlLHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImMxMDAzMTRmZmRmMTRlZmRiNzUyOWI4Mzk4ODhlYzlmIiwiaWF0IjoxNzkwOTQ1ODMzLCJleHAiOjE3OTA5NDc2MzN9.ZghTgpGpF2BCz41HshWN97zBSDKUSXuSdQ-N58Z7lJE", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"276b92483a9044a897b1ebaac2df017d", X-Trace-Id:"a3ce7c2ff4ac7baf4388c66e266374af", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":7,"code":"RFQ7KU23","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-02T20:57:13.9723654"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_9","password":"Pass1234","name":"教师-tea_9","email":"tea_9@test.com","roleType":"TEACHER","inviteCode":"RFQ7KU23"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"db08831a59e14090a50428c738c4939b", X-Trace-Id:"de0e12dba480f618297b5c727d946774", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_9","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"4ca0a16f4e1543fe9f43b814a17ed671", X-Trace-Id:"3f57efed592346c8a4230864c5e584d0", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzkiLCJuYW1lIjoi5pWZ5biILXRlYV85IiwiZW1haWwiOiJ0ZWFfOUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMDA1ZWIzMmFhNWIyNDgzODliYjNmMTE5NWQxOWRkYjgiLCJpYXQiOjE3OTA5NDU4MzQsImV4cCI6MTc5MDk0NzYzNH0.guvw640Ox_eKefDDVyFM_Y7OqAhoIp_t-MFAVZdz_LE","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiIxNTljYzZiY2NlOTA0ZjRiYmEyN2M3YWQ3YjIxNTkzMyIsImlhdCI6MTc5MDk0NTgzNCwiZXhwIjoxNzkxNTUwNjM0fQ.yfg9Qy5IvRONTcIErNg9TDJ5-2S9rf3S6XH9ssJ8uSc","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzkiLCJuYW1lIjoi5pWZ5biILXRlYV85IiwiZW1haWwiOiJ0ZWFfOUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMDA1ZWIzMmFhNWIyNDgzODliYjNmMTE5NWQxOWRkYjgiLCJpYXQiOjE3OTA5NDU4MzQsImV4cCI6MTc5MDk0NzYzNH0.guvw640Ox_eKefDDVyFM_Y7OqAhoIp_t-MFAVZdz_LE", Content-Length:"114"]
+             Body = {"type":1,"content":"上限批甲","correctAnswer":"A","score":5.0,"difficulty":1,"choices":["A选项","B选项"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"65dd2b2211eb485eaad145d8974177cf", X-Trace-Id:"9cd174c6307eb93353cafff61bfa993d", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":12,"type":1,"typeName":"单选","content":"上限批甲","choices":["A选项","B选项"],"correctAnswer":"A","score":5.0,"difficulty":1,"tags":[],"createdBy":8,"createdTime":"2026-10-02T20:57:14.3795018","updatedTime":"2026-10-02T20:57:14.3795018"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions/batch-delete
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzkiLCJuYW1lIjoi5pWZ5biILXRlYV85IiwiZW1haWwiOiJ0ZWFfOUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOm1hbmFnZSxwYXBlcjptYW5hZ2UscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiMDA1ZWIzMmFhNWIyNDgzODliYjNmMTE5NWQxOWRkYjgiLCJpYXQiOjE3OTA5NDU4MzQsImV4cCI6MTc5MDk0NzYzNH0.guvw640Ox_eKefDDVyFM_Y7OqAhoIp_t-MFAVZdz_LE", Content-Length:"10"]
+             Body = {"ids":[]}
+    Session Attrs = {}
+
+Handler:
+             Type = null
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = org.springframework.web.HttpRequestMethodNotSupportedException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 500
+    Error message = null
+          Headers = [X-Request-Id:"04495586268b49e9a058b3e23042fc0a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":500,"message":"系统内部错误"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+[ERROR] Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 21.74 s <<< FAILURE! -- in com.exam.question.QuestionBatchDeleteIntegrationTest
+[ERROR] com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteAllSuccessRemovesAllFromList -- Time elapsed: 4.309 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<200> but was:<500>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:287)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteAllSuccessRemovesAllFromList(QuestionBatchDeleteIntegrationTest.java:135)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteAllFailedDeletesNothing -- Time elapsed: 1.124 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<200> but was:<500>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:287)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteAllFailedDeletesNothing(QuestionBatchDeleteIntegrationTest.java:155)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeletePartialSuccessOnlyCompliantSubsetDeleted -- Time elapsed: 1.174 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<200> but was:<500>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:287)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeletePartialSuccessOnlyCompliantSubsetDeleted(QuestionBatchDeleteIntegrationTest.java:108)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteRejectsDuplicateIds -- Time elapsed: 0.495 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<400> but was:<500>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:287)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteRejectsDuplicateIds(QuestionBatchDeleteIntegrationTest.java:172)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteRejectsEmptyAndOverLimitIds -- Time elapsed: 0.501 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<400> but was:<500>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:287)
+	at com.exam.question.QuestionBatchDeleteIntegrationTest.batchDeleteRejectsEmptyAndOverLimitIds(QuestionBatchDeleteIntegrationTest.java:186)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   QuestionBatchDeleteIntegrationTest.batchDeleteAllFailedDeletesNothing:155->IntegrationTestBase.perform:287 Response status expected:<200> but was:<500>
+[ERROR]   QuestionBatchDeleteIntegrationTest.batchDeleteAllSuccessRemovesAllFromList:135->IntegrationTestBase.perform:287 Response status expected:<200> but was:<500>
+[ERROR]   QuestionBatchDeleteIntegrationTest.batchDeletePartialSuccessOnlyCompliantSubsetDeleted:108->IntegrationTestBase.perform:287 Response status expected:<200> but was:<500>
+[ERROR]   QuestionBatchDeleteIntegrationTest.batchDeleteRejectsDuplicateIds:172->IntegrationTestBase.perform:287 Response status expected:<400> but was:<500>
+[ERROR]   QuestionBatchDeleteIntegrationTest.batchDeleteRejectsEmptyAndOverLimitIds:186->IntegrationTestBase.perform:287 Response status expected:<400> but was:<500>
+[INFO] 
+[ERROR] Tests run: 5, Failures: 5, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  34.335 s
+[INFO] Finished at: 2026-10-02T20:57:15+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] See D:\code\examOnline\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

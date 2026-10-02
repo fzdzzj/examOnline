@@ -214,6 +214,26 @@ export type ReviewHandleRequest = {
     reason?: string;
 };
 
+export type BatchDeleteQuestionsRequest = {
+    ids: Array<number>;
+};
+
+export type ApiResponseBatchDeleteQuestionsResponse = {
+    code?: number;
+    message?: string;
+    data?: BatchDeleteQuestionsResponse;
+};
+
+export type BatchDeleteQuestionsResponse = {
+    succeeded?: Array<number>;
+    failed?: Array<FailedItem>;
+};
+
+export type FailedItem = {
+    id?: number;
+    reason?: string;
+};
+
 export type PaperCreateRequest = {
     title: string;
     description?: string;
@@ -1363,6 +1383,22 @@ export type Create1Responses = {
 };
 
 export type Create1Response = Create1Responses[keyof Create1Responses];
+
+export type BatchDeleteData = {
+    body: BatchDeleteQuestionsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/questions/batch-delete';
+};
+
+export type BatchDeleteResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseBatchDeleteQuestionsResponse;
+};
+
+export type BatchDeleteResponse = BatchDeleteResponses[keyof BatchDeleteResponses];
 
 export type Page1Data = {
     body?: never;
