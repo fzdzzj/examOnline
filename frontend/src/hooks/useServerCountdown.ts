@@ -118,7 +118,9 @@ export interface ServerCountdownView {
 }
 
 /**
- * 组件用 hook：`source` 每次变化（首帧、轮询、断线重连后重拉）都重新锚定。
+ * 组件用 hook：source 的时间字段（remainingSeconds / deadlineTime / serverTime）
+ * 任一变化（首帧、轮询换新对象、断线重连后重拉、响应式属性原地更新）都重新锚定；
+ * 整卷快照里的题目列表等非时间字段再大也不触发重锚定，监听不做深层遍历。
  * 必须在 setup 里调用；作用域销毁时自动停表。
  */
 export function useServerCountdown(
@@ -133,14 +135,19 @@ export function useServerCountdown(
     remainingSeconds.value = engine.value.peek();
   };
 
+  // 监听依赖窄化为时间三字段的投影：source 换新引用或任一时间字段原地更新都会
+  // 触发重锚定；答题数据里题目列表等非时间字段的任何变动都不在此列，
+  // 也就不必为整卷快照付一次深层遍历的响应式开销。
   watch(
-    () => toValue(source),
-    (snapshot) => {
-      engine.value = createServerCountdownEngine(snapshot, { now });
+    () => {
+      const s = toValue(source);
+      return [s?.remainingSeconds, s?.deadlineTime, s?.serverTime] as const;
+    },
+    () => {
+      engine.value = createServerCountdownEngine(toValue(source), { now });
       advance();
     },
-    // 答题数据是每次 refetch 换一个新对象，deep 保证字段变了就重新锚定
-    { immediate: true, deep: true }
+    { immediate: true }
   );
 
   const timer = setInterval(advance, tickMs);

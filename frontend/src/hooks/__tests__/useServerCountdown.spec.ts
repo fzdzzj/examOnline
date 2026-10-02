@@ -8,9 +8,10 @@
  *   反向断言是防"以后有人图省事把默认时钟换成本地时刻"的变异守卫。
  *
  * 全部用注入的秒表 / 假定时器，不真 sleep。
+ * 另有一道静态源码防线：监听依赖必须窄化到时间三字段投影、不得对整卷快照做深层遍历。
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { effectScope, nextTick, ref } from 'vue';
+import { effectScope, nextTick, reactive, ref } from 'vue';
 
 import {
   createServerCountdownEngine,
@@ -19,6 +20,7 @@ import {
   useServerCountdown,
   type ServerTimeSnapshot,
 } from '@/hooks/useServerCountdown';
+import useServerCountdownSource from '../useServerCountdown.ts?raw';
 
 describe('remainingFromServer —— 剩余时长只从后端字段来', () => {
   it('优先用后端算好的 remainingSeconds', () => {
@@ -232,5 +234,70 @@ describe('useServerCountdown', () => {
     clock = 60_000;
     vi.advanceTimersByTime(5_000);
     expect(view.remainingSeconds.value).toBe(60);
+  });
+});
+
+describe('useServerCountdown 窄化监听 —— 只有时间字段触发重新锚定', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** 模拟整卷响应混进 source：时间字段之外还挂着题目列表等大体积非时间字段。 */
+  type SnapshotWithQuestions = ServerTimeSnapshot & {
+    questions: Array<{ id: number; title: string }>;
+  };
+
+  it('非时间字段原地更新不重锚定：剩余秒数按秒表平滑递减，不跳跃不重置', async () => {
+    vi.useFakeTimers();
+    let clock = 0;
+    const source = reactive<SnapshotWithQuestions>({
+      remainingSeconds: 100,
+      questions: [{ id: 1, title: '题1' }],
+    });
+    const scope = effectScope();
+    const view = scope.run(() => useServerCountdown(source, { now: () => clock, tickMs: 1000 }))!;
+
+    clock = 30_000;
+    vi.advanceTimersByTime(1000);
+    expect(view.remainingSeconds.value).toBe(70);
+
+    // 原地改题目标题：若监听仍对整卷快照深层遍历，这里会重锚定并把剩余秒数跳回 100
+    source.questions[0]!.title = '修改';
+    await nextTick();
+    expect(view.remainingSeconds.value).toBe(70);
+
+    clock = 31_000;
+    vi.advanceTimersByTime(1000);
+    expect(view.remainingSeconds.value).toBe(69);
+    scope.stop();
+  });
+
+  it('时间字段原地更新即重新锚定：remainingSeconds 变 80 后立即取新值', async () => {
+    vi.useFakeTimers();
+    let clock = 0;
+    const source = reactive<ServerTimeSnapshot>({ remainingSeconds: 100 });
+    const scope = effectScope();
+    const view = scope.run(() => useServerCountdown(source, { now: () => clock, tickMs: 1000 }))!;
+
+    clock = 30_000;
+    vi.advanceTimersByTime(1000);
+    expect(view.remainingSeconds.value).toBe(70);
+
+    source.remainingSeconds = 80;
+    await nextTick();
+    expect(view.remainingSeconds.value).toBe(80);
+    scope.stop();
+  });
+});
+
+describe('useServerCountdown 源码词法护栏 —— 监听依赖窄化（静态防线）', () => {
+  it('不得对整卷快照做深层遍历监听（防回归标记）', () => {
+    expect(useServerCountdownSource).not.toContain('deep: true');
+  });
+
+  it('监听依赖窄化为时间三字段投影（remainingSeconds / deadlineTime / serverTime）', () => {
+    expect(useServerCountdownSource).toContain('remainingSeconds');
+    expect(useServerCountdownSource).toContain('deadlineTime');
+    expect(useServerCountdownSource).toContain('serverTime');
   });
 });
