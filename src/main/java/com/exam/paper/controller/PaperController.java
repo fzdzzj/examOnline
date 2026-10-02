@@ -5,6 +5,7 @@ import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
 import com.exam.common.ratelimit.RateLimit;
 import com.exam.paper.dto.AddPaperQuestionRequest;
+import com.exam.paper.dto.BatchAddPaperQuestionsRequest;
 import com.exam.paper.dto.PaperCreateRequest;
 import com.exam.paper.dto.PaperDetailResponse;
 import com.exam.paper.dto.PaperOrderRequest;
@@ -95,6 +96,13 @@ public class PaperController {
     public ApiResponse<PaperQuestionItemResponse> addQuestion(@PathVariable Long id,
                                                               @Valid @RequestBody AddPaperQuestionRequest request) {
         return ApiResponse.success(paperService.addQuestion(id, request.getQuestionId(), request.getScore()));
+    }
+
+    /** 批量加题入卷：整批单事务全有全无，任一题失败整体回滚（杜绝半批入卷） */
+    @PostMapping("/{id}/questions/batch")
+    public ApiResponse<PaperDetailResponse> addQuestions(@PathVariable Long id,
+                                                         @Valid @RequestBody BatchAddPaperQuestionsRequest request) {
+        return ApiResponse.success(paperService.addQuestions(id, request));
     }
 
     /** 移出题目（剩余题目自动重排为 1..n） */

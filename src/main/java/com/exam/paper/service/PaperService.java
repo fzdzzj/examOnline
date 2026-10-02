@@ -10,6 +10,7 @@ import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.exam.service.ExamPaperLockService;
+import com.exam.paper.dto.BatchAddPaperQuestionsRequest;
 import com.exam.paper.dto.PaperCreateRequest;
 import com.exam.paper.dto.PaperDetailResponse;
 import com.exam.paper.dto.PaperQuestionItemResponse;
@@ -171,6 +172,29 @@ public class PaperService {
         examPaperLockService.assertPaperEditable(paper.getId());
         PaperQuestion row = addQuestionInternal(paper, loadLiveQuestion(questionId), score);
         return toItem(row, questionMapper.selectById(questionId));
+    }
+
+    /**
+     * 批量加题入卷：整批单事务全有全无（commitRandomDraw 同构），任一题失败整体回滚，
+     * 杜绝半批入卷。请求内重复 questionId 前置显式校验（不靠逐题查重间接暴露）；
+     * 单项失败语义与单题端点一致（已在卷中/不存在/锁定/越权同文案）。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public PaperDetailResponse addQuestions(Long paperId, BatchAddPaperQuestionsRequest request) {
+        Paper paper = getOwnedPaper(paperId);
+        assertNotLocked(paper);
+        examPaperLockService.assertPaperEditable(paper.getId());
+        List<Long> questionIds = request.getItems().stream()
+                .map(BatchAddPaperQuestionsRequest.Item::getQuestionId)
+                .toList();
+        if (new HashSet<>(questionIds).size() != questionIds.size()) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "请求内存在重复题目");
+        }
+        for (BatchAddPaperQuestionsRequest.Item item : request.getItems()) {
+            addQuestionInternal(paper, loadLiveQuestion(item.getQuestionId()), item.getScore());
+        }
+        log.info("试卷 {} 批量加题 {} 道", paperId, request.getItems().size());
+        return detail(paperId);
     }
 
     /** 移出题目并重排剩余题号，保持 1..n 连续。 */

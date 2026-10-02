@@ -276,6 +276,15 @@ export type Rule = {
     count: number;
 };
 
+export type BatchAddPaperQuestionsRequest = {
+    items: Array<Item>;
+};
+
+export type Item = {
+    questionId: number;
+    score?: number;
+};
+
 export type ApiResponseRandomDrawPreviewResponse = {
     code?: number;
     message?: string;
@@ -1461,6 +1470,24 @@ export type CommitRandomDrawResponses = {
 };
 
 export type CommitRandomDrawResponse = CommitRandomDrawResponses[keyof CommitRandomDrawResponses];
+
+export type AddQuestionsData = {
+    body: BatchAddPaperQuestionsRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/api/papers/{id}/questions/batch';
+};
+
+export type AddQuestionsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponsePaperDetailResponse;
+};
+
+export type AddQuestionsResponse = AddQuestionsResponses[keyof AddQuestionsResponses];
 
 export type PreviewDrawData = {
     body: RandomDrawRequest;

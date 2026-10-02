@@ -660,6 +660,31 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePaperDetailResponse"
+  /api/papers/{id}/questions/batch:
+    post:
+      tags:
+      - paper-controller
+      operationId: addQuestions
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchAddPaperQuestionsRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperDetailResponse"
   /api/papers/random-draw/preview:
     post:
       tags:
@@ -2478,6 +2503,29 @@ components:
           minimum: 1
       required:
       - count
+    BatchAddPaperQuestionsRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Item"
+          maxItems: 100
+          minItems: 0
+      required:
+      - items
+    Item:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        score:
+          type: number
+          maximum: 999.9
+          minimum: 0.5
+      required:
+      - questionId
     ApiResponseRandomDrawPreviewResponse:
       type: object
       properties:
