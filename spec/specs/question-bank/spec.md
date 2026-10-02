@@ -1,7 +1,8 @@
 # question-bank 规范
 
 > 能力域：题库与组卷（阶段 3，W2-W3）。
-> 来源：`spec/changes/add-question-bank` 合入（题目管理、答案归一化、标签体系、手动组卷、标签随机抽题、抽题锁定与试卷快照）。
+> 来源：`spec/changes/add-question-bank` 合入（题目管理、答案归一化、标签体系、手动组卷、标签随机抽题、抽题锁定与试卷快照）；
+> `spec/changes/archive/add-paper-batch-add-questions` 合入（批量加题入卷，2026-10-02）。
 
 ## Requirements
 
@@ -88,6 +89,48 @@ THEN 系统校验失败并提示调整
 
 ---
 
+### Requirement: 批量加题入卷
+
+系统 SHALL 提供批量加题入卷端点（`POST /api/papers/{id}/questions/batch`），接受题目 ID 列表（每项可携带可选分值覆盖），SHALL 以整批单事务全有全无语义执行：任一题目失败则整批回滚，不得出现半批入卷。
+
+#### Scenario: 批量入卷成功
+
+GIVEN 教师本人的一张草稿试卷已含若干题目
+WHEN 教师以题目 ID 列表调用批量入卷（部分项携带分值覆盖、部分项缺省）
+THEN 全部题目按提交顺序追加到试卷末尾、题号连续接续，缺省分值项使用题目默认分、显式分值项在试卷内覆盖默认分，返回更新后的试卷详情
+
+#### Scenario: 请求内重复拒绝
+
+GIVEN 教师以含重复题目 ID 的列表调用批量入卷
+WHEN 请求到达服务端
+THEN 返回 400「请求内存在重复题目」，试卷零变更
+
+#### Scenario: 卷内已有题目整体回滚
+
+GIVEN 批量列表中混入一题已在试卷中的题目
+WHEN 教师调用批量入卷
+THEN 返回与单题加题相同的「该题目已在试卷中」业务错误，整批回滚，试卷题目数与内容零变更
+
+#### Scenario: 含不存在或已软删题目整体回滚
+
+GIVEN 批量列表中混入一题不存在或已软删的题目
+WHEN 教师调用批量入卷
+THEN 返回 404「题目不存在或已删除」，整批回滚
+
+#### Scenario: 锁定试卷拒绝批量入卷
+
+GIVEN 试卷已生成快照（锁定）或被进行中考试绑定
+WHEN 教师调用批量入卷
+THEN 按既有锁定口径拒绝（与单题加题同文案），零变更
+
+#### Scenario: 越权与边界约束与单题一致
+
+GIVEN 非归属教师（非 ADMIN）或列表为空或超过单次上限
+WHEN 调用批量入卷
+THEN 越权按既有 403/404 口径拒绝；空列表或超上限返回 400，且单次批量至多 100 项
+
+---
+
 ### Requirement: 标签随机抽题
 
 WHEN 教师按规则随机抽题,
@@ -126,3 +169,14 @@ AND 之后某题目被修改或软删除
 WHEN 读取快照
 THEN 快照内容保持不变
 AND 历史组卷结果不受影响
+
+---
+
+> 合入注记（2026-10-02，`add-paper-batch-add-questions` 归档）：上方「批量加题入卷」Requirement 为本卡新增——
+> 立项依据是后端能力缺口（手动组卷仅有单题入卷端点，前端组卷页 `onPick` 逐题串行 N 次请求且循环无
+> try/catch，中途失败即中断、此前已入卷题目保持已入卷且无部分成功提示，半批静默）。实现为
+> `POST /api/papers/{id}/questions/batch`（`PaperService.addQuestions` 整批 `@Transactional(rollbackFor
+> = Exception.class)` 循环复用 `addQuestionInternal`，与 `commitRandomDraw` 同构；请求内重复 questionId
+> 前置显式校验 400；单项失败语义与单题端点同文案），前端 `onPick` 改单次批量调用 + try/catch。
+> 单题端点、`addQuestionInternal` 内部逻辑、`updateMeta` 总分校验口径零改动；逐题查重的查询数优化显式
+> 不做、另立卡。证据：`spec/changes/archive/add-paper-batch-add-questions/evidence/`。
