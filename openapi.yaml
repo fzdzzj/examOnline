@@ -1632,13 +1632,41 @@ paths:
         schema:
           type: integer
           format: int64
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: onlyUngraded
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: name
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: submissionId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
       responses:
         "200":
           description: OK
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponseListSubjectiveGradeRow"
+                $ref: "#/components/schemas/ApiResponseSubjectiveGradePageResponse"
   /api/exams/{examId}/grading/subjective/questions:
     get:
       tags:
@@ -3655,7 +3683,7 @@ components:
         lastAbnormalTime:
           type: string
           format: date-time
-    ApiResponseListSubjectiveGradeRow:
+    ApiResponseSubjectiveGradePageResponse:
       type: object
       properties:
         code:
@@ -3664,9 +3692,20 @@ components:
         message:
           type: string
         data:
+          $ref: "#/components/schemas/SubjectiveGradePageResponse"
+    SubjectiveGradePageResponse:
+      type: object
+      properties:
+        rows:
           type: array
           items:
             $ref: "#/components/schemas/SubjectiveGradeRow"
+        total:
+          type: integer
+          format: int32
+        graded:
+          type: integer
+          format: int32
     ApiResponseListSubjectiveQuestionItem:
       type: object
       properties:

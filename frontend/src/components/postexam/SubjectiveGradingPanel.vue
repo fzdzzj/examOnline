@@ -40,8 +40,8 @@
 
     <div class="mb-3 flex flex-wrap items-center gap-3">
       <span class="question-meta">
-        第 {{ question.number }} 题 · 满分 {{ question.score }} 分 · 已批 {{ gradedCount }}/{{
-          rows.length
+        第 {{ question.number }} 题 · 满分 {{ question.score }} 分 · 已批 {{ graded ?? 0 }}/{{
+          total ?? 0
         }}
       </span>
       <Input
@@ -58,11 +58,12 @@
 
     <Table
       :columns="columns"
-      :data-source="filteredRows"
+      :data-source="rows"
       :loading="loading"
-      :pagination="{ pageSize: 10, showSizeChanger: false }"
+      :pagination="pagination"
       :row-key="(row: SubjectiveGradeRow) => row.submissionId as number"
       size="middle"
+      @change="onTableChange"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'student'">
@@ -140,6 +141,7 @@ import {
   Typography,
   message,
   type TableColumnsType,
+  type TablePaginationConfig,
 } from 'ant-design-vue';
 import { computed, reactive, ref, watch } from 'vue';
 
@@ -164,6 +166,9 @@ const props = defineProps<{
   question: SubjectiveQuestionItem;
   rows: SubjectiveGradeRow[];
   loading?: boolean;
+  /** 信封 total/graded（add-subjective-grading-pagination）：服务端口径的行总数与已批数 */
+  total?: number;
+  graded?: number;
 }>();
 
 const emit = defineEmits<{ refreshed: [] }>();
@@ -175,22 +180,29 @@ const columns: TableColumnsType = [
   { title: '打分', key: 'grading', width: 330 },
 ];
 
-// ===== 筛选 =====
-const nameFilter = ref('');
-const onlyUngraded = ref(false);
+// ===== 服务端分页与筛选状态（add-subjective-grading-pagination）=====
+// 状态由父级 useQuery 持有（page/size/筛选入 queryKey），面板只做输入并上抛，
+// 客户端不再对 props.rows 做全量筛选链或客户端分页——大班全量行不进前端内存。
+const page = defineModel<number>('page', { default: 1 });
+const pageSize = defineModel<number>('pageSize', { default: 10 });
+const nameFilter = defineModel<string>('nameFilter', { default: '' });
+const onlyUngraded = defineModel<boolean>('onlyUngraded', { default: false });
 
-const filteredRows = computed<SubjectiveGradeRow[]>(() => {
-  let result = props.rows;
-  if (nameFilter.value.trim()) {
-    result = result.filter((r) => r.studentName?.includes(nameFilter.value.trim()));
-  }
-  if (onlyUngraded.value) {
-    result = result.filter((r) => !r.graded);
-  }
-  return result;
-});
+const pagination = computed(() => ({
+  current: page.value,
+  pageSize: pageSize.value,
+  total: props.total ?? 0,
+  showSizeChanger: false,
+}));
 
-const gradedCount = computed(() => props.rows.filter((r) => r.graded).length);
+function onTableChange(pagination: TablePaginationConfig): void {
+  if (pagination.current !== undefined && pagination.current !== page.value) {
+    page.value = pagination.current;
+  }
+  if (pagination.pageSize !== undefined && pagination.pageSize !== pageSize.value) {
+    pageSize.value = pagination.pageSize;
+  }
+}
 
 // ===== 编辑状态（key = submissionId）=====
 interface Draft {
@@ -231,15 +243,17 @@ const flow = createGradingFlow({
       })
     ),
   refreshRow: async (submissionId, questionId) => {
-    const list = await unwrap(
+    // 单行取数（add-subjective-grading-pagination）：submissionId 查询参数直达该行，
+    // 替代「全量拉取后 find」；409/1012 冲突回填语义（拉最新行回填、教师重看重打）不变
+    const pageData = await unwrap(
       subjectiveRows({
         client,
         throwOnError: true,
         path: { examId: props.examId },
-        query: { questionId },
+        query: { questionId, submissionId },
       })
     );
-    return list?.find((r) => r.submissionId === submissionId) ?? null;
+    return pageData?.rows?.[0] ?? null;
   },
 });
 

@@ -5,6 +5,7 @@ import com.exam.common.ApiResponse;
 import com.exam.grading.dto.GradingProgressResponse;
 import com.exam.grading.dto.GradingRunResponse;
 import com.exam.grading.dto.ManualScoreRequest;
+import com.exam.grading.dto.SubjectiveGradePageResponse;
 import com.exam.grading.dto.SubjectiveGradeRow;
 import com.exam.grading.dto.SubjectiveQuestionItem;
 import com.exam.grading.dto.SubjectiveScoreRequest;
@@ -103,11 +104,22 @@ public class GradingController {
         return ApiResponse.success(subjectiveGradingService.listQuestions(examId));
     }
 
-    /** 批改工作台：同题列出全部学生（答案/初判提示分/终分/评语/版本号）。 */
+    /**
+     * 批改工作台：同题列出学生（答案/初判提示分/终分/评语/版本号），响应恒为分页信封
+     * {rows, total, graded}（add-subjective-grading-pagination）。
+     * page/size/onlyUngraded/name/submissionId 全部可选：page/size 缺省返回全量；
+     * onlyUngraded/name 筛选下沉服务端；submissionId 单行取数（至多 1 行）专供冲突回填。
+     */
     @GetMapping("/subjective")
-    public ApiResponse<List<SubjectiveGradeRow>> subjectiveRows(@PathVariable Long examId,
-                                                                @RequestParam Long questionId) {
-        return ApiResponse.success(subjectiveGradingService.listRows(examId, questionId));
+    public ApiResponse<SubjectiveGradePageResponse> subjectiveRows(@PathVariable Long examId,
+                                                                   @RequestParam Long questionId,
+                                                                   @RequestParam(required = false) Integer page,
+                                                                   @RequestParam(required = false) Integer size,
+                                                                   @RequestParam(required = false) Boolean onlyUngraded,
+                                                                   @RequestParam(required = false) String name,
+                                                                   @RequestParam(required = false) Long submissionId) {
+        return ApiResponse.success(subjectiveGradingService.listRows(
+                examId, questionId, page, size, onlyUngraded, name, submissionId));
     }
 
     /**

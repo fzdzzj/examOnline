@@ -269,9 +269,10 @@ class GradingScoreIntegrationTest extends IntegrationTestBase {
         assertEquals(3, questions.get(0).get("totalStudents").asInt());
         assertEquals(0, questions.get(0).get("gradedStudents").asInt());
 
+        // add-subjective-grading-pagination：响应恒为分页信封 {rows, total, graded}，缺省全量
         JsonNode rows = perform(jsonGet("/api/exams/" + examId + "/grading/subjective?questionId="
                 + shortQuestionId, teacher), 200).get("data");
-        assertEquals(3, rows.size());
+        assertEquals(3, rows.get("rows").size());
 
         saveSubjective(teacher, examId, studentIdOf(student1), shortQuestionId, "6.0", 0, "表述完整");
         saveSubjective(teacher, examId, studentIdOf(student2), shortQuestionId, "3.0", 0, "关键词命中少");

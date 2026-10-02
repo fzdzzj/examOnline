@@ -808,10 +808,16 @@ export type MonitorStudentItem = {
     lastAbnormalTime?: string;
 };
 
-export type ApiResponseListSubjectiveGradeRow = {
+export type ApiResponseSubjectiveGradePageResponse = {
     code?: number;
     message?: string;
-    data?: Array<SubjectiveGradeRow>;
+    data?: SubjectiveGradePageResponse;
+};
+
+export type SubjectiveGradePageResponse = {
+    rows?: Array<SubjectiveGradeRow>;
+    total?: number;
+    graded?: number;
 };
 
 export type ApiResponseListSubjectiveQuestionItem = {
@@ -2310,6 +2316,11 @@ export type SubjectiveRowsData = {
     };
     query: {
         questionId: number;
+        page?: number;
+        size?: number;
+        onlyUngraded?: boolean;
+        name?: string;
+        submissionId?: number;
     };
     url: '/api/exams/{examId}/grading/subjective';
 };
@@ -2318,7 +2329,7 @@ export type SubjectiveRowsResponses = {
     /**
      * OK
      */
-    200: ApiResponseListSubjectiveGradeRow;
+    200: ApiResponseSubjectiveGradePageResponse;
 };
 
 export type SubjectiveRowsResponse = SubjectiveRowsResponses[keyof SubjectiveRowsResponses];
