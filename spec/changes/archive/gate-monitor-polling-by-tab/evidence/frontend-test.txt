@@ -1,0 +1,127 @@
+
+> examonline-front@0.0.0 test
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+ [32m✓[39m src/hooks/__tests__/useBehaviorReport.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 200[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useRandomDraw.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useAutoSaveDraft.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/apiClient.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useServerCountdown.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/student/scores/__tests__/makeupFinalScore.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 700[2mms[22m[39m
+     [33m[2m✓[22m[39m 正常：后端返回 finalScore 原样渲染（前端只透传，不本地合并） [33m 506[2mms[22m[39m
+ [32m✓[39m src/components/question/__tests__/questionTypeConfig.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/scores/__tests__/summaryPrerequisiteAlert.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 941[2mms[22m[39m
+     [33m[2m✓[22m[39m 拦截器包装后的汇总前置错误仍显示前往批改工作台 [33m 534[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/student/scores/__tests__/applyReviewAlert.spec.ts [2m([22m[2m1 test[22m[2m)[22m[33m 645[2mms[22m[39m
+     [33m[2m✓[22m[39m 后端校验说明真实可见：限次限时由后端裁决、前端不预展资格计数（Alert 具名插槽） [33m 640[2mms[22m[39m
+ [32m✓[39m src/components/student/__tests__/DraftSyncBadge.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 589[2mms[22m[39m
+     [33m[2m✓[22m[39m synced：显示已自动保存与服务器确认时刻 [33m 346[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/studentTaking.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useSubmitExam.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+npm.cmd : Not implemented: Window's getComputedStyle() method: with pseudo-elements
+At line:16 char:6
++ $o = npm.cmd run test 2>&1 | Out-String; $c=$LASTEXITCODE; [System.IO ...
++      ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Not implemented...pseudo-elements:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ [32m✓[39m src/hooks/__tests__/useExamMonitor.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/student/__tests__/QuestionAnswerCard.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 1031[2mms[22m[39m
+     [33m[2m✓[22m[39m 单选：渲染 Radio 组，选项顺序与文案字母严格按快照 [33m 358[2mms[22m[39m
+[90mstderr[2m | src/pages/(dashboard)/teacher/scores/__tests__/publishConfirmAlert.spec.ts[2m > [22m[2m成绩发布确认弹窗（te
+acher/scores）[2m > [22m[2m知情文案真实可见：仅已批改可发布、汇总会锁定、重复发布幂等（Alert 具名插槽）
+[22m[39m[Vue warn]: injection "Symbol(router)" not found. 
+  at <Index.page ref="VTU_COMPONENT" > 
+  at <VTUROOT>
+
+ [32m✓[39m src/components/student/__tests__/ExamCountdown.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 674[2mms[22m[39m
+     [33m[2m✓[22m[39m 正常作答中：只显示后端剩余时长，不弹任何警告 [33m 424[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/exam/__tests__/BehaviorTimeline.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 818[2mms[22m[39m
+     [33m[2m✓[22m[39m 一条日志一个时间线节点，事件类型原样透出（时间升序由后端保证） [33m 498[2mms[22m[39m
+ [32m✓[39m src/components/observability/__tests__/GrafanaEntry.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1068[2mms[22m[39m
+     [33m[2m✓[22m[39m 未配置：给出可读的降级说明与变量名，且完全不渲染链接 [33m 630[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/scores/__tests__/publishConfirmAlert.spec.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1199[2mms[22m[39m
+     [33m[2m✓[22m[39m 知情文案真实可见：仅已批改可发布、汇总会锁定、重复发布幂等（Alert 具名插槽） [33m 1196[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1711[2mms[22m[39m
+     [33m[2m✓[22m[39m 仅已结束考试显示入口；重复点击只调用一次，并刷新题级进度与学生行 [33m 644[2mms[22m[39m
+     [33m[2m✓[22m[39m 已选主观题时才刷新当前学生行 [33m 697[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/postexam/__tests__/ScorePublishPreview.spec.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1215[2mms[22m[39m
+     [33m[2m✓[22m[39m 所有列都渲染出值（不空白） [33m 1212[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/student/__tests__/TakingBoard.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1234[2mms[22m[39m
+     [33m[2m✓[22m[39m 已答/未答/当前三态同时可区分 [33m 534[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/exam/__tests__/ExamSnapshotPreview.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1330[2mms[22m[39m
+     [33m[2m✓[22m[39m 有快照：题目按后端行序原样渲染，分值不重算 [33m 1052[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/student/__tests__/StudentExamList.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 1966[2mms[22m[39m
+     [33m[2m✓[22m[39m 三个后端分组各渲染自己的文案，顺序与后端一致 [33m 983[2mms[22m[39m
+     [33m[2m✓[22m[39m 状态只取后端 group：时间窗在未来的行后端说已完成，界面就不许显示待考/进行中 [33m 321[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/hooks/__tests__/useGradingFlow.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/papers/__tests__/paperDetailTable.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1868[2mms[22m[39m
+     [33m[2m✓[22m[39m 草稿态真实渲染题目表、题干和改分/排序/移出入口，且无 Table 解析警告 [33m 1533[2mms[22m[39m
+     [33m[2m✓[22m[39m 锁定态真实渲染题目内容和只读分值，不呈现编辑操作 [33m 332[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/router/__tests__/access.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useStudentTaking.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/utils/__tests__/draftMerge.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/exam/__tests__/ExamMonitorPanel.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 2705[2mms[22m[39m
+     [33m[2m✓[22m[39m 四个计数与题目总数一律照后端显示，界面不做加总 [33m 1291[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/makeups/__tests__/makeupFinalScore.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 4058[2mms[22m[39m
+     [33m[2m✓[22m[39m 过期边界已撤：「后端尚未接线 / finalScore 零调用」表述不再出现 [33m 2013[2mms[22m[39m
+     [33m[2m✓[22m[39m 诚实边界改写：合并规则在后端、历史成绩保留不覆盖，前端不本地推算 [33m 842[2mms[22m[39m
+     [33m[2m✓[22m[39m 渲染后端返回值：makeupFinalScore 返回 82.5 则页面原样呈现 82.5 [33m 599[2mms[22m[39m
+     [33m[2m✓[22m[39m 不本地合并：后端返回 null（无已批改记录）时展示空态说明，不出现推算数字 [33m 598[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/exams/__tests__/examCreatePublishFlow.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 3394[2mms[22m[39m
+     [33m[2m✓[22m[39m 动作入口按后端返回的 status/published 渲染：仅「未开始+未发布」可发布、仅「进行中」可强制结束 [33m 1817[2mms[22m[39m
+     [33m[2m✓[22m[39m 发布确认弹窗明示生成快照与锁定；确认后调 publish 并失效列表缓存 [33m 548[2mms[22m[39m
+     [33m[2m✓[22m[39m force-end 确认弹窗明示触发缺考标记且不可逆；确认后调 force-end [33m 457[2mms[22m[39m
+     [33m[2m✓[22m[39m 必填缺失被拦：不发起创建请求 [33m 371[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useClassRoster.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/scoreVisibility.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/sessionRefresh.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/constants/__tests__/postExam.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/exportDownload.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/behaviorEvents.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/scoreActions.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/questionFilters.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/paperMath.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/gradingValidation.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/dateTime.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/drawRules.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m43 passed[39m[22m[90m (43)[39m
+[2m      Tests [22m [1m[32m360 passed[39m[22m[90m (360)[39m
+[2m   Start at [22m 11:37:41
+[2m   Duration [22m 19.75s[2m (transform 6.29s, setup 1.58s, import 216.02s, tests 27.54s, environment 85.21s)[22m
+
