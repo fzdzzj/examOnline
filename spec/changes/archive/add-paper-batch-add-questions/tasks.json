@@ -1,0 +1,111 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对",
+    "task": "分支与基线锚定",
+    "steps": [
+      {
+        "step": "K1–K3：从 main 新建 feature/add-paper-batch-add-questions；记录 HEAD 短 SHA 与 git status 基线（应仅 6 个白名单未跟踪文件）",
+        "completed": true
+      },
+      {
+        "step": "K4：双端门禁基线锚：仓库根 mvnw.cmd clean test → 350/0/0/1@bfc7bfa；frontend 下 lint:check / type-check:check / test → 44 文件 383 例（命令 + 当次输出 + 短 SHA 记入本字段）",
+        "completed": true
+      },
+      {
+        "step": "K5：现状复核锚点：PaperController.addQuestion / PaperService.addQuestionInternal 与 commitRandomDraw / papers/[id].page.vue onPick 串行循环（grep 锚 'for (const question of fresh）'），确认与本卡 proposal 描述一致；不一致停下回报",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1–K3：自 main 新建分支 feature/add-paper-batch-add-questions，开工 HEAD=bfc7bfa；git status --porcelain 基线仅 6 个白名单未跟踪文件（.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-optimization-candidates.md、docs/指导主Agent交接文档-2026-09-30/10-01/10-02.md），无暂存/修改行。K4：后端基线（仓库根，$env:JAVA_HOME='D:\\develop1\\jdk21'; .\\mvnw.cmd clean test）→ Tests run: 350, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS @ bfc7bfa；前端基线（cwd=frontend，npm.cmd run lint:check / type-check:check / test）→ 三项退出码 0，Test Files 44 passed (44)、Tests 383 passed (383)，与主指令预期锚一致。K5：PaperController 仅有单题 POST /{id}/questions、无 batch 路由；PaperService 有 addQuestionInternal（与 commitRandomDraw 同构的既有复用先例）、无 addQuestions；papers/[id].page.vue 的 onPick 含 'for (const question of fresh)' 串行 await unwrap(addQuestion( 循环且循环体无 try/catch——三处锚点均与 proposal 一致。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：后端实施（先红后绿）",
+    "task": "DTO + Service + Controller + 集成测试",
+    "steps": [
+      {
+        "step": "写集成测试（批量成功含混合分值与题号接续 / 已在卷中整体回滚零新增行 / 请求内重复 400 / 含不存在题 404 整体回滚 / 锁定试卷拒绝），未实施时定向跑一次留红（404 级证据，evidence/red-backend.txt）",
+        "completed": true
+      },
+      {
+        "step": "实施：BatchAddPaperQuestionsRequest（items 非空、≤100 项、questionId 必填、score 可选）+ PaperService.addQuestions（getOwnedPaper + assertNotLocked + assertPaperEditable + 请求内重复前置校验 + 循环 addQuestionInternal，整批 @Transactional(rollbackFor=Exception.class)，返回 detail）+ PaperController POST /{id}/questions/batch",
+        "completed": true
+      },
+      {
+        "step": "定向绿：mvnw.cmd test -Dtest=<新测试类> 全过留档（evidence/green-backend.txt）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "先红：新增 src/test/java/com/exam/paper/PaperBatchAddQuestionsIntegrationTest.java（5 用例：批量成功含混合分值与题号接续 / 卷内已有题目整体回滚零新增 / 请求内重复 400 / 含不存在或软删题 404 整体回滚 / 锁定试卷拒绝）后定向跑 .\\mvnw.cmd test \"-Dtest=PaperBatchAddQuestionsIntegrationTest\" → Tests run: 5, Failures: 5, Errors: 0, Skipped: 0（evidence/red-backend.txt）。【偏离登记】未实施时 POST /api/papers/{id}/questions/batch 命中既有 /{id}/questions/{questionId} 路由模式抛 HttpRequestMethodNotSupportedException、落 GlobalExceptionHandler 兜底 500，非任务预期 404 级——证据文件内 5 处 Unhandled exception 栈均为该异常，属『POST 端点未实施』的语义等价红。实施：BatchAddPaperQuestionsRequest（items @NotEmpty + @Size(max=100) + @Valid；Item.questionId @NotNull、score 可选 BigDecimal @DecimalMin(0.5)/@DecimalMax(999.9)）+ PaperService.addQuestions（getOwnedPaper + assertNotLocked + examPaperLockService.assertPaperEditable + 请求内重复前置校验抛 400『请求内存在重复题目』+ 循环复用 addQuestionInternal(loadLiveQuestion(...))，整批 @Transactional(rollbackFor = Exception.class)，末尾返回 detail(paperId)）+ PaperController POST /{id}/questions/batch 返回 PaperDetailResponse；单题端点、addQuestionInternal 内部逻辑、commitRandomDraw、updateMeta 总分校验口径、schema.sql、pom.xml 零改动。定向绿：.\\mvnw.cmd test \"-Dtest=PaperBatchAddQuestionsIntegrationTest\" → Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 + BUILD SUCCESS（evidence/green-backend.txt）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：契约导出与前端实施",
+    "task": "openapi.yaml 重导出 + gen:api + onPick 批量化 + 词法护栏",
+    "steps": [
+      {
+        "step": "路 A 离线契约重导出：mvnw.cmd -o test -Dtest=OpenApiContractTest#exportOpenApiContract -DexportContract=true；确认 openapi.yaml 含新 path 且护栏断言（无 U+FFFD、servers.url 带端口）随测试通过",
+        "completed": true
+      },
+      {
+        "step": "frontend 下 npm.cmd run gen:api 再生成客户端；确认 sdk.gen.ts 含批量入卷函数",
+        "completed": true
+      },
+      {
+        "step": "写前端词法护栏与用例（onPick 单次批量调用 / 失败提示不再半批静默 / 源码断言无串行 await unwrap(addQuestion( 入卷循环且有批量调用），改造前跑一次留红（evidence/red-frontend.txt）",
+        "completed": true
+      },
+      {
+        "step": "实施 onPick：改单次批量调用 + try/catch（ApiError message 提示）+ 成功提示与 invalidatePaper 保留；护栏转绿（evidence/green-frontend.txt）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "路 A 离线契约重导出（仓库根）：.\\mvnw.cmd -o test \"-Dtest=OpenApiContractTest#exportOpenApiContract\" \"-DexportContract=true\" → BUILD SUCCESS，openapi.yaml 落盘新 path（现行锚：行 663 /api/papers/{id}/questions/batch、行 667 operationId: addQuestions、行 2506 BatchAddPaperQuestionsRequest schema），无 U+FFFD、servers.url 带端口的护栏断言随测试通过。gen:api（cwd=frontend）：npm.cmd run gen:api → sdk.gen.ts 行 259 导出 addQuestions，types.gen.ts 新增 BatchAddPaperQuestionsRequest/Item 与 AddQuestionsData，index.ts re-export；gen 重写 17 文件中仅 3 个实质变更（其余为 core.autocrlf 行尾状态噪音，git add 归一化后无 staged diff）。前端先红：新增 frontend/src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts（5 用例：词法护栏 2 + 行为 3）后 npm.cmd run test -- paperBatchAdd → 5 tests | 4 failed、Failed Tests 4（evidence/red-frontend.txt；词法 2 + 行为 2 红，『所选题目均已在试卷中』既有行为绿）。【修复记录】首跑 5/5 系模块 mock 调用记录跨用例泄漏（前置判断用例被累积调用记录误伤），beforeEach 首行补 vi.clearAllMocks() 后得正确红态 4 failed | 1 passed。实施 onPick：改单次批量调用 unwrap(addQuestions(...)) + try/catch（error instanceof Error ? error.message : 『批量加入试卷失败』），成功 message.success(已加入 N 题) + invalidatePaper() 保留，『所选题目均已在试卷中』前置判断保留；转绿 npm.cmd run test -- paperBatchAdd → Test Files 1 passed (1)、Tests 5 passed (5)（evidence/green-frontend.txt）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：实施笔与全量门禁",
+    "task": "两笔提交之实施笔 + 双端门禁",
+    "steps": [
+      {
+        "step": "实施笔提交（仅 src/main、src/test、openapi.yaml、frontend/src；提交前核对 git diff --cached --name-only 与 --check）",
+        "completed": true
+      },
+      {
+        "step": "已提交状态仓库根 mvnw.cmd clean test：四计数 350→350+N/0/0/1 全绿 + 短 SHA + 退出码记入",
+        "completed": true
+      },
+      {
+        "step": "已提交状态前端 lint:check / type-check:check / test 三项退出码 0，vitest 44 文件 383→383+M 例记入",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "实施笔 d346508『feat(paper): 组卷批量入卷端点与前端 onPick 批量化』：提交前 git diff --cached --name-only 恰 10 文件（src/main 3 + src/test 1 + openapi.yaml + frontend/src 5，与 git diff-tree 当次输出一致）、git diff --cached --check 无告警，git show --shortstat 当次输出 10 files changed, 460 insertions(+), 10 deletions(-)。【偏离登记】实施笔经一次 amend（72f581a → d346508，仅 paperBatchAdd.spec.ts 两处 prettier 换行修复，src 与 openapi.yaml 内容两态一致）。后端全量门禁（仓库根，$env:JAVA_HOME='D:\\develop1\\jdk21'; .\\mvnw.cmd clean test）→ Tests run: 355, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS、退出码 0（350 基线 + 新增 5 恰吻合）。【归属说明】该轮启动于 72f581a、运行期间 amend 至 d346508；amend 仅改前端 spec 两处换行、src 内容两态一致，结果归属 d346508。前端全量门禁（cwd=frontend）：npm.cmd run lint:check 退出码 0、npm.cmd run type-check:check 退出码 0、npm.cmd run test 退出码 0 → Test Files 45 passed (45)、Tests 388 passed (388)（383 基线 + 新增 5 恰吻合）。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：收口（两笔提交、spec 合入、归档、自查）",
+    "task": "收口笔=spec/README/归档（零 src 豁免凭据）",
+    "steps": [
+      {
+        "step": "spec/specs/question-bank/spec.md 合入本卡 Requirement + 尾部合入注记；spec/README.md 当前状态行 + question-bank 能力域行 + 归档行；变更目录移入 archive/ 并刷 evidence-sha256.txt",
+        "completed": true
+      },
+      {
+        "step": "docs/backend-optimization-candidates.md 缺口 B 标注已闭环（指向本卡）；docs/frontend-optimization-candidates.md 候选 5 由指导 agent 裁决标注（子 agent 不改前端台账）【执行期调整：两处台账标注均按主指令红线跳过——docs/*candidates.md 为白名单未跟踪文件，不入库、不暂存、禁改；本卡闭环登记改由 spec/README.md 归档行与 question-bank spec.md 合入注记承载，台账标注留指导 agent 收口后处理】",
+        "completed": true
+      },
+      {
+        "step": "收口自查：git diff --name-only <实施笔> HEAD -- src frontend pom.xml 为空；AGENTS.md 自查四条；实体↔schema 表级差集空；git status 终态仅白名单未跟踪文件",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "spec/specs/question-bank/spec.md：头部来源行追加 archive 路径 + 『批量加题入卷』Requirement（6 Scenario，插于『手动组卷』与『标签随机抽题』之间）+ 尾部合入注记（立项依据/实现要点/零改动清单/证据位置）。spec/README.md：当前状态行（line 29）+ question-bank 能力域行（line 46）+ 归档表行（line 142）。变更目录整体移入 spec/changes/archive/add-paper-batch-add-questions/ 并生成 evidence/evidence-sha256.txt（red-backend/green-backend/red-frontend/green-frontend 四证据文件 SHA256，LF 无 BOM）。【偏离登记·按主指令调整】原第 2 步两处台账标注（docs/backend-optimization-candidates.md 缺口 B、docs/frontend-optimization-candidates.md 候选 5）整体跳过：docs/*candidates.md 属主指令白名单未跟踪文件（不入库、不暂存、禁改），台账标注留指导 agent 收口后处理，本卡闭环登记由 spec/README.md 归档行与 question-bank spec.md 合入注记承载。收口自查当次输出：git diff --name-only d346508 HEAD -- src frontend pom.xml → 空（收口笔前以工作区等价命令 git diff --name-only d346508 -- src frontend pom.xml 预核同为空，收口笔后按本命令复跑确认）；AGENTS.md 自查四条全过（pom.xml flyway 0 命中、src/main/resources/db 不存在、src/test @Sql 注解形态 0 命中（仅 DataRetentionIntegrationTest 与 MyScoreRankEquivalenceTest 两处 javadoc 复述行）、AGENTS.md 与根 README.md 易变事实/裸行号 0 命中）；实体↔schema 表级差集空（26 实体 = 26 表）；mvnw 门禁四文件在位；git status --porcelain 终态仅 6 个白名单未跟踪文件。"
+  }
+]

@@ -1,0 +1,1904 @@
+﻿
+> examonline-front@0.0.0 test
+> vitest run paperBatchAdd
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+npm.cmd : Not implemented: Window's getComputedStyle() method: with pseudo-elements
+At line:15 char:1038
++ ... \@vscode\ripgrep\bin'; npm.cmd run test -- paperBatchAdd 2>&1 | Tee-O ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Not implemented...pseudo-elements:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts [2m([22m[2m5 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 823[2mms[22m[39m
+[31m     [31m×[31m 源码不再含串行单题入卷循环（for (const question of fresh) / await unwrap(addQuestion(）[39m[32m 12[2mms[22m[39m
+[31m     [31m×[31m 源码含批量入卷调用（unwrap(addQuestions(）[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m 批量入卷成功：单次批量调用 + 成功提示 + 失效刷新，单题端点零调用[39m[33m 513[2mms[22m[39m
+[31m     [31m×[31m 批量入卷失败：ApiError message 透出提示，不再半批静默[39m[32m 143[2mms[22m[39m
+     [32m✓[39m 所选题目均已在试卷中：前端前置提示保留，不发起任何请求[32m 151[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 4 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts[2m > [22m词法护栏：组卷页 onPi
+ck 批量化[2m > [22m源码不再含串行单题入卷循环（for (const question of fresh) / await unwrap(addQuestion(）
+[31m[1mAssertionError[22m: expected '<template>\r\n  <Spin :spinning="isFe…' not to contain 'for (const question of 
+fresh)'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- for (const question of fresh)[39m
+[31m+ <template>
+[39m
+[31m+   <Spin :spinning="isFetching">
+[39m
+[31m+     <Alert
+[39m
+[31m+       v-if="detail && isLocked"
+[39m
+[31m+       type="info"
+[39m
+[31m+       show-icon
+[39m
+[31m+       class="mb-3"
+[39m
+[31m+       message="试卷已锁定（已生成快照），以下内容为只读预览"
+[39m
+[31m+     />
+[39m
+[31m+ 
+[39m
+[31m+     <Empty v-else-if="!detail && !isFetching" description="试卷不存在或加载失败" />
+[39m
+[31m+ 
+[39m
+[31m+     <template v-if="detail">
+[39m
+[31m+       <Card class="mb-4">
+[39m
+[31m+         <div class="flex flex-wrap items-start justify-between gap-2">
+[39m
+[31m+           <div class="min-w-0">
+[39m
+[31m+             <h2 class="mb-1 flex items-center gap-2 text-lg font-semibold">
+[39m
+[31m+               <span class="truncate">{{ detail.title }}</span>
+[39m
+[31m+               <Tag :color="isLocked ? 'gold' : 'default'">
+[39m
+[31m+                 {{ paperStatusLabel(detail.status) }}
+[39m
+[31m+               </Tag>
+[39m
+[31m+             </h2>
+[39m
+[31m+             <p class="mb-1 text-gray-500">{{ detail.description || '暂无描述' }}</p>
+[39m
+[31m+             <p class="mb-0 text-gray-700">
+[39m
+[31m+               题数 {{ detail.questionCount ?? items.length }} · 实际合计
+[39m
+[31m+               <b>{{ sumPaperScores(items) }}</b>
+[39m
+[31m+               分 / 申报总分 {{ detail.totalScore }} 分
+[39m
+[31m+             </p>
+[39m
+[31m+           </div>
+[39m
+[31m+           <div v-if="!isLocked" class="flex gap-2">
+[39m
+[31m+             <Button @click="openMetaEdit">编辑信息</Button>
+[39m
+[31m+             <Button type="primary" @click="pickerOpen = true">+ 从题库选题</Button>
+[39m
+[31m+           </div>
+[39m
+[31m+         </div>
+[39m
+[31m+ 
+[39m
+[31m+         <div v-if="distribution.length" class="mt-3 flex flex-wrap gap-2">
+[39m
+[31m+           <Tag v-for="row in distribution" :key="row.type" color="blue">
+[39m
+[31m+             {{ row.typeName }} × {{ row.count }} = {{ row.subtotal }} 分
+[39m
+[31m+           </Tag>
+[39m
+[31m+         </div>
+[39m
+[31m+ 
+[39m
+[31m+         <Alert
+[39m
+[31m+           v-if="!isLocked && scoreMismatch"
+[39m
+[31m+           type="warning"
+[39m
+[31m+           show-icon
+[39m
+[31m+           class="mt-3"
+[39m
+[31m+           :message="`各题分值之和(${sumPaperScores(items)})与申报总分(${detail.totalScore})不一致，请调整题目分值或总分`"
+[39m
+[31m+         />
+[39m
+[31m+       </Card>
+[39m
+[31m+ 
+[39m
+[31m+       <Tabs v-if="!isLocked" class="mb-4">
+[39m
+[31m+         <TabPane key="manual" tab="手动选题">
+[39m
+[31m+           <p class="mb-0 text-gray-500">
+[39m
+[31m+             点击右上角「从题库选题」加入题目；加入后可在下方题目列表覆盖单题分值、调整顺序或移出。
+[39m
+[31m+             题干与选项实时读取题库；题目入卷时使用默认分。
+[39m
+[31m+           </p>
+[39m
+[31m+         </TabPane>
+[39m
+[31m+ 
+[39m
+[31m+         <TabPane key="draw" tab="随机抽题">
+[39m
+[31m+           <div class="mb-3 space-y-2">
+[39m
+[31m+             <div
+[39m
+[31m+               v-for="(rule, index) in ruleDrafts"
+[39m
+[31m+               :key="index"
+[39m
+[31m+               class="flex flex-wrap items-center gap-2"
+[39m
+[31m+             >
+[39m
+[31m+               <span class="w-14 text-gray-500">规则{{ index + 1 }}</span>
+[39m
+[31m+               <Select
+[39m
+[31m+                 v-model:value="rule.type"
+[39m
+[31m+                 :options="QUESTION_TYPE_OPTIONS"
+[39m
+[31m+                 allow-clear
+[39m
+[31m+                 placeholder="题型不限"
+[39m
+[31m+                 class="w-32"
+[39m
+[31m+               />
+[39m
+[31m+               <Select
+[39m
+[31m+                 v-model:value="rule.difficulty"
+[39m
+[31m+                 :options="DIFFICULTY_OPTIONS"
+[39m
+[31m+                 allow-clear
+[39m
+[31m+                 placeholder="难度不限"
+[39m
+[31m+                 class="w-32"
+[39m
+[31m+               />
+[39m
+[31m+               <Select
+[39m
+[31m+                 v-model:value="rule.tagIds"
+[39m
+[31m+                 :options="tagOptions"
+[39m
+[31m+                 mode="multiple"
+[39m
+[31m+                 allow-clear
+[39m
+[31m+                 placeholder="标签（任一命中即可）"
+[39m
+[31m+                 class="w-72"
+[39m
+[31m+               />
+[39m
+[31m+               <span class="text-gray-500">抽</span>
+[39m
+[31m+               <InputNumber v-model:value="rule.count" :min="1" :max="100" class="w-20" />
+[39m
+[31m+               <span class="text-gray-500">题</span>
+[39m
+[31m+               <Button
+[39m
+[31m+                 size="small"
+[39m
+[31m+                 danger
+[39m
+[31m+                 :disabled="ruleDrafts.length <= 1"
+[39m
+[31m+                 @click="removeRule(index)"
+[39m
+[31m+               >
+[39m
+[31m+                 移除
+[39m
+[31m+               </Button>
+[39m
+[31m+             </div>
+[39m
+[31m+             <Button size="small" @click="addRule">+ 添加规则</Button>
+[39m
+[31m+           </div>
+[39m
+[31m+ 
+[39m
+[31m+           <div class="flex gap-2">
+[39m
+[31m+             <Button :loading="drawFlow.state.phase === 'previewing'" @click="onPreview">
+[39m
+[31m+               预览抽题
+[39m
+[31m+             </Button>
+[39m
+[31m+             <template
+[39m
+[31m+               v-if="drawFlow.state.phase === 'previewed' || drawFlow.state.phase === 'committing'"
+[39m
+[31m+             >
+[39m
+[31m+               <Button :disabled="drawFlow.state.phase === 'committing'" @click="drawFlow.redraw()">
+[39m
+[31m+                 重新抽取
+[39m
+[31m+               </Button>
+[39m
+[31m+               <Button
+[39m
+[31m+                 type="primary"
+[39m
+[31m+                 :loading="drawFlow.state.phase === 'committing'"
+[39m
+[31m+                 @click="onCommit"
+[39m
+[31m+               >
+[39m
+[31m+                 确认入卷
+[39m
+[31m+               </Button>
+[39m
+[31m+             </template>
+[39m
+[31m+           </div>
+[39m
+[31m+ 
+[39m
+[31m+           <Alert
+[39m
+[31m+             v-if="drawFlow.state.error"
+[39m
+[31m+             type="error"
+[39m
+[31m+             show-icon
+[39m
+[31m+             :message="drawFlow.state.error"
+[39m
+[31m+             class="mt-3"
+[39m
+[31m+           />
+[39m
+[31m+ 
+[39m
+[31m+           <div v-if="drawFlow.state.preview" class="mt-3">
+[39m
+[31m+             <Card
+[39m
+[31m+               v-for="ruleResult in drawFlow.state.preview.rules"
+[39m
+[31m+               :key="ruleResult.ruleIndex ?? 0"
+[39m
+[31m+               size="small"
+[39m
+[31m+               :title="`规则 ${(ruleResult.ruleIndex ?? 0) + 1}（抽中 ${(ruleResult.questions ?? []).length} 题）`"
+[39m
+[31m+               class="mb-2"
+[39m
+[31m+             >
+[39m
+[31m+               <ul class="m-0 list-disc pl-5">
+[39m
+[31m+                 <li v-for="question in ruleResult.questions ?? []" :key="question.id" class="mb-1">
+[39m
+[31m+                   <Tag>{{ question.typeName ?? typeLabelOf(question.type) }}</Tag>
+[39m
+[31m+                   {{ question.content }}
+[39m
+[31m+                   <span class="text-gray-400">
+[39m
+[31m+                     默认 {{ question.score }} 分 · 难度 {{ difficultyLabelOf(question.difficulty) }}
+[39m
+[31m+                   </span>
+[39m
+[31m+                 </li>
+[39m
+[31m+               </ul>
+[39m
+[31m+             </Card>
+[39m
+[31m+             <p class="mb-0 text-gray-500">
+[39m
+[31m+               共抽中 {{ drawFlow.state.preview.total }} 题；随机算法在后端，
+[39m
+[31m+               确认入卷会按同一规则重新抽取并追加到试卷（使用题目默认分）。
+[39m
+[31m+             </p>
+[39m
+[31m+           </div>
+[39m
+[31m+         </TabPane>
+[39m
+[31m+       </Tabs>
+[39m
+[31m+ 
+[39m
+[31m+       <Card :title="`试卷题目（${items.length}）`">
+[39m
+[31m+         <Table
+[39m
+[31m+           :columns="questionColumns"
+[39m
+[31m+           :data-source="items"
+[39m
+[31m+           :pagination="false"
+[39m
+[31m+           :row-key="(row: PaperQuestionItemResponse) => row.questionId as number"
+[39m
+[31m+           size="middle"
+[39m
+[31m+         >
+[39m
+[31m+           <template #bodyCell="{ column, record }">
+[39m
+[31m+             <template v-if="column.key === 'number'">
+[39m
+[31m+               {{ record.number }}
+[39m
+[31m+             </template>
+[39m
+[31m+             <template v-else-if="column.key === 'questionType'">
+[39m
+[31m+               <Tag v-if="record.questionDeleted" color="red">题目已删除</Tag>
+[39m
+[31m+               <Tag v-else>{{ typeLabelOf(record.questionType) }}</Tag>
+[39m
+[31m+             </template>
+[39m
+[31m+             <template v-else-if="column.key === 'content'">
+[39m
+[31m+               <span :class="record.questionDeleted ? 'text-gray-400' : ''">
+[39m
+[31m+                 {{ record.questionDeleted ? '原题目已被删除，仅保留占位与分值' : record.content }}
+[39m
+[31m+               </span>
+[39m
+[31m+             </template>
+[39m
+[31m+             <template v-else-if="column.key === 'score'">
+[39m
+[31m+               <template v-if="!isLocked">
+[39m
+[31m+                 <InputNumber
+[39m
+[31m+                   v-model:value="scoreDrafts[record.questionId as number]"
+[39m
+[31m+                   :min="0.5"
+[39m
+[31m+                   :max="999.9"
+[39m
+[31m+                   :step="0.5"
+[39m
+[31m+                   size="small"
+[39m
+[31m+                   class="w-24"
+[39m
+[31m+                   @blur="commitScore(record)"
+[39m
+[31m+                   @press-enter="commitScore(record)"
+[39m
+[31m+                 />
+[39m
+[31m+                 <div v-if="record.defaultScore !== undefined" class="text-xs text-gray-400">
+[39m
+[31m+                   默认 {{ record.defaultScore }} 分
+[39m
+[31m+                 </div>
+[39m
+[31m+               </template>
+[39m
+[31m+               <template v-else>
+[39m
+[31m+                 {{ record.score }}
+[39m
+[31m+                 <div class="text-xs text-gray-400">默认 {{ record.defaultScore ?? '—' }} 分</div>
+[39m
+[31m+               </template>
+[39m
+[31m+             </template>
+[39m
+[31m+             <template v-else-if="column.key === 'actions'">
+[39m
+[31m+               <template v-if="!isLocked">
+[39m
+[31m+                 <Button
+[39m
+[31m+                   type="link"
+[39m
+[31m+                   size="small"
+[39m
+[31m+                   :disabled="isFirst(record)"
+[39m
+[31m+                   @click="move(record, -1)"
+[39m
+[31m+                 >
+[39m
+[31m+                   上移
+[39m
+[31m+                 </Button>
+[39m
+[31m+                 <Button
+[39m
+[31m+                   type="link"
+[39m
+[31m+                   size="small"
+[39m
+[31m+                   :disabled="isLast(record)"
+[39m
+[31m+                   @click="move(record, 1)"
+[39m
+[31m+                 >
+[39m
+[31m+                   下移
+[39m
+[31m+                 </Button>
+[39m
+[31m+                 <Popconfirm title="将该题移出试卷？" @confirm="onRemove(record)">
+[39m
+[31m+                   <Button type="link" size="small" danger>移出</Button>
+[39m
+[31m+                 </Popconfirm>
+[39m
+[31m+               </template>
+[39m
+[31m+               <span v-else class="text-gray-400">只读</span>
+[39m
+[31m+             </template>
+[39m
+[31m+           </template>
+[39m
+[31m+         </Table>
+[39m
+[31m+       </Card>
+[39m
+[31m+ 
+[39m
+[31m+       <QuestionPickerModal
+[39m
+[31m+         v-model:open="pickerOpen"
+[39m
+[31m+         :exclude-ids="paperQuestionIds"
+[39m
+[31m+         @picked="onPick"
+[39m
+[31m+       />
+[39m
+[31m+ 
+[39m
+[31m+       <Modal v-model:open="metaOpen" title="编辑试卷信息" :footer="null" :mask-closable="false">
+[39m
+[31m+         <Form layout="vertical">
+[39m
+[31m+           <FormItem label="试卷标题" required>
+[39m
+[31m+             <Input v-model:value="metaDraft.title" :maxlength="128" />
+[39m
+[31m+           </FormItem>
+[39m
+[31m+           <FormItem label="试卷描述">
+[39m
+[31m+             <Textarea v-model:value="metaDraft.description" :rows="2" :maxlength="512" />
+[39m
+[31m+           </FormItem>
+[39m
+[31m+           <FormItem label="申报总分" required>
+[39m
+[31m+             <InputNumber
+[39m
+[31m+               v-model:value="metaDraft.totalScore"
+[39m
+[31m+               :min="0"
+[39m
+[31m+               :max="9999.9"
+[39m
+[31m+               :step="0.5"
+[39m
+[31m+               class="w-48"
+[39m
+[31m+             />
+[39m
+[31m+             <p v-if="detail.questionCount" class="mb-0 mt-1 text-gray-400">
+[39m
+[31m+               已有 {{ detail.questionCount }} 题，当前各题分值之和为
+[39m
+[31m+               {{ sumPaperScores(items) }} 分， 不一致将保存失败。
+[39m
+[31m+             </p>
+[39m
+[31m+           </FormItem>
+[39m
+[31m+           <div class="flex justify-end gap-2">
+[39m
+[31m+             <Button @click="metaOpen = false">取消</Button>
+[39m
+[31m+             <Button type="primary" :loading="metaSaving" @click="onMetaSave">保存</Button>
+[39m
+[31m+           </div>
+[39m
+[31m+         </Form>
+[39m
+[31m+       </Modal>
+[39m
+[31m+     </template>
+[39m
+[31m+   </Spin>
+[39m
+[31m+ </template>
+[39m
+[31m+ 
+[39m
+[31m+ <script setup lang="ts">
+[39m
+[31m+ import {
+[39m
+[31m+   Alert,
+[39m
+[31m+   Button,
+[39m
+[31m+   Card,
+[39m
+[31m+   Empty,
+[39m
+[31m+   Form,
+[39m
+[31m+   FormItem,
+[39m
+[31m+   Input,
+[39m
+[31m+   InputNumber,
+[39m
+[31m+   Modal,
+[39m
+[31m+   Popconfirm,
+[39m
+[31m+   Select,
+[39m
+[31m+   Spin,
+[39m
+[31m+   TabPane,
+[39m
+[31m+   Tabs,
+[39m
+[31m+   Tag,
+[39m
+[31m+   Table,
+[39m
+[31m+   Textarea,
+[39m
+[31m+   message,
+[39m
+[31m+   type TableColumnsType,
+[39m
+[31m+ } from 'ant-design-vue';
+[39m
+[31m+ import { computed, reactive, ref, watch } from 'vue';
+[39m
+[31m+ import { useRoute } from 'vue-router';
+[39m
+[31m+ import { useQuery } from '@tanstack/vue-query';
+[39m
+[31m+ 
+[39m
+[31m+ import QuestionPickerModal from '@/components/question/QuestionPickerModal.vue';
+[39m
+[31m+ import {
+[39m
+[31m+   addQuestion,
+[39m
+[31m+   commitRandomDraw,
+[39m
+[31m+   detail1,
+[39m
+[31m+   list as listTags,
+[39m
+[31m+   previewDraw as previewDrawContract,
+[39m
+[31m+   removeQuestion,
+[39m
+[31m+   update1,
+[39m
+[31m+   updateOrder,
+[39m
+[31m+   updateQuestionScore,
+[39m
+[31m+   type PaperDetailResponse,
+[39m
+[31m+   type PaperQuestionItemResponse,
+[39m
+[31m+   type QuestionResponse,
+[39m
+[31m+   type TagResponse,
+[39m
+[31m+ } from '@/api/axios';
+[39m
+[31m+ import { client, unwrap } from '@/api/apiClient';
+[39m
+[31m+ import { queryClient } from '@/api/queryClient';
+[39m
+[31m+ import { createDrawFlow } from '@/hooks/useRandomDraw';
+[39m
+[31m+ import { moveItem, scoreDistribution, sumPaperScores } from '@/utils/paperMath';
+[39m
+[31m+ import { drawRulesErrors, toDrawRules, type DrawRuleDraft } from '@/utils/drawRules';
+[39m
+[31m+ import {
+[39m
+[31m+   DIFFICULTY_OPTIONS,
+[39m
+[31m+   PAPER_STATUS_LOCKED,
+[39m
+[31m+   QUESTION_TYPE_OPTIONS,
+[39m
+[31m+   difficultyLabelOf,
+[39m
+[31m+   paperStatusLabel,
+[39m
+[31m+   typeLabelOf,
+[39m
+[31m+ } from '@/utils/questionTypes';
+[39m
+[31m+ 
+[39m
+[31m+ const route = useRoute('/(dashboard)/teacher/papers/[id]');
+[39m
+[31m+ const paperId = computed(() => Number(route.params.id));
+[39m
+[31m+ 
+[39m
+[31m+ const { data: detail, isFetching } = useQuery({
+[39m
+[31m+   queryKey: computed(() => ['paper', paperId.value]),
+[39m
+[31m+   queryFn: () =>
+[39m
+[31m+     unwrap<PaperDetailResponse>(
+[39m
+[31m+       detail1({ client, throwOnError: true, path: { id: paperId.value } })
+[39m
+[31m+     ),
+[39m
+[31m+ });
+[39m
+[31m+ 
+[39m
+[31m+ const items = computed<PaperQuestionItemResponse[]>(() => detail.value?.questions ?? []);
+[39m
+[31m+ const isLocked = computed(() => detail.value?.status === PAPER_STATUS_LOCKED);
+[39m
+[31m+ const scoreMismatch = computed(() => {
+[39m
+[31m+   if (!detail.value || items.value.length === 0) return false;
+[39m
+[31m+   const declared = detail.value.totalScore ?? 0;
+[39m
+[31m+   return Math.abs(sumPaperScores(items.value) - declared) > 0.001;
+[39m
+[31m+ });
+[39m
+[31m+ 
+[39m
+[31m+ const distribution = computed(() => scoreDistribution(items.value));
+[39m
+[31m+ 
+[39m
+[31m+ const paperQuestionIds = computed(() =>
+[39m
+[31m+   items.value.map((item) => item.questionId).filter((id): id is number => id !== undefined)
+[39m
+[31m+ );
+[39m
+[31m+ 
+[39m
+[31m+ function invalidatePaper(): void {
+[39m
+[31m+   void queryClient.invalidateQueries({ queryKey: ['paper', paperId.value] });
+[39m
+[31m+   // 列表页的题数/状态随试卷变化，一并失效
+[39m
+[31m+   void queryClient.invalidateQueries({ queryKey: ['papers'] });
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ // ==================== 手动组卷 ====================
+[39m
+[31m+ 
+[39m
+[31m+ const pickerOpen = ref(false);
+[39m
+[31m+ 
+[39m
+[31m+ async function onPick(selected: QuestionResponse[]): Promise<void> {
+[39m
+[31m+   const existing = new Set(paperQuestionIds.value);
+[39m
+[31m+   const fresh = selected.filter(
+[39m
+[31m+     (question) => question.id !== undefined && !existing.has(question.id)
+[39m
+[31m+   );
+[39m
+[31m+   if (fresh.length === 0) {
+[39m
+[31m+     message.info('所选题目均已在试卷中');
+[39m
+[31m+     return;
+[39m
+[31m+   }
+[39m
+[31m+   // 逐题入卷；不传 score 即使用题目默认分（覆盖在下方列表内单独调整）
+[39m
+[31m+   for (const question of fresh) {
+[39m
+[31m+     await unwrap(
+[39m
+[31m+       addQuestion({
+[39m
+[31m+         client,
+[39m
+[31m+         throwOnError: true,
+[39m
+[31m+         path: { id: paperId.value },
+[39m
+[31m+         body: { questionId: question.id as number },
+[39m
+[31m+       })
+[39m
+[31m+     );
+[39m
+[31m+   }
+[39m
+[31m+   message.success(`已加入 ${fresh.length} 题`);
+[39m
+[31m+   invalidatePaper();
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ /** 卷内分值编辑草稿：key=questionId。blur/回车时才提交，避免逐键触发 PUT。 */
+[39m
+[31m+ const scoreDrafts = reactive<Record<number, number | undefined>>({});
+[39m
+[31m+ 
+[39m
+[31m+ watch(
+[39m
+[31m+   items,
+[39m
+[31m+   (list) => {
+[39m
+[31m+     for (const item of list) {
+[39m
+[31m+       const key = item.questionId;
+[39m
+[31m+       if (key !== undefined && !(key in scoreDrafts)) {
+[39m
+[31m+         scoreDrafts[key] = item.score ?? undefined;
+[39m
+[31m+       }
+[39m
+[31m+     }
+[39m
+[31m+   },
+[39m
+[31m+   { immediate: true }
+[39m
+[31m+ );
+[39m
+[31m+ 
+[39m
+[31m+ async function commitScore(record: PaperQuestionItemResponse): Promise<void> {
+[39m
+[31m+   const key = record.questionId;
+[39m
+[31m+   if (key === undefined) return;
+[39m
+[31m+   const next = scoreDrafts[key];
+[39m
+[31m+   if (next === undefined || !Number.isFinite(next)) {
+[39m
+[31m+     scoreDrafts[key] = record.score ?? undefined;
+[39m
+[31m+     message.warning('分值须在 0.5–999.9 之间');
+[39m
+[31m+     return;
+[39m
+[31m+   }
+[39m
+[31m+   if (Math.abs(next - (record.score ?? 0)) < 0.001) {
+[39m
+[31m+     return;
+[39m
+[31m+   }
+[39m
+[31m+   try {
+[39m
+[31m+     await unwrap(
+[39m
+[31m+       updateQuestionScore({
+[39m
+[31m+         client,
+[39m
+[31m+         throwOnError: true,
+[39m
+[31m+         path: { id: paperId.value, questionId: key },
+[39m
+[31m+         body: { score: next },
+[39m
+[31m+       })
+[39m
+[31m+     );
+[39m
+[31m+     invalidatePaper();
+[39m
+[31m+   } catch (error) {
+[39m
+[31m+     scoreDrafts[key] = record.score ?? undefined;
+[39m
+[31m+     message.error(error instanceof Error ? error.message : '分值保存失败');
+[39m
+[31m+   }
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ function rowIndexOf(record: PaperQuestionItemResponse): number {
+[39m
+[31m+   return items.value.findIndex((item) => item.questionId === record.questionId);
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ function isFirst(record: PaperQuestionItemResponse): boolean {
+[39m
+[31m+   return rowIndexOf(record) <= 0;
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ function isLast(record: PaperQuestionItemResponse): boolean {
+[39m
+[31m+   return rowIndexOf(record) >= items.value.length - 1;
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ /**
+[39m
+[31m+  * 调序：本地 moveItem 算出新顺序后，把全量 questionId 列表交给后端重排题号
+[39m
+[31m+  * （契约要求传入列表与现有题目一一对应，随机算法不涉及、排序逻辑也只在前端算目标顺序）。
+[39m
+[31m+  */
+[39m
+[31m+ async function move(record: PaperQuestionItemResponse, delta: number): Promise<void> {
+[39m
+[31m+   const from = rowIndexOf(record);
+[39m
+[31m+   if (from < 0) return;
+[39m
+[31m+   const ids = items.value.map((item) => item.questionId as number);
+[39m
+[31m+   const next = moveItem(ids, from, delta);
+[39m
+[31m+   if (next.every((id, index) => id === ids[index])) {
+[39m
+[31m+     return;
+[39m
+[31m+   }
+[39m
+[31m+   try {
+[39m
+[31m+     await unwrap(
+[39m
+[31m+       updateOrder({
+[39m
+[31m+         client,
+[39m
+[31m+         throwOnError: true,
+[39m
+[31m+         path: { id: paperId.value },
+[39m
+[31m+         body: { questionIds: next },
+[39m
+[31m+       })
+[39m
+[31m+     );
+[39m
+[31m+     invalidatePaper();
+[39m
+[31m+   } catch (error) {
+[39m
+[31m+     message.error(error instanceof Error ? error.message : '调序失败');
+[39m
+[31m+   }
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ async function onRemove(record: PaperQuestionItemResponse): Promise<void> {
+[39m
+[31m+   if (record.questionId === undefined) return;
+[39m
+[31m+   try {
+[39m
+[31m+     await unwrap(
+[39m
+[31m+       removeQuestion({
+[39m
+[31m+         client,
+[39m
+[31m+         throwOnError: true,
+[39m
+[31m+         path: { id: paperId.value, questionId: record.questionId },
+[39m
+[31m+       })
+[39m
+[31m+     );
+[39m
+[31m+     delete scoreDrafts[record.questionId];
+[39m
+[31m+     message.success('已移出试卷');
+[39m
+[31m+     invalidatePaper();
+[39m
+[31m+   } catch (error) {
+[39m
+[31m+     message.error(error instanceof Error ? error.message : '移出失败');
+[39m
+[31m+   }
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ // ==================== 试卷元信息 ====================
+[39m
+[31m+ 
+[39m
+[31m+ const metaOpen = ref(false);
+[39m
+[31m+ const metaSaving = ref(false);
+[39m
+[31m+ const metaDraft = reactive<{ title: string; description: string; totalScore: number | undefined }>({
+[39m
+[31m+   title: '',
+[39m
+[31m+   description: '',
+[39m
+[31m+   totalScore: undefined,
+[39m
+[31m+ });
+[39m
+[31m+ 
+[39m
+[31m+ function openMetaEdit(): void {
+[39m
+[31m+   if (!detail.value) return;
+[39m
+[31m+   metaDraft.title = detail.value.title ?? '';
+[39m
+[31m+   metaDraft.description = detail.value.description ?? '';
+[39m
+[31m+   metaDraft.totalScore = detail.value.totalScore ?? undefined;
+[39m
+[31m+   metaOpen.value = true;
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ async function onMetaSave(): Promise<void> {
+[39m
+[31m+   if (!metaDraft.title.trim() || metaDraft.totalScore === undefined) {
+[39m
+[31m+     message.warning('标题与申报总分不能为空');
+[39m
+[31m+     return;
+[39m
+[31m+   }
+[39m
+[31m+   metaSaving.value = true;
+[39m
+[31m+   try {
+[39m
+[31m+     await unwrap(
+[39m
+[31m+       update1({
+[39m
+[31m+         client,
+[39m
+[31m+         throwOnError: true,
+[39m
+[31m+         path: { id: paperId.value },
+[39m
+[31m+         body: {
+[39m
+[31m+           title: metaDraft.title.trim(),
+[39m
+[31m+           description: metaDraft.description,
+[39m
+[31m+           totalScore: metaDraft.totalScore,
+[39m
+[31m+         },
+[39m
+[31m+       })
+[39m
+[31m+     );
+[39m
+[31m+     message.success('试卷信息已保存');
+[39m
+[31m+     metaOpen.value = false;
+[39m
+[31m+     invalidatePaper();
+[39m
+[31m+   } catch (error) {
+[39m
+[31m+     // 后端总分校验失败（各题分值之和 ≠ 总分）会返回 400 + 中文原因，直接透传
+[39m
+[31m+     message.error(error instanceof Error ? error.message : '保存失败');
+[39m
+[31m+   } finally {
+[39m
+[31m+     metaSaving.value = false;
+[39m
+[31m+   }
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ // ==================== 标签随机抽题 ====================
+[39m
+[31m+ 
+[39m
+[31m+ const { data: tags } = useQuery({
+[39m
+[31m+   queryKey: ['tags'],
+[39m
+[31m+   queryFn: () => unwrap<TagResponse[]>(listTags({ client, throwOnError: true })),
+[39m
+[31m+ });
+[39m
+[31m+ 
+[39m
+[31m+ const tagOptions = computed(() =>
+[39m
+[31m+   (tags.value ?? []).map((tag) => ({ value: tag.id as number, label: tag.name ?? String(tag.id) }))
+[39m
+[31m+ );
+[39m
+[31m+ 
+[39m
+[31m+ function emptyRule(): DrawRuleDraft {
+[39m
+[31m+   return { type: undefined, difficulty: undefined, tagIds: [], count: 5 };
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ const ruleDrafts = ref<DrawRuleDraft[]>([emptyRule()]);
+[39m
+[31m+ 
+[39m
+[31m+ function addRule(): void {
+[39m
+[31m+   ruleDrafts.value.push(emptyRule());
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ function removeRule(index: number): void {
+[39m
+[31m+   if (ruleDrafts.value.length > 1) {
+[39m
+[31m+     ruleDrafts.value.splice(index, 1);
+[39m
+[31m+   }
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ /** 生产注入：走 gen:api 生成客户端；单测注入 mock（见 useRandomDraw.spec.ts）。 */
+[39m
+[31m+ const drawFlow = createDrawFlow({
+[39m
+[31m+   previewDraw: (rules) =>
+[39m
+[31m+     unwrap(previewDrawContract({ client, throwOnError: true, body: { rules } })),
+[39m
+[31m+   commitDraw: (id, rules) =>
+[39m
+[31m+     unwrap(commitRandomDraw({ client, throwOnError: true, path: { id }, body: { rules } })),
+[39m
+[31m+ });
+[39m
+[31m+ 
+[39m
+[31m+ // 规则一旦被修改，旧预览即作废：预览结果永远与当前规则一一对应
+[39m
+[31m+ watch(
+[39m
+[31m+   ruleDrafts,
+[39m
+[31m+   () => {
+[39m
+[31m+     drawFlow.invalidate();
+[39m
+[31m+   },
+[39m
+[31m+   { deep: true }
+[39m
+[31m+ );
+[39m
+[31m+ 
+[39m
+[31m+ async function onPreview(): Promise<void> {
+[39m
+[31m+   const errors = drawRulesErrors(ruleDrafts.value);
+[39m
+[31m+   if (errors.length > 0) {
+[39m
+[31m+     message.warning(errors[0] as string);
+[39m
+[31m+     return;
+[39m
+[31m+   }
+[39m
+[31m+   await drawFlow.preview(toDrawRules(ruleDrafts.value));
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ async function onCommit(): Promise<void> {
+[39m
+[31m+   const ok = await drawFlow.commit(paperId.value);
+[39m
+[31m+   if (ok) {
+[39m
+[31m+     message.success('抽题已入卷');
+[39m
+[31m+     ruleDrafts.value = [emptyRule()];
+[39m
+[31m+     invalidatePaper();
+[39m
+[31m+   }
+[39m
+[31m+ }
+[39m
+[31m+ 
+[39m
+[31m+ const questionColumns: TableColumnsType = [
+[39m
+[31m+   { title: '题号', key: 'number', width: 70 },
+[39m
+[31m+   { title: '题型', key: 'questionType', width: 110 },
+[39m
+[31m+   { title: '题干', key: 'content', ellipsis: true },
+[39m
+[31m+   { title: '卷内分值', key: 'score', width: 140 },
+[39m
+[31m+   { title: '操作', key: 'actions', width: 200 },
+[39m
+[31m+ ];
+[39m
+[31m+ </script>
+[39m
+[31m+[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts:[2m119:24[22m[39m
+    [90m117|[39m   it('源码不再含串行单题入卷循环（for (const question of fresh) / await unwrap(addQu…
+    [90m118|[39m     [35mconst[39m source [33m=[39m [34mreadFileSync[39m([33mPAGE_SOURCE[39m[33m,[39m [32m
+'utf-8'[39m)[33m;[39m
+    [90m119|[39m     [34mexpect[39m(source)[33m.[39mnot[33m.[39m[34mtoContain[39m([32m'for (const question o
+f fresh)'[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m120|[39m     [34mexpect[39m(source)[33m.[39mnot[33m.[39m[34mtoMatch[39m([36m/unwrap\(\s*addQuestion\
+(/[39m)[33m;[39m
+    [90m121|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts[2m > [22m词法护栏：组卷页 onPi
+ck 批量化[2m > [22m源码含批量入卷调用（unwrap(addQuestions(）
+[31m[1mAssertionError[22m: expected '<template>\r\n  <Spin :spinning="isFe…' to match /unwrap\(\s*addQuestions\(/[3
+9m
+
+[32m- Expected:[39m
+/unwrap\(\s*addQuestions\(/
+
+[31m+ Received:[39m
+"<template>
+  <Spin :spinning=\"isFetching\">
+    <Alert
+      v-if=\"detail && isLocked\"
+      type=\"info\"
+      show-icon
+      class=\"mb-3\"
+      message=\"试卷已锁定（已生成快照），以下内容为只读预览\"
+    />
+
+    <Empty v-else-if=\"!detail && !isFetching\" description=\"试卷不存在或加载失败\" />
+
+    <template v-if=\"detail\">
+      <Card class=\"mb-4\">
+        <div class=\"flex flex-wrap items-start justify-between gap-2\">
+          <div class=\"min-w-0\">
+            <h2 class=\"mb-1 flex items-center gap-2 text-lg font-semibold\">
+              <span class=\"truncate\">{{ detail.title }}</span>
+              <Tag :color=\"isLocked ? 'gold' : 'default'\">
+                {{ paperStatusLabel(detail.status) }}
+              </Tag>
+            </h2>
+            <p class=\"mb-1 text-gray-500\">{{ detail.description || '暂无描述' }}</p>
+            <p class=\"mb-0 text-gray-700\">
+              题数 {{ detail.questionCount ?? items.length }} · 实际合计
+              <b>{{ sumPaperScores(items) }}</b>
+              分 / 申报总分 {{ detail.totalScore }} 分
+            </p>
+          </div>
+          <div v-if=\"!isLocked\" class=\"flex gap-2\">
+            <Button @click=\"openMetaEdit\">编辑信息</Button>
+            <Button type=\"primary\" @click=\"pickerOpen = true\">+ 从题库选题</Button>
+          </div>
+        </div>
+
+        <div v-if=\"distribution.length\" class=\"mt-3 flex flex-wrap gap-2\">
+          <Tag v-for=\"row in distribution\" :key=\"row.type\" color=\"blue\">
+            {{ row.typeName }} × {{ row.count }} = {{ row.subtotal }} 分
+          </Tag>
+        </div>
+
+        <Alert
+          v-if=\"!isLocked && scoreMismatch\"
+          type=\"warning\"
+          show-icon
+          class=\"mt-3\"
+          :message=\"`各题分值之和(${sumPaperScores(items)})与申报总分(${detail.totalScore})不一致，请调整题目分值或总分`\"
+        />
+      </Card>
+
+      <Tabs v-if=\"!isLocked\" class=\"mb-4\">
+        <TabPane key=\"manual\" tab=\"手动选题\">
+          <p class=\"mb-0 text-gray-500\">
+            点击右上角「从题库选题」加入题目；加入后可在下方题目列表覆盖单题分值、调整顺序或移出。
+            题干与选项实时读取题库；题目入卷时使用默认分。
+          </p>
+        </TabPane>
+
+        <TabPane key=\"draw\" tab=\"随机抽题\">
+          <div class=\"mb-3 space-y-2\">
+            <div
+              v-for=\"(rule, index) in ruleDrafts\"
+              :key=\"index\"
+              class=\"flex flex-wrap items-center gap-2\"
+            >
+              <span class=\"w-14 text-gray-500\">规则{{ index + 1 }}</span>
+              <Select
+                v-model:value=\"rule.type\"
+                :options=\"QUESTION_TYPE_OPTIONS\"
+                allow-clear
+                placeholder=\"题型不限\"
+                class=\"w-32\"
+              />
+              <Select
+                v-model:value=\"rule.difficulty\"
+                :options=\"DIFFICULTY_OPTIONS\"
+                allow-clear
+                placeholder=\"难度不限\"
+                class=\"w-32\"
+              />
+              <Select
+                v-model:value=\"rule.tagIds\"
+                :options=\"tagOptions\"
+                mode=\"multiple\"
+                allow-clear
+                placeholder=\"标签（任一命中即可）\"
+                class=\"w-72\"
+              />
+              <span class=\"text-gray-500\">抽</span>
+              <InputNumber v-model:value=\"rule.count\" :min=\"1\" :max=\"100\" class=\"w-20\" />
+              <span class=\"text-gray-500\">题</span>
+              <Button
+                size=\"small\"
+                danger
+                :disabled=\"ruleDrafts.length <= 1\"
+                @click=\"removeRule(index)\"
+              >
+                移除
+              </Button>
+            </div>
+            <Button size=\"small\" @click=\"addRule\">+ 添加规则</Button>
+          </div>
+
+          <div class=\"flex gap-2\">
+            <Button :loading=\"drawFlow.state.phase === 'previewing'\" @click=\"onPreview\">
+              预览抽题
+            </Button>
+            <template
+              v-if=\"drawFlow.state.phase === 'previewed' || drawFlow.state.phase === 'committing'\"
+            >
+              <Button :disabled=\"drawFlow.state.phase === 'committing'\" @click=\"drawFlow.redraw()\">
+                重新抽取
+              </Button>
+              <Button
+                type=\"primary\"
+                :loading=\"drawFlow.state.phase === 'committing'\"
+                @click=\"onCommit\"
+              >
+                确认入卷
+              </Button>
+            </template>
+          </div>
+
+          <Alert
+            v-if=\"drawFlow.state.error\"
+            type=\"error\"
+            show-icon
+            :message=\"drawFlow.state.error\"
+            class=\"mt-3\"
+          />
+
+          <div v-if=\"drawFlow.state.preview\" class=\"mt-3\">
+            <Card
+              v-for=\"ruleResult in drawFlow.state.preview.rules\"
+              :key=\"ruleResult.ruleIndex ?? 0\"
+              size=\"small\"
+              :title=\"`规则 ${(ruleResult.ruleIndex ?? 0) + 1}（抽中 ${(ruleResult.questions ?? []).length} 题）`\"
+              class=\"mb-2\"
+            >
+              <ul class=\"m-0 list-disc pl-5\">
+                <li v-for=\"question in ruleResult.questions ?? []\" :key=\"question.id\" class=\"mb-1\">
+                  <Tag>{{ question.typeName ?? typeLabelOf(question.type) }}</Tag>
+                  {{ question.content }}
+                  <span class=\"text-gray-400\">
+                    默认 {{ question.score }} 分 · 难度 {{ difficultyLabelOf(question.difficulty) }}
+                  </span>
+                </li>
+              </ul>
+            </Card>
+            <p class=\"mb-0 text-gray-500\">
+              共抽中 {{ drawFlow.state.preview.total }} 题；随机算法在后端，
+              确认入卷会按同一规则重新抽取并追加到试卷（使用题目默认分）。
+            </p>
+          </div>
+        </TabPane>
+      </Tabs>
+
+      <Card :title=\"`试卷题目（${items.length}）`\">
+        <Table
+          :columns=\"questionColumns\"
+          :data-source=\"items\"
+          :pagination=\"false\"
+          :row-key=\"(row: PaperQuestionItemResponse) => row.questionId as number\"
+          size=\"middle\"
+        >
+          <template #bodyCell=\"{ column, record }\">
+            <template v-if=\"column.key === 'number'\">
+              {{ record.number }}
+            </template>
+            <template v-else-if=\"column.key === 'questionType'\">
+              <Tag v-if=\"record.questionDeleted\" color=\"red\">题目已删除</Tag>
+              <Tag v-else>{{ typeLabelOf(record.questionType) }}</Tag>
+            </template>
+            <template v-else-if=\"column.key === 'content'\">
+              <span :class=\"record.questionDeleted ? 'text-gray-400' : ''\">
+                {{ record.questionDeleted ? '原题目已被删除，仅保留占位与分值' : record.content }}
+              </span>
+            </template>
+            <template v-else-if=\"column.key === 'score'\">
+              <template v-if=\"!isLocked\">
+                <InputNumber
+                  v-model:value=\"scoreDrafts[record.questionId as number]\"
+                  :min=\"0.5\"
+                  :max=\"999.9\"
+                  :step=\"0.5\"
+                  size=\"small\"
+                  class=\"w-24\"
+                  @blur=\"commitScore(record)\"
+                  @press-enter=\"commitScore(record)\"
+                />
+                <div v-if=\"record.defaultScore !== undefined\" class=\"text-xs text-gray-400\">
+                  默认 {{ record.defaultScore }} 分
+                </div>
+              </template>
+              <template v-else>
+                {{ record.score }}
+                <div class=\"text-xs text-gray-400\">默认 {{ record.defaultScore ?? '—' }} 分</div>
+              </template>
+            </template>
+            <template v-else-if=\"column.key === 'actions'\">
+              <template v-if=\"!isLocked\">
+                <Button
+                  type=\"link\"
+                  size=\"small\"
+                  :disabled=\"isFirst(record)\"
+                  @click=\"move(record, -1)\"
+                >
+                  上移
+                </Button>
+                <Button
+                  type=\"link\"
+                  size=\"small\"
+                  :disabled=\"isLast(record)\"
+                  @click=\"move(record, 1)\"
+                >
+                  下移
+                </Button>
+                <Popconfirm title=\"将该题移出试卷？\" @confirm=\"onRemove(record)\">
+                  <Button type=\"link\" size=\"small\" danger>移出</Button>
+                </Popconfirm>
+              </template>
+              <span v-else class=\"text-gray-400\">只读</span>
+            </template>
+          </template>
+        </Table>
+      </Card>
+
+      <QuestionPickerModal
+        v-model:open=\"pickerOpen\"
+        :exclude-ids=\"paperQuestionIds\"
+        @picked=\"onPick\"
+      />
+
+      <Modal v-model:open=\"metaOpen\" title=\"编辑试卷信息\" :footer=\"null\" :mask-closable=\"false\">
+        <Form layout=\"vertical\">
+          <FormItem label=\"试卷标题\" required>
+            <Input v-model:value=\"metaDraft.title\" :maxlength=\"128\" />
+          </FormItem>
+          <FormItem label=\"试卷描述\">
+            <Textarea v-model:value=\"metaDraft.description\" :rows=\"2\" :maxlength=\"512\" />
+          </FormItem>
+          <FormItem label=\"申报总分\" required>
+            <InputNumber
+              v-model:value=\"metaDraft.totalScore\"
+              :min=\"0\"
+              :max=\"9999.9\"
+              :step=\"0.5\"
+              class=\"w-48\"
+            />
+            <p v-if=\"detail.questionCount\" class=\"mb-0 mt-1 text-gray-400\">
+              已有 {{ detail.questionCount }} 题，当前各题分值之和为
+              {{ sumPaperScores(items) }} 分， 不一致将保存失败。
+            </p>
+          </FormItem>
+          <div class=\"flex justify-end gap-2\">
+            <Button @click=\"metaOpen = false\">取消</Button>
+            <Button type=\"primary\" :loading=\"metaSaving\" @click=\"onMetaSave\">保存</Button>
+          </div>
+        </Form>
+      </Modal>
+    </template>
+  </Spin>
+</template>
+
+<script setup lang=\"ts\">
+import {
+  Alert,
+  Button,
+  Card,
+  Empty,
+  Form,
+  FormItem,
+  Input,
+  InputNumber,
+  Modal,
+  Popconfirm,
+  Select,
+  Spin,
+  TabPane,
+  Tabs,
+  Tag,
+  Table,
+  Textarea,
+  message,
+  type TableColumnsType,
+} from 'ant-design-vue';
+import { computed, reactive, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useQuery } from '@tanstack/vue-query';
+
+import QuestionPickerModal from '@/components/question/QuestionPickerModal.vue';
+import {
+  addQuestion,
+  commitRandomDraw,
+  detail1,
+  list as listTags,
+  previewDraw as previewDrawContract,
+  removeQuestion,
+  update1,
+  updateOrder,
+  updateQuestionScore,
+  type PaperDetailResponse,
+  type PaperQuestionItemResponse,
+  type QuestionResponse,
+  type TagResponse,
+} from '@/api/axios';
+import { client, unwrap } from '@/api/apiClient';
+import { queryClient } from '@/api/queryClient';
+import { createDrawFlow } from '@/hooks/useRandomDraw';
+import { moveItem, scoreDistribution, sumPaperScores } from '@/utils/paperMath';
+import { drawRulesErrors, toDrawRules, type DrawRuleDraft } from '@/utils/drawRules';
+import {
+  DIFFICULTY_OPTIONS,
+  PAPER_STATUS_LOCKED,
+  QUESTION_TYPE_OPTIONS,
+  difficultyLabelOf,
+  paperStatusLabel,
+  typeLabelOf,
+} from '@/utils/questionTypes';
+
+const route = useRoute('/(dashboard)/teacher/papers/[id]');
+const paperId = computed(() => Number(route.params.id));
+
+const { data: detail, isFetching } = useQuery({
+  queryKey: computed(() => ['paper', paperId.value]),
+  queryFn: () =>
+    unwrap<PaperDetailResponse>(
+      detail1({ client, throwOnError: true, path: { id: paperId.value } })
+    ),
+});
+
+const items = computed<PaperQuestionItemResponse[]>(() => detail.value?.questions ?? []);
+const isLocked = computed(() => detail.value?.status === PAPER_STATUS_LOCKED);
+const scoreMismatch = computed(() => {
+  if (!detail.value || items.value.length === 0) return false;
+  const declared = detail.value.totalScore ?? 0;
+  return Math.abs(sumPaperScores(items.value) - declared) > 0.001;
+});
+
+const distribution = computed(() => scoreDistribution(items.value));
+
+const paperQuestionIds = computed(() =>
+  items.value.map((item) => item.questionId).filter((id): id is number => id !== undefined)
+);
+
+function invalidatePaper(): void {
+  void queryClient.invalidateQueries({ queryKey: ['paper', paperId.value] });
+  // 列表页的题数/状态随试卷变化，一并失效
+  void queryClient.invalidateQueries({ queryKey: ['papers'] });
+}
+
+// ==================== 手动组卷 ====================
+
+const pickerOpen = ref(false);
+
+async function onPick(selected: QuestionResponse[]): Promise<void> {
+  const existing = new Set(paperQuestionIds.value);
+  const fresh = selected.filter(
+    (question) => question.id !== undefined && !existing.has(question.id)
+  );
+  if (fresh.length === 0) {
+    message.info('所选题目均已在试卷中');
+    return;
+  }
+  // 逐题入卷；不传 score 即使用题目默认分（覆盖在下方列表内单独调整）
+  for (const question of fresh) {
+    await unwrap(
+      addQuestion({
+        client,
+        throwOnError: true,
+        path: { id: paperId.value },
+        body: { questionId: question.id as number },
+      })
+    );
+  }
+  message.success(`已加入 ${fresh.length} 题`);
+  invalidatePaper();
+}
+
+/** 卷内分值编辑草稿：key=questionId。blur/回车时才提交，避免逐键触发 PUT。 */
+const scoreDrafts = reactive<Record<number, number | undefined>>({});
+
+watch(
+  items,
+  (list) => {
+    for (const item of list) {
+      const key = item.questionId;
+      if (key !== undefined && !(key in scoreDrafts)) {
+        scoreDrafts[key] = item.score ?? undefined;
+      }
+    }
+  },
+  { immediate: true }
+);
+
+async function commitScore(record: PaperQuestionItemResponse): Promise<void> {
+  const key = record.questionId;
+  if (key === undefined) return;
+  const next = scoreDrafts[key];
+  if (next === undefined || !Number.isFinite(next)) {
+    scoreDrafts[key] = record.score ?? undefined;
+    message.warning('分值须在 0.5–999.9 之间');
+    return;
+  }
+  if (Math.abs(next - (record.score ?? 0)) < 0.001) {
+    return;
+  }
+  try {
+    await unwrap(
+      updateQuestionScore({
+        client,
+        throwOnError: true,
+        path: { id: paperId.value, questionId: key },
+        body: { score: next },
+      })
+    );
+    invalidatePaper();
+  } catch (error) {
+    scoreDrafts[key] = record.score ?? undefined;
+    message.error(error instanceof Error ? error.message : '分值保存失败');
+  }
+}
+
+function rowIndexOf(record: PaperQuestionItemResponse): number {
+  return items.value.findIndex((item) => item.questionId === record.questionId);
+}
+
+function isFirst(record: PaperQuestionItemResponse): boolean {
+  return rowIndexOf(record) <= 0;
+}
+
+function isLast(record: PaperQuestionItemResponse): boolean {
+  return rowIndexOf(record) >= items.value.length - 1;
+}
+
+/**
+ * 调序：本地 moveItem 算出新顺序后，把全量 questionId 列表交给后端重排题号
+ * （契约要求传入列表与现有题目一一对应，随机算法不涉及、排序逻辑也只在前端算目标顺序）。
+ */
+async function move(record: PaperQuestionItemResponse, delta: number): Promise<void> {
+  const from = rowIndexOf(record);
+  if (from < 0) return;
+  const ids = items.value.map((item) => item.questionId as number);
+  const next = moveItem(ids, from, delta);
+  if (next.every((id, index) => id === ids[index])) {
+    return;
+  }
+  try {
+    await unwrap(
+      updateOrder({
+        client,
+        throwOnError: true,
+        path: { id: paperId.value },
+        body: { questionIds: next },
+      })
+    );
+    invalidatePaper();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '调序失败');
+  }
+}
+
+async function onRemove(record: PaperQuestionItemResponse): Promise<void> {
+  if (record.questionId === undefined) return;
+  try {
+    await unwrap(
+      removeQuestion({
+        client,
+        throwOnError: true,
+        path: { id: paperId.value, questionId: record.questionId },
+      })
+    );
+    delete scoreDrafts[record.questionId];
+    message.success('已移出试卷');
+    invalidatePaper();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '移出失败');
+  }
+}
+
+// ==================== 试卷元信息 ====================
+
+const metaOpen = ref(false);
+const metaSaving = ref(false);
+const metaDraft = reactive<{ title: string; description: string; totalScore: number | undefined }>({
+  title: '',
+  description: '',
+  totalScore: undefined,
+});
+
+function openMetaEdit(): void {
+  if (!detail.value) return;
+  metaDraft.title = detail.value.title ?? '';
+  metaDraft.description = detail.value.description ?? '';
+  metaDraft.totalScore = detail.value.totalScore ?? undefined;
+  metaOpen.value = true;
+}
+
+async function onMetaSave(): Promise<void> {
+  if (!metaDraft.title.trim() || metaDraft.totalScore === undefined) {
+    message.warning('标题与申报总分不能为空');
+    return;
+  }
+  metaSaving.value = true;
+  try {
+    await unwrap(
+      update1({
+        client,
+        throwOnError: true,
+        path: { id: paperId.value },
+        body: {
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m4 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 19:01:43
+[2m   Duration [22m 4.49s[2m (transform 198ms, setup 34ms, import 2.67s, tests 823ms, environment 737ms)[22m
+
+          title: metaDraft.title.trim(),
+          description: metaDraft.description,
+          totalScore: metaDraft.totalScore,
+        },
+      })
+    );
+    message.success('试卷信息已保存');
+    metaOpen.value = false;
+    invalidatePaper();
+  } catch (error) {
+    // 后端总分校验失败（各题分值之和 ≠ 总分）会返回 400 + 中文原因，直接透传
+    message.error(error instanceof Error ? error.message : '保存失败');
+  } finally {
+    metaSaving.value = false;
+  }
+}
+
+// ==================== 标签随机抽题 ====================
+
+const { data: tags } = useQuery({
+  queryKey: ['tags'],
+  queryFn: () => unwrap<TagResponse[]>(listTags({ client, throwOnError: true })),
+});
+
+const tagOptions = computed(() =>
+  (tags.value ?? []).map((tag) => ({ value: tag.id as number, label: tag.name ?? String(tag.id) }))
+);
+
+function emptyRule(): DrawRuleDraft {
+  return { type: undefined, difficulty: undefined, tagIds: [], count: 5 };
+}
+
+const ruleDrafts = ref<DrawRuleDraft[]>([emptyRule()]);
+
+function addRule(): void {
+  ruleDrafts.value.push(emptyRule());
+}
+
+function removeRule(index: number): void {
+  if (ruleDrafts.value.length > 1) {
+    ruleDrafts.value.splice(index, 1);
+  }
+}
+
+/** 生产注入：走 gen:api 生成客户端；单测注入 mock（见 useRandomDraw.spec.ts）。 */
+const drawFlow = createDrawFlow({
+  previewDraw: (rules) =>
+    unwrap(previewDrawContract({ client, throwOnError: true, body: { rules } })),
+  commitDraw: (id, rules) =>
+    unwrap(commitRandomDraw({ client, throwOnError: true, path: { id }, body: { rules } })),
+});
+
+// 规则一旦被修改，旧预览即作废：预览结果永远与当前规则一一对应
+watch(
+  ruleDrafts,
+  () => {
+    drawFlow.invalidate();
+  },
+  { deep: true }
+);
+
+async function onPreview(): Promise<void> {
+  const errors = drawRulesErrors(ruleDrafts.value);
+  if (errors.length > 0) {
+    message.warning(errors[0] as string);
+    return;
+  }
+  await drawFlow.preview(toDrawRules(ruleDrafts.value));
+}
+
+async function onCommit(): Promise<void> {
+  const ok = await drawFlow.commit(paperId.value);
+  if (ok) {
+    message.success('抽题已入卷');
+    ruleDrafts.value = [emptyRule()];
+    invalidatePaper();
+  }
+}
+
+const questionColumns: TableColumnsType = [
+  { title: '题号', key: 'number', width: 70 },
+  { title: '题型', key: 'questionType', width: 110 },
+  { title: '题干', key: 'content', ellipsis: true },
+  { title: '卷内分值', key: 'score', width: 140 },
+  { title: '操作', key: 'actions', width: 200 },
+];
+</script>
+"
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts:[2m125:20[22m[39m
+    [90m123|[39m   [34mit[39m([32m'源码含批量入卷调用（unwrap(addQuestions(）'[39m[33m,[39m () [33m=>[39m {
+    [90m124|[39m     [35mconst[39m source [33m=[39m [34mreadFileSync[39m([33mPAGE_SOURCE[39m[33m,[39m [32m
+'utf-8'[39m)[33m;[39m
+    [90m125|[39m     [34mexpect[39m(source)[33m.[39m[34mtoMatch[39m([36m/unwrap\(\s*addQuestions\(/[39m)[33m
+;[39m
+    [90m   |[39m                    [31m^[39m
+    [90m126|[39m   })[33m;[39m
+    [90m127|[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts[2m > [22m组卷页批量入卷行为[2m
+ > [22m批量入卷成功：单次批量调用 + 成功提示 + 失效刷新，单题端点零调用
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called 1 times, but got 0 times[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts:[2m138:30[22m[39m
+    [90m136|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m137|[39m
+    [90m138|[39m     [34mexpect[39m(api[33m.[39maddQuestions)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[3
+9m)[33m;[39m
+    [90m   |[39m                              [31m^[39m
+    [90m139|[39m     [34mexpect[39m(api[33m.[39maddQuestion)[33m.[39mnot[33m.[39m[34mtoHaveBeenCalled[39m()
+[33m;[39m
+    [90m140|[39m     [34mexpect[39m(message[33m.[39msuccess)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m'已加入 2
+ 题'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts[2m > [22m组卷页批量入卷行为[2m
+ > [22m批量入卷失败：ApiError message 透出提示，不再半批静默
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called 1 times, but got 0 times[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts:[2m154:30[22m[39m
+    [90m152|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m153|[39m
+    [90m154|[39m     [34mexpect[39m(api[33m.[39maddQuestions)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[3
+9m)[33m;[39m
+    [90m   |[39m                              [31m^[39m
+    [90m155|[39m     [34mexpect[39m(message[33m.[39merror)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m'该题目已在试卷
+中'[39m)[33m;[39m
+    [90m156|[39m     [34mexpect[39m(message[33m.[39msuccess)[33m.[39mnot[33m.[39m[34mtoHaveBeenCalled[39m()
+[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯[22m[39m
+

@@ -290,7 +290,7 @@ import { useQuery } from '@tanstack/vue-query';
 
 import QuestionPickerModal from '@/components/question/QuestionPickerModal.vue';
 import {
-  addQuestion,
+  addQuestions,
   commitRandomDraw,
   detail1,
   list as listTags,
@@ -362,19 +362,23 @@ async function onPick(selected: QuestionResponse[]): Promise<void> {
     message.info('所选题目均已在试卷中');
     return;
   }
-  // 逐题入卷；不传 score 即使用题目默认分（覆盖在下方列表内单独调整）
-  for (const question of fresh) {
+  // 单次批量入卷（后端整批单事务全有全无，杜绝半批静默）；不传 score 即用题目默认分
+  try {
     await unwrap(
-      addQuestion({
+      addQuestions({
         client,
         throwOnError: true,
         path: { id: paperId.value },
-        body: { questionId: question.id as number },
+        body: {
+          items: fresh.map((question) => ({ questionId: question.id as number })),
+        },
       })
     );
+    message.success(`已加入 ${fresh.length} 题`);
+    invalidatePaper();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '批量加入试卷失败');
   }
-  message.success(`已加入 ${fresh.length} 题`);
-  invalidatePaper();
 }
 
 /** 卷内分值编辑草稿：key=questionId。blur/回车时才提交，避免逐键触发 PUT。 */
