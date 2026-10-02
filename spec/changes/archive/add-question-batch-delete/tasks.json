@@ -1,0 +1,107 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对",
+    "task": "分支与基线锚定",
+    "steps": [
+      {
+        "step": "K1–K3：从 main（6fa6aec）新建 feature/add-question-batch-delete；记录 HEAD 短 SHA 与 git status 基线（应仅 6 个白名单未跟踪文件）",
+        "completed": true
+      },
+      {
+        "step": "K4：双端门禁基线锚：仓库根 mvnw.cmd clean test → 355/0/0/1@6fa6aec；frontend 下 lint:check / type-check:check / test → 45 文件 388 例（命令 + 当次输出 + 短 SHA 记入本字段）",
+        "completed": true
+      },
+      {
+        "step": "K5：现状复核锚点：QuestionController.delete / QuestionService.softDelete 校验链（getOwnedQuestion + assertQuestionEditable + deleteById，含既有失败文案逐字摘录）与 questions/index.page.vue onBatchDelete 串行循环，确认与 proposal 描述一致；不一致停下回报",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1: git checkout -b feature/add-question-batch-delete @6fa6aec（main HEAD 短 SHA 6fa6aec）；git status 基线=6 个白名单未跟踪文件（.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-optimization-candidates.md、docs/指导主Agent交接文档-2026-09-30/10-01/10-02.md）+2 个 spec/changes 卡片目录（本卡 add-question-batch-delete 由指导主 agent 预建、add-subjective-grading-pagination 为他卡不触碰）。K4: 后端 JAVA_HOME=D:\\develop1\\jdk21 ./mvnw.cmd clean test → 「[WARNING] Tests run: 355, Failures: 0, Errors: 0, Skipped: 1」「BUILD SUCCESS」exit=0 @6fa6aec，原始输出 evidence/baseline-backend.txt；前端 frontend 下 npm.cmd run lint:check exit=0、npm.cmd run type-check:check exit=0、npm.cmd run test exit=0 → 「Test Files 45 passed (45)」「Tests 388 passed (388)」，原始输出 evidence/baseline-fe-lint.txt、evidence/baseline-fe-type.txt、evidence/baseline-fe-test.txt。K5: 与 proposal 一致——QuestionController.delete 为 DELETE /api/questions/{id}（类级 @RequirePermission(\"question:manage\")）；QuestionService.softDelete 校验链=getOwnedQuestion（null→404「题目不存在」）→OwnershipGuard.assertOwner(createdBy, currentUser, \"题目\")（403「无权操作该题目（资源不属于当前用户）」）→examPaperLockService.assertQuestionEditable（400「考试进行中，试卷已锁定，不允许修改」，ExamPaperLockService.LOCK_MESSAGE）→questionMapper.deleteById（@TableLogic isDeleted 软删）；frontend/src/pages/(dashboard)/teacher/questions/index.page.vue onBatchDelete 确为串行 for (const id of ids) 逐题 await unwrap(deleteQuestion(...))。请求内重复 400 口径「请求内存在重复题目」与 PaperService.addQuestions 既有实现（new HashSet 判重）一致。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：后端实施（先红后绿）",
+    "task": "DTO + Service + Controller + 集成测试",
+    "steps": [
+      {
+        "step": "写集成测试（部分成功混合场景仅有效子集落库且逐题 reason 正确 / 全部成功 / 全部失败零删除 / 请求内重复 400 / 空或超上限 400），端点未实施时定向跑一次留红（evidence/red-backend.txt）",
+        "completed": true
+      },
+      {
+        "step": "实施：BatchDeleteQuestionsRequest（ids @NotEmpty @Size(max=100)，请求内重复 400「请求内存在重复题目」）+ QuestionService.batchDelete（selectBatchIds 取回后逐题校验收集 failed：不存在或已软删 / 非归属且非 ADMIN / 被进行中考试引用——reason 文案与单删路径逐字对齐；合规子集单事务 @Transactional(rollbackFor=Exception.class) 逐题 deleteById 软删）+ QuestionController POST /api/questions/batch-delete 返回 succeeded/failed 信封；softDelete 既有方法体零改动",
+        "completed": true
+      },
+      {
+        "step": "定向绿：mvnw.cmd test -Dtest=<新测试类> 全过留档（evidence/green-backend.txt）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "新测试类 com.exam.question.QuestionBatchDeleteIntegrationTest，5 个用例（batchDeletePartialSuccessOnlyCompliantSubsetDeleted / batchDeleteAllSuccessRemovesAllFromList / batchDeleteAllFailedDeletesNothing / batchDeleteRejectsDuplicateIds / batchDeleteRejectsEmptyAndOverLimitIds）。红档：JAVA_HOME=D:\\develop1\\jdk21 ./mvnw.cmd test -Dtest=QuestionBatchDeleteIntegrationTest（端点未实施）→「Tests run: 5, Failures: 5, Errors: 0, Skipped: 0」「BUILD FAILURE」exit=1，原始输出 evidence/red-backend.txt。绿档：同命令（实施后）→「Tests run: 5, Failures: 0, Errors: 0, Skipped: 0」「BUILD SUCCESS」exit=0，原始输出 evidence/green-backend.txt。实施细节：BatchDeleteQuestionsRequest（@NotEmpty + @Size(max=100)）与 BatchDeleteQuestionsResponse（succeeded/failed 信封，内嵌 FailedItem{id,reason}）落在 com.exam.question.dto；QuestionService.batchDelete 为纯新增 @Transactional(rollbackFor=Exception.class) 方法——请求内重复前置显式校验（new HashSet 判重，文案「请求内存在重复题目」与 PaperService.addQuestions 逐字一致）→ requireLogin → selectBatchIds 一次取回（逻辑删除过滤使不存在/已软删同为 null→「题目不存在」）→ 逐题 try-catch 内复用 OwnershipGuard.assertOwner(createdBy, operator, \"题目\") 与 examPaperLockService.assertQuestionEditable(id) 抛出的既有 403/400 文案（不新造口径、无副本漂移）→ 合规子集逐题 deleteById；QuestionController 新增 @PostMapping(\"/batch-delete\")，类级 @RequirePermission(\"question:manage\") 继承；softDelete 既有方法体零改动（git diff 可核）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：契约导出与前端实施",
+    "task": "openapi.yaml 重导出 + gen:api + onBatchDelete 批量化 + 词法护栏",
+    "steps": [
+      {
+        "step": "路 A 离线契约重导出（mvnw.cmd -o test -Dtest=OpenApiContractTest#exportOpenApiContract -DexportContract=true）；确认 openapi.yaml 含新 path 且护栏断言通过",
+        "completed": true
+      },
+      {
+        "step": "frontend 下 npm.cmd run gen:api；确认 sdk.gen.ts 含批量删除函数",
+        "completed": true
+      },
+      {
+        "step": "写前端词法护栏与用例（onBatchDelete 单次批量调用 / 信封解析提示成功 N 失败 M 含失败 reason / 部分成功不伪装成全部成功 / 源码断言无串行 for-of 删除循环且有批量调用），改造前跑一次留红（evidence/red-frontend.txt）",
+        "completed": true
+      },
+      {
+        "step": "实施 onBatchDelete：改单次批量调用 + 解析信封 + message 提示（沿用既有提示模式）+ 成功后列表与选中态刷新；护栏转绿（evidence/green-frontend.txt）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "契约：JAVA_HOME=D:\\develop1\\jdk21 ./mvnw.cmd -o test \"-Dtest=OpenApiContractTest#exportOpenApiContract\" \"-DexportContract=true\" →「Tests run: 1, Failures: 0」「BUILD SUCCESS」exit=0，openapi.yaml 新增 60 行（git diff --stat：1 file changed, 60 insertions），含 path /api/questions/batch-delete（532 行）与 schemas BatchDeleteQuestionsRequest / BatchDeleteQuestionsResponse / ApiResponseBatchDeleteQuestionsResponse，原始输出 evidence/contract-export.txt。gen:api：frontend 下 npm.cmd run gen:api exit=0，sdk.gen.ts:211 含 export const batchDelete，types.gen.ts 生成 BatchDeleteQuestionsRequest/BatchDeleteQuestionsResponse/FailedItem/BatchDeleteData（git 变更 frontend/src/api/axios/{index.ts,sdk.gen.ts,types.gen.ts}），原始输出 evidence/gen-api.txt。前端新增 spec：frontend/src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts，6 个用例（词法护栏 2 + 行为 4：部分成功提示与逐条 reason 与选中态刷新 / 全部成功 / 全部失败不伪装成全部成功 / 请求校验失败透出）。红档：改造前 npx.cmd vitest run <spec> →「Tests 6 failed (6)」exit=1，原始输出 evidence/red-frontend.txt（旧代码含串行 for (const id of 循环即变异态，护栏可红实证）；绿档：改造后同命令 →「Tests 6 passed (6)」exit=0，原始输出 evidence/green-frontend.txt。onBatchDelete 实施：单次 unwrap(batchDelete({client, throwOnError:true, body:{ids}})) + 信封解析（succeeded/failed）+ 全成沿用「已删除 N 道题目」/部分失败「删除完成：成功 N 题，失败 M 题」+ 失败项逐条 message.error「题目 {id}：{reason}」+ 成功后清空 selectedIds 并 invalidateQuestions。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：实施笔与全量门禁",
+    "task": "两笔提交之实施笔 + 双端门禁",
+    "steps": [
+      {
+        "step": "实施笔提交（仅 src/main、src/test、openapi.yaml、frontend/src；提交前核对 git diff --cached --name-only 与 --check）",
+        "completed": true
+      },
+      {
+        "step": "已提交状态仓库根 mvnw.cmd clean test：总数 355→355+N/0/0/1 全绿 + 短 SHA + 退出码记入",
+        "completed": true
+      },
+      {
+        "step": "已提交状态前端 lint:check / type-check:check / test 三项退出码 0，vitest 45 文件 388→388+M 例记入",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "实施笔 SHA=ee99641（amend 前为 f2f3100，因首版 onBatchDelete 未做可空链防护 type-check 报 TS18048 两处——result?.succeeded/result?.failed——修复后 amend，仅该 1 个文件差异）。暂存清单（git diff --cached --name-only，11 文件）：frontend/src/api/axios/{index.ts,sdk.gen.ts,types.gen.ts}、frontend/src/pages/(dashboard)/teacher/questions/{index.page.vue,__tests__/questionBatchDelete.spec.ts}、openapi.yaml、src/main/java/com/exam/question/controller/QuestionController.java、src/main/java/com/exam/question/dto/{BatchDeleteQuestionsRequest,BatchDeleteQuestionsResponse}.java、src/main/java/com/exam/question/service/QuestionService.java、src/test/java/com/exam/question/QuestionBatchDeleteIntegrationTest.java——恰在 src/main、src/test、openapi.yaml、frontend/src 白名单内；git diff --cached --check 干净（CHECK-OK）。提交信息经 target/commit-msg-impl.txt 以 git commit -F 落（中文信息文件法，避开 shell 中文字面量）。已提交状态双端门禁 @ ee99641：后端 JAVA_HOME=D:\\develop1\\jdk21 ./mvnw.cmd clean test →「[WARNING] Tests run: 360, Failures: 0, Errors: 0, Skipped: 1」「BUILD SUCCESS」退出码 0（基线 355 + 新增 5，恰好 N=5），原始输出 evidence/full-backend.txt；前端 frontend 下 npm.cmd run lint:check exit=0（evidence/full-fe-lint.txt）、npm.cmd run type-check:check exit=0（evidence/full-fe-type.txt，修复后复跑）、npm.cmd run test exit=0 →「Test Files 46 passed (46)」「Tests 394 passed (394)」（基线 45 文件 388 例 + 1 文件 6 例），原始输出 evidence/full-fe-test.txt。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：收口（两笔提交、spec 合入、归档、自查）",
+    "task": "收口笔=spec/README/归档（零 src 豁免凭据）",
+    "steps": [
+      {
+        "step": "spec/specs/question-bank/spec.md 合入本卡 Requirement + 尾部合入注记；spec/README.md 当前状态行 + question-bank 能力域行 + 归档行；变更目录移入 archive/ 并生成 evidence-sha256.txt",
+        "completed": true
+      },
+      {
+        "step": "收口自查：git diff --name-only <实施笔> HEAD -- src frontend pom.xml 为空；AGENTS.md 自查四条；实体↔schema 表级差集空；git status 终态仅白名单未跟踪文件",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "spec 合入：spec/specs/question-bank/spec.md 在「题目管理」Requirement 之后插入 ADDED Requirement「批量删除题目」（逐题结果信封主条款 + 5 Scenario：部分成功/全部成功/全部失败零删除/请求校验拒绝/单题删除端点语义不变，与 spec-delta 逐字一致）+ 尾部合入注记（2026-10-02，add-question-batch-delete 归档）。spec/README.md 三处：①当前状态段在无进行中变更句后插入本卡收口叙述（GO 裁决、信封语义、门禁计数 ee99641）；②能力域登记表 question-bank 行（#2）来源变更追加 add-question-batch-delete（题库批量删除端点与前端 onBatchDelete 批量化，2026-10-02 归档）；③归档表追加本卡行（2026-10-02）。变更目录整体 mv 入 spec/changes/archive/add-question-batch-delete/（目录内文件均为未跟踪态，纯文件系统移动后整目录 git add，不使用 git mv——git mv 只暂存 index 旧内容，见既往二踩记录）；evidence/evidence-sha256.txt 以 sha256sum -t 对 14 个证据文件生成（sha256sum 默认二进制标记 * 与既有归档格式不一致，改用 -t 两空格格式）。收口自查（全部当次实跑）：①git diff --name-only ee99641 HEAD -- src frontend pom.xml → 输出为空 exit=0；②AGENTS.md 四条自查——grep -nE '1331[67]|330[67]|root12[3]|[T]ests run|[0-9]+%' AGENTS.md 无命中、grep -nE '330[67]|1331[67]|root12[3]|root/[r]oot' README.md 无命中、grep -rn '@Sql' src/test 过滤 javadoc 续行后无命中、grep -nE '\\.md:[0-9]' AGENTS.md 无命中；③实体↔schema 表级差集（AGENTS.md 约定 3 的 comm 命令）输出为空；④grep -c flyway pom.xml = 0、src/main/resources/db 不存在。"
+  }
+]

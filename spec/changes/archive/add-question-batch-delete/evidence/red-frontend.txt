@@ -1,0 +1,623 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts [2m([22m[2m6 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[33m 1218[2mms[22m[39m
+[31m     [31m×[31m 源码不再含串行 for-of 删除循环（for (const id of ids)）[39m[32m 17[2mms[22m[39m
+[31m     [31m×[31m 源码含单次批量调用（unwrap(batchDelete(）与逐题结果信封解析（succeeded/failed）[39m[32m 4[2mms[22m[39m
+[31m     [31m×[31m 部分成功：单次批量调用 + 信封解析提示成功 N 失败 M + 失败项逐条 reason + 刷新选中态[39m[33m 690[2mms[22m[39m
+[31m     [31m×[31m 全部成功：批量调用 + 成功提示，单题端点零调用[39m[32m 171[2mms[22m[39m
+[31m     [31m×[31m 全部失败：零删除提示「成功 0 题，失败 2 题」，不伪装成全部成功[39m[32m 171[2mms[22m[39m
+[31m     [31m×[31m 请求校验失败（重复/空/超限 400）：错误透出，不刷新列表[39m[32m 160[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 6 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts[2m > [22m词法护栏：题库页 onBatchDelete 批量化[2m > [22m源码不再含串行 for-of 删除循环（for (const id of ids)）
+[31m[1mAssertionError[22m: expected '<template>\r\n  <div>\r\n    <div cla…' not to contain 'for (const id of'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- for (const id of[39m
+[31m+ <template>[39m
+[31m+   <div>[39m
+[31m+     <div class="mb-3 flex flex-wrap items-center gap-2">[39m
+[31m+       <Select[39m
+[31m+         v-model:value="filters.type"[39m
+[31m+         :options="QUESTION_TYPE_OPTIONS"[39m
+[31m+         allow-clear[39m
+[31m+         placeholder="题型"[39m
+[31m+         class="w-32"[39m
+[31m+       />[39m
+[31m+       <Select[39m
+[31m+         v-model:value="filters.difficulty"[39m
+[31m+         :options="DIFFICULTY_OPTIONS"[39m
+[31m+         allow-clear[39m
+[31m+         placeholder="难度"[39m
+[31m+         class="w-28"[39m
+[31m+       />[39m
+[31m+       <Select[39m
+[31m+         v-model:value="filters.tagId"[39m
+[31m+         :options="tagOptions"[39m
+[31m+         allow-clear[39m
+[31m+         placeholder="标签"[39m
+[31m+         class="w-40"[39m
+[31m+       />[39m
+[31m+       <Input[39m
+[31m+         v-model:value="keywordInput"[39m
+[31m+         allow-clear[39m
+[31m+         placeholder="题干关键词"[39m
+[31m+         class="w-56"[39m
+[31m+         @press-enter="onSearch"[39m
+[31m+       />[39m
+[31m+       <Button type="primary" @click="onSearch">查询</Button>[39m
+[31m+       <div class="flex-1" />[39m
+[31m+       <Popconfirm[39m
+[31m+         title="确认删除选中的题目？"[39m
+[31m+         :disabled="selectedIds.length === 0"[39m
+[31m+         @confirm="onBatchDelete"[39m
+[31m+       >[39m
+[31m+         <Button danger :disabled="selectedIds.length === 0">[39m
+[31m+           批量删除（{{ selectedIds.length }}）[39m
+[31m+         </Button>[39m
+[31m+       </Popconfirm>[39m
+[31m+       <Button type="primary" @click="onCreate">新建题目</Button>[39m
+[31m+     </div>[39m
+[31m+ [39m
+[31m+     <Table[39m
+[31m+       :columns="columns"[39m
+[31m+       :data-source="rows"[39m
+[31m+       :loading="isFetching"[39m
+[31m+       :pagination="pagination"[39m
+[31m+       :row-key="(row: QuestionResponse) => row.id as number"[39m
+[31m+       :row-selection="rowSelection"[39m
+[31m+       size="middle"[39m
+[31m+     >[39m
+[31m+       <template #bodyCell="{ column, record }">[39m
+[31m+         <template v-if="column.key === 'content'">[39m
+[31m+           <span>{{ record.content }}</span>[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'type'">[39m
+[31m+           <Tag>{{ typeLabelOf(record.type) }}</Tag>[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'score'">{{ record.score ?? '—' }}</template>[39m
+[31m+         <template v-else-if="column.key === 'difficulty'">[39m
+[31m+           {{ difficultyLabelOf(record.difficulty) }}[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'tags'">[39m
+[31m+           <Tag v-for="tag in record.tags ?? []" :key="tag.id" color="blue">{{ tag.name }}</Tag>[39m
+[31m+           <span v-if="(record.tags ?? []).length === 0" class="text-gray-400">无</span>[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'updatedTime'">[39m
+[31m+           {{ formatTime(record.updatedTime) }}[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'actions'">[39m
+[31m+           <Button type="link" size="small" @click="onEdit(record)">编辑</Button>[39m
+[31m+           <Popconfirm title="确认删除该题目？" @confirm="onDelete(record)">[39m
+[31m+             <Button type="link" size="small" danger>删除</Button>[39m
+[31m+           </Popconfirm>[39m
+[31m+         </template>[39m
+[31m+       </template>[39m
+[31m+     </Table>[39m
+[31m+ [39m
+[31m+     <!-- 软删除语义说明：列表数据完全来自后端分页接口；已删题目被后端逻辑删除过滤，[39m
+[31m+          不会出现在本列表（前端不自行发明过滤规则，也不做「已删假可用」展示）。 -->[39m
+[31m+     <QuestionForm v-model:open="formOpen" :question="editing" @saved="invalidateQuestions" />[39m
+[31m+   </div>[39m
+[31m+ </template>[39m
+[31m+ [39m
+[31m+ <script setup lang="ts">[39m
+[31m+ import {[39m
+[31m+   Button,[39m
+[31m+   Input,[39m
+[31m+   Popconfirm,[39m
+[31m+   Select,[39m
+[31m+   Table,[39m
+[31m+   Tag,[39m
+[31m+   message,[39m
+[31m+   type TableColumnsType,[39m
+[31m+ } from 'ant-design-vue';[39m
+[31m+ import dayjs from 'dayjs';[39m
+[31m+ import { computed, reactive, ref, watch } from 'vue';[39m
+[31m+ import { useQuery } from '@tanstack/vue-query';[39m
+[31m+ [39m
+[31m+ import QuestionForm from '@/components/question/QuestionForm.vue';[39m
+[31m+ import {[39m
+[31m+   delete_ as deleteQuestion,[39m
+[31m+   list as listTags,[39m
+[31m+   page,[39m
+[31m+   type QuestionResponse,[39m
+[31m+   type TagResponse,[39m
+[31m+ } from '@/api/axios';[39m
+[31m+ import { client, unwrap } from '@/api/apiClient';[39m
+[31m+ import { queryClient } from '@/api/queryClient';[39m
+[31m+ import { buildQuestionPageQuery } from '@/utils/questionFilters';[39m
+[31m+ import {[39m
+[31m+   DIFFICULTY_OPTIONS,[39m
+[31m+   QUESTION_TYPE_OPTIONS,[39m
+[31m+   difficultyLabelOf,[39m
+[31m+   typeLabelOf,[39m
+[31m+ } from '@/utils/questionTypes';[39m
+[31m+ [39m
+[31m+ const columns: TableColumnsType = [[39m
+[31m+   { title: '题干', key: 'content', ellipsis: true },[39m
+[31m+   { title: '题型', key: 'type', width: 80 },[39m
+[31m+   { title: '默认分', key: 'score', width: 80 },[39m
+[31m+   { title: '难度', key: 'difficulty', width: 70 },[39m
+[31m+   { title: '标签', key: 'tags', width: 200 },[39m
+[31m+   { title: '更新时间', key: 'updatedTime', width: 160 },[39m
+[31m+   { title: '操作', key: 'actions', width: 120 },[39m
+[31m+ ];[39m
+[31m+ [39m
+[31m+ const filters = reactive<{[39m
+[31m+   type: number | undefined;[39m
+[31m+   difficulty: number | undefined;[39m
+[31m+   tagId: number | undefined;[39m
+[31m+   keyword: string;[39m
+[31m+ }>({ type: undefined, difficulty: undefined, tagId: undefined, keyword: '' });[39m
+[31m+ [39m
+[31m+ const keywordInput = ref('');[39m
+[31m+ const currentPage = ref(1);[39m
+[31m+ const pageSize = ref(10);[39m
+[31m+ [39m
+[31m+ const query = computed(() =>[39m
+[31m+   buildQuestionPageQuery({[39m
+[31m+     page: currentPage.value,[39m
+[31m+     size: pageSize.value,[39m
+[31m+     type: filters.type,[39m
+[31m+     difficulty: filters.difficulty,[39m
+[31m+     tagId: filters.tagId,[39m
+[31m+     keyword: filters.keyword,[39m
+[31m+   })[39m
+[31m+ );[39m
+[31m+ [39m
+[31m+ const { data, isFetching } = useQuery({[39m
+[31m+   queryKey: computed(() => ['questions', query.value]),[39m
+[31m+   queryFn: () => unwrap(page({ client, throwOnError: true, query: query.value })),[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const rows = computed(() => data.value?.list ?? []);[39m
+[31m+ const total = computed(() => data.value?.total ?? 0);[39m
+[31m+ [39m
+[31m+ const pagination = computed(() => ({[39m
+[31m+   current: currentPage.value,[39m
+[31m+   pageSize: pageSize.value,[39m
+[31m+   total: total.value,[39m
+[31m+   showSizeChanger: true,[39m
+[31m+   onChange: (nextPage: number, nextSize: number) => {[39m
+[31m+     currentPage.value = nextPage;[39m
+[31m+     pageSize.value = nextSize;[39m
+[31m+   },[39m
+[31m+ }));[39m
+[31m+ [39m
+[31m+ watch([() => filters.type, () => filters.difficulty, () => filters.tagId], () => {[39m
+[31m+   currentPage.value = 1;[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ function onSearch(): void {[39m
+[31m+   filters.keyword = keywordInput.value;[39m
+[31m+   currentPage.value = 1;[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ const { data: tags } = useQuery({[39m
+[31m+   queryKey: ['tags'],[39m
+[31m+   queryFn: () => unwrap<TagResponse[]>(listTags({ client, throwOnError: true })),[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const tagOptions = computed(() =>[39m
+[31m+   (tags.value ?? []).map((tag) => ({ value: tag.id as number, label: tag.name ?? String(tag.id) }))[39m
+[31m+ );[39m
+[31m+ [39m
+[31m+ const selectedIds = ref<number[]>([]);[39m
+[31m+ [39m
+[31m+ const rowSelection = computed(() => ({[39m
+[31m+   selectedRowKeys: selectedIds.value,[39m
+[31m+   onChange: (keys: Array<number | string>) => {[39m
+[31m+     selectedIds.value = keys.map(Number);[39m
+[31m+   },[39m
+[31m+ }));[39m
+[31m+ [39m
+[31m+ // 换页/筛选后清空勾选，避免把不可见行悄悄删掉[39m
+[31m+ watch(query, () => {[39m
+[31m+   selectedIds.value = [];[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ function invalidateQuestions(): void {[39m
+[31m+   void queryClient.invalidateQueries({ queryKey: ['questions'] });[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ const formOpen = ref(false);[39m
+[31m+ const editing = ref<QuestionResponse | null>(null);[39m
+[31m+ [39m
+[31m+ function onCreate(): void {[39m
+[31m+   editing.value = null;[39m
+[31m+   formOpen.value = true;[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ function onEdit(record: QuestionResponse): void {[39m
+[31m+   editing.value = record;[39m
+[31m+   formOpen.value = true;[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ async function onDelete(record: QuestionResponse): Promise<void> {[39m
+[31m+   if (record.id === undefined) return;[39m
+[31m+   try {[39m
+[31m+     await unwrap(deleteQuestion({ client, throwOnError: true, path: { id: record.id } }));[39m
+[31m+     message.success('题目已删除');[39m
+[31m+     invalidateQuestions();[39m
+[31m+   } catch (error) {[39m
+[31m+     message.error(error instanceof Error ? error.message : '删除失败，请稍后重试');[39m
+[31m+   }[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ async function onBatchDelete(): Promise<void> {[39m
+[31m+   const ids = [...selectedIds.value];[39m
+[31m+   if (ids.length === 0) return;[39m
+[31m+   let okCount = 0;[39m
+[31m+   let failCount = 0;[39m
+[31m+   for (const id of ids) {[39m
+[31m+     try {[39m
+[31m+       await unwrap(deleteQuestion({ client, throwOnError: true, path: { id } }));[39m
+[31m+       okCount += 1;[39m
+[31m+     } catch {[39m
+[31m+       failCount += 1;[39m
+[31m+     }[39m
+[31m+   }[39m
+[31m+   if (failCount === 0) {[39m
+[31m+     message.success(`已删除 ${okCount} 道题目`);[39m
+[31m+   } else {[39m
+[31m+     message.warning(`删除完成：成功 ${okCount} 题，失败 ${failCount} 题`);[39m
+[31m+   }[39m
+[31m+   selectedIds.value = [];[39m
+[31m+   invalidateQuestions();[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ function formatTime(value?: string | null): string {[39m
+[31m+   return value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '—';[39m
+[31m+ }[39m
+[31m+ </script>[39m
+[31m+[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts:[2m102:24[22m[39m
+    [90m100|[39m   [34mit[39m([32m'源码不再含串行 for-of 删除循环（for (const id of ids)）'[39m[33m,[39m () [33m=>[39m {
+    [90m101|[39m     [35mconst[39m source [33m=[39m [34mreadFileSync[39m([33mPAGE_SOURCE[39m[33m,[39m [32m'utf-8'[39m)[33m;[39m
+    [90m102|[39m     [34mexpect[39m(source)[33m.[39mnot[33m.[39m[34mtoContain[39m([32m'for (const id of'[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m103|[39m   })[33m;[39m
+    [90m104|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts[2m > [22m词法护栏：题库页 onBatchDelete 批量化[2m > [22m源码含单次批量调用（unwrap(batchDelete(）与逐题结果信封解析（succeeded/failed）
+[31m[1mAssertionError[22m: expected '<template>\r\n  <div>\r\n    <div cla…' to match /unwrap\(\s*batchDelete\(/[39m
+
+[32m- Expected:[39m
+/unwrap\(\s*batchDelete\(/
+
+[31m+ Received:[39m
+"<template>
+  <div>
+    <div class=\"mb-3 flex flex-wrap items-center gap-2\">
+      <Select
+        v-model:value=\"filters.type\"
+        :options=\"QUESTION_TYPE_OPTIONS\"
+        allow-clear
+        placeholder=\"题型\"
+        class=\"w-32\"
+      />
+      <Select
+        v-model:value=\"filters.difficulty\"
+        :options=\"DIFFICULTY_OPTIONS\"
+        allow-clear
+        placeholder=\"难度\"
+        class=\"w-28\"
+      />
+      <Select
+        v-model:value=\"filters.tagId\"
+        :options=\"tagOptions\"
+        allow-clear
+        placeholder=\"标签\"
+        class=\"w-40\"
+      />
+      <Input
+        v-model:value=\"keywordInput\"
+        allow-clear
+        placeholder=\"题干关键词\"
+        class=\"w-56\"
+        @press-enter=\"onSearch\"
+      />
+      <Button type=\"primary\" @click=\"onSearch\">查询</Button>
+      <div class=\"flex-1\" />
+      <Popconfirm
+        title=\"确认删除选中的题目？\"
+        :disabled=\"selectedIds.length === 0\"
+        @confirm=\"onBatchDelete\"
+      >
+        <Button danger :disabled=\"selectedIds.length === 0\">
+          批量删除（{{ selectedIds.length }}）
+        </Button>
+      </Popconfirm>
+      <Button type=\"primary\" @click=\"onCreate\">新建题目</Button>
+    </div>
+
+    <Table
+      :columns=\"columns\"
+      :data-source=\"rows\"
+      :loading=\"isFetching\"
+      :pagination=\"pagination\"
+      :row-key=\"(row: QuestionResponse) => row.id as number\"
+      :row-selection=\"rowSelection\"
+      size=\"middle\"
+    >
+      <template #bodyCell=\"{ column, record }\">
+        <template v-if=\"column.key === 'content'\">
+          <span>{{ record.content }}</span>
+        </template>
+        <template v-else-if=\"column.key === 'type'\">
+          <Tag>{{ typeLabelOf(record.type) }}</Tag>
+        </template>
+        <template v-else-if=\"column.key === 'score'\">{{ record.score ?? '—' }}</template>
+        <template v-else-if=\"column.key === 'difficulty'\">
+          {{ difficultyLabelOf(record.difficulty) }}
+        </template>
+        <template v-else-if=\"column.key === 'tags'\">
+          <Tag v-for=\"tag in record.tags ?? []\" :key=\"tag.id\" color=\"blue\">{{ tag.name }}</Tag>
+          <span v-if=\"(record.tags ?? []).length === 0\" class=\"text-gray-400\">无</span>
+        </template>
+        <template v-else-if=\"column.key === 'updatedTime'\">
+          {{ formatTime(record.updatedTime) }}
+        </template>
+        <template v-else-if=\"column.key === 'actions'\">
+          <Button type=\"link\" size=\"small\" @click=\"onEdit(record)\">编辑</Button>
+          <Popconfirm title=\"确认删除该题目？\" @confirm=\"onDelete(record)\">
+            <Button type=\"link\" size=\"small\" danger>删除</Button>
+          </Popconfirm>
+        </template>
+      </template>
+    </Table>
+
+    <!-- 软删除语义说明：列表数据完全来自后端分页接口；已删题目被后端逻辑删除过滤，
+         不会出现在本列表（前端不自行发明过滤规则，也不做「已删假可用」展示）。 -->
+    <QuestionForm v-model:open=\"formOpen\" :question=\"editing\" @saved=\"invalidateQuestions\" />
+  </div>
+</template>
+
+<script setup lang=\"ts\">
+import {
+  Button,
+  Input,
+  Popconfirm,
+  Select,
+  Table,
+  Tag,
+  message,
+  type TableColumnsType,
+} from 'ant-design-vue';
+import dayjs from 'dayjs';
+import { computed, reactive, ref, watch } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+
+import QuestionForm from '@/components/question/QuestionForm.vue';
+import {
+  delete_ as deleteQuestion,
+  list as listTags,
+  page,
+  type QuestionResponse,
+  type TagResponse,
+} from '@/api/axios';
+import { client, unwrap } from '@/api/apiClient';
+import { queryClient } from '@/api/queryClient';
+import { buildQuestionPageQuery } from '@/utils/questionFilters';
+import {
+  DIFFICULTY_OPTIONS,
+  QUESTION_TYPE_OPTIONS,
+  difficultyLabelOf,
+  typeLabelOf,
+} from '@/utils/questionTypes';
+
+const columns: TableColumnsType = [
+  { title: '题干', key: 'content', ellipsis: true },
+  { title: '题型', key: 'type', width: 80 },
+  { title: '默认分', key: 'score', width: 80 },
+  { title: '难度', key: 'difficulty', width: 70 },
+  { title: '标签', key: 'tags', width: 200 },
+  { title: '更新时间', key: 'updatedTime', width: 160 },
+  { title: '操作', key: 'actions', width: 120 },
+];
+
+const filters = reactive<{
+  type: number | undefined;
+  difficulty: number | undefined;
+  tagId: number | undefined;
+  keyword: string;
+}>({ type: undefined, difficulty: undefined, tagId: undefined, keyword: '' });
+
+const keywordInput = ref('');
+const currentPage = ref(1);
+const pageSize = ref(10);
+
+const query = computed(() =>
+  buildQuestionPageQuery({
+    page: currentPage.value,
+    size: pageSize.value,
+    type: filters.type,
+    difficulty: filters.difficulty,
+    tagId: filters.tagId,
+    keyword: filters.keyword,
+  })
+);
+
+const { data, isFetching } = useQuery({
+  queryKey: computed(() => ['questions', query.value]),
+  queryFn: () => unwrap(page({ client, throwOnError: true, query: query.value })),
+});
+
+const rows = computed(() => data.value?.list ?? []);
+const total = computed(() => data.value?.total ?? 0);
+
+const pagination = computed(() => ({
+  current: currentPage.value,
+  pageSize: pageSize.value,
+  total: total.value,
+  showSizeChanger: true,
+  onChange: (nextPage: number, nextSize: number) => {
+    currentPage.value = nextPage;
+    pageSize.value = nextSize;
+  },
+}));
+
+watch([() => filters.type, () => filters.difficulty, () => filters.tagId], () => {
+  currentPage.value = 1;
+});
+
+function onSearch(): void {
+  filters.keyword = keywordInput.value;
+  currentPage.value = 1;
+}
+
+const { data: tags } = useQuery({
+  queryKey: ['tags'],
+  queryFn: () => unwrap<TagResponse[]>(listTags({ client, throwOnError: true })),
+});
+
+const tagOptions = computed(() =>
+  (tags.value ?? []).map((tag) => ({ value: tag.id as number, label: tag.name ?? String(tag.id) }))
+);
+
+const selectedIds = ref<number[]>([]);
+
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedIds.value,
+  onChange: (keys: Array<number | string>) => {
+    selectedIds.value = keys.map(Number);
+  },
+}));
+
+// 换页/筛选后清空勾选，避免把不可见行悄悄删掉
+watch(query, () => {
+  selectedIds.value = [];
+});
+
+function invalidateQuestions(): void {
+  void queryClient.invalidateQueries({ queryKey: ['questions'] });
+}
+
+const formOpen = ref(false);
+const editing = ref<QuestionResponse | null>(null);
+
+function onCreate(): void {
+  editing.value = null;
+  formOpen.value = true;
+}
+
+function onEdit(record: QuestionResponse): void {
+  editing.value = record;
+  formOpen.value = true;
+}
+
+async function onDelete(record: QuestionResponse): Promise<void> {
+  if (record.id === undefined) return;
+  try {
+    await unwrap(deleteQuestion({ client, throwOnError: true, path: { id: record.id } }));
+    message.success('题目已删除');
+    invalidateQuestions();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '删除失败，请稍后重试');
+  }
+}
+
+async function onBatchDelete(): Promise<void> {
+  const ids = [...selectedIds.value];
+  if (ids.length === 0) return;
+  let okCount = 0;
+  let failCount = 0;
+  for (const id of ids) {
+    try {
+      await unwrap(deleteQuestion({ client, throwOnError: true, path: { id } }));
+      okCount += 1;
+    } catch {
+      failCount += 1;
+    }
+  }
+  if (failCount === 0) {
+    message.success(`已删除 ${okCount} 道题目`);
+  } else {
+    message.warning(`删除完成：成功 ${okCount} 题，失败 ${failCount} 题`);
+  }
+  selectedIds.value = [];
+  invalidateQuestions();
+}
+
+function formatTime(value?: string | null): string {
+  return value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '—';
+}
+</script>
+"
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts:[2m107:20[22m[39m
+    [90m105|[39m   it('源码含单次批量调用（unwrap(batchDelete(）与逐题结果信封解析（succeeded/failed）', () =…
+    [90m106|[39m     [35mconst[39m source [33m=[39m [34mreadFileSync[39m([33mPAGE_SOURCE[39m[33m,[39m [32m'utf-8'[39m)[33m;[39m
+    [90m107|[39m     [34mexpect[39m(source)[33m.[39m[34mtoMatch[39m([36m/unwrap\(\s*batchDelete\(/[39m)[33m;[39m
+    [90m   |[39m                    [31m^[39m
+    [90m108|[39m     [34mexpect[39m(source)[33m.[39m[34mtoContain[39m([32m'succeeded'[39m)[33m;[39m
+    [90m109|[39m     [34mexpect[39m(source)[33m.[39m[34mtoContain[39m([32m'failed'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts[2m > [22m题库页批量删除行为[2m > [22m部分成功：单次批量调用 + 信封解析提示成功 N 失败 M + 失败项逐条 reason + 刷新选中态
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called 1 times, but got 0 times[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts:[2m126:29[22m[39m
+    [90m124|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m125|[39m
+    [90m126|[39m     [34mexpect[39m(api[33m.[39mbatchDelete)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                             [31m^[39m
+    [90m127|[39m     [34mexpect[39m(api[33m.[39mbatchDelete)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m128|[39m       expect[33m.[39m[34mobjectContaining[39m({ body[33m:[39m { ids[33m:[39m [[34m101[39m[33m,[39m [34m102[39m] } })
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts[2m > [22m题库页批量删除行为[2m > [22m全部成功：批量调用 + 成功提示，单题端点零调用
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called 1 times, but got 0 times[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts:[2m156:29[22m[39m
+    [90m154|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m155|[39m
+    [90m156|[39m     [34mexpect[39m(api[33m.[39mbatchDelete)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                             [31m^[39m
+    [90m157|[39m     [34mexpect[39m(api[33m.[39mdelete_)[33m.[39mnot[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m158|[39m     [34mexpect[39m(message[33m.[39msuccess)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m'已删除 2 道题目'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts[2m > [22m题库页批量删除行为[2m > [22m全部失败：零删除提示「成功 0 题，失败 2 题」，不伪装成全部成功
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called 1 times, but got 0 times[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts:[2m178:29[22m[39m
+    [90m176|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m177|[39m
+    [90m178|[39m     [34mexpect[39m(api[33m.[39mbatchDelete)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                             [31m^[39m
+    [90m179|[39m     [34mexpect[39m(message[33m.[39msuccess)[33m.[39mnot[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m180|[39m     [34mexpect[39m(message[33m.[39mwarning)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m'删除完成：成功 0 题，失败 2 题'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts[2m > [22m题库页批量删除行为[2m > [22m请求校验失败（重复/空/超限 400）：错误透出，不刷新列表
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called 1 times, but got 0 times[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts:[2m193:29[22m[39m
+    [90m191|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m192|[39m
+    [90m193|[39m     [34mexpect[39m(api[33m.[39mbatchDelete)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                             [31m^[39m
+    [90m194|[39m     [34mexpect[39m(message[33m.[39merror)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m'请求内存在重复题目'[39m)[33m;[39m
+    [90m195|[39m     [34mexpect[39m(message[33m.[39msuccess)[33m.[39mnot[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m6 failed[39m[22m[90m (6)[39m
+[2m   Start at [22m 21:04:17
+[2m   Duration [22m 5.45s[2m (transform 423ms, setup 54ms, import 3.04s, tests 1.22s, environment 819ms)[22m
+
