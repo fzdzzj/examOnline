@@ -102,6 +102,7 @@ import { useQuery } from '@tanstack/vue-query';
 
 import QuestionForm from '@/components/question/QuestionForm.vue';
 import {
+  batchDelete,
   delete_ as deleteQuestion,
   list as listTags,
   page,
@@ -232,23 +233,24 @@ async function onDelete(record: QuestionResponse): Promise<void> {
 async function onBatchDelete(): Promise<void> {
   const ids = [...selectedIds.value];
   if (ids.length === 0) return;
-  let okCount = 0;
-  let failCount = 0;
-  for (const id of ids) {
-    try {
-      await unwrap(deleteQuestion({ client, throwOnError: true, path: { id } }));
-      okCount += 1;
-    } catch {
-      failCount += 1;
+  try {
+    // 单次批量调用 + 逐题结果信封：部分成功不伪装成全部成功（失败项逐条 reason 透出）
+    const result = await unwrap(batchDelete({ client, throwOnError: true, body: { ids } }));
+    const okCount = result?.succeeded?.length ?? 0;
+    const failedItems = result?.failed ?? [];
+    if (failedItems.length === 0) {
+      message.success(`已删除 ${okCount} 道题目`);
+    } else {
+      message.warning(`删除完成：成功 ${okCount} 题，失败 ${failedItems.length} 题`);
+      for (const item of failedItems) {
+        message.error(`题目 ${item.id}：${item.reason ?? '删除失败，请稍后重试'}`);
+      }
     }
+    selectedIds.value = [];
+    invalidateQuestions();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '删除失败，请稍后重试');
   }
-  if (failCount === 0) {
-    message.success(`已删除 ${okCount} 道题目`);
-  } else {
-    message.warning(`删除完成：成功 ${okCount} 题，失败 ${failCount} 题`);
-  }
-  selectedIds.value = [];
-  invalidateQuestions();
 }
 
 function formatTime(value?: string | null): string {

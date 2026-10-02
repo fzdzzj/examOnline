@@ -10,6 +10,7 @@ import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.exam.service.ExamPaperLockService;
+import com.exam.question.dto.BatchDeleteQuestionsResponse;
 import com.exam.question.dto.QuestionCreateRequest;
 import com.exam.question.entity.Question;
 import com.exam.question.entity.QuestionTag;
@@ -28,6 +29,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -125,6 +127,49 @@ public class QuestionService {
         examPaperLockService.assertQuestionEditable(id);
         questionMapper.deleteById(question.getId());
         log.info("题目软删除: id={}", id);
+    }
+
+    /**
+     * 批量删除（add-question-batch-delete，逐题结果信封）：selectBatchIds 一次取回后逐题校验
+     * 收集失败项（已软删/不存在逻辑删除过滤后为 null、非归属且非 ADMIN、被进行中考试引用），
+     * 合规子集再逐题逻辑删除。任一题校验失败不阻止其余合规题目（部分成功），
+     * 失败 reason 与单删路径 {@link #softDelete} 的校验链文案逐字一致——403/400 直接复用
+     * {@link OwnershipGuard#assertOwner} 与 {@link ExamPaperLockService#assertQuestionEditable}
+     * 抛出的既有文案（不新造口径、不随副本漂移），404 文案「题目不存在」逐字对齐
+     * {@link #getOwnedQuestion}。全部失败时 succeeded 为空列表仍返回 200。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public BatchDeleteQuestionsResponse batchDelete(List<Long> ids) {
+        LoginUser operator = requireLogin();
+        // 请求内重复前置显式校验（不靠逐题查重间接暴露），口径与批量入卷 addQuestions 一致
+        if (new HashSet<>(ids).size() != ids.size()) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "请求内存在重复题目");
+        }
+        Map<Long, Question> found = questionMapper.selectBatchIds(ids).stream()
+                .collect(Collectors.toMap(Question::getId, question -> question));
+
+        List<Long> deletable = new ArrayList<>();
+        List<BatchDeleteQuestionsResponse.FailedItem> failed = new ArrayList<>();
+        for (Long id : ids) {
+            Question question = found.get(id);
+            if (question == null) {
+                // selectBatchIds 已被逻辑删除过滤：查不到 = 不存在或已软删，与 getOwnedQuestion 404 同文案
+                failed.add(new BatchDeleteQuestionsResponse.FailedItem(id, "题目不存在"));
+                continue;
+            }
+            try {
+                OwnershipGuard.assertOwner(question.getCreatedBy(), operator, "题目");
+                examPaperLockService.assertQuestionEditable(id);
+                deletable.add(id);
+            } catch (BusinessException e) {
+                failed.add(new BatchDeleteQuestionsResponse.FailedItem(id, e.getMessage()));
+            }
+        }
+        for (Long id : deletable) {
+            questionMapper.deleteById(id);
+        }
+        log.info("题目批量删除: 请求 {} 题，成功 {} 题，失败 {} 题", ids.size(), deletable.size(), failed.size());
+        return new BatchDeleteQuestionsResponse(deletable, failed);
     }
 
     /**

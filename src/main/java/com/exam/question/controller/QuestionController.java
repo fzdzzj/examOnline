@@ -3,6 +3,8 @@ package com.exam.question.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
+import com.exam.question.dto.BatchDeleteQuestionsRequest;
+import com.exam.question.dto.BatchDeleteQuestionsResponse;
 import com.exam.question.dto.QuestionCreateRequest;
 import com.exam.question.dto.QuestionPageResponse;
 import com.exam.question.dto.QuestionResponse;
@@ -91,6 +93,16 @@ public class QuestionController {
     public ApiResponse<Void> delete(@PathVariable Long id) {
         questionService.softDelete(id);
         return ApiResponse.success();
+    }
+
+    /**
+     * 批量删除题目（逐题结果信封）：部分成功如实返回 succeeded/failed，不把部分成功
+     * 伪装成全部成功；单题端点 {@link #delete} 原样保留，语义不变。
+     */
+    @PostMapping("/batch-delete")
+    public ApiResponse<BatchDeleteQuestionsResponse> batchDelete(
+            @Valid @RequestBody BatchDeleteQuestionsRequest request) {
+        return ApiResponse.success(questionService.batchDelete(request.getIds()));
     }
 
     private QuestionResponse toResponse(Question question, List<Tag> tags) {
