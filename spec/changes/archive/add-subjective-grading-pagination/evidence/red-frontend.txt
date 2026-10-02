@@ -1,0 +1,1689 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+[90mstderr[2m | src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m[2m批改页服务端分页参数[2m > [22m[2mqueryFn 携带 page/size/onlyUngraded/name，翻页与筛选后参数随动且切筛选回第 1 页
+[22m[39m[Vue warn]: Invalid prop: type check failed for prop "rows". Expected Array, got Object  
+  at <SubjectiveGradingPanel exam-id=7 question= {
+  questionId: [33m55[39m,
+  number: [33m1[39m,
+  content: [32m'简答题'[39m,
+  score: [33m10[39m,
+  totalStudents: [33m25[39m,
+  gradedStudents: [33m17[39m
+} rows= {
+  rows: [
+    {
+      id: [33m1[39m,
+      submissionId: [33m1001[39m,
+      questionId: [33m55[39m,
+      studentId: [33m7[39m,
+      studentName: [32m'张三'[39m,
+      studentAnswer: [32m'作答内容'[39m,
+      score: [90mundefined[39m,
+      version: [33m0[39m,
+      graded: [33mfalse[39m
+    },
+    {
+      id: [33m1[39m,
+      submissionId: [33m1002[39m,
+      questionId: [33m55[39m,
+      studentId: [33m8[39m,
+      studentName: [32m'李四'[39m,
+      studentAnswer: [32m'作答内容'[39m,
+      score: [33m8[39m,
+      version: [33m1[39m,
+      graded: [33mtrue[39m
+    }
+  ],
+  total: [33m30[39m,
+  graded: [33m3[39m
+}  ... > 
+  at <ACard key=0 title="批改：第 1 题" class="mb-4" > 
+  at <Index.page ref="VTU_COMPONENT" > 
+  at <VTUROOT>
+[Vue warn]: Unhandled error during execution of render function 
+  at <SubjectiveGradingPanel exam-id=7 question= {
+  questionId: [33m55[39m,
+  number: [33m1[39m,
+  content: [32m'简答题'[39m,
+  score: [33m10[39m,
+  totalStudents: [33m25[39m,
+  gradedStudents: [33m17[39m
+} rows= {
+  rows: [
+    {
+      id: [33m1[39m,
+      submissionId: [33m1001[39m,
+      questionId: [33m55[39m,
+      studentId: [33m7[39m,
+      studentName: [32m'张三'[39m,
+      studentAnswer: [32m'作答内容'[39m,
+      score: [90mundefined[39m,
+      version: [33m0[39m,
+      graded: [33mfalse[39m
+    },
+    {
+      id: [33m1[39m,
+      submissionId: [33m1002[39m,
+      questionId: [33m55[39m,
+      studentId: [33m8[39m,
+      studentName: [32m'李四'[39m,
+      studentAnswer: [32m'作答内容'[39m,
+      score: [33m8[39m,
+      version: [33m1[39m,
+      graded: [33mtrue[39m
+    }
+  ],
+  total: [33m30[39m,
+  graded: [33m3[39m
+}  ... > 
+  at <ACard key=0 title="批改：第 1 题" class="mb-4" > 
+  at <Index.page ref="VTU_COMPONENT" > 
+  at <VTUROOT>
+[Vue warn]: Unhandled error during execution of component update 
+  at <Index.page ref="VTU_COMPONENT" > 
+  at <VTUROOT>
+
+ [31m❯[39m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts [2m([22m[2m9 tests[22m[2m | [22m[31m9 failed[39m[2m)[22m[33m 2101[2mms[22m[39m
+[31m     [31m×[31m 面板不再含客户端全量筛选链（filteredRows）[39m[32m 15[2mms[22m[39m
+[31m     [31m×[31m 面板不再含静态客户端分页（pageSize: 10）[39m[32m 7[2mms[22m[39m
+[31m     [31m×[31m 面板 refreshRow 含 submissionId 查询参数（冲突回填单行取数）[39m[32m 3[2mms[22m[39m
+[31m     [31m×[31m 批改页 useQuery queryKey 含 page/pageSize/onlyUngraded/nameFilter（服务端驱动）[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m 已批进度展示信封 graded/total，而非客户端计数[39m[33m 752[2mms[22m[39m
+[31m     [31m×[31m 表格翻页与改页大小上抛 update:page / update:pageSize（服务端驱动）[39m[33m 415[2mms[22m[39m
+[31m     [31m×[31m 姓名筛选与只看未批改上抛服务端筛选状态[39m[33m 403[2mms[22m[39m
+[31m     [31m×[31m 409/1012 冲突后 refreshRow 以 submissionId 单行拉取并通知父级刷新[39m[32m 266[2mms[22m[39m
+[31m     [31m×[31m queryFn 携带 page/size/onlyUngraded/name，翻页与筛选后参数随动且切筛选回第 1 页[39m[32m 235[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 9 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m主观题批改服务端分页词法护栏[2m > [22m面板不再含客户端全量筛选链（filteredRows）
+[31m[1mAssertionError[22m: expected '<template>\r\n  <div>\r\n    <!-- 乐观锁…' not to contain 'filteredRows'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- filteredRows[39m
+[31m+ <template>[39m
+[31m+   <div>[39m
+[31m+     <!-- 乐观锁冲突提示（硬约定 2）：绝不静默覆盖，教师必须看到并重看最新内容 -->[39m
+[31m+     <Alert[39m
+[31m+       v-if="flow.state.conflict"[39m
+[31m+       type="warning"[39m
+[31m+       show-icon[39m
+[31m+       closable[39m
+[31m+       class="mb-3"[39m
+[31m+       @close="flow.dismissConflict()"[39m
+[31m+     >[39m
+[31m+       <template #message>[39m
+[31m+         {{ flow.state.conflict.message }}[39m
+[31m+       </template>[39m
+[31m+       <template #description>[39m
+[31m+         已为你刷新该生的最新批改内容（他人已打的分数与评语见下表），请重看后重新打分提交。[39m
+[31m+         <span class="conflict-note">系统不会用你刚才的分数覆盖他人的批改。</span>[39m
+[31m+       </template>[39m
+[31m+     </Alert>[39m
+[31m+ [39m
+[31m+     <Alert[39m
+[31m+       v-if="flow.state.error"[39m
+[31m+       type="error"[39m
+[31m+       show-icon[39m
+[31m+       class="mb-3"[39m
+[31m+       :message="flow.state.error.message"[39m
+[31m+       closable[39m
+[31m+       @close="flow.dismissError()"[39m
+[31m+     />[39m
+[31m+ [39m
+[31m+     <Alert[39m
+[31m+       v-if="lastSuccess"[39m
+[31m+       type="success"[39m
+[31m+       show-icon[39m
+[31m+       class="mb-3"[39m
+[31m+       :message="`已保存：${lastSuccess.studentName ?? lastSuccess.studentId ?? ''} 第 ${question.number} 题 ${lastSuccess.score} 分`"[39m
+[31m+       closable[39m
+[31m+       @close="lastSuccessId = null"[39m
+[31m+     />[39m
+[31m+ [39m
+[31m+     <div class="mb-3 flex flex-wrap items-center gap-3">[39m
+[31m+       <span class="question-meta">[39m
+[31m+         第 {{ question.number }} 题 · 满分 {{ question.score }} 分 · 已批 {{ gradedCount }}/{{[39m
+[31m+           rows.length[39m
+[31m+         }}[39m
+[31m+       </span>[39m
+[31m+       <Input[39m
+[31m+         v-model:value="nameFilter"[39m
+[31m+         placeholder="按学生姓名筛选（当前题）"[39m
+[31m+         allow-clear[39m
+[31m+         class="w-56"[39m
+[31m+       />[39m
+[31m+       <label class="flex items-center gap-1 text-sm">[39m
+[31m+         <input v-model="onlyUngraded" type="checkbox" />[39m
+[31m+         只看未批改[39m
+[31m+       </label>[39m
+[31m+     </div>[39m
+[31m+ [39m
+[31m+     <Table[39m
+[31m+       :columns="columns"[39m
+[31m+       :data-source="filteredRows"[39m
+[31m+       :loading="loading"[39m
+[31m+       :pagination="{ pageSize: 10, showSizeChanger: false }"[39m
+[31m+       :row-key="(row: SubjectiveGradeRow) => row.submissionId as number"[39m
+[31m+       size="middle"[39m
+[31m+     >[39m
+[31m+       <template #bodyCell="{ column, record }">[39m
+[31m+         <template v-if="column.key === 'student'">[39m
+[31m+           <div class="student-cell">[39m
+[31m+             <span>{{ (record as SubjectiveGradeRow).studentName ?? '-' }}</span>[39m
+[31m+             <span class="student-id">ID {{ (record as SubjectiveGradeRow).studentId }}</span>[39m
+[31m+           </div>[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'answer'">[39m
+[31m+           <TypographyParagraph[39m
+[31m+             class="answer-cell"[39m
+[31m+             :content="(record as SubjectiveGradeRow).studentAnswer || '（未作答）'"[39m
+[31m+             :ellipsis="{ rows: 2, expandable: true }"[39m
+[31m+           />[39m
+[31m+           <div v-if="(record as SubjectiveGradeRow).suggestedDetail" class="suggested">[39m
+[31m+             参考评分建议：{{ (record as SubjectiveGradeRow).suggestedScore }} 分[39m
+[31m+           </div>[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'current'">[39m
+[31m+           <template v-if="(record as SubjectiveGradeRow).graded">[39m
+[31m+             <Tag color="green">{{ (record as SubjectiveGradeRow).score }} 分</Tag>[39m
+[31m+             <div v-if="(record as SubjectiveGradeRow).comment" class="current-comment">[39m
+[31m+               {{ (record as SubjectiveGradeRow).comment }}[39m
+[31m+             </div>[39m
+[31m+           </template>[39m
+[31m+           <Tag v-else color="default">未批</Tag>[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'grading'">[39m
+[31m+           <div class="grading-cell">[39m
+[31m+             <InputNumber[39m
+[31m+               :value="editingOf(record as SubjectiveGradeRow).score ?? undefined"[39m
+[31m+               class="score-input"[39m
+[31m+               :min="0"[39m
+[31m+               :max="question.score"[39m
+[31m+               :step="0.5"[39m
+[31m+               placeholder="分数"[39m
+[31m+               :status="rowErrorOf(record as SubjectiveGradeRow) ? 'error' : undefined"[39m
+[31m+               @update:value="(v) => setEditing(record as SubjectiveGradeRow, 'score', v)"[39m
+[31m+             />[39m
+[31m+             <Input[39m
+[31m+               :value="editingOf(record as SubjectiveGradeRow).comment"[39m
+[31m+               placeholder="评语（可空）"[39m
+[31m+               class="comment-input"[39m
+[31m+               @update:value="(v) => setEditing(record as SubjectiveGradeRow, 'comment', v)"[39m
+[31m+             />[39m
+[31m+             <Button[39m
+[31m+               type="primary"[39m
+[31m+               size="small"[39m
+[31m+               :loading="[39m
+[31m+                 flow.state.savingSubmissionId === (record as SubjectiveGradeRow).submissionId[39m
+[31m+               "[39m
+[31m+               :disabled="flow.state.savingSubmissionId !== null"[39m
+[31m+               @click="onSubmit(record as SubjectiveGradeRow)"[39m
+[31m+             >[39m
+[31m+               提交[39m
+[31m+             </Button>[39m
+[31m+           </div>[39m
+[31m+           <div v-if="rowErrorOf(record as SubjectiveGradeRow)" class="row-error">[39m
+[31m+             {{ rowErrorOf(record as SubjectiveGradeRow) }}[39m
+[31m+           </div>[39m
+[31m+         </template>[39m
+[31m+       </template>[39m
+[31m+     </Table>[39m
+[31m+   </div>[39m
+[31m+ </template>[39m
+[31m+ [39m
+[31m+ <script setup lang="ts">[39m
+[31m+ import {[39m
+[31m+   Alert,[39m
+[31m+   Button,[39m
+[31m+   Input,[39m
+[31m+   InputNumber,[39m
+[31m+   Table,[39m
+[31m+   Tag,[39m
+[31m+   Typography,[39m
+[31m+   message,[39m
+[31m+   type TableColumnsType,[39m
+[31m+ } from 'ant-design-vue';[39m
+[31m+ import { computed, reactive, ref, watch } from 'vue';[39m
+[31m+ [39m
+[31m+ import {[39m
+[31m+   saveSubjectiveScore,[39m
+[31m+   subjectiveRows,[39m
+[31m+   type SubjectiveGradeRow,[39m
+[31m+   type SubjectiveQuestionItem,[39m
+[31m+ } from '@/api/axios';[39m
+[31m+ import { client, unwrap } from '@/api/apiClient';[39m
+[31m+ import { createGradingFlow } from '@/hooks/useGradingFlow';[39m
+[31m+ [39m
+[31m+ /**[39m
+[31m+  * 逐题打分面板：同题全部学生行（subjectiveRows）+ 逐行打分提交（saveSubjectiveScore 带 expectedVersion）。[39m
+[31m+  * 冲突处理是本组件的灵魂：后端 409/1012 → 提示「已被他人批改」→ 拉最新行回填 → 教师重看重打。[39m
+[31m+  */[39m
+[31m+ [39m
+[31m+ const TypographyParagraph = Typography.Paragraph;[39m
+[31m+ [39m
+[31m+ const props = defineProps<{[39m
+[31m+   examId: number;[39m
+[31m+   question: SubjectiveQuestionItem;[39m
+[31m+   rows: SubjectiveGradeRow[];[39m
+[31m+   loading?: boolean;[39m
+[31m+ }>();[39m
+[31m+ [39m
+[31m+ const emit = defineEmits<{ refreshed: [] }>();[39m
+[31m+ [39m
+[31m+ const columns: TableColumnsType = [[39m
+[31m+   { title: '学生', key: 'student', width: 130 },[39m
+[31m+   { title: '作答内容', key: 'answer' },[39m
+[31m+   { title: '当前批改', key: 'current', width: 120 },[39m
+[31m+   { title: '打分', key: 'grading', width: 330 },[39m
+[31m+ ];[39m
+[31m+ [39m
+[31m+ // ===== 筛选 =====[39m
+[31m+ const nameFilter = ref('');[39m
+[31m+ const onlyUngraded = ref(false);[39m
+[31m+ [39m
+[31m+ const filteredRows = computed<SubjectiveGradeRow[]>(() => {[39m
+[31m+   let result = props.rows;[39m
+[31m+   if (nameFilter.value.trim()) {[39m
+[31m+     result = result.filter((r) => r.studentName?.includes(nameFilter.value.trim()));[39m
+[31m+   }[39m
+[31m+   if (onlyUngraded.value) {[39m
+[31m+     result = result.filter((r) => !r.graded);[39m
+[31m+   }[39m
+[31m+   return result;[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const gradedCount = computed(() => props.rows.filter((r) => r.graded).length);[39m
+[31m+ [39m
+[31m+ // ===== 编辑状态（key = submissionId）=====[39m
+[31m+ interface Draft {[39m
+[31m+   score: string | null;[39m
+[31m+   comment: string;[39m
+[31m+ }[39m
+[31m+ const drafts = reactive<Record<number, Draft>>({});[39m
+[31m+ [39m
+[31m+ function editingOf(row: SubjectiveGradeRow): Draft {[39m
+[31m+   return drafts[row.submissionId as number] ?? { score: null, comment: '' };[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ function setEditing(row: SubjectiveGradeRow, field: keyof Draft, value: unknown): void {[39m
+[31m+   const id = row.submissionId as number;[39m
+[31m+   const current = drafts[id] ?? { score: null, comment: '' };[39m
+[31m+   if (field === 'score') {[39m
+[31m+     // InputNumber 的 null/number 都收敛成字符串，交给校验函数统一判定[39m
+[31m+     current.score = value === null || value === undefined ? null : String(value);[39m
+[31m+   } else {[39m
+[31m+     current.comment = typeof value === 'string' ? value : '';[39m
+[31m+   }[39m
+[31m+   drafts[id] = current;[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ function clearDraft(row: SubjectiveGradeRow): void {[39m
+[31m+   delete drafts[row.submissionId as number];[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ // ===== 提交流（依赖注入：saveScore 走真实契约，refreshRow 冲突后拉最新行）=====[39m
+[31m+ const flow = createGradingFlow({[39m
+[31m+   saveScore: (request) =>[39m
+[31m+     unwrap([39m
+[31m+       saveSubjectiveScore({[39m
+[31m+         client,[39m
+[31m+         throwOnError: true,[39m
+[31m+         path: { examId: props.examId },[39m
+[31m+         body: request,[39m
+[31m+       })[39m
+[31m+     ),[39m
+[31m+   refreshRow: async (submissionId, questionId) => {[39m
+[31m+     const list = await unwrap([39m
+[31m+       subjectiveRows({[39m
+[31m+         client,[39m
+[31m+         throwOnError: true,[39m
+[31m+         path: { examId: props.examId },[39m
+[31m+         query: { questionId },[39m
+[31m+       })[39m
+[31m+     );[39m
+[31m+     return list?.find((r) => r.submissionId === submissionId) ?? null;[39m
+[31m+   },[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const lastSuccessId = ref<number | null>(null);[39m
+[31m+ // 成功提示按 submissionId 从最新行取分数：直接存下点击时的 row 会显示保存前的旧分数[39m
+[31m+ const lastSuccess = computed<SubjectiveGradeRow | undefined>(() =>[39m
+[31m+   props.rows.find((r) => r.submissionId === lastSuccessId.value)[39m
+[31m+ );[39m
+[31m+ [39m
+[31m+ async function onSubmit(row: SubjectiveGradeRow): Promise<void> {[39m
+[31m+   const draft = editingOf(row);[39m
+[31m+   const ok = await flow.submit(row, draft.score, draft.comment, props.question.score ?? 0);[39m
+[31m+   if (ok) {[39m
+[31m+     clearDraft(row);[39m
+[31m+     lastSuccessId.value = row.submissionId ?? null;[39m
+[31m+     message.success('批改已保存');[39m
+[31m+     // 通知父级刷新行列表（拿到新 version / graded 状态），单测断言的是 flow 层行为[39m
+[31m+     emit('refreshed');[39m
+[31m+   }[39m
+[31m+   // 失败/冲突：不提示成功、不清输入，界面由 flow.state 驱动展示原因[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ // 冲突发生后：把后端最新行回填到展示（教师重看的对象），并清掉旧输入防误提交[39m
+[31m+ watch([39m
+[31m+   () => flow.state.conflict,[39m
+[31m+   (conflict) => {[39m
+[31m+     if (!conflict?.latestRow) return;[39m
+[31m+     clearDraft(conflict.latestRow);[39m
+[31m+     // 表格数据来自父级的 rows 查询，不重拉则「见下表」里的他人分数永远显示不出来[39m
+[31m+     emit('refreshed');[39m
+[31m+   }[39m
+[31m+ );[39m
+[31m+ [39m
+[31m+ // 行内错误文案：flow 的校验/提交错误按 submissionId 归位到对应行[39m
+[31m+ function rowErrorOf(row: SubjectiveGradeRow): string | null {[39m
+[31m+   const error = flow.state.error;[39m
+[31m+   if (error && error.submissionId === row.submissionId) return error.message;[39m
+[31m+   return null;[39m
+[31m+ }[39m
+[31m+ </script>[39m
+[31m+ [39m
+[31m+ <style scoped>[39m
+[31m+ .mb-3 {[39m
+[31m+   margin-bottom: 0.75rem;[39m
+[31m+ }[39m
+[31m+ .question-meta {[39m
+[31m+   color: #555;[39m
+[31m+   font-size: 13px;[39m
+[31m+ }[39m
+[31m+ .conflict-note {[39m
+[31m+   color: #d46b08;[39m
+[31m+ }[39m
+[31m+ .student-cell {[39m
+[31m+   display: flex;[39m
+[31m+   flex-direction: column;[39m
+[31m+ }[39m
+[31m+ .student-id {[39m
+[31m+   color: #999;[39m
+[31m+   font-size: 12px;[39m
+[31m+ }[39m
+[31m+ .answer-cell {[39m
+[31m+   margin-bottom: 0 !important;[39m
+[31m+   max-width: 420px;[39m
+[31m+ }[39m
+[31m+ .suggested {[39m
+[31m+   color: #999;[39m
+[31m+   font-size: 12px;[39m
+[31m+   margin-top: 2px;[39m
+[31m+ }[39m
+[31m+ .current-comment {[39m
+[31m+   color: #999;[39m
+[31m+   font-size: 12px;[39m
+[31m+   margin-top: 2px;[39m
+[31m+   max-width: 110px;[39m
+[31m+   word-break: break-all;[39m
+[31m+ }[39m
+[31m+ .grading-cell {[39m
+[31m+   display: flex;[39m
+[31m+   align-items: center;[39m
+[31m+   gap: 8px;[39m
+[31m+   flex-wrap: wrap;[39m
+[31m+ }[39m
+[31m+ .score-input {[39m
+[31m+   width: 90px;[39m
+[31m+ }[39m
+[31m+ .comment-input {[39m
+[31m+   flex: 1;[39m
+[31m+   min-width: 140px;[39m
+[31m+ }[39m
+[31m+ .row-error {[39m
+[31m+   color: #cf1322;[39m
+[31m+   font-size: 12px;[39m
+[31m+   margin-top: 4px;[39m
+[31m+ }[39m
+[31m+ </style>[39m
+[31m+[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts:[2m112:53[22m[39m
+    [90m110|[39m [34mdescribe[39m([32m'主观题批改服务端分页词法护栏'[39m[33m,[39m () [33m=>[39m {
+    [90m111|[39m   [34mit[39m([32m'面板不再含客户端全量筛选链（filteredRows）'[39m[33m,[39m () [33m=>[39m {
+    [90m112|[39m     expect(readFileSync(PANEL_SOURCE, 'utf-8')).not.toContain('filtere…
+    [90m   |[39m                                                     [31m^[39m
+    [90m113|[39m   })[33m;[39m
+    [90m114|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m主观题批改服务端分页词法护栏[2m > [22m面板不再含静态客户端分页（pageSize: 10）
+[31m[1mAssertionError[22m: expected '<template>\r\n  <div>\r\n    <!-- 乐观锁…' not to contain 'pageSize: 10'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- pageSize: 10[39m
+[31m+ <template>[39m
+[31m+   <div>[39m
+[31m+     <!-- 乐观锁冲突提示（硬约定 2）：绝不静默覆盖，教师必须看到并重看最新内容 -->[39m
+[31m+     <Alert[39m
+[31m+       v-if="flow.state.conflict"[39m
+[31m+       type="warning"[39m
+[31m+       show-icon[39m
+[31m+       closable[39m
+[31m+       class="mb-3"[39m
+[31m+       @close="flow.dismissConflict()"[39m
+[31m+     >[39m
+[31m+       <template #message>[39m
+[31m+         {{ flow.state.conflict.message }}[39m
+[31m+       </template>[39m
+[31m+       <template #description>[39m
+[31m+         已为你刷新该生的最新批改内容（他人已打的分数与评语见下表），请重看后重新打分提交。[39m
+[31m+         <span class="conflict-note">系统不会用你刚才的分数覆盖他人的批改。</span>[39m
+[31m+       </template>[39m
+[31m+     </Alert>[39m
+[31m+ [39m
+[31m+     <Alert[39m
+[31m+       v-if="flow.state.error"[39m
+[31m+       type="error"[39m
+[31m+       show-icon[39m
+[31m+       class="mb-3"[39m
+[31m+       :message="flow.state.error.message"[39m
+[31m+       closable[39m
+[31m+       @close="flow.dismissError()"[39m
+[31m+     />[39m
+[31m+ [39m
+[31m+     <Alert[39m
+[31m+       v-if="lastSuccess"[39m
+[31m+       type="success"[39m
+[31m+       show-icon[39m
+[31m+       class="mb-3"[39m
+[31m+       :message="`已保存：${lastSuccess.studentName ?? lastSuccess.studentId ?? ''} 第 ${question.number} 题 ${lastSuccess.score} 分`"[39m
+[31m+       closable[39m
+[31m+       @close="lastSuccessId = null"[39m
+[31m+     />[39m
+[31m+ [39m
+[31m+     <div class="mb-3 flex flex-wrap items-center gap-3">[39m
+[31m+       <span class="question-meta">[39m
+[31m+         第 {{ question.number }} 题 · 满分 {{ question.score }} 分 · 已批 {{ gradedCount }}/{{[39m
+[31m+           rows.length[39m
+[31m+         }}[39m
+[31m+       </span>[39m
+[31m+       <Input[39m
+[31m+         v-model:value="nameFilter"[39m
+[31m+         placeholder="按学生姓名筛选（当前题）"[39m
+[31m+         allow-clear[39m
+[31m+         class="w-56"[39m
+[31m+       />[39m
+[31m+       <label class="flex items-center gap-1 text-sm">[39m
+[31m+         <input v-model="onlyUngraded" type="checkbox" />[39m
+[31m+         只看未批改[39m
+[31m+       </label>[39m
+[31m+     </div>[39m
+[31m+ [39m
+[31m+     <Table[39m
+[31m+       :columns="columns"[39m
+[31m+       :data-source="filteredRows"[39m
+[31m+       :loading="loading"[39m
+[31m+       :pagination="{ pageSize: 10, showSizeChanger: false }"[39m
+[31m+       :row-key="(row: SubjectiveGradeRow) => row.submissionId as number"[39m
+[31m+       size="middle"[39m
+[31m+     >[39m
+[31m+       <template #bodyCell="{ column, record }">[39m
+[31m+         <template v-if="column.key === 'student'">[39m
+[31m+           <div class="student-cell">[39m
+[31m+             <span>{{ (record as SubjectiveGradeRow).studentName ?? '-' }}</span>[39m
+[31m+             <span class="student-id">ID {{ (record as SubjectiveGradeRow).studentId }}</span>[39m
+[31m+           </div>[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'answer'">[39m
+[31m+           <TypographyParagraph[39m
+[31m+             class="answer-cell"[39m
+[31m+             :content="(record as SubjectiveGradeRow).studentAnswer || '（未作答）'"[39m
+[31m+             :ellipsis="{ rows: 2, expandable: true }"[39m
+[31m+           />[39m
+[31m+           <div v-if="(record as SubjectiveGradeRow).suggestedDetail" class="suggested">[39m
+[31m+             参考评分建议：{{ (record as SubjectiveGradeRow).suggestedScore }} 分[39m
+[31m+           </div>[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'current'">[39m
+[31m+           <template v-if="(record as SubjectiveGradeRow).graded">[39m
+[31m+             <Tag color="green">{{ (record as SubjectiveGradeRow).score }} 分</Tag>[39m
+[31m+             <div v-if="(record as SubjectiveGradeRow).comment" class="current-comment">[39m
+[31m+               {{ (record as SubjectiveGradeRow).comment }}[39m
+[31m+             </div>[39m
+[31m+           </template>[39m
+[31m+           <Tag v-else color="default">未批</Tag>[39m
+[31m+         </template>[39m
+[31m+         <template v-else-if="column.key === 'grading'">[39m
+[31m+           <div class="grading-cell">[39m
+[31m+             <InputNumber[39m
+[31m+               :value="editingOf(record as SubjectiveGradeRow).score ?? undefined"[39m
+[31m+               class="score-input"[39m
+[31m+               :min="0"[39m
+[31m+               :max="question.score"[39m
+[31m+               :step="0.5"[39m
+[31m+               placeholder="分数"[39m
+[31m+               :status="rowErrorOf(record as SubjectiveGradeRow) ? 'error' : undefined"[39m
+[31m+               @update:value="(v) => setEditing(record as SubjectiveGradeRow, 'score', v)"[39m
+[31m+             />[39m
+[31m+             <Input[39m
+[31m+               :value="editingOf(record as SubjectiveGradeRow).comment"[39m
+[31m+               placeholder="评语（可空）"[39m
+[31m+               class="comment-input"[39m
+[31m+               @update:value="(v) => setEditing(record as SubjectiveGradeRow, 'comment', v)"[39m
+[31m+             />[39m
+[31m+             <Button[39m
+[31m+               type="primary"[39m
+[31m+               size="small"[39m
+[31m+               :loading="[39m
+[31m+                 flow.state.savingSubmissionId === (record as SubjectiveGradeRow).submissionId[39m
+[31m+               "[39m
+[31m+               :disabled="flow.state.savingSubmissionId !== null"[39m
+[31m+               @click="onSubmit(record as SubjectiveGradeRow)"[39m
+[31m+             >[39m
+[31m+               提交[39m
+[31m+             </Button>[39m
+[31m+           </div>[39m
+[31m+           <div v-if="rowErrorOf(record as SubjectiveGradeRow)" class="row-error">[39m
+[31m+             {{ rowErrorOf(record as SubjectiveGradeRow) }}[39m
+[31m+           </div>[39m
+[31m+         </template>[39m
+[31m+       </template>[39m
+[31m+     </Table>[39m
+[31m+   </div>[39m
+[31m+ </template>[39m
+[31m+ [39m
+[31m+ <script setup lang="ts">[39m
+[31m+ import {[39m
+[31m+   Alert,[39m
+[31m+   Button,[39m
+[31m+   Input,[39m
+[31m+   InputNumber,[39m
+[31m+   Table,[39m
+[31m+   Tag,[39m
+[31m+   Typography,[39m
+[31m+   message,[39m
+[31m+   type TableColumnsType,[39m
+[31m+ } from 'ant-design-vue';[39m
+[31m+ import { computed, reactive, ref, watch } from 'vue';[39m
+[31m+ [39m
+[31m+ import {[39m
+[31m+   saveSubjectiveScore,[39m
+[31m+   subjectiveRows,[39m
+[31m+   type SubjectiveGradeRow,[39m
+[31m+   type SubjectiveQuestionItem,[39m
+[31m+ } from '@/api/axios';[39m
+[31m+ import { client, unwrap } from '@/api/apiClient';[39m
+[31m+ import { createGradingFlow } from '@/hooks/useGradingFlow';[39m
+[31m+ [39m
+[31m+ /**[39m
+[31m+  * 逐题打分面板：同题全部学生行（subjectiveRows）+ 逐行打分提交（saveSubjectiveScore 带 expectedVersion）。[39m
+[31m+  * 冲突处理是本组件的灵魂：后端 409/1012 → 提示「已被他人批改」→ 拉最新行回填 → 教师重看重打。[39m
+[31m+  */[39m
+[31m+ [39m
+[31m+ const TypographyParagraph = Typography.Paragraph;[39m
+[31m+ [39m
+[31m+ const props = defineProps<{[39m
+[31m+   examId: number;[39m
+[31m+   question: SubjectiveQuestionItem;[39m
+[31m+   rows: SubjectiveGradeRow[];[39m
+[31m+   loading?: boolean;[39m
+[31m+ }>();[39m
+[31m+ [39m
+[31m+ const emit = defineEmits<{ refreshed: [] }>();[39m
+[31m+ [39m
+[31m+ const columns: TableColumnsType = [[39m
+[31m+   { title: '学生', key: 'student', width: 130 },[39m
+[31m+   { title: '作答内容', key: 'answer' },[39m
+[31m+   { title: '当前批改', key: 'current', width: 120 },[39m
+[31m+   { title: '打分', key: 'grading', width: 330 },[39m
+[31m+ ];[39m
+[31m+ [39m
+[31m+ // ===== 筛选 =====[39m
+[31m+ const nameFilter = ref('');[39m
+[31m+ const onlyUngraded = ref(false);[39m
+[31m+ [39m
+[31m+ const filteredRows = computed<SubjectiveGradeRow[]>(() => {[39m
+[31m+   let result = props.rows;[39m
+[31m+   if (nameFilter.value.trim()) {[39m
+[31m+     result = result.filter((r) => r.studentName?.includes(nameFilter.value.trim()));[39m
+[31m+   }[39m
+[31m+   if (onlyUngraded.value) {[39m
+[31m+     result = result.filter((r) => !r.graded);[39m
+[31m+   }[39m
+[31m+   return result;[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const gradedCount = computed(() => props.rows.filter((r) => r.graded).length);[39m
+[31m+ [39m
+[31m+ // ===== 编辑状态（key = submissionId）=====[39m
+[31m+ interface Draft {[39m
+[31m+   score: string | null;[39m
+[31m+   comment: string;[39m
+[31m+ }[39m
+[31m+ const drafts = reactive<Record<number, Draft>>({});[39m
+[31m+ [39m
+[31m+ function editingOf(row: SubjectiveGradeRow): Draft {[39m
+[31m+   return drafts[row.submissionId as number] ?? { score: null, comment: '' };[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ function setEditing(row: SubjectiveGradeRow, field: keyof Draft, value: unknown): void {[39m
+[31m+   const id = row.submissionId as number;[39m
+[31m+   const current = drafts[id] ?? { score: null, comment: '' };[39m
+[31m+   if (field === 'score') {[39m
+[31m+     // InputNumber 的 null/number 都收敛成字符串，交给校验函数统一判定[39m
+[31m+     current.score = value === null || value === undefined ? null : String(value);[39m
+[31m+   } else {[39m
+[31m+     current.comment = typeof value === 'string' ? value : '';[39m
+[31m+   }[39m
+[31m+   drafts[id] = current;[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ function clearDraft(row: SubjectiveGradeRow): void {[39m
+[31m+   delete drafts[row.submissionId as number];[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ // ===== 提交流（依赖注入：saveScore 走真实契约，refreshRow 冲突后拉最新行）=====[39m
+[31m+ const flow = createGradingFlow({[39m
+[31m+   saveScore: (request) =>[39m
+[31m+     unwrap([39m
+[31m+       saveSubjectiveScore({[39m
+[31m+         client,[39m
+[31m+         throwOnError: true,[39m
+[31m+         path: { examId: props.examId },[39m
+[31m+         body: request,[39m
+[31m+       })[39m
+[31m+     ),[39m
+[31m+   refreshRow: async (submissionId, questionId) => {[39m
+[31m+     const list = await unwrap([39m
+[31m+       subjectiveRows({[39m
+[31m+         client,[39m
+[31m+         throwOnError: true,[39m
+[31m+         path: { examId: props.examId },[39m
+[31m+         query: { questionId },[39m
+[31m+       })[39m
+[31m+     );[39m
+[31m+     return list?.find((r) => r.submissionId === submissionId) ?? null;[39m
+[31m+   },[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const lastSuccessId = ref<number | null>(null);[39m
+[31m+ // 成功提示按 submissionId 从最新行取分数：直接存下点击时的 row 会显示保存前的旧分数[39m
+[31m+ const lastSuccess = computed<SubjectiveGradeRow | undefined>(() =>[39m
+[31m+   props.rows.find((r) => r.submissionId === lastSuccessId.value)[39m
+[31m+ );[39m
+[31m+ [39m
+[31m+ async function onSubmit(row: SubjectiveGradeRow): Promise<void> {[39m
+[31m+   const draft = editingOf(row);[39m
+[31m+   const ok = await flow.submit(row, draft.score, draft.comment, props.question.score ?? 0);[39m
+[31m+   if (ok) {[39m
+[31m+     clearDraft(row);[39m
+[31m+     lastSuccessId.value = row.submissionId ?? null;[39m
+[31m+     message.success('批改已保存');[39m
+[31m+     // 通知父级刷新行列表（拿到新 version / graded 状态），单测断言的是 flow 层行为[39m
+[31m+     emit('refreshed');[39m
+[31m+   }[39m
+[31m+   // 失败/冲突：不提示成功、不清输入，界面由 flow.state 驱动展示原因[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ // 冲突发生后：把后端最新行回填到展示（教师重看的对象），并清掉旧输入防误提交[39m
+[31m+ watch([39m
+[31m+   () => flow.state.conflict,[39m
+[31m+   (conflict) => {[39m
+[31m+     if (!conflict?.latestRow) return;[39m
+[31m+     clearDraft(conflict.latestRow);[39m
+[31m+     // 表格数据来自父级的 rows 查询，不重拉则「见下表」里的他人分数永远显示不出来[39m
+[31m+     emit('refreshed');[39m
+[31m+   }[39m
+[31m+ );[39m
+[31m+ [39m
+[31m+ // 行内错误文案：flow 的校验/提交错误按 submissionId 归位到对应行[39m
+[31m+ function rowErrorOf(row: SubjectiveGradeRow): string | null {[39m
+[31m+   const error = flow.state.error;[39m
+[31m+   if (error && error.submissionId === row.submissionId) return error.message;[39m
+[31m+   return null;[39m
+[31m+ }[39m
+[31m+ </script>[39m
+[31m+ [39m
+[31m+ <style scoped>[39m
+[31m+ .mb-3 {[39m
+[31m+   margin-bottom: 0.75rem;[39m
+[31m+ }[39m
+[31m+ .question-meta {[39m
+[31m+   color: #555;[39m
+[31m+   font-size: 13px;[39m
+[31m+ }[39m
+[31m+ .conflict-note {[39m
+[31m+   color: #d46b08;[39m
+[31m+ }[39m
+[31m+ .student-cell {[39m
+[31m+   display: flex;[39m
+[31m+   flex-direction: column;[39m
+[31m+ }[39m
+[31m+ .student-id {[39m
+[31m+   color: #999;[39m
+[31m+   font-size: 12px;[39m
+[31m+ }[39m
+[31m+ .answer-cell {[39m
+[31m+   margin-bottom: 0 !important;[39m
+[31m+   max-width: 420px;[39m
+[31m+ }[39m
+[31m+ .suggested {[39m
+[31m+   color: #999;[39m
+[31m+   font-size: 12px;[39m
+[31m+   margin-top: 2px;[39m
+[31m+ }[39m
+[31m+ .current-comment {[39m
+[31m+   color: #999;[39m
+[31m+   font-size: 12px;[39m
+[31m+   margin-top: 2px;[39m
+[31m+   max-width: 110px;[39m
+[31m+   word-break: break-all;[39m
+[31m+ }[39m
+[31m+ .grading-cell {[39m
+[31m+   display: flex;[39m
+[31m+   align-items: center;[39m
+[31m+   gap: 8px;[39m
+[31m+   flex-wrap: wrap;[39m
+[31m+ }[39m
+[31m+ .score-input {[39m
+[31m+   width: 90px;[39m
+[31m+ }[39m
+[31m+ .comment-input {[39m
+[31m+   flex: 1;[39m
+[31m+   min-width: 140px;[39m
+[31m+ }[39m
+[31m+ .row-error {[39m
+[31m+   color: #cf1322;[39m
+[31m+   font-size: 12px;[39m
+[31m+   margin-top: 4px;[39m
+[31m+ }[39m
+[31m+ </style>[39m
+[31m+[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts:[2m116:53[22m[39m
+    [90m114|[39m
+    [90m115|[39m   [34mit[39m([32m'面板不再含静态客户端分页（pageSize: 10）'[39m[33m,[39m () [33m=>[39m {
+    [90m116|[39m     expect(readFileSync(PANEL_SOURCE, 'utf-8')).not.toContain('pageSiz…
+    [90m   |[39m                                                     [31m^[39m
+    [90m117|[39m   })[33m;[39m
+    [90m118|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m主观题批改服务端分页词法护栏[2m > [22m面板 refreshRow 含 submissionId 查询参数（冲突回填单行取数）
+[31m[1mAssertionError[22m: expected '<template>\r\n  <div>\r\n    <!-- 乐观锁…' to match /query:\s*\{\s*questionId,\s*submissio…/[39m
+
+[32m- Expected:[39m
+/query:\s*\{\s*questionId,\s*submissionId/
+
+[31m+ Received:[39m
+"<template>
+  <div>
+    <!-- 乐观锁冲突提示（硬约定 2）：绝不静默覆盖，教师必须看到并重看最新内容 -->
+    <Alert
+      v-if=\"flow.state.conflict\"
+      type=\"warning\"
+      show-icon
+      closable
+      class=\"mb-3\"
+      @close=\"flow.dismissConflict()\"
+    >
+      <template #message>
+        {{ flow.state.conflict.message }}
+      </template>
+      <template #description>
+        已为你刷新该生的最新批改内容（他人已打的分数与评语见下表），请重看后重新打分提交。
+        <span class=\"conflict-note\">系统不会用你刚才的分数覆盖他人的批改。</span>
+      </template>
+    </Alert>
+
+    <Alert
+      v-if=\"flow.state.error\"
+      type=\"error\"
+      show-icon
+      class=\"mb-3\"
+      :message=\"flow.state.error.message\"
+      closable
+      @close=\"flow.dismissError()\"
+    />
+
+    <Alert
+      v-if=\"lastSuccess\"
+      type=\"success\"
+      show-icon
+      class=\"mb-3\"
+      :message=\"`已保存：${lastSuccess.studentName ?? lastSuccess.studentId ?? ''} 第 ${question.number} 题 ${lastSuccess.score} 分`\"
+      closable
+      @close=\"lastSuccessId = null\"
+    />
+
+    <div class=\"mb-3 flex flex-wrap items-center gap-3\">
+      <span class=\"question-meta\">
+        第 {{ question.number }} 题 · 满分 {{ question.score }} 分 · 已批 {{ gradedCount }}/{{
+          rows.length
+        }}
+      </span>
+      <Input
+        v-model:value=\"nameFilter\"
+        placeholder=\"按学生姓名筛选（当前题）\"
+        allow-clear
+        class=\"w-56\"
+      />
+      <label class=\"flex items-center gap-1 text-sm\">
+        <input v-model=\"onlyUngraded\" type=\"checkbox\" />
+        只看未批改
+      </label>
+    </div>
+
+    <Table
+      :columns=\"columns\"
+      :data-source=\"filteredRows\"
+      :loading=\"loading\"
+      :pagination=\"{ pageSize: 10, showSizeChanger: false }\"
+      :row-key=\"(row: SubjectiveGradeRow) => row.submissionId as number\"
+      size=\"middle\"
+    >
+      <template #bodyCell=\"{ column, record }\">
+        <template v-if=\"column.key === 'student'\">
+          <div class=\"student-cell\">
+            <span>{{ (record as SubjectiveGradeRow).studentName ?? '-' }}</span>
+            <span class=\"student-id\">ID {{ (record as SubjectiveGradeRow).studentId }}</span>
+          </div>
+        </template>
+        <template v-else-if=\"column.key === 'answer'\">
+          <TypographyParagraph
+            class=\"answer-cell\"
+            :content=\"(record as SubjectiveGradeRow).studentAnswer || '（未作答）'\"
+            :ellipsis=\"{ rows: 2, expandable: true }\"
+          />
+          <div v-if=\"(record as SubjectiveGradeRow).suggestedDetail\" class=\"suggested\">
+            参考评分建议：{{ (record as SubjectiveGradeRow).suggestedScore }} 分
+          </div>
+        </template>
+        <template v-else-if=\"column.key === 'current'\">
+          <template v-if=\"(record as SubjectiveGradeRow).graded\">
+            <Tag color=\"green\">{{ (record as SubjectiveGradeRow).score }} 分</Tag>
+            <div v-if=\"(record as SubjectiveGradeRow).comment\" class=\"current-comment\">
+              {{ (record as SubjectiveGradeRow).comment }}
+            </div>
+          </template>
+          <Tag v-else color=\"default\">未批</Tag>
+        </template>
+        <template v-else-if=\"column.key === 'grading'\">
+          <div class=\"grading-cell\">
+            <InputNumber
+              :value=\"editingOf(record as SubjectiveGradeRow).score ?? undefined\"
+              class=\"score-input\"
+              :min=\"0\"
+              :max=\"question.score\"
+              :step=\"0.5\"
+              placeholder=\"分数\"
+              :status=\"rowErrorOf(record as SubjectiveGradeRow) ? 'error' : undefined\"
+              @update:value=\"(v) => setEditing(record as SubjectiveGradeRow, 'score', v)\"
+            />
+            <Input
+              :value=\"editingOf(record as SubjectiveGradeRow).comment\"
+              placeholder=\"评语（可空）\"
+              class=\"comment-input\"
+              @update:value=\"(v) => setEditing(record as SubjectiveGradeRow, 'comment', v)\"
+            />
+            <Button
+              type=\"primary\"
+              size=\"small\"
+              :loading=\"
+                flow.state.savingSubmissionId === (record as SubjectiveGradeRow).submissionId
+              \"
+              :disabled=\"flow.state.savingSubmissionId !== null\"
+              @click=\"onSubmit(record as SubjectiveGradeRow)\"
+            >
+              提交
+            </Button>
+          </div>
+          <div v-if=\"rowErrorOf(record as SubjectiveGradeRow)\" class=\"row-error\">
+            {{ rowErrorOf(record as SubjectiveGradeRow) }}
+          </div>
+        </template>
+      </template>
+    </Table>
+  </div>
+</template>
+
+<script setup lang=\"ts\">
+import {
+  Alert,
+  Button,
+  Input,
+  InputNumber,
+  Table,
+  Tag,
+  Typography,
+  message,
+  type TableColumnsType,
+} from 'ant-design-vue';
+import { computed, reactive, ref, watch } from 'vue';
+
+import {
+  saveSubjectiveScore,
+  subjectiveRows,
+  type SubjectiveGradeRow,
+  type SubjectiveQuestionItem,
+} from '@/api/axios';
+import { client, unwrap } from '@/api/apiClient';
+import { createGradingFlow } from '@/hooks/useGradingFlow';
+
+/**
+ * 逐题打分面板：同题全部学生行（subjectiveRows）+ 逐行打分提交（saveSubjectiveScore 带 expectedVersion）。
+ * 冲突处理是本组件的灵魂：后端 409/1012 → 提示「已被他人批改」→ 拉最新行回填 → 教师重看重打。
+ */
+
+const TypographyParagraph = Typography.Paragraph;
+
+const props = defineProps<{
+  examId: number;
+  question: SubjectiveQuestionItem;
+  rows: SubjectiveGradeRow[];
+  loading?: boolean;
+}>();
+
+const emit = defineEmits<{ refreshed: [] }>();
+
+const columns: TableColumnsType = [
+  { title: '学生', key: 'student', width: 130 },
+  { title: '作答内容', key: 'answer' },
+  { title: '当前批改', key: 'current', width: 120 },
+  { title: '打分', key: 'grading', width: 330 },
+];
+
+// ===== 筛选 =====
+const nameFilter = ref('');
+const onlyUngraded = ref(false);
+
+const filteredRows = computed<SubjectiveGradeRow[]>(() => {
+  let result = props.rows;
+  if (nameFilter.value.trim()) {
+    result = result.filter((r) => r.studentName?.includes(nameFilter.value.trim()));
+  }
+  if (onlyUngraded.value) {
+    result = result.filter((r) => !r.graded);
+  }
+  return result;
+});
+
+const gradedCount = computed(() => props.rows.filter((r) => r.graded).length);
+
+// ===== 编辑状态（key = submissionId）=====
+interface Draft {
+  score: string | null;
+  comment: string;
+}
+const drafts = reactive<Record<number, Draft>>({});
+
+function editingOf(row: SubjectiveGradeRow): Draft {
+  return drafts[row.submissionId as number] ?? { score: null, comment: '' };
+}
+
+function setEditing(row: SubjectiveGradeRow, field: keyof Draft, value: unknown): void {
+  const id = row.submissionId as number;
+  const current = drafts[id] ?? { score: null, comment: '' };
+  if (field === 'score') {
+    // InputNumber 的 null/number 都收敛成字符串，交给校验函数统一判定
+    current.score = value === null || value === undefined ? null : String(value);
+  } else {
+    current.comment = typeof value === 'string' ? value : '';
+  }
+  drafts[id] = current;
+}
+
+function clearDraft(row: SubjectiveGradeRow): void {
+  delete drafts[row.submissionId as number];
+}
+
+// ===== 提交流（依赖注入：saveScore 走真实契约，refreshRow 冲突后拉最新行）=====
+const flow = createGradingFlow({
+  saveScore: (request) =>
+    unwrap(
+      saveSubjectiveScore({
+        client,
+        throwOnError: true,
+        path: { examId: props.examId },
+        body: request,
+      })
+    ),
+  refreshRow: async (submissionId, questionId) => {
+    const list = await unwrap(
+      subjectiveRows({
+        client,
+        throwOnError: true,
+        path: { examId: props.examId },
+        query: { questionId },
+      })
+    );
+    return list?.find((r) => r.submissionId === submissionId) ?? null;
+  },
+});
+
+const lastSuccessId = ref<number | null>(null);
+// 成功提示按 submissionId 从最新行取分数：直接存下点击时的 row 会显示保存前的旧分数
+const lastSuccess = computed<SubjectiveGradeRow | undefined>(() =>
+  props.rows.find((r) => r.submissionId === lastSuccessId.value)
+);
+
+async function onSubmit(row: SubjectiveGradeRow): Promise<void> {
+  const draft = editingOf(row);
+  const ok = await flow.submit(row, draft.score, draft.comment, props.question.score ?? 0);
+  if (ok) {
+    clearDraft(row);
+    lastSuccessId.value = row.submissionId ?? null;
+    message.success('批改已保存');
+    // 通知父级刷新行列表（拿到新 version / graded 状态），单测断言的是 flow 层行为
+    emit('refreshed');
+  }
+  // 失败/冲突：不提示成功、不清输入，界面由 flow.state 驱动展示原因
+}
+
+// 冲突发生后：把后端最新行回填到展示（教师重看的对象），并清掉旧输入防误提交
+watch(
+  () => flow.state.conflict,
+  (conflict) => {
+    if (!conflict?.latestRow) return;
+    clearDraft(conflict.latestRow);
+    // 表格数据来自父级的 rows 查询，不重拉则「见下表」里的他人分数永远显示不出来
+    emit('refreshed');
+  }
+);
+
+// 行内错误文案：flow 的校验/提交错误按 submissionId 归位到对应行
+function rowErrorOf(row: SubjectiveGradeRow): string | null {
+  const error = flow.state.error;
+  if (error && error.submissionId === row.submissionId) return error.message;
+  return null;
+}
+</script>
+
+<style scoped>
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+.question-meta {
+  color: #555;
+  font-size: 13px;
+}
+.conflict-note {
+  color: #d46b08;
+}
+.student-cell {
+  display: flex;
+  flex-direction: column;
+}
+.student-id {
+  color: #999;
+  font-size: 12px;
+}
+.answer-cell {
+  margin-bottom: 0 !important;
+  max-width: 420px;
+}
+.suggested {
+  color: #999;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.current-comment {
+  color: #999;
+  font-size: 12px;
+  margin-top: 2px;
+  max-width: 110px;
+  word-break: break-all;
+}
+.grading-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.score-input {
+  width: 90px;
+}
+.comment-input {
+  flex: 1;
+  min-width: 140px;
+}
+.row-error {
+  color: #cf1322;
+  font-size: 12px;
+  margin-top: 4px;
+}
+</style>
+"
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts:[2m120:49[22m[39m
+    [90m118|[39m
+    [90m119|[39m   [34mit[39m([32m'面板 refreshRow 含 submissionId 查询参数（冲突回填单行取数）'[39m[33m,[39m () [33m=>[39m {
+    [90m120|[39m     expect(readFileSync(PANEL_SOURCE, 'utf-8')).toMatch(/query:\s*\{\s…
+    [90m   |[39m                                                 [31m^[39m
+    [90m121|[39m   })[33m;[39m
+    [90m122|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m主观题批改服务端分页词法护栏[2m > [22m批改页 useQuery queryKey 含 page/pageSize/onlyUngraded/nameFilter（服务端驱动）
+[31m[1mAssertionError[22m: expected '<template>\r\n  <div>\r\n    <Card ti…' to match /'rows',[\s\S]{0,200}page\.value,\s*pa…/[39m
+
+[32m- Expected:[39m
+/'rows',[\s\S]{0,200}page\.value,\s*pageSize\.value,\s*onlyUngraded\.value,\s*nameFilter\.value/
+
+[31m+ Received:[39m
+"<template>
+  <div>
+    <Card title=\"批改工作台\" class=\"mb-4\">
+      <template #extra>
+        <span class=\"hint\">
+          并发批改由后端乐观锁保护：同一份答卷被他人先保存时，后提交方会收到冲突提示，绝不静默覆盖。
+        </span>
+      </template>
+
+      <div class=\"mb-3 flex flex-wrap items-center gap-3\">
+        <Select
+          v-model:value=\"selectedExamId\"
+          :options=\"examOptions\"
+          placeholder=\"选择考试（已结束 / 已批改状态）\"
+          class=\"w-96\"
+          show-search
+          :filter-option=\"examFilterOption\"
+          :loading=\"examsFetching\"
+        />
+      </div>
+
+      <Alert
+        v-if=\"selectedExam && !canGradeSelected\"
+        type=\"info\"
+        show-icon
+        message=\"该考试尚未结束，暂不可批改。批改入口在考试结束（自然到点或强制结束）后开放。\"
+        class=\"mb-3\"
+      />
+
+      <div v-if=\"canRunGrading\" class=\"run-grading-panel mb-3\">
+        <Alert type=\"info\" show-icon>
+          <template #message>运行判分</template>
+          <template #description>
+            <div class=\"run-grading-description\">
+              <span>
+                仅对已结束且尚未汇总的考试开放；会重新计算客观题分数，不覆盖教师已保存的主观题分数。
+              </span>
+              <Button type=\"primary\" :loading=\"gradingButtonLoading\" @click=\"onRunGrading\">
+                运行判分
+              </Button>
+            </div>
+          </template>
+        </Alert>
+      </div>
+
+      <Alert
+        v-if=\"gradingRunError\"
+        type=\"error\"
+        show-icon
+        :message=\"gradingRunError\"
+        class=\"mb-3\"
+      />
+
+      <div v-if=\"gradingRunResult\" class=\"grading-run-result mb-3\">
+        <div class=\"result-title\">最近一次判分结果</div>
+        <div class=\"result-stats\">
+          <span>总数：{{ gradingRunResult.total ?? '未返回' }}</span>
+          <span>成功：{{ gradingRunResult.success ?? '未返回' }}</span>
+          <span>失败：{{ gradingRunResult.failed ?? '未返回' }}</span>
+        </div>
+        <Alert
+          v-if=\"gradingRunResult.total === 0\"
+          type=\"info\"
+          show-icon
+          message=\"无已交卷答卷，本次没有可判分的答卷。\"
+          class=\"mt-2\"
+        />
+        <Alert
+          v-else-if=\"(gradingRunResult.failed ?? 0) > 0\"
+          type=\"warning\"
+          show-icon
+          message=\"部分答卷判分失败，请处理失败清单后再汇总成绩。\"
+          class=\"mt-2\"
+        />
+        <Alert
+          v-else-if=\"gradingRunResult.total !== undefined && gradingRunResult.failed === 0\"
+          type=\"success\"
+          show-icon
+          message=\"判分完成，可继续检查主观题批改进度。\"
+          class=\"mt-2\"
+        />
+        <ul v-if=\"(gradingRunResult.failures?.length ?? 0) > 0\" class=\"failure-list\">
+          <li
+            v-for=\"failure in gradingRunResult.failures\"
+            :key=\"failure.submissionId ?? failure.studentId\"
+          >
+            答卷 {{ failure.submissionId ?? '未知' }}（学生 {{ failure.studentId ?? '未知' }}）：
+            {{ failure.error ?? '未知错误' }}
+          </li>
+        </ul>
+      </div>
+    </Card>
+
+    <template v-if=\"selectedExamId !== undefined && canGradeSelected\">
+      <Card title=\"主观题进度\" class=\"mb-4\" :loading=\"questionsFetching\">
+        <template #extra>
+          <Button size=\"small\" @click=\"() => void refetchQuestions()\">刷新进度</Button>
+        </template>
+        <Table
+          v-if=\"questions.length > 0\"
+          :columns=\"questionColumns\"
+          :data-source=\"questions\"
+          :pagination=\"false\"
+          :row-key=\"(q: SubjectiveQuestionItem) => q.questionId as number\"
+          size=\"middle\"
+        >
+          <template #bodyCell=\"{ column, record }\">
+            <template v-if=\"column.key === 'progress'\">
+              <span>
+                {{ (record as SubjectiveQuestionItem).gradedStudents ?? 0 }} /
+                {{ (record as SubjectiveQuestionItem).totalStudents ?? 0 }}
+              </span>
+            </template>
+            <template v-else-if=\"column.key === 'actions'\">
+              <Button
+                type=\"link\"
+                size=\"small\"
+                @click=\"selectQuestion(record as SubjectiveQuestionItem)\"
+              >
+                {{
+                  selectedQuestionId === (record as SubjectiveQuestionItem).questionId
+                    ? '批改中'
+                    : '去批改'
+                }}
+              </Button>
+            </template>
+          </template>
+        </Table>
+        <Alert
+          v-else-if=\"!questionsFetching\"
+          type=\"info\"
+          show-icon
+          message=\"该试卷没有主观题，客观题由后端自动判分，无需人工批改。\"
+        />
+      </Card>
+
+      <Card v-if=\"selectedQuestion\" :title=\"`批改：第 ${selectedQuestion.number} 题`\" class=\"mb-4\">
+        <SubjectiveGradingPanel
+          :exam-id=\"selectedExamId\"
+          :question=\"selectedQuestion\"
+          :rows=\"rows\"
+          :loading=\"rowsFetching\"
+          @refreshed=\"onRowRefreshed\"
+        />
+      </Card>
+    </template>
+  </div>
+</template>
+
+<script setup lang=\"ts\">
+import { Alert, Button, Card, Select, Table, message, type TableColumnsType } from 'ant-design-vue';
+import { computed, ref, watch } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+
+import {
+  page2 as pageExams,
+  subjectiveQuestions,
+  subjectiveRows,
+  run,
+  type ExamResponse,
+  type GradingRunResponse,
+  type SubjectiveGradeRow,
+  type SubjectiveQuestionItem,
+} from '@/api/axios';
+import { client, unwrap } from '@/api/apiClient';
+import { EXAM_STATUS } from '@/constants/examStatus';
+import { createTeacherExamsQueryOptions } from '@/hooks/useTeacherExams';
+import { resolveScoreActions } from '@/utils/scoreActions';
+import SubjectiveGradingPanel from '@/components/postexam/SubjectiveGradingPanel.vue';
+
+/**
+ * 教师批改工作台（阶段 23）：
+ * 考试选择 → 主观题进度（subjectiveQuestions）→ 同题学生行（subjectiveRows）→ 逐行打分。
+ * 批改入口只按后端返回的考试状态渲染（≥ ENDED），冲突处理见 SubjectiveGradingPanel。
+ */
+
+const questionColumns: TableColumnsType = [
+  { title: '题号', key: 'number', dataIndex: 'number', width: 80 },
+  { title: '题干', key: 'content', dataIndex: 'content' },
+  { title: '满分', key: 'score', dataIndex: 'score', width: 80 },
+  { title: '批改进度', key: 'progress', width: 110 },
+  { title: '操作', key: 'actions', width: 100 },
+];
+
+// ===== 考试选择（教师自己的考试：统一走多页累积收口，见 useTeacherExams）=====
+const { data: examsData, isFetching: examsFetching } = useQuery(
+  createTeacherExamsQueryOptions((page, size) =>
+    unwrap<ExamResponse[]>(pageExams({ client, throwOnError: true, query: { page, size } }))
+  )
+);
+const exams = computed<ExamResponse[]>(() => examsData.value ?? []);
+
+const examOptions = computed(() =>
+  exams.value.map((e) => ({
+    value: e.id as number,
+    label: `#${e.id} ${e.title}（${getExamStatusLabel(e.status)}）`,
+  }))
+);
+
+function getExamStatusLabel(status: number | undefined): string {
+  const map: Record<number, string> = {
+    [EXAM_STATUS.NOT_STARTED]: '未开始',
+    [EXAM_STATUS.IN_PROGRESS]: '进行中',
+    [EXAM_STATUS.ENDED]: '已结束',
+    [EXAM_STATUS.GRADED]: '已批改',
+    [EXAM_STATUS.PUBLISHED]: '成绩已发布',
+  };
+  return (status !== undefined && map[status]) || '未知';
+}
+
+function examFilterOption(input: string, option?: unknown): boolean {
+  const label = (option as { label?: unknown } | undefined)?.label;
+  return String(label ?? '')
+    .toLowerCase()
+    .includes(input.toLowerCase());
+}
+
+const selectedExamId = ref<number | undefined>(undefined);
+const selectedExam = computed<ExamResponse | undefined>(() =>
+  exams.value.find((e) => e.id === selectedExamId.value)
+);
+// 批改入口按后端状态渲染：≥ ENDED 才开放（scoreActions 的 canGrade）
+const canGradeSelected = computed(
+  () => resolveScoreActions(selectedExam.value?.status, false).canGrade
+);
+// 只有后端状态仍为 ENDED 时才提供“整场运行判分”；GRADED/PUBLISHED 不冒称可整场重判。
+const canRunGrading = computed(() => selectedExam.value?.status === EXAM_STATUS.ENDED);
+
+const gradingRunning = ref(false);
+const gradingRunExamId = ref<number | undefined>(undefined);
+const gradingButtonLoading = computed(
+  () => gradingRunning.value && gradingRunExamId.value === selectedExamId.value
+);
+const gradingRunResult = ref<GradingRunResponse | null>(null);
+const gradingRunError = ref<string | null>(null);
+
+watch(selectedExamId, () => {
+  // 结果属于所选考试；切换考试时清掉旧结果，避免跨考试误读。
+  gradingRunResult.value = null;
+  gradingRunError.value = null;
+  selectedQuestionId.value = undefined;
+});
+
+async function onRunGrading(): Promise<void> {
+  const examId = selectedExamId.value;
+  if (
+    examId === undefined ||
+    !canRunGrading.value ||
+    (gradingRunning.value && gradingRunExamId.value === examId)
+  ) {
+    return;
+  }
+
+  gradingRunning.value = true;
+  gradingRunExamId.value = examId;
+  gradingRunResult.value = null;
+  gradingRunError.value = null;
+  try {
+    const result = await unwrap<GradingRunResponse>(
+      run({
+        client,
+        throwOnError: true,
+        path: { examId },
+      })
+    );
+    // 运行期间切换了考试：旧请求的结果不能显示，也不能刷新新考试的查询。
+    if (selectedExamId.value !== examId) return;
+    if (!result) {
+      gradingRunError.value = '判分接口未返回结果，未能确认本次判分状态。';
+      message.error(gradingRunError.value);
+      return;
+    }
+
+    gradingRunResult.value = result;
+    void refetchQuestions();
+    if (selectedQuestionId.value !== undefined) {
+      void refetchRows();
+    }
+
+    if (result.total === 0) {
+      message.info('无已交卷答卷，本次没有可判分的答卷');
+    } else if ((result.failed ?? 0) > 0) {
+      message.warning('部分答卷判分失败，请处理失败清单后再汇总成绩');
+    } else if (result.total !== undefined && result.failed === 0) {
+      message.success('判分完成');
+    }
+  } catch (error) {
+    if (selectedExamId.value !== examId) return;
+    gradingRunError.value = error instanceof Error ? error.message : '运行判分失败';
+    message.error(gradingRunError.value);
+  } finally {
+    if (gradingRunExamId.value === examId) {
+      gradingRunning.value = false;
+      gradingRunExamId.value = undefined;
+    }
+  }
+}
+
+// ===== 主观题进度 =====
+const {
+  data: questionsData,
+  isFetching: questionsFetching,
+  refetch: refetchQuestions,
+} = useQuery({
+  queryKey: computed(() => ['grading', 'questions', selectedExamId.value] as const),
+  queryFn: () =>
+    unwrap<SubjectiveQuestionItem[]>(
+      subjectiveQuestions({
+        client,
+        throwOnError: true,
+        path: { examId: selectedExamId.value as number },
+      })
+    ),
+  enabled: computed(() => selectedExamId.value !== undefined && canGradeSelected.value),
+});
+
+const questions = computed<SubjectiveQuestionItem[]>(() => questionsData.value ?? []);
+
+const selectedQuestionId = ref<number | undefined>(undefined);
+const selectedQuestion = computed<SubjectiveQuestionItem | undefined>(() =>
+  questions.value.find((q) => q.questionId === selectedQuestionId.value)
+);
+
+function selectQuestion(question: SubjectiveQuestionItem): void {
+  selectedQuestionId.value = question.questionId;
+}
+
+// ===== 同题学生行 =====
+const {
+  data: rowsData,
+  isFetching: rowsFetching,
+  refetch: refetchRows,
+} = useQuery({
+  queryKey: computed(
+    () => ['grading', 'rows', selectedExamId.value, selectedQuestionId.value] as const
+  ),
+  queryFn: () =>
+    unwrap<SubjectiveGradeRow[]>(
+      subjectiveRows({
+        client,
+        throwOnError: true,
+        path: { examId: selectedExamId.value as number },
+        query: { questionId: selectedQuestionId.value as number },
+      })
+    ),
+  enabled: computed(() => selectedQuestionId.value !== undefined),
+});
+
+const rows = computed<SubjectiveGradeRow[]>(() => rowsData.value ?? []);
+
+// 面板提交成功或冲突后：行列表和题级进度都要重拉，否则同一屏会出现 1/1 与 0/1 并存
+function onRowRefreshed(): void {
+  void refetchRows();
+  void refetchQuestions();
+}
+</script>
+
+<style scoped>
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.run-grading-description {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.result-title {
+  font-weight: 600;
+}
+.result-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+.failure-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.hint {
+  color: #999;
+  font-size: 12px;
+  font-weight: normal;
+  max-width: 420px;
+}
+</style>
+"
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts:[2m124:48[22m[39m
+    [90m122|[39m
+    [90m123|[39m   it('批改页 useQuery queryKey 含 page/pageSize/onlyUngraded/nameFilter（服务…
+    [90m124|[39m     [34mexpect[39m([34mreadFileSync[39m([33mPAGE_SOURCE[39m[33m,[39m [32m'utf-8'[39m))[33m.[39m[34mtoMatch[39m(
+    [90m   |[39m                                                [31m^[39m
+    [90m125|[39m       /'rows',[\s\S]{0,200}page\.value,\s*pageSize\.value,\s*onlyUngra…
+    [90m126|[39m     )[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m批改面板信封驱动计数与分页交互[2m > [22m已批进度展示信封 graded/total，而非客户端计数
+[31m[1mAssertionError[22m: expected '第 1 题 · 满分 10 分 · 已批 1/2 只看未批改 学生作答内容…' to contain '已批 17/25'[39m
+
+Expected: [32m"已批 1[7m7[27m/2[7m5[27m"[39m
+Received: [31m"[7m第 1 题 · 满分 10 分 · [27m已批 1/2[7m 只看未批改 学生作答内容当前批改打分张三ID 7作答内容未批提 交李四ID 8作答内容8 分提 交1[27m"[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts:[2m146:28[22m[39m
+    [90m144|[39m   [34mit[39m([32m'已批进度展示信封 graded/total，而非客户端计数'[39m[33m,[39m () [33m=>[39m {
+    [90m145|[39m     [35mconst[39m wrapper [33m=[39m [34mmountPanel[39m()[33m;[39m
+    [90m146|[39m     [34mexpect[39m(wrapper[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'已批 17/25'[39m)[33m;[39m
+    [90m   |[39m                            [31m^[39m
+    [90m147|[39m     [90m// 客户端口径是 1/2（2 行中 1 行已批）——信封驱动后不得再出现[39m
+    [90m148|[39m     [34mexpect[39m(wrapper[33m.[39m[34mtext[39m())[33m.[39mnot[33m.[39m[34mtoContain[39m([32m'已批 1/2'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m批改面板信封驱动计数与分页交互[2m > [22m表格翻页与改页大小上抛 update:page / update:pageSize（服务端驱动）
+[31m[1mAssertionError[22m: expected undefined to deeply equal [ [ 2 ] ][39m
+
+[32m- Expected:[39m
+[
+  [
+    2,
+  ],
+]
+
+[31m+ Received:[39m
+undefined
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts:[2m155:44[22m[39m
+    [90m153|[39m     wrapper[33m.[39m[34mfindComponent[39m([33mTable[39m)[33m.[39mvm[33m.[39m[34m$emit[39m([32m'change'[39m[33m,[39m [34m2[39m[33m,[39m [34m20[39m)[33m;[39m
+    [90m154|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m155|[39m     [34mexpect[39m(wrapper[33m.[39m[34memitted[39m([32m'update:page'[39m))[33m.[39m[34mtoEqual[39m([[[34m2[39m]])[33m;[39m
+    [90m   |[39m                                            [31m^[39m
+    [90m156|[39m     [34mexpect[39m(wrapper[33m.[39m[34memitted[39m([32m'update:pageSize'[39m))[33m.[39m[34mtoEqual[39m([[[34m20[39m]])[33m;[39m
+    [90m157|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m批改面板信封驱动计数与分页交互[2m > [22m姓名筛选与只看未批改上抛服务端筛选状态
+[31m[1mAssertionError[22m: expected undefined to deeply equal [ [ '张' ] ][39m
+
+[32m- Expected:[39m
+[
+  [
+    "张",
+  ],
+]
+
+[31m+ Received:[39m
+undefined
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts:[2m162:50[22m[39m
+    [90m160|[39m     [35mconst[39m wrapper [33m=[39m [34mmountPanel[39m()[33m;[39m
+    [90m161|[39m     [35mawait[39m wrapper[33m.[39m[34mfindComponent[39m([33mInput[39m)[33m.[39mvm[33m.[39m[34m$emit[39m([32m'update:value'[39m[33m,[39m [32m'张'[39m)[33m;[39m
+    [90m162|[39m     [34mexpect[39m(wrapper[33m.[39m[34memitted[39m([32m'update:nameFilter'[39m))[33m.[39m[34mtoEqual[39m([[[32m'张'[39m]])[33m;[39m
+    [90m   |[39m                                                  [31m^[39m
+    [90m163|[39m     [35mawait[39m wrapper[33m.[39m[34mfind[39m([32m'input[type="checkbox"]'[39m)[33m.[39m[34msetValue[39m([35mtrue[39m)[33m;[39m
+    [90m164|[39m     [34mexpect[39m(wrapper[33m.[39m[34memitted[39m([32m'update:onlyUngraded'[39m))[33m.[39m[34mtoEqual[39m([[[35mtrue[39m]])[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m批改面板信封驱动计数与分页交互[2m > [22m409/1012 冲突后 refreshRow 以 submissionId 单行拉取并通知父级刷新
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called 1 times, but got 0 times[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts:[2m183:37[22m[39m
+    [90m181|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m182|[39m
+    [90m183|[39m     [34mexpect[39m(api[33m.[39msaveSubjectiveScore)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                                     [31m^[39m
+    [90m184|[39m     [90m// 单行取数：查询携带 submissionId（替代全量拉取后 find）[39m
+    [90m185|[39m     [34mexpect[39m(api[33m.[39msubjectiveRows)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts[2m > [22m批改页服务端分页参数[2m > [22mqueryFn 携带 page/size/onlyUngraded/name，翻页与筛选后参数随动且切筛选回第 1 页
+[31m[1mTypeError[22m: props.rows.find is not a function[39m
+[36m [2m❯[22m ComputedRefImpl.fn src/components/postexam/SubjectiveGradingPanel.vue:[2m249:14[22m[39m
+    [90m247|[39m // 成功提示按 submissionId 从最新行取分数：直接存下点击时的 row 会显示保存前的旧分数
+    [90m248|[39m const lastSuccess = computed<SubjectiveGradeRow | undefined>(() =>
+    [90m249|[39m   props.rows.find((r) => r.submissionId === lastSuccessId.value)
+    [90m   |[39m              [31m^[39m
+    [90m250|[39m );
+    [90m251|[39m
+[90m [2m❯[22m refreshComputed node_modules/.pnpm/@vue+reactivity@3.5.43/node_modules/@vue/reactivity/dist/reactivity.cjs.js:[2m422:28[22m[39m
+[90m [2m❯[22m ComputedRefImpl.get value [as value] node_modules/.pnpm/@vue+reactivity@3.5.43/node_modules/@vue/reactivity/dist/reactivity.cjs.js:[2m1745:5[22m[39m
+[90m [2m❯[22m unref node_modules/.pnpm/@vue+reactivity@3.5.43/node_modules/@vue/reactivity/dist/reactivity.cjs.js:[2m1570:45[22m[39m
+[90m [2m❯[22m Object.get node_modules/.pnpm/@vue+reactivity@3.5.43/node_modules/@vue/reactivity/dist/reactivity.cjs.js:[2m1576:64[22m[39m
+[90m [2m❯[22m Proxy._sfc_render src/components/postexam/SubjectiveGradingPanel.vue:[2m32:13[22m[39m
+[90m [2m❯[22m renderComponentRoot node_modules/.pnpm/@vue+runtime-core@3.5.43/node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:[2m4663:16[22m[39m
+[90m [2m❯[22m ReactiveEffect.componentUpdateFn [as fn] node_modules/.pnpm/@vue+runtime-core@3.5.43/node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:[2m6203:46[22m[39m
+[90m [2m❯[22m ReactiveEffect.run node_modules/.pnpm/@vue+reactivity@3.5.43/node_modules/@vue/reactivity/dist/reactivity.cjs.js:[2m268:19[22m[39m
+[90m [2m❯[22m setupRenderEffect node_modules/.pnpm/@vue+runtime-core@3.5.43/node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:[2m6338:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m9 failed[39m[22m[90m (9)[39m
+[2m   Start at [22m 22:30:40
+[2m   Duration [22m 6.83s[2m (transform 422ms, setup 61ms, import 3.47s, tests 2.10s, environment 928ms)[22m
+
