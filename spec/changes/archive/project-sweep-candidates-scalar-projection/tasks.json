@@ -1,0 +1,78 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对与列集冻结",
+    "task": "K1–K5 开工核对；消费字段机械归因；变更目录与冻结列集登记",
+    "steps": [
+      {
+        "step": "K1–K5 开工核对（分支/HEAD/工作树/门禁基线锚 349/0/0/1@aa3636a；本卡无容器测量，Docker 项不适用）",
+        "completed": true
+      },
+      {
+        "step": "机械归因：selectForceSubmitCandidates 全仓唯一调用方 ExamSweepService.forceSubmitOverdue（grep 锚 selectForceSubmitCandidates），消费 getter 仅 getExamId/getStudentId；冻结列集 s.exam_id,s.student_id",
+        "completed": true
+      },
+      {
+        "step": "建 spec/changes/project-sweep-candidates-scalar-projection/{proposal.md,tasks.json,specs/data-access-delta.md,evidence/}",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1 分支=feature/update-monitor-overview-submission-projection、K2 HEAD=586a365（接手时 git branch / git log 现场输出）；K3 git status --porcelain 恰 4 行 ??（.zcodeignore、docs/backend-optimization-candidates.md、两份指导主Agent交接文档——均为禁入库纪律文件，未触碰未暂存）；K4 不适用（本卡无容器测量）；K5 门禁基线锚 349/0/0/1@aa3636a（2026-10-01 交接档实测记录，enforce-exam-enter-class-affiliation 收口笔 aa3636a 实施门禁）。机械归因：`grep -rn selectForceSubmitCandidates src` 恰 2 命中=ExamSubmissionMapper.java 定义 + ExamSweepService.java:97 唯一调用方；消费仅 getExamId()/getStudentId()（forceSubmitOverdue 循环体 L101–L111，随后 forceSubmitByBackend(examId, studentId) 重新定位答卷）。冻结列集 s.exam_id,s.student_id 登记于 proposal.md 与护栏 FROZEN_COLUMNS。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：护栏先红",
+    "task": "写常驻护栏 SweepCandidatesProjectionGuardTest，实施前跑一次留红色原文",
+    "steps": [
+      {
+        "step": "护栏写定：Executor 层拦截 selectForceSubmitCandidates，断言实体 paperJson 全 null（库内非 null 前置）+ 捕获 SELECT 列表==冻结列集（剥优化器注释）+ examId/studentId 照常载入",
+        "completed": true
+      },
+      {
+        "step": "实施前跑 mvnw.cmd test -Dtest=SweepCandidatesProjectionGuardTest 留红（evidence/guard-red.log）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "护栏写定 com.exam.scalar.guard.SweepCandidatesProjectionGuardTest（Executor 拦截器 TARGET_MS=ExamSubmissionMapper.selectForceSubmitCandidates；seed 3 行超时候选、paper_json 非 null；断言 SELECT 列表==冻结列集 / 实体 paperJson 必 null / 消费列载入 / canary）。红跑：JAVA_HOME=D:\\develop1\\jdk21; mvnw.cmd -o test -Dtest=SweepCandidatesProjectionGuardTest（仓库根）→ `Tests run: 1, Failures: 1, Errors: 0, Skipped: 0`，失败原文「列投影后目标语句返回实体的 paperJson 必须为 null ==> expected: <0> but was: <3>」——红的原因符合 proposal 验收条款（非装配错误），Finished at 2026-10-01T23:10:28+08:00，rev=586a365 后的工作树（护栏新增、未实施投影）。原件 evidence/guard-red.log（surefire 报告 + 命令与当次输出摘记）。首次红跑前有 3 处 LocalDateTime→Timestamp 编译错，已修（record 补非规范构造器）后取得上述有效红——编译错不属于护栏证据，如实登记。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：实施投影与门禁",
+    "task": "selectForceSubmitCandidates 改窄列（列集==冻结列集一字不差）；护栏转绿；实施笔提交后已提交状态跑全量门禁",
+    "steps": [
+      {
+        "step": "实施 s.* → s.exam_id, s.student_id（保留 JOIN_INDEX 提示/谓词/LIMIT，同步 javadoc）；护栏转绿留档（evidence/guard-green.log）",
+        "completed": true
+      },
+      {
+        "step": "实施笔提交（ExamSubmissionMapper.java + SweepCandidatesProjectionGuardTest.java）",
+        "completed": true
+      },
+      {
+        "step": "已提交状态仓库根 mvnw.cmd clean test：四计数 349→350/0/0/1 全绿 + 短 SHA + 退出码 + Finished at 记入；MultiInstanceSweepSafetyTest 随门禁通过",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "实施：ExamSubmissionMapper.selectForceSubmitCandidates 由 `SELECT /*+ JOIN_INDEX(s idx_submissions_sweep) */ s.* ` 改为 `… s.exam_id, s.student_id `（JOIN_INDEX 提示/谓词/LIMIT 一字未动，javadoc 增列投影说明段）。绿跑：mvnw.cmd -o test -Dtest=SweepCandidatesProjectionGuardTest,MultiInstanceSweepSafetyTest → `Tests run: 5, Failures: 0, Errors: 0, Skipped: 0`（护栏 1 + sweep 端到端回归 4），BUILD SUCCESS，Finished at 2026-10-01T23:12:02+08:00，工作树（已实施投影、未提交）。实施笔 `e14fd68`（git commit 现场输出：2 files changed, 235 insertions(+), 1 deletion(-)；暂存清单 git diff --cached --name-only 恰 2 文件、--check 无空白错）。门禁：JAVA_HOME=D:\\develop1\\jdk21; mvnw.cmd clean test（仓库根，已提交状态 @ e14fd68）→ `Tests run: 350, Failures: 0, Errors: 0, Skipped: 1`，BUILD SUCCESS 退出码 0，Total time 02:33 min，Finished at 2026-10-01T23:15:24+08:00（基线 349→350 = +1 常驻护栏，Skipped 恒 1）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：收口（两笔提交、spec 合入、归档、自查）",
+    "task": "提交2=spec/README/归档/证据（零 src 豁免凭据）",
+    "steps": [
+      {
+        "step": "spec/specs/data-access/spec.md 追加 Scenario + 尾部合入注记；spec/README.md 当前状态行 + data-access 行 + 归档行；变更目录移入 archive/ 并刷 evidence-sha256.txt",
+        "completed": true
+      },
+      {
+        "step": "收口自查：git diff --name-only <实施笔> HEAD -- src pom.xml 为空（零 src 豁免凭据）；AGENTS.md 自查四条；实体↔schema 表级差集空；git status 终态",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "spec/specs/data-access/spec.md「标量读取的列投影」追加 Scenario「兜底扫描候选行的投影站点（project-sweep-candidates-scalar-projection）」+ 顶部合入注记（GO、无三臂测量理由、护栏红绿、门禁 350/0/0/1@e14fd68、验收边界）；spec/README.md 三处：当前状态行（新收口置顶）、能力域表 data-access 行追加来源变更、归档表末追加本卡行；变更目录整体移入 spec/changes/archive/project-sweep-candidates-scalar-projection/ 并刷 evidence/evidence-sha256.txt。收口自查（当次现场输出）：`git diff --name-only e14fd68 HEAD -- src pom.xml` → 空输出（零 src 豁免凭据成立）；AGENTS.md 判据 1/2/4（端口/口令/用例数/百分比、根入口连接事实、裸行号）与判据 3（@Sql 仅类注释复述行）均无违规命中；实体↔schema 表级差集为空（comm -23 空）；git status 终态除本卡收口文件外仅原有 4 行未跟踪纪律文件。收口笔提交信息：docs(spec): project-sweep-candidates-scalar-projection 收口笔。"
+  }
+]

@@ -175,6 +175,7 @@ import {
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { MAKEUP_RULE_OPTIONS, makeupRuleLabel } from '@/constants/postExam';
+import { createTeacherExamsQueryOptions } from '@/hooks/useTeacherExams';
 import { toIsoLocalDateTime } from '@/utils/dateTime';
 
 /**
@@ -191,7 +192,6 @@ import { toIsoLocalDateTime } from '@/utils/dateTime';
  */
 
 const route = useRoute();
-const PAGE_SIZE = 50;
 
 const candidateColumns: TableColumnsType = [
   { title: '学生 ID', key: 'studentId', dataIndex: 'studentId', width: 100 },
@@ -200,14 +200,11 @@ const candidateColumns: TableColumnsType = [
 ];
 
 // ===== 主考考试选择 =====
-const examPage = ref(1);
-const { data: examsData, isFetching: examsFetching } = useQuery({
-  queryKey: computed(() => ['exams', 'makeups', examPage.value] as const),
-  queryFn: () =>
-    unwrap<ExamResponse[]>(
-      pageExams({ client, throwOnError: true, query: { page: examPage.value, size: PAGE_SIZE } })
-    ),
-});
+const { data: examsData, isFetching: examsFetching } = useQuery(
+  createTeacherExamsQueryOptions((page, size) =>
+    unwrap<ExamResponse[]>(pageExams({ client, throwOnError: true, query: { page, size } }))
+  )
+);
 const exams = computed<ExamResponse[]>(() => examsData.value ?? []);
 const examOptions = computed(() =>
   exams.value.map((e) => ({ value: e.id as number, label: `#${e.id} ${e.title}` }))

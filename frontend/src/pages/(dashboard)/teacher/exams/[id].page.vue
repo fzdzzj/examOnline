@@ -259,7 +259,7 @@ import { ApiError } from '@/api/types';
 import { BizCode } from '@/api/errorMap';
 import { client, unwrap } from '@/api/apiClient';
 import { getExamStatusConfig, type ExamStatus } from '@/constants/examStatus';
-import { MONITOR_POLLING_HINT } from '@/constants/monitor';
+import { isMonitorConsumerTab, MONITOR_POLLING_HINT } from '@/constants/monitor';
 import { SEVERITY_LEVEL } from '@/constants/severity';
 import BehaviorTimeline from '@/components/exam/BehaviorTimeline.vue';
 import ExamMonitorPanel from '@/components/exam/ExamMonitorPanel.vue';
@@ -355,10 +355,14 @@ function isNotFound(error: unknown): boolean {
 // ==================== 监考总览（轮询） ====================
 
 const monitorOptions = computed(() =>
-  createMonitorQueryOptions(examId.value, (id) =>
-    unwrap<MonitorOverviewResponse>(
-      monitorOverviewContract({ client, throwOnError: true, path: { examId: id } })
-    )
+  createMonitorQueryOptions(
+    examId.value,
+    (id) =>
+      unwrap<MonitorOverviewResponse>(
+        monitorOverviewContract({ client, throwOnError: true, path: { examId: id } })
+      ),
+    // 仅「监考」「考生名单与进度」页签消费 overview；其余页签暂停轮询
+    { isConsumerTabActive: () => isMonitorConsumerTab(activeTab.value) }
   )
 );
 

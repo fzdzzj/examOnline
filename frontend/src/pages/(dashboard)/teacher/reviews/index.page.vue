@@ -86,6 +86,7 @@ import { listByExam, page2 as pageExams, type ExamResponse, type ScoreReview } f
 import { client, unwrap } from '@/api/apiClient';
 import { queryClient } from '@/api/queryClient';
 import { getReviewStatusConfig } from '@/constants/postExam';
+import { createTeacherExamsQueryOptions } from '@/hooks/useTeacherExams';
 import ReviewHandleModal from '@/components/postexam/ReviewHandleModal.vue';
 import ReviewTimeline from '@/components/postexam/ReviewTimeline.vue';
 
@@ -94,8 +95,6 @@ import ReviewTimeline from '@/components/postexam/ReviewTimeline.vue';
  * GET /api/exams/{examId}/score-reviews 列表；POST /api/score-reviews/{reviewId}/handle 处理。
  * 「待处理 / 处理中」才可处理，已出结论（已同意 / 已驳回）不给入口——判定依据后端 status。
  */
-
-const PAGE_SIZE = 50;
 
 const columns: TableColumnsType = [
   { title: '申请 ID', key: 'id', dataIndex: 'id', width: 90 },
@@ -111,14 +110,11 @@ function formatTime(value: string | undefined): string {
   return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '—';
 }
 
-const examPage = ref(1);
-const { data: examsData, isFetching: examsFetching } = useQuery({
-  queryKey: computed(() => ['exams', 'reviews', examPage.value] as const),
-  queryFn: () =>
-    unwrap<ExamResponse[]>(
-      pageExams({ client, throwOnError: true, query: { page: examPage.value, size: PAGE_SIZE } })
-    ),
-});
+const { data: examsData, isFetching: examsFetching } = useQuery(
+  createTeacherExamsQueryOptions((page, size) =>
+    unwrap<ExamResponse[]>(pageExams({ client, throwOnError: true, query: { page, size } }))
+  )
+);
 const exams = computed<ExamResponse[]>(() => examsData.value ?? []);
 const examOptions = computed(() =>
   exams.value.map((e) => ({ value: e.id as number, label: `#${e.id} ${e.title}` }))

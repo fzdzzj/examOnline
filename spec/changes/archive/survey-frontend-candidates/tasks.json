@@ -1,0 +1,59 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对与工单确认",
+    "task": "K1–K5 开工核对；通读三件套与镜像格式范本",
+    "steps": [
+      { "step": "K1 记录当次分支与 HEAD（短 SHA），作为阶段 3 零改动凭据的 <开工HEAD>", "completed": true },
+      { "step": "K2/K3 git status --porcelain：仅纪律文件 ?? 行（.zcodeignore、docs/ 两份交接档、docs/backend-optimization-candidates.md）；不得有暂存或修改行", "completed": true },
+      { "step": "K4 本卡无容器/无运行时操作确认：不启动 dev server、不跑前端构建、不碰 Docker/共享 dev，纯静态只读", "completed": true },
+      { "step": "K5 门禁基线锚 350/0/0/1@e14fd68（交接档记录）；本卡零改动，预期计数不变", "completed": true },
+      { "step": "通读 proposal.md / tasks.json / specs/frontend-delta.md 与格式范本 docs/backend-optimization-candidates.md", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "命令与当次输出（仓库根）：`git rev-parse --short HEAD` → `bd5c645`；`git symbolic-ref --short HEAD` → `feature/update-monitor-overview-submission-projection`；`git status --short` → 仅有 `M spec/README.md`（阶段 3 归档行）与 `?? .zcodeignore`、`?? docs/backend-optimization-candidates.md`、`?? docs/指导主Agent交接文档-2026-09-30.md`、`?? docs/指导主Agent交接文档-2026-10-01.md`、`?? spec/changes/survey-frontend-candidates/` 这些未跟踪行，**无 src/、frontend/、pom.xml 改动，无暂存行**。<开工HEAD> = `bd5c645`（阶段 3 零改动凭据取值）。基线锚四计数取自交接档：350/0/0/1 @ `e14fd68`。本卡纯静态：未启动 dev server、未跑前端构建、未碰 Docker/共享 dev。已通读 proposal.md、tasks.json、specs/frontend-delta.md 与格式范本 docs/backend-optimization-candidates.md。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：六面巡查（普查不抽查，证据锚点）",
+    "task": "逐面过 frontend/src 全部 .vue 与相关 ts，候选即时登记，逐面留「查了什么、怎么查」",
+    "steps": [
+      { "step": "面1 API 调用模式（api/ + pages/）：每页请求数与串并行、未分页全量拉取、重复拉取、输入无防抖、轮询间隔与页面可见性", "completed": true },
+      { "step": "面2 生命周期与清理（hooks/ + pages/）：定时器/SSE/监听器 onUnmounted 清理、长驻内存持有、路由快切响应竞态", "completed": true },
+      { "step": "面3 渲染与大列表（pages/ + components/）：无虚拟化大列表、深 watcher、大对象全量 reactive、computed 误用", "completed": true },
+      { "step": "面4 状态与重复提交（store/ + pages/ + api/）：提交防重、幂等前端配合、token 过期各路径处理", "completed": true },
+      { "step": "面5 网络与包体（router/ + 各 import）：路由级代码分割、按需引入复核（echarts/lodash 已查，结论相同不立项）、响应体消费面", "completed": true },
+      { "step": "面6 错误与边界路径（api/ 拦截器 + pages/）：失败后 loading 永挂、空态/404、SSE 断线重连与事件去重、草稿冲突提示", "completed": true },
+      { "step": "每面记录：过掉的文件清单 + grep/阅读锚点；候选逐条登记（文件+锚点、已核代码、疑点、待验证/最小下一步、与既有裁决比对结论）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "巡查方式：Glob/LS 清点 frontend/src 下 .vue 共 46 个 + api/components/constants/hooks/pages/router/store/utils 全部 .ts 逐面 Read；候选锚点用 Grep 复验。六面「查了什么、怎么查」摘记见 evidence/sweep-faces.md；候选台账见 docs/frontend-optimization-candidates.md（快照 evidence/ledger-snapshot.md）。产出 9 条候选：面1/面2 交叉 1 条（监考轮询不按页签门控，teacher/exams/[id].page.vue 行为日志 521-525/557 有 activeTab 门控 vs 监考 372-373 无）、面1 4 条（scores/index.page.vue:216 PAGE_SIZE=50 只取首页；grading:204 `examPage.value += 1` 累积翻页；questions:237 `for (const id of ids)` 逐条串行 deleteQuestion；papers:366 `for (const question of fresh)` 逐题串行 addQuestion）、面3 3 条（useServerCountdown.ts:143 `deep:true` 整卷快照深 watch；student/exams/[id].page.vue:320 `answers.value = { ...answers.value, [key]: value }` 全量浅拷贝；SubjectiveGradingPanel.vue:63 `pageSize: 10` 客户端分页 + 162-167 同题全量行）、面5 1 条待测量（ant-design-vue 具名导入 60 文件是否 tree-shake，需构建产物证据，本轮零构建只登记待测量）。grep 锚点全部命中。面6 未发现违反既有 spec Scenario 的行为缺陷，未触发停止条件 1。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：台账成文与交叉核对",
+    "task": "产出 docs/frontend-optimization-candidates.md（不入库纪律文件）并逐条复验锚点",
+    "steps": [
+      { "step": "台账成文：头注（快照 revision、候选≠已确认瓶颈≠已批准、引用前按当时 revision 重核）+ 巡查范围与证据边界 + 逐候选 + 「已处理不能重复立项的路径」+ 后续决策纪律；格式镜像后端台账", "completed": true },
+      { "step": "逐条候选锚点在当前 revision 复验（优先 grep 锚点，行号绑定 revision 仅辅助）", "completed": true },
+      { "step": "台账全文快照复制入 evidence/ledger-snapshot.md，快照头部记录 docs/ 原件的 sha256 与当时 revision", "completed": true },
+      { "step": "evidence/sweep-faces.md：六面各自的文件清单与巡查方法摘记", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "命令与当次输出（仓库根）：`(Get-FileHash -Algorithm SHA256 docs\\frontend-optimization-candidates.md).Hash` → `27F335BD67B69AFD318DA6CED6ADC75A4547232D0EC5F1B34442A5B1FC2A2A83`；台账全文 7784 字符。快照一致性核验：PowerShell 读两份文本逐字比较 → `ledgerLen=7784 bodyLen=7784 match=True`（evidence/ledger-snapshot.md 正文与原件逐字一致）。锚点复验（Grep，均命中）：teacher/exams/[id].page.vue 行为日志门控 521-525/557 vs 监考 useQuery 372-373；hooks/useExamMonitor.ts:39 `enabled: Number.isInteger(examId) && examId > 0`；constants/monitor.ts 10s；scores/index.page.vue:216 `const PAGE_SIZE = 50`；grading/index.page.vue:204 `examPage.value += 1`；questions/index.page.vue:237 `for (const id of ids)`；papers/[id].page.vue:366 `for (const question of fresh)`；useServerCountdown.ts:143 `{ immediate: true, deep: true }`；student/exams/[id].page.vue:320 `answers.value = { ...answers.value, [key]: value }`；SubjectiveGradingPanel.vue:63 `pageSize: 10`；`from 'ant-design-vue'` 命中 60 文件；router/index.ts:2 `import { routes } from 'vue-router/auto-routes'`。revision 绑定 `bd5c645`（分支 feature/update-monitor-overview-submission-projection，2026-10-01）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：收口（单笔提交）",
+    "task": "零改动凭据 + 门禁复跑 + 归档 + 单笔提交 + 回传清单",
+    "steps": [
+      { "step": "零改动凭据：git diff --name-only <开工HEAD> HEAD -- src pom.xml frontend 输出为空（<开工HEAD> = 阶段 0 K1 记录值）", "completed": true },
+      { "step": "门禁复跑：仓库根 mvnw.cmd clean test（JAVA_HOME=D:\\develop1\\jdk21）→ 四计数与基线一致（350/0/0/1 预期）；红或计数变动→停止上报", "completed": true },
+      { "step": "evidence-sha256.txt（覆盖 evidence/ 全部文件，LF 行尾无 BOM）；确认 specs/frontend-delta.md 零规范变更（若巡查发现需合入的约束→停止回传，不得自行合入）", "completed": true },
+      { "step": "变更目录移入 spec/changes/archive/；spec/README.md 追加归档行（格式镜像既有归档表行）；单笔提交，信息：docs(spec): survey-frontend-candidates 收口——前端只读巡查产出候选台账，零规范变更（中文经仓库内临时文件 -F，UTF-8 无 BOM，提交后删）", "completed": true },
+      { "step": "回传固定清单（proposal「验收与停止条件」节七项）：git status 终态、候选总数与六面分布、台账路径与 sha256、逐条候选一行摘要、门禁当次四计数与退出码、提交短 SHA 与信息、evidence 清单", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "零改动凭据（仓库根）：`git diff --name-only bd5c645 HEAD -- src pom.xml frontend` → 空（EMPTY）；`git status --porcelain -- src pom.xml frontend` → 空（EMPTY）；EXIT=0。<开工HEAD>=`bd5c645`。门禁复跑：`$env:JAVA_HOME='D:\\develop1\\jdk21'; .\\mvnw.cmd clean test` → 当次 surefire 汇总 `Tests run: 350, Failures: 0, Errors: 0, Skipped: 1`，`BUILD SUCCESS`，退出码 `0`（Total time 03:17 min，Finished 2026-10-02T00:04:56+08:00），与基线锚 350/0/0/1 @ e14fd68 一致；原始输出见 evidence/gate-output.txt。evidence-sha256.txt（LF 无 BOM）覆盖 evidence/ 全部文件：ledger-snapshot.md `5CEA6C0B…B5C5`、sweep-faces.md `0CAD6CF0…FC9E7`、gate-output.txt `C76BC19D…2E89`；台账 sha256 `27F335BD…2A83`。specs/frontend-delta.md 为零规范变更声明，巡查未发现需合入的约束，未自行合入。变更目录移入 spec/changes/archive/survey-frontend-candidates/，spec/README.md 追加归档行，单笔收口提交（提交信息见回传清单⑥）。"
+  }
+]

@@ -46,6 +46,13 @@ public interface ExamSubmissionMapper extends BaseMapper<ExamSubmission> {
      * 由定时任务强制交卷（spec「后端兜底」场景；教师提前结束 force_end 后考试态为已结束，同样命中）。
      * 联表判断考试状态——答卷表不冗余考试状态，以 exams 为唯一事实源。
      *
+     * <p><b>列投影（project-sweep-candidates-scalar-projection）</b>：本语句全仓唯一消费方
+     * {@code ExamSweepService.forceSubmitOverdue} 对候选行只读 {@code examId}/{@code studentId}
+     * （随后 {@code forceSubmitByBackend} 按 (examId, studentId) 重新定位答卷），SELECT 列集冻结为
+     * {@code s.exam_id, s.student_id}，不载入 {@code paper_json} 等长字段；护栏
+     * {@code SweepCandidatesProjectionGuardTest} 常驻锁定列集与长字段必 null。下游若需新字段，
+     * 必须同批扩冻结列集与护栏，不得退回 {@code s.*}。
+     *
      * <p><b>{@code JOIN_INDEX} 提示是必需的，不是装饰。</b>不加时优化器常改从 exams 驱动
      * （全表扫考试 → 按 {@code idx_submissions_exam_submit} 逐场回表）；钉住
      * {@code idx_submissions_sweep} 后走 status=1 索引查找 + 主键回查考试。
@@ -62,7 +69,7 @@ public interface ExamSubmissionMapper extends BaseMapper<ExamSubmission> {
      * <p><b>耦合代价</b>：索引名进了 SQL，改名/删 {@code idx_submissions_sweep} 会让提示
      * 失效（不报错，退回上面的慢计划），改 {@code schema.sql} 时需同步这里。
      */
-    @Select("SELECT /*+ JOIN_INDEX(s idx_submissions_sweep) */ s.* FROM exam_submissions s "
+    @Select("SELECT /*+ JOIN_INDEX(s idx_submissions_sweep) */ s.exam_id, s.student_id FROM exam_submissions s "
             + "JOIN exams e ON e.id = s.exam_id AND e.is_deleted = 0 "
             + "WHERE s.status = 1 AND (s.deadline_time < #{now} OR e.status IN (2, 3)) "
             + "LIMIT #{limit}")

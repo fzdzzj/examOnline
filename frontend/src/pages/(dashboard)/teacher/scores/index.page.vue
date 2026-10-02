@@ -198,6 +198,7 @@ import {
 import { client, unwrap } from '@/api/apiClient';
 import { queryClient } from '@/api/queryClient';
 import { getExamStatusConfig, type ExamStatus } from '@/constants/examStatus';
+import { createTeacherExamsQueryOptions } from '@/hooks/useTeacherExams';
 import { highestRoleOf, type State } from '@/store';
 import { resolveScoreActions } from '@/utils/scoreActions';
 import ExportScoreButtons from '@/components/postexam/ExportScoreButtons.vue';
@@ -213,8 +214,6 @@ import ScorePublishPreview from '@/components/postexam/ScorePublishPreview.vue';
  * 动作入口一律走 scoreActions 纯函数映射，前端不自行推算状态机、不自行放宽撤回权限。
  */
 
-const PAGE_SIZE = 50;
-
 const resultColumns: TableColumnsType = [
   { title: '考试 ID', key: 'examId', dataIndex: 'examId', width: 100 },
   { title: '结果', key: 'success', width: 90 },
@@ -226,14 +225,11 @@ const store = useStore<State>();
 // 撤回是管理员专属动作（后端 @RequireRole(ADMIN)）：角色取自 /api/auth/me，前端不做本地缓存推断
 const isAdmin = computed(() => highestRoleOf(store.state.user) === 'ADMIN');
 
-const examPage = ref(1);
-const { data: examsData, isFetching: examsFetching } = useQuery({
-  queryKey: computed(() => ['exams', 'scores', examPage.value] as const),
-  queryFn: () =>
-    unwrap<ExamResponse[]>(
-      pageExams({ client, throwOnError: true, query: { page: examPage.value, size: PAGE_SIZE } })
-    ),
-});
+const { data: examsData, isFetching: examsFetching } = useQuery(
+  createTeacherExamsQueryOptions((page, size) =>
+    unwrap<ExamResponse[]>(pageExams({ client, throwOnError: true, query: { page, size } }))
+  )
+);
 const exams = computed<ExamResponse[]>(() => examsData.value ?? []);
 
 const examOptions = computed(() =>

@@ -1,0 +1,54 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对与基线",
+    "task": "K1–K4 开工核对（分支 / HEAD / 工作区干净度 / 前后端门禁基线）",
+    "steps": [
+      { "step": "K1 记录当次分支与 HEAD 短 SHA", "completed": true },
+      { "step": "K2 git status --porcelain：除 5 个既有白名单未跟踪纪律文件外，无已跟踪修改/新增未跟踪", "completed": true },
+      { "step": "K3 复核候选 2 / 候选 3 现址：scores 页 PAGE_SIZE=50 且 examPage 无自增；grading 页 watch(exams) 覆盖写入丢前页", "completed": true },
+      { "step": "K4 前端基线：npm.cmd run lint:check / type-check:check / test（cwd=frontend），记录三项退出码与 vitest 计数", "completed": true },
+      { "step": "K4 后端基线：仓库根 .\\mvnw.cmd clean test，记录四计数与 BUILD 结果", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "K1 branch=feature/update-monitor-overview-submission-projection、HEAD=490a3de；K2 git status --porcelain 仅 5 个白名单未跟踪文件（.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-optimization-candidates.md、docs/指导主Agent交接文档-2026-09-30.md、docs/指导主Agent交接文档-2026-10-01.md），无已跟踪修改；K3 scores 页当时为 `const PAGE_SIZE = 50` + `examPage = ref(1)` 且无自增（只取第一页），grading 页为 `watch(exams, list => { if (list.length === examPage.value * PAGE_SIZE) examPage.value += 1 })`（覆盖写入、丢前页）；K4 前端基线（cwd=frontend）lint:check 退出码 0、type-check:check 退出码 0、test 退出码 0（Test Files 43 passed、Tests 360 passed）；K4 后端基线（仓库根，JAVA_HOME=D:\\develop1\\jdk21）Tests run: 350, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS + 退出码 0。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：实施（先红后绿）",
+    "task": "新增 useTeacherExams.ts 收口点 → 五个页面改造 → 词法护栏先红后绿",
+    "steps": [
+      { "step": "先写 useTeacherExams.spec.ts（纯逻辑六边界 + 页面源码词法护栏），跑 vitest 必须红（护栏因页面未接线而红）", "completed": true },
+      { "step": "新增 hooks/useTeacherExams.ts：fetchAllTeacherExams（逐页累加 / 提前 break / maxPages 上限 / 取数异常兜底）与 createTeacherExamsQueryOptions（queryKey=['exams','teacher-dropdown']、staleTime=30_000）", "completed": true },
+      { "step": "改造 scores：移除 PAGE_SIZE=50 与 examPage，切 createTeacherExamsQueryOptions", "completed": true },
+      { "step": "改造 grading：移除 PAGE_SIZE=50 与 examPage，删除丢页 watch(exams)，切 createTeacherExamsQueryOptions", "completed": true },
+      { "step": "协同统一 reviews / absences / makeups：移除各自 PAGE_SIZE=50 与 examPage，切 createTeacherExamsQueryOptions（label 形状不变）", "completed": true },
+      { "step": "复跑 vitest 转绿：纯逻辑用例 + 词法护栏全绿", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "先红（npx.cmd vitest run src/hooks/__tests__/useTeacherExams.spec.ts，页面未接线时）：Test Files 1 failed、Tests 6 failed | 12 passed (18)，退出码 1——6 项失败全为词法护栏（scores/grading 两页 × 3 条断言：含 examPage.value * PAGE_SIZE、含 const PAGE_SIZE = 50、未引用 createTeacherExamsQueryOptions），纯逻辑用例已全绿。实施后转绿途中发现测试侧一处自有错误（『取数抛错』用例的 first mock 恒返回整页 100 条，导致按 maxPages 累积到 500 而非 100，断言写死 100 而失败），改为『首页满页 + 次页抛错』与『首页即抛错』两用例后消除；最终 npx.cmd vitest run src/hooks/__tests__/useTeacherExams.spec.ts → Test Files 1 passed、Tests 19 passed，退出码 0。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：门禁（前端三项 + 后端一道）",
+    "task": "两道门禁全绿；vitest 计数恰增不减；后端四计数不变",
+    "steps": [
+      { "step": "前端：npm.cmd run lint:check / type-check:check / test（cwd=frontend），三项退出码 0", "completed": true },
+      { "step": "后端：仓库根 .\\mvnw.cmd clean test → 四计数 350/0/0/1 + BUILD SUCCESS，本卡零后端改动预期不变", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "前端（cwd=frontend）：npm.cmd run lint:check 退出码 0、npm.cmd run type-check:check 退出码 0、npm.cmd run test 退出码 0（Test Files 44 passed、Tests 379 passed）——基线 43 文件 360 例 → 终态 44 文件 379 例（+1 文件 +19 例，与新增用例数相等、无丢失）。后端（仓库根）：.\\mvnw.cmd clean test @ 实施笔 0d2b415 → Tests run: 350, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS + 退出码 0。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：提交与归档（两笔）",
+    "task": "实施笔 + 收口笔；变更三件套归档 spec.md/README 登记",
+    "steps": [
+      { "step": "实施笔：仅 frontend/src（新增 hook + 新增 spec + 五页改造），信息 feat(frontend): unify teacher exam dropdown pagination and fix grading watch bug", "completed": true },
+      { "step": "收口笔：delta 合入 spec/specs/frontend/spec.md（两个 Requirement 各 +1 Scenario）+ 变更目录移入 spec/changes/archive/unify-teacher-exam-select-pagination/ + spec/README.md 状态说明与归档行，信息 docs(spec): archive unify-teacher-exam-select-pagination", "completed": true },
+      { "step": "零源码改动凭据：git diff --name-only <实施笔SHA> HEAD -- src frontend pom.xml 输出为空", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "实施笔 0d2b415「feat(frontend): unify teacher exam dropdown pagination and fix grading watch bug」（7 files changed：新增 hooks/useTeacherExams.ts、hooks/__tests__/useTeacherExams.spec.ts + 改 scores/grading/reviews/absences/makeups 五页）；收口笔（本笔）：spec/specs/frontend/spec.md 合入 MODIFIED「主观题批改工作台」「成绩发布、撤回与导出界面」（各 +1 Scenario）+ spec/changes/archive/unify-teacher-exam-select-pagination/（proposal.md / tasks.json / specs/frontend/spec-delta.md）+ spec/README.md 状态说明与归档行；零源码改动凭据 git diff --name-only 0d2b415 HEAD -- src frontend pom.xml 输出为空。"
+  }
+]
