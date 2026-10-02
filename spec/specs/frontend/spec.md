@@ -154,6 +154,18 @@ WHEN 倒计时到达该阈值
 
 THEN 界面给出显式警告
 
+#### Scenario: 倒计时响应窄化不深层监听快照
+
+GIVEN 倒计时以整卷响应（含题目列表等非时间字段）作为快照来源
+
+WHEN 非时间字段发生任何更新
+
+THEN 倒计时引擎不重新锚定，剩余秒数按单调时长平滑递减、不跳跃不重置
+
+AND 时间字段（remainingSeconds / deadlineTime / serverTime）任一变化时才重新锚定
+
+AND 倒计时对快照的监听依赖 SHALL 窄化为时间三字段投影，SHALL NOT 对整卷快照做深层遍历
+
 ---
 
 ### Requirement: 草稿保存与断线恢复

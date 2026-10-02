@@ -1,0 +1,46 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与基线",
+    "task": "现场核对分支/HEAD/工作树与前后端门禁基线",
+    "steps": [
+      { "step": "K1 分支=feature/update-monitor-overview-submission-projection；K2 HEAD=015397d；K3 工作树仅 5 个白名单未跟踪文件（.zcodeignore、docs/*），无已跟踪修改", "completed": true },
+      { "step": "K4 基线：前端 lint:check / type-check:check exit 0，test 44 文件 / 379 用例全绿；后端 mvnw.cmd clean test 350/0/0/1 BUILD SUCCESS", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "现场执行（2026-10-02，revision=015397d）：`git rev-parse --abbrev-ref HEAD` → feature/update-monitor-overview-submission-projection；`git rev-parse --short HEAD` → 015397d；`git status --porcelain` → 恰 5 行未跟踪（.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-optimization-candidates.md、两份中文命名的指导交接文档），零已跟踪修改。前端：`npm.cmd run lint:check` exit 0（无输出=无违规）；`npm.cmd run type-check:check` exit 0；`npm.cmd run test` → Test Files 44 passed (44)、Tests 379 passed (379)。后端：`mvnw.cmd clean test`（仓库根，后台日志 D:/code/examOnline-measure/k4-backend-baseline.log）→ Tests run: 350, Failures: 0, Errors: 0, Skipped: 1、BUILD SUCCESS。注：本机 git 较老不支持 branch --show-current，以 rev-parse --abbrev-ref 等价核对。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：护栏先红",
+    "task": "先写词法护栏与行为测试，在旧实现上取证红灯",
+    "steps": [
+      { "step": "新增 4 例：非时间字段原地更新不重锚定（剩余秒数平滑递减）、时间字段原地更新即时重锚定、词法不含深层遍历标记、词法含时间三字段投影；不改 hook", "completed": true },
+      { "step": "在旧实现上跑本 spec 文件，红灯恰为两条且原因正确（深层遍历仍存在→非时间字段更新触发重锚定跳回 100；deep+true 词法标记命中），其余 19 例全绿", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "`npx.cmd vitest run src/hooks/__tests__/useServerCountdown.spec.ts`（hook 未改）：Test Files 1 failed (1)、Tests 2 failed | 19 passed (21)。两条 FAIL 为：①「窄化监听 > 非时间字段原地更新不重锚定：剩余秒数按秒表平滑递减，不跳跃不重置」——`source.questions[0].title = '修改'` + nextTick 后剩余秒数被深层遍历重锚定跳回 100（期望 70），红灯原因=旧实现仍对整卷快照深层遍历；②「源码词法护栏 > 不得对整卷快照做深层遍历监听（防回归标记）」——`expect(source).not.toContain('deep: true')` 失败，红灯原因=旧实现 watch 选项仍含该标记。原始输出留存 D:/code/examOnline-measure/narrow-countdown/red-phase.log。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：实施转绿与门禁",
+    "task": "窄化投影监听并移除深层遍历，全量门禁复验",
+    "steps": [
+      { "step": "useServerCountdown.ts：watch 源改为 [s?.remainingSeconds, s?.deadlineTime, s?.serverTime] 投影，移除深层遍历选项，回调仍以整卷快照重建引擎；不变式（单调秒表/服务端权威/不本地推算）零改动", "completed": true },
+      { "step": "本 spec 文件 21 例全绿；前端 lint:check / type-check:check / test 全绿且用例数只增不减；后端 mvnw.cmd clean test 保持 350/0/0/1；显式路径提交实施笔", "completed": false }
+    ],
+    "passes": true,
+    "evidence": "实施 revision=57e1f2b（提交信息 perf(frontend): narrow server countdown watch dependencies and drop deep watch，恰 2 文件：useServerCountdown.ts +81/-7 行内、useServerCountdown.spec.ts，git diff --cached --name-only 核对无误、--check 干净）。hook 改动：watch 源改为 `() => { const s = toValue(source); return [s?.remainingSeconds, s?.deadlineTime, s?.serverTime] as const; }` 投影，watch 选项只剩 { immediate: true }，回调内仍 `createServerCountdownEngine(toValue(source), { now })` 以整卷快照重建引擎；engine 初值、advance 秒表推进、isExpired/isUnanchored/display 计算属性、作用域停表与全部注释级不变式（monotonicNow 测时长、服务端权威、不本地推算、Date.now 零命中）零改动，hook 签名与外部调用方式不变。转绿：`npx.cmd vitest run src/hooks/__tests__/useServerCountdown.spec.ts` → Test Files 1 passed (1)、Tests 21 passed (21)（原 17 + 新 4），原始输出 D:/code/examOnline-measure/narrow-countdown/green-phase.log。前端三门禁 @ 57e1f2b：`npm.cmd run lint:check` 退出码 0；`npm.cmd run type-check:check` 退出码 0（app+config 两段 tsc 均过，含新增 `../useServerCountdown.ts?raw` 导入）；`npm.cmd run test` → Test Files 44 passed (44)、Tests 383 passed (383)（基线 379 → 383，+4，零删减）。后端门禁 @ 57e1f2b：仓库根 `mvnw.cmd clean test` → Tests run: 350, Failures: 0, Errors: 0, Skipped: 1、BUILD SUCCESS、退出码 0，原始日志 D:/code/examOnline-measure/narrow-countdown/backend-gate-57e1f2b.log（仓库外留存）。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：规范合入与一次性归档",
+    "task": "delta 合入基线、提案目录移 archive、README 登记、文档笔提交",
+    "steps": [
+      { "step": "spec/specs/frontend/spec.md 的「倒计时以服务端时间为准」Requirement 追加 Scenario（既有四场景原文不动）；提案三件套移入 spec/changes/archive/narrow-server-countdown-watch/；spec/README.md 登记归档", "completed": false },
+      { "step": "文档笔只含 spec.md + archive 目录 + README，git diff --name-only HEAD~1 HEAD -- src frontend pom.xml 为空；显式路径暂存", "completed": false }
+    ],
+    "passes": true,
+    "evidence": "① spec/specs/frontend/spec.md 的「倒计时以服务端时间为准」Requirement 追加 Scenario「倒计时响应窄化不深层监听快照」（既有四场景与 Requirement 头部原文逐字未动；按近期前端候选变更先例，spec.md 头部来源行不登记候选实施）；② 本目录三件套整体移入 spec/changes/archive/narrow-server-countdown-watch/（提案目录原为未跟踪，纯 mv 后按新路径显式暂存）；③ spec/README.md 三处登记：第 29 行「当前无进行中变更」段首插入本变更收口句、frontend 能力域行（来源变更列）追加本变更、已归档变更表新增本行；④ 文档归档笔只含 spec/specs/frontend/spec.md、spec/changes/archive/narrow-server-countdown-watch/、spec/README.md 三项，显式路径暂存并以 `git diff --name-only HEAD~1 HEAD -- src frontend pom.xml` 输出为空自证零源码改动；文档提交 SHA 不自嵌，门禁与验收只绑定实施笔 revision 57e1f2b。"
+  }
+]
