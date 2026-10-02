@@ -9,8 +9,16 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MonitorOverviewResponse } from '@/api/axios';
-import { MONITOR_POLLING_HINT, MONITOR_POLLING_INTERVAL_MS } from '@/constants/monitor';
+import {
+  MONITOR_CONSUMER_TABS,
+  MONITOR_POLLING_HINT,
+  MONITOR_POLLING_INTERVAL_MS,
+  isMonitorConsumerTab,
+} from '@/constants/monitor';
 import { createMonitorQueryOptions, submittedRatioOf } from '@/hooks/useExamMonitor';
+// 词法护栏直接读页面源码：门控接线若被悄悄移除，行为单测仍会全绿，只有对源码的断言能拦住
+// （先例：后端 PublisherConfirmScopeGuardTest 的词法护栏）。
+import examDetailPageSource from '@/pages/(dashboard)/teacher/exams/[id].page.vue?raw';
 
 const OVERVIEW: MonitorOverviewResponse = {
   examId: 9,
@@ -79,5 +87,62 @@ describe('数据新鲜度措辞', () => {
   it('措辞里写明的间隔与实际轮询间隔一致（两处必须同源，不许各写一份）', () => {
     const seconds = MONITOR_POLLING_INTERVAL_MS / 1000;
     expect(MONITOR_POLLING_HINT).toContain(`${seconds}s`);
+  });
+});
+
+describe('页签门控', () => {
+  it('只有「监考」与「考生名单与进度」页签消费监考总览：monitor/roster 真，其余三页假', () => {
+    expect(MONITOR_CONSUMER_TABS).toEqual(['monitor', 'roster']);
+    expect(isMonitorConsumerTab('monitor')).toBe(true);
+    expect(isMonitorConsumerTab('roster')).toBe(true);
+    expect(isMonitorConsumerTab('overview')).toBe(false);
+    expect(isMonitorConsumerTab('snapshot')).toBe(false);
+    expect(isMonitorConsumerTab('behavior')).toBe(false);
+  });
+
+  it('注入页签谓词后 enabled = examId 合法 AND 页签消费中（合取语义）', () => {
+    const consume = { isConsumerTabActive: () => true };
+    const idle = { isConsumerTabActive: () => false };
+    // examId 非法：即便停在消费页签也不发请求
+    expect(createMonitorQueryOptions(Number.NaN, vi.fn(), consume).enabled).toBe(false);
+    expect(createMonitorQueryOptions(0, vi.fn(), consume).enabled).toBe(false);
+    // examId 合法 + 非消费页签：暂停轮询
+    expect(createMonitorQueryOptions(9, vi.fn(), idle).enabled).toBe(false);
+    // examId 合法 + 消费页签：轮询
+    expect(createMonitorQueryOptions(9, vi.fn(), consume).enabled).toBe(true);
+  });
+
+  it('第三参缺省时保持旧行为：enabled 只由 examId 合法性决定（向后兼容）', () => {
+    expect(createMonitorQueryOptions(9, vi.fn()).enabled).toBe(true);
+    expect(createMonitorQueryOptions(Number.NaN, vi.fn()).enabled).toBe(false);
+  });
+});
+
+/** 取出 `callee(` 起配平的整段调用（本例实参不含带括号的字符串字面量，无需处理引号）。 */
+function extractBalancedCall(source: string, callee: string): string | null {
+  const start = source.indexOf(`${callee}(`);
+  if (start === -1) return null;
+  let depth = 0;
+  for (let i = start + callee.length; i < source.length; i += 1) {
+    if (source[i] === '(') depth += 1;
+    else if (source[i] === ')') {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+describe('页面接线词法护栏', () => {
+  it('详情页构造监考轮询选项时注入了 isMonitorConsumerTab 页签谓词', () => {
+    const call = extractBalancedCall(examDetailPageSource, 'createMonitorQueryOptions');
+    expect(call, '页面必须调用 createMonitorQueryOptions 构造轮询选项').not.toBeNull();
+    expect(call ?? '').toContain('isMonitorConsumerTab');
+  });
+
+  it('页签谓词取自 @/constants/monitor 的权威导出，而非页面内自建比较', () => {
+    expect(examDetailPageSource).toMatch(
+      /import\s*\{[^}]*\bisMonitorConsumerTab\b[^}]*\}\s*from\s*['"]@\/constants\/monitor['"]/
+    );
   });
 });

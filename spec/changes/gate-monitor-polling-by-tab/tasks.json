@@ -1,0 +1,57 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对与锚点复核",
+    "task": "K1–K6 开工核对；复核提案「指导侧冻结核实结论」四处锚点",
+    "steps": [
+      { "step": "K1 记录当次分支与 HEAD（短 SHA），作为收口笔零改动凭据的 <开工HEAD>", "completed": false },
+      { "step": "K2 git status --porcelain：仅纪律文件 ?? 行，无暂存/修改行（spec/changes/gate-monitor-polling-by-tab/ 为本卡三件套，属预期未跟踪）", "completed": false },
+      { "step": "K3 消费面复核：grep 页面源码中 overview.value 的全部消费点，确认恰为 monitor 面板绑定与 rosterRows 左连两处；若出现第三处消费或 roster 消费缺失 → 停止条件 1", "completed": false },
+      { "step": "K4 锚点复核：useExamMonitor.ts 文件头三条不变式注释、createMonitorQueryOptions 现签名、行为日志门控先例（activeTab === 'behavior'）、constants/monitor.ts 现有导出", "completed": false },
+      { "step": "K5 前端基线：按 frontend/package.json scripts 跑一次 lint / type-check / test，记录 vitest 用例基线总数与三项退出码（基线红 → 停止条件 2）", "completed": false },
+      { "step": "K6 后端基线锚确认：350/0/0/1 @ e14fd68（f8ea846 起代码态零差异），本卡零后端改动，预期不变", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：实施（先红后绿）",
+    "task": "constants → hooks → 页面 → 测试，四文件按序落地；词法护栏须先红",
+    "steps": [
+      { "step": "先写测试：useExamMonitor.spec.ts 新增「页签门控」与「页面接线词法护栏」两个 describe；此时跑 vitest 必须红（词法护栏因页面未接线而红、新 API 因不存在而红），保存当次输出到 evidence/guard-red.txt", "completed": false },
+      { "step": "constants/monitor.ts：MONITOR_CONSUMER_TABS = ['monitor', 'roster'] as const + isMonitorConsumerTab(tab: string): boolean，注释写明 roster 在集合内的原因（rosterRows 左连 overview.students）", "completed": false },
+      { "step": "hooks/useExamMonitor.ts：createMonitorQueryOptions 增可选第三参 { isConsumerTabActive?: () => boolean }（缺省 () => true），enabled 组合 examId 合法 && isConsumerTabActive()；文件头不变式清单追加第 4 条", "completed": false },
+      { "step": "pages/(dashboard)/teacher/exams/[id].page.vue：createMonitorQueryOptions 调用处注入 () => isMonitorConsumerTab(activeTab.value)；页面 enabled 不写字面量页签比较", "completed": false },
+      { "step": "复跑 vitest 转绿：既有用例（含旧 4 条 createMonitorQueryOptions 断言）全绿 + 新用例全绿；保存当次输出到 evidence/guard-green.txt；若无法同时成立 → 停止条件 3", "completed": false },
+      { "step": "逐条自查「不变式」六条（proposal）：间隔/透传/queryKey/refetchOnWindowFocus/行为日志门控/零后端改动；任一被动到 → 停止条件 4", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：门禁（前端三项 + 后端一道）",
+    "task": "两道门禁全绿，vitest 计数恰增不减",
+    "steps": [
+      { "step": "前端：按 frontend/package.json scripts 实跑 lint / type-check / test，三项退出码 0；vitest 用例数 = 基线 + 新增用例数，无丢失", "completed": false },
+      { "step": "后端：仓库根 $env:JAVA_HOME='D:\\develop1\\jdk21'; .\\mvnw.cmd clean test → 350/0/0/1 + BUILD SUCCESS + 退出码 0，原始输出存 evidence/gate-backend.txt；计数变动 → 停止条件 2", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：提交与收口（两笔）",
+    "task": "实施笔 + 收口笔；归档；回传七项",
+    "steps": [
+      { "step": "实施笔：frontend/src 4 文件 + spec/changes/gate-monitor-polling-by-tab/ 三件套；信息（示例，可按实际微调）：fix(frontend): 监考总览轮询按页签门控——仅 monitor/roster 页签轮询，其余页签暂停", "completed": false },
+      { "step": "收口笔：delta 合入 spec/specs/frontend/spec.md（「监考与行为日志界面」Requirement 追加「非消费页签不轮询」Scenario，MODIFIED 形态完整替换该 Requirement 块）+ 变更目录移入 spec/changes/archive/ + spec/README.md 归档行 + evidence/（guard-red.txt、guard-green.txt、gate-backend.txt、前端三项输出）+ evidence-sha256.txt（LF 无 BOM）", "completed": false },
+      { "step": "零改动凭据：git diff --name-only <实施笔SHA> HEAD -- src pom.xml frontend 输出为空；git status --porcelain -- src pom.xml frontend 为空", "completed": false },
+      { "step": "中文提交信息经仓库内临时文件 -F（UTF-8 无 BOM，[System.IO.File]::WriteAllText + UTF8Encoding($false)），提交后删临时文件", "completed": false },
+      { "step": "回传固定清单七项（proposal「验收与停止条件」节）：git status 终态、前端门禁三项摘要、后端四计数与退出码、改动文件清单+先红后绿证据、两笔 SHA 与信息+零改动凭据、evidence 清单与 sha256、停止条件逐条复核声明", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]
