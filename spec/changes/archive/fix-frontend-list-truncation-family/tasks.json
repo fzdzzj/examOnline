@@ -1,0 +1,123 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对",
+    "task": "分支与基线锚定（从 main@31dfc17 开工）+ 基线期第三抖专项",
+    "steps": [
+      {
+        "step": "K1–K3：从 main（31dfc17）新建 feature/fix-frontend-list-truncation-family；记录 HEAD 短 SHA 与 git status 基线（应仅 7 个白名单未跟踪文件）",
+        "completed": true
+      },
+      {
+        "step": "K4：双端门禁基线锚（命令 + 当次输出 + 短 SHA 记入本字段，不作常量假设）",
+        "completed": true
+      },
+      {
+        "step": "K5：第三抖专项——gradingServerPaging.spec.ts 基线连续三抖的机理取证与最小处置（显式超时上限，断言与交互零改动）",
+        "completed": true
+      },
+      {
+        "step": "K6：现状复核锚点：四处截断取数点（create.page 试卷/班级下拉 size:100 单页、classes 转班目标 page:1,size:100 单页、papers 列表 FETCH_SIZE=100 一次取回后客户端切片）；useTeacherExams.ts 累加语义与既有 spec 用例；pagePapers/page1 返回裸列表无 total、pageClasses 返回 {list,total,page,size} 信封；teacher/exams/index.page.vue 服务端分页形态——确认与 proposal 描述一致；不一致停下回报",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1-K3: git checkout -b feature/fix-frontend-list-truncation-family @ main（git log --oneline -1 实测输出 '31dfc17 Merge branch feature/add-frontend-invite-code-admin into main'，git rev-parse --short HEAD=31dfc17，git branch --show-current=feature/fix-frontend-list-truncation-family）；git status --short 基线=7 个白名单未跟踪文件（.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-optimization-candidates.md、docs/frontend-improvement-candidates.md、docs/指导主Agent交接文档-2026-09-30/-10-01/-10-02.md）。K4 前端: cd frontend && npm.cmd run lint:check exit 0、npm.cmd run type-check:check exit 0（evidence/baseline-frontend-lint.txt / baseline-frontend-typecheck.txt）；npm.cmd run test 首跑 exit 1——gradingServerPaging.spec.ts 一例 5000ms 超时（'queryFn 携带 page/size/onlyUngraded/name，翻页与筛选后参数随动且切筛选回第 1 页'，Error: Test timed out in 5000ms；当次 'Test Files 1 failed | 52 passed (53)' 'Tests 1 failed | 428 passed (429)'，evidence/baseline-frontend-test.txt）→ 定向复跑该文件 9/9 绿 exit 0（evidence/rerun1-targeted-gradingServerPaging.txt）→ 第 1 次全量复跑 exit 1 同例同超时 '1 failed | 428 passed (429)'（evidence/rerun1-full-frontend-test.txt）→ 第 2 次全量复跑 exit 1 同例同超时 '1 failed | 428 passed (429)'（evidence/rerun2-full-frontend-test.txt）＝全量口径三连抖，触发派发卡「第三抖触发专项」。K4 后端: JAVA_HOME=D:\\develop1\\jdk21 + ./mvnw.cmd clean test exit 0 @ 31dfc17（在 detached 于 31dfc17 的干净工作树执行，git checkout 前后 git status --porcelain -uno 均为空、未跟踪文件不受影响），关键行 '[WARNING] Tests run: 368, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS'（全量日志 evidence/baseline-backend.txt）＝后端基线锚定 368/0/0/1。K5 专项取证与处置: 取证=以 60s 超时上限跑一次全量作诊断（npm.cmd run test -- --testTimeout=60000 --reporter=verbose，exit 0，'Test Files 53 passed (53)' 'Tests 429 passed (429)'，evidence/jitter-diagnosis-full-run-timeout60s.txt），实测该越界用例在全量并行下耗时 5034ms（同文件其余用例 3465/1865/1820/965ms；定向单跑整文件 9 例 3929ms、三次全量该文件 13718/14090/14842ms），机理为 CPU 争抢放大致边际超时（贴 5000ms 默认上限 34ms），非逻辑缺陷或挂死；同一抖动在上卡 add-frontend-invite-code-admin 基线已登记一次（其 tasks.json K4 字段自陈『是否构成三抖触发专项的口径提请指导判定』）。处置=为该单条用例补显式超时上限 '}, 15000);' + 三行注释登记缘由与证据位置，断言、交互步骤与同文件其余用例零改动；格式经 npx.cmd eslint --fix 该单文件归一（exit 0）。处置后复验（串行）：lint:check exit 0、type-check:check exit 0（evidence/jitter-fix-frontend-lint.txt / -typecheck.txt），npm.cmd run test 默认配置全量 exit 0 'Test Files 53 passed (53)' 'Tests 429 passed (429)'、该文件 '✓ ... (9 tests) 14842ms'（evidence/jitter-fix-full-frontend-test.txt）。注：本 step 的「最小处置」判据（只抬实测越界的那一条）在阶段 3 门禁被新证据推翻一次，续处置见 719f22d 与阶段 3 evidence。K6: 锚点逐一核对一致——create.page.vue:228 pagePapers({query:{page:1,size:100}}) 与 :243 pageClasses({query:{page:1,size:100}}) 均单页取数后直接 map 成 options；classes/index.page.vue:476 转班目标 pageClasses({query:{page:1,size:100}})、enabled 由 transferModalOpen 门控、选项取 envelope.list 再排除当前班级；papers/index.page.vue:72-92 FETCH_SIZE=100 + queryKey ['papers',1,FETCH_SIZE] + rows.slice(start, start+FETCH_SIZE) 客户端切片 + pagination total=rows.length；useTeacherExams.ts:18-60 累加语义（满页续拉/空页未满页停/最多 5 页/catch 即 break 保留已累积）与 __tests__/useTeacherExams.spec.ts 既有用例在册；契约侧 types.gen.ts：pagePapers 与 page1（GET /api/papers）返回 ApiResponseListPaperResponse 裸列表无 total、pageClasses（GET /api/classes）返回 ApiResponseClassPageResponse{list,total,page,size}、GET /api/exams 亦裸列表；teacher/exams/index.page.vue 用 pageNum/pageSize ref 进 queryKey + @change 翻页真实请求，其分页器 total 写字面量 pageNum*pageSize——经核 antd vc-pagination/Pagination.js 的 calculatePage=Math.floor((total-1)/pageSize)+1 与 hasNext=current<calculatePage，该写法在满页第 1 页算出 calculatePage=1、下一页不可点，故本卡对试卷页改用「满页预留下一页」的下界推断 total（偏离该字面写法，proposal 裁决 4 已登记）。与 proposal 描述一致，未触发停止回报条件。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：前端红测先行",
+    "task": "累加器纯逻辑用例 + 三下拉全量候选用例 + 试卷页真分页用例（实施前先红）",
+    "steps": [
+      {
+        "step": "写用例①：fetchAllPages 累加器纯逻辑六场景（空页停/未满页停/恰满页+空页/多页累积/达 5 页上限/单页失败保留已累积），形态对齐 useTeacherExams.spec.ts",
+        "completed": true
+      },
+      {
+        "step": "写用例②：考务创建页试卷/班级下拉全量候选（mock 满 100 再 35 条，断言两请求、135 条可选）",
+        "completed": true
+      },
+      {
+        "step": "写用例③：转班目标下拉全量班级（同形态）",
+        "completed": true
+      },
+      {
+        "step": "写用例④：试卷列表真分页（后端共 250 条按页返回，断言点第 2 页发起 page:2 新请求、渲染第 2 页行；词法护栏源码不含 FETCH_SIZE 与本地 slice；查询失败落错误 Alert 不落空态）",
+        "completed": true
+      },
+      {
+        "step": "定向跑一次留红（evidence/red-frontend.txt），红灯应恰为新用例",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "新增 4 个 spec 共 20 例：frontend/src/hooks/__tests__/fetchAllPages.spec.ts（10 例，六场景 + maxPages/pageSize 可覆盖 + undefined 兜底 + 首页即失败兜底）、frontend/src/pages/(dashboard)/teacher/exams/__tests__/examCreateOptionsFullList.spec.ts（3 例：试卷 135/两请求、班级 135/两请求、词法护栏）、frontend/src/pages/(dashboard)/teacher/classes/__tests__/transferTargetsFullList.spec.ts（3 例：弹层未开不取候选〔既有 enabled 门控行为保留用例〕、弹层开 135/两请求、词法护栏）、frontend/src/pages/(dashboard)/teacher/papers/__tests__/paperListServerPaging.spec.ts（4 例：首屏 page1/size10 + 第 2 页可达、翻页真实请求且渲染第 2 页行、词法护栏不含 FETCH_SIZE 与 .slice(、查询失败落 papers-error 不落「暂无数据」）。红（第 1 次定向跑，evidence/red-frontend.txt）exit 1 'Test Files 4 failed (4)' 'Tests 10 failed (10)'——其中转班 spec 的 2 例为假红：mock 把 '@/hooks/useClassRoster' 的导出名写成 useClassRoster，实测报 'No \"createClassRoster\" export is defined on the \"@/hooks/useClassRoster\" mock'，属测试基建缺陷而非需求红态；改为不 mock 该纯逻辑 + 依赖注入的 hook（deps 全落在已 mock 的 SDK/apiClient 层），让挂载走真实链路。红（第 2 次定向跑＝定论红态，evidence/red-frontend-run2.txt）exit 1 'Test Files 4 failed (4)' 'Tests 9 failed | 1 passed (10)'：①fetchAllPages.spec.ts 整文件 'Error: Failed to resolve import \"@/hooks/fetchAllPages\" ... Does the file exist?'、0 例执行——红态性质如实登记：通用累加器尚不存在，套件在模块解析层失败（先例同 add-frontend-invite-code-admin 的新页面红态）；②创建页两例断言尾部「to have a length of 135 but got 100」（选项数组停在第 100 条，试卷与班级同形；完整原文见 evidence/red-frontend-run2.txt）——截断缺陷的直证；③转班两例同为 got 100 越界断言 + 词法护栏 'to contain fetchAllPages'；④试卷页四例：'expected [ { page: 1, size: 100 } ] to deeply equal [ { page: 1, size: 10 } ]'、'expected [ 试卷1 …(96) ] to have a length of 10 but got 100'、\"not to contain 'FETCH_SIZE'\"、papers-error Alert 'expected false to be true'；⑤唯一绿例为转班「弹层未打开时不取候选」（既有行为保留用例，对齐 paperBatchAdd.spec.ts 先例）。红灯恰为新用例：定向命令只跑这 4 个新文件，既有用例零牵连。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：前端实施（先红后绿）",
+    "task": "通用累加器 + useTeacherExams 一行委托 + 三下拉改累加器 + 试卷列表服务端分页",
+    "steps": [
+      {
+        "step": "实施：新增 frontend/src/hooks/fetchAllPages.ts（泛型累加器，语义照抄 useTeacherExams.ts:18-60）",
+        "completed": true
+      },
+      {
+        "step": "实施：useTeacherExams.ts 的 fetchAllTeacherExams 改一行委托（签名与 TEACHER_EXAMS_* 常量不动），跑既有 useTeacherExams.spec.ts 必须原样全绿（委托等价性护栏）",
+        "completed": true
+      },
+      {
+        "step": "实施：create.page.vue 试卷/班级下拉与 classes/index.page.vue 转班目标改累加器（消费形态对齐考试下拉的 useQuery 接线）",
+        "completed": true
+      },
+      {
+        "step": "实施：papers/index.page.vue 服务端分页（pageNum/pageSize 进 queryKey、@change 翻页真实请求、total 下界推断、移除 FETCH_SIZE 本地切片）+ 查询失败 Alert（U-1 三态分离形态）",
+        "completed": true
+      },
+      {
+        "step": "定向绿：新增 spec 全过留档（evidence/green-frontend.txt）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "实施（见实施笔 d78269e 与续笔 719f22d，git show --stat 实测 d78269e '11 files changed, 731 insertions(+), 55 deletions(-)'）：hooks/fetchAllPages.ts 新增 55 行——FETCH_ALL_PAGE_SIZE=100 / FETCH_ALL_MAX_PAGES=5 / PageFetcher<T> / FetchAllPagesOptions / fetchAllPages<T> 循环体与 useTeacherExams.ts 原实现逐字同语义（满页续拉、空页或 undefined 即停、未满页即停、catch 即 break 保留已累积）；useTeacherExams.ts 的 fetchAllTeacherExams 函数体改为单条 'return fetchAllPages<ExamResponse>(fetchPage, { pageSize: options.pageSize ?? TEACHER_EXAMS_PAGE_SIZE, maxPages: options.maxPages ?? TEACHER_EXAMS_MAX_PAGES })'，签名/导出常量/createTeacherExamsQueryOptions 零改动，模块头注释同步说明「累加语义本体在 fetchAllPages.ts」（否则该注释自述收敛为一处会变为假）；create.page.vue 试卷下拉 fetchAllPages<PaperResponse>((page,size)=>unwrap(pagePapers({query:{page,size}})))、班级下拉 fetchAllPages<ClassResponse>(async 取 envelope.list)、classOptions 改读数组；classes/index.page.vue 转班目标同形态（enabled 门控与「排除当前班级」filter 不动）；papers/index.page.vue 改 pageNum/pageSize ref 进 computed queryKey ['papers',page,size]、queryFn 携带当页参数、tablePagination + @change=onTableChange（形态对齐 teacher/exams/index.page.vue），total 用下界推断 '(pageNum-1)*pageSize + rows.length + (rows.length===pageSize ? 1 : 0)' 并注释登记「不照抄考试页字面 total=pageNum*pageSize，按 antd calculatePage 那写法满页时下一页点不到」，另按 U-1 加 queryErrorText + Alert data-test='papers-error' 与 Table v-else。委托等价性护栏：npm.cmd run test -- useTeacherExams.spec.ts fetchAllPages.spec.ts（evidence/green-accumulator-delegation.txt）实测 '✓ src/hooks/__tests__/useTeacherExams.spec.ts (19 tests)' 全绿（19 例一字未改），该轮整体 '1 failed | 28 passed (29)' 的唯一失败是新 spec 自身写错的期望——pageSize 可覆盖例把「首页恰好 40 条」当成未满页断言只发 1 次请求，而按累加器语义恰满页必须续拉探下一页；改断言为「自定义 pageSize=40 时首页满页续拉第 2 页（20 条未满即停，2 次请求）；同 40 条在默认 100 下单次即停」，属测试期望修正、非实现缺陷。定向绿：npm.cmd run test -- <4 个新 spec> exit 0 'Test Files 4 passed (4)' 'Tests 20 passed (20)'（evidence/green-frontend.txt）。实施后全量预检第 1 次 exit 1 'Test Files 1 failed | 56 passed (57)' 'Tests 2 failed | 447 passed (449)'（evidence/precommit-frontend-test.txt）——失败为既有 examCreatePublishFlow.spec.ts 两例，报 'TypeError: (classesData.value ?? []).map is not a function' at create.page.vue:255：该 spec 的 useQuery mock 不走 queryFn、按 queryKey 首元素投喂旧「单页信封」{list:[...]}，班级候选改为累加数组后形状不符；只把该 mock 夹具改为数组（git diff 实测 4 行、含一行说明注释），断言集合与口径零改动 → 第 2 次全量 exit 0 'Test Files 57 passed (57)' 'Tests 449 passed (449)'（evidence/precommit-frontend-test-run2.txt）。三项预检：lint:check exit 0（precommit-frontend-lint-run2.txt）；type-check:check 首跑 exit 2——5 处 'error TS18048: arg is possibly undefined' / 'TS18048/TS2532 Object is possibly undefined' 全在新 spec 读 mock.calls 参数处，补可选链后 exit 0（precommit-frontend-typecheck.txt 记录失败态、-run2.txt 记录通过态）。变异校验（分页器下界推断的可红性）：临时把 total 改为不预留下一页 → npm.cmd run test -- paperListServerPaging exit 1 '1 failed | 3 passed (4)'，红灯恰为首屏例的 '.ant-pagination-item-2 存在' 断言（AssertionError: expected false to be true，evidence/pagination-total-mutation-check.txt）；还原后同命令 exit 0 '4 passed (4)'（evidence/pagination-total-restored-run.txt）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：实施笔与全量门禁",
+    "task": "两笔提交之实施笔 + 双端门禁（串行执行，不并发跑 Maven 与 vitest）",
+    "steps": [
+      {
+        "step": "实施笔提交（仅 frontend/src；提交前核对 git diff --cached --name-only 与 --check）",
+        "completed": true
+      },
+      {
+        "step": "已提交状态前端 lint:check / type-check:check / test 三项退出码 0，vitest 相对基线（53 文件 429 例）只增不减记入，且 useTeacherExams.spec.ts 既有用例全绿",
+        "completed": true
+      },
+      {
+        "step": "已提交状态仓库根 mvnw.cmd clean test 与基线持平（零后端改动）；git diff 证明零后端文件改动（src/main、src/test、pom.xml、schema.sql、openapi.yaml）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "暂存核对：git add 显式 11 个路径，git diff --cached --name-only 当次输出恰 11 文件且全部位于 frontend/src，git diff --cached --check exit 0；实施笔 git commit -F <仓库外消息文件> → 短 SHA d78269e（'11 files changed, 731 insertions(+), 55 deletions(-)'）。提交数偏差如实登记：派发卡写「两笔提交」，本卡实为三笔——d78269e 实施笔 + 719f22d 第三抖专项续笔 + 归档笔；续笔由下述门禁新证据逼出，保持独立单笔可整体回滚，不并入实施笔也不 amend 改写已存在的实施笔。@d78269e 首次全量门禁 exit 1 'Test Files 1 failed | 56 passed (57)' 'Tests 1 failed | 448 passed (449)'（evidence/gate-frontend-test-attempt1-jitter4.txt）——gradingServerPaging.spec.ts「已批进度展示信封 graded/total，而非客户端计数」用例以同一机理越界（Error: Test timed out in 5000ms，spec:163；诊断轮实测 3465ms、本轮在全量并行负载下越过上限），推翻阶段 0 K5「只抬实测越界那一条」的最小判据；同因同处置：为该第二条用例补 15000ms 上限（git diff 实测 '3 insertions(+), 1 deletion(-)'，注释登记判据收窄为「贴近或越过 5000ms 上限的用例」；同文件其余三条实测 1865/1820/965ms 仍有 ≥2.7 倍余量、无越界证据不动；断言与交互零改动），定向复跑该文件 9/9 绿 exit 0（evidence/jitter-fix2-targeted-grading.txt，该轮 'queryFn 携带…' 用例 2929ms）。已提交状态（@719f22d）前端门禁（串行，未与 Maven 并发）：lint:check exit 0、type-check:check exit 0、npm.cmd run test exit 0，vitest 关键行 'Test Files 57 passed (57)' 'Tests 449 passed (449)' = 基线 53 文件 429 例 + 新增 4 文件 20 例，只增不减；其中 useTeacherExams.spec.ts 19 例、examCreatePublishFlow.spec.ts 5 例（夹具形状修正后）全绿（evidence/gate-frontend-{lint,typecheck,test}.txt）。抖动收口判定按重复测量而非单轮：续笔处置后连续两次全量全绿（evidence/jitter-fix2-full-run1.txt '449 passed (449)'、evidence/gate-frontend-test.txt '449 passed (449)'），对照处置前 4 轮全量越界（基线 3 轮 + 本阶段 1 轮）。已提交状态后端门禁 @719f22d（前端门禁跑完后串行执行）：JAVA_HOME=D:\\develop1\\jdk21 + ./mvnw.cmd clean test exit 0，关键行 '[WARNING] Tests run: 368, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS'（evidence/gate-backend.txt）＝与基线 368/0/0/1@31dfc17（evidence/baseline-backend.txt）持平。零后端改动证明：git diff --name-only 31dfc17 719f22d -- src pom.xml schema.sql openapi.yaml 当次输出为空；git diff --name-only 31dfc17 719f22d 全量恰 11 文件且全在 frontend/src。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：收口（两笔提交、spec 合入、归档、自查）",
+    "task": "收口笔=spec/README/归档（零 src 豁免凭据）",
+    "steps": [
+      {
+        "step": "spec/specs/frontend/spec.md 合入本卡 Requirement + 尾部合入注记；spec/README.md 当前状态行 + frontend 能力域行 + 归档行；变更目录移入 archive/ 并生成 evidence-sha256.txt",
+        "completed": true
+      },
+      {
+        "step": "收口自查：git diff --name-only <实施笔> HEAD -- src frontend pom.xml openapi.yaml 为空；AGENTS.md 自查四条；git status 终态仅白名单未跟踪文件",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "spec/specs/frontend/spec.md：在「邀请码管理界面」Requirement 之后、`---` 注记分隔线之前合入 ADDED Requirement「下拉与列表取数不截断」（SHALL 段 + 6 个 Scenario），并追加尾部合入注记（登记六项 spec-delta 未明说的口径：①失败态按载体分别对齐既有口径——下拉沿用累加器尽力而为语义、只有列表页用 U-1 错误 Alert，未新造第三态；②试卷列表 total 用「满页即至少还有下一页」下界推断而不照抄考试页字面 total=pageNum*pageSize，附 antd calculatePage/hasNext 依据与变异校验结论；③该推断意味着页码数字可能小于真实末页，不谎称精确总数；④数据量级未测量、不构成收口前提；⑤委托抽取后同步改写 useTeacherExams.ts 模块头注释，否则其『收敛为一处』自述会变为假；⑥既有 examCreatePublishFlow.spec.ts 的 useQuery mock 夹具由单页信封改为累加数组、断言零改动；并登记第三抖专项与其判据收窄过程）。逐字比对：node 抽取该卡 specs/frontend/spec-delta.md 的 Requirement 段与 spec.md 末段实测 'VERBATIM-MATCH-OK' delta_len=1248 merged_len=1248 scenarios=6。spec/README.md 三处登记：当前状态段队首插入本卡收口描述（沿用『已于 2026-10-07 收口并移入下方归档表（**GO**：…）』体例）+ 已合入规范表 frontend 行（#18）追加本卡来源 + 归档表 add-frontend-invite-code-admin 行之后追加本卡行。归档：整目录 rename 在本机两次报 'mv: cannot move ... Permission denied'（Windows 目录句柄锁定），改为 mkdir 目标 + 逐项 mv 子项（proposal.md/tasks.json/specs/evidence\\*.txt）+ rmdir 空壳完成；移动前后文件计数一致（源侧 find -type f 余 0、目标侧 34 件＝31 evidence + 三件套），移动后 spec/changes/ 下仅 IMPLEMENTATION_STATUS.md 与 archive/（与『当前无进行中变更』一致）。evidence/evidence-sha256.txt 以 sha256sum --binary *.txt 生成 31 行（不含清单自身），当场 sha256sum --check 实测 ': OK' 计 31 行全通过。暂存核对：git add 显式 3 个路径（spec/specs/frontend/spec.md、spec/README.md、spec/changes/archive/fix-frontend-list-truncation-family），git diff --cached --name-only 当次 37 文件（git status 摘要 '35 A' + '2 M'＝2 个 spec 文件 + 归档 35 件含 manifest），git diff --cached --name-only -- src frontend pom.xml schema.sql openapi.yaml → 空输出（零 src/frontend 文件入暂存，即本收口笔必然零后端与零前端源码改动；提交后复核 git diff --name-only 719f22d HEAD -- src frontend pom.xml schema.sql openapi.yaml 亦应为空，结果记入当轮收口汇报）。git diff --cached --check 退出码 2，按 ':N: ' 头部行计数命中 37985 处，逐条归类全部落在 evidence/*.txt 原始日志（控制台输出固有的 CRLF/行尾空格，与既有归档 committed 证据字节同构）；过滤 evidence/ 后的非证据文件（spec/README.md、spec/specs/frontend/spec.md、proposal.md、tasks.json、spec-delta.md、evidence-sha256.txt）命中数为 0。AGENTS.md 四条自查当次计数均 0：'1331[67]|330[67]|root12[3]|[T]ests run|[0-9]+%' grep AGENTS.md=0、'330[67]|1331[67]|root12[3]|root/[r]oot' grep README.md=0、'@Sql' grep src/test 过滤注释后=0、'\\\\.md:[0-9]' grep AGENTS.md=0。提交数偏差如实登记：派发卡写「两笔提交」，本卡实为三笔（实施笔 d78269e、第三抖专项续笔 719f22d、本收口笔），续笔由门禁新证据逼出、保持独立单笔可整块回滚。"
+  }
+]
