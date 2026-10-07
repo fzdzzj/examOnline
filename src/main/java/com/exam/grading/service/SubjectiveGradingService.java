@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.config.ReadYourWriteMark;
+import com.exam.grading.dto.SubjectiveGradePageResponse;
 import com.exam.grading.dto.SubjectiveGradeRow;
 import com.exam.grading.dto.SubjectiveQuestionItem;
 import com.exam.grading.dto.SubjectiveScoreRequest;
@@ -87,10 +88,48 @@ public class SubjectiveGradingService {
         }).toList();
     }
 
-    /** 工作台列表：同题全部学生（含答案快照/初判提示分/终分/版本号）。 */
-    public List<SubjectiveGradeRow> listRows(Long examId, Long questionId) {
+    /** 服务端分页 size 上限；page/size 只给其一时的另一参数兜底（page=1 / size=上限）。 */
+    private static final int MAX_PAGE_SIZE = 100;
+
+    /**
+     * 工作台列表（add-subjective-grading-pagination）：同题学生行，响应恒为分页信封。
+     *
+     * <ul>
+     *   <li>page/size 均缺省 → 全量（rows=该题全部行）；只给其一时另一参数取默认
+     *       （page=1 / size=上限）；page≥1、size∈[1,100]，违规 400；</li>
+     *   <li>onlyUngraded=true → 服务端过滤未批（score IS NULL，对齐面板既有 !graded 语义）；
+     *       name → 学生姓名 LIKE 包含（对齐面板既有 studentName.includes）；</li>
+     *   <li>submissionId → 单行取数（至多 1 行），专供 409/1012 冲突回填，替代全量拉取后 find；</li>
+     *   <li>total 与 rows 同口径（筛选后、分页前）；graded 与题级进度 gradedStudents 同口径，
+     *       不受行筛选影响；排序恒为 student_id 稳定序——翻页不丢行不错行的前提。</li>
+     * </ul>
+     */
+    public SubjectiveGradePageResponse listRows(Long examId, Long questionId, Integer page, Integer size,
+                                                Boolean onlyUngraded, String name, Long submissionId) {
         gradingQueryService.requireOwnedExam(examId);
-        return subjectiveGradeMapper.selectWorkbenchRows(examId, questionId);
+        Integer offset = null;
+        Integer limit = null;
+        if (page != null || size != null) {
+            int pageNumber = page == null ? 1 : page;
+            int pageSize = size == null ? MAX_PAGE_SIZE : size;
+            if (pageNumber < 1) {
+                throw new BusinessException(ResponseCode.BAD_REQUEST, "page 必须 ≥ 1");
+            }
+            if (pageSize < 1 || pageSize > MAX_PAGE_SIZE) {
+                throw new BusinessException(ResponseCode.BAD_REQUEST,
+                        "size 必须在 1.." + MAX_PAGE_SIZE);
+            }
+            offset = (pageNumber - 1) * pageSize;
+            limit = pageSize;
+        }
+        // 面板提交前会 trim，空白串等价于不过滤（对齐既有客户端筛选语义）
+        String nameKeyword = name == null || name.isBlank() ? null : name.trim();
+        List<SubjectiveGradeRow> rows = subjectiveGradeMapper.selectWorkbenchRowsPaged(
+                examId, questionId, offset, limit, onlyUngraded, nameKeyword, submissionId);
+        int total = (int) subjectiveGradeMapper.countWorkbenchRows(
+                examId, questionId, onlyUngraded, nameKeyword, submissionId);
+        int graded = (int) subjectiveGradeMapper.countWorkbenchGraded(examId, questionId);
+        return new SubjectiveGradePageResponse(rows, total, graded);
     }
 
     /**

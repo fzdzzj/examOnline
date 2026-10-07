@@ -139,7 +139,13 @@
           :exam-id="selectedExamId"
           :question="selectedQuestion"
           :rows="rows"
+          :total="rowsTotal"
+          :graded="gradedCount"
           :loading="rowsFetching"
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          v-model:name-filter="nameFilter"
+          v-model:only-ungraded="onlyUngraded"
           @refreshed="onRowRefreshed"
         />
       </Card>
@@ -159,6 +165,7 @@ import {
   run,
   type ExamResponse,
   type GradingRunResponse,
+  type SubjectiveGradePageResponse,
   type SubjectiveGradeRow,
   type SubjectiveQuestionItem,
 } from '@/api/axios';
@@ -326,27 +333,59 @@ function selectQuestion(question: SubjectiveQuestionItem): void {
 }
 
 // ===== 同题学生行 =====
+// 服务端分页与筛选（add-subjective-grading-pagination）：page/size/筛选全部入 queryKey，
+// 由服务端过滤与分页（信封 {rows,total,graded}），客户端不再做全量筛选链。
+const page = ref(1);
+const pageSize = ref(10);
+const onlyUngraded = ref(false);
+const nameFilter = ref('');
+
 const {
   data: rowsData,
   isFetching: rowsFetching,
   refetch: refetchRows,
 } = useQuery({
   queryKey: computed(
-    () => ['grading', 'rows', selectedExamId.value, selectedQuestionId.value] as const
+    () =>
+      [
+        'grading',
+        'rows',
+        selectedExamId.value,
+        selectedQuestionId.value,
+        page.value,
+        pageSize.value,
+        onlyUngraded.value,
+        nameFilter.value,
+      ] as const
   ),
   queryFn: () =>
-    unwrap<SubjectiveGradeRow[]>(
+    unwrap<SubjectiveGradePageResponse>(
       subjectiveRows({
         client,
         throwOnError: true,
         path: { examId: selectedExamId.value as number },
-        query: { questionId: selectedQuestionId.value as number },
+        query: {
+          questionId: selectedQuestionId.value as number,
+          page: page.value,
+          size: pageSize.value,
+          onlyUngraded: onlyUngraded.value,
+          // 空白姓名等价于不过滤（对齐后端语义）
+          name: nameFilter.value.trim() ? nameFilter.value.trim() : undefined,
+        },
       })
     ),
   enabled: computed(() => selectedQuestionId.value !== undefined),
 });
 
-const rows = computed<SubjectiveGradeRow[]>(() => rowsData.value ?? []);
+const rowsEnvelope = computed<SubjectiveGradePageResponse | undefined>(() => rowsData.value);
+const rows = computed<SubjectiveGradeRow[]>(() => rowsEnvelope.value?.rows ?? []);
+const rowsTotal = computed(() => rowsEnvelope.value?.total ?? 0);
+const gradedCount = computed(() => rowsEnvelope.value?.graded ?? 0);
+
+// 切换题目或筛选条件时翻回第 1 页（换筛选看第 2 页没有意义）
+watch([selectedQuestionId, onlyUngraded, nameFilter], () => {
+  page.value = 1;
+});
 
 // 面板提交成功或冲突后：行列表和题级进度都要重拉，否则同一屏会出现 1/1 与 0/1 并存
 function onRowRefreshed(): void {
