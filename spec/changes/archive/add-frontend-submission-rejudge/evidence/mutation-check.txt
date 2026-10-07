@@ -1,0 +1,41 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+ [31m❯[39m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 821[2mms[22m[39m
+     [33m[2m✓[22m[39m 只在失败行呈现重判入口；无失败时不出现入口 [33m 390[2mms[22m[39m
+     [32m✓[39m 确认后才调用 rejudge，路径参数取契约的 examId + submissionId[32m 76[2mms[22m[39m
+     [32m✓[39m 重判在途时重复确认只发起一次请求[32m 64[2mms[22m[39m
+[31m     [31m×[31m 重判成功：该行移出清单、统计回填、失效批改查询并提示成功[39m[32m 53[2mms[22m[39m
+     [32m✓[39m 重判仍失败：该行文案换成后端本次原文，清单不破坏、统计不回填[32m 71[2mms[22m[39m
+     [32m✓[39m 重判请求被拒：原文呈现且清单与统计保持原状，只由显式确认发起[32m 90[2mms[22m[39m
+     [32m✓[39m 切换考试后到达的旧重判响应不回写结果区，也不刷新新考试的查询[32m 74[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts[2m > [22m判分失败答卷逐卷重判[2m > [22m重判成功：该行移出清单、统计回填、失效批改查询并提示成功
+[31m[1mAssertionError[22m: expected '批改工作台并发批改由后端乐观锁保护：同一份答卷被他人先保存时，后提交方会收…' to contain '失败：1'[39m
+
+Expected: [32m"失败：1"[39m
+Received: [31m"批改工作台并发批改由后端乐观锁保护：同一份答卷被他人先保存时，后提交方会收到冲突提示，绝不静默覆盖。#7待判分考试（已结束）运行判分仅对已结束且尚未汇总的考试开放；会重新计算客观题分数，不覆盖教师已保存的主观题分数。运行判分最近一次判分结果总数：4成功：2失败：2部分答卷判分失败，请处理失败清单后再汇总成绩。答卷102（学生203）：快照缺题重判主观题进度刷新进度该试卷没有主观题，客观题由后端自动判分，无需人工批改。"[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts:[2m177:24[22m[39m
+    [90m175|[39m     [34mexpect[39m([34mrejudgeButtons[39m(wrapper))[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m176|[39m     [90m// 统计随之回填，不新造第三种行形态[39m
+    [90m177|[39m     [34mexpect[39m([34mbodyText[39m())[33m.[39m[34mtoContain[39m([32m'失败：1'[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m178|[39m     [34mexpect[39m([34mbodyText[39m())[33m.[39m[34mtoContain[39m([32m'成功：3'[39m)[33m;[39m
+    [90m179|[39m     [34mexpect[39m(message[33m.[39msuccess)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m'答卷 101 重判成功'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 00:27:58
+[2m   Duration [22m 5.63s[2m (transform 251ms, setup 42ms, import 3.62s, tests 821ms, environment 884ms)[22m
+
+EXIT=1
