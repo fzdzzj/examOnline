@@ -1,0 +1,34 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/admin/invite-codes/__tests__/inviteCodeAdmin.spec.ts [2m([22m[2m8 tests[22m[2m | [22m[31m1 failed[39m[2m | [22m[33m7 skipped[39m[2m)[22m[33m 661[2mms[22m[39m
+     [2m[90m↓[39m[22m 列表按后端字段渲染：状态标签呈现，作废入口仅有效行出现
+     [2m[90m↓[39m[22m 查询失败：错误 Alert 显性呈现后端 message，空态不出现
+     [2m[90m↓[39m[22m 成功且无数据：空态照常呈现，不弹错误 Alert
+[31m     [31m×[31m 生成成功：提交 createInviteCode（body 携带 note），弹层内展示新码并失效列表查询[39m[33m 657[2mms[22m[39m
+     [2m[90m↓[39m[22m 生成失败：message 呈现后端原文，不失效查询、不展示伪成功结果
+     [2m[90m↓[39m[22m 作废知情确认：确认后调 invalidateInviteCode（path 携带 id）并失效列表查询
+     [2m[90m↓[39m[22m 作废失败：message 呈现后端原文且不失效查询
+     [2m[90m↓[39m[22m admin 分组经角色过滤且含「邀请码管理」入口（菜单项 + 可导航路径）
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/admin/invite-codes/__tests__/inviteCodeAdmin.spec.ts[2m > [22m邀请码管理页（admin/invite-codes）[2m > [22m生成成功：提交 createInviteCode（body 携带 note），弹层内展示新码并失效列表查询
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m src/pages/(dashboard)/admin/invite-codes/__tests__/inviteCodeAdmin.spec.ts:[2m193:69[22m[39m
+    [90m191|[39m     [35mawait[39m vi[33m.[39m[34mwaitFor[39m(() [33m=>[39m [34mexpect[39m([34mbodyText[39m())[33m.[39m[34mtoContain[39m([32m'NEWCODE1'[39m))[33m;[39m
+    [90m192|[39m     [90m// spec-delta 场景 2「提供复制入口」：copyable 渲染的复制按钮在弹层内[39m
+    [90m193|[39m     expect(document.body.querySelector('.ant-typography-copy')).not.to…
+    [90m   |[39m                                                                     [31m^[39m
+    [90m194|[39m     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['invit…
+    [90m195|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[33m7 skipped[39m[90m (8)[39m
+[2m   Start at [22m 19:28:28
+[2m   Duration [22m 5.29s[2m (transform 188ms, setup 46ms, import 3.33s, tests 661ms, environment 976ms)[22m
+
