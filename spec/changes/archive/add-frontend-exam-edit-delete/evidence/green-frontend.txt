@@ -1,0 +1,30 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts src/pages/(dashboard)/teacher/exams/__tests__/examCreatePublishFlow.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/exams/__tests__/examCreatePublishFlow.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 2329[2mms[22m[39m
+     [33m[2m✓[22m[39m 动作入口按后端返回的 status/published 渲染：仅「未开始+未发布」可发布、仅「进行中」可强制结束 [33m 1084[2mms[22m[39m
+     [33m[2m✓[22m[39m force-end 确认弹窗明示触发缺考标记且不可逆；确认后调 force-end [33m 328[2mms[22m[39m
+     [33m[2m✓[22m[39m 必填缺失被拦：不发起创建请求 [33m 395[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2820[2mms[22m[39m
+     [33m[2m✓[22m[39m 操作列乐观门控：未开始+未发布→编辑+删除；进行中/已结束未发布→仅删除；已发布→两者皆无 [33m 1024[2mms[22m[39m
+     [33m[2m✓[22m[39m 删除确认弹窗明示不可逆；确认后调 delete2 并失效 exams 查询 [33m 347[2mms[22m[39m
+     [33m[2m✓[22m[39m 删除失败呈现后端原文：非未开始考试被拒时不本地编造文案、不失效查询 [33m 329[2mms[22m[39m
+     [33m[2m✓[22m[39m 编辑模式：标题「编辑考试」，详情端点返回值回填全部表单字段（含防作弊两开关） [33m 453[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 17:50:36
+[2m   Duration [22m 8.55s[2m (transform 441ms, setup 56ms, import 9.01s, tests 5.15s, environment 1.80s)[22m
+
+exit=0
