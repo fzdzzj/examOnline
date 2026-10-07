@@ -1,0 +1,131 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对",
+    "task": "分支与基线锚定（从 main@d4d21f7 开工）",
+    "steps": [
+      {
+        "step": "K1–K3：从 main（d4d21f7）新建 feature/fix-frontend-makeup-time-and-landing；记录 HEAD 短 SHA 与 git status 基线（应仅 7 个白名单未跟踪文件）",
+        "completed": true
+      },
+      {
+        "step": "K4：双端门禁基线锚（命令 + 当次输出 + 短 SHA 记入本字段，不作常量假设）：前端 lint/type-check/test + 后端 mvnw.cmd clean test（JAVA_HOME=D:\\develop1\\jdk21）",
+        "completed": true
+      },
+      {
+        "step": "K5：现状复核锚点：makeups/index.page.vue:108 自由文本时间输入与提交解析 warning；(dashboard)/index.page.vue:21 阶段 19 验证卡——确认与 proposal 描述一致",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1-K3: git checkout -b feature/fix-frontend-makeup-time-and-landing @ main（git log --oneline -1 输出 'd4d21f7 Merge branch feature/fix-frontend-list-truncation-family into main'，git rev-parse --short HEAD=d4d21f7，git branch --show-current=feature/fix-frontend-makeup-time-and-landing）；git status --short 基线=7 个白名单未跟踪文件（.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-optimization-candidates.md、docs/frontend-improvement-candidates.md、docs/指导主Agent交接文档-2026-09-30/-10-01/-10-02.md）。K4 前端: cd frontend && npm.cmd run lint:check exit 0、npm.cmd run type-check:check exit 0（evidence/baseline-frontend-lint.txt / baseline-frontend-typecheck.txt）；npm.cmd run test 全量 exit 0 'Test Files 57 passed (57)' 'Tests 449 passed (449)'（evidence/baseline-frontend-test.txt）。K4 后端: JAVA_HOME=D:\\develop1\\jdk21 + .\\mvnw.cmd clean test exit 0 @ d4d21f7，关键行 '[WARNING] Tests run: 368, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS'（全量日志 evidence/baseline-backend.txt）＝后端基线锚定 368/0/0/1。K5: 锚点逐一核对一致——makeups/index.page.vue:108 起开始/结束时间为 Input 且提交时经 toIsoLocalDateTime 检查并 message.warning；(dashboard)/index.page.vue:21-40 为「这一页验证了什么」开发验证卡。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：前端红测先行",
+    "task": "补考时间选择与 rules 校验用例 + 落地页欢迎卡与常用入口用例（实施前先红）",
+    "steps": [
+      {
+        "step": "写用例①：makeups 页面断言时间字段渲染为 DatePicker 且旧 placeholder 自由文本 Input 不存在",
+        "completed": true
+      },
+      {
+        "step": "写用例②：makeups 时间格式等价性断言（构造 dayjs 选择 -> 跑提交转换 -> 输出与旧 toIsoLocalDateTime 口径逐字比对）",
+        "completed": true
+      },
+      {
+        "step": "写用例③：makeups 表单 rules 校验断言（必填缺失 / 起止倒置被拦且不调用后端接口）",
+        "completed": true
+      },
+      {
+        "step": "写用例④：landing 页面断言「这一页验证了什么」文案不存在，欢迎卡与常用入口渲染（学生/教师/管理员角色自适应）",
+        "completed": true
+      },
+      {
+        "step": "定向跑一次留红（evidence/red-frontend.txt），红灯应恰为新用例",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "新增 2 个 spec 共 12 例：frontend/src/pages/(dashboard)/teacher/makeups/__tests__/makeupTimeAndRules.spec.ts（6 例：DatePicker 渲染与旧 placeholder 排除、dayjs 构造与 toIsoLocalDateTime 格式等价性、合法语境下 dayjs 转换为带 T 字符串提交、起止时间倒置拦截、时间缺失拦截、源码词法护栏）与 frontend/src/pages/(dashboard)/__tests__/landingWelcomeAndEntries.spec.ts（6 例：验证卡清除、学生常用入口、教师常用入口、管理员常用入口、零新增数据请求、源码词法护栏）。定向执行（双引号包裹括号路径）：npm.cmd run test -- \"src/pages/(dashboard)/teacher/makeups/__tests__/makeupTimeAndRules.spec.ts\" \"src/pages/(dashboard)/__tests__/landingWelcomeAndEntries.spec.ts\" | Tee-Object ..\\spec\\changes\\fix-frontend-makeup-time-and-landing\\evidence\\red-frontend.txt。实测输出 exit 1 'Test Files 2 failed (2)' 'Tests 9 failed | 3 passed (12)'，绿灯恰为纯函数格式等价性断言与零 API 调用断言，红灯恰为未改造的 9 个新行为断言与词法护栏（旧 placeholder 存在、倒置时间未拦截、旧开发验证卡存在、欢迎卡与常用入口不存在等），真实红态确凿在册。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：前端实施（先红后绿）",
+    "task": "makeups 时间控件替换与 rules 统一 + 落地页欢迎卡与常用入口改造",
+    "steps": [
+      {
+        "step": "实施①：makeups/index.page.vue 两处时间 Input 改 DatePicker（show-time，值形态 dayjs），提交时格式化输出带 T 字符串",
+        "completed": true
+      },
+      {
+        "step": "实施②：makeups/index.page.vue 引入 Form rules（必填 + 起止先后），移除提交时 message.warning 双轨分支",
+        "completed": true
+      },
+      {
+        "step": "实施③：(dashboard)/index.page.vue 移除「这一页验证了什么」验证卡，新增欢迎卡（显示名/角色，消费既有 auth store）",
+        "completed": true
+      },
+      {
+        "step": "实施④：(dashboard)/index.page.vue 新增常用快捷入口（对齐侧边栏既有路由与角色过滤逻辑，零新造路由，零新数据请求）",
+        "completed": true
+      },
+      {
+        "step": "定向跑新用例转绿（evidence/green-frontend.txt）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "按 proposal 完成改造：1) makeups/index.page.vue 引入 DatePicker 与 Form rules，时间输入状态收敛为 Dayjs | null，提交时以 .format('YYYY-MM-DDTHH:mm:ss') 格式化输出带字面量 T 字符串；Form rules 统一校验必填与结束时间 isAfter 开始时间，移除提交时 message.warning 文本解析检查；2) (dashboard)/index.page.vue 彻底清除「这一页验证了什么」验证卡，替换为欢迎卡（显示名与角色，消费既有 Vuex auth store，零新增 API 请求）与常用快捷入口（对齐 (dashboard).page.vue 侧边栏既有路由清单与 canAccess(role, prefix) 角色过滤逻辑，零新造路由）。定向复跑：npm.cmd run test -- \"src/pages/(dashboard)/teacher/makeups/__tests__/makeupTimeAndRules.spec.ts\" \"src/pages/(dashboard)/__tests__/landingWelcomeAndEntries.spec.ts\" | Tee-Object ..\\spec\\changes\\fix-frontend-makeup-time-and-landing\\evidence\\green-frontend.txt，实测 exit 0 'Test Files 2 passed (2)' 'Tests 12 passed (12)'，全部 12 例转绿。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：全量双端门禁与零后端改动复核",
+    "task": "串行全量双端门禁 + 零后端改动证据",
+    "steps": [
+      {
+        "step": "前端 lint:check、type-check:check 退出码 0，全量 test 57+ 文件、449+ 例全绿",
+        "completed": true
+      },
+      {
+        "step": "后端 mvnw.cmd clean test 368/0/0/1 BUILD SUCCESS 不变",
+        "completed": true
+      },
+      {
+        "step": "git diff 证明零后端文件改动（src/、pom.xml、schema.sql、openapi.yaml 均不动）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "双端门禁严格串行执行并全绿：1) 前端 cd frontend && npm.cmd run lint:check exit 0（evidence/gate-frontend-lint.txt）、npm.cmd run type-check:check exit 0（evidence/gate-frontend-typecheck.txt）；npm.cmd run test 全量 exit 0 'Test Files 59 passed (59)' 'Tests 461 passed (461)'（57 文件 449 例 → 59 文件 461 例，净增 2 文件 12 例，零失败零跳过，evidence/gate-frontend-test.txt）；2) 后端 JAVA_HOME=D:\\develop1\\jdk21 + .\\mvnw.cmd clean test exit 0，关键输出 '[WARNING] Tests run: 368, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS'（evidence/gate-backend.txt），与基线 368/0/0/1 逐字一致；3) git diff --name-only main -- src pom.xml schema.sql openapi.yaml 严格输出为空，证实零后端改动。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：规范合入与收尾归档",
+    "task": "spec 合入、README 三处登记、移入 archive/ 与两笔提交",
+    "steps": [
+      {
+        "step": "第一笔提交（实施笔）：代码改动 + 测试用例 + tasks.json 进度",
+        "completed": true
+      },
+      {
+        "step": "spec/specs/frontend/spec.md 合入 ADDED Requirements 与合入注记",
+        "completed": true
+      },
+      {
+        "step": "spec/README.md 三处登记（当前状态收口说明、已合入规范表、归档变更表）",
+        "completed": true
+      },
+      {
+        "step": "变更目录移入 spec/changes/archive/ 并生成 evidence-sha256.txt",
+        "completed": true
+      },
+      {
+        "step": "第二笔提交（归档笔）：规范合入与归档资产",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "1) 实施笔 1fe4b67：仅含 frontend/src 4 个文件，零后端改动；2) spec/specs/frontend/spec.md：合入两项 ADDED Requirements（补考时间控件与规范化表单校验、仪表盘落地页与常用入口）及合入注记；3) spec/README.md 完成三处登记（当前状态队首收口说明、已合入规范表 frontend 行 #18 追加来源、已归档变更表追加记录）；4) 变更目录完整移入 spec/changes/archive/fix-frontend-makeup-time-and-landing/，evidence/evidence-sha256.txt 经 sha256sum --check 校验全部通过；5) 第二笔归档笔仅含 spec/ 相关文件，git status 保持干净（仅 7 个白名单未跟踪文件）。"
+  }
+]
