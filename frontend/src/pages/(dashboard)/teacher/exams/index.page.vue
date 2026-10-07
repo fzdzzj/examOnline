@@ -58,6 +58,19 @@
               >
                 详情
               </Button>
+              <!-- 编辑：与「发布考试」同源的乐观口径（未开始+未发布），复用创建页；
+                   最终裁决在后端 ExamService.assertEditable，越权请求会被拒绝并原文呈现 -->
+              <Button
+                v-if="
+                  !(record as ExamResponse).published &&
+                  (record as ExamResponse).status === EXAM_STATUS.NOT_STARTED
+                "
+                type="link"
+                size="small"
+                @click="router.push(`/teacher/exams/create?examId=${(record as ExamResponse).id}`)"
+              >
+                编辑
+              </Button>
               <!-- 发布考试：仅「未开始 + 未发布」可发布（后端 ExamController.publish 裁决，
                    前端只按状态渲染入口，越权点击会被后端拒绝） -->
               <Button
@@ -80,6 +93,18 @@
                 @click="openForceEndConfirm(record as ExamResponse)"
               >
                 强制结束
+              </Button>
+              <!-- 删除：乐观口径放宽为「仅未发布」即显示（含进行中/已结束的未发布考试）——
+                   后端 assertEditable（未发布且未开始）才是裁决者，非未开始的删除会被 400
+                   拒绝，失败 message 原文呈现，前端不拦截不编造 -->
+              <Button
+                v-if="!(record as ExamResponse).published"
+                type="link"
+                size="small"
+                danger
+                @click="openDeleteConfirm(record as ExamResponse)"
+              >
+                删除
               </Button>
             </Space>
           </template>
@@ -132,6 +157,30 @@
         </template>
       </Alert>
     </Modal>
+
+    <!-- 删除确认弹窗（形态对齐「强制结束」：warning Alert 明示不可逆） -->
+    <Modal
+      v-model:open="deleteModalOpen"
+      title="确认删除考试"
+      :confirm-loading="deleting"
+      ok-text="删除"
+      @ok="confirmDelete"
+    >
+      <!-- 同上：正文走 #message 具名插槽，否则默认插槽被静默丢弃 -->
+      <Alert type="warning" show-icon>
+        <template #message>
+          <p class="font-semibold">警告：此操作将删除该考试！</p>
+          <ul class="list-disc pl-5">
+            <li>考试软删除，列表中不再可见</li>
+            <li>
+              <span class="font-semibold text-red-600">删除后不可恢复</span>
+              （能否删除以后端裁决为准，失败原因原文提示）
+            </li>
+          </ul>
+          <p class="mt-2 text-sm">这是不可逆操作，请谨慎执行。</p>
+        </template>
+      </Alert>
+    </Modal>
   </div>
 </template>
 
@@ -155,6 +204,7 @@ import { useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 
 import {
+  delete2 as deleteExamContract,
   forceEnd as forceEndContract,
   page2 as pageExams,
   publish1 as publishExam,
@@ -167,8 +217,11 @@ import { EXAM_STATUS, getExamStatusConfig, type ExamStatus } from '@/constants/e
 /**
  * 考试列表页面（阶段 21 考务，修复版）。
  * 后端契约：GET /api/exams 分页（教师仅见自己的考试）、
- * POST /api/exams/{id}/publish（生成快照）、POST /api/exams/{id}/force-end（触发缺考标记）。
- * 按钮可见性按后端返回的 status/published 渲染，前端不自行推算状态机。
+ * POST /api/exams/{id}/publish（生成快照）、POST /api/exams/{id}/force-end（触发缺考标记）、
+ * PUT /api/exams/{id}（编辑，跳创建页）与 DELETE /api/exams/{id}（软删）。
+ * 按钮可见性按后端返回的 status/published 渲染，前端不自行推算状态机：
+ * 「编辑」与发布同源（未开始+未发布）、「删除」乐观放宽为仅未发布——
+ * 能否编辑/删除的最终裁决在后端 ExamService.assertEditable，失败 message 原文呈现。
  */
 
 const router = useRouter();
@@ -183,7 +236,7 @@ const columns: TableColumnsType = [
   { title: '开始时间', key: 'startTime', width: 170 },
   { title: '结束时间', key: 'endTime', width: 170 },
   { title: '个人时长(分)', key: 'durationMinutes', dataIndex: 'durationMinutes', width: 110 },
-  { title: '操作', key: 'actions', width: 230 },
+  { title: '操作', key: 'actions', width: 320 },
 ];
 
 function formatTime(value: string | undefined | null): string {
@@ -292,6 +345,33 @@ async function confirmForceEnd(): Promise<void> {
     message.error(error instanceof Error ? error.message : '强制结束失败，请稍后重试');
   } finally {
     forceEnding.value = false;
+  }
+}
+
+// ===== 删除考试 =====
+const deleteModalOpen = ref(false);
+const deletingExamId = ref<number | undefined>(undefined);
+const deleting = ref(false);
+
+function openDeleteConfirm(exam: ExamResponse): void {
+  deletingExamId.value = exam.id;
+  deleteModalOpen.value = true;
+}
+
+async function confirmDelete(): Promise<void> {
+  if (deletingExamId.value === undefined) return;
+  deleting.value = true;
+  try {
+    await unwrap(
+      deleteExamContract({ client, throwOnError: true, path: { id: deletingExamId.value } })
+    );
+    message.success('考试已删除');
+    deleteModalOpen.value = false;
+    void queryClient.invalidateQueries({ queryKey: ['exams'] });
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '删除考试失败，请稍后重试');
+  } finally {
+    deleting.value = false;
   }
 }
 </script>

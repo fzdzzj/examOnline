@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-3xl">
-    <Card title="新建考试" class="mb-4">
+    <Card :title="isEditMode ? '编辑考试' : '新建考试'" class="mb-4">
       <template #extra>
         <Button @click="router.back()">返回</Button>
       </template>
@@ -96,7 +96,9 @@
 
         <div class="mt-4 flex justify-end gap-3">
           <Button @click="router.back()">取消</Button>
-          <Button type="primary" :loading="submitting" @click="handleSubmit">创建考试</Button>
+          <Button type="primary" :loading="submitting" @click="handleSubmit">
+            {{ isEditMode ? '保存修改' : '创建考试' }}
+          </Button>
         </div>
       </Form>
     </Card>
@@ -118,22 +120,29 @@ import {
   Switch,
   message,
 } from 'ant-design-vue';
-import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 
 import {
   create3 as createExam,
   page1 as pagePapers,
   page3 as pageClasses,
+  detail2 as examDetailContract,
+  update2 as updateExamContract,
   type ClassPageResponse,
+  type ExamDetailResponse,
   type PaperResponse,
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
+import { queryClient } from '@/api/queryClient';
 
 /**
- * 考试创建页面（阶段 21 考务，修复版）。
- * 后端契约：POST /api/exams（ExamCreateRequest）；试卷 / 班级下拉取自分页接口。
+ * 考试创建/编辑页面（阶段 21 考务，修复版）。
+ * 后端契约：POST /api/exams（ExamCreateRequest）；编辑模式经 PUT /api/exams/{id}
+ * （ExamUpdateRequest，后端 assertEditable 裁决「未发布且未开始」）；试卷 / 班级下拉取自分页接口。
+ * 编辑模式由 route query 的 examId 触发（/teacher/exams/create?examId=9）：详情端点回填初始值，
+ * 提交改调 update2，成功后失效 exams 查询并跳回列表（对齐发布/强制结束做法）。
  * 时间用字符串（value-format）直接对齐后端 LocalDateTime 反序列化，避免时区换算；
  * 但 value-format 必须带字面量 T（YYYY-MM-DDTHH:mm:ss）——空格分隔会被后端判
  * 400「请求体格式错误」（实测；`spring.jackson.date-format` 只作用于 java.util.Date）。
@@ -141,6 +150,17 @@ import { client, unwrap } from '@/api/apiClient';
  */
 
 const router = useRouter();
+const route = useRoute();
+
+/** 编辑模式：route query 带 examId（如 ?examId=9）即视为编辑既有考试 */
+const editExamId = computed<number | undefined>(() => {
+  const raw = route.query.examId;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof value !== 'string' || value === '') return undefined;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+});
+const isEditMode = computed(() => editExamId.value !== undefined);
 
 const form = ref({
   title: '',
@@ -155,6 +175,51 @@ const form = ref({
 
 const enableSwitchScreen = ref(true);
 const enableForbidCopy = ref(false);
+
+const { data: editDetail } = useQuery({
+  queryKey: computed(() => ['exam-edit-detail', editExamId.value] as const),
+  queryFn: () =>
+    unwrap<ExamDetailResponse>(
+      examDetailContract({
+        client,
+        throwOnError: true,
+        path: { id: editExamId.value as number },
+      })
+    ),
+  enabled: isEditMode,
+});
+
+/** antiCheatConfig 契约类型是 JsonNode（unknown）：按创建写入的键读取，缺失时回落新建默认值 */
+function readAntiCheatConfig(raw: unknown): { switchScreen: boolean; forbidCopy: boolean } {
+  const cfg = (raw ?? {}) as { switchScreen?: unknown; forbidCopy?: unknown };
+  return {
+    switchScreen: cfg.switchScreen !== false,
+    forbidCopy: cfg.forbidCopy === true,
+  };
+}
+
+// 详情返回后回填一次；编辑中重新拉取不覆盖用户已改的表单
+const backfilled = ref(false);
+watch(
+  editDetail,
+  (detail) => {
+    if (isEditMode.value && detail && !backfilled.value) {
+      backfilled.value = true;
+      form.value.title = detail.title ?? '';
+      form.value.description = detail.description ?? '';
+      form.value.paperId = detail.paperId;
+      form.value.classId = detail.classId;
+      form.value.startTime = detail.startTime;
+      form.value.endTime = detail.endTime;
+      form.value.durationMinutes = detail.durationMinutes ?? 60;
+      form.value.allowLateMinutes = detail.allowLateMinutes ?? 0;
+      const antiCheat = readAntiCheatConfig(detail.antiCheatConfig);
+      enableSwitchScreen.value = antiCheat.switchScreen;
+      enableForbidCopy.value = antiCheat.forbidCopy;
+    }
+  },
+  { immediate: true }
+);
 
 const { data: papersData, isFetching: papersFetching } = useQuery({
   queryKey: ['papers', 'for-exam-create'] as const,
@@ -216,30 +281,41 @@ async function handleSubmit(): Promise<void> {
   if (!validate()) return;
   submitting.value = true;
   try {
-    await unwrap(
-      createExam({
-        client,
-        throwOnError: true,
-        body: {
-          title: form.value.title.trim(),
-          ...(form.value.description.trim() ? { description: form.value.description.trim() } : {}),
-          paperId: form.value.paperId as number,
-          ...(form.value.classId !== undefined ? { classId: form.value.classId } : {}),
-          startTime: form.value.startTime as string,
-          endTime: form.value.endTime as string,
-          durationMinutes: form.value.durationMinutes,
-          allowLateMinutes: form.value.allowLateMinutes ?? 0,
-          antiCheatConfig: {
-            switchScreen: enableSwitchScreen.value,
-            forbidCopy: enableForbidCopy.value,
-          },
-        },
-      })
-    );
-    message.success('考试已创建（未发布状态）');
+    const description = form.value.description.trim();
+    const body = {
+      title: form.value.title.trim(),
+      // 编辑模式始终携带 description（空串 = 清空描述）；创建模式保留既有「空描述不携带」口径
+      ...(isEditMode.value || description ? { description } : {}),
+      paperId: form.value.paperId as number,
+      ...(form.value.classId !== undefined ? { classId: form.value.classId } : {}),
+      startTime: form.value.startTime as string,
+      endTime: form.value.endTime as string,
+      durationMinutes: form.value.durationMinutes,
+      allowLateMinutes: form.value.allowLateMinutes ?? 0,
+      antiCheatConfig: {
+        switchScreen: enableSwitchScreen.value,
+        forbidCopy: enableForbidCopy.value,
+      },
+    };
+    if (isEditMode.value && editExamId.value !== undefined) {
+      await unwrap(
+        updateExamContract({ client, throwOnError: true, path: { id: editExamId.value }, body })
+      );
+      message.success('考试已保存');
+      void queryClient.invalidateQueries({ queryKey: ['exams'] });
+    } else {
+      await unwrap(createExam({ client, throwOnError: true, body }));
+      message.success('考试已创建（未发布状态）');
+    }
     router.push('/teacher/exams');
   } catch (error) {
-    message.error(error instanceof Error ? error.message : '创建考试失败，请稍后重试');
+    message.error(
+      error instanceof Error
+        ? error.message
+        : isEditMode.value
+          ? '保存考试失败，请稍后重试'
+          : '创建考试失败，请稍后重试'
+    );
   } finally {
     submitting.value = false;
   }

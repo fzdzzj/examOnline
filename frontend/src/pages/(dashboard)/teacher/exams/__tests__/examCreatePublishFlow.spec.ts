@@ -22,11 +22,14 @@ import ExamCreatePage from '@/pages/(dashboard)/teacher/exams/create.page.vue';
 
 // ---- 各 mock 模块需要跨 beforeEach 共享的状态（vi.hoisted 提到 mock 之前） ----
 const routerMock = vi.hoisted(() => ({ push: vi.fn(), back: vi.fn() }));
+// add-frontend-exam-edit-delete：create.page 改用 useRoute 读编辑模式 examId，
+// 测试基建补 useRoute（query 为空 = 新建模式），断言零改动
+const routeMock = vi.hoisted(() => ({ query: {} as Record<string, unknown> }));
 const invalidateQueries = vi.hoisted(() => vi.fn());
 /** useQuery 的按 queryKey 首元素分发的数据表 */
 const queryStore = vi.hoisted(() => ({ data: {} as Record<string, unknown> }));
 
-vi.mock('vue-router', () => ({ useRouter: () => routerMock }));
+vi.mock('vue-router', () => ({ useRouter: () => routerMock, useRoute: () => routeMock }));
 
 vi.mock('@/api/queryClient', () => ({
   queryClient: { invalidateQueries: invalidateQueries },
