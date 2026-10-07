@@ -286,6 +286,9 @@ describe('批改页服务端分页参数', () => {
     document.body.innerHTML = '';
   });
 
+  // 第三抖专项（fix-frontend-list-truncation-family）：全量套件并行下本用例实测 5034ms，
+  // 贴着 vitest 默认 5000ms 上限（定向单跑约 0.4s）。仅抬高超时上限吸收 CPU 争抢，
+  // 断言与交互零改动。
   it('queryFn 携带 page/size/onlyUngraded/name，翻页与筛选后参数随动且切筛选回第 1 页', async () => {
     const wrapper = mount(TeacherGradingPage, { attachTo: document.body });
     await selectExam(wrapper, ENDED_EXAM.id);
@@ -329,5 +332,5 @@ describe('批改页服务端分页参数', () => {
     expect(vi.mocked(api.subjectiveRows).mock.calls[2]?.[0]).toMatchObject({
       query: expect.objectContaining({ name: '张', page: 1 }),
     });
-  });
+  }, 15000);
 });

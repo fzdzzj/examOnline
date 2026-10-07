@@ -131,11 +131,13 @@ import {
   detail2 as examDetailContract,
   update2 as updateExamContract,
   type ClassPageResponse,
+  type ClassResponse,
   type ExamDetailResponse,
   type PaperResponse,
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { queryClient } from '@/api/queryClient';
+import { fetchAllPages } from '@/hooks/fetchAllPages';
 
 /**
  * 考试创建/编辑页面（阶段 21 考务，修复版）。
@@ -221,11 +223,13 @@ watch(
   { immediate: true }
 );
 
+// 候选不截断（U-2）：两个端点都是「只有 page/size、信封缺 total」的分页形状，
+// 满页即续拉，语义与教师考试下拉同源（共用 fetchAllPages）；单页失败保留已累积部分。
 const { data: papersData, isFetching: papersFetching } = useQuery({
   queryKey: ['papers', 'for-exam-create'] as const,
   queryFn: () =>
-    unwrap<PaperResponse[]>(
-      pagePapers({ client, throwOnError: true, query: { page: 1, size: 100 } })
+    fetchAllPages<PaperResponse>((page, size) =>
+      unwrap<PaperResponse[]>(pagePapers({ client, throwOnError: true, query: { page, size } }))
     ),
 });
 
@@ -239,13 +243,16 @@ const paperOptions = computed(() =>
 const { data: classesData, isFetching: classesFetching } = useQuery({
   queryKey: ['classes', 'for-exam-create'] as const,
   queryFn: () =>
-    unwrap<ClassPageResponse>(
-      pageClasses({ client, throwOnError: true, query: { page: 1, size: 100 } })
-    ),
+    fetchAllPages<ClassResponse>(async (page, size) => {
+      const envelope = await unwrap<ClassPageResponse>(
+        pageClasses({ client, throwOnError: true, query: { page, size } })
+      );
+      return envelope?.list ?? [];
+    }),
 });
 
 const classOptions = computed(() =>
-  (classesData.value?.list ?? []).map((c) => ({
+  (classesData.value ?? []).map((c) => ({
     value: c.id as number,
     label: c.name ?? `班级 #${c.id}`,
   }))
