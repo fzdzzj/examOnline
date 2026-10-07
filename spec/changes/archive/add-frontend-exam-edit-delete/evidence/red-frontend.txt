@@ -1,0 +1,164 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts src/pages/(dashboard)/teacher/exams/__tests__/examCreatePublishFlow.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/exams/__tests__/examCreatePublishFlow.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 2447[2mms[22m[39m
+     [33m[2m✓[22m[39m 动作入口按后端返回的 status/published 渲染：仅「未开始+未发布」可发布、仅「进行中」可强制结束 [33m 1111[2mms[22m[39m
+     [33m[2m✓[22m[39m 发布确认弹窗明示生成快照与锁定；确认后调 publish 并失效列表缓存 [33m 382[2mms[22m[39m
+     [33m[2m✓[22m[39m force-end 确认弹窗明示触发缺考标记且不可逆；确认后调 force-end [33m 333[2mms[22m[39m
+     [33m[2m✓[22m[39m 必填缺失被拦：不发起创建请求 [33m 381[2mms[22m[39m
+ [31m❯[39m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts [2m([22m[2m7 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[33m 4922[2mms[22m[39m
+[31m     [31m×[31m 操作列乐观门控：未开始+未发布→编辑+删除；进行中/已结束未发布→仅删除；已发布→两者皆无[39m[33m 1100[2mms[22m[39m
+[31m     [31m×[31m 点击「编辑」跳转创建页并携带 examId[39m[33m 336[2mms[22m[39m
+[31m     [31m×[31m 删除确认弹窗明示不可逆；确认后调 delete2 并失效 exams 查询[39m[32m 300[2mms[22m[39m
+[31m     [31m×[31m 删除失败呈现后端原文：非未开始考试被拒时不本地编造文案、不失效查询[39m[33m 313[2mms[22m[39m
+[31m     [31m×[31m 编辑模式：标题「编辑考试」，详情端点返回值回填全部表单字段（含防作弊两开关）[39m[33m 412[2mms[22m[39m
+[31m     [31m×[31m 编辑提交：调 update2（path 携带 examId、请求体对齐 ExamUpdateRequest），成功跳回列表并失效 exams 查询[39m[33m 1227[2mms[22m[39m
+[31m     [31m×[31m 编辑提交失败：message 呈现后端原文且不跳转、不失效查询[39m[33m 1230[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 7 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts[2m > [22m考试列表：编辑与删除入口（index.page）[2m > [22m操作列乐观门控：未开始+未发布→编辑+删除；进行中/已结束未发布→仅删除；已发布→两者皆无
+[31m[1mAssertionError[22m: expected [] to have a length of 1 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts:[2m158:51[22m[39m
+    [90m156|[39m
+    [90m157|[39m     [35mconst[39m buttonTexts [33m=[39m wrapper[33m.[39m[34mfindAll[39m([32m'button'[39m)[33m.[39m[34mmap[39m((b) [33m=>[39m b[33m.[39m[34mtext[39m())[33m;[39m
+    [90m158|[39m     [34mexpect[39m(buttonTexts[33m.[39m[34mfilter[39m((t) [33m=>[39m t [33m===[39m [32m'编辑'[39m))[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                                                   [31m^[39m
+    [90m159|[39m     [34mexpect[39m(buttonTexts[33m.[39m[34mfilter[39m((t) [33m=>[39m t [33m===[39m [32m'删除'[39m))[33m.[39m[34mtoHaveLength[39m([34m3[39m)[33m;[39m
+    [90m160|[39m     [34mexpect[39m(buttonTexts[33m.[39m[34mfilter[39m((t) [33m=>[39m t [33m===[39m [32m'发布考试'[39m))[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts[2m > [22m考试列表：编辑与删除入口（index.page）[2m > [22m点击「编辑」跳转创建页并携带 examId
+[31m[1mAssertionError[22m: expected undefined to be truthy[39m
+
+[32m- Expected:[39m
+true
+
+[31m+ Received:[39m
+undefined
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts:[2m170:24[22m[39m
+    [90m168|[39m
+    [90m169|[39m     [35mconst[39m editButton [33m=[39m [34mfindRowButton[39m(wrapper[33m,[39m [32m'待编辑的考试'[39m[33m,[39m [32m'编辑'[39m)[33m;[39m
+    [90m170|[39m     [34mexpect[39m(editButton)[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m171|[39m     [35mawait[39m editButton[33m?.[39m[34mtrigger[39m([32m'click'[39m)[33m;[39m
+    [90m172|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts[2m > [22m考试列表：编辑与删除入口（index.page）[2m > [22m删除确认弹窗明示不可逆；确认后调 delete2 并失效 exams 查询
+[31m[1mAssertionError[22m: expected undefined to be truthy[39m
+
+[32m- Expected:[39m
+true
+
+[31m+ Received:[39m
+undefined
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts:[2m182:26[22m[39m
+    [90m180|[39m
+    [90m181|[39m     [35mconst[39m deleteButton [33m=[39m [34mfindRowButton[39m(wrapper[33m,[39m [32m'待编辑的考试'[39m[33m,[39m [32m'删除'[39m)[33m;[39m
+    [90m182|[39m     [34mexpect[39m(deleteButton)[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m183|[39m     [35mawait[39m deleteButton[33m?.[39m[34mtrigger[39m([32m'click'[39m)[33m;[39m
+    [90m184|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts[2m > [22m考试列表：编辑与删除入口（index.page）[2m > [22m删除失败呈现后端原文：非未开始考试被拒时不本地编造文案、不失效查询
+[31m[1mAssertionError[22m: expected undefined to be truthy[39m
+
+[32m- Expected:[39m
+true
+
+[31m+ Received:[39m
+undefined
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts:[2m210:26[22m[39m
+    [90m208|[39m     [90m// 进行中+未发布的行：入口乐观显示，点击后由后端拒绝[39m
+    [90m209|[39m     [35mconst[39m deleteButton [33m=[39m [34mfindRowButton[39m(wrapper[33m,[39m [32m'进行中未发布'[39m[33m,[39m [32m'删除'[39m)[33m;[39m
+    [90m210|[39m     [34mexpect[39m(deleteButton)[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m211|[39m     [35mawait[39m deleteButton[33m?.[39m[34mtrigger[39m([32m'click'[39m)[33m;[39m
+    [90m212|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts[2m > [22m考试编辑模式（create.page）[2m > [22m编辑模式：标题「编辑考试」，详情端点返回值回填全部表单字段（含防作弊两开关）
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ ObjectContaining{…} ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts:[2m246:25[22m[39m
+    [90m244|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountEditPageAndBackfill[39m()[33m;[39m
+    [90m245|[39m
+    [90m246|[39m     [34mexpect[39m(api[33m.[39mdetail2)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m   |[39m                         [31m^[39m
+    [90m247|[39m       expect[33m.[39m[34mobjectContaining[39m({ throwOnError[33m:[39m [35mtrue[39m[33m,[39m path[33m:[39m { id[33m:[39m [34m21[39m } })
+    [90m248|[39m     )[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts[2m > [22m考试编辑模式（create.page）[2m > [22m编辑提交：调 update2（path 携带 examId、请求体对齐 ExamUpdateRequest），成功跳回列表并失效 exams 查询
+[31m[1mAssertionError[22m: expected '' to be '待编辑的考试' // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 待编辑的考试[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts:[2m283:9[22m[39m
+    [90m281|[39m       [34mexpect[39m(
+    [90m282|[39m         (wrapper.vm as unknown as { form: { title: string } }).form.ti…
+    [90m283|[39m       )[33m.[39m[34mtoBe[39m([32m'待编辑的考试'[39m)
+    [90m   |[39m         [31m^[39m
+    [90m284|[39m     )[33m;[39m
+    [90m285|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts[2m > [22m考试编辑模式（create.page）[2m > [22m编辑提交失败：message 呈现后端原文且不跳转、不失效查询
+[31m[1mAssertionError[22m: expected '' to be '待编辑的考试' // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 待编辑的考试[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts:[2m316:9[22m[39m
+    [90m314|[39m       [34mexpect[39m(
+    [90m315|[39m         (wrapper.vm as unknown as { form: { title: string } }).form.ti…
+    [90m316|[39m       )[33m.[39m[34mtoBe[39m([32m'待编辑的考试'[39m)
+    [90m   |[39m         [31m^[39m
+    [90m317|[39m     )[33m;[39m
+    [90m318|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 17:48:20
+[2m   Duration [22m 12.09s[2m (transform 465ms, setup 77ms, import 11.36s, tests 7.37s, environment 2.22s)[22m
+
+exit=1

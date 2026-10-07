@@ -990,6 +990,50 @@ WHEN 页面渲染
 
 THEN 错误 Alert 呈现后端 message，成功空值提示文案保持原样
 
+### Requirement: 考试编辑与删除入口
+
+教师考试列表 SHALL 为「未开始且未发布」的考试提供「编辑」入口（与「发布考试」同源乐观门控）、为「未发布」的考试提供「删除」入口（乐观放宽，最终裁决在后端）；编辑 SHALL 复用创建页（route query 携带 examId 时呈现「编辑考试」）并经详情端点回填、提交调用 `PUT /api/exams/{id}`，删除 SHALL 经知情确认弹窗（形态对齐「强制结束」）调用 `DELETE /api/exams/{id}`；操作失败 SHALL 原文呈现后端 message，SHALL NOT 本地编造失败文案或拦截请求；操作成功 SHALL 失效列表查询刷新（对齐发布/强制结束的既有做法）。
+
+#### Scenario: 操作列乐观门控
+
+GIVEN 列表行按后端返回的 status/published 渲染
+
+WHEN 行为「未开始 + 未发布」
+
+THEN 「编辑」与「删除」均出现
+
+AND 行为「进行中 + 未发布」或「已结束 + 未发布」时仅「删除」出现（编辑不出现，删除乐观放宽）
+
+AND 行为「已发布」时两者均不出现
+
+#### Scenario: 编辑复用创建页并回填
+
+GIVEN 教师点击「编辑」进入 create?examId=&lt;id&gt;
+
+WHEN 页面加载
+
+THEN 标题呈现「编辑考试」且详情端点返回值回填全部表单字段（含防作弊两开关）
+
+AND 提交调用 `PUT /api/exams/{id}`（path 携带 examId）成功后跳回列表并失效 exams 查询
+
+#### Scenario: 删除知情确认
+
+GIVEN 教师点击「删除」
+
+WHEN 确认弹窗呈现
+
+THEN 弹窗明示删除不可逆（形态对齐「强制结束」弹窗）
+
+AND 确认后调用 `DELETE /api/exams/{id}` 并失效 exams 查询
+
+#### Scenario: 失败原文呈现不本地编造
+
+GIVEN 后端拒绝编辑或删除（如非未开始考试的删除请求）
+
+WHEN 操作失败
+
+THEN message 呈现后端返回的原始 message，且不跳转、不失效查询
+
 ---
 
 > 合入注记（2026-09-23，`accept-frontend-19-23` 收口批次，阶段 19/20 的 delta 补合入）：
@@ -1020,4 +1064,21 @@ THEN 错误 Alert 呈现后端 message，成功空值提示文案保持原样
 > 验收边界=实施笔 `df7ed0a` 已提交状态双端门禁：frontend lint:check/type-check:check/test 三项退出码 0、
 > vitest 47 文件 403 例 → 51 文件 414 例（+4 文件 +11 例，先红 6 failed | 9 passed 后绿，红灯恰为新增失败态
 > 断言与词法护栏）；backend `mvnw.cmd clean test` 368/0/0/1 + BUILD SUCCESS（零后端改动，与基线 3b7783e 持平）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。
+
+> 合入注记（2026-10-07，变更 `add-frontend-exam-edit-delete`，前端台账 F-1+F-2 收口）：
+> 「考试编辑与删除入口」Requirement 合入（4 个 Scenario，文本与该卡 `specs/frontend/spec-delta.md` 逐字一致）。
+> 实施边界：teacher/exams/index.page.vue 操作列新增「编辑」（与「发布考试」同源门控，跳 create?examId=&lt;id&gt;）
+> 与「删除」（乐观放宽为仅未发布，含进行中/已结束的未发布行），删除经声明式确认弹窗（形态对齐「强制结束」：
+> v-model:open Modal + warning Alert 明示不可逆，正文走 #message 具名插槽）调 delete2；create.page.vue 编辑模式
+> （route query examId → 标题「编辑考试」、detail2 回填全部表单字段、提交改调 update2、成功失效 exams 查询并跳回
+> 列表）。spec-delta 未明说的实现口径如实登记：①「乐观口径」的准确含义——按钮显隐不构成越权写入口，后端
+> `ExamService.assertEditable`（未发布且未开始）才是裁决者，进行中/已结束未发布行的删除请求会被 400 拒绝，
+> 失败 message 原文呈现（不本地拦截、不编造文案），用例以 mock rejection 固化该行为；②编辑模式请求体始终携带
+> description（空串 = 清空描述），创建模式保留既有「空描述不携带」口径零改动；③antiCheatConfig 契约类型是
+> JsonNode（unknown），回填按创建写入的键防御性读取、缺失回落新建默认值；④操作列宽度 230 → 320（容纳新增按钮）。
+> 验收边界=实施笔 `5279168` 已提交状态双端门禁：frontend lint:check/type-check:check/test 三项退出码 0、
+> vitest 51 文件 414 例 → 52 文件 421 例（+1 文件 +7 例，先红 7 failed | 5 passed 后绿，红灯恰为新增编辑/删除
+> 断言）；backend `mvnw.cmd clean test` 368/0/0/1 + BUILD SUCCESS（零后端改动，与基线 04d7b69 持平；
+> `git diff --name-only 04d7b69 5279168 -- src pom.xml schema.sql openapi.yaml` 为空）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。
