@@ -32,6 +32,8 @@ vi.mock('@tanstack/vue-query', async () => {
         refetch,
       };
     },
+    // 页面接入逐卷重判后需要 query client；本文件的既有用例不断言它，属测试基建适配
+    useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   };
 });
 
