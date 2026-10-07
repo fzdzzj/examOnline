@@ -1156,6 +1156,49 @@ AND 成功且无数据时空态照常呈现
 
 ---
 
+### Requirement: 补考时间控件与规范化表单校验
+
+教师端创建补考时，开始时间与结束时间 SHALL 渲染为带有时间选择功能的日期时间选择器（`DatePicker`，`show-time`），SHALL NOT 使用自由文本输入框（`Input`）。表单校验 SHALL 统一使用 Form rules 进行管理：开始时间与结束时间为必填项，且结束时间必须晚于开始时间；未填写或起止时间倒置时 SHALL 在表单项下方呈现校验错误，SHALL NOT 在提交时使用 `message.warning` 作为双轨拦截。提交补考创建请求时，时间值 SHALL 格式化为与 `toIsoLocalDateTime` 输出逐字一致的 ISO-8601 本地日期时间字符串（`YYYY-MM-DDTHH:mm:ss`），契约与后端解析口径保持严格等价。
+
+#### Scenario: 时间控件渲染与自由文本移除
+
+GIVEN 教师进入补考管理页
+WHEN 观察创建补考表单
+THEN 开始时间与结束时间渲染为 DatePicker 组件
+AND 旧 placeholder 自由文本 Input 不存在
+
+#### Scenario: 时间格式转换等价性
+
+GIVEN 教师在日期时间选择器中选定开始与结束时间
+WHEN 触发表单提交
+THEN 提交至后端的请求体中的时间字符串与原 `toIsoLocalDateTime` 处理结果逐字一致（带字面量 `T`）
+
+#### Scenario: 表单 rules 校验拦截
+
+GIVEN 补考表单时间为空或结束时间早于等于开始时间
+WHEN 尝试提交表单
+THEN Form rules 拦截提交并呈现错误提示，且不向后端发起创建请求
+
+---
+
+### Requirement: 仪表盘落地页与常用入口
+
+用户登录后的根落地页（`/`）SHALL 呈现欢迎卡与常用快捷入口，SHALL NOT 包含开发期验证卡片（「这一页验证了什么」）。欢迎卡 SHALL 基于既有 auth store 渲染当前用户的显示名与角色标签，SHALL NOT 新增后端数据请求。常用入口 SHALL 与侧边栏已有路由和角色权限过滤逻辑保持一致（学生呈现考试与成绩入口、教师呈现考试/批改/组卷等入口、管理员呈现邀请码管理入口），SHALL NOT 引入未在系统注册的新路由。
+
+#### Scenario: 开发验证文案清除
+
+GIVEN 用户访问系统根路径落地页
+THEN 页面中不再出现「这一页验证了什么」及阶段 19 开发验证清单
+
+#### Scenario: 角色自适应的欢迎与常用入口渲染
+
+GIVEN 用户以特定角色（如学生、教师或管理员）登录
+WHEN 渲染落地页
+THEN 欢迎卡展示该用户的显示名与角色
+AND 常用入口区域呈现该角色有权访问的快捷入口，点击可正确导航至对应页面
+
+---
+
 > 合入注记（2026-09-23，`accept-frontend-19-23` 收口批次，阶段 19/20 的 delta 补合入）：
 > 五阶段 Requirement 至此全部入基线。**已知缺陷如实登记**（真机走查 `frontend/docs/frontend-stages-walkthrough.md`，
 > `59bab7b`）：①「组卷界面」的 *手动组卷可排序与改分* 与 *试卷可只读预览* 两个 Scenario 当前不成立——
@@ -1251,4 +1294,19 @@ AND 成功且无数据时空态照常呈现
 > 抖动收口按重复测量判定——续笔处置后连续两次全量全绿（对照处置前 4 轮全量越界）。backend
 > `mvnw.cmd clean test` 368/0/0/1 + BUILD SUCCESS（零后端改动，与基线 `31dfc17` 当次实测持平；
 > `git diff --name-only 31dfc17 719f22d -- src pom.xml schema.sql openapi.yaml` 为空）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。
+
+> 合入注记（2026-10-07，变更 `fix-frontend-makeup-time-and-landing`，UX 台账 U-4+U-5 收官）：
+> 「补考时间控件与规范化表单校验」与「仪表盘落地页与常用入口」两项 Requirement 合入（共 5 个 Scenario，
+> 文本与该卡 `specs/frontend/spec-delta.md` 逐字一致）。
+> 实施边界：①`makeups/index.page.vue` 开始时间与结束时间由自由文本 `Input` 替换为 `DatePicker`（`show-time`，
+> 值形态 `Dayjs | undefined`），提交时以 `.format('YYYY-MM-DDTHH:mm:ss')` 转换为带字面量 `T` 字符串，
+> 与旧 `toIsoLocalDateTime` 口径逐字一致；必填与起止先后（结束晚于开始）收敛至 Form rules，移除提交时
+> `message.warning` 时间解析双轨分支；②`(dashboard)/index.page.vue` 彻底移除阶段 19 开发验证卡（「这一页验证了什么」
+> 及清单），替换为欢迎卡（显示名与角色，数据源纯消费既有 Vuex auth store，零新增 API 请求）与常用快捷入口
+> （对齐侧边栏既有路由清单与 `canAccess(role, prefix)` 角色过滤逻辑，零新造路由）。零后端改动、零契约变更零 `gen:api`。
+> 验收边界=实施笔 `1fe4b67` 已提交状态双端门禁：frontend lint:check/type-check:check/test 三项退出码 0、vitest
+> 57 文件 449 例 → 59 文件 461 例（+2 文件 +12 例；先红 exit 1 '9 failed | 3 passed (12)'，后全绿）；
+> backend `mvnw.cmd clean test` 368/0/0/1 + BUILD SUCCESS（零后端改动，与基线 `d4d21f7` 当次实测持平；
+> `git diff --name-only d4d21f7 1fe4b67 -- src pom.xml schema.sql openapi.yaml` 为空）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。

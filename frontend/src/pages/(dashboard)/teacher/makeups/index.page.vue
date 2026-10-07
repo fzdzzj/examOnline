@@ -100,15 +100,33 @@
     </Card>
 
     <Card title="创建补考">
-      <Form :label-col="{ span: 5 }" :wrapper-col="{ span: 14 }">
+      <Form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        :label-col="{ span: 5 }"
+        :wrapper-col="{ span: 14 }"
+      >
         <FormItem label="补考标题" v-bind="titleValidate">
           <Input v-model:value="form.title" placeholder="如：高一数学期末补考" />
         </FormItem>
-        <FormItem label="开始时间" required>
-          <Input v-model:value="form.startTime" placeholder="2026-09-20 09:00:00" />
+        <FormItem label="开始时间" name="startTime" required>
+          <DatePicker
+            v-model:value="form.startTime"
+            show-time
+            format="YYYY-MM-DD HH:mm:ss"
+            placeholder="选择开始时间"
+            style="width: 100%"
+          />
         </FormItem>
-        <FormItem label="结束时间" required>
-          <Input v-model:value="form.endTime" placeholder="2026-09-20 11:00:00" />
+        <FormItem label="结束时间" name="endTime" required>
+          <DatePicker
+            v-model:value="form.endTime"
+            show-time
+            format="YYYY-MM-DD HH:mm:ss"
+            placeholder="选择结束时间"
+            style="width: 100%"
+          />
         </FormItem>
         <FormItem label="考试时长(分钟)" required>
           <InputNumber v-model:value="form.durationMinutes" :min="1" :max="600" />
@@ -164,6 +182,7 @@ import {
   Alert,
   Button,
   Card,
+  DatePicker,
   Descriptions,
   DescriptionsItem,
   Form,
@@ -175,9 +194,12 @@ import {
   Table,
   Tag,
   message,
+  type FormInstance,
   type TableColumnsType,
   type TableProps,
 } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import type { Dayjs } from 'dayjs';
 import { computed, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
@@ -195,7 +217,6 @@ import {
 import { client, unwrap } from '@/api/apiClient';
 import { MAKEUP_RULE_OPTIONS, makeupRuleLabel } from '@/constants/postExam';
 import { createTeacherExamsQueryOptions } from '@/hooks/useTeacherExams';
-import { toIsoLocalDateTime } from '@/utils/dateTime';
 
 /**
  * 补考管理（阶段 23，最终成绩展示见 add-makeup-final-score-frontend）：
@@ -348,21 +369,42 @@ function studentNameOf(id: number): string {
 }
 
 // ===== 创建补考 =====
+const formRef = ref<FormInstance>();
+
 const form = reactive<{
   title: string;
-  startTime: string;
-  endTime: string;
+  startTime: Dayjs | undefined;
+  endTime: Dayjs | undefined;
   durationMinutes: number;
   allowLateMinutes: number;
   makeupScoreRule: string;
 }>({
   title: '',
-  startTime: '',
-  endTime: '',
+  startTime: undefined,
+  endTime: undefined,
   durationMinutes: 60,
   allowLateMinutes: 0,
   makeupScoreRule: MAKEUP_RULE_OPTIONS[0].value,
 });
+
+const rules: Record<string, Rule[]> = {
+  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+  endTime: [
+    { required: true, message: '请选择结束时间', trigger: 'change' },
+    {
+      validator: async (_rule: Rule, value: Dayjs | undefined) => {
+        if (!value) {
+          return Promise.reject(new Error('请选择结束时间'));
+        }
+        if (form.startTime && !value.isAfter(form.startTime)) {
+          return Promise.reject(new Error('结束时间必须晚于开始时间'));
+        }
+        return Promise.resolve();
+      },
+      trigger: 'change',
+    },
+  ],
+};
 
 const titleValidate = computed(() => ({
   help: form.title.trim() ? '' : '标题留空时后端会按默认规则生成',
@@ -381,10 +423,23 @@ async function onCreate(): Promise<void> {
     message.warning('请至少选择一名学生（后端 studentIds 必填）');
     return;
   }
-  const startTime = toIsoLocalDateTime(form.startTime);
-  const endTime = toIsoLocalDateTime(form.endTime);
+
+  // U-4 表单校验：必填与起止先后由 Form rules 统一裁决，移除提交时 warning 双轨分支
+  if (formRef.value) {
+    try {
+      await formRef.value.validate();
+    } catch {
+      return;
+    }
+  } else {
+    if (!form.startTime || !form.endTime || !form.endTime.isAfter(form.startTime)) {
+      return;
+    }
+  }
+
+  const startTime = form.startTime?.format('YYYY-MM-DDTHH:mm:ss');
+  const endTime = form.endTime?.format('YYYY-MM-DDTHH:mm:ss');
   if (!startTime || !endTime) {
-    message.warning('开始 / 结束时间无法解析，请按 2026-09-20 09:00:00 填写');
     return;
   }
   creating.value = true;
