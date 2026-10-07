@@ -37,7 +37,18 @@
         </template>
       </Alert>
 
+      <!-- U-1 三态分离：查询失败显性呈现，表格隐藏——失败不得落「该考试没有缺考记录」空态 -->
+      <Alert
+        v-if="queryErrorText"
+        type="error"
+        show-icon
+        :message="queryErrorText"
+        data-test="absences-error"
+        class="mb-3"
+      />
+
       <Table
+        v-else
         :columns="columns"
         :data-source="absenceList"
         :loading="isFetching"
@@ -118,7 +129,7 @@ function examFilterOption(input: string, option?: unknown): boolean {
 
 const selectedExamId = ref<number | undefined>(undefined);
 
-const { data, isFetching, refetch } = useQuery({
+const { data, isFetching, error, refetch } = useQuery({
   queryKey: computed(() => ['absences', selectedExamId.value] as const),
   queryFn: () =>
     unwrap<AbsenceItemResponse[]>(
@@ -128,6 +139,14 @@ const { data, isFetching, refetch } = useQuery({
 });
 
 const absenceList = computed<AbsenceItemResponse[]>(() => data.value ?? []);
+
+// U-1 三态分离：查询失败显性呈现（Alert 承载后端 message），
+// 不落「该考试没有缺考记录（或考试尚未结束）」空态
+const queryErrorText = computed<string | null>(() => {
+  const caught = error.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '缺考名单加载失败';
+});
 
 function gotoMakeup(studentId: number): void {
   void router.push({

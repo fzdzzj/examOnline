@@ -38,6 +38,8 @@ vi.mock('@tanstack/vue-query', async () => {
       const key = unref(options.queryKey) as unknown[];
       return {
         data: ref(queryStore.data[String(key[0])]),
+        // fix-frontend-query-failure-states：页面解构 error 做三态分离，mock 须提供该字段
+        error: ref(null),
         isFetching: ref(false),
         refetch: vi.fn(),
       };

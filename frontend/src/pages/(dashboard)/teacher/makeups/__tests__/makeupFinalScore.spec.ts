@@ -36,15 +36,19 @@ vi.mock('@tanstack/vue-query', async () => {
   return {
     useQuery: (options: { queryFn?: () => unknown }) => {
       const data = ref<unknown>(undefined);
+      // fix-frontend-query-failure-states：页面解构 error 做三态分离，mock 须提供该字段
+      const error = ref<unknown>(null);
       if (options.queryFn) {
         Promise.resolve()
           .then(options.queryFn)
           .then((value: unknown) => {
             data.value = value;
           })
-          .catch(() => {});
+          .catch((reason: unknown) => {
+            error.value = reason;
+          });
       }
-      return { data, isFetching: ref(false), refetch: vi.fn() };
+      return { data, error, isFetching: ref(false), refetch: vi.fn() };
     },
   };
 });
