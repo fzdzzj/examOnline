@@ -34,8 +34,23 @@
         </template>
       </Alert>
 
+      <!-- U-1 三态分离：查询失败（非「成绩待发布」）显性呈现，不伪装成「成绩未发布」业务态
+           （形态先例：StudentExamList「空态与错误态分开……真相是系统坏了」） -->
+      <Alert
+        v-if="queryError"
+        type="error"
+        show-icon
+        class="mb-3"
+        :message="queryError"
+        data-test="scores-error"
+      />
+
       <Spin :spinning="scoreFetching">
-        <ScoreVisibilityCard :view="view" :variant="scoreMode === 'makeup' ? 'final' : 'detail'" />
+        <ScoreVisibilityCard
+          v-if="!queryError"
+          :view="view"
+          :variant="scoreMode === 'makeup' ? 'final' : 'detail'"
+        />
       </Spin>
 
       <div v-if="view.kind === 'reviewing'" class="mt-3">
@@ -169,7 +184,11 @@ const selectedExamId = ref<number | undefined>(undefined);
 // 由学生显式选择口径——可见性裁决仍 100% 在后端。
 const scoreMode = ref<'regular' | 'makeup'>('regular');
 
-const { data: scoreData, isFetching: myScoreFetching } = useQuery({
+const {
+  data: scoreData,
+  isFetching: myScoreFetching,
+  error: scoreError,
+} = useQuery({
   queryKey: computed(() => ['my-score', selectedExamId.value] as const),
   queryFn: async () => {
     try {
@@ -188,7 +207,11 @@ const { data: scoreData, isFetching: myScoreFetching } = useQuery({
   retry: false,
 });
 
-const { data: makeupData, isFetching: makeupFetching } = useQuery({
+const {
+  data: makeupData,
+  isFetching: makeupFetching,
+  error: makeupError,
+} = useQuery({
   queryKey: computed(() => ['my-makeup-final', selectedExamId.value] as const),
   queryFn: async () => {
     try {
@@ -210,6 +233,24 @@ const { data: makeupData, isFetching: makeupFetching } = useQuery({
   enabled: computed(() => scoreMode.value === 'makeup' && selectedExamId.value !== undefined),
   retry: false,
 });
+
+// ===== U-1 三态分离：失败态先于业务映射裁决 =====
+// queryFn 已把「成绩待发布」归一为 null（not-published 业务态），能到 error 里的都是真失败；
+// 对 error 再判别一次 isNotPublishedError 是防回归双保险——判别入口仍是 scoreVisibility.ts
+// 的唯一函数（后端 400 固定文案），不放宽、不新增第二套本地推断。
+const scoreQueryError = computed<string | null>(() => {
+  const caught = scoreError.value;
+  if (!caught || isNotPublishedError(caught)) return null;
+  return caught instanceof Error ? caught.message : '成绩查询失败';
+});
+const makeupQueryError = computed<string | null>(() => {
+  const caught = makeupError.value;
+  if (!caught || isNotPublishedError(caught)) return null;
+  return caught instanceof Error ? caught.message : '补考最终成绩查询失败';
+});
+const queryError = computed<string | null>(() =>
+  scoreMode.value === 'makeup' ? makeupQueryError.value : scoreQueryError.value
+);
 
 // 三态映射：未发布（响应为空）/ 复核中（reviewing）/ 已发布——两种口径共用同一套 ScoreView
 const view = computed(() =>

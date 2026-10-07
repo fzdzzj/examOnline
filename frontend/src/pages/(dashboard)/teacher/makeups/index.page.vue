@@ -40,7 +40,17 @@
     </Card>
 
     <Card title="补考候选人（后端按及格线判定）" class="mb-4">
+      <!-- U-1 三态分离：候选人查询失败显性呈现——失败不得落「请先点查询」引导文案 -->
+      <Alert
+        v-if="eligibleErrorText"
+        type="error"
+        show-icon
+        :message="eligibleErrorText"
+        data-test="eligible-error"
+        class="mb-3"
+      />
       <Table
+        v-else
         :columns="candidateColumns"
         :data-source="candidates"
         :loading="eligibleFetching"
@@ -69,7 +79,16 @@
         />
       </div>
       <Spin :spinning="finalFetching">
-        <Descriptions v-if="finalData" bordered :column="1">
+        <!-- U-1 三态分离：最终成绩查询失败显性呈现——失败不得落「选择学生后查询」提示 -->
+        <Alert
+          v-if="finalErrorText"
+          type="error"
+          show-icon
+          :message="finalErrorText"
+          data-test="final-error"
+          class="mb-3"
+        />
+        <Descriptions v-else-if="finalData" bordered :column="1">
           <DescriptionsItem label="最终成绩（后端沿主考家族合并）">
             {{ finalData.finalScore ?? '—（后端返回为空：该生无已批改成绩记录）' }}
           </DescriptionsItem>
@@ -236,6 +255,7 @@ const {
   data: eligibleData,
   isFetching: eligibleFetching,
   refetch: refetchEligible,
+  error: eligibleError,
 } = useQuery({
   queryKey: computed(() => ['makeup-eligible', selectedExamId.value, passLine.value] as const),
   queryFn: () =>
@@ -251,6 +271,14 @@ const {
 });
 
 const candidates = computed<MakeupCandidateItem[]>(() => eligibleData.value ?? []);
+
+// U-1 三态分离：候选人查询失败显性呈现（Alert 承载后端 message），
+// 不落「请先选择主考考试并点击『查询补考候选人』」引导文案
+const eligibleErrorText = computed<string | null>(() => {
+  const caught = eligibleError.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '补考候选人查询失败';
+});
 const selectedIds = ref<number[]>([]);
 
 // 候选名单更新后：保留预填（缺考页带来的学生）与用户已选项
@@ -277,7 +305,11 @@ const finalStudentOptions = computed(() =>
   }))
 );
 
-const { data: finalData, isFetching: finalFetching } = useQuery({
+const {
+  data: finalData,
+  isFetching: finalFetching,
+  error: finalError,
+} = useQuery({
   queryKey: computed(
     () => ['makeup-final-score', selectedExamId.value, finalStudentId.value] as const
   ),
@@ -293,6 +325,14 @@ const { data: finalData, isFetching: finalFetching } = useQuery({
       })
     ),
   enabled: computed(() => selectedExamId.value !== undefined && finalStudentId.value !== undefined),
+});
+
+// U-1 三态分离：最终成绩查询失败显性呈现（Alert 承载后端 message），
+// 不落「选择学生后查询」提示文案（成功且无数据时该文案原样保留）
+const finalErrorText = computed<string | null>(() => {
+  const caught = finalError.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '补考最终成绩查询失败';
 });
 
 // 换主考后候选名单随之变化：清掉已选学生，避免拿着旧家族的学生查询

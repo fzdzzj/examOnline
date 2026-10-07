@@ -21,7 +21,18 @@
         <Button @click="() => void refetch()">刷新列表</Button>
       </div>
 
+      <!-- U-1 三态分离：查询失败显性呈现，表格隐藏——失败不得落「该考试暂无复核申请」空态 -->
+      <Alert
+        v-if="queryErrorText"
+        type="error"
+        show-icon
+        :message="queryErrorText"
+        data-test="reviews-error"
+        class="mb-3"
+      />
+
       <Table
+        v-else
         :columns="columns"
         :data-source="reviews"
         :loading="isFetching"
@@ -69,6 +80,7 @@
 
 <script setup lang="ts">
 import {
+  Alert,
   Button,
   Card,
   Modal,
@@ -128,7 +140,7 @@ function examFilterOption(input: string, option?: unknown): boolean {
 
 const selectedExamId = ref<number | undefined>(undefined);
 
-const { data, isFetching, refetch } = useQuery({
+const { data, isFetching, error, refetch } = useQuery({
   queryKey: computed(() => ['score-reviews', selectedExamId.value] as const),
   queryFn: () =>
     unwrap<ScoreReview[]>(
@@ -138,6 +150,13 @@ const { data, isFetching, refetch } = useQuery({
 });
 
 const reviews = computed<ScoreReview[]>(() => data.value ?? []);
+
+// U-1 三态分离：查询失败显性呈现（Alert 承载后端 message），不落「该考试暂无复核申请」空态
+const queryErrorText = computed<string | null>(() => {
+  const caught = error.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '复核申请加载失败';
+});
 
 const current = ref<ScoreReview | null>(null);
 const detailOpen = ref(false);

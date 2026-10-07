@@ -950,6 +950,46 @@ THEN 仅后端变更
 
 AND 前端无需同步修改判分逻辑
 
+### Requirement: 查询失败与业务态分离
+
+页面数据查询失败 SHALL 显性呈现错误态（Alert 承载后端 message），SHALL NOT 渲染为业务空态或「成绩待发布」业务态；「成绩待发布」SHALL 仅由后端 400 固定文案判别（`utils/scoreVisibility.ts` 的 `isNotPublishedError`），前端 SHALL NOT 放宽该判别或引入第二套本地推断；既有业务空态文案 SHALL 保持原样（成功且无数据时照常呈现）。
+
+#### Scenario: 学生成绩页失败显性呈现
+
+GIVEN myScore 或补考最终成绩查询返回非「成绩待发布」错误
+
+WHEN 页面渲染
+
+THEN 错误 Alert 呈现后端 message
+
+AND 未发布卡片不出现（失败不得伪装成「成绩未发布」业务态）
+
+#### Scenario: 待发布仅认后端 400 文案
+
+GIVEN 后端返回 400「成绩待发布」
+
+WHEN 页面渲染
+
+THEN 仍渲染未发布业务态、不弹错误 Alert（回归保护，判别不放宽）
+
+#### Scenario: 教师侧列表失败不伪装空态
+
+GIVEN 复核申请 / 缺考名单 / 补考候选人查询失败
+
+WHEN 页面渲染
+
+THEN 错误 Alert 呈现后端 message 且既有空态文案不出现
+
+AND 成功且无数据时空态文案原样保留
+
+#### Scenario: 补考最终成绩查询失败同口径
+
+GIVEN 教师侧补考最终成绩查询失败
+
+WHEN 页面渲染
+
+THEN 错误 Alert 呈现后端 message，成功空值提示文案保持原样
+
 ---
 
 > 合入注记（2026-09-23，`accept-frontend-19-23` 收口批次，阶段 19/20 的 delta 补合入）：
@@ -968,3 +1008,16 @@ AND 前端无需同步修改判分逻辑
 
 > D2 收口注记（2026-09-25，变更 `fix-grading-entry-and-summary-prerequisite`，推荐 A）：
 > 批改工作台显式运行判分入口与成绩汇总写前护栏（未判/失败答卷在任何写入前整场拒绝；合法客观零分与 §7.5 主观部分批改保留），连同成绩页前置错误的「前往批改工作台」指引，已在隔离测试中验收（后端集成/服务层用例 + 前端页面测试 + 已提交 HEAD 全量门禁）；**未跑共享 dev 真汇总**，真实 Chromium 亦未执行，不得视为真机已验。原走查 `59bab7b` 的历史 D2 记载保留不改；原遗留 #18 关闭。
+
+> 合入注记（2026-10-07，变更 `fix-frontend-query-failure-states`，UX 台账 U-1 收口）：
+> 「查询失败与业务态分离」Requirement 合入（4 个 Scenario，文本与该卡 `specs/frontend/spec-delta.md` 逐字一致）。
+> 实施边界：四处接线——student/scores（myScore 与补考最终成绩两查询）、teacher/reviews、teacher/absences、
+> teacher/makeups（候选人与最终成绩两查询），错误态以 Alert 承载后端 message（形态抄 `StudentExamList.vue`
+> 「空态与错误态分开」既有范式）；既有业务空态文案零改动；`utils/scoreVisibility.ts` 纯函数与类型、
+> `ScoreVisibilityCard` 零改动；零契约变更零 `gen:api`。spec-delta 未明说的一处实现口径如实登记：
+> 页面 queryFn 对「成绩待发布」的归一（catch → null → not-published）保持原样，页面对 error 槽内的值
+> 再判别一次 `isNotPublishedError` 属防回归双保险，不是第二套判别口径。
+> 验收边界=实施笔 `df7ed0a` 已提交状态双端门禁：frontend lint:check/type-check:check/test 三项退出码 0、
+> vitest 47 文件 403 例 → 51 文件 414 例（+4 文件 +11 例，先红 6 failed | 9 passed 后绿，红灯恰为新增失败态
+> 断言与词法护栏）；backend `mvnw.cmd clean test` 368/0/0/1 + BUILD SUCCESS（零后端改动，与基线 3b7783e 持平）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。

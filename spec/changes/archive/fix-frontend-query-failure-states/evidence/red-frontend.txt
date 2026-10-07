@@ -1,0 +1,437 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/student/scores/__tests__/queryFailureStates.spec.ts src/pages/(dashboard)/student/scores/__tests__/makeupFinalScore.spec.ts src/pages/(dashboard)/student/scores/__tests__/applyReviewAlert.spec.ts src/pages/(dashboard)/teacher/reviews/__tests__/queryFailureStates.spec.ts src/pages/(dashboard)/teacher/absences/__tests__/queryFailureStates.spec.ts src/pages/(dashboard)/teacher/makeups/__tests__/queryFailureStates.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/student/scores/__tests__/queryFailureStates.spec.ts [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 784[2mms[22m[39m
+[31m     [31m×[31m 非「成绩待发布」失败：错误 Alert 显性呈现，未发布卡片不出现[39m[33m 680[2mms[22m[39m
+     [32m✓[39m 待发布 400：仍渲染未发布业务态、不弹错误 Alert（回归保护，判别不放宽）[32m 88[2mms[22m[39m
+[31m     [31m×[31m 词法护栏：源码必须在调用 mapMyScoreToView 前判别 error 与 isNotPublishedError[39m[32m 11[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/student/scores/__tests__/applyReviewAlert.spec.ts [2m([22m[2m1 test[22m[2m)[22m[33m 923[2mms[22m[39m
+     [33m[2m✓[22m[39m 后端校验说明真实可见：限次限时由后端裁决、前端不预展资格计数（Alert 具名插槽） [33m 919[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/student/scores/__tests__/makeupFinalScore.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1025[2mms[22m[39m
+     [33m[2m✓[22m[39m 正常：后端返回 finalScore 原样渲染（前端只透传，不本地合并） [33m 858[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/teacher/absences/__tests__/queryFailureStates.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1117[2mms[22m[39m
+[31m     [31m×[31m 查询失败：错误 Alert 显性呈现，空态文案「该考试没有缺考记录（或考试尚未结束）」不出现[39m[33m 967[2mms[22m[39m
+     [32m✓[39m 成功且无数据：空态文案原样保留，不弹错误 Alert[32m 145[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/teacher/reviews/__tests__/queryFailureStates.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1085[2mms[22m[39m
+[31m     [31m×[31m 查询失败：错误 Alert 显性呈现，空态文案「该考试暂无复核申请」不出现[39m[33m 962[2mms[22m[39m
+     [32m✓[39m 成功且无数据：空态文案原样保留，不弹错误 Alert[32m 119[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/teacher/makeups/__tests__/queryFailureStates.spec.ts [2m([22m[2m4 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 2029[2mms[22m[39m
+[31m     [31m×[31m 候选人查询失败：错误 Alert 显性呈现，「请先选择主考考试并点击查询」不出现[39m[33m 1317[2mms[22m[39m
+     [32m✓[39m 候选人成功且无数据：空态文案原样保留，不弹错误 Alert[32m 254[2mms[22m[39m
+[31m     [31m×[31m 最终成绩查询失败：错误 Alert 显性呈现，成功空值提示文案不出现[39m[32m 243[2mms[22m[39m
+     [32m✓[39m 最终成绩成功且无数据：提示文案原样保留，不弹错误 Alert[32m 210[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 6 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/student/scores/__tests__/queryFailureStates.spec.ts[2m > [22mstudent/scores 查询失败三态（U-1）[2m > [22m非「成绩待发布」失败：错误 Alert 显性呈现，未发布卡片不出现
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/student/scores/__tests__/queryFailureStates.spec.ts:[2m88:28[22m[39m
+    [90m 86|[39m
+    [90m 87|[39m     [35mconst[39m alert [33m=[39m wrapper[33m.[39m[34mfind[39m([32m'[data-test="scores-error"]'[39m)[33m;[39m
+    [90m 88|[39m     [34mexpect[39m(alert[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                            [31m^[39m
+    [90m 89|[39m     [34mexpect[39m(alert[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'网络连接失败，请稍后重试'[39m)[33m;[39m
+    [90m 90|[39m     [90m// 失败不得伪装成业务态：未发布卡片不出现[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/student/scores/__tests__/queryFailureStates.spec.ts[2m > [22mstudent/scores 查询失败三态（U-1）[2m > [22m词法护栏：源码必须在调用 mapMyScoreToView 前判别 error 与 isNotPublishedError
+[31m[1mAssertionError[22m: expected '<template>\r\n  <div>\r\n    <Card ti…' to contain 'error: scoreError'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- error: scoreError[39m
+[31m+ <template>[39m
+[31m+   <div>[39m
+[31m+     <Card title="我的成绩与复核" class="mb-4">[39m
+[31m+       <template #extra>[39m
+[31m+         <span class="hint">成绩可见性与复核资格一律以后端返回为准，前端不做本地判定。</span>[39m
+[31m+       </template>[39m
+[31m+ [39m
+[31m+       <div class="mb-3 flex flex-wrap items-center gap-3">[39m
+[31m+         <Select[39m
+[31m+           v-model:value="selectedExamId"[39m
+[31m+           :options="examOptions"[39m
+[31m+           placeholder="选择考试"[39m
+[31m+           class="w-96"[39m
+[31m+           show-search[39m
+[31m+           :filter-option="examFilterOption"[39m
+[31m+           :loading="examsFetching"[39m
+[31m+         />[39m
+[31m+         <RadioGroup v-model:value="scoreMode">[39m
+[31m+           <Radio value="regular">常规成绩</Radio>[39m
+[31m+           <Radio value="makeup">补考最终成绩</Radio>[39m
+[31m+         </RadioGroup>[39m
+[31m+         <span v-if="scoreMode === 'makeup'" class="hint">[39m
+[31m+           后端沿主考家族按考试配置规则合并，历史成绩保留不覆盖；前端只渲染返回值。[39m
+[31m+         </span>[39m
+[31m+       </div>[39m
+[31m+ [39m
+[31m+       <!-- 接口缺口如实告知：学生端没有「查询自己复核申请」的端点 -->[39m
+[31m+       <Alert type="info" show-icon class="mb-3">[39m
+[31m+         <template #description>[39m
+[31m+           复核资格（剩余次数 / 时间窗）由后端在提交时校验拒绝，后端[39m
+[31m+           <b>没有单独的资格查询端点</b>[39m
+[31m+           ，因此本页不展示「剩余次数」——前端不本地计数（两端规则漂移会导致资格判定失真）。[39m
+[31m+           同理，学生查询本人复核申请列表的端点目前也不存在，申请结果以成绩卡片状态与后端返回为准。[39m
+[31m+         </template>[39m
+[31m+       </Alert>[39m
+[31m+ [39m
+[31m+       <Spin :spinning="scoreFetching">[39m
+[31m+         <ScoreVisibilityCard :view="view" :variant="scoreMode === 'makeup' ? 'final' : 'detail'" />[39m
+[31m+       </Spin>[39m
+[31m+ [39m
+[31m+       <div v-if="view.kind === 'reviewing'" class="mt-3">[39m
+[31m+         <!-- 复核中不再重复申请：后端会对重复申请返回 1001，此处按钮由后端 reviewing 字段驱动 -->[39m
+[31m+         <span class="pending-hint">复核进行中，处理完成后成绩恢复显示</span>[39m
+[31m+       </div>[39m
+[31m+       <div v-else-if="view.kind === 'published' && scoreMode === 'regular'" class="mt-3">[39m
+[31m+         <Button[39m
+[31m+           type="primary"[39m
+[31m+           :disabled="appliedExamIds.includes(selectedExamId as number)"[39m
+[31m+           @click="applyModalOpen = true"[39m
+[31m+         >[39m
+[31m+           申请成绩复核[39m
+[31m+         </Button>[39m
+[31m+       </div>[39m
+[31m+ [39m
+[31m+       <Alert[39m
+[31m+         v-if="applyError"[39m
+[31m+         type="error"[39m
+[31m+         show-icon[39m
+[31m+         class="mt-3"[39m
+[31m+         :message="applyError"[39m
+[31m+         closable[39m
+[31m+         @close="applyError = null"[39m
+[31m+       />[39m
+[31m+ [39m
+[31m+       <Alert[39m
+[31m+         v-if="appliedReview"[39m
+[31m+         type="success"[39m
+[31m+         show-icon[39m
+[31m+         class="mt-3"[39m
+[31m+         message="复核申请已提交（待教师处理）"[39m
+[31m+       >[39m
+[31m+         <template #description>[39m
+[31m+           申请理由：{{ appliedReview.reason || '（未填写）' }} · 后端返回状态：[39m
+[31m+           {{ getReviewStatusConfig(appliedReview.status ?? -1).label }}[39m
+[31m+         </template>[39m
+[31m+       </Alert>[39m
+[31m+     </Card>[39m
+[31m+ [39m
+[31m+     <Modal[39m
+[31m+       v-model:open="applyModalOpen"[39m
+[31m+       title="申请成绩复核"[39m
+[31m+       :confirm-loading="applying"[39m
+[31m+       @ok="onApply"[39m
+[31m+     >[39m
+[31m+       <!-- ⚠️ ant-design-vue 4 的 Alert 只渲染 message/description，正文必须走具名插槽[39m
+[31m+            （默认插槽会被静默丢弃） -->[39m
+[31m+       <Alert type="warning" show-icon class="mb-2">[39m
+[31m+         <template #message>[39m
+[31m+           复核次数与时间窗限制由后端在提交时校验（超窗 / 重复申请会被后端拒绝并给出原因），[39m
+[31m+           前端不预先展示资格计数。[39m
+[31m+         </template>[39m
+[31m+       </Alert>[39m
+[31m+       <Textarea[39m
+[31m+         v-model:value="applyReason"[39m
+[31m+         :rows="4"[39m
+[31m+         placeholder="申请理由（说明存疑的题目或分数）"[39m
+[31m+       />[39m
+[31m+     </Modal>[39m
+[31m+   </div>[39m
+[31m+ </template>[39m
+[31m+ [39m
+[31m+ <script setup lang="ts">[39m
+[31m+ import {[39m
+[31m+   Alert,[39m
+[31m+   Button,[39m
+[31m+   Card,[39m
+[31m+   Modal,[39m
+[31m+   Radio,[39m
+[31m+   RadioGroup,[39m
+[31m+   Select,[39m
+[31m+   Spin,[39m
+[31m+   Textarea,[39m
+[31m+   message,[39m
+[31m+ } from 'ant-design-vue';[39m
+[31m+ import { computed, ref } from 'vue';[39m
+[31m+ import { useQuery } from '@tanstack/vue-query';[39m
+[31m+ [39m
+[31m+ import {[39m
+[31m+   apply,[39m
+[31m+   myExams,[39m
+[31m+   myMakeupFinalScore,[39m
+[31m+   myScore,[39m
+[31m+   type ExamListItem,[39m
+[31m+   type MakeupFinalScoreResponse,[39m
+[31m+   type MyScoreResponse,[39m
+[31m+   type ScoreReview,[39m
+[31m+ } from '@/api/axios';[39m
+[31m+ import { client, unwrap } from '@/api/apiClient';[39m
+[31m+ import { getReviewStatusConfig } from '@/constants/postExam';[39m
+[31m+ import {[39m
+[31m+   mapMakeupFinalScoreToView,[39m
+[31m+   mapMyScoreToView,[39m
+[31m+   isNotPublishedError,[39m
+[31m+ } from '@/utils/scoreVisibility';[39m
+[31m+ import ScoreVisibilityCard from '@/components/postexam/ScoreVisibilityCard.vue';[39m
+[31m+ [39m
+[31m+ /**[39m
+[31m+  * 学生成绩查询与复核申请（阶段 23，补考最终成绩见 add-makeup-final-score-frontend）：[39m
+[31m+  * - GET /api/exam-taking/exams 我的考试列表；[39m
+[31m+  * - GET /api/scores/my?examId= 成绩（未发布 → 后端 400「成绩待发布」；复核中 → reviewing=true 且分数置空）；[39m
+[31m+  * - GET /api/scores/makeup-final?examId= 补考最终成绩（学生查本人，口径同 myScore）：[39m
+[31m+  *   未发布同样统一「成绩待发布」（后端 requirePublishedRoot）；主考家族存在进行中复核时[39m
+[31m+  *   reviewing=true 且 finalScore 置 null（防「看了分数再申请」），前端只看 reviewing 字段[39m
+[31m+  *   隐藏分数、不本地推断；合并规则在后端（沿主考家族按考试配置规则），前端只渲染返回值。[39m
+[31m+  *   教师侧对端点为 GET /api/exams/{examId}/scores/makeup-final/{studentId}（exam:manage，[39m
+[31m+  *   teacher/makeups 页使用），学生无此权限、本页不调用；[39m
+[31m+  * - POST /api/exams/{examId}/score-reviews 申请复核（限次限时由后端校验，前端不计数）。[39m
+[31m+  */[39m
+[31m+ [39m
+[31m+ const { data: examsData, isFetching: examsFetching } = useQuery({[39m
+[31m+   queryKey: ['my-exams'] as const,[39m
+[31m+   queryFn: () => unwrap<ExamListItem[]>(myExams({ client, throwOnError: true })),[39m
+[31m+ });[39m
+[31m+ const exams = computed<ExamListItem[]>(() => examsData.value ?? []);[39m
+[31m+ const examOptions = computed(() =>[39m
+[31m+   exams.value.map((e) => ({ value: e.examId as number, label: `${e.title}（#${e.examId}）` }))[39m
+[31m+ );[39m
+[31m+ function examFilterOption(input: string, option?: unknown): boolean {[39m
+[31m+   const label = (option as { label?: unknown } | undefined)?.label;[39m
+[31m+   return String(label ?? '')[39m
+[31m+     .toLowerCase()[39m
+[31m+     .includes(input.toLowerCase());[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ const selectedExamId = ref<number | undefined>(undefined);[39m
+[31m+ [39m
+[31m+ // 成绩口径：常规成绩（myScore）/ 补考最终成绩（makeup-final）。[39m
+[31m+ // 考试列表不携带补考标记（ExamListItem 无 parentExamId），前端不猜哪场是补考，[39m
+[31m+ // 由学生显式选择口径——可见性裁决仍 100% 在后端。[39m
+[31m+ const scoreMode = ref<'regular' | 'makeup'>('regular');[39m
+[31m+ [39m
+[31m+ const { data: scoreData, isFetching: myScoreFetching } = useQuery({[39m
+[31m+   queryKey: computed(() => ['my-score', selectedExamId.value] as const),[39m
+[31m+   queryFn: async () => {[39m
+[31m+     try {[39m
+[31m+       return ([39m
+[31m+         (await unwrap<MyScoreResponse>([39m
+[31m+           myScore({ client, throwOnError: true, query: { examId: selectedExamId.value as number } })[39m
+[31m+         )) ?? null[39m
+[31m+       );[39m
+[31m+     } catch (error) {[39m
+[31m+       // 未发布是后端的正常业务状态（400「成绩待发布」），不是异常：映射为 not-published[39m
+[31m+       if (isNotPublishedError(error)) return null;[39m
+[31m+       throw error;[39m
+[31m+     }[39m
+[31m+   },[39m
+[31m+   enabled: computed(() => scoreMode.value === 'regular' && selectedExamId.value !== undefined),[39m
+[31m+   retry: false,[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const { data: makeupData, isFetching: makeupFetching } = useQuery({[39m
+[31m+   queryKey: computed(() => ['my-makeup-final', selectedExamId.value] as const),[39m
+[31m+   queryFn: async () => {[39m
+[31m+     try {[39m
+[31m+       return ([39m
+[31m+         (await unwrap<MakeupFinalScoreResponse>([39m
+[31m+           myMakeupFinalScore({[39m
+[31m+             client,[39m
+[31m+             throwOnError: true,[39m
+[31m+             query: { examId: selectedExamId.value as number },[39m
+[31m+           })[39m
+[31m+         )) ?? null[39m
+[31m+       );[39m
+[31m+     } catch (error) {[39m
+[31m+       // 口径同 myScore：未发布（400「成绩待发布」）→ not-published，不当异常弹给用户[39m
+[31m+       if (isNotPublishedError(error)) return null;[39m
+[31m+       throw error;[39m
+[31m+     }[39m
+[31m+   },[39m
+[31m+   enabled: computed(() => scoreMode.value === 'makeup' && selectedExamId.value !== undefined),[39m
+[31m+   retry: false,[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ // 三态映射：未发布（响应为空）/ 复核中（reviewing）/ 已发布——两种口径共用同一套 ScoreView[39m
+[31m+ const view = computed(() =>[39m
+[31m+   scoreMode.value === 'makeup'[39m
+[31m+     ? mapMakeupFinalScoreToView(makeupData.value ?? undefined)[39m
+[31m+     : mapMyScoreToView(scoreData.value ?? undefined)[39m
+[31m+ );[39m
+[31m+ const scoreFetching = computed(() =>[39m
+[31m+   scoreMode.value === 'makeup' ? makeupFetching.value : myScoreFetching.value[39m
+[31m+ );[39m
+[31m+ [39m
+[31m+ // ===== 复核申请 =====[39m
+[31m+ const applyModalOpen = ref(false);[39m
+[31m+ const applyReason = ref('');[39m
+[31m+ const applying = ref(false);[39m
+[31m+ const applyError = ref<string | null>(null);[39m
+[31m+ const appliedReview = ref<ScoreReview | null>(null);[39m
+[31m+ const appliedExamIds = ref<number[]>([]);[39m
+[31m+ [39m
+[31m+ async function onApply(): Promise<void> {[39m
+[31m+   if (selectedExamId.value === undefined) return;[39m
+[31m+   applying.value = true;[39m
+[31m+   applyError.value = null;[39m
+[31m+   try {[39m
+[31m+     appliedReview.value =[39m
+[31m+       (await unwrap([39m
+[31m+         apply({[39m
+[31m+           client,[39m
+[31m+           throwOnError: true,[39m
+[31m+           path: { examId: selectedExamId.value },[39m
+[31m+           body: { reason: applyReason.value.trim() || undefined },[39m
+[31m+         })[39m
+[31m+       )) ?? null;[39m
+[31m+     appliedExamIds.value = [...appliedExamIds.value, selectedExamId.value];[39m
+[31m+     applyModalOpen.value = false;[39m
+[31m+     message.success('复核申请已提交，等待教师处理');[39m
+[31m+   } catch (error) {[39m
+[31m+     // 限次/超窗/重复申请一律以后端拒绝文案为准（如 400 超窗、1001 已申请过）[39m
+[31m+     applyError.value = error instanceof Error ? error.message : '申请失败，请稍后重试';[39m
+[31m+   } finally {[39m
+[31m+     applying.value = false;[39m
+[31m+   }[39m
+[31m+ }[39m
+[31m+ </script>[39m
+[31m+ [39m
+[31m+ <style scoped>[39m
+[31m+ .mb-2 {[39m
+[31m+   margin-bottom: 0.5rem;[39m
+[31m+ }[39m
+[31m+ .mb-3 {[39m
+[31m+   margin-bottom: 0.75rem;[39m
+[31m+ }[39m
+[31m+ .mb-4 {[39m
+[31m+   margin-bottom: 1rem;[39m
+[31m+ }[39m
+[31m+ .mt-3 {[39m
+[31m+   margin-top: 0.75rem;[39m
+[31m+ }[39m
+[31m+ .hint {[39m
+[31m+   color: #999;[39m
+[31m+   font-size: 12px;[39m
+[31m+   font-weight: normal;[39m
+[31m+ }[39m
+[31m+ .pending-hint {[39m
+[31m+   color: #999;[39m
+[31m+   font-size: 13px;[39m
+[31m+ }[39m
+[31m+ </style>[39m
+[31m+[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/student/scores/__tests__/queryFailureStates.spec.ts:[2m107:30[22m[39m
+    [90m105|[39m     [34mexpect[39m(viewCallIdx)[33m.[39m[34mtoBeGreaterThan[39m([33m-[39m[34m1[39m)[33m;[39m
+    [90m106|[39m     [90m// 两处查询都要解构 error（myScore 与补考最终成绩），错误 Alert 必须在模板接线[39m
+    [90m107|[39m     [34mexpect[39m(scoresPageSource)[33m.[39m[34mtoContain[39m([32m'error: scoreError'[39m)[33m;[39m
+    [90m   |[39m                              [31m^[39m
+    [90m108|[39m     [34mexpect[39m(scoresPageSource)[33m.[39m[34mtoContain[39m([32m'error: makeupError'[39m)[33m;[39m
+    [90m109|[39m     [34mexpect[39m(scoresPageSource)[33m.[39m[34mtoContain[39m([32m'data-test="scores-error"'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/absences/__tests__/queryFailureStates.spec.ts[2m > [22mteacher/absences 查询失败三态（U-1）[2m > [22m查询失败：错误 Alert 显性呈现，空态文案「该考试没有缺考记录（或考试尚未结束）」不出现
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/absences/__tests__/queryFailureStates.spec.ts:[2m72:28[22m[39m
+    [90m 70|[39m
+    [90m 71|[39m     [35mconst[39m alert [33m=[39m wrapper[33m.[39m[34mfind[39m([32m'[data-test="absences-error"]'[39m)[33m;[39m
+    [90m 72|[39m     [34mexpect[39m(alert[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                            [31m^[39m
+    [90m 73|[39m     [34mexpect[39m(alert[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'服务器内部错误'[39m)[33m;[39m
+    [90m 74|[39m     [90m// 失败不得伪装成业务空态（含误导性括号解释的那句）[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/makeups/__tests__/queryFailureStates.spec.ts[2m > [22mteacher/makeups 查询失败三态（U-1）[2m > [22m候选人查询失败：错误 Alert 显性呈现，「请先选择主考考试并点击查询」不出现
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/makeups/__tests__/queryFailureStates.spec.ts:[2m78:28[22m[39m
+    [90m 76|[39m
+    [90m 77|[39m     [35mconst[39m alert [33m=[39m wrapper[33m.[39m[34mfind[39m([32m'[data-test="eligible-error"]'[39m)[33m;[39m
+    [90m 78|[39m     [34mexpect[39m(alert[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                            [31m^[39m
+    [90m 79|[39m     [34mexpect[39m(alert[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'服务器内部错误'[39m)[33m;[39m
+    [90m 80|[39m     [90m// 失败不得伪装成「还没点查询」的引导文案[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/makeups/__tests__/queryFailureStates.spec.ts[2m > [22mteacher/makeups 查询失败三态（U-1）[2m > [22m最终成绩查询失败：错误 Alert 显性呈现，成功空值提示文案不出现
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/makeups/__tests__/queryFailureStates.spec.ts:[2m100:28[22m[39m
+    [90m 98|[39m
+    [90m 99|[39m     [35mconst[39m alert [33m=[39m wrapper[33m.[39m[34mfind[39m([32m'[data-test="final-error"]'[39m)[33m;[39m
+    [90m100|[39m     [34mexpect[39m(alert[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                            [31m^[39m
+    [90m101|[39m     [34mexpect[39m(alert[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'服务器内部错误'[39m)[33m;[39m
+    [90m102|[39m     [34mexpect[39m(wrapper[33m.[39m[34mtext[39m())[33m.[39mnot[33m.[39m[34mtoContain[39m([32m'选择学生后查询'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/reviews/__tests__/queryFailureStates.spec.ts[2m > [22mteacher/reviews 查询失败三态（U-1）[2m > [22m查询失败：错误 Alert 显性呈现，空态文案「该考试暂无复核申请」不出现
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/reviews/__tests__/queryFailureStates.spec.ts:[2m71:28[22m[39m
+    [90m 69|[39m
+    [90m 70|[39m     [35mconst[39m alert [33m=[39m wrapper[33m.[39m[34mfind[39m([32m'[data-test="reviews-error"]'[39m)[33m;[39m
+    [90m 71|[39m     [34mexpect[39m(alert[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                            [31m^[39m
+    [90m 72|[39m     [34mexpect[39m(alert[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'服务器内部错误'[39m)[33m;[39m
+    [90m 73|[39m     [90m// 失败不得伪装成业务空态[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m4 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (6)[39m
+[2m      Tests [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m9 passed[39m[22m[90m (15)[39m
+[2m   Start at [22m 16:09:35
+[2m   Duration [22m 10.51s[2m (transform 2.28s, setup 362ms, import 38.33s, tests 6.96s, environment 8.62s)[22m
+
