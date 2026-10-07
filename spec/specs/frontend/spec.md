@@ -1034,6 +1034,58 @@ WHEN 操作失败
 
 THEN message 呈现后端返回的原始 message，且不跳转、不失效查询
 
+### Requirement: 邀请码管理界面
+
+管理端 SHALL 提供邀请码管理页（`/admin/invite-codes`，落既有 `/admin` 角色分区）：列表按后端返回字段渲染（状态按 `status` 呈现，前端不推算）、经 `listInviteCodes` 取数；生成 SHALL 经表单提交 `createInviteCode`（字段按契约），成功后新码在任何列表刷新前于当前弹层内一次性可见并可复制；作废 SHALL 经知情确认弹窗（形态对齐考试删除）调用 `invalidateInviteCode`；查询失败 SHALL 以 Alert 显性呈现后端 message 且 SHALL NOT 伪装空态；操作失败 SHALL 原文呈现后端 message，SHALL NOT 本地编造失败文案或拦截请求；生成 / 作废成功 SHALL 失效邀请码列表查询刷新。
+
+#### Scenario: 列表按后端字段渲染
+
+GIVEN 后端返回邀请码数组（含有效与已作废行）
+
+WHEN 页面渲染
+
+THEN 邀请码 / 备注 / 状态 / 已使用次数 / 创建时间均按返回值呈现
+
+AND 作废入口仅在有效（status=0）行出现
+
+#### Scenario: 生成后新码一次性可见可复制
+
+GIVEN 管理员填写备注并提交生成
+
+WHEN `createInviteCode` 返回新邀请码
+
+THEN 弹层内展示新码且提供复制入口
+
+AND 邀请码列表查询被失效刷新
+
+#### Scenario: 作废知情确认
+
+GIVEN 管理员点击有效行的「作废」
+
+WHEN 确认弹窗呈现
+
+THEN 弹窗明示作废不可逆（形态对齐考试删除弹窗）
+
+AND 确认后调用 `invalidateInviteCode`（path 携带该行 id）并失效列表查询
+
+#### Scenario: 查询失败不伪装空态
+
+GIVEN 列表查询失败
+
+WHEN 页面渲染
+
+THEN 错误 Alert 呈现后端 message，空态不出现
+
+AND 成功且无数据时空态照常呈现
+
+#### Scenario: 失败原文呈现不本地编造
+
+GIVEN 生成或作废被后端拒绝
+
+WHEN 操作失败
+
+THEN message 呈现后端返回的原始 message，且不失效查询、不展示伪成功结果
+
 ---
 
 > 合入注记（2026-09-23，`accept-frontend-19-23` 收口批次，阶段 19/20 的 delta 补合入）：
@@ -1081,4 +1133,22 @@ THEN message 呈现后端返回的原始 message，且不跳转、不失效查�
 > vitest 51 文件 414 例 → 52 文件 421 例（+1 文件 +7 例，先红 7 failed | 5 passed 后绿，红灯恰为新增编辑/删除
 > 断言）；backend `mvnw.cmd clean test` 368/0/0/1 + BUILD SUCCESS（零后端改动，与基线 04d7b69 持平；
 > `git diff --name-only 04d7b69 5279168 -- src pom.xml schema.sql openapi.yaml` 为空）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。
+
+> 合入注记（2026-10-07，变更 `add-frontend-invite-code-admin`，前端台账 F-4 收口）：
+> 「邀请码管理界面」Requirement 合入（5 个 Scenario，文本与该卡 `specs/frontend/spec-delta.md` 逐字一致）。
+> 实施边界：新页 `admin/invite-codes/index.page.vue`——Card + Table（按后端字段渲染）+ 查询失败 Alert 与数据区
+> 分离（U-1 三态分离口径）+ 生成 Modal（成功后同弹层展示新码可复制）+ 作废知情确认弹窗（形态对齐考试删除：
+> 声明式 Modal + warning Alert 明示不可逆，#message 具名插槽）；`(dashboard).page.vue` 导航 admin 分区由
+> disabled 占位「管理端（未开放）」真实化为 `canAccess(role, '/admin/')` 门控的「邀请码管理」入口
+> （NAVIGABLE_PATHS 同步增补）；`access.ts` 分区结构、注册页与 errorMap 零改动，审计日志/踢人端点不接
+> （后台账保留）。spec-delta 未明说的实现口径如实登记：①空备注不携带 body（`body: note ? { note } : {}`，
+> 对齐创建考试「空描述不携带」口径）；②新码直接以 `createInviteCode` 响应在弹层内一次性展示，不另发补看
+> 请求（列表列的邀请码原文同按后端返回呈现）；③状态标签按后端 `status` 直读（0 绿「有效」/其余 default
+> 「已作废」），前端不推算；④作废入口 fail-closed——仅 `status===0` 行渲染，非有效行不提供入口。
+> 验收边界=实施笔 `b7cdabe` 已提交状态双端门禁：frontend lint:check/type-check:check/test 三项退出码 0、
+> vitest 52 文件 421 例 → 53 文件 429 例（+1 文件 +8 例，先红 exit 1（模块解析失败：页面尚不存在、0 例执行，
+> 红态性质如实登记）后绿 8/8；复制入口断言经变异校验可红）；backend `mvnw.cmd clean test` 368/0/0/1 +
+> BUILD SUCCESS（零后端改动，与基线 c762508 持平；`git diff --name-only c762508 b7cdabe -- src pom.xml
+> schema.sql openapi.yaml` 为空）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。

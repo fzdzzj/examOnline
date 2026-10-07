@@ -77,9 +77,10 @@ const roleLabel = (role: string): string => {
  * 菜单按角色过滤。⚠️ 这只是「看不看得到」的体验层（硬约定 4）：
  * 手输 URL 依然会被后端 @RequirePermission 拒绝，前端不声称这里是权限边界。
  *
- * 教师端（阶段 20）：题库 / 标签 / 组卷三个页面挂在 /teacher 前缀下，
- * 角色限定与后端 RBAC 一致（ADMIN + TEACHER 均有 question:manage、paper:manage）。
- * /admin、/student 分区仍是阶段 21+ 的 disabled 占位。
+ * 教师端：题库 / 标签 / 组卷等页面挂在 /teacher 前缀下，角色限定与后端 RBAC 一致。
+ * 管理端（F-4）：邀请码管理挂在 /admin 前缀下，仅 ADMIN 可见——权限边界在后端
+ * 类级 @RequireRole(ADMIN) + 方法级 invite:manage，菜单过滤只是体验层；
+ * 审计日志 / 踢人端点未接页面（后端账保留）。/student 分区仍是 disabled 占位。
  */
 const menuItems = computed<MenuProps['items']>(() => {
   const loggedIn = isAuthenticatedOf(user.value);
@@ -117,20 +118,19 @@ const menuItems = computed<MenuProps['items']>(() => {
       ],
     });
   }
-  const sections: Array<{ prefix: string; label: string }> = [
-    { prefix: '/admin', label: '管理端（未开放）' },
-  ];
-  for (const section of sections) {
-    if (canAccess(role, `${section.prefix}/`)) {
-      items.push({ key: section.prefix, label: section.label, disabled: true });
-    }
+  if (canAccess(role, '/admin/')) {
+    items.push({
+      key: 'admin-section',
+      label: '管理端',
+      children: [{ key: '/admin/invite-codes', label: '邀请码管理' }],
+    });
   }
   return items;
 });
 
 const selectedKeys = computed(() => [route.path]);
 
-// 只跳转本阶段真实存在的页面；管理端/学生端分区项是 disabled 的占位，点了也不会跳出 404。
+// 只跳转真实存在的页面；未列入白名单的菜单项点击不跳转（避免跳出 404）。
 const NAVIGABLE_PATHS: readonly string[] = [
   '/',
   '/change-password',
@@ -146,6 +146,7 @@ const NAVIGABLE_PATHS: readonly string[] = [
   '/teacher/makeups',
   '/student/exams',
   '/student/scores',
+  '/admin/invite-codes',
 ];
 
 const onMenuClick: MenuProps['onClick'] = ({ key }) => {
