@@ -1,0 +1,43 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/papers/__tests__/paperListServerPaging.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/teacher/papers/__tests__/paperListServerPaging.spec.ts [2m([22m[2m4 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1483[2mms[22m[39m
+[31m     [31m×[31m 首屏按服务端取第 1 页 10 条，且分页器让第 2 页可达[39m[33m 914[2mms[22m[39m
+     [33m[2m✓[22m[39m 翻第 2 页发起真实请求并渲染第 2 页返回的行 [33m 443[2mms[22m[39m
+     [32m✓[39m 源码不再一次取回后本地切片[32m 1[2mms[22m[39m
+     [32m✓[39m 查询失败：错误 Alert 显性呈现后端 message，空态不出现[32m 122[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/papers/__tests__/paperListServerPaging.spec.ts[2m > [22m试卷列表服务端分页（papers/index.page）[2m > [22m首屏按服务端取第 1 页 10 条，且分页器让第 2 页可达
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/papers/__tests__/paperListServerPaging.spec.ts:[2m121:61[22m[39m
+    [90m119|[39m     [34mexpect[39m([34mtitleCells[39m(wrapper)[[34m9[39m])[33m.[39m[34mtoBe[39m([32m'试卷10'[39m)[33m;[39m
+    [90m120|[39m     [90m// 下界推断生效：满页时下一页存在（字面 total=当页条数 会让这一页永远点不到）[39m
+    [90m121|[39m     [34mexpect[39m(wrapper[33m.[39m[34mfind[39m([32m'.ant-pagination-item-2'[39m)[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                                                             [31m^[39m
+    [90m122|[39m   })[33m;[39m
+    [90m123|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 21:12:40
+[2m   Duration [22m 7.58s[2m (transform 209ms, setup 60ms, import 4.70s, tests 1.48s, environment 1.04s)[22m
+

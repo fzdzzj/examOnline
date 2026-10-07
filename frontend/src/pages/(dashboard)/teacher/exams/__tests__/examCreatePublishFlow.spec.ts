@@ -178,8 +178,10 @@ describe('考试列表：发布与强制结束入口（index.page）', () => {
 
 describe('考试创建表单（create.page）', () => {
   function mountCreatePage() {
+    // 该 useQuery mock 直接按 queryKey 首元素投喂数据、不走 queryFn，
+    // 因此两个下拉的值是「累加器拼全后的数组」（U-2 起班级不再是单页信封）
     queryStore.data['papers'] = [{ id: 5, title: '期中卷' }];
-    queryStore.data['classes'] = { list: [{ id: 1, name: '一班' }] };
+    queryStore.data['classes'] = [{ id: 1, name: '一班' }];
     return mount(ExamCreatePage);
   }
 

@@ -1088,6 +1088,74 @@ THEN message 呈现后端返回的原始 message，且不失效查询、不展�
 
 ---
 
+### Requirement: 下拉与列表取数不截断
+
+教师端需要完整候选集的下拉与需要分页呈现的列表 SHALL NOT 把「一次请求的一页」当作全量：分页信封无 `total` 的候选下拉 SHALL 经统一累加器取数（满页续拉、空页或未满页即停、最多 5 页、单页失败保留已累积部分且不抛错）；列表页 SHALL 使用服务端分页（当前页进入 `queryKey`、翻页发起真实请求），SHALL NOT 一次取回后在客户端切片；列表查询失败 SHALL 以 Alert 显性呈现后端 message 且 SHALL NOT 伪装成空态；取数 SHALL 使用 `types.gen.ts` 导出的 SDK 函数与契约声明的分页参数，SHALL NOT 手写 URL。既有考试下拉的累积语义 SHALL 不因本 Requirement 的实现抽取而改变。
+
+#### Scenario: 累加器逐页累积到到底
+
+GIVEN 候选端点返回裸列表且无 total 信封
+
+WHEN 第 1 页返回满页（size=100）、第 2 页返回 35 条
+
+THEN 累加结果为 135 条且只发起 2 次请求
+
+AND 首页即返回未满一页时只发起 1 次请求、不再续拉
+
+#### Scenario: 累加器保护上限与单页失败保留
+
+GIVEN 连续 5 页都返回满页
+
+WHEN 累加到第 5 页
+
+THEN 停止续拉（最多 5 页保护上限），返回已累积的 500 条
+
+GIVEN 第 2 页请求失败
+
+THEN 保留第 1 页已累积数据返回、不抛错、不阻断页面渲染
+
+#### Scenario: 考务创建页试卷与班级下拉取全量候选
+
+GIVEN 试卷与班级各 135 条（分两页返回）
+
+WHEN 考试创建页加载两个下拉
+
+THEN 试卷下拉与班级下拉都经累加器发起 2 次请求
+
+AND 135 条全部为该下拉的可选项
+
+#### Scenario: 转班目标下拉取全量班级
+
+GIVEN 班级 135 条（分两页返回）且转班弹层已打开
+
+WHEN 转班目标班级下拉加载
+
+THEN 发起 2 次请求、目标选项覆盖全部班级（仅排除当前班级本身）
+
+#### Scenario: 试卷列表翻页发起真实请求
+
+GIVEN 试卷列表按服务端分页显示第 1 页 10 条（后端共 250 条）
+
+WHEN 用户点第 2 页
+
+THEN `queryKey` 随当前页变化并重新发起请求（`page: 2`）
+
+AND 表格渲染的是第 2 页返回的行，源码不再存在一次取回后的本地切片
+
+AND 分页器在满页时至少预留下一页（无 total 信封下做下界推断，不谎称精确总数）
+
+#### Scenario: 列表查询失败不伪装空态
+
+GIVEN 试卷列表查询失败
+
+WHEN 页面渲染
+
+THEN 错误 Alert 呈现后端 message，表格与其空态不出现
+
+AND 成功且无数据时空态照常呈现
+
+---
+
 > 合入注记（2026-09-23，`accept-frontend-19-23` 收口批次，阶段 19/20 的 delta 补合入）：
 > 五阶段 Requirement 至此全部入基线。**已知缺陷如实登记**（真机走查 `frontend/docs/frontend-stages-walkthrough.md`，
 > `59bab7b`）：①「组卷界面」的 *手动组卷可排序与改分* 与 *试卷可只读预览* 两个 Scenario 当前不成立——
@@ -1151,4 +1219,36 @@ THEN message 呈现后端返回的原始 message，且不失效查询、不展�
 > 红态性质如实登记）后绿 8/8；复制入口断言经变异校验可红）；backend `mvnw.cmd clean test` 368/0/0/1 +
 > BUILD SUCCESS（零后端改动，与基线 c762508 持平；`git diff --name-only c762508 b7cdabe -- src pom.xml
 > schema.sql openapi.yaml` 为空）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。
+
+> 合入注记（2026-10-07，变更 `fix-frontend-list-truncation-family`，UX 台账 U-2 截断家族收口）：
+> 「下拉与列表取数不截断」Requirement 合入（6 个 Scenario，文本与该卡 `specs/frontend/spec-delta.md` 逐字一致）。
+> 实施边界：新增 `hooks/fetchAllPages.ts`（分页信封缺 total 时的逐页累加语义通用形态），
+> `useTeacherExams.ts` 的 `fetchAllTeacherExams` 改为一行委托（签名、`TEACHER_EXAMS_*` 常量与
+> `createTeacherExamsQueryOptions` 零改动）；考务创建页试卷/班级两个下拉、班级页转班目标下拉改走该累加器；
+> 试卷列表页改服务端分页（`pageNum/pageSize` 进 computed `queryKey` + `@change` 翻页真实请求，
+> 移除 `FETCH_SIZE` 本地切片）并按 U-1 加查询失败 Alert。零后端改动、零契约变更零 `gen:api`。
+> spec-delta 未明说的实现与解释口径如实登记：①**失败态按载体分别对齐既有口径**——下拉沿用考试下拉家族
+> 已在基线的「尽力而为」语义（单页失败保留已累积、不抛错、不阻断页面，改造成整块红 Alert 会动到五个
+> 在用消费点的形态，属越界），只有列表页用 U-1 错误 Alert（失败不得渲染成空表/空态）；②试卷列表分页器
+> `total` 采「满页即至少还有下一页」的**下界推断**，未照抄考试页的字面 `total: pageNum * pageSize`——按 antd
+> `vc-pagination/Pagination.js` 的 `calculatePage = floor((total-1)/pageSize)+1` 与 `hasNext = current < calculatePage`，
+> 字面写法在满页时算出 1 页、下一页按钮根本点不到，「翻页真实请求」这条断言将无从触发；变异校验已做
+> （去掉 `+1` 预留即转红）；③该推断意味着页码数字可能小于真实末页（不谎称精确总数）；④数据量级**未测量**
+> ——dev 库数据量不构成分布证据，收口判据与考试下拉同为「取数不截断」，与量级无关；⑤委托抽取后
+> `useTeacherExams.ts` 模块头注释同步改写为「累加语义本体在 `fetchAllPages.ts`」，否则其自述会变为假；
+> ⑥既有 `examCreatePublishFlow.spec.ts` 的 `useQuery` mock 不走 `queryFn`，其班级候选夹具由单页信封
+> 改为累加后的数组（4 行 diff，断言集合与口径零改动）。
+> 随本卡入库的测试稳定性处置（与 U-2 需求无关，可整块回滚）：`gradingServerPaging.spec.ts` 两条重交互用例
+> 在**未改动的 main@31dfc17** 上连续三次全量跑越界（`Error: Test timed out in 5000ms`；诊断轮实测 5034ms
+> 与 3465ms，定向单跑整文件 9 例仅 3929ms——CPU 争抢放大致边际超时，非逻辑缺陷），按派发卡「第三抖触发专项」
+> 为其补显式 15000ms 上限；判据收窄过程如实登记——首轮只抬「实测越界那一条」，实施笔门禁中同文件第二条
+> 用例以同机理越界（第 4 次抖动），遂同因同处置，其余三条（实测 1865/1820/965ms，≥2.7 倍余量）不动。
+> 验收边界=实施笔 `d78269e` + 专项续笔 `719f22d` 已提交状态双端门禁：frontend lint:check/type-check:check/test
+> 三项退出码 0、vitest 53 文件 429 例 → 57 文件 449 例（+4 文件 +20 例；先红 exit 1 '9 failed | 1 passed (10)'，
+> 其中新增累加器 spec 因模块尚不存在而在解析层失败、0 例执行，红态性质如实登记；唯一绿例为既有
+> `enabled` 门控行为保留用例）；`useTeacherExams.spec.ts` 19 例在委托改造后原样全绿（委托等价性护栏）；
+> 抖动收口按重复测量判定——续笔处置后连续两次全量全绿（对照处置前 4 轮全量越界）。backend
+> `mvnw.cmd clean test` 368/0/0/1 + BUILD SUCCESS（零后端改动，与基线 `31dfc17` 当次实测持平；
+> `git diff --name-only 31dfc17 719f22d -- src pom.xml schema.sql openapi.yaml` 为空）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。

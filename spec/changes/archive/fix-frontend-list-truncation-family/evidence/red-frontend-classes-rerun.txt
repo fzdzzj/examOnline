@@ -1,0 +1,578 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/classes/__tests__/transferTargetsFullList.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/teacher/classes/__tests__/transferTargetsFullList.spec.ts [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 1774[2mms[22m[39m
+     [33m[2m✓[22m[39m 弹层未打开时不取候选：班级表格照常按 size=10 取数，无 size=100 请求 [33m 504[2mms[22m[39m
+[31m     [31m×[31m 弹层打开后满页续拉：发 2 次 size=100 请求（page 1/2），135 个班级全部可选[39m[33m 1262[2mms[22m[39m
+[31m     [31m×[31m 候选下拉走共享累加器，页面不再出现单页取数形状[39m[32m 6[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/classes/__tests__/transferTargetsFullList.spec.ts[2m > [22m转班目标下拉取全量班级（classes/index.page）[2m > [22m弹层打开后满页续拉：发 2 次 size=100 请求（page 1/2），135 个班级全部可选
+[31m[1mAssertionError[22m: expected [ { value: 1, label: '班级1' }, …(99) ] to have a length of 135 but got 100[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 135[39m
+[31m+ 100[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/classes/__tests__/transferTargetsFullList.spec.ts:[2m137:59[22m[39m
+    [90m135|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m136|[39m
+    [90m137|[39m     await vi.waitFor(() => expect(targetOptions(wrapper)).toHaveLength…
+    [90m   |[39m                                                           [31m^[39m
+    [90m138|[39m     [34mexpect[39m([34mtargetQueries[39m())[33m.[39m[34mtoEqual[39m([
+    [90m139|[39m       { page[33m:[39m [34m1[39m[33m,[39m size[33m:[39m [34m100[39m }[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/classes/__tests__/transferTargetsFullList.spec.ts[2m > [22m转班目标下拉取全量班级（classes/index.page）[2m > [22m候选下拉走共享累加器，页面不再出现单页取数形状
+[31m[1mAssertionError[22m: expected '<template>\r\n  <div>\r\n    <Card ti…' to contain 'fetchAllPages'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- fetchAllPages[39m
+[31m+ <template>[39m
+[31m+   <div>[39m
+[31m+     <Card title="班级管理" class="mb-4">[39m
+[31m+       <template #extra>[39m
+[31m+         <Button type="primary" @click="openClassModal()">+ 新建班级</Button>[39m
+[31m+       </template>[39m
+[31m+ [39m
+[31m+       <Table[39m
+[31m+         :columns="columns"[39m
+[31m+         :data-source="rows"[39m
+[31m+         :loading="isFetching"[39m
+[31m+         :pagination="tablePagination"[39m
+[31m+         :row-key="(row: ClassResponse) => row.id as number"[39m
+[31m+         size="middle"[39m
+[31m+         @change="onTableChange"[39m
+[31m+       >[39m
+[31m+         <template #bodyCell="{ column, record }">[39m
+[31m+           <template v-if="column.key === 'createdTime'">[39m
+[31m+             {{ formatTime((record as ClassResponse).createdTime) }}[39m
+[31m+           </template>[39m
+[31m+           <template v-else-if="column.key === 'actions'">[39m
+[31m+             <Space>[39m
+[31m+               <Button type="link" size="small" @click="viewClassStudents(record as ClassResponse)">[39m
+[31m+                 查看学生[39m
+[31m+               </Button>[39m
+[31m+               <Button type="link" size="small" @click="openClassModal(record as ClassResponse)">[39m
+[31m+                 编辑[39m
+[31m+               </Button>[39m
+[31m+               <Popconfirm[39m
+[31m+                 title="删除班级为软删，确认删除？"[39m
+[31m+                 @confirm="onDeleteClass(record as ClassResponse)"[39m
+[31m+               >[39m
+[31m+                 <Button type="link" size="small" danger>删除</Button>[39m
+[31m+               </Popconfirm>[39m
+[31m+             </Space>[39m
+[31m+           </template>[39m
+[31m+         </template>[39m
+[31m+       </Table>[39m
+[31m+       <!-- 说明：按 ClassController 现有契约实现——分页 / 创建 / 更新 / 删除 / 学生列表 /[39m
+[31m+            入班 / 转班 / 移出。归属与存在性均由后端裁决，前端只渲染返回结果。 -->[39m
+[31m+     </Card>[39m
+[31m+ [39m
+[31m+     <!-- 新建/编辑班级 Modal -->[39m
+[31m+     <Modal[39m
+[31m+       v-model:open="classModalOpen"[39m
+[31m+       :title="isEditing ? '编辑班级' : '新建班级'"[39m
+[31m+       :confirm-loading="saving"[39m
+[31m+       :ok-button-props="{ disabled: !draftName.trim() }"[39m
+[31m+       @ok="saveClass"[39m
+[31m+     >[39m
+[31m+       <Form layout="vertical">[39m
+[31m+         <FormItem label="班级名称" required>[39m
+[31m+           <Input[39m
+[31m+             v-model:value="draftName"[39m
+[31m+             :maxlength="64"[39m
+[31m+             placeholder="请输入班级名称"[39m
+[31m+             allow-clear[39m
+[31m+           />[39m
+[31m+         </FormItem>[39m
+[31m+         <FormItem label="课程 ID（可选）">[39m
+[31m+           <InputNumber[39m
+[31m+             v-model:value="draftCourseId"[39m
+[31m+             :min="1"[39m
+[31m+             placeholder="请输入课程 ID"[39m
+[31m+             style="width: 100%"[39m
+[31m+           />[39m
+[31m+         </FormItem>[39m
+[31m+       </Form>[39m
+[31m+     </Modal>[39m
+[31m+ [39m
+[31m+     <!-- 学生列表 Modal -->[39m
+[31m+     <Modal v-model:open="studentModalOpen" title="班级学生列表" width="760px" :footer="null">[39m
+[31m+       <Alert[39m
+[31m+         v-if="roster.state.error"[39m
+[31m+         type="error"[39m
+[31m+         show-icon[39m
+[31m+         closable[39m
+[31m+         :message="roster.state.error"[39m
+[31m+         class="mb-3"[39m
+[31m+         @close="roster.clearError()"[39m
+[31m+       />[39m
+[31m+ [39m
+[31m+       <!-- 入班：契约只吃 userId（POST /api/classes/{id}/students 的 JoinStudentRequest）。[39m
+[31m+            ⚠️ 后端没有「教师可检索学生」的只读端点（/api/users 不存在，[39m
+[31m+            AdminController 是 @RequireRole(ADMIN) 且不含用户列表），故此处按 ID 录入，[39m
+[31m+            不伪造下拉候选。 -->[39m
+[31m+       <div class="mb-3 flex flex-wrap items-end gap-2">[39m
+[31m+         <div>[39m
+[31m+           <p class="mb-1 text-xs text-gray-500">学生用户 ID</p>[39m
+[31m+           <InputNumber[39m
+[31m+             v-model:value="joinUserId"[39m
+[31m+             :min="1"[39m
+[31m+             placeholder="如 12"[39m
+[31m+             style="width: 160px"[39m
+[31m+           />[39m
+[31m+         </div>[39m
+[31m+         <Button[39m
+[31m+           type="primary"[39m
+[31m+           :loading="roster.state.pending === 'join'"[39m
+[31m+           :disabled="joinUserId === undefined"[39m
+[31m+           @click="onJoinStudent"[39m
+[31m+         >[39m
+[31m+           加入本班[39m
+[31m+         </Button>[39m
+[31m+         <Input[39m
+[31m+           v-model:value="studentSearch"[39m
+[31m+           placeholder="搜索本班学生（姓名 / 用户名）"[39m
+[31m+           allow-clear[39m
+[31m+           style="width: 240px"[39m
+[31m+         />[39m
+[31m+       </div>[39m
+[31m+ [39m
+[31m+       <Table[39m
+[31m+         :columns="studentColumns"[39m
+[31m+         :data-source="filteredStudents"[39m
+[31m+         :loading="studentsFetching"[39m
+[31m+         :pagination="false"[39m
+[31m+         :row-key="(row: ClassStudentItem) => row.userId as number"[39m
+[31m+         size="small"[39m
+[31m+       >[39m
+[31m+         <template #bodyCell="{ column, record }">[39m
+[31m+           <template v-if="column.key === 'joinedTime'">[39m
+[31m+             {{ formatTime((record as ClassStudentItem).joinedTime) }}[39m
+[31m+           </template>[39m
+[31m+           <template v-else-if="column.key === 'actions'">[39m
+[31m+             <Space>[39m
+[31m+               <Button type="link" size="small" @click="openTransfer(record as ClassStudentItem)">[39m
+[31m+                 转班[39m
+[31m+               </Button>[39m
+[31m+               <Popconfirm[39m
+[31m+                 title="将该学生移出本班？（仅解除班级归属，成绩随人不迁移）"[39m
+[31m+                 :ok-button-props="{ danger: true }"[39m
+[31m+                 @confirm="onRemoveStudent(record as ClassStudentItem)"[39m
+[31m+               >[39m
+[31m+                 <Button type="link" size="small" danger :disabled="removing(record)">移出</Button>[39m
+[31m+               </Popconfirm>[39m
+[31m+             </Space>[39m
+[31m+           </template>[39m
+[31m+         </template>[39m
+[31m+       </Table>[39m
+[31m+       <p v-if="!studentsFetching && filteredStudents.length === 0" class="mb-0 mt-2 text-gray-500">[39m
+[31m+         本班暂无学生（或搜索无结果）。[39m
+[31m+       </p>[39m
+[31m+     </Modal>[39m
+[31m+ [39m
+[31m+     <!-- 转班 Modal：目标班级只能从「本班教师可见的班级」里选（后端 page 接口按归属过滤），[39m
+[31m+          越权指向别人的班级由后端 getOwnedClass / selectById 裁决，前端不做安全假设。 -->[39m
+[31m+     <Modal[39m
+[31m+       v-model:open="transferModalOpen"[39m
+[31m+       title="学生转班"[39m
+[31m+       :confirm-loading="transferring"[39m
+[31m+       :ok-button-props="{ disabled: transferTargetId === undefined }"[39m
+[31m+       ok-text="确认转班"[39m
+[31m+       @ok="onConfirmTransfer"[39m
+[31m+     >[39m
+[31m+       <p class="mb-3 text-gray-700">[39m
+[31m+         学生[39m
+[31m+         <b>{{ transferStudentName }}</b>[39m
+[31m+         （ID {{ transferUserId ?? '—' }}）将由 「{{ currentClassName }}」转入下方所选班级。[39m
+[31m+       </p>[39m
+[31m+       <!-- ⚠️ ant-design-vue 4 的 Alert 只渲染 message/description，正文必须走 description[39m
+[31m+            （默认插槽会被静默丢弃——本仓多份旧页面的 Alert 正文就是这么消失的） -->[39m
+[31m+       <Alert[39m
+[31m+         type="info"[39m
+[31m+         show-icon[39m
+[31m+         class="mb-3"[39m
+[31m+         description="后端仅更新 user_class.class_id（成绩随人，历史成绩不迁移），入班时间记为转班时刻。"[39m
+[31m+       />[39m
+[31m+       <Select[39m
+[31m+         v-model:value="transferTargetId"[39m
+[31m+         :options="transferTargetOptions"[39m
+[31m+         :loading="transferTargetsFetching"[39m
+[31m+         placeholder="选择目标班级"[39m
+[31m+         style="width: 100%"[39m
+[31m+         show-search[39m
+[31m+         option-filter-prop="label"[39m
+[31m+       />[39m
+[31m+     </Modal>[39m
+[31m+   </div>[39m
+[31m+ </template>[39m
+[31m+ [39m
+[31m+ <script setup lang="ts">[39m
+[31m+ import {[39m
+[31m+   Alert,[39m
+[31m+   Button,[39m
+[31m+   Card,[39m
+[31m+   Form,[39m
+[31m+   FormItem,[39m
+[31m+   Input,[39m
+[31m+   InputNumber,[39m
+[31m+   Modal,[39m
+[31m+   Popconfirm,[39m
+[31m+   Select,[39m
+[31m+   Space,[39m
+[31m+   Table,[39m
+[31m+   message,[39m
+[31m+   type TableColumnsType,[39m
+[31m+ } from 'ant-design-vue';[39m
+[31m+ import dayjs from 'dayjs';[39m
+[31m+ import { computed, ref } from 'vue';[39m
+[31m+ import { useQuery } from '@tanstack/vue-query';[39m
+[31m+ [39m
+[31m+ import {[39m
+[31m+   create4 as createClass,[39m
+[31m+   delete3 as deleteClass,[39m
+[31m+   joinStudent as joinStudentContract,[39m
+[31m+   listStudents,[39m
+[31m+   page3 as pageClasses,[39m
+[31m+   removeStudent as removeStudentContract,[39m
+[31m+   transfer as transferContract,[39m
+[31m+   update3 as updateClass,[39m
+[31m+   type ClassPageResponse,[39m
+[31m+   type ClassResponse,[39m
+[31m+   type ClassStudentItem,[39m
+[31m+ } from '@/api/axios';[39m
+[31m+ import { client, unwrap } from '@/api/apiClient';[39m
+[31m+ import { queryClient } from '@/api/queryClient';[39m
+[31m+ import { createClassRoster } from '@/hooks/useClassRoster';[39m
+[31m+ [39m
+[31m+ /**[39m
+[31m+  * 班级管理页面（阶段 21 考务）。[39m
+[31m+  * 后端契约：GET/POST /api/classes、PUT/DELETE /api/classes/{id}、[39m
+[31m+  * GET /api/classes/{id}/students、POST /api/classes/{id}/students（入班）、[39m
+[31m+  * PUT /api/classes/{id}/students/{userId}/transfer（转班）、[39m
+[31m+  * DELETE /api/classes/{id}/students/{userId}（移出）。[39m
+[31m+  * 教师仅见/仅改自己归属的班级——越权由 ClassService.getOwnedClass 裁决（隐藏按钮不是安全边界）。[39m
+[31m+  */[39m
+[31m+ [39m
+[31m+ const columns: TableColumnsType = [[39m
+[31m+   { title: 'ID', key: 'id', dataIndex: 'id', width: 80 },[39m
+[31m+   { title: '班级名称', key: 'name', dataIndex: 'name' },[39m
+[31m+   { title: '课程 ID', key: 'courseId', dataIndex: 'courseId', width: 120 },[39m
+[31m+   { title: '创建教师 ID', key: 'createdBy', dataIndex: 'createdBy', width: 130 },[39m
+[31m+   { title: '创建时间', key: 'createdTime', width: 180 },[39m
+[31m+   { title: '操作', key: 'actions', width: 220 },[39m
+[31m+ ];[39m
+[31m+ [39m
+[31m+ const studentColumns: TableColumnsType = [[39m
+[31m+   { title: '用户 ID', key: 'userId', dataIndex: 'userId', width: 100 },[39m
+[31m+   { title: '用户名', key: 'username', dataIndex: 'username', width: 140 },[39m
+[31m+   { title: '姓名', key: 'name', dataIndex: 'name', width: 140 },[39m
+[31m+   { title: '入班时间', key: 'joinedTime', width: 170 },[39m
+[31m+   { title: '操作', key: 'actions', width: 140 },[39m
+[31m+ ];[39m
+[31m+ [39m
+[31m+ function formatTime(value: string | undefined | null): string {[39m
+[31m+   return value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '—';[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ const pageNum = ref(1);[39m
+[31m+ const pageSize = ref(10);[39m
+[31m+ [39m
+[31m+ const { data, isFetching, refetch } = useQuery({[39m
+[31m+   queryKey: computed(() => ['classes', pageNum.value, pageSize.value] as const),[39m
+[31m+   queryFn: () =>[39m
+[31m+     unwrap<ClassPageResponse>([39m
+[31m+       pageClasses({[39m
+[31m+         client,[39m
+[31m+         throwOnError: true,[39m
+[31m+         query: { page: pageNum.value, size: pageSize.value },[39m
+[31m+       })[39m
+[31m+     ),[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const rows = computed<ClassResponse[]>(() => data.value?.list ?? []);[39m
+[31m+ [39m
+[31m+ const tablePagination = computed(() => ({[39m
+[31m+   current: pageNum.value,[39m
+[31m+   pageSize: pageSize.value,[39m
+[31m+   // 后端未返回 total 时退化为「只有当页」的分页器，避免拍脑袋造总数[39m
+[31m+   total: data.value?.total ?? data.value?.list?.length ?? 0,[39m
+[31m+   showSizeChanger: false,[39m
+[31m+ }));[39m
+[31m+ [39m
+[31m+ function onTableChange(pag: { current?: number; pageSize?: number }): void {[39m
+[31m+   if (typeof pag.current === 'number') pageNum.value = pag.current;[39m
+[31m+   if (typeof pag.pageSize === 'number') pageSize.value = pag.pageSize;[39m
+[31m+   void refetch();[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ // ===== 新建 / 编辑 =====[39m
+[31m+ const classModalOpen = ref(false);[39m
+[31m+ const isEditing = ref(false);[39m
+[31m+ const editingClassId = ref<number | undefined>(undefined);[39m
+[31m+ const draftName = ref('');[39m
+[31m+ const draftCourseId = ref<number | undefined>(undefined);[39m
+[31m+ const saving = ref(false);[39m
+[31m+ [39m
+[31m+ function openClassModal(clazz?: ClassResponse): void {[39m
+[31m+   if (clazz) {[39m
+[31m+     isEditing.value = true;[39m
+[31m+     editingClassId.value = clazz.id;[39m
+[31m+     draftName.value = clazz.name ?? '';[39m
+[31m+     draftCourseId.value = clazz.courseId;[39m
+[31m+   } else {[39m
+[31m+     isEditing.value = false;[39m
+[31m+     editingClassId.value = undefined;[39m
+[31m+     draftName.value = '';[39m
+[31m+     draftCourseId.value = undefined;[39m
+[31m+   }[39m
+[31m+   classModalOpen.value = true;[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ async function saveClass(): Promise<void> {[39m
+[31m+   const name = draftName.value.trim();[39m
+[31m+   if (!name) {[39m
+[31m+     message.warning('请输入班级名称');[39m
+[31m+     return;[39m
+[31m+   }[39m
+[31m+   saving.value = true;[39m
+[31m+   try {[39m
+[31m+     if (isEditing.value && editingClassId.value !== undefined) {[39m
+[31m+       await unwrap([39m
+[31m+         updateClass({[39m
+[31m+           client,[39m
+[31m+           throwOnError: true,[39m
+[31m+           path: { id: editingClassId.value },[39m
+[31m+           body: {[39m
+[31m+             name,[39m
+[31m+             ...(draftCourseId.value !== undefined ? { courseId: draftCourseId.value } : {}),[39m
+[31m+           },[39m
+[31m+         })[39m
+[31m+       );[39m
+[31m+       message.success('班级已更新');[39m
+[31m+     } else {[39m
+[31m+       await unwrap([39m
+[31m+         createClass({[39m
+[31m+           client,[39m
+[31m+           throwOnError: true,[39m
+[31m+           body: {[39m
+[31m+             name,[39m
+[31m+             ...(draftCourseId.value !== undefined ? { courseId: draftCourseId.value } : {}),[39m
+[31m+           },[39m
+[31m+         })[39m
+[31m+       );[39m
+[31m+       message.success('班级已创建');[39m
+[31m+     }[39m
+[31m+     classModalOpen.value = false;[39m
+[31m+     void refetch();[39m
+[31m+   } catch (error) {[39m
+[31m+     message.error(error instanceof Error ? error.message : '保存班级失败，请稍后重试');[39m
+[31m+   } finally {[39m
+[31m+     saving.value = false;[39m
+[31m+   }[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ async function onDeleteClass(clazz: ClassResponse): Promise<void> {[39m
+[31m+   if (clazz.id === undefined) return;[39m
+[31m+   try {[39m
+[31m+     await unwrap(deleteClass({ client, throwOnError: true, path: { id: clazz.id } }));[39m
+[31m+     message.success('班级已删除');[39m
+[31m+     void refetch();[39m
+[31m+   } catch (error) {[39m
+[31m+     message.error(error instanceof Error ? error.message : '删除班级失败，请稍后重试');[39m
+[31m+   }[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ // ===== 学生列表 =====[39m
+[31m+ const studentModalOpen = ref(false);[39m
+[31m+ const studentSearch = ref('');[39m
+[31m+ const studentsExamKey = ref<number | undefined>(undefined);[39m
+[31m+ /** 入班录入框：契约入参只有 userId（无学生检索端点，故不伪造下拉候选）。 */[39m
+[31m+ const joinUserId = ref<number | undefined>(undefined);[39m
+[31m+ [39m
+[31m+ const {[39m
+[31m+   data: studentsData,[39m
+[31m+   isFetching: studentsFetching,[39m
+[31m+   refetch: refetchStudents,[39m
+[31m+ } = useQuery({[39m
+[31m+   queryKey: computed(() => ['classes', studentsExamKey.value, 'students'] as const),[39m
+[31m+   queryFn: () =>[39m
+[31m+     unwrap<ClassStudentItem[]>([39m
+[31m+       listStudents({[39m
+[31m+         client,[39m
+[31m+         throwOnError: true,[39m
+[31m+         path: { id: studentsExamKey.value as number },[39m
+[31m+       })[39m
+[31m+     ),[39m
+[31m+   enabled: computed(() => studentModalOpen.value && studentsExamKey.value !== undefined),[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const filteredStudents = computed<ClassStudentItem[]>(() => {[39m
+[31m+   const keyword = studentSearch.value.trim().toLowerCase();[39m
+[31m+   if (!keyword) return studentsData.value ?? [];[39m
+[31m+   return (studentsData.value ?? []).filter([39m
+[31m+     (s) => s.name?.toLowerCase().includes(keyword) || s.username?.toLowerCase().includes(keyword)[39m
+[31m+   );[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ function viewClassStudents(clazz: ClassResponse): void {[39m
+[31m+   if (clazz.id === undefined) return;[39m
+[31m+   studentsExamKey.value = clazz.id;[39m
+[31m+   studentSearch.value = '';[39m
+[31m+   joinUserId.value = undefined;[39m
+[31m+   roster.clearError();[39m
+[31m+   studentModalOpen.value = true;[39m
+[31m+   void refetchStudents();[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ // ===== 入班 / 转班 / 移出 =====[39m
+[31m+ [39m
+[31m+ /** 当前打开学生列表的班级 id（三个动作的路径班级）。 */[39m
+[31m+ const activeClassId = computed(() => studentsExamKey.value);[39m
+[31m+ [39m
+[31m+ function invalidateRoster(classIds: number[]): void {[39m
+[31m+   for (const id of classIds) {[39m
+[31m+     void queryClient.invalidateQueries({ queryKey: ['classes', id, 'students'] });[39m
+[31m+   }[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ // 生产注入：gen:api 生成客户端 + apiClient 拦截器；单测走 hooks/__tests__/useClassRoster.spec.ts[39m
+[31m+ const roster = createClassRoster({[39m
+[31m+   join: (classId, userId) =>[39m
+[31m+     unwrap([39m
+[31m+       joinStudentContract({[39m
+[31m+         client,[39m
+[31m+         throwOnError: true,[39m
+[31m+         path: { id: classId },[39m
+[31m+         body: { userId },[39m
+[31m+       })[39m
+[31m+     ),[39m
+[31m+   transfer: (classId, userId, targetClassId) =>[39m
+[31m+     unwrap([39m
+[31m+       transferContract({[39m
+[31m+         client,[39m
+[31m+         throwOnError: true,[39m
+[31m+         path: { id: classId, userId },[39m
+[31m+         body: { targetClassId },[39m
+[31m+       })[39m
+[31m+     ),[39m
+[31m+   remove: (classId, userId) =>[39m
+[31m+     unwrap([39m
+[31m+       removeStudentContract({[39m
+[31m+         client,[39m
+[31m+         throwOnError: true,[39m
+[31m+         path: { id: classId, userId },[39m
+[31m+       })[39m
+[31m+     ),[39m
+[31m+   onChanged: invalidateRoster,[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ async function onJoinStudent(): Promise<void> {[39m
+[31m+   const classId = activeClassId.value;[39m
+[31m+   const userId = joinUserId.value;[39m
+[31m+   if (classId === undefined || userId === undefined) return;[39m
+[31m+   const ok = await roster.joinStudent(classId, userId);[39m
+[31m+   if (ok) {[39m
+[31m+     joinUserId.value = undefined;[39m
+[31m+     message.success('学生已加入本班');[39m
+[31m+   }[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ function removing(student: ClassStudentItem): boolean {[39m
+[31m+   return roster.state.pending === `remove:${student.userId}`;[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ async function onRemoveStudent(student: ClassStudentItem): Promise<void> {[39m
+[31m+   const classId = activeClassId.value;[39m
+[31m+   if (classId === undefined || student.userId === undefined) return;[39m
+[31m+   if (await roster.removeStudent(classId, student.userId)) {[39m
+[31m+     message.success('学生已移出本班');[39m
+[31m+   }[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ const transferModalOpen = ref(false);[39m
+[31m+ const transferUserId = ref<number | undefined>(undefined);[39m
+[31m+ const transferStudentName = ref('');[39m
+[31m+ const transferTargetId = ref<number | undefined>(undefined);[39m
+[31m+ const transferring = computed(() => roster.state.pending === `transfer:${transferUserId.value}`);[39m
+[31m+ [39m
+[31m+ /** 目标班级候选：走同一张分页接口（后端按归属过滤），不另造端点。 */[39m
+[31m+ const { data: transferTargets, isFetching: transferTargetsFetching } = useQuery({[39m
+[31m+   queryKey: ['classes', 'for-transfer'] as const,[39m
+[31m+   queryFn: () =>[39m
+[31m+     unwrap<ClassPageResponse>([39m
+[31m+       pageClasses({ client, throwOnError: true, query: { page: 1, size: 100 } })[39m
+[31m+     ),[39m
+[31m+   enabled: computed(() => transferModalOpen.value),[39m
+[31m+ });[39m
+[31m+ [39m
+[31m+ const transferTargetOptions = computed(() =>[39m
+[31m+   (transferTargets.value?.list ?? [])[39m
+[31m+     .filter((c) => c.id !== undefined && c.id !== activeClassId.value)[39m
+[31m+     .map((c) => ({ value: c.id as number, label: c.name ?? `班级 #${c.id}` }))[39m
+[31m+ );[39m
+[31m+ [39m
+[31m+ function openTransfer(student: ClassStudentItem): void {[39m
+[31m+   if (student.userId === undefined || activeClassId.value === undefined) return;[39m
+[31m+   transferUserId.value = student.userId;[39m
+[31m+   transferStudentName.value = student.name || student.username || `用户 #${student.userId}`;[39m
+[31m+   transferTargetId.value = undefined;[39m
+[31m+   transferModalOpen.value = true;[39m
+[31m+ }[39m
+[31m+ [39m
+[31m+ const currentClassName = computed([39m
+[31m+   () => rows.value.find((c) => c.id === activeClassId.value)?.name ?? '当前班级'[39m
+[31m+ );[39m
+[31m+ [39m
+[31m+ async function onConfirmTransfer(): Promise<void> {[39m
+[31m+   const classId = activeClassId.value;[39m
+[31m+   const userId = transferUserId.value;[39m
+[31m+   const targetClassId = transferTargetId.value;[39m
+[31m+   if (classId === undefined || userId === undefined || targetClassId === undefined) return;[39m
+[31m+   if (await roster.transferStudent(classId, userId, targetClassId)) {[39m
+[31m+     transferModalOpen.value = false;[39m
+[31m+     message.success('学生已转班，两个班级的名单均已刷新');[39m
+[31m+   }[39m
+[31m+ }[39m
+[31m+ </script>[39m
+[31m+ [39m
+[31m+ <style scoped>[39m
+[31m+ .mb-3 {[39m
+[31m+   margin-bottom: 0.75rem;[39m
+[31m+ }[39m
+[31m+ .mb-4 {[39m
+[31m+   margin-bottom: 1rem;[39m
+[31m+ }[39m
+[31m+ </style>[39m
+[31m+[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/classes/__tests__/transferTargetsFullList.spec.ts:[2m145:31[22m[39m
+    [90m143|[39m
+    [90m144|[39m   [34mit[39m([32m'候选下拉走共享累加器，页面不再出现单页取数形状'[39m[33m,[39m () [33m=>[39m {
+    [90m145|[39m     [34mexpect[39m(classesPageSource)[33m.[39m[34mtoContain[39m([32m'fetchAllPages'[39m)[33m;[39m
+    [90m   |[39m                               [31m^[39m
+    [90m146|[39m     expect(classesPageSource).not.toMatch(/query:\s*\{\s*page:\s*1,\s*…
+    [90m147|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (3)[39m
+[2m   Start at [22m 21:03:27
+[2m   Duration [22m 6.34s[2m (transform 189ms, setup 43ms, import 3.24s, tests 1.77s, environment 966ms)[22m
+

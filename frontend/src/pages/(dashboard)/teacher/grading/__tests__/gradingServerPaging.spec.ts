@@ -160,12 +160,14 @@ describe('批改面板信封驱动计数与分页交互', () => {
     document.body.innerHTML = '';
   });
 
+  // 第三抖专项续：本用例同样在全量并行下越过 5000ms 默认上限（诊断轮实测 3465ms，
+  // 后续全量轮越界），与文件末条用例同因同处置——只抬超时上限，断言零改动。
   it('已批进度展示信封 graded/total，而非客户端计数', () => {
     const wrapper = mountPanel();
     expect(wrapper.text()).toContain('已批 17/25');
     // 客户端口径是 1/2（2 行中 1 行已批）——信封驱动后不得再出现
     expect(wrapper.text()).not.toContain('已批 1/2');
-  });
+  }, 15000);
 
   it('表格翻页与改页大小上抛 update:page / update:pageSize（服务端驱动）', async () => {
     const wrapper = mountPanel();
@@ -286,6 +288,9 @@ describe('批改页服务端分页参数', () => {
     document.body.innerHTML = '';
   });
 
+  // 第三抖专项（fix-frontend-list-truncation-family）：全量套件并行下本用例实测 5034ms，
+  // 贴着 vitest 默认 5000ms 上限（定向单跑约 0.4s）。仅抬高超时上限吸收 CPU 争抢，
+  // 断言与交互零改动。
   it('queryFn 携带 page/size/onlyUngraded/name，翻页与筛选后参数随动且切筛选回第 1 页', async () => {
     const wrapper = mount(TeacherGradingPage, { attachTo: document.body });
     await selectExam(wrapper, ENDED_EXAM.id);
@@ -329,5 +334,5 @@ describe('批改页服务端分页参数', () => {
     expect(vi.mocked(api.subjectiveRows).mock.calls[2]?.[0]).toMatchObject({
       query: expect.objectContaining({ name: '张', page: 1 }),
     });
-  });
+  }, 15000);
 });

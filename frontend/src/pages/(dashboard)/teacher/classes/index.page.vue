@@ -215,6 +215,7 @@ import {
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { queryClient } from '@/api/queryClient';
+import { fetchAllPages } from '@/hooks/fetchAllPages';
 import { createClassRoster } from '@/hooks/useClassRoster';
 
 /**
@@ -468,18 +469,24 @@ const transferStudentName = ref('');
 const transferTargetId = ref<number | undefined>(undefined);
 const transferring = computed(() => roster.state.pending === `transfer:${transferUserId.value}`);
 
-/** 目标班级候选：走同一张分页接口（后端按归属过滤），不另造端点。 */
+/**
+ * 目标班级候选：走同一张分页接口（后端按归属过滤），不另造端点。
+ * 候选不截断（U-2）：信封缺 total 时满页即续拉，与考试 / 试卷下拉共用 fetchAllPages 那一份语义。
+ */
 const { data: transferTargets, isFetching: transferTargetsFetching } = useQuery({
   queryKey: ['classes', 'for-transfer'] as const,
   queryFn: () =>
-    unwrap<ClassPageResponse>(
-      pageClasses({ client, throwOnError: true, query: { page: 1, size: 100 } })
-    ),
+    fetchAllPages<ClassResponse>(async (page, size) => {
+      const envelope = await unwrap<ClassPageResponse>(
+        pageClasses({ client, throwOnError: true, query: { page, size } })
+      );
+      return envelope?.list ?? [];
+    }),
   enabled: computed(() => transferModalOpen.value),
 });
 
 const transferTargetOptions = computed(() =>
-  (transferTargets.value?.list ?? [])
+  (transferTargets.value ?? [])
     .filter((c) => c.id !== undefined && c.id !== activeClassId.value)
     .map((c) => ({ value: c.id as number, label: c.name ?? `班级 #${c.id}` }))
 );
