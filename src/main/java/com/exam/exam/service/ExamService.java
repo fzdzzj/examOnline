@@ -26,6 +26,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
@@ -99,13 +100,20 @@ public class ExamService {
         return exam;
     }
 
-    /** 考试分页：教师仅见自己的考试，ADMIN 可见全部。 */
+    /** 考试分页（兼容既有无参调用）：教师仅见自己的考试，ADMIN 可见全部。 */
     public Page<Exam> page(long page, long size) {
+        return page(page, size, null, null);
+    }
+
+    /** 考试分页：教师仅见自己的考试，ADMIN 可见全部，支持标题模糊与状态精确筛选。 */
+    public Page<Exam> page(long page, long size, String title, Integer status) {
         LoginUser operator = requireLogin();
         return examMapper.selectPage(new Page<>(page, Math.min(size, 100)),
                 Wrappers.<Exam>lambdaQuery()
                         .eq(operator.getRoleLevel() < RoleHierarchy.levelOf(RoleHierarchy.ADMIN),
                                 Exam::getCreatedBy, operator.getId())
+                        .like(StringUtils.hasText(title), Exam::getTitle, title != null ? title.trim() : null)
+                        .eq(status != null, Exam::getStatus, status)
                         .orderByDesc(Exam::getId));
     }
 

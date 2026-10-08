@@ -1,0 +1,147 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对与基线留证",
+    "task": "分支与基线锚定（从 main 最新实测开工）",
+    "steps": [
+      {
+        "step": "K1–K3：从 main 新建 feature/add-exam-list-filtering；记录 HEAD 短 SHA 与 git status 基线（应仅 7 个白名单未跟踪文件）",
+        "completed": true
+      },
+      {
+        "step": "K4：双端门禁基线留证（严格串行）：后端 mvnw.cmd clean test（JAVA_HOME=D:\\develop1\\jdk21）+ 前端 lint:check / type-check:check / test，实测数字留存 evidence/",
+        "completed": true
+      },
+      {
+        "step": "K5：现状锚点复核：ExamController.page / ExamService.page 仅支持 page/size；openapi.yaml 中 GET /api/exams 参数仅 page/size；index.page.vue 存在客户端 filteredRows 与「（当前页）」占位符",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1-K3: 从 main（git rev-parse --short HEAD=ecfaebd）新建并切换分支 feature/add-exam-list-filtering；git status --short 仅 7 个白名单未跟踪文件（.zcodeignore、docs/3 份候选、docs/3 份交接文档）。K4 后端: JAVA_HOME=D:\\develop1\\jdk21 + mvnw.cmd clean test 退出码 0，'[WARNING] Tests run: 368, Failures: 0, Errors: 0, Skipped: 1'，'[INFO] BUILD SUCCESS'，总耗时 03:20 min，全量日志留存 evidence/baseline-backend.txt。K4 前端（严格串行）: npm.cmd --prefix frontend run lint:check 退出码 0（evidence/baseline-frontend-lint.txt）；npm.cmd --prefix frontend run type-check:check 退出码 0（evidence/baseline-frontend-typecheck.txt）；npm.cmd --prefix frontend run test 退出码 0，'Test Files 61 passed (61)' 'Tests 476 passed (476)'，总耗时 118.96s（evidence/baseline-frontend-test.txt）。K5 现状锚点核验：ExamController.page:78-83 仅接受 page/size；ExamService.page:103-110 仅构造 createdBy 与 id DESC；openapi.yaml paths.'/api/exams'.get.parameters 仅含 page 与 size；index.page.vue:260 queryKey 仅含 pageNum/pageSize，:273-282 存在 filteredRows 客户端切片计算，:11 占位符为 '搜索考试标题（当前页）'。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：后端红测先行",
+    "task": "考试列表服务端筛选集成测试（实施前先红）",
+    "steps": [
+      {
+        "step": "用例①：title 模糊匹配命中与不命中（命中项按 id DESC 排序，不匹配返回空列表）",
+        "completed": true
+      },
+      {
+        "step": "用例②：title 传入空格 blank 视为不过滤，返回该教师全量考试",
+        "completed": true
+      },
+      {
+        "step": "用例③：status 精确筛选仅返回对应状态的考试",
+        "completed": true
+      },
+      {
+        "step": "用例④：title 与 status 组合筛选",
+        "completed": true
+      },
+      {
+        "step": "用例⑤：不传筛选参数与既有分页行为完全一致（现状回归）",
+        "completed": true
+      },
+      {
+        "step": "用例⑥：维持教师所有权隔离（非管理员仅查本人考试，不越权查他人考试）",
+        "completed": true
+      },
+      {
+        "step": "取先红日志：执行测试确认先红（编译或执行失败），保存至 evidence/red-backend.txt",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "新增集成测试 ExamListFilteringIntegrationTest（6 例），在未改动 ExamController/ExamService 前执行 mvnw.cmd test -Dtest=ExamListFilteringIntegrationTest，exit 1，'[ERROR] Tests run: 6, Failures: 3, Errors: 0, Skipped: 0' + '[INFO] BUILD FAILURE'。3 个失败红灯精确对应服务端尚未实施的筛选行为：titleSearchMatchAndMismatch 期望 2 实得 3、exactStatusFilter 期望 0 实得 2、combinedTitleAndStatusFilter 期望 1 实得 3；纯空格不过滤、缺省全量回归、教师隔离 3 例已通过。完整先红日志留存 evidence/red-backend.txt。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：后端实施与契约重导出",
+    "task": "后端实现与 openapi.yaml 导出",
+    "steps": [
+      {
+        "step": "ExamController.page 扩充 title 与 status 可选参数，维持 ApiResponse<List<ExamResponse>> 形状",
+        "completed": true
+      },
+      {
+        "step": "ExamService.page 构造动态条件：StringUtils.hasText(title) -> like, status != null -> eq，叠加 operator 所有权与 id DESC 排序",
+        "completed": true
+      },
+      {
+        "step": "运行 OpenApiContractTest#exportOpenApiContract 离线重导出 openapi.yaml，断言 servers.url 带端口且中文无乱码",
+        "completed": true
+      },
+      {
+        "step": "运行后端新增测试转绿，保存 evidence/green-backend.txt",
+        "completed": true
+      },
+      {
+        "step": "执行仓库根 mvnw.cmd clean test，验证用例数只增不减（368+N）、BUILD SUCCESS",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "ExamController.page 增加 @RequestParam(required = false) String title 与 Integer status；ExamService.page 增加 StringUtils.hasText(title) -> .like(Exam::getTitle, title.trim()) 与 status != null -> .eq(Exam::getStatus, status)，保持 operator 所有权与 id DESC 排序。离线执行 OpenApiContractTest#exportOpenApiContract（-DexportContract=true）重导出 openapi.yaml，git diff 显示 paths.'/api/exams'.get.parameters 新增 title 与 status，servers.url 保持 http://localhost:8080 不变，无乱码。执行 mvnw.cmd test -Dtest=ExamListFilteringIntegrationTest exit 0，6 例全绿（evidence/green-backend.txt）。执行仓库根 mvnw.cmd clean test exit 0，'[WARNING] Tests run: 374, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS'，总耗时 03:46 min，用例数从基线 368 恰好增长 6 例至 374，全量日志留存 evidence/gate-backend.txt。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：前端接线与红绿测试",
+    "task": "前端契约生成、页面改造与单测验证",
+    "steps": [
+      {
+        "step": "执行 npm run gen:api 基于新 openapi.yaml 重新生成 types.gen.ts 与 SDK，不手写接口类型",
+        "completed": true
+      },
+      {
+        "step": "前端红测先行：编写 examListFiltering.spec.ts 断言带参请求、防抖触发、修改筛选回第 1 页、placeholder 移除「（当前页）」",
+        "completed": true
+      },
+      {
+        "step": "取前端先红日志，保存至 evidence/red-frontend.txt",
+        "completed": true
+      },
+      {
+        "step": "改造 index.page.vue：queryKey 纳入 title/status，防抖触发，变更回第 1 页，placeholder 移除「（当前页）」，表格直接绑定服务端数据",
+        "completed": true
+      },
+      {
+        "step": "运行前端测试确认转绿，保存至 evidence/green-frontend.txt",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "执行 npm run gen:api（504ms），types.gen.ts 中 Page2Data.query 自动增加 title?: string; status?: number;，零手写类型。编写 examListFiltering.spec.ts（4 例），在 index.page.vue 未改造前执行 npm run test -- examListFiltering.spec.ts exit 1，4 例全红（占位符仍含当前页、title 缺少防抖与透传、status 未透传、切页后搜索未回第 1 页），日志留存 evidence/red-frontend.txt。改造 index.page.vue：placeholder 更新为「搜索考试标题」，queryKey 与 query 纳入 title/status，增加 300ms setTimeout 防抖，watch searchTitle/statusFilter 自动重置 pageNum 为 1，表格直接绑定 rows 移除客户端 filteredRows。执行 npm run test -- examListFiltering.spec.ts exit 0，4 例全绿（evidence/green-frontend.txt）。变异检验：将 title 改为 undefined，4 例中 2 例转红，撤回后复验全绿（evidence/mutation-check.txt）。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：双端门禁留证与交付归档",
+    "task": "双端门禁验证、提交与归档",
+    "steps": [
+      {
+        "step": "双端门禁串行执行：后端 mvnw.cmd clean test + 前端 lint:check/type-check:check/test，留存 gate-* 证据",
+        "completed": true
+      },
+      {
+        "step": "核对 git diff 范围仅限后端 exam 域文件、openapi.yaml、前端生成物与考试列表页及测试、spec/",
+        "completed": true
+      },
+      {
+        "step": "实施笔提交：实现代码、契约、前端接线、测试与 spec 变更三件套",
+        "completed": false
+      },
+      {
+        "step": "合入规范与归档：exam-management 与 frontend spec 追加 Requirement，README 三处登记，移入 archive/ 并生成 evidence-sha256.txt",
+        "completed": false
+      },
+      {
+        "step": "归档笔提交，确认 git status 仅剩 7 个白名单未跟踪文件",
+        "completed": false
+      }
+    ],
+    "passes": false,
+    "evidence": "双端门禁全部在仓库根与 frontend/ 严格串行执行完毕：① 后端 mvnw.cmd clean test exit 0，Tests run: 374, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，总耗时 03:46 min（evidence/gate-backend.txt）；② 前端 lint:check exit 0（evidence/gate-frontend-lint.txt）；③ 前端 type-check:check exit 0（evidence/gate-frontend-typecheck.txt）；④ 前端 test exit 0，Test Files 62 passed (62)，Tests 480 passed (480)，总耗时 39.36s（evidence/gate-frontend-test.txt）。核对 git diff --name-only 范围：src/main/java/com/exam/exam/*、src/test/java/com/exam/exam/ExamListFilteringIntegrationTest.java、openapi.yaml、frontend/src/api/axios/types.gen.ts、frontend/src/pages/(dashboard)/teacher/exams/index.page.vue、frontend/src/pages/(dashboard)/teacher/exams/__tests__/examListFiltering.spec.ts、spec/changes/add-exam-list-filtering/*，范围严格封闭。"
+  }
+]

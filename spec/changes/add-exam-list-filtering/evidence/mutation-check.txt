@@ -1,0 +1,89 @@
+
+> examonline-front@0.0.0 test
+> vitest run examListFiltering.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/teacher/exams/__tests__/examListFiltering.spec.ts [2m([22m[2m4 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 1466[2mms[22m[39m
+     [33m[2m✓[22m[39m 占位符断言：搜索框 placeholder 移除「（当前页）」，文案为「搜索考试标题」 [33m 780[2mms[22m[39m
+[31m     [31m×[31m 防抖检索与参数透传：标题输入在 300ms 内不发请求，300ms 后以新标题发起请求[39m[32m 251[2mms[22m[39m
+     [32m✓[39m 状态筛选参数透传：更改状态下拉框即刻触发带参请求[32m 209[2mms[22m[39m
+[31m     [31m×[31m 切页后筛选变更重置为第 1 页：在第 2 页变更搜索词自动重置为 page 1 发起请求[39m[32m 223[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/exams/__tests__/examListFiltering.spec.ts[2m > [22m教师考试列表服务端筛选联动（U-3）[2m > [22m防抖检索与参数透传：标题输入在 300ms 内不发请求，300ms 后以新标题发起请求
+[31m[1mAssertionError[22m: expected last "vi.fn()" call to have been called with [ ObjectContaining{…} ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    {[22m
+[31m+     "client": {[39m
+[31m+       "__test": "mock-client",[39m
+[31m+     },[39m
+[2m      "query": {[22m
+[2m        "page": 1,[22m
+[2m        "size": 10,[22m
+[32m-       "title": "物理",[39m
+[31m+       "status": undefined,[39m
+[31m+       "title": undefined,[39m
+[2m      },[22m
+[31m+     "throwOnError": true,[39m
+[2m    },[22m
+[2m  ][22m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/exams/__tests__/examListFiltering.spec.ts:[2m148:23[22m[39m
+    [90m146|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m147|[39m     [34mexpect[39m(api[33m.[39mpage2)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m2[39m)[33m;[39m
+    [90m148|[39m     [34mexpect[39m(api[33m.[39mpage2)[33m.[39m[34mtoHaveBeenLastCalledWith[39m(
+    [90m   |[39m                       [31m^[39m
+    [90m149|[39m       expect[33m.[39m[34mobjectContaining[39m({
+    [90m150|[39m         query[33m:[39m expect[33m.[39m[34mobjectContaining[39m({
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/exams/__tests__/examListFiltering.spec.ts[2m > [22m教师考试列表服务端筛选联动（U-3）[2m > [22m切页后筛选变更重置为第 1 页：在第 2 页变更搜索词自动重置为 page 1 发起请求
+[31m[1mAssertionError[22m: expected last "vi.fn()" call to have been called with [ ObjectContaining{…} ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    {[22m
+[31m+     "client": {[39m
+[31m+       "__test": "mock-client",[39m
+[31m+     },[39m
+[2m      "query": {[22m
+[2m        "page": 1,[22m
+[2m        "size": 10,[22m
+[32m-       "title": "期末",[39m
+[31m+       "status": undefined,[39m
+[31m+       "title": undefined,[39m
+[2m      },[22m
+[31m+     "throwOnError": true,[39m
+[2m    },[22m
+[2m  ][22m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/exams/__tests__/examListFiltering.spec.ts:[2m206:23[22m[39m
+    [90m204|[39m
+    [90m205|[39m     [90m// 必须重置为第 1 页[39m
+    [90m206|[39m     [34mexpect[39m(api[33m.[39mpage2)[33m.[39m[34mtoHaveBeenLastCalledWith[39m(
+    [90m   |[39m                       [31m^[39m
+    [90m207|[39m       expect[33m.[39m[34mobjectContaining[39m({
+    [90m208|[39m         query[33m:[39m expect[33m.[39m[34mobjectContaining[39m({
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 12:30:45
+[2m   Duration [22m 6.07s[2m (transform 203ms, setup 41ms, import 3.36s, tests 1.47s, environment 923ms)[22m
+
