@@ -5,6 +5,17 @@
         <Button @click="router.back()">返回</Button>
       </template>
 
+      <!-- U-7 三态分离：编辑模式回填失败显性呈现（Alert 承载后端 message），
+           且回填成功前禁用「保存修改」，防默认值误写真实考试 -->
+      <Alert
+        v-if="backfillErrorText"
+        type="error"
+        show-icon
+        :message="backfillErrorText"
+        data-test="exam-backfill-error"
+        class="mb-4"
+      />
+
       <Form layout="vertical">
         <FormItem label="考试标题" required>
           <Input
@@ -96,7 +107,12 @@
 
         <div class="mt-4 flex justify-end gap-3">
           <Button @click="router.back()">取消</Button>
-          <Button type="primary" :loading="submitting" @click="handleSubmit">
+          <Button
+            type="primary"
+            :loading="submitting"
+            :disabled="isEditMode && !backfilled"
+            @click="handleSubmit"
+          >
             {{ isEditMode ? '保存修改' : '创建考试' }}
           </Button>
         </div>
@@ -107,6 +123,7 @@
 
 <script setup lang="ts">
 import {
+  Alert,
   Button,
   Card,
   DatePicker,
@@ -178,7 +195,7 @@ const form = ref({
 const enableSwitchScreen = ref(true);
 const enableForbidCopy = ref(false);
 
-const { data: editDetail } = useQuery({
+const { data: editDetail, error: editBackfillError } = useQuery({
   queryKey: computed(() => ['exam-edit-detail', editExamId.value] as const),
   queryFn: () =>
     unwrap<ExamDetailResponse>(
@@ -189,6 +206,15 @@ const { data: editDetail } = useQuery({
       })
     ),
   enabled: isEditMode,
+});
+
+// U-7 三态分离：编辑模式回填失败显性呈现（Alert 承载后端 message）——失败时表单不落默认值
+// 误写真实考试（保存按钮随下方 isEditMode && !backfilled 禁用 + handleSubmit 拦截双保险）
+const backfillErrorText = computed<string | null>(() => {
+  if (!isEditMode.value) return null;
+  const caught = editBackfillError.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '考试信息加载失败';
 });
 
 /** antiCheatConfig 契约类型是 JsonNode（unknown）：按创建写入的键读取，缺失时回落新建默认值 */
@@ -285,6 +311,12 @@ function validate(): boolean {
 }
 
 async function handleSubmit(): Promise<void> {
+  // U-7 提交拦截（与保存按钮 `:disabled` 双保险）：编辑模式且回填尚未成功（失败/进行中）时拒绝提交，
+  // 防默认值误写真实考试；保存按钮禁用已对常规点击生效，此拦截兜底程序化/键盘触发的提交
+  if (isEditMode.value && !backfilled.value) {
+    message.warning('考试信息加载失败，不能保存修改，请重试');
+    return;
+  }
   if (!validate()) return;
   submitting.value = true;
   try {
