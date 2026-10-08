@@ -1,0 +1,103 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对",
+    "task": "分支与基线锚定（从 main@b424c91 开工）与现状锚点复核",
+    "steps": [
+      {
+        "step": "从 main（b424c91）新建 feature/fix-frontend-exam-page-error-states；记录 HEAD 短 SHA 与 git status 基线（应仅台账/纪律白名单未跟踪文件）",
+        "completed": true
+      },
+      {
+        "step": "K4：双端门禁基线锚（命令 + 当次输出 + 短 SHA 记入本字段，不作常量假设）",
+        "completed": true
+      },
+      {
+        "step": "K5：现状复核锚点（台账行号基于 608adf5，须现场重核）：index.page.vue useQuery(:272 只解构 {data,isFetching,refetch})、rows=data??[](:292)、本页 3 处 Alert 均在确认弹窗(:119/:140/:165)、Table(:19-107)；create.page.vue 回填 useQuery(:181 只解构 {data:editDetail})、watch 回填(:203-224)、全文件 0 个 Alert；与台账 U-6/U-7 描述一致，不一致停下回报",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "开工核对：git checkout -b feature/fix-frontend-exam-page-error-states @ main HEAD b424c91（git log --oneline -1 实测 b424c91 docs(spec): 归档 survey-frontend-candidates-r2 第二轮前端只读巡查台账与证据清单）；基线 git status --porcelain 仅 7 个白名单未跟踪文件（.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-improvement-candidates-r2.md、docs/frontend-improvement-candidates.md、docs/frontend-optimization-candidates.md、docs/指导主Agent交接文档-2026-09-30/-10-01/-10-02.md）。K4 基线锚：后端 JAVA_HOME=D:\\develop1\\jdk21 + ./mvnw.cmd clean test @ b424c91 关键行 '[WARNING] Tests run: 374, Failures: 0, Errors: 0, Skipped: 1' + BUILD SUCCESS（退出码 1 为 Select-String 管道工件，Maven 实为 BUILD SUCCESS）；前端基线 npm.cmd run test @ b424c91 关键行 'Test Files 63 passed (63)' 'Tests 490 passed (490)'。台账 `docs/frontend-improvement-candidates-r2.md`（基于 608adf5 的纪律文件，现场复核行号）U-6（:76-86 总结 index.page.vue :272 useQuery 只解构 {data,isFetching,refetch}、:292 rows=data??[]、本页 3 处 Alert 全在确认弹窗 :119/:140/:165）与 U-7（:88-98 总结 create.page.vue :181 useQuery 只解构 {data:editDetail}、:203-224 watch 回填、全文件 0 Alert）——现场重核当前 HEAD 行号：index.page.vue useQuery(:272 实际 :272-290)、rows(:292)、Table(:19-107)、三确认弹窗 Alert(:119/:140/:165) 与台账一致；create.page.vue 回填 useQuery(:181 实际 :198 之前基线 :181-192)、watch 回填、全文件 0 Alert 一致。U-6 表单形态对照 papers/index.page.vue:10-18（Alert v-if=queryErrorText type=error show-icon :message data-test class=mb-3 + Table v-else）与 makeups/index(:43-63)、student/scores/index(:40-50) 等 U-1 已收口形态一致，未新造第三态。与台账描述一致，未触发停止回报条件。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：前端红测先行",
+    "task": "新增两 spec 覆盖 U-6 三态与 U-7 三态（实施前先落盘证明红；性质如实登记）",
+    "steps": [
+      {
+        "step": "写用例：examQueryFailureStates.spec.ts（U-6 三态：列表查询失败→错误 Alert 呈现后端 message+Table 隐藏+空态不现 / 搜索/筛选联动失败同口径 / 成功空数组→既有空态保留+无 Alert / 成功数据→Table 数据行零回归）；examEditBackfillFailure.spec.ts（U-7 三态：编辑回填失败→错误 Alert 呈现后端 message+保存按钮禁用+提交被拦截 / 回填成功→表单回填+保存可用+update2 链路零回归 / 创建路径→标题「新建考试」+不触发回填+create3 链路零回归）",
+        "completed": true
+      },
+      {
+        "step": "定向跑一次留红（红证跑在实施前：测试已落盘、页面未实施，性质如实登记为「预期红」）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "新增 2 个 spec 共 7 例（examQueryFailureStates.spec.ts 4 例 + examEditBackfillFailure.spec.ts 3 例）。红证（证据 evidence/red-frontend.txt，跑在页面实施前、仅测试落盘）：npm.cmd run test -- 两个新 spec 关键行 'Test Files 2 failed (2)' 'Tests 3 failed | 4 passed (7)'——3 条红灯恰为需实施才满足的断言：examQueryFailureStates ①列表查询失败 Alert 缺失（:114）、②搜索/筛选联动失败 Alert 缺失（:142）；examEditBackfillFailure ③编辑回填失败 Alert 缺失+保存禁用缺失（:123）。4 条绿灯=既有行为零回归断言（成功空数组→ant-empty 空态保留、成功数据→数据行、回填成功、创建路径），页未实施也已通过（性质如实登记：红证=预期红，仅 3 处需实施的新断言红）。红测期修正两处测试自身断言口径（非页面缺陷）：①成功空数组用「暂无数据」断言，实测本页 antd Empty 在挂载环境渲染 'No data'（locale 无关语义）→ 改断言 `.ant-empty` 占位符存在且 ATable 存在；②体行断言 filter(tr=>text) 会把 antd placeholder 行算入 → 空态用例改按 `.ant-empty` 断言。修正后红证净化：3 failed | 4 passed（三处红灯均为需实施断言）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：前端实施（先红后绿）",
+    "task": "U-6 index.page 查询失败 Alert+Table 隐藏；U-7 create.page 回填失败 Alert+保存禁用/提交拦截",
+    "steps": [
+      {
+        "step": "实施 index.page.vue：列表 useQuery 补 error 解构；新增查询错误 Alert（v-if 显性呈现、Table v-else 隐藏）；三个确认弹窗 Alert 一字不动；不自动重试",
+        "completed": true
+      },
+      {
+        "step": "实施 create.page.vue：回填 useQuery 补 error 解构；isEditMode 且回填失败→Alert 显性呈现后端 message；保存按钮 :disabled=isEditMode&&!backfilled + handleSubmit 提交拦截双保险；创建路径与回填成功路径零改动",
+        "completed": true
+      },
+      {
+        "step": "定向绿：vitest 两个新 spec 全过留档（evidence/green-frontend.txt）",
+        "completed": true
+      },
+      {
+        "step": "变异校验：撤 error 消费（错误 Alert 不现）或撤禁保存（保存按钮不禁用）或撤提交拦截（合法表单下 update2 被误调）即红、复原即绿",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "实施（本卡列出的 frontend/src 变更，git diff --stat 3 文件 +59/-3 外加 2 新 spec 与 1 mock 基建适配）：index.page.vue——列表 useQuery 补 error 解构；Table 前新增错误 Alert（v-if=queryErrorText type=error show-icon :message=queryErrorText data-test='exams-error' class='mb-3'）+ Table 加 v-else 隐藏；新增 queryErrorText computed（error instanceof Error ? error.message : '考试列表加载失败'，形态逐字对齐 papers/index :110-115）；三个确认弹窗（发布/强制结束/删除）Alert 一字不动；不自动重试。create.page.vue——回填 useQuery 补 error:editBackfillError 解构；新增 backfillErrorText computed（isEditMode 优先判空，未触发 detail2 的创建模式恒 null）；模板新增回填失败 Alert（data-test='exam-backfill-error' class='mb-4'，置于 Form 前）；保存按钮补 :disabled=isEditMode&&!backfilled；handleSubmit 顶部补提交拦截（isEditMode&&!backfilled → message.warning + return，兜底程序化/键盘触发的提交）；创建路径（isEditMode=false 时 backfillErrorText 恒 null、按钮不禁用、拦截不触发）与回填成功路径（backfilled=true 后按钮可用、update2 链路）零改动。mock 基建适配（断言零改动）：examCreatePublishFlow.spec.ts useQuery mock 补 error:ref(null)（页面消费 error，该 mock 原本缺 error ref 会致访问 error.value 抛错），见阶段证据（该 spec 5 例断言零改动）。绿证（evidence/green-frontend.txt）：定向 npm.cmd run test -- 两个新 spec 关键行 'Test Files 2 passed (2)' 'Tests 7 passed (7)'；全考试目录复跑 6 文件 26 例全过（前患: examCreatePublishFlow 3 例原红=缺 error ref 触发，补 mock 后 5 例全绿零断言改动）。变异校验（关键断言均实测红→绿）：①U-6 撤 error 消费（Alert v-if 改 false）→ examQueryFailureStates 两失败用例红（2 failed）→ 复原绿；②U-7 撤保存禁用（:disabled 移除）→ 回填失败用例 red（disabled=true 断言 :128）→ 复原绿；③U-7 撤提交拦截（handleSubmit guard 移除）→ 在「合法表单」增强断言下 update2 被误调、用例红（:148）→ 复原绿（guard 由增强断言独立覆盖，非仅依赖按钮禁用）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：实施笔与全量门禁",
+    "task": "实施笔提交 + 双端门禁复跑留证（已提交状态；零后端改动）",
+    "steps": [
+      {
+        "step": "实施笔提交（仅 frontend/src 两页 + 两新 spec + mock 基建适配；提交前核对 git diff --cached --name-only 与 --check）",
+        "completed": true
+      },
+      {
+        "step": "已提交状态前端 lint:check / type-check:check / test 三项退出码 0，vitest 计数较基线净增数=新增用例数",
+        "completed": true
+      },
+      {
+        "step": "已提交状态仓库根 mvnw.cmd clean test 持平；git diff 证明零后端文件改动（src/main、src/test、pom.xml、schema.sql、openapi.yaml）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "前端门禁（已提交状态实施笔 1d03e4e，全提交态复跑留证）：cd frontend && npm.cmd run lint:check exit 0、npm.cmd run type-check:check exit 0、npm.cmd run test exit 0——vitest 关键行 'Test Files 65 passed (65)' 'Tests 497 passed (497)' = 基线 63 文件 490 例 + 新增 2 文件 7 例，只增不减（evidence/gate-frontend-lint.txt / -typecheck.txt / -test.txt）。后端门禁（已提交状态实施笔 1d03e4e，前端门禁后串行）：仓库根 ./mvnw.cmd clean test exit 0，关键行 '[WARNING] Tests run: 374, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS' = 基线 374/0/0/1@b424c91 持平、零后端改动（evidence/gate-backend.txt 全量日志）。零后端改动证明：git diff --name-only b424c91 1d03e4e -- src pom.xml schema.sql openapi.yaml 当次输出为空、退出码 0；实施笔 git diff b424c91 1d03e4e --stat 恰 5 个文件且全部位于 frontend/src。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：收口（两笔提交、spec 合入、归档、自查）",
+    "task": "收口笔=spec 合入 frontend/spec.md + 变更目录 + spec/README 登记",
+    "steps": [
+      {
+        "step": "变更目录整目录补入 tasks.json 完成态与 evidence-sha256.txt；spec/specs/frontend/spec.md 合入本卡 Requirement + 尾部合入注记；spec/README.md 当前状态行 + frontend 能力域行 + 归档行",
+        "completed": false
+      },
+      {
+        "step": "收口自查：git diff --name-only <实施笔> HEAD -- src frontend pom.xml openapi.yaml 为空；AGENTS.md 自查四条；git status 终态仅白名单未跟踪文件",
+        "completed": false
+      }
+    ],
+    "passes": false,
+    "evidence": "(阶段 4 完成时填：合入注记要点、自查输出)"
+  }
+]
