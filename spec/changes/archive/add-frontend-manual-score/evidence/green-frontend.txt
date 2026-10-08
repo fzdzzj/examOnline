@@ -1,0 +1,33 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1108[2mms[22m[39m
+     [33m[2m✓[22m[39m 仅已结束考试显示入口；重复点击只调用一次，并刷新题级进度与学生行 [33m 510[2mms[22m[39m
+     [33m[2m✓[22m[39m 已选主观题时才刷新当前学生行 [33m 394[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1254[2mms[22m[39m
+     [33m[2m✓[22m[39m 只在失败行呈现重判入口；无失败时不出现入口 [33m 627[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1368[2mms[22m[39m
+     [33m[2m✓[22m[39m 只在失败行呈现手动给分入口并与「重判」并存；无失败时不出现入口 [33m 645[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 4250[2mms[22m[39m
+     [33m[2m✓[22m[39m 已批进度展示信封 graded/total，而非客户端计数 [33m 1376[2mms[22m[39m
+     [33m[2m✓[22m[39m 表格翻页与改页大小上抛 update:page / update:pageSize（服务端驱动） [33m 538[2mms[22m[39m
+     [33m[2m✓[22m[39m 姓名筛选与只看未批改上抛服务端筛选状态 [33m 482[2mms[22m[39m
+     [33m[2m✓[22m[39m 409/1012 冲突后 refreshRow 以 submissionId 单行拉取并通知父级刷新 [33m 320[2mms[22m[39m
+     [33m[2m✓[22m[39m queryFn 携带 page/size/onlyUngraded/name，翻页与筛选后参数随动且切筛选回第 1 页 [33m 1527[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m28 passed[39m[22m[90m (28)[39m
+[2m   Start at [22m 11:21:16
+[2m   Duration [22m 10.58s[2m (transform 900ms, setup 106ms, import 16.93s, tests 7.98s, environment 3.79s)[22m
+

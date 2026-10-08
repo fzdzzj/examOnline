@@ -1,0 +1,51 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+ [31m❯[39m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts [2m([22m[2m8 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 2099[2mms[22m[39m
+     [33m[2m✓[22m[39m 只在失败行呈现手动给分入口并与「重判」并存；无失败时不出现入口 [33m 790[2mms[22m[39m
+     [32m✓[39m 确认文案明示绕过引擎且教师裁定即终局，数值精度对齐契约[32m 229[2mms[22m[39m
+     [32m✓[39m 确认后按契约路径参数与请求体调用 manualScore；未录入分数不发起[32m 200[2mms[22m[39m
+     [32m✓[39m 给分在途时重复确认只发起一次请求[32m 172[2mms[22m[39m
+[31m     [31m×[31m 给分成功：该行移出清单、统计回填、失效批改查询并提示成功[39m[32m 213[2mms[22m[39m
+     [32m✓[39m 给分请求被拒：原文呈现且清单与统计保持原状，不自动重试[32m 194[2mms[22m[39m
+     [32m✓[39m 切换考试后到达的旧给分响应不回写结果区，也不刷新新考试的查询[32m 177[2mms[22m[39m
+     [32m✓[39m 重判入口与行为零回归：确认文案与路径参数不变，且不误触手动给分[32m 120[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts[2m > [22m判分失败答卷手动给分[2m > [22m给分成功：该行移出清单、统计回填、失效批改查询并提示成功
+[31m[1mAssertionError[22m: expected '批改工作台并发批改由后端乐观锁保护：同一份答卷被他人先保存时，后提交方会收…' to contain '失败：1'[39m
+
+Expected: [32m"失败：1"[39m
+Received: [31m"批改工作台并发批改由后端乐观锁保护：同一份答卷被他人先保存时，后提交方会收到冲突提示，绝不静默覆盖。#7待判分考试（已结束）运行判分仅对已结束且尚未汇总的考试开放；会重新计算客观题分数，不覆盖教师已保存的主观题分数。运行判分最近一次判分结果总数：4成功：2失败：2部分答卷判分失败，请处理失败清单后再汇总成绩。答卷102（学生203）：快照缺题重判手动给分主观题进度刷新进度该试卷没有主观题，客观题由后端自动判分，无需人工批改。"[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts:[2m217:24[22m[39m
+    [90m215|[39m     [34mexpect[39m([34mactionButtons[39m(wrapper[33m,[39m [32m'手动给分'[39m))[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m216|[39m     [90m// 统计随之回填（与重判同口径），不新造第三种行形态[39m
+    [90m217|[39m     [34mexpect[39m([34mbodyText[39m())[33m.[39m[34mtoContain[39m([32m'失败：1'[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m218|[39m     [34mexpect[39m([34mbodyText[39m())[33m.[39m[34mtoContain[39m([32m'成功：3'[39m)[33m;[39m
+    [90m219|[39m     [34mexpect[39m(message[33m.[39msuccess)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m'答卷 101 手动给分成功'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m7 passed[39m[22m[90m (8)[39m
+[2m   Start at [22m 11:21:56
+[2m   Duration [22m 8.94s[2m (transform 362ms, setup 43ms, import 4.90s, tests 2.10s, environment 828ms)[22m
+
+
+===== 还原与复跑（同一份文件，cmp 逐字节一致）=====
+$ cp /d/code/evidence-manual-score/page.impl.vue "src/pages/(dashboard)/teacher/grading/index.page.vue"
+$ cmp /d/code/evidence-manual-score/page.impl.vue "src/pages/(dashboard)/teacher/grading/index.page.vue" && echo RESTORED-IDENTICAL
+RESTORED-IDENTICAL
+$ sha256sum "src/pages/(dashboard)/teacher/grading/index.page.vue"
+8706daf614b68de1017ca13342b15cd521dc135f7b4f9a0e6001c2a633194d24 *src/pages/(dashboard)/teacher/grading/index.page.vue
+$ npm.cmd run test -- manualScore.spec.ts submissionRejudge.spec.ts
+ Test Files  2 passed (2)
+      Tests  15 passed (15)

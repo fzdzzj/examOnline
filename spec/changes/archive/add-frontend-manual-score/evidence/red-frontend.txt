@@ -1,0 +1,118 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 734[2mms[22m[39m
+     [33m[2m✓[22m[39m 只在失败行呈现重判入口；无失败时不出现入口 [33m 420[2mms[22m[39m
+ [31m❯[39m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts [2m([22m[2m8 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[33m 745[2mms[22m[39m
+[31m     [31m×[31m 只在失败行呈现手动给分入口并与「重判」并存；无失败时不出现入口[39m[33m 419[2mms[22m[39m
+[31m     [31m×[31m 确认文案明示绕过引擎且教师裁定即终局，数值精度对齐契约[39m[32m 53[2mms[22m[39m
+[31m     [31m×[31m 确认后按契约路径参数与请求体调用 manualScore；未录入分数不发起[39m[32m 44[2mms[22m[39m
+[31m     [31m×[31m 给分在途时重复确认只发起一次请求[39m[32m 45[2mms[22m[39m
+[31m     [31m×[31m 给分成功：该行移出清单、统计回填、失效批改查询并提示成功[39m[32m 48[2mms[22m[39m
+[31m     [31m×[31m 给分请求被拒：原文呈现且清单与统计保持原状，不自动重试[39m[32m 42[2mms[22m[39m
+[31m     [31m×[31m 切换考试后到达的旧给分响应不回写结果区，也不刷新新考试的查询[39m[32m 44[2mms[22m[39m
+     [32m✓[39m 重判入口与行为零回归：确认文案与路径参数不变，且不误触手动给分[32m 47[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 7 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts[2m > [22m判分失败答卷手动给分[2m > [22m只在失败行呈现手动给分入口并与「重判」并存；无失败时不出现入口
+[31m[1mAssertionError[22m: expected [] to have a length of 2 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts:[2m119:44[22m[39m
+    [90m117|[39m     [34mexpect[39m([34mbodyText[39m())[33m.[39m[34mtoContain[39m([32m'答卷102（学生203）：快照缺题'[39m)[33m;[39m
+    [90m118|[39m     [90m// 两条失败行各一个手动给分入口，且与「重判」并存[39m
+    [90m119|[39m     [34mexpect[39m([34mactionButtons[39m(wrapper[33m,[39m [32m'手动给分'[39m))[33m.[39m[34mtoHaveLength[39m([34m2[39m)[33m;[39m
+    [90m   |[39m                                            [31m^[39m
+    [90m120|[39m     [34mexpect[39m([34mactionButtons[39m(wrapper[33m,[39m [32m'重判'[39m))[33m.[39m[34mtoHaveLength[39m([34m2[39m)[33m;[39m
+    [90m121|[39m     [34mexpect[39m([34mactionPopconfirms[39m(wrapper[33m,[39m [32m'手动给分'[39m))[33m.[39m[34mtoHaveLength[39m([34m2[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts[2m > [22m判分失败答卷手动给分[2m > [22m确认文案明示绕过引擎且教师裁定即终局，数值精度对齐契约
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'props')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts:[2m143:62[22m[39m
+    [90m141|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountAndRun[39m([[34mfailure101[39m()])[33m;[39m
+    [90m142|[39m
+    [90m143|[39m     const title = String(actionPopconfirms(wrapper, '手动给分')[0].props('…
+    [90m   |[39m                                                              [31m^[39m
+    [90m144|[39m     [34mexpect[39m(title)[33m.[39m[34mtoContain[39m([32m'绕过判分引擎'[39m)[33m;[39m
+    [90m145|[39m     [34mexpect[39m(title)[33m.[39m[34mtoContain[39m([32m'教师裁定即终局'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts[2m > [22m判分失败答卷手动给分[2m > [22m确认后按契约路径参数与请求体调用 manualScore；未录入分数不发起
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts:[2m164:16[22m[39m
+    [90m162|[39m
+    [90m163|[39m     [90m// 空值不构成一次给分请求（不是后端会拒绝的业务错误，而是这次动作不成立）[39m
+    [90m164|[39m     popconfirm[33m.[39mvm[33m.[39m[34m$emit[39m([32m'confirm'[39m)[33m;[39m
+    [90m   |[39m                [31m^[39m
+    [90m165|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m166|[39m     [34mexpect[39m(api[33m.[39mmanualScore)[33m.[39mnot[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts[2m > [22m判分失败答卷手动给分[2m > [22m给分在途时重复确认只发起一次请求
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts:[2m191:27[22m[39m
+    [90m189|[39m     )[33m;[39m
+    [90m190|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountAndRun[39m([[34mfailure101[39m()])[33m;[39m
+    [90m191|[39m     [34mscoreInputs[39m(wrapper)[[34m0[39m][33m.[39mvm[33m.[39m[34m$emit[39m([32m'update:value'[39m[33m,[39m [34m60[39m)[33m;[39m
+    [90m   |[39m                           [31m^[39m
+    [90m192|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m193|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts[2m > [22m判分失败答卷手动给分[2m > [22m给分成功：该行移出清单、统计回填、失效批改查询并提示成功
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts:[2m206:27[22m[39m
+    [90m204|[39m     vi[33m.[39m[34mmocked[39m(api[33m.[39mmanualScore)[33m.[39m[34mmockResolvedValue[39m(undefined [35mas[39m never)[33m;[39m
+    [90m205|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountAndRun[39m([[34mfailure101[39m()[33m,[39m [34mfailure102[39m()])[33m;[39m
+    [90m206|[39m     [34mscoreInputs[39m(wrapper)[[34m0[39m][33m.[39mvm[33m.[39m[34m$emit[39m([32m'update:value'[39m[33m,[39m [34m88.5[39m)[33m;[39m
+    [90m   |[39m                           [31m^[39m
+    [90m207|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m208|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts[2m > [22m判分失败答卷手动给分[2m > [22m给分请求被拒：原文呈现且清单与统计保持原状，不自动重试
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts:[2m227:27[22m[39m
+    [90m225|[39m     vi.mocked(api.manualScore).mockRejectedValue(new Error('手动给分不得超过客观…
+    [90m226|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountAndRun[39m([[34mfailure101[39m()])[33m;[39m
+    [90m227|[39m     [34mscoreInputs[39m(wrapper)[[34m0[39m][33m.[39mvm[33m.[39m[34m$emit[39m([32m'update:value'[39m[33m,[39m [34m95[39m)[33m;[39m
+    [90m   |[39m                           [31m^[39m
+    [90m228|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m229|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts[2m > [22m判分失败答卷手动给分[2m > [22m切换考试后到达的旧给分响应不回写结果区，也不刷新新考试的查询
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts:[2m254:27[22m[39m
+    [90m252|[39m     )[33m;[39m
+    [90m253|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountAndRun[39m([[34mfailure101[39m()])[33m;[39m
+    [90m254|[39m     [34mscoreInputs[39m(wrapper)[[34m0[39m][33m.[39mvm[33m.[39m[34m$emit[39m([32m'update:value'[39m[33m,[39m [34m60[39m)[33m;[39m
+    [90m   |[39m                           [31m^[39m
+    [90m255|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m256|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m8 passed[39m[22m[90m (15)[39m
+[2m   Start at [22m 11:17:52
+[2m   Duration [22m 68.21s[2m (transform 675ms, setup 205ms, import 112.18s, tests 1.48s, environment 18.75s)[22m
+
