@@ -1,0 +1,95 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对",
+    "task": "分支与基线锚定（从 main@ab2dcd3 开工）",
+    "steps": [
+      {
+        "step": "K1–K3：从 main（ab2dcd3）新建 feature/add-frontend-audit-logs-kick；记录 HEAD 短 SHA 与 git status 基线（应仅 7 个白名单未跟踪文件）",
+        "completed": true
+      },
+      {
+        "step": "K4：双端门禁基线锚（前端 lint:check/type-check:check/test + 后端 mvnw.cmd clean test，命令 + 当次输出 + 短 SHA 记入本字段，不作常量假设；串行执行不并发）",
+        "completed": true
+      },
+      {
+        "step": "K5：现状复核锚点：auditLogs 四查询参数与 ApiResponse<List> 无 total 信封；kickUser path userId；AuditLogResponse 十字段；AdminController 类级 @RequireRole(ADMIN) + kick 的 user:manage；AuditLogService.page 的 eq 精确匹配与 action 常量写入点普查；access.ts /admin 分区；导航无审计入口——确认与 proposal 描述一致；不一致停下回报",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1-K3: git checkout -b feature/add-frontend-audit-logs-kick @ main HEAD ab2dcd3（git rev-parse --short HEAD 当次输出 ab2dcd3；git log --oneline -1 输出 'ab2dcd3 Merge branch feature/add-frontend-exam-list-filtering into main'）；git status --short 基线=7 个白名单未跟踪文件（.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-optimization-candidates.md、docs/frontend-improvement-candidates.md、docs/指导主Agent交接文档-2026-09-30.md / -10-01.md / -10-02.md），零已跟踪文件改动。K4（严格串行：前端三项全部跑完后才启动后端，全程无并发）：前端 cd frontend && npm.cmd run lint:check exit 0、npm.cmd run type-check:check exit 0（app+config 两段均无输出错误，evidence/baseline-frontend-lint.txt / -typecheck.txt）；npm.cmd run test exit 0，关键行 'Test Files  62 passed (62)' 'Tests  480 passed (480)' 'Duration 137.97s'（evidence/baseline-frontend-test.txt）＝基线锚定 62 文件 480 例，无抖动。后端 JAVA_HOME=D:\\develop1\\jdk21 + ./mvnw.cmd clean test exit 0（JAVA_HOME 先经 /d/develop1/jdk21/bin/java -version 现场确认 'java version \"21.0.9\"'），关键行 '[WARNING] Tests run: 374, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS'（全量日志 evidence/baseline-backend.txt）＝基线锚定 374/0/0/1。两值与卡面预期（62/480、374/0/0/1）逐项一致。K5: 锚点逐一核对一致——openapi.yaml '/api/admin/audit-logs' 的 operationId=auditLogs 且参数为 page(int64,default 1,min 1)/size(int64,default 20,min 1,max 100)/username(string)/action(string)，**action 无 enum**；types.gen.ts AuditLogsData.query 即 {page?,size?,username?,action?}、AuditLogsResponses[200]=ApiResponseListAuditLogResponse（信封只有 code/message/data?:AuditLogResponse[]，**无 total**）；AuditLogResponse=id?/traceId?/userId?/username?/action?/ipAddress?/status?/details?/createdTime?；KickUserData.path={userId:number}、url '/api/admin/users/{userId}/kick'、响应 ApiResponseVoid；sdk.gen.ts 两函数均在（auditLogs:500 附近、kickUser:500），全仓除生成物与 index.ts re-export 外零调用（前端 grep 仅命中 api/axios 生成层）。后端语义：AdminController 类级 @RequireRole(RoleHierarchy.ADMIN) + @Validated，audit-logs 方法**刻意不带** @RequirePermission（注释自陈类级 ADMIN 已是不可放宽门槛，再挂 audit:read 等于把同一道门建两遍），kick 方法 @RequirePermission('user:manage')；AuditLogService.page 用 lambdaQuery().eq(hasText(username)).eq(hasText(action)).orderByDesc(id)、size 走 Math.min(size,100) 兜底、返回 getRecords() 页内数组；AuditLog 实体声明 4 个 ACTION_* 常量但**写入点只有 2 个**——LOGIN（logLoginEvent，AuthService:144/152）与 ACCOUNT_LOCKED（logAccountLock，LoginGuardService:77），PERMISSION_CHANGE / JWT_VALIDATION 在 src/ 全仓零引用；且 schema.sql:456 的列注释写的是 'LOGIN / LOGIN_LOCKED / PERMISSION_CHANGE'（LOGIN_LOCKED 与实体常量 ACCOUNT_LOCKED 不一致）。两处不一致共同支撑本卡裁决：动作筛选不做下拉枚举。account_lock 行 user_id 可为 NULL（record(null, …)），故下线入口按 userId 存在性 fail-closed 成立。access.ts:24 { prefix: '/admin', roles: ['ADMIN'] } 就位、(dashboard).page.vue 的 admin-section children 仅邀请码一项、NAVIGABLE_PATHS 无 /admin/audit-logs。与 proposal 描述一致（并额外登记上述 action 常量口径），未触发停止回报条件。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：前端红测先行",
+    "task": "审计日志页用例（列表渲染 / 失败 Alert / 空态 / 下界分页 / 筛选防抖回页 / 下线入口与确认流）+ 导航入口断言（实施前先红）",
+    "steps": [
+      {
+        "step": "写用例：列表渲染（mock auditLogs，字段直渲染）；查询失败 Alert（mock reject 断言呈现后端原文且空态不出现）；成功且空数组呈现空态；下界推断分页（total 缺失时满页可翻页、末页不预留）；username/action 过滤带参 + 防抖 + 回第 1 页；含 userId 行呈现「强制下线」、不含则不呈现；确认后调 kickUser（path 断言）；成功刷新 + message；失败 message 原文",
+        "completed": true
+      },
+      {
+        "step": "定向跑一次留红（evidence/red-frontend.txt），红灯应恰为新用例",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "新增 1 个 spec：frontend/src/pages/(dashboard)/admin/audit-logs/__tests__/auditLogsKick.spec.ts（370 行 10 例，三段 describe）——①列表按后端字段渲染：LOGIN/ACCOUNT_LOCKED/SUCCESS/WARNING/IP/dayjs 时间/详情原串直读，且「强制下线」按钮数恰为 1、所在行含 alice 不含 bob（无 userId 的系统事件行不呈现入口）；②查询失败：错误 Alert（data-test=\"audit-logs-error\"）呈现后端 message 原文且 '暂无数据' 不出现；③成功且空数组：不弹 Alert、空态照常呈现；④无 total 信封的下界分页：mock 端按 query 对 45 条做服务端切片+eq 过滤，首屏 query 恰为 {page:1,size:20}、满页时 .ant-pagination-item-2 存在、emit change 后末次请求 {page:2,size:20} 且第 2 页渲染 user_21 起、第 3 页 5 条未满页时 .ant-pagination-item-4 不存在；⑤强制下线知情确认：弹窗文本含『会话』『重新登录』，确认后 kickUser 收到 path:{userId:7} + message.success + invalidateQueries ['audit-logs']；⑥下线失败：message.error('无权管理该用户')、success 与 invalidateQueries 均不调用；⑦空筛选值不携带参数：Object.keys(query).sort() 恰为 ['page','size']；⑧用户名+动作筛选 300ms 防抖（100ms/300ms 处请求数 1→2，末次 query 恰为 {page:1,size:20,username:'user_1',action:'LOGIN'}，输入带首尾空格断言去空白）；⑨第 2 页改筛选回第 1 页；⑩(dashboard).page.vue 词法护栏：canAccess(role,'/admin/') + '/admin/audit-logs' ≥2 处。红：cd frontend && npm.cmd run test -- \"src/pages/(dashboard)/admin/audit-logs/__tests__/auditLogsKick.spec.ts\" exit 1，关键行 'Error: Failed to resolve import \"@/pages/(dashboard)/admin/audit-logs/index.page.vue\" … Does the file exist?' + 'Test Files  1 failed (1)' + 'Tests  no tests'（evidence/red-frontend.txt）——红态性质如实登记：新页面尚不存在，套件在模块解析层失败、0 例执行；红灯恰为新用例（定向命令只跑该文件，既有用例零牵连）。补充复验：实施后 prettier 对该 spec 做了折行归一（纯格式、断言零改动），为使红证确实跑在最终版 spec 字节上，把 index.page.vue 临时移出库外再定向跑一次，exit 1 且红态与原红完全同形（同一 Failed to resolve 行、'1 failed (1)'、'no tests'，evidence/red-frontend-final-spec.txt），随后原样移回。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：前端实施（先红后绿）",
+    "task": "审计日志页（列表 + 筛选 + 下界分页 + 危险确认下线）+ ADMIN 侧边栏入口",
+    "steps": [
+      {
+        "step": "实施：admin/audit-logs/index.page.vue（Card + Table + 查询失败 Alert + username/action 防抖输入 + 下界分页 + 强制下线确认弹窗 + invalidate ['audit-logs']）；(dashboard).page.vue admin 分组 children 增补「审计日志」+ NAVIGABLE_PATHS 增补",
+        "completed": true
+      },
+      {
+        "step": "定向绿：vitest 新 spec 全过留档（evidence/green-frontend.txt）；关键断言变异校验（撤防抖/撤回页/撤下界推断/撤 userId 门控即红）留档",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "实施（见实施笔 83a392b，git show --stat 实测 4 files changed, 655 insertions(+), 5 deletions(-)）：admin/audit-logs/index.page.vue（276 行新增）——Card『安全审计日志』+ 两个 Input（placeholder '搜索用户名' / '按动作筛选（如 LOGIN / ACCOUNT_LOCKED）'，allow-clear）；查询失败 Alert（v-if=queryErrorText，data-test=\"audit-logs-error\"）与 Table（v-else，columns ID/用户名/动作/状态/链路 ID/IP/时间/详情/操作，#emptyText『暂无数据』，:loading=isFetching，@change=onTableChange）分离；状态列 Tag 只按后端原串取色（SUCCESS green/FAILURE red/WARNING orange/未知 default）、文案用原串不翻译；操作列『强制下线』v-if=isKickable（typeof userId==='number'，一挡 undefined 二挡 null）danger；下线 Modal 声明式（title『确认强制下线』、ok-text『强制下线』、:confirm-loading=kicking、warning Alert 走 #message 插槽：明示『所有会话立即失效，需重新登录』+『已断开的会话无法恢复，只能由该用户重新登录』，答卷数据不受影响）——形态对齐考试删除/邀请码作废。script：pageSize 取后端默认 20；两输入共用一个 300ms setTimeout 防抖（watch([usernameFilter,actionFilter]) → clearTimeout 重建 → 回调里 trim 后赋 debounced*，并 pageNum=1；onBeforeUnmount 清定时器）；queryKey computed ['audit-logs',pageNum,pageSize,debouncedUsername,debouncedAction]；queryFn 走 SDK auditLogs({client,throwOnError:true,query:{page,size, …(非空才 username/action 的条件展开)}})；tablePagination total=(pageNum-1)*pageSize+rows.length+(rows.length===pageSize?1:0)、showSizeChanger:false；confirmKick=unwrap(kickUser({client,throwOnError:true,path:{userId}})) + message.success('已强制下线，该用户需重新登录') + 关弹窗 + invalidateQueries ['audit-logs']，catch message.error(error instanceof Error ? error.message : '强制下线失败，请稍后重试')。(dashboard).page.vue（+9/-5）：admin-section children 追加 { key: '/admin/audit-logs', label: '审计日志' }，NAVIGABLE_PATHS 追加 '/admin/audit-logs'，并把『审计日志 / 踢人端点未接页面』那句过期注释改为指向新页；顺带把 invite-codes 页 '审计日志 / 踢人端点本期不接（后台账保留）' 的过期一行改为指向 /admin/audit-logs（纯注释，1 行）。access.ts 零改动（新路径落在既有 /admin 前缀分区）。实施期修正：precheck lint:check exit 1——'空筛选值不携带参数' 用例里 `const wrapper = mountAuditLogsPage()` 赋值未用（@typescript-eslint/no-unused-vars），改为直接调用 mountAuditLogsPage() 后复跑 exit 0（evidence/precheck-frontend-lint.txt 保留原始报错，修的是变量绑定不是断言）。绿：npm.cmd run test -- \"…auditLogsKick.spec.ts\" exit 0，'Test Files  1 passed (1)' 'Tests  10 passed (10)'（evidence/green-frontend.txt）。变异校验（每次改完只跑相关用例、验后即还原，全部五处均已复原并由后续全量门禁确认绿）：①把 total 推断式退化为字面 (pageNum-1)*size+rows.length → -t total exit 1 'AssertionError: expected false to be true'（第 2 页按钮不再存在），evidence/mutation-1-pagination.txt；②把 v-if=\"isKickable(record)\" 改成恒真 → exit 1 'expected [ DOMWrapper… ] to have a length of 1 but got 2'，evidence/mutation-2-kickable-gate.txt；③撤掉 setTimeout 改即时赋值 → exit 1 'expected \"vi.fn()\" to be called 1 times, but got 3 times'，evidence/mutation-3-debounce.txt；④把条件展开改成恒带 username/action 两参 → exit 1 'expected [ Array(4) ] to deeply equal [ \\'page\\', \\'size\\' ]'，evidence/mutation-4-empty-param-omission.txt；⑤去掉回调里的 pageNum=1 → 整文件跑 exit 1 'expected { page: 2, size: 20, …(1) } to deeply equal { page: 1, size: 20, …(1) }' 且其余 9 例全绿（精确单点失败），evidence/mutation-5-page-reset.txt。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：实施笔与全量门禁",
+    "task": "两笔提交之实施笔 + 双端门禁（串行执行，不并发跑 Maven 与 vitest）",
+    "steps": [
+      {
+        "step": "实施笔提交（仅 frontend/src；提交前核对 git diff --cached --name-only 与 --check）",
+        "completed": true
+      },
+      {
+        "step": "已提交状态前端 lint:check / type-check:check / test 三项退出码 0，vitest 相对基线只增不减记入",
+        "completed": true
+      },
+      {
+        "step": "已提交状态仓库根 mvnw.cmd clean test 与基线持平（零后端改动）；git diff 证明零后端文件改动（src/main、src/test、pom.xml、schema.sql、openapi.yaml）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "暂存核对：git add 显式路径 4 个文件（(dashboard).page.vue、admin/audit-logs/index.page.vue、admin/audit-logs/__tests__/auditLogsKick.spec.ts、admin/invite-codes/index.page.vue），git diff --cached --name-only 当次输出恰为这 4 个文件且全部位于 frontend/src，git diff --cached --check exit 0；实施笔 git commit -F <仓库内 .git 下的消息文件（避免中文进命令行、也避免消息落进工作树）> → 短 SHA 83a392b（4 files changed, 655 insertions(+), 5 deletions(-)，其中新增 index.page.vue 276 行、auditLogsKick.spec.ts 370 行）。已提交状态前端门禁 @ 83a392b：cd frontend && npm.cmd run lint:check exit 0、npm.cmd run type-check:check exit 0（app 与 config 两段均无诊断输出）、npm.cmd run test exit 0，vitest 关键行 'Test Files  63 passed (63)' 'Tests  490 passed (490)' = 基线 62 文件 480 例 + 新增 1 文件 10 例，只增不减、零回归（evidence/gate-frontend-lint.txt / gate-frontend-typecheck.txt / gate-frontend-test.txt）。已提交状态后端门禁 @ 83a392b（前端三项全部跑完后才启动，全程未并发）：JAVA_HOME=D:\\develop1\\jdk21 + ./mvnw.cmd clean test，日志末尾 MVN_EXIT=0，关键行 '[WARNING] Tests run: 374, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS' = 与基线 374/0/0/1 @ ab2dcd3 逐位持平（本卡零后端改动的预期读数；日志内的 RabbitMQ 'Failed to check/redeclare auto-delete queue(s)' ERROR 与基线同现，属测试期既有噪音，不影响计数）（evidence/gate-backend.txt 全量日志）。零后端改动证明：git diff --name-only ab2dcd3 83a392b -- src pom.xml openapi.yaml → 空输出、退出码 0；同一 range 的全量 git diff --name-only 恰 4 个文件且全在 frontend/src 下。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：收口（两笔提交、spec 合入、归档、自查）",
+    "task": "归档笔=spec 合入/README 三处登记/移入 archive（零 src 豁免凭据）",
+    "steps": [
+      {
+        "step": "spec/specs/frontend/spec.md 合入本卡 Requirement + 尾部合入注记；spec/README.md 三处登记（当前状态段 + 已合入规范表 frontend 行 + 归档表行）；变更目录移入 archive/ 并生成 evidence-sha256.txt",
+        "completed": true
+      },
+      {
+        "step": "收口自查：git diff --name-only <实施笔> HEAD -- src frontend pom.xml openapi.yaml 为空；AGENTS.md 自查四条；git status 终态仅白名单未跟踪文件",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "spec/specs/frontend/spec.md：在「教师端考试列表服务端筛选联动」Requirement 的合入注记之后、文件尾部合入 ADDED Requirement「审计日志查询与强制下线界面」（SHALL 段 + 6 个 Scenario），合入后用 sed 抽取双侧行段（spec.md:1590-1650 与 spec-delta.md:5-末尾）各 61 行、去 CR 后 diff 实测无差异并输出 'VERBATIM-MATCH-OK'（临时抽取文件在仓库外 /tmp，用完即删）；尾部合入注记 9 条登记 spec-delta 未逐条写明的实现口径（①动作筛选用文本输入及其契约/常量/注释三重不一致判据；②status 只取色不翻译；③size=20 取后端默认、上限由 @Max+Math.min 兜底；④typeof userId==='number' 一挡 undefined 二挡 null；⑤声明式 Modal 的形态对齐与措辞按 kickUser 真值收敛、不声称写审计；⑥仅侧边栏+NAVIGABLE_PATHS 两处登记、落地页入口卡不新增、access.ts 零改动；⑦dlq/replay 维持不接、不做时间区间；⑧先红后绿与五处变异校验读数；⑨验收边界绑定实施笔 83a392b 的双端门禁）。spec/README.md 三处登记：①当前状态段——在 '_当前无进行中变更（…）。_' 之后、'`add-exam-list-filtering` 已于…' 之前插全本卡收口描述（沿用『已于 2026-10-08 收口并移入下方归档表（**GO**：…）』体例，含门禁读数与零后端改动凭据）；②已合入规范表——frontend 行（#18）来源列追加 '`add-frontend-audit-logs-kick`（审计日志查询与强制下线……前端台账 F-4 第二阶段，2026-10-08 归档）'；③归档变更表——'add-exam-list-filtering' 行之后追加本卡行，awk 实测该行管道符 5 个（恰 4 列，内容里未混入裸 '|'）、长度 2001 字符。归档：mv spec/changes/add-frontend-audit-logs-kick/ → spec/changes/archive/（移动前 ls archive/ | grep -ic audit-logs 输出 0，无同名覆盖风险；移动后 find spec/changes -mindepth 1 -maxdepth 1 -type d -not -name archive | wc -l 输出 0，与 README '_当前无进行中变更_' 一致）。evidence/evidence-sha256.txt 以 sha256sum -b 覆盖 evidence/ 全部 17 件原始日志（baseline-*×4、red-frontend + red-frontend-final-spec、green-frontend、mutation-1..5、precheck-frontend-lint、gate-*×4），当场 grep -v '^#' evidence-sha256.txt | sha256sum -c - 实测 17 行全 OK。暂存核对：git add 显式路径（spec/specs/frontend/spec.md、spec/README.md、spec/changes/archive/add-frontend-audit-logs-kick）后 git diff --cached --name-only 全部位于 spec/ 下（2 个修改 + 归档 21 件新增），git diff --cached --name-only -- src frontend pom.xml schema.sql openapi.yaml → 空输出、退出码 0（零源码文件入暂存，即归档笔必然零后端/前端改动）。git diff --cached --check 命中逐文件归类全部落在 evidence/*.txt 原始日志（控制台输出固有的 CRLF 与行尾空格，按既有约定按原字节入库、由 -text 属性与 sha256 清单承诺可复验），非证据文件（README.md、spec.md、proposal.md、tasks.json、spec-delta.md、evidence-sha256.txt）过滤后零命中。AGENTS.md 四条自查（在仓库根实跑）：1) grep -nE '1331[67]|330[67]|root12[3]|[T]ests run|[0-9]+%' AGENTS.md → 无命中（exit 1）；2) grep -nE '330[67]|1331[67]|root12[3]|root/[r]oot' README.md → 无命中（exit 1）；3) grep -rn '@Sql' src/test 过滤注释续行 → 空（exit 1）；4) grep -nE '\\.md:[0-9]' AGENTS.md → 无命中（exit 1）——本卡未新增易变事实载体，AGENTS.md 零改动（工作树 diff 亦未触及该文件）。零后端文件改动复核（收口笔提交前在同一工作树实跑）：git diff --name-only 83a392b -- src pom.xml openapi.yaml → 空输出。"
+  }
+]

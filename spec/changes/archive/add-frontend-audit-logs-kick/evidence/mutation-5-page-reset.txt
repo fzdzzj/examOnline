@@ -1,0 +1,59 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/admin/audit-logs/__tests__/auditLogsKick.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/admin/audit-logs/__tests__/auditLogsKick.spec.ts [2m([22m[2m10 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 2542[2mms[22m[39m
+     [33m[2m✓[22m[39m 列表按后端字段渲染：动作/状态/IP/时间/详情直读，下线入口仅 userId 行出现 [33m 860[2mms[22m[39m
+     [32m✓[39m 查询失败：错误 Alert 显性呈现后端 message，空态不出现[32m 139[2mms[22m[39m
+     [32m✓[39m 成功且无数据：空态照常呈现，不弹错误 Alert[32m 129[2mms[22m[39m
+     [33m[2m✓[22m[39m 无 total 信封的下界分页：满页时第 2 页可达且真实带 page 请求，末页不预留 [33m 397[2mms[22m[39m
+     [32m✓[39m 强制下线知情确认：弹窗明示会话立即失效需重新登录，确认后调 kickUser（path 携带 userId）[32m 147[2mms[22m[39m
+     [32m✓[39m 强制下线失败：message 呈现后端原文，不失效查询、不展示伪成功结果[32m 105[2mms[22m[39m
+     [32m✓[39m 空筛选值不携带参数：首屏只带 page/size[32m 156[2mms[22m[39m
+     [32m✓[39m 用户名与动作筛选：防抖窗口内不请求，300ms 后以去空白的值带参请求[32m 239[2mms[22m[39m
+[31m     [31m×[31m 切到第 2 页后修改筛选自动回第 1 页[39m[33m 364[2mms[22m[39m
+     [32m✓[39m admin 分组含「审计日志」入口（菜单项 + 可导航路径）[32m 2[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/admin/audit-logs/__tests__/auditLogsKick.spec.ts[2m > [22m筛选联动（username / action）[2m > [22m切到第 2 页后修改筛选自动回第 1 页
+[31m[1mAssertionError[22m: expected { page: 2, size: 20, …(1) } to deeply equal { page: 1, size: 20, …(1) }[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "page": 1,[39m
+[31m+   "page": 2,[39m
+[2m    "size": 20,[22m
+[2m    "username": "nomatch",[22m
+[2m  }[22m
+
+[36m [2m❯[22m src/pages/(dashboard)/admin/audit-logs/__tests__/auditLogsKick.spec.ts:[2m362:31[22m[39m
+    [90m360|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m361|[39m
+    [90m362|[39m     expect(lastServedQuery()).toEqual({ page: 1, size: 20, username: '…
+    [90m   |[39m                               [31m^[39m
+    [90m363|[39m   })[33m;[39m
+    [90m364|[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m9 passed[39m[22m[90m (10)[39m
+[2m   Start at [22m 14:43:52
+[2m   Duration [22m 6.73s[2m (transform 199ms, setup 40ms, import 3.02s, tests 2.54s, environment 863ms)[22m
+

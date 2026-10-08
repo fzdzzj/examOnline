@@ -134,7 +134,7 @@ import { queryClient } from '@/api/queryClient';
  * 后端契约：GET /api/admin/invite-codes（列表）、POST /api/admin/invite-codes（生成）、
  * POST /api/admin/invite-codes/{id}/invalidate（作废）。权限边界是后端类级
  * @RequireRole(ADMIN) + 方法级 @RequirePermission('invite:manage')，本页只是体验层入口。
- * 审计日志 / 踢人端点本期不接（后台账保留）。
+ * 审计日志与强制下线在 /admin/audit-logs 页（F-4 第二阶段）。
  *
  * 口径：状态按后端返回的 status 渲染（0=有效、1=已作废），作废入口 fail-closed
  * 仅有效行出现；查询失败以 Alert 显性呈现后端 message（U-1 三态分离）不伪装空态；
