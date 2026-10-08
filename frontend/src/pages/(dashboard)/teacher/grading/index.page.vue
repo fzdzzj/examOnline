@@ -87,8 +87,28 @@
             答卷 {{ failure.submissionId ?? '未知' }}（学生 {{ failure.studentId ?? '未知' }}）：
             {{ failure.error ?? '未知错误' }}
             <Popconfirm title="将对这一份答卷重新判分，确认重判？" @confirm="onRejudge(failure)">
-              <Button type="link" size="small" :disabled="rejudgingSubmissionId !== null">
+              <Button type="link" size="small" :disabled="resolvingSubmissionId !== null">
                 重判
+              </Button>
+            </Popconfirm>
+            <InputNumber
+              class="manual-score-input"
+              :value="manualScoreDraft(failure.submissionId) ?? undefined"
+              :min="0"
+              :max="999"
+              :precision="1"
+              :step="0.5"
+              size="small"
+              placeholder="客观题总分"
+              :disabled="resolvingSubmissionId !== null"
+              @update:value="(value) => setManualScoreDraft(failure.submissionId, value)"
+            />
+            <Popconfirm
+              title="手动给分将绕过判分引擎，教师裁定即终局，该卷不再重算，确认给分？"
+              @confirm="onManualScore(failure)"
+            >
+              <Button type="link" size="small" :disabled="resolvingSubmissionId !== null">
+                手动给分
               </Button>
             </Popconfirm>
           </li>
@@ -163,6 +183,7 @@ import {
   Alert,
   Button,
   Card,
+  InputNumber,
   Popconfirm,
   Select,
   Table,
@@ -173,6 +194,7 @@ import { computed, ref, watch } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 
 import {
+  manualScore,
   page2 as pageExams,
   rejudge,
   subjectiveQuestions,
@@ -319,19 +341,38 @@ async function onRunGrading(): Promise<void> {
   }
 }
 
-// ===== 失败答卷逐卷重判 =====
-// 契约（types.gen.ts：RejudgeResponses[200] = ApiResponseFailureItem）给出的是一次同步结果行，
+// ===== 失败答卷的单卷处置：重判（引擎重算）与手动给分（教师裁定）=====
+// 重判契约（types.gen.ts：RejudgeResponses[200] = ApiResponseFailureItem）给出的是一次同步结果行，
 // 不是「已受理」回执：error 为空即该卷本次判分成功，非空即仍失败且带后端现场原因。
+// 手动给分契约（ManualScoreResponses[200] = ApiResponseVoid）无结果体：请求成功即该卷已被裁定——
+// 该动作完全绕过判分引擎，教师裁定即终局。
 const queryClient = useQueryClient();
-const rejudgingSubmissionId = ref<number | null>(null);
+// 同一时刻只允许一次「失败行处置」在途（重判与手动给分共用）：既防重复点击，也保证回填
+// 只发生在一个确定的动作上。
+const resolvingSubmissionId = ref<number | null>(null);
+// 各失败行待提交的客观题总分（逐行独立，避免把某一行的分数用到另一行上）。
+const manualScoreDrafts = ref<Record<number, number | null>>({});
+
+/** 读该行的待提交分数（行没有草稿即 null）。 */
+function manualScoreDraft(submissionId: number | undefined): number | null {
+  if (submissionId === undefined) return null;
+  return manualScoreDrafts.value[submissionId] ?? null;
+}
+
+/** 记该行的待提交分数；非有限数值（清空或非法输入）一律收敛为 null。 */
+function setManualScoreDraft(submissionId: number | undefined, value: unknown): void {
+  if (submissionId === undefined) return;
+  manualScoreDrafts.value[submissionId] =
+    typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
 
 async function onRejudge(failure: FailureItem): Promise<void> {
   const examId = selectedExamId.value;
   const submissionId = failure.submissionId;
   if (examId === undefined || submissionId === undefined) return;
-  if (rejudgingSubmissionId.value !== null) return;
+  if (resolvingSubmissionId.value !== null) return;
 
-  rejudgingSubmissionId.value = submissionId;
+  resolvingSubmissionId.value = submissionId;
   try {
     const result = await unwrap<FailureItem | null | undefined>(
       rejudge({
@@ -348,14 +389,50 @@ async function onRejudge(failure: FailureItem): Promise<void> {
       message.error(reason);
       return;
     }
-    removeRejudgedFailure(submissionId);
+    removeResolvedFailure(submissionId);
     message.success(`答卷 ${submissionId} 重判成功`);
     void queryClient.invalidateQueries({ queryKey: ['grading'] });
   } catch (error) {
     if (selectedExamId.value !== examId) return;
     message.error(error instanceof Error ? error.message : '重判失败');
   } finally {
-    rejudgingSubmissionId.value = null;
+    resolvingSubmissionId.value = null;
+  }
+}
+
+/**
+ * 手动给分：判分引擎反复失败（如答案数据损坏无法解析）时的兜底通道——完全绕过引擎，
+ * 教师裁定即终局。与重判共用竞态防护（resolvingSubmissionId）与成功回填（removeResolvedFailure）。
+ */
+async function onManualScore(failure: FailureItem): Promise<void> {
+  const examId = selectedExamId.value;
+  const submissionId = failure.submissionId;
+  if (examId === undefined || submissionId === undefined) return;
+  if (resolvingSubmissionId.value !== null) return;
+  const objectiveScore = manualScoreDraft(submissionId);
+  // 空值不构成一次给分请求：这不是后端会拒绝的业务错误，而是这次动作不成立（不本地编造文案）。
+  if (objectiveScore === null) return;
+
+  resolvingSubmissionId.value = submissionId;
+  try {
+    await unwrap<unknown>(
+      manualScore({
+        client,
+        throwOnError: true,
+        path: { examId, submissionId },
+        body: { objectiveScore },
+      })
+    );
+    // 与整场判分同口径：切换考试后到达的旧响应不得回写新考试的结果区
+    if (selectedExamId.value !== examId) return;
+    removeResolvedFailure(submissionId);
+    message.success(`答卷 ${submissionId} 手动给分成功`);
+    void queryClient.invalidateQueries({ queryKey: ['grading'] });
+  } catch (error) {
+    if (selectedExamId.value !== examId) return;
+    message.error(error instanceof Error ? error.message : '手动给分失败');
+  } finally {
+    resolvingSubmissionId.value = null;
   }
 }
 
@@ -365,8 +442,11 @@ function markRejudgeFailure(submissionId: number, reason: string): void {
   if (row) row.error = reason;
 }
 
-/** 重判成功：该行不再是失败项，从清单移除并把统计回填到与清单一致（数值缺失时不编造）。 */
-function removeRejudgedFailure(submissionId: number): void {
+/**
+ * 该行已不再是失败项（重判成功与手动给分成功共用同一份回填口径）：
+ * 从清单移除，并把统计回填到与清单一致（数值缺失时不编造）。
+ */
+function removeResolvedFailure(submissionId: number): void {
   const result = gradingRunResult.value;
   if (!result) return;
   result.failures = (result.failures ?? []).filter((item) => item.submissionId !== submissionId);
@@ -490,6 +570,14 @@ function onRowRefreshed(): void {
 .failure-list {
   margin: 8px 0 0;
   padding-left: 20px;
+}
+.failure-list li {
+  line-height: 2;
+}
+/* 手动给分的客观题总分输入（与「重判」同排） */
+.manual-score-input {
+  width: 120px;
+  margin-left: 8px;
 }
 .mt-2 {
   margin-top: 0.5rem;
