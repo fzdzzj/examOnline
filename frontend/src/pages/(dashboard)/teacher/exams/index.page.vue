@@ -6,12 +6,7 @@
       </template>
 
       <div class="mb-3 flex flex-wrap items-center gap-2">
-        <Input
-          v-model:value="searchTitle"
-          placeholder="搜索考试标题（当前页）"
-          allow-clear
-          class="w-64"
-        />
+        <Input v-model:value="searchTitle" placeholder="搜索考试标题" allow-clear class="w-64" />
         <Select
           v-model:value="statusFilter"
           :options="statusOptions"
@@ -23,7 +18,7 @@
 
       <Table
         :columns="columns"
-        :data-source="filteredRows"
+        :data-source="rows"
         :loading="isFetching"
         :pagination="tablePagination"
         :row-key="(row: ExamResponse) => row.id as number"
@@ -199,7 +194,7 @@ import {
   type TableColumnsType,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 
@@ -255,31 +250,46 @@ const pageNum = ref(1);
 const pageSize = ref(10);
 const statusFilter = ref<number | undefined>(undefined);
 const searchTitle = ref('');
+const debouncedTitle = ref('');
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+watch(searchTitle, (newVal) => {
+  if (debounceTimer !== null) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    debouncedTitle.value = newVal.trim();
+    pageNum.value = 1;
+  }, 300);
+});
+
+watch(statusFilter, () => {
+  pageNum.value = 1;
+});
+
+onBeforeUnmount(() => {
+  if (debounceTimer !== null) clearTimeout(debounceTimer);
+});
 
 const { data, isFetching, refetch } = useQuery({
-  queryKey: computed(() => ['exams', pageNum.value, pageSize.value] as const),
+  queryKey: computed(
+    () =>
+      ['exams', pageNum.value, pageSize.value, debouncedTitle.value, statusFilter.value] as const
+  ),
   queryFn: () =>
     unwrap<ExamResponse[]>(
       pageExams({
         client,
         throwOnError: true,
-        query: { page: pageNum.value, size: pageSize.value },
+        query: {
+          page: pageNum.value,
+          size: pageSize.value,
+          title: debouncedTitle.value || undefined,
+          status: statusFilter.value ?? undefined,
+        },
       })
     ),
 });
 
 const rows = computed<ExamResponse[]>(() => data.value ?? []);
-
-const filteredRows = computed<ExamResponse[]>(() => {
-  let result = rows.value;
-  if (searchTitle.value.trim()) {
-    result = result.filter((e) => e.title?.includes(searchTitle.value.trim()));
-  }
-  if (statusFilter.value !== undefined && statusFilter.value !== null) {
-    result = result.filter((e) => e.status === statusFilter.value);
-  }
-  return result;
-});
 
 const tablePagination = computed(() => ({
   current: pageNum.value,

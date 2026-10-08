@@ -1553,6 +1553,8 @@ export type Page2Data = {
     query?: {
         page?: number;
         size?: number;
+        title?: string;
+        status?: number;
     };
     url: '/api/exams';
 };

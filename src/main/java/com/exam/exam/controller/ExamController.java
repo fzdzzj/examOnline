@@ -73,12 +73,14 @@ public class ExamController {
         return ApiResponse.success(toResponse(examService.create(request)));
     }
 
-    /** 考试分页（教师仅见自己的考试） */
+    /** 考试分页（教师仅见自己的考试，支持按标题模糊、按状态精确筛选） */
     @GetMapping
     public ApiResponse<List<ExamResponse>> page(
             @RequestParam(defaultValue = "1") @Min(1) long page,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) long size) {
-        Page<Exam> result = examService.page(page, size);
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) long size,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Integer status) {
+        Page<Exam> result = examService.page(page, size, title, status);
         return ApiResponse.success(result.getRecords().stream().map(this::toResponse).toList());
     }
 

@@ -1,7 +1,7 @@
 # frontend 规范
 
 > 能力域：前端（阶段 19 起的前端系列，19–23 五阶段全量）。
-> 来源：`spec/changes/archive/add-frontend-skeleton-auth` 合入（前端工程底座/API 契约驱动集成/会话与令牌生命周期/角色路由守卫，阶段 19，2026-09-23）+ `spec/changes/archive/add-frontend-teacher-authoring` 合入（题库管理界面/组卷界面/前端不复现判分口径，阶段 20，2026-09-23）+ `spec/changes/archive/add-frontend-must-change-guard` 合入（强制改密前端守卫，提案④，2026-09-21；接回阶段 19 因契约缺字段而移出的「强制改密前置」需求）+ `spec/changes/archive/add-frontend-student-taking` 合入（学生端在线考试：作答界面/服务端时间倒计时/草稿保存与断线恢复/交卷防重配合/切屏检测与上报/交卷结果如实呈现，阶段 22，2026-09-23）+ `spec/changes/archive/add-frontend-exam-admin` 合入（教师端考务：班级管理界面/考试创建与发布界面/监考与行为日志界面，阶段 21，2026-09-23）+ `spec/changes/archive/add-frontend-post-exam` 合入（考后闭环：主观题批改工作台/成绩发布撤回导出/缺考与补考/成绩查询与复核，阶段 23，2026-09-23）。
+> 来源：`spec/changes/archive/add-frontend-skeleton-auth` 合入（前端工程底座/API 契约驱动集成/会话与令牌生命周期/角色路由守卫，阶段 19，2026-09-23）+ `spec/changes/archive/add-frontend-teacher-authoring` 合入（题库管理界面/组卷界面/前端不复现判分口径，阶段 20，2026-09-23）+ `spec/changes/archive/add-frontend-must-change-guard` 合入（强制改密前端守卫，提案④，2026-09-21；接回阶段 19 因契约缺字段而移出的「强制改密前置」需求）+ `spec/changes/archive/add-frontend-student-taking` 合入（学生端在线考试：作答界面/服务端时间倒计时/草稿保存与断线恢复/交卷防重配合/切屏检测与上报/交卷结果如实呈现，阶段 22，2026-09-23）+ `spec/changes/archive/add-frontend-exam-admin` 合入（教师端考务：班级管理界面/考试创建与发布界面/监考与行为日志界面，阶段 21，2026-09-23）+ `spec/changes/archive/add-frontend-post-exam` 合入（考后闭环：主观题批改工作台/成绩发布撤回导出/缺考与补考/成绩查询与复核，阶段 23，2026-09-23）+ `spec/changes/archive/add-exam-list-filtering` 合入（教师端考试列表服务端筛选联动，2026-10-08）。
 > 实施注记：
 > - 本文件由**首个收尾的前端变更**创建（spec/README.md 约定：谁先收尾谁建目录）；阶段 19–23 五份 spec-delta 待各自验收收尾后按 Requirement 标题逐个追加，不预建空壳。
 > - 判定收敛在 `frontend/src/router/access.ts` 的 `decideNavigation` 单一函数，`guard.ts` 只做接线；前端守卫不是安全边界，后端 `@RequireRole` 才是权限的唯一裁决者。
@@ -1539,3 +1539,51 @@ AND 逐卷重判的入口文案、路径参数、成功回填、仍失败换原�
 > 统计回填断言做过变异校验（撤掉 `removeResolvedFailure` 的两行统计回填 → 该例转红于 `'失败：1'`，
 > 其余 7 例不受影响；换回原件 `cmp` 逐字节一致后复跑全绿）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。
+
+---
+
+### Requirement: 教师端考试列表服务端筛选联动
+
+教师端考试列表页面（`frontend/src/pages/(dashboard)/teacher/exams/index.page.vue`）SHALL 将标题与状态筛选条件作为参数传递至后端 `pageExams`（`GET /api/exams`），并 SHALL 将查询参数纳入 `queryKey`。搜索标题输入 SHALL 具备防抖机制，筛选条件变更 SHALL 自动重置到第 1 页，且表格 SHALL 呈现服务端筛选后的完整分页数据，不再由前端进行客户端分页内切片过滤。
+
+#### Scenario: 标题与状态参数透传服务端
+GIVEN 教师在考试列表页输入搜索标题并选择状态
+WHEN 发起数据拉取
+THEN 调用 `pageExams` 时携带 `query: { page, size, title, status }`
+AND 请求返回的数据直接用于表格呈现
+
+#### Scenario: 标题输入防抖避免逐键请求
+GIVEN 教师在搜索框连续快速输入字符
+WHEN 触发 input事件
+THEN 在防抖窗口期（300ms）内不发起新请求，停止输入达到防抖时间后才触发带新标题的查询请求
+
+#### Scenario: 筛选条件变更自动重置第 1 页
+GIVEN 当前处于第 2 页
+WHEN 教师修改标题搜索词或更改状态下拉
+THEN 当前页码自动重置为 1，并以第 1 页参数发起新请求
+
+#### Scenario: 占位提示文案移除当前页限定
+GIVEN 考试列表页面加载完成
+WHEN 观察搜索输入框
+THEN placeholder 为「搜索考试标题」，不包含「（当前页）」字样
+
+---
+
+> 合入注记（2026-10-08，变更 `add-exam-list-filtering`，台账 U-3）：
+> 「教师端考试列表服务端筛选联动」Requirement 合入（4 个 Scenario，文本与该卡 `specs/frontend/spec-delta.md` 逐字一致）。
+> **立项判据（UX 台账 U-3 收口）**：此前列表拉取首页数据后在客户端 `filteredRows` 进行标题与状态筛选，
+> 导致超过 1 页的考试在非首页无法被检索，搜索输入框甚至带有「搜索考试标题（当前页）」占位提示。
+> 本变更由后端端点扩参配合前端接线，将筛选下沉至服务端。
+> 实施边界：
+> ① 前端由 `npm run gen:api` 依据后端导出的 `openapi.yaml` 重新生成 `types.gen.ts`，`Page2Data.query`
+> 自动持有 `title?: string; status?: number;`，零手写类型；
+> ② `index.page.vue` 增加 `debouncedTitle` 配合 300ms `setTimeout` 防抖，避免逐键触发后端网络请求；
+> ③ `watch` 监听标题与状态变更，自动重置 `pageNum = 1`；
+> ④ `queryKey` 纳入 `[pageNum, pageSize, debouncedTitle, statusFilter]`，驱动真实参数拉取；
+> ⑤ 表格数据源改绑服务端返回的 `rows`，完全移除客户端 `filteredRows` 切片过滤，占位符更新为「搜索考试标题」；
+> ⑥ 先红后绿（新增 `examListFiltering.spec.ts` 4 例，未改造前 4 例全红，改造后 4 例全绿；且既有 3 个考试测试文件 15 例零回归全绿）；
+> ⑦ 变异检验已执行（将 `title` 改为 `undefined` 即引发 2 例红灯，撤回后复验全绿）；
+> ⑧ 验收边界=实施笔 `a393877` 已提交状态双端门禁：frontend lint:check/type-check:check/test 三项退出码 0、
+> vitest 61 文件 476 例 → 62 文件 480 例（+1 文件 +4 例）；backend `mvnw.cmd clean test` → 374/0/0/1 + BUILD SUCCESS（+6 例）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。
+
