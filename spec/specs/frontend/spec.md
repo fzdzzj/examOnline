@@ -1419,3 +1419,123 @@ AND 汇总成绩的前置拒绝提示与指引不变
 > 368/0/0/1 + BUILD SUCCESS（与本卡基线 `fe78456` 当次实测持平；
 > `git diff --name-only main 6a688af -- src pom.xml schema.sql openapi.yaml` 为空）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。
+
+---
+
+### Requirement: 判分失败答卷手动给分
+
+WHEN 教师在批改工作台运行整场判分后得到失败清单,
+
+系统 SHALL 在每一条失败行内提供「手动给分」入口，使教师可在判分引擎反复失败时直接裁定该答卷的客观题总分（调用既有的 `POST /api/exams/{examId}/grading/submissions/{submissionId}/manual-score`），SHALL NOT 要求教师为一份引擎无法判分的答卷反复重判或重跑整场判分。手动给分入口 SHALL 带轻量确认，确认文案 SHALL 明示该操作绕过判分引擎、教师裁定即终局、该卷不再由引擎重算；入口 SHALL 由教师录入客观题总分，数值输入精度 SHALL 对齐契约 `ManualScoreRequest` 的约束（非负、最多 1 位小数），入口 SHALL 防重复点击；`examId`、`submissionId` 与 `objectiveScore` SHALL 分别取自生成契约的路径参数与请求体形状。手动给分结果 SHALL 按 `ApiResponseVoid` 的既有语义回填：请求成功即该行从失败清单移除且失败计数减一、成功计数加一，并失效题级进度与学生行查询以刷新同屏数据；请求失败时 SHALL 原样呈现后端 message，且失败清单与统计不被破坏。整场判分、逐卷重判与成绩汇总流程 SHALL 不因该入口的加入而改变，前端 SHALL NOT 自动重试手动给分。
+
+#### Scenario: 仅失败行呈现手动给分入口
+
+GIVEN 整场判分返回 `total=3 success=2 failed=1`，失败清单含一份答卷
+AND 成功卷只有统计值、没有明细行
+
+WHEN 批改工作台渲染判分结果
+
+THEN 失败行内同时出现「重判」与「手动给分」入口
+AND 成功卷不呈现任何手动给分入口
+AND 失败清单行的原文案结构（答卷 ID / 学生 ID / 错误原因）保持不变
+
+#### Scenario: 无失败时不出现手动给分入口
+
+GIVEN 整场判分返回 `failed=0`（或失败清单为空）
+
+WHEN 批改工作台渲染判分结果
+
+THEN 页面上不存在「手动给分」入口
+
+#### Scenario: 确认文案明示绕过引擎且教师裁定即终局
+
+GIVEN 失败行内呈现「手动给分」入口
+
+WHEN 教师点击该入口
+
+THEN 确认层文案明示手动给分将绕过判分引擎、教师裁定即终局、该卷不再重算
+AND 在教师确认之前不发起任何请求
+
+#### Scenario: 确认后按契约路径参数与请求体调用手动给分
+
+GIVEN 失败清单中答卷 `submissionId=101`，当前所选考试 `examId=7`，教师录入客观题总分 `88.5`
+
+WHEN 教师在该行确认手动给分
+
+THEN 前端调用生成 SDK 的 `manualScore`，路径参数为 `{ examId: 7, submissionId: 101 }`、请求体为 `{ objectiveScore: 88.5 }`
+AND 未录入分数时确认不发起请求
+AND 在途期间入口被禁用，重复确认只发出一次请求
+
+#### Scenario: 手动给分成功回填该行并刷新同屏数据
+
+GIVEN 教师已确认对某失败卷手动给分
+
+WHEN 后端返回成功
+
+THEN 该卷从失败清单移除，失败计数减一、成功计数加一
+AND 提示手动给分成功
+AND 题级进度与学生行查询被失效重取（不靠本地推算）
+AND 清单其余行不受影响
+
+#### Scenario: 手动给分请求失败原文呈现
+
+GIVEN 教师已确认对某失败卷手动给分
+
+WHEN 请求被拒绝（如超过客观题满分、答卷尚未交卷、越权或网络失败）
+
+THEN 以 `message.error` 呈现后端返回的 message 原文（不本地编造文案）
+AND 失败清单与统计保持原状，行数不减少
+AND 不自动重试该请求
+
+#### Scenario: 整场判分与逐卷重判零回归
+
+GIVEN 页面已加入手动给分入口
+
+WHEN 教师继续使用原有的「运行判分」与失败行的「重判」
+
+THEN 整场判分的调用、loading 防重、结果统计与三段提示判定与加入入口前一致
+AND 逐卷重判的入口文案、路径参数、成功回填、仍失败换原文与请求失败原文呈现与加入入口前一致
+
+---
+
+> 合入注记（2026-10-08，变更 `add-frontend-manual-score`，前端台账 T-1 澄清后立项）：
+> 「判分失败答卷手动给分」Requirement 合入（7 个 Scenario，文本与该卡 `specs/frontend/spec-delta.md` 逐字一致）。
+> **立项判据（T-1 由「待澄清」转「已实施」）**：`manualScore` 与复核调分（`handle` 的
+> `adjustedTotalScore`）经澄清确认不是同一能力——对象（判分失败的答卷 vs 已发布成绩的复核申请）、
+> 时机（汇总前 vs 发布后）、输入（客观题总分 vs 调整后总分）、语义（绕过引擎的终局裁定 vs 行政调整）
+> 四维均不同，故不构成重复建设，补齐「判分阶段的兜底裁定」这条最小闭环。
+> 实施边界：改动全部落在 `teacher/grading/index.page.vue` 失败清单行内——在既有「重判」之后加
+> `Popconfirm` 包裹的「手动给分」按钮，同排 `InputNumber` 录入客观题总分，确认后调生成 SDK
+> `manualScore`（`path:{examId, submissionId}` + `body:{objectiveScore}`，零手写 URL）。
+> spec-delta 未明说的实现与解释口径如实登记：
+> ①**数值精度取值的依据**——`ManualScoreRequest` 的 `@Digits(integer = 3, fraction = 1)` + `@DecimalMin("0")`
+> 落到 `InputNumber` 即 `min 0 / max 999 / precision 1`（`step 0.5` 与主观题打分输入同族）；**真实上限是
+> 「快照客观题满分」而前端此刻拿不到该值**，故不预判、不本地拦截，越限由后端以原文拒绝呈现；
+> ②**「未录入分数不发起请求」**——空值不是「后端会拒绝的业务错误」而是这一次动作不成立，故在发起前
+> 收口，且不本地编造任何文案（该口径已写进 delta 的 Scenario，此处置只是落实）；
+> ③**两处改名**——为准确表达「两个动作共用」，`rejudgingSubmissionId` / `removeRejudgedFailure` 改名为
+> `resolvingSubmissionId` / `removeResolvedFailure`（纯改名、行为逐字等价；重判既有 7 例零改动通过即护证），
+> `markRejudgeFailure` 仍为重判专用（手动给分没有「仍失败带原因」分支，失败一律后端原文）；
+> ④**在途禁用覆盖所有失败行与两个动作**（同一时刻只允许一次失败行处置在途），不是只禁用被点那一行；
+> ⑤成功按 `ApiResponseVoid` 既有语义回填——该端点无结果体，请求成功即该卷已被裁定，故直接复用重判那份
+> 回填（移除该行 + `failed` 减一 / `success` 加一 + `invalidateQueries({queryKey:['grading']})` +
+> `message.success`），不新造行形态、不引入轮询；
+> ⑥**红证方式**——「先测后实施」：测试先落盘、页面当次尚未实施（等价于红证跑在最终版 spec 上），红灯期
+> 7 例为入口/`InputNumber` 不存在、第 8 例（重判零回归护栏）与同批 `submissionRejudge.spec.ts` 7 例全绿；
+> ⑦**实施过程中的一次自伤如实登记**——同一文件的两处编辑被并发发出，antd 具名导入 `InputNumber` 丢失，
+> 首轮绿测以 `[Vue warn]: Failed to resolve component: InputNumber` 失败（与该页历史上漏 `import { Table }`
+> 的失败形态同源），补回导入后转绿；该轮日志留在该卡 `evidence/green-frontend.txt` 的失败态之外、
+> 已在 tasks.json 阶段 2 证据中登记，不掩改痕；
+> ⑧**基线期一次环境抖动**——前端全量首跑 7 例 `Test timed out in 5000ms`（分散在 7 个与本卡零交集的文件，
+> 同轮 Duration 159.41s、import 累计 2065.61s 属宿主 CPU 争抢），按纪律全量复跑即全绿（回落 42.71s）。
+> 本卡不声称的事：真实 Chromium 与共享 dev 真给分未执行；后端 `manualScore` 的「不得超过客观题满分」
+> 「答卷尚未交卷不能给分」等校验属后端既有服务实现与既有测试范围，本卡只以 mock rejection 固化前端
+> 「原文呈现、清单统计原状、不自动重试」的行为，未新增任何后端证据。
+> 验收边界=实施笔 `7914d25` 已提交状态双端门禁：frontend lint:check/type-check:check/test 三项退出码 0、
+> vitest 60 文件 468 例 → 61 文件 476 例（+1 文件 +8 例；先红 exit 1 'Tests 7 failed | 8 passed (15)'，
+> 第 8 例重判零回归护栏红灯期即绿）；backend `mvnw.cmd clean test` → 368/0/0/1 + BUILD SUCCESS
+> （与本卡基线 `037018c` 当次实测持平；
+> `git diff --name-only 037018c 7914d25 -- src pom.xml schema.sql openapi.yaml` 为空）。
+> 统计回填断言做过变异校验（撤掉 `removeResolvedFailure` 的两行统计回填 → 该例转红于 `'失败：1'`，
+> 其余 7 例不受影响；换回原件 `cmp` 逐字节一致后复跑全绿）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。
