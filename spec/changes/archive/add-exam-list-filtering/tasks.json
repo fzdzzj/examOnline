@@ -130,18 +130,18 @@
       },
       {
         "step": "实施笔提交：实现代码、契约、前端接线、测试与 spec 变更三件套",
-        "completed": false
+        "completed": true
       },
       {
         "step": "合入规范与归档：exam-management 与 frontend spec 追加 Requirement，README 三处登记，移入 archive/ 并生成 evidence-sha256.txt",
-        "completed": false
+        "completed": true
       },
       {
         "step": "归档笔提交，确认 git status 仅剩 7 个白名单未跟踪文件",
-        "completed": false
+        "completed": true
       }
     ],
-    "passes": false,
-    "evidence": "双端门禁全部在仓库根与 frontend/ 严格串行执行完毕：① 后端 mvnw.cmd clean test exit 0，Tests run: 374, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，总耗时 03:46 min（evidence/gate-backend.txt）；② 前端 lint:check exit 0（evidence/gate-frontend-lint.txt）；③ 前端 type-check:check exit 0（evidence/gate-frontend-typecheck.txt）；④ 前端 test exit 0，Test Files 62 passed (62)，Tests 480 passed (480)，总耗时 39.36s（evidence/gate-frontend-test.txt）。核对 git diff --name-only 范围：src/main/java/com/exam/exam/*、src/test/java/com/exam/exam/ExamListFilteringIntegrationTest.java、openapi.yaml、frontend/src/api/axios/types.gen.ts、frontend/src/pages/(dashboard)/teacher/exams/index.page.vue、frontend/src/pages/(dashboard)/teacher/exams/__tests__/examListFiltering.spec.ts、spec/changes/add-exam-list-filtering/*，范围严格封闭。"
+    "passes": true,
+    "evidence": "双端门禁全部在仓库根与 frontend/ 严格串行执行完毕：① 后端 mvnw.cmd clean test exit 0，Tests run: 374, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，总耗时 03:46 min（evidence/gate-backend.txt）；② 前端 lint:check exit 0（evidence/gate-frontend-lint.txt）；③ 前端 type-check:check exit 0（evidence/gate-frontend-typecheck.txt）；④ 前端 test exit 0，Test Files 62 passed (62)，Tests 480 passed (480)，总耗时 39.36s（evidence/gate-frontend-test.txt）。核对 git diff --name-only 范围封闭。实施笔提交 short revision=a393877（commit msg: feat(exam): 考试列表服务端筛选与防抖联动（台账 U-3））。规范合入：exam-management spec 追加 Requirement 考试列表服务端筛选与分页（7 Scenario）；frontend spec 追加 Requirement 教师端考试列表服务端筛选联动（4 Scenario）与合入注记。变更目录移入 archive/ 并由 sha256sum 生成 evidence-sha256.txt 经校验 11 份证据全 OK。"
   }
 ]
