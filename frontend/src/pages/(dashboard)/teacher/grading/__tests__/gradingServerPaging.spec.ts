@@ -63,6 +63,8 @@ vi.mock('@tanstack/vue-query', async () => {
       const bucket = key[1] === 'questions' ? 'questions' : key[1] === 'rows' ? 'rows' : 'exams';
       return { data: ref(queryStore.data[bucket]), isFetching: ref(false), refetch: vi.fn() };
     },
+    // 页面接入逐卷重判后需要 query client；本文件的既有用例不断言它，属测试基建适配
+    useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   };
 });
 

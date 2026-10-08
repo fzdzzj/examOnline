@@ -1199,6 +1199,84 @@ AND 常用入口区域呈现该角色有权访问的快捷入口，点击可正�
 
 ---
 
+### Requirement: 判分失败答卷逐卷重判
+
+WHEN 教师在批改工作台运行整场判分后得到失败清单,
+
+系统 SHALL 在每一条失败行内提供「重判」入口，使教师可对单份答卷调用既有的单卷重判端点（`POST /api/exams/{examId}/grading/submissions/{submissionId}/rejudge`），SHALL NOT 要求教师为处置个别失败卷而重跑整场判分。重判入口 SHALL 带轻量确认（说明将对这一份答卷重新判分）并防重复点击；`examId` 与 `submissionId` SHALL 取自生成契约的路径参数形状。重判结果 SHALL 按后端返回的同步结果行回填：该卷重判成功时该行从失败清单移除且失败计数相应减少，该卷重判仍失败时该行错误文案更新为后端本次返回的原文；请求失败时 SHALL 原样呈现后端 message，且失败清单与统计不被破坏。重判成功 SHALL 失效题级进度与学生行查询以刷新同屏数据。整场判分与成绩汇总流程 SHALL 不因该入口的加入而改变，前端 SHALL NOT 自动重试重判。
+
+#### Scenario: 仅失败行呈现重判入口
+
+GIVEN 整场判分返回 `total=3 success=2 failed=1`，失败清单含一份答卷
+AND 成功卷只有统计值、没有明细行
+
+WHEN 批改工作台渲染判分结果
+
+THEN 失败行内出现「重判」入口
+AND 成功卷不呈现任何重判入口
+AND 失败清单行的原文案结构（答卷 ID / 学生 ID / 错误原因）保持不变
+
+#### Scenario: 无失败时不出现重判入口
+
+GIVEN 整场判分返回 `failed=0`（或失败清单为空）
+
+WHEN 批改工作台渲染判分结果
+
+THEN 页面上不存在「重判」入口
+
+#### Scenario: 确认后按契约路径参数调用单卷重判
+
+GIVEN 失败清单中答卷 `submissionId=101`，当前所选考试 `examId=7`
+
+WHEN 教师点击该行的「重判」并在确认弹层中确认
+
+THEN 前端调用生成 SDK 的 `rejudge`，路径参数为 `{ examId: 7, submissionId: 101 }`
+AND 未确认时不发起任何请求
+AND 在途期间该行入口被禁用，重复确认只发出一次请求
+
+#### Scenario: 重判成功回填该行并刷新同屏数据
+
+GIVEN 教师已确认对某失败卷发起重判
+
+WHEN 后端返回的同步结果行不带错误原因
+
+THEN 该卷从失败清单移除，失败计数减一、成功计数加一
+AND 提示重判成功
+AND 题级进度与学生行查询被失效重取（不靠本地推算）
+AND 清单其余行不受影响
+
+#### Scenario: 重判仍失败呈现后端原文且不破坏清单
+
+GIVEN 教师已确认对某失败卷发起重判
+
+WHEN 后端返回的同步结果行带有新的错误原因
+
+THEN 该行仍留在失败清单中，错误文案更新为后端本次返回的原文
+AND 失败计数不减、不提示成功
+AND 提示以 `message.error` 呈现该原文（不本地编造文案）
+
+#### Scenario: 重判请求失败原文呈现
+
+GIVEN 教师已确认对某失败卷发起重判
+
+WHEN 重判请求被拒绝（如越权、答卷不属于该考试或网络失败）
+
+THEN 以 `message.error` 呈现后端返回的 message 原文
+AND 失败清单与统计保持原状，行数不减少
+AND 不自动重试该请求
+
+#### Scenario: 整场判分与汇总流程零回归
+
+GIVEN 页面已加入逐卷重判入口
+
+WHEN 教师继续使用原有的「运行判分」并进入后续汇总成绩
+
+THEN 整场判分的调用、loading 防重、结果统计与三段提示判定与加入入口前一致
+AND 已批改/已发布考试仍不出现整场重判入口
+AND 汇总成绩的前置拒绝提示与指引不变
+
+---
+
 > 合入注记（2026-09-23，`accept-frontend-19-23` 收口批次，阶段 19/20 的 delta 补合入）：
 > 五阶段 Requirement 至此全部入基线。**已知缺陷如实登记**（真机走查 `frontend/docs/frontend-stages-walkthrough.md`，
 > `59bab7b`）：①「组卷界面」的 *手动组卷可排序与改分* 与 *试卷可只读预览* 两个 Scenario 当前不成立——
@@ -1310,3 +1388,34 @@ AND 常用入口区域呈现该角色有权访问的快捷入口，点击可正�
 > backend `mvnw.cmd clean test` 368/0/0/1 + BUILD SUCCESS（零后端改动，与基线 `d4d21f7` 当次实测持平；
 > `git diff --name-only d4d21f7 1fe4b67 -- src pom.xml schema.sql openapi.yaml` 为空）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium。
+
+> 合入注记（2026-10-08，变更 `add-frontend-submission-rejudge`，前端台账 F-3 收口）：
+> 「判分失败答卷逐卷重判」Requirement 合入（7 个 Scenario，文本与该卡 `specs/frontend/spec-delta.md` 逐字一致）。
+> 实施边界：改动全部落在 `teacher/grading/index.page.vue`（+73/-2）——失败清单 `<li>` 行末加
+> `Popconfirm` 包裹的「重判」按钮并接生成 SDK `rejudge`，原 82-90 行的 `ul/li` 结构与行文案
+> （答卷 ID / 学生 ID / `error ?? '未知错误'`）一字未动，只在行末**加**操作；入口只存在于失败行，
+> `failed=0` 或清单为空时页面不出现「重判」；整场判分链路（`onRunGrading`、`run` 调用、
+> `gradingRunError`、`total===0`/`failed>0`/`failed===0` 三段提示判定、`canRunGrading` 门控）与
+> 成绩汇总前置护栏零改动；`manualScore`（手动给分）不接、`gen:api` 不重跑、零契约变更、零后端改动。
+> spec-delta 未明说的实现与解释口径如实登记：①**契约形状决定接线**——`types.gen.ts` 的
+> `RejudgeResponses[200] = ApiResponseFailureItem` 是一次同步结果行而非受理回执，故成功判别取
+> `result?.error` 是否为空（后端 `GradingController.rejudge` 恒返回 `FailureItem`，
+> `ObjectiveGradingService.GradeOutcome.ok` 的 `error` 为 null），不新造行形态、不引入轮询；
+> ②重判成功时除移除该行外**一并回填 `failed` 减一 / `success` 加一**——delta 只写了「该行移除」，
+> 但只删行不改统计会同屏出现「失败：1」配空清单的自相矛盾；数值缺失（后端未返回该字段）时
+> 以 `typeof number` 守卫不编造；③失效走仓内既有范式 `queryClient.invalidateQueries(['grading'])`
+> （题级进度与学生行两个 queryKey 前缀命中），未复用页面局部的 `refetch` 句柄；④切换考试后到达的
+> 旧响应丢弃并跳过失效与提示——delta 未写，属该页 `onRunGrading` 既有不变式向新操作的延伸，
+> 有用例 ⑦ 守住；⑤在途禁用覆盖**所有**失败行（同一时刻只允许一次重判在途），不是只禁用被点那一行；
+> ⑥红证过程中两处**判据自身**的错（Vue 模板换行使行文案断言需按去空白口径比对；失败项常量按引用
+> 共享会被就地回填污染后续用例）与两处 mock 适配（`gradingRunFlow`/`gradingServerPaging` 的
+> vue-query mock 各补 `useQueryClient` 一行，既有断言零改动）均如实登记于该卡 tasks.json 阶段 1/3 证据；
+> ⑦统计回填断言做过变异校验（撤掉两行 → 该例转红于 `'失败：1'`，其余 6 例不受影响）。
+> 本卡不声称的事：单卷重判的后端幂等性与「主观批改结果不动」属后端既有语义与既有集成测试范围，
+> 本卡未新增任何后端证据；真实 Chromium 与共享 dev 真判分未执行。
+> 验收边界=实施笔 `6a688af` 已提交状态双端门禁：frontend lint:check/type-check:check/test 三项退出码 0、
+> vitest 59 文件 461 例 → 60 文件 468 例（+1 文件 +7 例；先红 exit 1 '7 failed | 4 passed (11)'，
+> 7 个红灯全部为入口/Popconfirm 不存在，红证跑在最终版 spec 上）；backend `mvnw.cmd clean test`
+> 368/0/0/1 + BUILD SUCCESS（与本卡基线 `fe78456` 当次实测持平；
+> `git diff --name-only main 6a688af -- src pom.xml schema.sql openapi.yaml` 为空）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。

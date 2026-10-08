@@ -1,0 +1,143 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对",
+    "task": "分支与基线锚定（从 main@fe78456 开工）",
+    "steps": [
+      {
+        "step": "K1–K3：从 main（fe78456）新建 feature/add-frontend-submission-rejudge；记录 HEAD 短 SHA 与 git status 基线（应仅 7 个白名单未跟踪文件）",
+        "completed": true
+      },
+      {
+        "step": "K4：双端门禁基线锚（命令 + 当次输出 + 短 SHA 记入本字段，不作常量假设）：前端 lint/type-check/test + 后端 mvnw.cmd clean test（JAVA_HOME=D:\\develop1\\jdk21）",
+        "completed": true
+      },
+      {
+        "step": "K5：契约与现状复核锚点：types.gen.ts 的 RejudgeData.path 为 {examId, submissionId} 且 RejudgeResponses[200]=ApiResponseFailureItem（同步结果行，非受理回执）；index.page.vue:82-90 失败清单为只读 ul 无动作；GradingController.rejudge 成功时 error 为 null——确认与 proposal 描述一致",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1-K3: git checkout -b feature/add-frontend-submission-rejudge @ main（git rev-parse --short HEAD=fe78456，git branch --show-current=feature/add-frontend-submission-rejudge）；git status --short 基线=7 个白名单未跟踪文件（.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-improvement-candidates.md、docs/frontend-optimization-candidates.md、docs/指导主Agent交接文档-2026-09-30/-10-01/-10-02.md）。K4 前端: cd frontend && npm.cmd run lint:check exit 0、npm.cmd run type-check:check exit 0（evidence/baseline-frontend-lint.txt / baseline-frontend-typecheck.txt）；npm.cmd run test 全量 exit 0 'Test Files 59 passed (59)' 'Tests 461 passed (461)'（evidence/baseline-frontend-test.txt）。K4 后端: JAVA_HOME=D:\\develop1\\jdk21 + .\\mvnw.cmd clean test exit 0 @ fe78456，关键行 '[WARNING] Tests run: 368, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS'（全量日志 evidence/baseline-backend.txt）＝后端基线锚定 368/0/0/1；双端四项严格串行（后端跑期间未并发 vitest）。K5: 锚点逐一核对一致——frontend/src/api/axios/types.gen.ts:1693-1710 RejudgeData.body 为 never、path 为 {examId: number; submissionId: number}、RejudgeResponses[200] 为 ApiResponseFailureItem（即同步结果行，无任何「已受理」形状）；FailureItem（types.gen.ts:436-440）为 {submissionId?, studentId?, error?}；index.page.vue:82-90 失败清单为 <ul class=\"failure-list\"> 只读渲染（答卷 ID/学生 ID/error ?? '未知错误'）无任何动作；GradingController.java:80-86 恒返回 FailureItem，ObjectiveGradingService.java:70-78 GradeOutcome.ok 的 error 为 null（成功即 error 空）。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：前端红测先行",
+    "task": "逐卷重判用例（实施前先红）",
+    "steps": [
+      {
+        "step": "写用例①：失败行呈现「重判」入口（行数=入口数、行原文案结构不变），成功卷只有统计值不呈现入口；failed=0 时页面不出现任何入口",
+        "completed": true
+      },
+      {
+        "step": "写用例②：入口呈现但未确认时不发请求；确认后调 SDK rejudge，断言路径参数 {examId, submissionId} 取自 types.gen.ts 契约形状",
+        "completed": true
+      },
+      {
+        "step": "写用例③：重判在途重复确认只发起一次请求（防重复点击）",
+        "completed": true
+      },
+      {
+        "step": "写用例④：重判成功（返回行不带 error）→ 该行移出清单、其余行不受影响、failed/success 统计回填 + invalidate ['grading'] + message.success",
+        "completed": true
+      },
+      {
+        "step": "写用例⑤：重判仍失败（返回行带 error）→ 该行文案换成后端本次原文、清单行数不减、统计不回填、message.error 原文；请求被拒 → message 原文、清单与统计原状、只由显式确认发起（不自动重试）",
+        "completed": true
+      },
+      {
+        "step": "写用例⑥：切换考试后到达的旧重判响应不回写结果区、不失效新考试查询（与 onRunGrading 同口径）",
+        "completed": true
+      },
+      {
+        "step": "回归护栏⑦：整场重判既有断言零回归——gradingRunFlow.spec.ts 既有 4 例一字不动（loading 防重、切考试丢弃、三段提示、失败清单可见），仅 vue-query mock 补 useQueryClient 属测试基建适配",
+        "completed": true
+      },
+      {
+        "step": "定向跑一次留红（evidence/red-frontend.txt），红灯应恰为新用例",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "新增 1 个 spec 7 例：frontend/src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts（① 只在失败行呈现重判入口〔两条失败行两个入口、行原文案结构不变〕且 failed=0 时零入口；② 入口呈现但未确认时 api.rejudge 未被调用，确认后断言 toHaveBeenCalledWith({client, throwOnError: true, path:{examId:7, submissionId:101}})；③ 在途重复确认只发起一次请求；④ 重判成功〔返回行 error 为 null〕→ 该行移出清单、其余行不受影响、失败：1/成功：3 统计回填、invalidateQueries({queryKey:['grading']})、message.success('答卷 101 重判成功')；⑤ 重判仍失败〔返回行带新原因〕→ 该行文案换成后端本次原文、行数仍 2、失败：2/成功：2 不回填、message.error(原文)、不失效查询；⑥ 请求被拒 → message.error('答卷不存在或不属于该考试') 原文、清单与统计原状、两次调用都对应两次显式确认（不自动补发）；⑦ 切换考试后到达的旧响应不回写结果区、不失效新考试查询）。既有 gradingRunFlow.spec.ts 4 例一字未改，只在其 vue-query mock 补 useQueryClient 一行（测试基建适配，无断言变化）。红灯取证方式：先把实施后的页面文件换回未实施版本（实施副本存仓库外 /tmp/page.impl.vue，换回 git show HEAD:<path> 的原件），再跑最终版 spec，随后 cp 换回并用 cmp 确认逐字节一致（RESTORED-IDENTICAL），避免红证与被提交用例不是同一份文件。定向执行（双引号包裹括号路径）：npm.cmd run test -- \"src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts\" \"src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts\"，实测 exit 1 'Test Files 1 failed | 1 passed (2)' 'Tests 7 failed | 4 passed (11)'（evidence/red-frontend.txt）——7 个红灯全部是 submissionRejudge 新用例，失败原因逐条可辨：两条为 rejudgeButtons 入口集合 expected [] to have a length of 2/1 but got +0，五条为 findAllComponents(Popconfirm)[0] 取不到组件的 TypeError（入口尚不存在），既有用例所在文件整体 passed。红证过程中修掉两处**判据自身**的错（不是被测错）：① 行文案断言最初写成 '答卷 101（学生 202）：答案格式错误'，而 Vue 模板换行会在插值间渲染出一个空格，实测文本为 '答卷 101（学生 202）： 答案格式错误'——改为去空白归一化口径（bodyText() 先 replace(/\\s+/g,'')）后该行断言在未实施版上转为绿、红灯收窄到入口缺失本身；② 失败项常量按引用共享会被重判结果就地回填污染后续用例（第 ⑤ 例把 error 改成 '答案 JSON 损坏' 后第 ⑥ 例读到被污染的原文），改为 failure101()/failure102() 工厂每例取独立副本。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：前端实施（先红后绿）",
+    "task": "index.page.vue 失败清单行内接入单卷重判",
+    "steps": [
+      {
+        "step": "实施①：失败清单行末加 Popconfirm（文案说明将重新判分该卷）包裹「重判」按钮，ul/li 原文案结构零改动",
+        "completed": true
+      },
+      {
+        "step": "实施②：onRejudge 调 rejudge（path 取 selectedExamId + 该行 submissionId），在途 submissionId 记录防重复点击；运行期间切换考试丢弃结果（与 onRunGrading 同口径）",
+        "completed": true
+      },
+      {
+        "step": "实施③：按同步结果形状回填——error 空则移除该行并把 failed 减一、success 加一（数值缺失时不编造），invalidate ['grading'] 刷新进度与行，message.success；error 非空则该行文案更新为原文、清单不破坏，message.error(error)",
+        "completed": true
+      },
+      {
+        "step": "实施④：请求异常走 message.error(error.message) 后端原文范式，清单与统计不动、不自动重试；零改动 onRunGrading 与三段 Alert 判定",
+        "completed": true
+      },
+      {
+        "step": "定向跑新用例转绿（evidence/green-frontend.txt）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "按 proposal 完成接线，改动全部落在 index.page.vue（+73/-2）：1) 失败清单 <li> 行末加 Popconfirm（title「将对这一份答卷重新判分，确认重判？」）包裹 type=link size=small 的「重判」按钮，原 82-90 行的 ul/li 结构与行文案（答卷 ID/学生 ID/error ?? '未知错误'）一字未动，只**加**操作；2) 新增 onRejudge(failure)：取 selectedExamId 与该行 submissionId，二者缺一不发起；rejudgingSubmissionId 非空即直接返回（防重复点击，按钮同时 :disabled），确认后调生成 SDK rejudge({client, throwOnError: true, path:{examId, submissionId}})，零手写 URL；3) 接线按契约实际形状（同步结果行，非受理回执）——result?.error 非空即「重判仍失败」：markRejudgeFailure 只把该行 error 换成后端本次原文、行数与 failed/success 统计不动，message.error(原文)；error 为空即「重判成功」：removeRejudgedFailure 从清单过滤掉该行并按 typeof number 守卫把 failed 减一、success 加一（数值缺失不编造），message.success('答卷 N 重判成功')，void queryClient.invalidateQueries({queryKey:['grading']}) 失效题级进度与学生行（对齐仓内 30+ 处 queryClient 失效范式，不靠本地推算）；4) 请求异常走 catch → message.error(error instanceof Error ? error.message : '重判失败')，清单与统计不动、不自动重试；与 onRunGrading 同口径在两个分支都判 selectedExamId.value !== examId 即丢弃切换考试后到达的旧响应；5) 整场判分链路零改动——onRunGrading、run 调用、gradingRunError、total===0/failed>0/failed===0 三段 Alert 判定、canRunGrading 门控、refetchQuestions/refetchRows 一处未动。定向复跑：npm.cmd run test -- \"src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts\" \"src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts\" 实测 exit 0 'Test Files 2 passed (2)' 'Tests 11 passed (11)'（evidence/green-frontend.txt）＝7 个新用例转绿且既有 4 例同文件同批通过。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：全量双端门禁与零后端改动复核",
+    "task": "串行全量双端门禁 + 零后端改动证据",
+    "steps": [
+      {
+        "step": "前端 lint:check、type-check:check 退出码 0，全量 test 相对基线 59 文件 461 例只增不减且全绿（含 gradingRunFlow 既有用例）",
+        "completed": true
+      },
+      {
+        "step": "后端 mvnw.cmd clean test 与基线当次实测持平（368/0/0/1）BUILD SUCCESS 不变",
+        "completed": true
+      },
+      {
+        "step": "git diff 证明零后端文件改动（src/、pom.xml、schema.sql、openapi.yaml 均不动）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "门禁全部在**已提交状态** 6a688af（实施笔）上复跑，不在未提交工作树上取证；跑完后 git status --short 对 frontend/ 零修改（变异校验后 cp 换回并与仓库外副本 cmp 逐字节一致、git status 该文件不出现），即被门禁的树与提交树同一：1) 前端 cd frontend && npm.cmd run lint:check exit 0（evidence/gate-frontend-lint.txt）、npm.cmd run type-check:check exit 0（evidence/gate-frontend-typecheck.txt）、npm.cmd run test 全量 exit 0 'Test Files 60 passed (60)' 'Tests 468 passed (468)'（evidence/gate-frontend-test.txt）＝相对基线 59 文件 461 例只增不减（+1 文件 +7 例），零失败零跳过，gradingRunFlow 既有 4 例与 gradingServerPaging 既有 9 例同批全绿；2) 后端 JAVA_HOME=D:\\develop1\\jdk21 + .\\mvnw.cmd clean test exit 0，关键行 '[WARNING] Tests run: 368, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS'（evidence/gate-backend.txt）＝与本卡基线 @ fe78456 当次实测 368/0/0/1 逐字持平；3) git diff --name-only main 6a688af -- src pom.xml schema.sql openapi.yaml 输出为空，git diff --stat main 6a688af 只列 4 个 frontend 文件（+321/-2），零后端改动成立。双端严格串行：后端跑期间未并发任何 vitest。变异校验（判据非空转证明）：删去 removeRejudgedFailure 的两行统计回填（failed 减一 / success 加一）后定向跑 submissionRejudge.spec.ts → exit 1 'Tests 1 failed | 6 passed (7)'，失败点恰为该用例 spec.ts:177 的 '失败：1' 断言，其余 6 例不受影响；换回原件复跑三文件定向 exit 0 'Tests 20 passed (20)'（证据 evidence/mutation-check.txt 记录变异那一轮）。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：规范合入与收尾归档",
+    "task": "spec 合入、README 三处登记、移入 archive/ 与两笔提交",
+    "steps": [
+      {
+        "step": "第一笔提交（实施笔）：仅代码改动 + 测试用例（含两处 vue-query mock 适配），spec 三件套与证据随归档笔入库",
+        "completed": true
+      },
+      {
+        "step": "spec/specs/frontend/spec.md 合入 ADDED Requirement 与合入注记",
+        "completed": true
+      },
+      {
+        "step": "spec/README.md 三处登记（当前状态收口说明、已合入规范表 frontend 行、已归档变更表）",
+        "completed": true
+      },
+      {
+        "step": "变更目录移入 spec/changes/archive/ 并生成 evidence-sha256.txt",
+        "completed": true
+      },
+      {
+        "step": "第二笔提交（归档笔）：规范合入与归档资产",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "1) 实施笔 6a688af：git show --stat 只列 4 个 frontend 文件（index.page.vue +73/-2、submissionRejudge.spec.ts 新增 244 行、gradingRunFlow.spec.ts 与 gradingServerPaging.spec.ts 各 +2 行 mock 适配），暂存清单经 git diff --cached --name-only 核对，spec/ 目录未卷入；2) spec/specs/frontend/spec.md：合入 ADDED Requirement「判分失败答卷逐卷重判」（7 个 Scenario，与该卡 specs/frontend/spec-delta.md 逐字一致）+ 合入注记（登记 6 条 delta 未明说的实现与解释口径、变异校验结果、以及「后端重判幂等性不属本卡证据」的不声称项）；3) spec/README.md 完成三处登记（当前状态段收口说明、已合入规范表 frontend 行追加本变更、已归档变更表追加本变更行）；4) 变更目录整体移入 spec/changes/archive/add-frontend-submission-rejudge/，evidence/evidence-sha256.txt 由 sha256sum -b 生成，grep -v '^#' evidence-sha256.txt | sha256sum -c - 当场逐条 OK；5) 归档笔只含 spec/ 下文件（git show --stat 可复核），git status 终态只剩 7 个白名单未跟踪文件。"
+  }
+]

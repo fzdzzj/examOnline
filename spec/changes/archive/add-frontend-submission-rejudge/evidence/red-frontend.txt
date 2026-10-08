@@ -1,0 +1,127 @@
+
+> examonline-front@0.0.0 test
+> vitest run src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts [2m([22m[2m7 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[33m 785[2mms[22m[39m
+[31m     [31m×[31m 只在失败行呈现重判入口；无失败时不出现入口[39m[33m 421[2mms[22m[39m
+[31m     [31m×[31m 确认后才调用 rejudge，路径参数取契约的 examId + submissionId[39m[32m 81[2mms[22m[39m
+[31m     [31m×[31m 重判在途时重复确认只发起一次请求[39m[32m 68[2mms[22m[39m
+[31m     [31m×[31m 重判成功：该行移出清单、统计回填、失效批改查询并提示成功[39m[32m 50[2mms[22m[39m
+[31m     [31m×[31m 重判仍失败：该行文案换成后端本次原文，清单不破坏、统计不回填[39m[32m 50[2mms[22m[39m
+[31m     [31m×[31m 重判请求被拒：原文呈现且清单与统计保持原状，只由显式确认发起[39m[32m 62[2mms[22m[39m
+[31m     [31m×[31m 切换考试后到达的旧重判响应不回写结果区，也不刷新新考试的查询[39m[32m 48[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1033[2mms[22m[39m
+     [33m[2m✓[22m[39m 仅已结束考试显示入口；重复点击只调用一次，并刷新题级进度与学生行 [33m 468[2mms[22m[39m
+     [33m[2m✓[22m[39m 已选主观题时才刷新当前学生行 [33m 419[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 7 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts[2m > [22m判分失败答卷逐卷重判[2m > [22m只在失败行呈现重判入口；无失败时不出现入口
+[31m[1mAssertionError[22m: expected [] to have a length of 2 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts:[2m110:37[22m[39m
+    [90m108|[39m     [34mexpect[39m([34mbodyText[39m())[33m.[39m[34mtoContain[39m([32m'答卷102（学生203）：快照缺题'[39m)[33m;[39m
+    [90m109|[39m     [90m// 两条失败行两个入口；两份成功卷只有统计值，不呈现入口[39m
+    [90m110|[39m     [34mexpect[39m([34mrejudgeButtons[39m(wrapper))[33m.[39m[34mtoHaveLength[39m([34m2[39m)[33m;[39m
+    [90m   |[39m                                     [31m^[39m
+    [90m111|[39m
+    [90m112|[39m     vi[33m.[39m[34mmocked[39m(api[33m.[39mrun)[33m.[39m[34mmockResolvedValue[39m({
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts[2m > [22m判分失败答卷逐卷重判[2m > [22m确认后才调用 rejudge，路径参数取契约的 examId + submissionId
+[31m[1mAssertionError[22m: expected [] to have a length of 1 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts:[2m129:37[22m[39m
+    [90m127|[39m
+    [90m128|[39m     [90m// 入口已呈现但教师尚未确认：不得自动发起[39m
+    [90m129|[39m     [34mexpect[39m([34mrejudgeButtons[39m(wrapper))[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                                     [31m^[39m
+    [90m130|[39m     [34mexpect[39m(api[33m.[39mrejudge)[33m.[39mnot[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m131|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts[2m > [22m判分失败答卷逐卷重判[2m > [22m重判在途时重复确认只发起一次请求
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts:[2m153:16[22m[39m
+    [90m151|[39m
+    [90m152|[39m     [35mconst[39m popconfirm [33m=[39m wrapper[33m.[39m[34mfindAllComponents[39m([33mPopconfirm[39m)[[34m0[39m][33m;[39m
+    [90m153|[39m     popconfirm[33m.[39mvm[33m.[39m[34m$emit[39m([32m'confirm'[39m)[33m;[39m
+    [90m   |[39m                [31m^[39m
+    [90m154|[39m     popconfirm[33m.[39mvm[33m.[39m[34m$emit[39m([32m'confirm'[39m)[33m;[39m
+    [90m155|[39m     [34mexpect[39m(api[33m.[39mrejudge)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts[2m > [22m判分失败答卷逐卷重判[2m > [22m重判成功：该行移出清单、统计回填、失效批改查询并提示成功
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts:[2m167:44[22m[39m
+    [90m165|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountAndRun[39m([[34mfailure101[39m()[33m,[39m [34mfailure102[39m()])[33m;[39m
+    [90m166|[39m
+    [90m167|[39m     wrapper[33m.[39m[34mfindAllComponents[39m([33mPopconfirm[39m)[[34m0[39m][33m.[39mvm[33m.[39m[34m$emit[39m([32m'confirm'[39m)[33m;[39m
+    [90m   |[39m                                            [31m^[39m
+    [90m168|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m169|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts[2m > [22m判分失败答卷逐卷重判[2m > [22m重判仍失败：该行文案换成后端本次原文，清单不破坏、统计不回填
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts:[2m188:44[22m[39m
+    [90m186|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountAndRun[39m([[34mfailure101[39m()[33m,[39m [34mfailure102[39m()])[33m;[39m
+    [90m187|[39m
+    [90m188|[39m     wrapper[33m.[39m[34mfindAllComponents[39m([33mPopconfirm[39m)[[34m0[39m][33m.[39mvm[33m.[39m[34m$emit[39m([32m'confirm'[39m)[33m;[39m
+    [90m   |[39m                                            [31m^[39m
+    [90m189|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m190|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts[2m > [22m判分失败答卷逐卷重判[2m > [22m重判请求被拒：原文呈现且清单与统计保持原状，只由显式确认发起
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts:[2m206:16[22m[39m
+    [90m204|[39m
+    [90m205|[39m     [35mconst[39m popconfirm [33m=[39m wrapper[33m.[39m[34mfindAllComponents[39m([33mPopconfirm[39m)[[34m0[39m][33m;[39m
+    [90m206|[39m     popconfirm[33m.[39mvm[33m.[39m[34m$emit[39m([32m'confirm'[39m)[33m;[39m
+    [90m   |[39m                [31m^[39m
+    [90m207|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m208|[39m     popconfirm[33m.[39mvm[33m.[39m[34m$emit[39m([32m'confirm'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts[2m > [22m判分失败答卷逐卷重判[2m > [22m切换考试后到达的旧重判响应不回写结果区，也不刷新新考试的查询
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts:[2m230:44[22m[39m
+    [90m228|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountAndRun[39m([[34mfailure101[39m()])[33m;[39m
+    [90m229|[39m
+    [90m230|[39m     wrapper[33m.[39m[34mfindAllComponents[39m([33mPopconfirm[39m)[[34m0[39m][33m.[39mvm[33m.[39m[34m$emit[39m([32m'confirm'[39m)[33m;[39m
+    [90m   |[39m                                            [31m^[39m
+    [90m231|[39m     wrapper.findComponent(Select).vm.$emit('update:value', ANOTHER_END…
+    [90m232|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 00:05:12
+[2m   Duration [22m 6.33s[2m (transform 383ms, setup 56ms, import 8.07s, tests 1.82s, environment 1.89s)[22m
+
+EXIT=1

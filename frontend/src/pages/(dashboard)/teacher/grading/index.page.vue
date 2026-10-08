@@ -86,6 +86,11 @@
           >
             答卷 {{ failure.submissionId ?? '未知' }}（学生 {{ failure.studentId ?? '未知' }}）：
             {{ failure.error ?? '未知错误' }}
+            <Popconfirm title="将对这一份答卷重新判分，确认重判？" @confirm="onRejudge(failure)">
+              <Button type="link" size="small" :disabled="rejudgingSubmissionId !== null">
+                重判
+              </Button>
+            </Popconfirm>
           </li>
         </ul>
       </div>
@@ -154,16 +159,27 @@
 </template>
 
 <script setup lang="ts">
-import { Alert, Button, Card, Select, Table, message, type TableColumnsType } from 'ant-design-vue';
+import {
+  Alert,
+  Button,
+  Card,
+  Popconfirm,
+  Select,
+  Table,
+  message,
+  type TableColumnsType,
+} from 'ant-design-vue';
 import { computed, ref, watch } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 
 import {
   page2 as pageExams,
+  rejudge,
   subjectiveQuestions,
   subjectiveRows,
   run,
   type ExamResponse,
+  type FailureItem,
   type GradingRunResponse,
   type SubjectiveGradePageResponse,
   type SubjectiveGradeRow,
@@ -301,6 +317,61 @@ async function onRunGrading(): Promise<void> {
       gradingRunExamId.value = undefined;
     }
   }
+}
+
+// ===== 失败答卷逐卷重判 =====
+// 契约（types.gen.ts：RejudgeResponses[200] = ApiResponseFailureItem）给出的是一次同步结果行，
+// 不是「已受理」回执：error 为空即该卷本次判分成功，非空即仍失败且带后端现场原因。
+const queryClient = useQueryClient();
+const rejudgingSubmissionId = ref<number | null>(null);
+
+async function onRejudge(failure: FailureItem): Promise<void> {
+  const examId = selectedExamId.value;
+  const submissionId = failure.submissionId;
+  if (examId === undefined || submissionId === undefined) return;
+  if (rejudgingSubmissionId.value !== null) return;
+
+  rejudgingSubmissionId.value = submissionId;
+  try {
+    const result = await unwrap<FailureItem | null | undefined>(
+      rejudge({
+        client,
+        throwOnError: true,
+        path: { examId, submissionId },
+      })
+    );
+    // 与整场判分同口径：切换考试后到达的旧响应不得回写新考试的结果区
+    if (selectedExamId.value !== examId) return;
+    const reason = result?.error;
+    if (reason) {
+      markRejudgeFailure(submissionId, reason);
+      message.error(reason);
+      return;
+    }
+    removeRejudgedFailure(submissionId);
+    message.success(`答卷 ${submissionId} 重判成功`);
+    void queryClient.invalidateQueries({ queryKey: ['grading'] });
+  } catch (error) {
+    if (selectedExamId.value !== examId) return;
+    message.error(error instanceof Error ? error.message : '重判失败');
+  } finally {
+    rejudgingSubmissionId.value = null;
+  }
+}
+
+/** 重判仍失败：只把该行原因换成后端本次原文，行数与统计不动（失败清单不破坏）。 */
+function markRejudgeFailure(submissionId: number, reason: string): void {
+  const row = gradingRunResult.value?.failures?.find((item) => item.submissionId === submissionId);
+  if (row) row.error = reason;
+}
+
+/** 重判成功：该行不再是失败项，从清单移除并把统计回填到与清单一致（数值缺失时不编造）。 */
+function removeRejudgedFailure(submissionId: number): void {
+  const result = gradingRunResult.value;
+  if (!result) return;
+  result.failures = (result.failures ?? []).filter((item) => item.submissionId !== submissionId);
+  if (typeof result.failed === 'number') result.failed -= 1;
+  if (typeof result.success === 'number') result.success += 1;
 }
 
 // ===== 主观题进度 =====
