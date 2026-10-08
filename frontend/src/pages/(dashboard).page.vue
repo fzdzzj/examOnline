@@ -78,9 +78,9 @@ const roleLabel = (role: string): string => {
  * 手输 URL 依然会被后端 @RequirePermission 拒绝，前端不声称这里是权限边界。
  *
  * 教师端：题库 / 标签 / 组卷等页面挂在 /teacher 前缀下，角色限定与后端 RBAC 一致。
- * 管理端（F-4）：邀请码管理挂在 /admin 前缀下，仅 ADMIN 可见——权限边界在后端
- * 类级 @RequireRole(ADMIN) + 方法级 invite:manage，菜单过滤只是体验层；
- * 审计日志 / 踢人端点未接页面（后端账保留）。/student 分区仍是 disabled 占位。
+ * 管理端（F-4）：邀请码管理与审计日志挂在 /admin 前缀下，仅 ADMIN 可见——权限边界在后端
+ * 类级 @RequireRole(ADMIN) + 方法级 invite:manage / user:manage，菜单过滤只是体验层；
+ * /student 分区仍是 disabled 占位。
  */
 const menuItems = computed<MenuProps['items']>(() => {
   const loggedIn = isAuthenticatedOf(user.value);
@@ -122,7 +122,10 @@ const menuItems = computed<MenuProps['items']>(() => {
     items.push({
       key: 'admin-section',
       label: '管理端',
-      children: [{ key: '/admin/invite-codes', label: '邀请码管理' }],
+      children: [
+        { key: '/admin/invite-codes', label: '邀请码管理' },
+        { key: '/admin/audit-logs', label: '审计日志' },
+      ],
     });
   }
   return items;
@@ -147,6 +150,7 @@ const NAVIGABLE_PATHS: readonly string[] = [
   '/student/exams',
   '/student/scores',
   '/admin/invite-codes',
+  '/admin/audit-logs',
 ];
 
 const onMenuClick: MenuProps['onClick'] = ({ key }) => {
