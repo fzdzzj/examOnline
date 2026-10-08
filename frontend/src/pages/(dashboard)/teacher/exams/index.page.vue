@@ -16,7 +16,19 @@
         />
       </div>
 
+      <!-- U-6 三态分离（形态对齐 papers/index 已收口径）：列表/搜索/筛选查询失败显性呈现，表格隐藏——
+           失败不得伪装成「无考试」空态；成功空数组才落既有空态 -->
+      <Alert
+        v-if="queryErrorText"
+        type="error"
+        show-icon
+        :message="queryErrorText"
+        data-test="exams-error"
+        class="mb-3"
+      />
+
       <Table
+        v-else
         :columns="columns"
         :data-source="rows"
         :loading="isFetching"
@@ -269,7 +281,7 @@ onBeforeUnmount(() => {
   if (debounceTimer !== null) clearTimeout(debounceTimer);
 });
 
-const { data, isFetching, refetch } = useQuery({
+const { data, isFetching, refetch, error } = useQuery({
   queryKey: computed(
     () =>
       ['exams', pageNum.value, pageSize.value, debouncedTitle.value, statusFilter.value] as const
@@ -290,6 +302,15 @@ const { data, isFetching, refetch } = useQuery({
 });
 
 const rows = computed<ExamResponse[]>(() => data.value ?? []);
+
+// U-6 三态分离（形态对齐 papers/index 已收口径）：列表/搜索/筛选查询失败显性呈现
+// （Alert 承载后端 message），成功空数组才落既有空态；本页三个确认弹窗内的 Alert
+// 是业务确认、非查询错误反馈，一字不动
+const queryErrorText = computed<string | null>(() => {
+  const caught = error.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '考试列表加载失败';
+});
 
 const tablePagination = computed(() => ({
   current: pageNum.value,

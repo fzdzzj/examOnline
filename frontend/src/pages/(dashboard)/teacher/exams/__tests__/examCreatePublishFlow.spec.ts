@@ -56,6 +56,9 @@ vi.mock('@tanstack/vue-query', async () => {
       const key = unref(options.queryKey) as unknown[];
       return {
         data: ref(queryStore.data[String(key[0])]),
+        // fix-frontend-exam-page-error-states（U-6/U-7）：页面消费 useQuery 的 error，
+        // 基建补 error ref（rejection 落尽走 queryFn mock，此处恒 null），断言零改动
+        error: ref<unknown>(null),
         isFetching: ref(false),
         refetch: vi.fn(),
       };
