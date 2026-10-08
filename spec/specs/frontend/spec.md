@@ -1587,3 +1587,97 @@ THEN placeholder 为「搜索考试标题」，不包含「（当前页）」字
 > vitest 61 文件 476 例 → 62 文件 480 例（+1 文件 +4 例）；backend `mvnw.cmd clean test` → 374/0/0/1 + BUILD SUCCESS（+6 例）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。
 
+### Requirement: 审计日志查询与强制下线界面
+
+管理端 SHALL 提供安全审计日志页（`/admin/audit-logs`，落既有 `/admin` 角色分区）：列表经 `auditLogs`（`GET /api/admin/audit-logs`）按 `page`/`size`/`username`/`action` 取数并按后端返回字段渲染，前端 SHALL NOT 自行推算动作或状态语义；用户名与动作筛选 SHALL 作为参数传递至服务端、SHALL 具备防抖且筛选变更 SHALL 重置到第 1 页；因响应为页内数组且无 `total` 信封，分页器 SHALL 以「当页满页即至少还有下一页」的下界推断呈现，SHALL NOT 伪造精确总数；仅携带 `userId` 的行 SHALL 呈现「强制下线」入口（无 `userId` 的系统事件行不呈现）；强制下线 SHALL 经危险确认弹窗（明示目标用户会话立即失效、需重新登录）调用 `kickUser`（path 携带该行 `userId`）；查询失败 SHALL 以 Alert 显性呈现后端 message 且 SHALL NOT 伪装空态；操作失败 SHALL 原文呈现后端 message，SHALL NOT 本地编造失败文案或拦截请求；强制下线成功 SHALL 失效审计日志查询刷新。
+
+#### Scenario: 列表按后端字段渲染
+
+GIVEN 后端返回审计日志数组（含 `userId` 行与 `userId` 为空的系统事件行）
+
+WHEN 页面渲染
+
+THEN 用户名 / 动作 / 状态 / IP / 时间 / 详情均按返回值呈现
+
+AND 「强制下线」入口仅在携带 `userId` 的行出现
+
+#### Scenario: 查询失败不伪装空态
+
+GIVEN `auditLogs` 查询失败
+
+WHEN 页面渲染
+
+THEN 错误 Alert 呈现后端返回的原始 message，空态文案不出现
+
+AND 成功且无数据时空态照常呈现、不弹错误 Alert
+
+#### Scenario: 无 total 信封的下界分页
+
+GIVEN 审计日志响应为页内数组且无 `total` 字段
+
+WHEN 当前页返回条数等于 `size`
+
+THEN 分页器据「满页即至少还有下一页」预留下一页入口，翻页可真实发起带 `page` 的请求
+
+AND 当前页返回条数小于 `size` 时不预留后续页码
+
+#### Scenario: 筛选参数透传服务端且防抖回第 1 页
+
+GIVEN 管理员在用户名输入框连续快速输入字符并填写动作筛选
+
+WHEN 触发输入事件
+
+THEN 防抖窗口内不发起新请求，停止输入后以 `query: { page, size, username, action }` 携带去空白后的筛选值请求
+
+AND 筛选值变化时当前页码重置为 1，空筛选值不携带该参数
+
+#### Scenario: 强制下线知情确认
+
+GIVEN 管理员点击某条携带 `userId` 记录的「强制下线」
+
+WHEN 危险确认弹窗呈现
+
+THEN 弹窗明示该用户所有会话立即失效、需重新登录
+
+AND 确认后调用 `kickUser`（path 携带该行 `userId`）并失效审计日志查询
+
+#### Scenario: 下线失败原文呈现不本地编造
+
+GIVEN 强制下线被后端拒绝
+
+WHEN 操作失败
+
+THEN message 呈现后端返回的原始 message，且不失效查询、不展示伪成功结果
+
+---
+
+> 合入注记（2026-10-08，变更 `add-frontend-audit-logs-kick`，台账 F-4 第二阶段）：
+> 「审计日志查询与强制下线界面」Requirement 合入（6 个 Scenario，文本与该卡 `specs/frontend/spec-delta.md` 逐字一致——
+> 双侧抽取行段去 CR 后 diff 实测输出 `VERBATIM-MATCH-OK`，各 61 行）。
+> **立项判据**：上一张 F-4 卡（`add-frontend-invite-code-admin`）归档时明确写下「审计日志与踢人两组端点维持零消费，需要时另立变更」；
+> 后端 `GET /api/admin/audit-logs`（登录成功/失败、账户锁定事件的同步落库查询）与 `POST /api/admin/users/{userId}/kick`
+> （目标用户全端下线）连同 SDK 函数与契约早已就绪，管理员却只能看得见邀请码、看不见安全事件，发现异常登录也无从当场处置。
+> 本卡把两组端点接成同一个页面，属「接口缺口为零、纯前端接线」的收口。
+> 实施边界（spec-delta 未逐条写明的口径，如实登记）：
+> ① 动作筛选为文本输入而非下拉：契约里 `action` 是无 `enum` 的裸 string，后端 `AuditLogService.page` 对该参数走 `eq` 精确匹配；
+>    `AuditLog` 实体虽声明四个 `ACTION_*` 常量，当前只有 `LOGIN`（`AuthService`）与 `ACCOUNT_LOCKED`（`LoginGuardService`）有写入点，
+>    `PERMISSION_CHANGE`/`JWT_VALIDATION` 在 `src/` 内零引用，且 `schema.sql` 的列注释写作 `LOGIN_LOCKED`、与实体常量 `ACCOUNT_LOCKED` 不一致——
+>    把这份清单固化成下拉，等于用常量表伪装契约枚举，后端补写入点或改名时会静默漏项；
+> ② `status` 列只据取值上色（SUCCESS/FAILURE/WARNING → 绿/红/橙，未知回落 default），文案一律渲染后端原串，前端不翻译、不建第二套语义；
+> ③ `size` 取后端默认值 20（上限 100 由 `@Max` 与 `Math.min` 双兜底），`showSizeChanger` 关闭，翻页只经表格 `@change` 改页码后 `refetch`；
+> ④ 可下线判定用 `typeof row.userId === 'number'`：契约把 `userId` 装成可选字段，而系统事件（账户锁定、账号不存在的失败登录）运行时是 `null`，
+>    该判法一挡 `undefined` 二挡 `null`；能否踢的最终裁决仍是后端 `user:manage`，越权失败原文呈现；
+> ⑤ 下线确认弹窗为声明式 `Modal` + warning `Alert`（正文走 `#message` 具名插槽），与考试删除/邀请码作废同形，
+>    明示「所有会话立即失效，需重新登录」「已断开的会话无法恢复」；措辞按后端真值收敛——`AuthService.kickUser` 只做
+>    `invalidateAllSessions` + 一行 INFO 日志，既不改业务数据也不写 `audit_log`，故弹窗不声称「答卷受影响」或「操作会记入审计」；
+> ⑥ 导航只在侧边栏 `admin-section` children 与 `NAVIGABLE_PATHS` 两处登记，落地页「常用入口」卡不新增（入口卡扩张是另一处体验决策）；
+>    `access.ts` 分区结构零改动，`/admin/audit-logs` 落在既有 `{ prefix: '/admin', roles: ['ADMIN'] }` 内；
+> ⑦ `dlq`/`replay` 维持不接，沿用 `add-dlq-observability-and-replay` 的既有取舍；不做时间区间筛选（后端 `page` 注释自陈刻意不提供 from/to）；
+> ⑧ 先红后绿：新增 `auditLogsKick.spec.ts` 10 例，实施前定向 exit 1（`Failed to resolve import … index.page.vue`、0 例执行；
+>    prettier 归一后再把页面临时移出仓库复跑一次，红态与原红同形），实施后 10/10 绿；
+>    五处关键断言逐条做变异校验且均可红——撤下界推断（`expected false to be true`）、下线入口改恒显示（按钮 2≠1）、
+>    撤防抖（请求 3≠1）、空值也携带参数（key 集 4≠2）、去掉 `pageNum=1`（`page: 2` 未回第 1 页且其余 9 例全绿），逐条复原后全绿；
+> ⑨ 验收边界=实施笔 `83a392b` 已提交状态双端门禁：frontend lint:check/type-check:check/test 三项退出码 0、
+>    vitest 62 文件 480 例 → 63 文件 490 例（+1 文件 +10 例）；backend `mvnw.cmd clean test` → 374/0/0/1 + BUILD SUCCESS（与基线 `ab2dcd3` 持平，零后端改动）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。
+

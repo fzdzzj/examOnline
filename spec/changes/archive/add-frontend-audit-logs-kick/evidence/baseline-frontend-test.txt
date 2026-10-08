@@ -1,0 +1,257 @@
+
+> examonline-front@0.0.0 test
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/classes/__tests__/transferTargetsFullList.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 3603[2mms[22m[39m
+     [33m[2m✓[22m[39m 弹层未打开时不取候选：班级表格照常按 size=10 取数，无 size=100 请求 [33m 2691[2mms[22m[39m
+     [33m[2m✓[22m[39m 弹层打开后满页续拉：发 2 次 size=100 请求（page 1/2），135 个班级全部可选 [33m 908[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/submissionRejudge.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 3928[2mms[22m[39m
+     [33m[2m✓[22m[39m 只在失败行呈现重判入口；无失败时不出现入口 [33m 1827[2mms[22m[39m
+     [33m[2m✓[22m[39m 确认后才调用 rejudge，路径参数取契约的 examId + submissionId [33m 534[2mms[22m[39m
+     [33m[2m✓[22m[39m 重判在途时重复确认只发起一次请求 [33m 340[2mms[22m[39m
+     [33m[2m✓[22m[39m 重判成功：该行移出清单、统计回填、失效批改查询并提示成功 [33m 429[2mms[22m[39m
+     [33m[2m✓[22m[39m 重判仍失败：该行文案换成后端本次原文，清单不破坏、统计不回填 [33m 404[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 4057[2mms[22m[39m
+     [33m[2m✓[22m[39m 仅已结束考试显示入口；重复点击只调用一次，并刷新题级进度与学生行 [33m 1674[2mms[22m[39m
+     [33m[2m✓[22m[39m 已选主观题时才刷新当前学生行 [33m 1506[2mms[22m[39m
+     [33m[2m✓[22m[39m 切换考试后丢弃旧判分结果，不刷新新考试的数据 [33m 328[2mms[22m[39m
+     [33m[2m✓[22m[39m 零答卷和部分失败分别呈现，不冒称判分成功，并显示失败清单 [33m 546[2mms[22m[39m
+ [32m✓[39m src/components/student/__tests__/StudentExamList.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 4000[2mms[22m[39m
+     [33m[2m✓[22m[39m 三个后端分组各渲染自己的文案，顺序与后端一致 [33m 2187[2mms[22m[39m
+     [33m[2m✓[22m[39m 入口可点性只认 canEnter：true 可点、false 与缺失都禁用 [33m 482[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/papers/__tests__/paperListServerPaging.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 4272[2mms[22m[39m
+     [33m[2m✓[22m[39m 首屏按服务端取第 1 页 10 条，且分页器让第 2 页可达 [33m 2538[2mms[22m[39m
+     [33m[2m✓[22m[39m 翻第 2 页发起真实请求并渲染第 2 页返回的行 [33m 1348[2mms[22m[39m
+     [33m[2m✓[22m[39m 查询失败：错误 Alert 显性呈现后端 message，空态不出现 [33m 379[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/papers/__tests__/paperBatchAdd.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 4624[2mms[22m[39m
+     [33m[2m✓[22m[39m 批量入卷成功：单次批量调用 + 成功提示 + 失效刷新，单题端点零调用 [33m 2951[2mms[22m[39m
+     [33m[2m✓[22m[39m 批量入卷失败：ApiError message 透出提示，不再半批静默 [33m 856[2mms[22m[39m
+     [33m[2m✓[22m[39m 所选题目均已在试卷中：前端前置提示保留，不发起任何请求 [33m 803[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/scores/__tests__/summaryPrerequisiteAlert.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 4610[2mms[22m[39m
+     [33m[2m✓[22m[39m 拦截器包装后的汇总前置错误仍显示前往批改工作台 [33m 2937[2mms[22m[39m
+     [33m[2m✓[22m[39m 旧考试汇总成功返回后，新考试不能出现旧的汇总结果卡片 [33m 446[2mms[22m[39m
+     [33m[2m✓[22m[39m 切换考试时清除已展示的汇总结果卡片 [33m 380[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/papers/__tests__/paperDetailTable.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 4936[2mms[22m[39m
+     [33m[2m✓[22m[39m 草稿态真实渲染题目表、题干和改分/排序/移出入口，且无 Table 解析警告 [33m 4369[2mms[22m[39m
+     [33m[2m✓[22m[39m 锁定态真实渲染题目内容和只读分值，不呈现编辑操作 [33m 564[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/exam/__tests__/ExamMonitorPanel.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 5056[2mms[22m[39m
+     [33m[2m✓[22m[39m 四个计数与题目总数一律照后端显示，界面不做加总 [33m 2188[2mms[22m[39m
+     [33m[2m✓[22m[39m 学生行保持后端顺序（排序在后端：异常优先），前端不再排一次 [33m 757[2mms[22m[39m
+     [33m[2m✓[22m[39m 考试状态标签取后端 examStatus（1=进行中），文案来自 constants/examStatus [33m 388[2mms[22m[39m
+     [33m[2m✓[22m[39m 异常学生按后端 maxSeverity 上色，并透出异常次数 [33m 352[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/manualScore.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 5397[2mms[22m[39m
+     [33m[2m✓[22m[39m 只在失败行呈现手动给分入口并与「重判」并存；无失败时不出现入口 [33m 2953[2mms[22m[39m
+     [33m[2m✓[22m[39m 确认文案明示绕过引擎且教师裁定即终局，数值精度对齐契约 [33m 424[2mms[22m[39m
+     [33m[2m✓[22m[39m 确认后按契约路径参数与请求体调用 manualScore；未录入分数不发起 [33m 513[2mms[22m[39m
+     [33m[2m✓[22m[39m 给分成功：该行移出清单、统计回填、失效批改查询并提示成功 [33m 570[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/admin/invite-codes/__tests__/inviteCodeAdmin.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 6375[2mms[22m[39m
+     [33m[2m✓[22m[39m 列表按后端字段渲染：状态标签呈现，作废入口仅有效行出现 [33m 3095[2mms[22m[39m
+     [33m[2m✓[22m[39m 查询失败：错误 Alert 显性呈现后端 message，空态不出现 [33m 557[2mms[22m[39m
+     [33m[2m✓[22m[39m 成功且无数据：空态照常呈现，不弹错误 Alert [33m 364[2mms[22m[39m
+     [33m[2m✓[22m[39m 生成成功：提交 createInviteCode（body 携带 note），弹层内展示新码并失效列表查询 [33m 974[2mms[22m[39m
+     [33m[2m✓[22m[39m 生成失败：message 呈现后端原文，不失效查询、不展示伪成功结果 [33m 518[2mms[22m[39m
+     [33m[2m✓[22m[39m 作废知情确认：确认后调 invalidateInviteCode（path 携带 id）并失效列表查询 [33m 464[2mms[22m[39m
+     [33m[2m✓[22m[39m 作废失败：message 呈现后端原文且不失效查询 [33m 399[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 6513[2mms[22m[39m
+     [33m[2m✓[22m[39m 部分成功：单次批量调用 + 信封解析提示成功 N 失败 M + 失败项逐条 reason + 刷新选中态 [33m 4264[2mms[22m[39m
+     [33m[2m✓[22m[39m 全部成功：批量调用 + 成功提示，单题端点零调用 [33m 791[2mms[22m[39m
+     [33m[2m✓[22m[39m 全部失败：零删除提示「成功 0 题，失败 2 题」，不伪装成全部成功 [33m 678[2mms[22m[39m
+     [33m[2m✓[22m[39m 请求校验失败（重复/空/超限 400）：错误透出，不刷新列表 [33m 762[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/exams/__tests__/examCreatePublishFlow.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 6684[2mms[22m[39m
+     [33m[2m✓[22m[39m 动作入口按后端返回的 status/published 渲染：仅「未开始+未发布」可发布、仅「进行中」可强制结束 [33m 3268[2mms[22m[39m
+     [33m[2m✓[22m[39m 发布确认弹窗明示生成快照与锁定；确认后调 publish 并失效列表缓存 [33m 928[2mms[22m[39m
+     [33m[2m✓[22m[39m force-end 确认弹窗明示触发缺考标记且不可逆；确认后调 force-end [33m 938[2mms[22m[39m
+     [33m[2m✓[22m[39m 必填缺失被拦：不发起创建请求 [33m 952[2mms[22m[39m
+     [33m[2m✓[22m[39m 合法表单提交：请求体对齐后端契约（时间带字面量 T、防作弊开关、迟到分钟、空描述不携带） [33m 596[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/exams/__tests__/examListFiltering.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 6806[2mms[22m[39m
+     [33m[2m✓[22m[39m 占位符断言：搜索框 placeholder 移除「（当前页）」，文案为「搜索考试标题」 [33m 4319[2mms[22m[39m
+     [33m[2m✓[22m[39m 防抖检索与参数透传：标题输入在 300ms 内不发请求，300ms 后以新标题发起请求 [33m 937[2mms[22m[39m
+     [33m[2m✓[22m[39m 状态筛选参数透传：更改状态下拉框即刻触发带参请求 [33m 683[2mms[22m[39m
+     [33m[2m✓[22m[39m 切页后筛选变更重置为第 1 页：在第 2 页变更搜索词自动重置为 page 1 发起请求 [33m 853[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/makeups/__tests__/queryFailureStates.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 7697[2mms[22m[39m
+     [33m[2m✓[22m[39m 候选人查询失败：错误 Alert 显性呈现，「请先选择主考考试并点击查询」不出现 [33m 4689[2mms[22m[39m
+     [33m[2m✓[22m[39m 候选人成功且无数据：空态文案原样保留，不弹错误 Alert [33m 1051[2mms[22m[39m
+     [33m[2m✓[22m[39m 最终成绩查询失败：错误 Alert 显性呈现，成功空值提示文案不出现 [33m 960[2mms[22m[39m
+     [33m[2m✓[22m[39m 最终成绩成功且无数据：提示文案原样保留，不弹错误 Alert [33m 991[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/makeups/__tests__/makeupFinalScore.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 7847[2mms[22m[39m
+     [33m[2m✓[22m[39m 过期边界已撤：「后端尚未接线 / finalScore 零调用」表述不再出现 [33m 4901[2mms[22m[39m
+     [33m[2m✓[22m[39m 诚实边界改写：合并规则在后端、历史成绩保留不覆盖，前端不本地推算 [33m 973[2mms[22m[39m
+     [33m[2m✓[22m[39m 渲染后端返回值：makeupFinalScore 返回 82.5 则页面原样呈现 82.5 [33m 1048[2mms[22m[39m
+     [33m[2m✓[22m[39m 不本地合并：后端返回 null（无已批改记录）时展示空态说明，不出现推算数字 [33m 920[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/exams/__tests__/examEditDelete.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 9538[2mms[22m[39m
+     [33m[2m✓[22m[39m 操作列乐观门控：未开始+未发布→编辑+删除；进行中/已结束未发布→仅删除；已发布→两者皆无 [33m 4555[2mms[22m[39m
+     [33m[2m✓[22m[39m 点击「编辑」跳转创建页并携带 examId [33m 847[2mms[22m[39m
+     [33m[2m✓[22m[39m 删除确认弹窗明示不可逆；确认后调 delete2 并失效 exams 查询 [33m 765[2mms[22m[39m
+     [33m[2m✓[22m[39m 删除失败呈现后端原文：非未开始考试被拒时不本地编造文案、不失效查询 [33m 766[2mms[22m[39m
+     [33m[2m✓[22m[39m 编辑模式：标题「编辑考试」，详情端点返回值回填全部表单字段（含防作弊两开关） [33m 1201[2mms[22m[39m
+     [33m[2m✓[22m[39m 编辑提交：调 update2（path 携带 examId、请求体对齐 ExamUpdateRequest），成功跳回列表并失效 exams 查询 [33m 727[2mms[22m[39m
+     [33m[2m✓[22m[39m 编辑提交失败：message 呈现后端原文且不跳转、不失效查询 [33m 672[2mms[22m[39m
+[90mstderr[2m | src/pages/(dashboard)/teacher/makeups/__tests__/makeupTimeAndRules.spec.ts[2m > [22m[2m补考创建时间控件与 rules 校验（U-4）[2m > [22m[2mrules 校验拦截：时间缺失被拦截，不发起创建请求
+[22m[39masync-validator: [ [32m"'${name}' is required"[39m ]
+async-validator: [ [32m"'${name}' is required"[39m ]
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/teacher/makeups/__tests__/makeupTimeAndRules.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 10058[2mms[22m[39m
+     [33m[2m✓[22m[39m 控件渲染：时间字段渲染为 DatePicker 组件且旧自由文本 placeholder 不存在 [33m 4884[2mms[22m[39m
+     [33m[2m✓[22m[39m 表单提交：合法语境下 dayjs 转换为等价带 T 字符串提交至后端 [33m 1515[2mms[22m[39m
+     [33m[2m✓[22m[39m rules 校验拦截：起止时间倒置（结束时间早于等于开始时间）被拦截，不发起创建请求 [33m 1758[2mms[22m[39m
+     [33m[2m✓[22m[39m rules 校验拦截：时间缺失被拦截，不发起创建请求 [33m 1892[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/hooks/__tests__/useAutoSaveDraft.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useBehaviorReport.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 246[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/grading/__tests__/gradingServerPaging.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 14668[2mms[22m[39m
+     [33m[2m✓[22m[39m 已批进度展示信封 graded/total，而非客户端计数 [33m 5164[2mms[22m[39m
+     [33m[2m✓[22m[39m 表格翻页与改页大小上抛 update:page / update:pageSize（服务端驱动） [33m 1643[2mms[22m[39m
+     [33m[2m✓[22m[39m 姓名筛选与只看未批改上抛服务端筛选状态 [33m 1628[2mms[22m[39m
+     [33m[2m✓[22m[39m 409/1012 冲突后 refreshRow 以 submissionId 单行拉取并通知父级刷新 [33m 1405[2mms[22m[39m
+     [33m[2m✓[22m[39m queryFn 携带 page/size/onlyUngraded/name，翻页与筛选后参数随动且切筛选回第 1 页 [33m 4815[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useClassRoster.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useRandomDraw.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useSubmitExam.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useServerCountdown.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/apiClient.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 109[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/fetchAllPages.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/constants/__tests__/postExam.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useTeacherExams.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/studentTaking.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/hooks/__tests__/useGradingFlow.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/student/scores/__tests__/applyReviewAlert.spec.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1335[2mms[22m[39m
+     [33m[2m✓[22m[39m 后端校验说明真实可见：限次限时由后端裁决、前端不预展资格计数（Alert 具名插槽） [33m 1332[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/student/scores/__tests__/makeupFinalScore.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1648[2mms[22m[39m
+     [33m[2m✓[22m[39m 正常：后端返回 finalScore 原样渲染（前端只透传，不本地合并） [33m 1347[2mms[22m[39m
+[90mstderr[2m | src/pages/(dashboard)/teacher/scores/__tests__/publishConfirmAlert.spec.ts[2m > [22m[2m成绩发布确认弹窗（teacher/scores）[2m > [22m[2m知情文案真实可见：仅已批改可发布、汇总会锁定、重复发布幂等（Alert 具名插槽）
+[22m[39m[Vue warn]: injection "Symbol(router)" not found. 
+  at <Index.page ref="VTU_COMPONENT" > 
+  at <VTUROOT>
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/question/__tests__/questionTypeConfig.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/components/exam/__tests__/ExamSnapshotPreview.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1982[2mms[22m[39m
+     [33m[2m✓[22m[39m 有快照：题目按后端行序原样渲染，分值不重算 [33m 1537[2mms[22m[39m
+     [33m[2m✓[22m[39m 考试配置快照原样列成键值对（含 null 值，前端不隐去、不补默认） [33m 339[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/reviews/__tests__/queryFailureStates.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 2171[2mms[22m[39m
+     [33m[2m✓[22m[39m 查询失败：错误 Alert 显性呈现，空态文案「该考试暂无复核申请」不出现 [33m 1692[2mms[22m[39m
+     [33m[2m✓[22m[39m 成功且无数据：空态文案原样保留，不弹错误 Alert [33m 476[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/scores/__tests__/publishConfirmAlert.spec.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1205[2mms[22m[39m
+     [33m[2m✓[22m[39m 知情文案真实可见：仅已批改可发布、汇总会锁定、重复发布幂等（Alert 具名插槽） [33m 1202[2mms[22m[39m
+ [32m✓[39m src/components/student/__tests__/TakingBoard.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1548[2mms[22m[39m
+     [33m[2m✓[22m[39m 已答/未答/当前三态同时可区分 [33m 680[2mms[22m[39m
+ [32m✓[39m src/components/student/__tests__/DraftSyncBadge.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1033[2mms[22m[39m
+     [33m[2m✓[22m[39m synced：显示已自动保存与服务器确认时刻 [33m 574[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/student/__tests__/ExamCountdown.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 732[2mms[22m[39m
+     [33m[2m✓[22m[39m 正常作答中：只显示后端剩余时长，不弹任何警告 [33m 432[2mms[22m[39m
+ [32m✓[39m src/components/student/__tests__/QuestionAnswerCard.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 1482[2mms[22m[39m
+     [33m[2m✓[22m[39m 单选：渲染 Radio 组，选项顺序与文案字母严格按快照 [33m 542[2mms[22m[39m
+ [32m✓[39m src/components/observability/__tests__/GrafanaEntry.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1237[2mms[22m[39m
+     [33m[2m✓[22m[39m 未配置：给出可读的降级说明与变量名，且完全不渲染链接 [33m 688[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/pages/(dashboard)/student/scores/__tests__/queryFailureStates.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1265[2mms[22m[39m
+     [33m[2m✓[22m[39m 非「成绩待发布」失败：错误 Alert 显性呈现，未发布卡片不出现 [33m 1151[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/exams/__tests__/examCreateOptionsFullList.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 2813[2mms[22m[39m
+     [33m[2m✓[22m[39m 试卷下拉满页后续拉第 2 页：发 2 次请求（page 1/2，size 100），135 条全部可选 [33m 2105[2mms[22m[39m
+     [33m[2m✓[22m[39m 班级下拉满页后续拉第 2 页：发 2 次请求（page 1/2，size 100），135 条全部可选 [33m 702[2mms[22m[39m
+ [32m✓[39m src/components/exam/__tests__/BehaviorTimeline.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1583[2mms[22m[39m
+     [33m[2m✓[22m[39m 一条日志一个时间线节点，事件类型原样透出（时间升序由后端保证） [33m 854[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/teacher/absences/__tests__/queryFailureStates.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 2216[2mms[22m[39m
+     [33m[2m✓[22m[39m 查询失败：错误 Alert 显性呈现，空态文案「该考试没有缺考记录（或考试尚未结束）」不出现 [33m 1696[2mms[22m[39m
+     [33m[2m✓[22m[39m 成功且无数据：空态文案原样保留，不弹错误 Alert [33m 517[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/postexam/__tests__/ScorePublishPreview.spec.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1438[2mms[22m[39m
+     [33m[2m✓[22m[39m 所有列都渲染出值（不空白） [33m 1435[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useExamMonitor.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/pages/(dashboard)/__tests__/landingWelcomeAndEntries.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 764[2mms[22m[39m
+     [33m[2m✓[22m[39m 验证卡清除：页面不含「这一页验证了什么」及阶段 19 开发清单 [33m 590[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useStudentTaking.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/sessionRefresh.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/scoreActions.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/scoreVisibility.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/draftMerge.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/drawRules.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/questionFilters.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/exportDownload.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/paperMath.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/behaviorEvents.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/gradingValidation.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/dateTime.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/router/__tests__/access.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m62 passed[39m[22m[90m (62)[39m
+[2m      Tests [22m [1m[32m480 passed[39m[22m[90m (480)[39m
+[2m   Start at [22m 14:27:29
+[2m   Duration [22m 137.97s[2m (transform 38.86s, setup 5.79s, import 1821.13s, tests 145.81s, environment 544.32s)[22m
+
