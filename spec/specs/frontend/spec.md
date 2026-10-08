@@ -1681,3 +1681,93 @@ THEN message 呈现后端返回的原始 message，且不失效查询、不展�
 >    vitest 62 文件 480 例 → 63 文件 490 例（+1 文件 +10 例）；backend `mvnw.cmd clean test` → 374/0/0/1 + BUILD SUCCESS（与基线 `ab2dcd3` 持平，零后端改动）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。
 
+---
+
+### Requirement: 考试列表查询失败与编辑回填失败显性化
+
+考试列表页（`teacher/exams/index.page.vue`）的列表/搜索/筛选查询失败 SHALL 以错误 Alert 显性呈现后端 message 且隐藏 Table，SHALL NOT 渲染为业务空态；成功且无数据时 SHALL 照常渲染既有业务空态文案。考试编辑页（`teacher/exams/create.page.vue`）在编辑模式下详情回填失败 SHALL 以错误 Alert 显性呈现后端 message，且回填成功前 SHALL 禁止保存（防默认值误写真实考试），回填成功后 SHALL 恢复保存可用；创建模式与编辑回填成功路径 SHALL 保持既有行为零改动。两处 SHALL NOT 自动重试、SHALL NOT 自动跳转。
+
+#### Scenario: 列表查询失败显性呈现且隐藏表格
+
+GIVEN 教师进入考试列表页
+
+WHEN 列表查询（或搜索/筛选联动查询）失败
+
+THEN 错误 Alert 呈现后端 message 且 Table 隐藏
+
+AND 既有业务空态文案不出现（失败不得伪装成「无考试」）
+
+#### Scenario: 列表查询成功空数组保留空态
+
+GIVEN 教师在考试列表页
+
+WHEN 列表查询成功且返回空数组
+
+THEN 既有业务空态文案原样呈现
+
+AND 不出现错误 Alert
+
+#### Scenario: 列表查询成功数据零回归
+
+GIVEN 教师在考试列表页
+
+WHEN 列表查询成功且返回数据
+
+THEN Table 照常渲染数据行、不出现错误 Alert、既有分页/筛选/操作列行为不变
+
+#### Scenario: 编辑回填失败显性呈现并禁用保存
+
+GIVEN 教师以编辑模式（route query 携带 examId）进入创建页
+
+WHEN 详情回填查询失败
+
+THEN 错误 Alert 呈现后端 message 且「保存修改」按钮禁用、提交被拦截（不落默认值写真实考试）
+
+#### Scenario: 编辑回填成功零回归
+
+GIVEN 教师以编辑模式进入创建页且详情回填查询成功
+
+THEN 详情返回值回填全部表单字段（含防作弊两开关）
+
+AND 「保存修改」可用、提交按既有链路调用 `PUT /api/exams/{id}` 成功后跳回列表并失效 exams 查询
+
+#### Scenario: 创建路径零回归
+
+GIVEN 教师以新建模式（无 examId）进入创建页
+
+THEN 标题为「新建考试」、不触发详情回填查询、不出现回填失败 Alert
+
+AND 提交按既有链路调用 `POST /api/exams`，行为与既有创建路径一致
+
+---
+
+> 合入注记（2026-10-08，变更 `fix-frontend-exam-page-error-states`，UX 台账 U-6+U-7 收口）：
+> 「考试列表查询失败与编辑回填失败显性化」Requirement 合入（6 个 Scenario，文本与该卡
+> `specs/frontend/spec-delta.md` 逐字一致，双侧抽取行段去 CR 后 diff 自验）
+> 实施边界：改动只落 `teacher/exams/index.page.vue` 与 `teacher/exams/create.page.vue` 两页——
+> index.page 列表 useQuery 补 error 解构，Table 前新增查询错误 Alert（`v-if=queryErrorText`，
+> 形态逐字对齐 `papers/index.page.vue:10-18` 的 U-1 已收口范式）+ Table 加 `v-else` 隐藏；
+> `queryErrorText` computed（`error instanceof Error ? error.message : '考试列表加载失败'`，对齐
+> `papers/index :110-115`）；三个确认弹窗（发布/强制结束/删除）Alert 一字不动；不自动重试。
+> create.page 回填 useQuery 补 `error:editBackfillError` 解构，新增 `backfillErrorText` computed
+> （isEditMode 优先判空，未触发 detail2 的创建模式恒 null），模板新增回填失败 Alert（置于 Form 前）；
+> 保存按钮补 `:disabled=isEditMode&&!backfilled`，`handleSubmit` 顶部补提交拦截（程序化/键盘触发的
+> 提交兜底，`isEditMode&&!backfilled → message.warning + return`）；创建路径与回填成功路径零改动。
+> spec-delta 未明说的实现与解释口径如实登记：
+> ① 提交拦截是独立于按钮 `:disabled` 的双保险——`disabled` 只挡鼠标，合规范表程序化提交仍可触发
+>    `update2`，故在 `handleSubmit` 顶部同时拦截，该口径由增强断言（在「合法表单」下确认 update2 未被误调）
+>    独立覆盖，非仅依赖按钮禁用；变异校验已做（撤 guard → 该例红）；
+> ② `backfillErrorText` 的优先判空顺序——创建模式（无 examId）下回填 useQuery 不被触发、`editBackfillError`
+>    天然为 null，故以 `isEditMode` 守卫避免误渲染；
+> ③ 成功空数组仍走既有 `.ant-empty` 空态（locale 无关系义），不因失败态加入而改变；
+> ④ 既有 `examCreatePublishFlow.spec.ts` 的 useQuery mock 补 `error:ref(null)` 一行属测试基建适配
+>    （页面新增消费 error，mock 原本缺该字段会致 `error.value` 访问抛错），断言零改动；
+> ⑤ 红证=预期红：两新 spec 7 例中 3 条新断言（列表查询失败 Alert 缺失、筛选联动失败 Alert 缺失、
+>    编辑回填失败 Alert+保存禁用缺失）在页面实施前红、4 条既有行为零回归断言页未实施也已绿（性质如实登记）。
+> 验收边界=`--no-ff` 合并笔 `59886f2`（main 合入后）+ 收口笔复跑双端门禁：frontend
+> lint:check/type-check:check/test 三项退出码 0，vitest 65 文件 497 例（与实施笔 `1d03e4e` 持平，
+> 基线 63 文件 490 例 → 65 文件 497 例，+2 文件 +7 例）；backend `mvnw.cmd clean test` → 374/0/0/1 + BUILD SUCCESS
+> （与基线 `b424c91` 持平，`git diff --name-only b424c91 1d03e4e -- src pom.xml schema.sql openapi.yaml` 为空，
+> 零后端改动）。
+> 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。
+

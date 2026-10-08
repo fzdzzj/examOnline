@@ -90,14 +90,14 @@
     "steps": [
       {
         "step": "变更目录整目录补入 tasks.json 完成态与 evidence-sha256.txt；spec/specs/frontend/spec.md 合入本卡 Requirement + 尾部合入注记；spec/README.md 当前状态行 + frontend 能力域行 + 归档行",
-        "completed": false
+        "completed": true
       },
       {
         "step": "收口自查：git diff --name-only <实施笔> HEAD -- src frontend pom.xml openapi.yaml 为空；AGENTS.md 自查四条；git status 终态仅白名单未跟踪文件",
-        "completed": false
+        "completed": true
       }
     ],
-    "passes": false,
-    "evidence": "(阶段 4 完成时填：合入注记要点、自查输出)"
+    "passes": true,
+    "evidence": "阶段 4 收口（2026-10-08）：main@b424c91 上 --no-ff 合并 `feature/fix-frontend-exam-page-error-states`，git merge --no-ff ... 输出 'Merge made by the recursive strategy'、无冲突，合并笔 `59886f2`（git rev-parse HEAD=59886f272b51661884c90842d4749910347446db），git log --oneline -4 = 59886f2 Merge branch 'feature/fix-frontend-exam-page-error-states' into main / dc970fe / 1d03e4e / b424c91。spec 基线合入：spec/specs/frontend/spec.md 尾部追加 ADDED Requirement「考试列表查询失败与编辑回填失败显性化」（6 Scenario，文本与该卡 spec-delta 逐字一致）+ 合入注记；自验 grep '列表查询失败显性呈现且隐藏表格' 在 spec.md:1690 与 spec-delta.md:9 均命中。变更目录归档：git mv spec/changes/fix-frontend-exam-page-error-states spec/changes/archive/，归档路径确认（ls 含 evidence/、specs/、evidence-sha256.txt、proposal.md、tasks.json），spec/changes/ 下已无该目录（仅 archive/ 与既存 survey-frontend-candidates-r2、IMPLEMENTATION_STATUS.md）。spec/README.md 登记：当前无进行中变更行改写为收口 fix-frontend-exam-page-error-states、frontend 能力域行（#18）追加该变更、归档表追加新行（对齐 add-frontend-manual-score/add-exam-list-filtering 字段口径：U-6/U-7 来源、--no-ff 合并笔 59886f2、收口笔）。收口自查：git diff --name-only b424c91 1d03e4e -- src pom.xml schema.sql openapi.yaml 为空（零后端改动，实施笔证据）；git status 终态仅 8 个白名单未跟踪文件（.zcodeignore、4 个台账 md、3 个指导交接文档-2026-09-30/-10-01/-10-02）；台账终态注记（不入库）：docs/frontend-improvement-candidates-r2.md 顶部补 U-6/U-7 已实施（变更 fix-frontend-exam-page-error-states、--no-ff 合并笔 59886f2、前端计数 63/490→65/497、日期 2026-10-08）与 O-2 留观察不改立项（单题端点被批量端点取代属设计演进非缺陷、与 O-1 同留观察，日期 2026-10-08）。合入后双端门禁（main 已提交状态复跑留证）：后端仓库根 mvnw.cmd clean test → '[WARNING] Tests run: 374, Failures: 0, Errors: 0, Skipped: 1' + '[INFO] BUILD SUCCESS'（374/0/0/1，与基线持平）；前端 cd frontend && npm.cmd run lint:check/type-check:check/test 三项 exit 0，vitest 'Test Files 65 passed (65)' 'Tests 497 passed (497)'（65 文件 497 例，与实施笔 1d03e4e 持平）。push：git push 成功，origin/main 由 b424c91 推进到 59886f2（b424c91 此前已推，本笔合并笔一并推上）。feature 分支清理：git branch -d feature/fix-frontend-exam-page-error-states 删除成功（已合入 main 全合并）。"
   }
 ]
