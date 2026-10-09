@@ -1,0 +1,136 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：调研核实与既有能力定性",
+    "task": "基线锚定、既有实现查证、消费方普查与定性纠偏",
+    "steps": [
+      {
+        "step": "从 main @ 19e0c05 切出分支 feature/update-grading-subjective-paging，记录 git status 基线",
+        "completed": true
+      },
+      {
+        "step": "双端门禁基线留证：后端 .\\mvnw.cmd clean test 实测 382/0/0/1；前端 lint:check / type-check:check / test 实测 77 文件 557 例且确认真实 vue-tsc banner",
+        "completed": true
+      },
+      {
+        "step": "既有实现普查与查证：确认服务端分页信封与筛选下沉已由 add-subjective-grading-pagination（commit c1c3ba0）实施完毕，普查确认全仓唯一前端消费方为批改工作台 index.page.vue，将任务定性纠偏为「既有能力之护栏补强案」",
+        "completed": true
+      },
+      {
+        "step": "读 SubjectiveGradingService.java 的 readYourWriteMark.mark() 语义，复核写后读主库路由对分页读的有效性",
+        "completed": true
+      },
+      {
+        "step": "核对 OpenApiContractTest 护栏与既有主观题批改集成测试，确定改造影响面",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "分支：git checkout -b feature/update-grading-subjective-paging @ main 19e0c05。后端基线：.\\mvnw.cmd clean test exit 0，关键行 '[WARNING] Tests run: 382, Failures: 0, Errors: 0, Skipped: 1' + BUILD SUCCESS。前端基线：npm.cmd run lint:check exit 0；type-check:check exit 0（见 vue-tsc --project ./tsconfig.app.json --noEmit 真实 banner）；npm.cmd run test exit 0，'Test Files 77 passed (77)' 'Tests 557 passed (557)'。普查与查证：能力已在 c1c3ba0 落地，本案正式纠偏定性为护栏补强，详见 proposal.md 阶段 0。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：护栏补强提案与 spec-delta 撰写",
+    "task": "建立 update-grading-subjective-paging 护栏补强提案与边界 Scenario",
+    "steps": [
+      {
+        "step": "编写 proposal.md，如实记录 c1c3ba0 既有实现查证结论、定性纠偏及对前案设计的核验结论",
+        "completed": true
+      },
+      {
+        "step": "编写 specs/grading/spec-delta.md，显式引用前案 Requirement「主观题批改行分页与筛选」，不新增 Requirement，补充 4 个边界 Scenario",
+        "completed": true
+      },
+      {
+        "step": "编写 tasks.json，以护栏补强为唯一叙事固化任务与证据",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "spec 三件套落盘于 spec/changes/update-grading-subjective-paging/ 目录下（proposal.md, tasks.json, specs/grading/spec-delta.md），叙事完整对齐护栏补强定性。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：后端护栏补强测试",
+    "task": "集成测试边界用例补充（越界页、相邻页严格排序）",
+    "steps": [
+      {
+        "step": "在既有 SubjectiveRowsPaginationIntegrationTest 中新增越界页返回空 rows 及相邻页无重叠无缝隙连续断言 2 个测试用例",
+        "completed": true
+      },
+      {
+        "step": "定向运行 SubjectiveRowsPaginationIntegrationTest 验证新用例通过（8 例增至 10 例），确认后端计数净增",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "新增用例：SubjectiveRowsPaginationIntegrationTest#outOfBoundsPageReturnsEmptyRows 与 adjacentPagesAreDisjointAndConsecutiveWithoutOverlap。定向运行 .\\mvnw.cmd test -Dtest=SubjectiveRowsPaginationIntegrationTest exit 0，Tests run: 10, Failures: 0, Errors: 0, Skipped: 0（原 8 例增至 10 例），越界页 rows 为空、total/graded 照实返回全量计数，相邻页 Page1.last.studentId < Page2.first.studentId 严格有序无缝隙无重叠。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：既有契约与生成 SDK 护栏核验",
+    "task": "openapi.yaml 护栏断言与 gen:api 一致性核验",
+    "steps": [
+      {
+        "step": "运行 OpenApiContractTest 验证 paths 计数、免鉴权标注与 openapi.yaml 格式完整性（无 U+FFFD，servers.url 未降级）",
+        "completed": true
+      },
+      {
+        "step": "运行 frontend gen:api 确认生成契约 SDK 与既有契约完全一致",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "OpenApiContractTest: .\\mvnw.cmd test -Dtest=OpenApiContractTest exit 0，paths=65 ≥ 57，无 U+FFFD，servers.url 未降级；.\\mvnw.cmd test -Dtest=OpenApiContractTest#exportOpenApiContract -DexportContract=true exit 0 显式重导出验证；npm.cmd run gen:api exit 0，生成的 SDK 与当前契约逐字节一致。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：前端护栏补强测试",
+    "task": "批改工作台越界空态与筛选一致性边界用例补充",
+    "steps": [
+      {
+        "step": "在既有 gradingServerPaging.spec.ts 中补充越界页空态展示与筛选作用域一致性 2 个行为测试用例",
+        "completed": true
+      },
+      {
+        "step": "运行前端 vitest 定向测试验证用例通过（9 例增至 11 例），确认前端计数净增",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "在 gradingServerPaging.spec.ts 中新增 2 个行为用例（越界页空态信封驱动统计维持全量、筛选作用域与题级进度口径一致），npm.cmd run test -- gradingServerPaging.spec.ts exit 0，Tests 11 passed (11)（原 9 例增至 11 例）。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：既有实现变异校验与全量门禁留证",
+    "task": "既有实现三项变异校验 + 全量双端门禁 + amend 提交",
+    "steps": [
+      {
+        "step": "变异校验 ①：撤既有 Service 分页参数透传（if(false)）→ 分页测试变红（expected: <2> but was: <5>）→ 恢复绿",
+        "completed": true
+      },
+      {
+        "step": "变异校验 ②：撤既有 Service 信封 graded 口径（graded=total）→ 统计一致性测试变红（expected: <2> but was: <5>）→ 恢复绿",
+        "completed": true
+      },
+      {
+        "step": "变异校验 ③：撤既有前端 409 回填（refreshRow 返回 null）→ 409 行为测试变红（called 1 times but got 0 times）→ 恢复绿",
+        "completed": true
+      },
+      {
+        "step": "全量后端门禁：.\\mvnw.cmd clean test 留证，确认计数净增至 384/0/0/1",
+        "completed": true
+      },
+      {
+        "step": "全量前端门禁：lint:check / type-check:check / test 留证，确认计数净增至 77/559",
+        "completed": true
+      },
+      {
+        "step": "执行 git commit --amend 重写提交信息并如实回传",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "三项变异校验全闭环（对象为既有实现）：①撤分页透传（if(false)）→ pagedSubsetStableOrderWithTotalAndGraded 红（expected: <2> but was: <5>）→ 复原绿；②撤 graded 口径（graded=total）→ gradedMatchesQuestionLevelProgress 红（expected: <2> but was: <5>）→ 复原绿；③撤前端 409 回填（refreshRow返回null）→ 409冲突测试红（expected vi.fn() to be called 1 times, but got 0 times）→ 复原绿。全量门禁：后端 .\\mvnw.cmd clean test exit 0，Tests run: 384, Failures: 0, Errors: 0, Skipped: 1（较基线 382 净增 +2）；前端 lint:check exit 0、type-check:check exit 0（见 vue-tsc 真实 banner）、test exit 0，77 passed (77)，559 passed (559)（较基线 557 净增 +2）。"
+  }
+]

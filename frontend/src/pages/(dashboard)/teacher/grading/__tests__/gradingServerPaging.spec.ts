@@ -219,6 +219,20 @@ describe('批改面板信封驱动计数与分页交互', () => {
     expect(wrapper.text()).toContain('已被他人批改');
     expect(wrapper.emitted('refreshed')).toBeTruthy();
   });
+
+  it('越界页返回空 rows 时面板渲染空态但信封统计维持全量', () => {
+    const wrapper = mountPanel({ rows: [], total: 25, graded: 17, page: 4 });
+    expect(wrapper.text()).toContain('已批 17/25');
+    expect(wrapper.findComponent(Table).props('dataSource')).toEqual([]);
+  });
+
+  it('筛选作用域与题级进度口径一致：输入筛选词上抛事件且题级进度数字保持信封统计', async () => {
+    const wrapper = mountPanel({ total: 25, graded: 17, nameFilter: '张三' });
+    expect(wrapper.text()).toContain('已批 17/25');
+    await wrapper.findComponent(Input).vm.$emit('update:value', '李四');
+    expect(wrapper.emitted('update:nameFilter')).toEqual([['李四']]);
+    expect(wrapper.text()).toContain('已批 17/25');
+  });
 });
 
 // ==================== 批改页：queryFn 携带服务端分页与筛选参数 ====================
