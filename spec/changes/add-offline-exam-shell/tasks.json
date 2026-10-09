@@ -1,0 +1,35 @@
+{
+  "change": "add-offline-exam-shell",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：调研核实与 spec-delta 制定",
+      "status": "completed",
+      "description": "完成切屏事件上报现状调研、SW 缓存目标与产物结构分析、vite 插件链核验，编制 proposal.md 与 specs/frontend/spec-delta.md，明确四条红线。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：断网显性 UI（先红后绿）",
+      "status": "completed",
+      "description": "实现作答页离线状态条（OfflineStatusBanner/集成），双检测 navigator.onLine 与草稿 unsynced 状态；措辞合规；网络恢复后自动隐藏并触发 flush；编写并跑通 Vitest 测试。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：Service Worker 离线壳与断网刷新重入（先红后绿）",
+      "status": "completed",
+      "description": "纯函数模块化 SW 决策逻辑（swCore.ts）；public/sw.js 手写源文件；精确路由注册与卸载（swRegister.ts）；纯函数与注册 mock 单元测试全覆盖。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：切屏事件离线兜底与队列补报（先红后绿）",
+      "status": "completed",
+      "description": "扩展本地 IndexedDB 存储支持切屏事件持久化队列（behaviorQueue.ts）；断网失败入队；online 及 flush 补报；同 durationMs 去重护栏保护。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：全量门禁、变异校验与分支提交",
+      "status": "completed",
+      "description": "运行前端三门禁与后端基线复核；完成两项变异校验（撤离线状态条断言红、撤 SW 版本清理护栏红）；八段格式交付回传。"
+    }
+  ]
+}
