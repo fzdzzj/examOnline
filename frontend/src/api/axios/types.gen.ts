@@ -771,6 +771,58 @@ export type ScorePreviewResponse = {
     items?: Array<ScoreItem>;
 };
 
+export type ApiResponseExamAnalysisReportResponse = {
+    code?: number;
+    message?: string;
+    data?: ExamAnalysisReportResponse;
+};
+
+export type ClassOverview = {
+    expectedCount?: number;
+    actualCount?: number;
+    absenceCount?: number;
+    averageScore?: number;
+    passRate?: number;
+    scoreBands?: Array<ScoreBandItem>;
+};
+
+export type ExamAnalysisReportResponse = {
+    classOverview?: ClassOverview;
+    questionStats?: Array<QuestionStatItem>;
+    tagWeakness?: Array<TagWeaknessItem>;
+    hasTagDimension?: boolean;
+    focusList?: Array<FocusStudentItem>;
+};
+
+export type FocusStudentItem = {
+    studentId?: number;
+    username?: string;
+    studentName?: string;
+    totalScore?: number;
+};
+
+export type QuestionStatItem = {
+    order?: number;
+    type?: string;
+    fullScore?: number;
+    averageScore?: number;
+    scoreRate?: number;
+    correctRate?: number;
+    discrimination?: number;
+    answeredCount?: number;
+};
+
+export type ScoreBandItem = {
+    band?: string;
+    count?: number;
+};
+
+export type TagWeaknessItem = {
+    tagId?: number;
+    tagName?: string;
+    scoreRate?: number;
+};
+
 export type ApiResponseListScoreReview = {
     code?: number;
     message?: string;
@@ -2292,6 +2344,24 @@ export type ExportClassSheetResponses = {
 };
 
 export type ExportClassSheetResponse = ExportClassSheetResponses[keyof ExportClassSheetResponses];
+
+export type AnalysisReportData = {
+    body?: never;
+    path: {
+        examId: number;
+    };
+    query?: never;
+    url: '/api/exams/{examId}/scores/analysis-report';
+};
+
+export type AnalysisReportResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseExamAnalysisReportResponse;
+};
+
+export type AnalysisReportResponse = AnalysisReportResponses[keyof AnalysisReportResponses];
 
 export type OverviewData = {
     body?: never;

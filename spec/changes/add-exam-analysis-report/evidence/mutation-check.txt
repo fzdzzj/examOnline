@@ -1,0 +1,33 @@
+# 变异校验记录（add-exam-analysis-report）
+
+对象：`GET /api/exams/{examId}/scores/analysis-report` 与知识点优雅降级分支。
+判据：关键断言在注入丑化后变红、复原后变绿，证明断言 load-bearing，非装饰性。
+
+## Mutation A — 撤除越权校验 `requireOwnedExam(examId)`
+
+- 注入：`ScoreController.analysisReport` 移除 `requireOwnedExam(examId)` 一行（保留 `@RequirePermission("exam:manage")`）。
+- 当次执行：`./mvnw.cmd -o test -Dtest=ExamAnalysisReportIntegrationTest#analysisReportEndToEndStructureAndSameSource`
+- 结果：**红** — `java.lang.AssertionError: Response status expected:<403> but was:<200>`
+  （非归属教师 otherTeacher 原应 403，撤校验后拿到 200）。
+- 复原：恢复 `requireOwnedExam(examId)` 后复跑该例 → 绿（`expected:<403>` 通过）。
+- 结论：越权归属校验是 403 判定的承载力，断言非装饰。
+
+## Mutation B — 撤除知识点优雅降级分支
+
+- 注入：`ExamAnalysisReportService.buildTagWeakness` 中 `links.isEmpty()` 分支由
+  `new TagDimension(false, List.of())` 改为 `new TagDimension(true, List.of())`
+  （使无标签试卷误报 `hasTagDimension=true`）。
+- 当次执行：`./mvnw.cmd -o test -Dtest=ExamAnalysisReportIntegrationTest#analysisReportEndToEndStructureAndSameSource`
+- 结果：**红** — `org.opentest4j.AssertionFailedError: expected:<false> but was:<true>`
+  （结构用例对无标签科目断言 `hasTagDimension==false`，撤降级后误为 true）。
+- 复原：恢复 `false` 后复跑全类 → 绿（4/4）。
+- 结论：优雅降级分支（空数组 + hasTagDimension=false，不报错不臆测）断言 load-bearing。
+
+## Mutation C — 撤除方法权限注解 `@RequirePermission("exam:manage")`（如实评估）
+
+- 评估：本端点 403 由**双保险**共同裁定——方法注解 + `requireOwnedExam`（归属校验）。
+  系统内「有 exam:manage 之外权限且又恰是考试归属教师」的用户不存在；学生（无 exam:manage）
+  与非归属教师即使撤注解也会被 `requireOwnedExam` 以 403 拦下。因此单独撤注解**不会**让本卡
+  集成测试转红，注解是纵深防御层而非唯一栅栏，red 变异无法以现有权限矩阵构造。
+- 不虚报「已对比转红」：如实登记该注解非独立 load-bearing，越权护栏真实承重的是
+  `requireOwnedExam`（Mutation A 已证），注解作为 defense-in-depth 保留并与导出一致。
