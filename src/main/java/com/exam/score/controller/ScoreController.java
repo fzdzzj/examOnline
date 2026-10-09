@@ -13,14 +13,17 @@ import com.exam.exam.mapper.ExamMapper;
 import com.exam.exam.service.MakeupScoreService;
 import com.exam.score.dto.BatchScoreRequest;
 import com.exam.score.dto.ExamAnalysisReportResponse;
+import com.exam.score.dto.ExamReviewResponse;
 import com.exam.score.dto.MakeupFinalScoreResponse;
 import com.exam.score.dto.MyScoreResponse;
 import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.dto.ScorePreviewResponse;
+import com.exam.score.dto.WrongQuestionPageResponse;
 import com.exam.score.service.ExamAnalysisReportService;
 import com.exam.score.service.ScoreExportService;
 import com.exam.score.service.ScoreReviewService;
 import com.exam.score.service.ScoreService;
+import com.exam.score.service.StudentWrongQuestionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -63,17 +66,20 @@ public class ScoreController {
     private final MakeupScoreService makeupScoreService;
     private final ExamMapper examMapper;
     private final ScoreReviewService scoreReviewService;
+    private final StudentWrongQuestionService studentWrongQuestionService;
 
     public ScoreController(ScoreService scoreService, ScoreExportService scoreExportService,
                            ExamAnalysisReportService examAnalysisReportService,
                            MakeupScoreService makeupScoreService, ExamMapper examMapper,
-                           ScoreReviewService scoreReviewService) {
+                           ScoreReviewService scoreReviewService,
+                           StudentWrongQuestionService studentWrongQuestionService) {
         this.scoreService = scoreService;
         this.scoreExportService = scoreExportService;
         this.examAnalysisReportService = examAnalysisReportService;
         this.makeupScoreService = makeupScoreService;
         this.examMapper = examMapper;
         this.scoreReviewService = scoreReviewService;
+        this.studentWrongQuestionService = studentWrongQuestionService;
     }
 
     /** 成绩汇总（幂等：重判/补批后可重复执行刷新总分与部分批改标记）。 */
@@ -110,6 +116,32 @@ public class ScoreController {
     @GetMapping("/api/scores/my")
     public ApiResponse<MyScoreResponse> myScore(@RequestParam Long examId) {
         return ApiResponse.success(scoreService.myScore(examId));
+    }
+
+    /**
+     * 学生查错题本列表（以已发布考试为粒度分页，每页最多 10 场考试组）。
+     */
+    @GetMapping("/api/scores/my/wrong-questions")
+    public ApiResponse<WrongQuestionPageResponse> myWrongQuestions(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        return ApiResponse.success(studentWrongQuestionService.listWrongQuestions(studentId, page, size));
+    }
+
+    /**
+     * 学生查单场考试逐题回顾（卷面全部题目，包括作答、正确答案与题目解析）。
+     */
+    @GetMapping("/api/scores/my/exams/{examId}/review")
+    public ApiResponse<ExamReviewResponse> myExamReview(@PathVariable Long examId) {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        return ApiResponse.success(studentWrongQuestionService.reviewExam(examId, studentId));
     }
 
     // ==================== 补考最终成绩（§5.1 合并规则经接口触达，收口遗留 #5） ====================

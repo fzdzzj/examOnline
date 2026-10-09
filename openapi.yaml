@@ -1389,6 +1389,52 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMyScoreResponse"
+  /api/scores/my/wrong-questions:
+    get:
+      tags:
+      - score-controller
+      operationId: myWrongQuestions
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseWrongQuestionPageResponse"
+  /api/scores/my/exams/{examId}/review:
+    get:
+      tags:
+      - score-controller
+      operationId: myExamReview
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExamReviewResponse"
   /api/scores/makeup-final:
     get:
       tags:
@@ -3436,6 +3482,155 @@ components:
           format: int32
         reviewing:
           type: boolean
+    ApiResponseWrongQuestionPageResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/WrongQuestionPageResponse"
+    ExamWrongQuestionsGroup:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        examTime:
+          type: string
+          format: date-time
+        wrongQuestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/WrongQuestionItem"
+    WrongQuestionItem:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        examTime:
+          type: string
+          format: date-time
+        questionId:
+          type: integer
+          format: int64
+        questionNumber:
+          type: integer
+          format: int32
+        questionType:
+          type: string
+        questionContent:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+        myAnswer:
+          type: string
+        correctAnswer:
+          type: string
+        myScore:
+          type: number
+        fullScore:
+          type: number
+        analysis:
+          type: string
+        scoreDetail:
+          type: string
+    WrongQuestionPageResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamWrongQuestionsGroup"
+    ApiResponseExamReviewResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ExamReviewResponse"
+    ExamReviewQuestionItem:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        questionNumber:
+          type: integer
+          format: int32
+        questionType:
+          type: string
+        questionContent:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+        myAnswer:
+          type: string
+        correctAnswer:
+          type: string
+        myScore:
+          type: number
+        fullScore:
+          type: number
+        graded:
+          type: boolean
+        analysis:
+          type: string
+        comment:
+          type: string
+        scoreDetail:
+          type: string
+    ExamReviewResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        examTime:
+          type: string
+          format: date-time
+        studentName:
+          type: string
+        objectiveScore:
+          type: number
+        subjectiveScore:
+          type: number
+        totalScore:
+          type: number
+        rank:
+          type: integer
+          format: int32
+        partialGraded:
+          type: boolean
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamReviewQuestionItem"
     ApiResponseMakeupFinalScoreResponse:
       type: object
       properties:

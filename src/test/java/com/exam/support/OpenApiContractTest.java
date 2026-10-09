@@ -55,7 +55,7 @@ class OpenApiContractTest {
         JsonNode paths = root.path("paths");
         assertTrue(paths.isObject() && paths.size() > 0, "paths 为空");
         int pathCount = paths.size();
-        assertTrue(pathCount >= 55, "paths 数量 " + pathCount + " < 55，新增端点后必须重新导出 openapi.yaml");
+        assertTrue(pathCount >= 57, "paths 数量 " + pathCount + " < 57，新增端点后必须重新导出 openapi.yaml");
 
         JsonNode securitySchemes = root.path("components").path("securitySchemes");
         assertTrue(securitySchemes.has("Authorization") || securitySchemes.toString().contains("bearer"),

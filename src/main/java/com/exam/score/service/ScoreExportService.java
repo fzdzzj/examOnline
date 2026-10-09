@@ -397,11 +397,17 @@ public class ScoreExportService {
 
     // ==================== 数据装配 ====================
 
+    /** 公共取数入口：学生个人成绩单（逐题得分/答案/评语），供错题本与单场逐题回顾复用同一判分口径。 */
+    public PersonalReport getPersonalReport(Exam exam, Long studentId) {
+        return loadPersonalReport(exam, studentId);
+    }
+
     /** 个人成绩单装配结果。 */
-    private record PersonalReport(String username, String studentName, BigDecimal objective,
+    public record PersonalReport(String username, String studentName, BigDecimal objective,
                                   BigDecimal subjective, BigDecimal total, int rank, boolean partial,
                                   List<GradingQuestion> questions,
-                                  Map<Long, QuestionScoreResolver.ResolvedQuestionScore> scores) {
+                                  Map<Long, QuestionScoreResolver.ResolvedQuestionScore> scores,
+                                  Map<Long, String> answers) {
     }
 
     private PersonalReport loadPersonalReport(Exam exam, Long studentId) {
@@ -419,6 +425,7 @@ public class ScoreExportService {
         Map<Long, Integer> ranks = rankBySubmissionId(exam.getId());
         Map<Long, QuestionScoreResolver.ResolvedQuestionScore> scores =
                 scoreResolver.resolve(submission, paper);
+        Map<Long, String> answers = paperReader.parseAnswers(submission.getAnswers());
         return new PersonalReport(
                 user == null ? "" : user.getUsername(),
                 user == null ? "未知学生" : user.getName(),
@@ -428,7 +435,8 @@ public class ScoreExportService {
                 ranks.getOrDefault(submission.getId(), 0),
                 isPartial(submission),
                 paper.questions(),
-                scores);
+                scores,
+                answers);
     }
 
     /** 全班排名：submissionId → 名次（与发布预览同一 RankCalculator 口径）。 */

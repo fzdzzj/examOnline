@@ -1,0 +1,139 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对与基线留证",
+    "task": "分支建立、代码研读与基线实测留证",
+    "steps": [
+      {
+        "step": "从 main @ 2c3a50e 建立 feature/add-student-wrong-questions 分支并切换",
+        "completed": true
+      },
+      {
+        "step": "翻阅 stash@{0} 明确前案硬伤（内存 subList、TODO/空串占位、detail 错配 analysis、修改 ScoreService 破坏既有用例等）",
+        "completed": true
+      },
+      {
+        "step": "实测确认基线计数：后端 surefire 378/0/0/1，前端 68 文件 519 例，lint/type-check 退出码 0",
+        "completed": true
+      },
+      {
+        "step": "编写 proposal.md、score-management/spec-delta.md 与 frontend/spec-delta.md",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "分支 feature/add-student-wrong-questions 成功建于 2c3a50ee3614d26adf68edd639d30126ea54f329；实测前端 lint:check/type-check:check/test exit 0（68 passed, 519 passed）；后端 mvnw.cmd clean test exit 0（Tests run: 378, Failures: 0, Errors: 0, Skipped: 1）。提案与两份规范增量完成落盘。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：后端红测先行与同源抽取",
+    "task": "ScoreExportService 最小抽取 + 新建独立 StudentWrongQuestionService + 契约导出与红测先行",
+    "steps": [
+      {
+        "step": "ScoreExportService 最小抽取：暴露 PersonalReport 为 public record，补充 answers 映射，开放 getPersonalReport 委托入口，既有导出端点零变化",
+        "completed": true
+      },
+      {
+        "step": "新建 DTO：WrongQuestionItem、ExamWrongQuestionsGroup、WrongQuestionPageResponse、ExamReviewResponse、ExamReviewQuestionItem",
+        "completed": true
+      },
+      {
+        "step": "新建独立 Service：StudentWrongQuestionService（绝不修改既有 ScoreService 方法体/构造器）",
+        "completed": true
+      },
+      {
+        "step": "ScoreController 接入 GET /api/scores/my/wrong-questions 与 GET /api/scores/my/exams/{examId}/review",
+        "completed": true
+      },
+      {
+        "step": "编写后端集成测试 StudentWrongQuestionIntegrationTest：发布门控拦截、无成绩404、错题判定含部分对、题目解析语义正确、考试粒度分页（先红）",
+        "completed": true
+      },
+      {
+        "step": "实施转绿：mvnw.cmd test -Dtest=StudentWrongQuestionIntegrationTest 通过",
+        "completed": true
+      },
+      {
+        "step": "执行关键变异校验：撤发布门控→红、撤错题判定→红、复原→绿，留存变异记录",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "StudentWrongQuestionIntegrationTest 先红后绿（4/4 测试全绿通过）；变异 1 移除 isExamPublished 门控导致未发布考试错题被查出从而断言失败；变异 2 移除部分对错题判定导致 2.0/4.0 分题目未被统计为错题从而断言失败；复原后 4/4 绿。GradingScoreIntegrationTest 3/3 绿零回归。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：契约导出与前端 SDK 重新生成",
+    "task": "OpenApiContractTest 导出 openapi.yaml + gen:api",
+    "steps": [
+      {
+        "step": "通过 OpenApiContractTest#exportOpenApiContract 重导出 openapi.yaml，更新 paths ≥ 57 数量护栏",
+        "completed": true
+      },
+      {
+        "step": "前端运行 npm.cmd run gen:api 重新生成 types.gen.ts 和 sdk.gen.ts，核对新接口契约",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "OpenApiContractTest 校验并更新 paths ≥ 57 护栏，导出 openapi.yaml 新增 /api/scores/my/wrong-questions 与 /api/scores/my/exams/{examId}/review；前端 npm.cmd run gen:api 成功再生成 types.gen.ts 与 sdk.gen.ts（导出 myWrongQuestions 与 myExamReview 方法）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：前端界面实现与红绿测试",
+    "task": "错题本页面 + 查分页逐题回顾入口及弹层 + 前端测试红后绿",
+    "steps": [
+      {
+        "step": "编写前端测试：wrongQuestionsPage.spec.ts（渲染/空态/失败态/无解析占位/考试分组）与 examReviewEntry.spec.ts（已发布呈现/未发布隐藏/弹层解析渲染）先红",
+        "completed": true
+      },
+      {
+        "step": "新建 student/wrong-questions/index.page.vue（错题本分组列表、三态处理、空态「暂无错题」、无解析占位）",
+        "completed": true
+      },
+      {
+        "step": "修改 (dashboard).page.vue：侧边栏注册「我的错题本」菜单项与 NAVIGABLE_PATHS 增补",
+        "completed": true
+      },
+      {
+        "step": "修改 student/scores/index.page.vue：已发布常规成绩卡片增设「逐题回顾」入口与单场逐题回顾弹层",
+        "completed": true
+      },
+      {
+        "step": "前端测试转绿：vitest 单跑新 spec 均全绿，全量 vitest 用例净增通过（70 文件，527 例）",
+        "completed": true
+      },
+      {
+        "step": "前端 type-check:check 与 lint:check 检查通过",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "前端 wrongQuestionsPage.spec.ts（5/5 绿）与 examReviewEntry.spec.ts（3/3 绿）先红后绿；全量 vitest 70 个测试文件 527 用例全绿；npm.cmd run lint:check exit 0；npm.cmd run type-check:check exit 0。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：门禁验证与交付自查",
+    "task": "双端门禁验证 + 字段完整性与零回归自查",
+    "steps": [
+      {
+        "step": "全量运行后端门禁 mvnw.cmd clean test，核查计数净增且 0 失败 0 错误",
+        "completed": true
+      },
+      {
+        "step": "全量运行前端门禁 npm.cmd run lint:check && npm.cmd run type-check:check && npm.cmd run test，核查计数净增",
+        "completed": true
+      },
+      {
+        "step": "核心字段完整性自查：逐字段确认 myAnswer、correctAnswer、analysis 真实非占位",
+        "completed": true
+      },
+      {
+        "step": "零回归证据核实：/api/scores/my 与 4 导出端点及 GradingScoreIntegrationTest 零回归",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "全量后端门禁 mvnw.cmd clean test 退出码 0，Tests run: 382, Failures: 0, Errors: 0, Skipped: 1（BUILD SUCCESS，基线 378 净增 4 用例）；全量前端门禁 npm.cmd --prefix frontend run lint:check（exit 0）、type-check:check（真实 vue-tsc/tsc banner，exit 0）、test（70 测试文件 527 用例全部通过，exit 0，基线 68/519 净增 2 文件 8 例）；字段完整性自查：myAnswer 来自 report.answers()、correctAnswer 来自卷面 q.correctAnswer()、analysis 取自题库实体 questions.analysis，0 处 TODO/空串占位；零回归自查：既有 ScoreService.java 零改动，GradingScoreIntegrationTest 3/3 绿，ExamAnalysisReportIntegrationTest 与 ScorePublishTransactionIntegrationTest 全绿；变异 A/B 独立复现精准红（撤发布门控红于 wrongQuestionsAndReview_requirePublishedRoot:308，撤部分对判定红于 wrongQuestions_identifiesWrongQuestionsAndAnalysis:226），复原后 4/4 绿且 git diff 逐字节归零。"
+  }
+]

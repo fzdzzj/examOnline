@@ -57,9 +57,14 @@
         <!-- 复核中不再重复申请：后端会对重复申请返回 1001，此处按钮由后端 reviewing 字段驱动 -->
         <span class="pending-hint">复核进行中，处理完成后成绩恢复显示</span>
       </div>
-      <div v-else-if="view.kind === 'published' && scoreMode === 'regular'" class="mt-3">
+      <div
+        v-else-if="view.kind === 'published' && scoreMode === 'regular'"
+        class="mt-3 flex items-center gap-3"
+      >
+        <Button type="primary" data-test="review-exam-btn" @click="openReviewModal">
+          逐题回顾
+        </Button>
         <Button
-          type="primary"
           :disabled="appliedExamIds.includes(selectedExamId as number)"
           @click="applyModalOpen = true"
         >
@@ -90,6 +95,108 @@
         </template>
       </Alert>
     </Card>
+
+    <!-- 单场考试逐题回顾 Modal -->
+    <Modal
+      v-model:open="reviewModalOpen"
+      :title="`${reviewData?.examTitle || '考试'} - 逐题回顾与解析`"
+      width="800px"
+      :footer="null"
+    >
+      <Alert v-if="reviewError" type="error" show-icon class="mb-3" :message="reviewError" />
+      <Spin :spinning="reviewFetching">
+        <div v-if="reviewData" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+          <!-- 总体成绩概览 -->
+          <div
+            class="bg-blue-50/50 p-3 rounded border border-blue-100 flex flex-wrap gap-4 text-sm"
+          >
+            <div>
+              考生姓名：
+              <span class="font-medium">{{ reviewData.studentName }}</span>
+            </div>
+            <div>
+              总分：
+              <span class="font-semibold text-blue-600">{{ reviewData.totalScore }}</span>
+            </div>
+            <div>客观题：{{ reviewData.objectiveScore }}</div>
+            <div>主观题：{{ reviewData.subjectiveScore }}</div>
+            <div>全班排名：第 {{ reviewData.rank }} 名</div>
+            <div>
+              批改状态：
+              <Tag :color="reviewData.partialGraded ? 'warning' : 'green'">
+                {{ reviewData.partialGraded ? '部分批改' : '已全部批改' }}
+              </Tag>
+            </div>
+          </div>
+
+          <!-- 逐题列表 -->
+          <div
+            v-for="q in reviewData.questions || []"
+            :key="q.questionId"
+            class="p-3 border rounded bg-white space-y-2"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold">第 {{ q.questionNumber }} 题</span>
+                <Tag color="cyan">{{ q.questionType }}</Tag>
+                <Tag
+                  :color="
+                    q.myScore === q.fullScore ? 'success' : q.myScore === 0 ? 'error' : 'warning'
+                  "
+                >
+                  {{ q.myScore }} / {{ q.fullScore }} 分
+                </Tag>
+              </div>
+              <Tag v-if="!q.graded" color="default">未批</Tag>
+            </div>
+
+            <!-- 题干 -->
+            <div class="text-gray-800 font-medium whitespace-pre-wrap">{{ q.questionContent }}</div>
+
+            <!-- 选项 -->
+            <div
+              v-if="q.choices && q.choices.length > 0"
+              class="pl-2 space-y-1 text-sm text-gray-600"
+            >
+              <div v-for="(choice, idx) in q.choices" :key="idx">
+                {{ String.fromCharCode(65 + idx) }}. {{ choice }}
+              </div>
+            </div>
+
+            <!-- 作答与标准答案 -->
+            <div class="bg-gray-50 p-2 rounded text-sm grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div>
+                我的作答：
+                <span class="font-medium text-blue-600">
+                  {{ q.myAnswer ? q.myAnswer : '（未作答）' }}
+                </span>
+              </div>
+              <div>
+                正确答案：
+                <span class="font-medium text-green-600">
+                  {{ q.correctAnswer ? q.correctAnswer : '（无）' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- 题目解析 -->
+            <div class="text-sm bg-blue-50/50 p-2 rounded border border-blue-100">
+              <span class="font-semibold text-blue-800">题目解析：</span>
+              <span v-if="q.analysis" class="text-gray-700 whitespace-pre-wrap">
+                {{ q.analysis }}
+              </span>
+              <span v-else class="text-gray-400 italic">暂无解析</span>
+            </div>
+
+            <!-- 教师评语或判分依据 -->
+            <div v-if="q.comment || q.scoreDetail" class="text-xs text-gray-500">
+              <span v-if="q.comment">评语：{{ q.comment }}</span>
+              <span v-if="q.scoreDetail">依据：{{ q.scoreDetail }}</span>
+            </div>
+          </div>
+        </div>
+      </Spin>
+    </Modal>
 
     <Modal
       v-model:open="applyModalOpen"
@@ -124,6 +231,7 @@ import {
   RadioGroup,
   Select,
   Spin,
+  Tag,
   Textarea,
   message,
 } from 'ant-design-vue';
@@ -132,10 +240,12 @@ import { useQuery } from '@tanstack/vue-query';
 
 import {
   apply,
+  myExamReview,
   myExams,
   myMakeupFinalScore,
   myScore,
   type ExamListItem,
+  type ExamReviewResponse,
   type MakeupFinalScoreResponse,
   type MyScoreResponse,
   type ScoreReview,
@@ -293,6 +403,38 @@ async function onApply(): Promise<void> {
   } finally {
     applying.value = false;
   }
+}
+
+// ===== 单场考试逐题回顾 =====
+const reviewModalOpen = ref(false);
+
+const {
+  data: reviewData,
+  isFetching: reviewFetching,
+  error: reviewQueryErrorCaught,
+  refetch: refetchReview,
+} = useQuery({
+  queryKey: computed(() => ['my-exam-review', selectedExamId.value] as const),
+  queryFn: () =>
+    unwrap<ExamReviewResponse>(
+      myExamReview({
+        client,
+        throwOnError: true,
+        path: { examId: selectedExamId.value as number },
+      })
+    ),
+  enabled: computed(() => reviewModalOpen.value && selectedExamId.value !== undefined),
+});
+
+const reviewError = computed<string | null>(() => {
+  const caught = reviewQueryErrorCaught.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '逐题回顾加载失败';
+});
+
+function openReviewModal(): void {
+  reviewModalOpen.value = true;
+  void refetchReview();
 }
 </script>
 
