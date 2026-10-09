@@ -4,7 +4,7 @@
  * 规范红线要求：
  * 1. 缓存决策 `shouldCache(url, method)`：同源静态资源可缓存；API 请求一律放行不缓存；跨域与非 GET 禁缓存；
  * 2. 导航请求识别 `isNavigationRequest(request)`：mode === 'navigate' 或 accept 含 text/html；
- * 3. 过期版本清理 `staleCachesToDelete(activeVersion, existingCaches)`：清理旧版本、精确保留当前版本；
+ * 3. 过期版本清理 `staleCachesToDelete(activeCacheName, existingCaches)`：清理旧版本、精确保留当前版本；
  * 4. 不依赖真实 Chromium，全部为纯函数，由 Vitest 直接覆盖。
  */
 import { describe, expect, it } from 'vitest';

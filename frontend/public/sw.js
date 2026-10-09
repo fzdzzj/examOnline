@@ -17,6 +17,38 @@ const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const PRECACHE_URLS = ['/', '/index.html'];
 
+/**
+ * 静态资源扩展名列表。
+ *
+ * 注意：此列表必须与 src/utils/swCore.ts 的 STATIC_EXTENSIONS 保持一致。
+ * 同步责任由词法护栏 swGuard.spec.ts 承担——护栏读取本文件源文本并断言红线特征。
+ */
+const STATIC_EXTENSIONS = [
+  '.js',
+  '.css',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.svg',
+  '.ico',
+  '.woff',
+  '.woff2',
+  '.ttf',
+  '.eot',
+  '.json',
+];
+
+/**
+ * 判断 URL 是否为应被 runtime 缓存的同源静态资源。
+ * 口径与 swCore.shouldCache 保持一致：/assets/ 路径或静态扩展名。
+ */
+function isStaticAsset(url) {
+  if (url.pathname.startsWith('/assets/')) return true;
+  const pathname = url.pathname.toLowerCase();
+  return STATIC_EXTENSIONS.some((ext) => pathname.endsWith(ext));
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
@@ -69,7 +101,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 同源静态资源：网络优先并写入缓存，离线时回退缓存
+  // 同源静态资源（/assets/ 路径或静态扩展名）：网络优先并写入缓存，离线时回退缓存
+  // 口径：同源 GET + 非 API + (startsWith /assets/ OR 静态扩展名) ——与 swCore.shouldCache 一致
+  if (!isStaticAsset(url)) {
+    // 非静态资源（如 /favicon.svg 以外的动态 URL）：直接放行，不缓存
+    return;
+  }
+
   event.respondWith(
     fetch(request)
       .then((response) => {

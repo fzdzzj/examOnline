@@ -62,6 +62,22 @@
   - 页面刷新（F5）仍在作答页，不触发路由切换注销，SW 保留并拦截导航请求，返回缓存的入口 HTML；
   - 刷新重入后，既有 IndexedDB 草稿恢复链路（`draftStorage.load`）接管答案恢复。
 
+### 3.2.1 设计取舍登记：sw.js 与 swCore.ts 双实现及其同步责任（修复笔 · add-offline-exam-shell）
+
+- **取舍**：离线壳的缓存决策存在两份实现——`frontend/public/sw.js`（手写 Service Worker，运行于
+  ServiceWorkerGlobalScope，无法在 Vitest 中直接执行）与 `frontend/src/utils/swCore.ts`（可单测纯函数，
+  供注册逻辑引用与 100% 单测覆盖）。二者 `STATIC_EXTENSIONS` 与 `shouldCache` 口径必须一致；
+  本轮由抽查裁决指出并修复了「sw.js fetch 兜底分支缓存范围比 swCore.shouldCache 宽」的漂移
+  （sw.js 原先对任意同源 GET 均缓存回写，未收敛到静态资源判定）。
+- **为何不做 DRY 合并**：sw.js 作为独立 SW 源文件被 Vite 原样复制，无法从 TS 模块导入运行时代码；
+  强行共享会引入构建期注入复杂度并破坏「手写源文件零依赖」的可移植性。故保留双实现为有意取舍。
+- **同步责任由护栏显式承担**：双实现的同步不靠口头约束，而由词法护栏
+  `frontend/src/utils/__tests__/swGuard.spec.ts` 承担——护栏读取 sw.js 源文本并断言四条缓存红线
+  （①`/api/` network-only 放行分支；②旧缓存清理含 `startsWith(CACHE_PREFIX)` 且排除当前 `CACHE_NAME`；
+  ③非 GET 请求放行；④预缓存入口列表存在）。sw.js 内 `STATIC_EXTENSIONS` 自含一份并注释注明
+  「必须与 swCore.ts 保持一致、由护栏守护」；`swCore.spec.ts` 维持纯函数单测，二者职责不重复。
+  （对齐既有词法护栏先例 `PublisherConfirmScopeGuardTest` 的「源码扫描而非 mock 单测」做法。）
+
 ### 3.3 阶段 4 · 切屏事件离线兜底（先红后绿）
 - IndexedDB 持久化切屏事件队列（`behaviorStorage.ts` / 扩展至 `draftStorage.ts`）；
 - 上报失败或离线时暂存入库；网络恢复（`online` 事件）及草稿 flush 时出队补报；

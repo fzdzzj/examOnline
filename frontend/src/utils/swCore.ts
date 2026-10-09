@@ -88,11 +88,11 @@ export function isNavigationRequest(probe: NavigationRequestProbe): boolean {
  *
  * 保证：
  * - 仅匹配属于该系统的缓存前缀（CACHE_PREFIX）；
- * - 排除当前活跃版本 activeVersion；
+ * - 排除当前活跃缓存名 activeCacheName（传完整缓存名（CACHE_NAME），非裸版本号）；
  * - 保留其它系统的缓存或未知缓存。
  */
-export function staleCachesToDelete(activeVersion: string, existingCaches: string[]): string[] {
+export function staleCachesToDelete(activeCacheName: string, existingCaches: string[]): string[] {
   return existingCaches.filter(
-    (cacheName) => cacheName.startsWith(CACHE_PREFIX) && cacheName !== activeVersion
+    (cacheName) => cacheName.startsWith(CACHE_PREFIX) && cacheName !== activeCacheName
   );
 }
