@@ -137,6 +137,15 @@
         <GrafanaEntry />
       </TabPane>
 
+      <!-- ==================== 分析报告（add-exam-analysis-report，创新点4） ==================== -->
+      <TabPane key="analysis" tab="分析报告">
+        <ExamAnalysisReport
+          v-if="activeTab === 'analysis'"
+          :exam-id="examId"
+          :enabled="activeTab === 'analysis'"
+        />
+      </TabPane>
+
       <!-- ==================== 行为日志 ==================== -->
       <TabPane key="behavior" tab="行为日志">
         <Space class="mb-3" wrap align="end">
@@ -262,6 +271,7 @@ import { getExamStatusConfig, type ExamStatus } from '@/constants/examStatus';
 import { isMonitorConsumerTab, MONITOR_POLLING_HINT } from '@/constants/monitor';
 import { SEVERITY_LEVEL } from '@/constants/severity';
 import BehaviorTimeline from '@/components/exam/BehaviorTimeline.vue';
+import ExamAnalysisReport from '@/components/exam/ExamAnalysisReport.vue';
 import ExamMonitorPanel from '@/components/exam/ExamMonitorPanel.vue';
 import ExamSnapshotPreview from '@/components/exam/ExamSnapshotPreview.vue';
 import GrafanaEntry from '@/components/observability/GrafanaEntry.vue';
@@ -283,7 +293,9 @@ const route = useRoute('/(dashboard)/teacher/exams/[id]');
 const router = useRouter();
 const examId = computed(() => Number(route.params.id));
 
-const activeTab = ref<'overview' | 'snapshot' | 'roster' | 'monitor' | 'behavior'>('overview');
+const activeTab = ref<'overview' | 'snapshot' | 'roster' | 'monitor' | 'analysis' | 'behavior'>(
+  'overview'
+);
 
 // ==================== 详情 ====================
 
