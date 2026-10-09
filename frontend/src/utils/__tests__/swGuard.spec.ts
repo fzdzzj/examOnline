@@ -18,9 +18,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+
 // 读取 sw.js 源文本（与本仓库其它词法护栏同一约定：以本文件目录为基准向上定位 public/sw.js）
-const SW_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../public/sw.js');
+const SW_PATH = path.resolve(HERE, '../../../public/sw.js');
 const swSource = readFileSync(SW_PATH, 'utf-8');
+
+// 读取 swCore.ts 源文本（双清单一致性用例需要比对两份实现的 STATIC_EXTENSIONS）
+const SW_CORE_PATH = path.resolve(HERE, '../swCore.ts');
+const swCoreSource = readFileSync(SW_CORE_PATH, 'utf-8');
 
 /**
  * 剔除注释后的 sw.js 源码（保留换行与偏移），对齐 PublisherConfirmScopeGuardTest 的
@@ -61,8 +67,48 @@ function stripComments(code: string): string {
 
 // 全部红线断言作用于剔除注释后的真实代码
 const swCode = stripComments(swSource);
+const swCoreCode = stripComments(swCoreSource);
 
-describe('sw.js 词法护栏 · 四条缓存红线', () => {
+/**
+ * 从剔除注释后的源码中提取 STATIC_EXTENSIONS = [...] 数组字面量，返回元素数组。
+ *
+ * 定位方式：正则命中 `STATIC_EXTENSIONS` 后的 `=` 与 `[`，再从该 `[` 起做括号配对，
+ * 取到与之匹配的 `]` 闭口（支持数组内嵌套，避免贪婪截断），最终用字符串字面量正则
+ * 解析出每一项（'...' / "..."）。解析失败（两份实现有一方缺清单或语法异常）抛错使用例红。
+ */
+function extractStaticExtensions(code: string): string[] {
+  const assignMatch = /STATIC_EXTENSIONS\s*=\s*\[/g.exec(code);
+  if (!assignMatch) {
+    throw new Error('源码中找不到 STATIC_EXTENSIONS = [ ... ] 定义');
+  }
+
+  const open = assignMatch.index + assignMatch[0].indexOf('[');
+  let depth = 0;
+  let end = -1;
+  for (let i = open; i < code.length; i++) {
+    if (code[i] === '[') {
+      depth++;
+    } else if (code[i] === ']') {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+  if (end === -1) {
+    throw new Error('STATIC_EXTENSIONS 数组括号未闭合');
+  }
+
+  const body = code.slice(open + 1, end);
+  const entries = body.match(/'[^']*'|"[^"]*"/g);
+  return entries ? entries.map((e) => e.slice(1, -1)) : [];
+}
+
+const staticExtensionsFromSwJs = extractStaticExtensions(swCode);
+const staticExtensionsFromSwCore = extractStaticExtensions(swCoreCode);
+
+describe('sw.js 词法护栏 · 缓存红线与双清单一致性', () => {
   it('① API 请求 network-only 放行分支存在（/api/ 路径判定）', () => {
     // sw.js 必须有 /api/ 判断分支，确保 API 请求不进入缓存逻辑
     expect(swCode).toMatch(/\/api\//);
@@ -87,5 +133,13 @@ describe('sw.js 词法护栏 · 四条缓存红线', () => {
     expect(swCode).toMatch(/PRECACHE_URLS/);
     // 必须包含 /index.html（离线导航回退目标）
     expect(swCode).toContain('/index.html');
+  });
+
+  it('⑤ 双清单一致性：sw.js 与 swCore.ts 的 STATIC_EXTENSIONS 逐项相等（顺序与内容）', () => {
+    // 两份实现都成功解析出非空清单
+    expect(staticExtensionsFromSwJs.length).toBeGreaterThan(0);
+    expect(staticExtensionsFromSwCore.length).toBeGreaterThan(0);
+    // 顺序与内容必须完全一致（漂移即红）
+    expect(staticExtensionsFromSwJs).toEqual(staticExtensionsFromSwCore);
   });
 });
