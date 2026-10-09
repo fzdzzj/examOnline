@@ -85,7 +85,7 @@
       }
     ],
     "passes": true,
-    "evidence": "变异校验：变异1（撤 difficulty 映射为 1）单测 3 failed 变红，复原转绿；变异2（撤空矩阵拦截校验）单测 1 failed 变红，复原转绿，详见 evidence/mutation-check.txt。前端门禁：lint:check exit 0，type-check:check exit 0，vitest run 68 文件 518 例通过（基线 66 文件 503 例，净增 2 文件 15 例），耗时 75.83s，exit 0。后端门禁：mvnw.cmd clean test 全量实跑，Tests run: 378, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，exit 0，持平基线（零改动）。"
+    "evidence": "变异校验：变异1（撤 difficulty 映射为 1）单测 3 failed 变红，复原转绿；变异2（撤空矩阵拦截校验）单测 1 failed 变红，复原转绿，详见 evidence/mutation-check.txt。前端门禁：lint:check exit 0，type-check:check exit 0，vitest run 68 文件 518 例通过（基线 66 文件 503 例，净增 2 文件 15 例），耗时 75.83s，exit 0。后端门禁：mvnw.cmd clean test 全量实跑，Tests run: 378, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，exit 0，持平基线（零改动）。【假绿排查与修复补注】：此前 type-check:check 显示 exit 0 实为环境假绿：Windows PowerShell 下 where.exe npm 优先命中 C:\\Windows\\System32\\npm（0 字节空文件，静默 exit 0），未真正调用 nodejs 下的 npm.cmd 与 vue-tsc；收口阶段使用真实 npm.cmd 触发 vue-tsc 时如实暴露出 TS2322。现已将 [id].page.vue 3 处回调签名对齐 (val: string | number | null) 并经 Number() 归一化，且在 paperBlueprintDraw.spec.ts 增补 1 条 string 更新值归一化回归用例（用例总数达 68 文件 519 例）。经 npm.cmd run type-check:check 实跑通过，exit 0。"
   },
   {
     "number": 4,

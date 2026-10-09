@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import { message, RadioGroup } from 'ant-design-vue';
+import { InputNumber, message, RadioGroup } from 'ant-design-vue';
 
 import type { PaperDetailResponse, TagResponse } from '@/api/axios';
 
@@ -285,5 +285,33 @@ describe('试卷详情抽题区：双向细目表矩阵蓝图模式', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('规则2');
+  });
+
+  it('细目表单元格 InputNumber 字符串更新值归一：输入字符串数字归一为 number 写入矩阵，null 清空为 undefined', async () => {
+    const wrapper = mountPage();
+    await switchToBlueprintMode(wrapper);
+
+    const vm = wrapper.vm as unknown as {
+      selectedBlueprintTagIds: number[];
+      blueprintMatrix: Record<number, Record<number, number | undefined>>;
+    };
+    vm.selectedBlueprintTagIds = [101];
+    await flushPromises();
+
+    const inputs = wrapper.findAllComponents(InputNumber);
+    expect(inputs.length).toBeGreaterThanOrEqual(3);
+
+    // 模拟 InputNumber 以 string 形态发出更新事件（如 '5'）
+    inputs[0].vm.$emit('update:value', '5');
+    await flushPromises();
+
+    // 断言矩阵格内写入的是 number 类型的 5，编译链路与数值校验不被 string 破坏
+    expect(vm.blueprintMatrix[101]?.[1]).toBe(5);
+    expect(typeof vm.blueprintMatrix[101]?.[1]).toBe('number');
+
+    // 模拟 InputNumber 发出 null 清空更新
+    inputs[0].vm.$emit('update:value', null);
+    await flushPromises();
+    expect(vm.blueprintMatrix[101]?.[1]).toBeUndefined();
   });
 });

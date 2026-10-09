@@ -177,7 +177,12 @@
                           class="w-20"
                           placeholder="0"
                           @update:value="
-                            (val: number | null) => updateBlueprintCell(tag.id as number, 1, val)
+                            (val: string | number | null) =>
+                              updateBlueprintCell(
+                                tag.id as number,
+                                1,
+                                val !== null && val !== '' ? Number(val) : null
+                              )
                           "
                         />
                       </td>
@@ -190,7 +195,12 @@
                           class="w-20"
                           placeholder="0"
                           @update:value="
-                            (val: number | null) => updateBlueprintCell(tag.id as number, 2, val)
+                            (val: string | number | null) =>
+                              updateBlueprintCell(
+                                tag.id as number,
+                                2,
+                                val !== null && val !== '' ? Number(val) : null
+                              )
                           "
                         />
                       </td>
@@ -203,7 +213,12 @@
                           class="w-20"
                           placeholder="0"
                           @update:value="
-                            (val: number | null) => updateBlueprintCell(tag.id as number, 3, val)
+                            (val: string | number | null) =>
+                              updateBlueprintCell(
+                                tag.id as number,
+                                3,
+                                val !== null && val !== '' ? Number(val) : null
+                              )
                           "
                         />
                       </td>
