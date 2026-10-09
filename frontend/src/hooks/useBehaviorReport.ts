@@ -34,6 +34,7 @@ import {
   reduceBehaviorSignal,
 } from '@/utils/behaviorEvents';
 import type { BehaviorEpisodeState, BehaviorEventType, DomSignal } from '@/utils/behaviorEvents';
+import { createStudentBehaviorQueue, type BehaviorQueue } from '@/utils/behaviorQueue';
 
 export interface BehaviorWarning {
   /** 后端原样返回：是否建议弹提醒、严重度名称、本次考试累计切屏次数、提示文案 */
@@ -54,6 +55,8 @@ export interface UseBehaviorReportOptions {
       examId: number,
       body: { eventType: string; eventData?: JsonNode }
     ) => Promise<BehaviorReportResponse | undefined>;
+    /** 离线队列存储（生产默认 IndexedDB，单测注入内存队列）。 */
+    queue?: BehaviorQueue;
     /** 信号源接线（生产 = window/document；单测注入自定义 EventTarget）。 */
     addListener?: (type: string, handler: () => void) => void;
     removeListener?: (type: string, handler: () => void) => void;
@@ -69,6 +72,8 @@ export interface BehaviorReportView {
   reportedCount: ReturnType<typeof ref<number>>;
   /** 兜底 flush：把未上报的暂存离开立刻报出（eventData={incomplete:true}）。页面在交卷前调用。 */
   flush(): Promise<void>;
+  /** 离线队列补报：把断网期间暂存的切屏事件重新上报。网络恢复与交卷前触发。 */
+  flushQueue(): Promise<void>;
 }
 
 /** 事件类型 → DOM 监听目标的接线表（显式，避免隐式全局）。 */
@@ -83,12 +88,14 @@ function listenerPairs(handlers: {
   onBlur: () => void;
   onFocus: () => void;
   onBeforeUnload: () => void;
+  onOnline: () => void;
 }): ListenerPair[] {
   return [
     { type: 'visibilitychange', handler: handlers.onVisibility, target: 'document' },
     { type: 'blur', handler: handlers.onBlur, target: 'window' },
     { type: 'focus', handler: handlers.onFocus, target: 'window' },
     { type: 'beforeunload', handler: handlers.onBeforeUnload, target: 'window' },
+    { type: 'online', handler: handlers.onOnline, target: 'window' },
   ];
 }
 
@@ -98,6 +105,9 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
   // 只测「离开了多久」这个时长，不测「现在是几点」（useServerCountdown 同款纪律）
   const nowFn =
     deps.now ?? ((): number => (typeof performance !== 'undefined' ? performance.now() : 0));
+
+  const queue = deps.queue ?? createStudentBehaviorQueue();
+  const reportedDurations = new Set<number>();
 
   const warning = ref<BehaviorWarning | null>(null);
   const reportedCount = ref(0);
@@ -117,9 +127,17 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
     eventType: BehaviorEventType,
     eventData: JsonNode | undefined
   ): Promise<boolean> {
+    const durationMs =
+      typeof eventData === 'object' && eventData !== null && 'durationMs' in eventData
+        ? (eventData as { durationMs?: number }).durationMs
+        : undefined;
+
     try {
       const data = await deps.report(id, { eventType, eventData });
       reportedCount.value += 1;
+      if (typeof durationMs === 'number') {
+        reportedDurations.add(durationMs);
+      }
       // 只转发后端的警告判定；warned=false 时清掉旧警告（别挂着吓人）
       warning.value =
         data && data.warned
@@ -145,7 +163,42 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
     episode = state;
     if (!active || event === null) return;
     // 回归上报：eventData 只带单调时长（相对量），不带本机时刻（绝对量可伪造）
-    await send(id, event, { durationMs });
+    const ok = await send(id, event, { durationMs });
+    if (!ok && queue) {
+      await queue.enqueue({
+        examId: id,
+        eventType: event,
+        durationMs,
+      });
+    }
+  }
+
+  let isFlushingQueue = false;
+
+  /** 离线队列补报：把断网期间暂存的切屏事件重新上报。 */
+  async function flushQueue(): Promise<void> {
+    if (!queue || isFlushingQueue) return;
+    isFlushingQueue = true;
+    try {
+      const id = toValue(examId);
+      const valid = Number.isInteger(id) && id > 0;
+      if (!valid) return;
+      const items = await queue.peek(id);
+      for (const item of items) {
+        // 去重护栏：同 durationMs 已成功上报过的，从队列移除且不重复上报
+        if (item.durationMs !== null && reportedDurations.has(item.durationMs)) {
+          await queue.dequeue(id, item);
+          continue;
+        }
+        const eventData = item.incomplete ? { incomplete: true } : { durationMs: item.durationMs };
+        const ok = await send(id, item.eventType, eventData);
+        if (ok) {
+          await queue.dequeue(id, item);
+        }
+      }
+    } finally {
+      isFlushingQueue = false;
+    }
   }
 
   /**
@@ -158,12 +211,23 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
     const id = toValue(examId);
     const valid = Number.isInteger(id) && id > 0;
     if (!valid || (toValue(suspended) && !ignoreSuspension)) return;
+    await flushQueue();
     const before = episode;
     const { state, event } = flushPendingEpisode(episode);
     episode = state;
     if (event === null) return;
     const ok = await send(id, event, { incomplete: true });
-    if (!ok) episode = before; // 还原暂存：这次离开不能因为一次网络失败就永久丢掉
+    if (!ok) {
+      episode = before; // 还原暂存：这次离开不能因为一次网络失败就永久丢掉
+      if (queue) {
+        await queue.enqueue({
+          examId: id,
+          eventType: event,
+          durationMs: null,
+          incomplete: true,
+        });
+      }
+    }
   }
 
   function onVisibilityChange(): void {
@@ -176,6 +240,7 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
     onBlur: () => void onSignal('window-blur'),
     onFocus: () => void onSignal('window-focus'),
     onBeforeUnload: () => void flush(true),
+    onOnline: () => void flushQueue(),
   };
 
   // 生产默认绑 window/document；单测注入 add/removeListener 打自定义 EventTarget
@@ -217,5 +282,5 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
     );
   }
 
-  return { warning, reportedCount, flush };
+  return { warning, reportedCount, flush, flushQueue };
 }

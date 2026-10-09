@@ -9,6 +9,8 @@
     />
 
     <template v-else>
+      <OfflineStatusBanner v-if="!closedByBackend" :visible="offlineStatus.isOffline.value" />
+
       <Card :title="snapshot?.examTitle ?? `考试 #${examId}`" class="mb-4">
         <template #extra>
           <Button size="small" @click="router.push('/student/exams')">返回列表</Button>
@@ -151,8 +153,8 @@
  *    （`ExamSweepService`），前端不判定超时、自动交卷失败也不重试风暴。
  */
 import { Alert, Button, Card, Spin } from 'ant-design-vue';
-import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { computed, onMounted, ref, watch } from 'vue';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 
 import {
@@ -172,16 +174,19 @@ import TakingBoard from '@/components/student/TakingBoard.vue';
 import DraftSyncBadge from '@/components/student/DraftSyncBadge.vue';
 import SubmitExamPanel from '@/components/student/SubmitExamPanel.vue';
 import SubmitResultCard from '@/components/student/SubmitResultCard.vue';
+import OfflineStatusBanner from '@/components/student/OfflineStatusBanner.vue';
 import { useServerCountdown } from '@/hooks/useServerCountdown';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useSubmitExam } from '@/hooks/useSubmitExam';
 import { useBehaviorReport } from '@/hooks/useBehaviorReport';
+import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { createEnterExamQueryOptions, examIdOf, isClosedByBackend } from '@/hooks/useStudentTaking';
 import { SUBMIT_TYPE } from '@/constants/studentTaking';
 import { ApiError } from '@/api/types';
 import { answerMapOf, navStatesOf, type AnswerMap } from '@/utils/studentTaking';
 import { mergeDrafts, resolveSeed, serverDraftOf, type DraftRecord } from '@/utils/draftMerge';
 import { createStudentDraftStorage } from '@/utils/draftStorage';
+import { registerExamServiceWorker, unregisterExamServiceWorker } from '@/utils/swRegister';
 
 const route = useRoute('/(dashboard)/student/exams/[id]');
 const router = useRouter();
@@ -285,6 +290,26 @@ const autoSave = useAutoSaveDraft({
       ),
     storage: draftStorage,
   },
+});
+
+const offlineStatus = useOfflineStatus({
+  autoSaveStatus: () => autoSave.status.value,
+  onRecover: () => {
+    void autoSave.flush();
+    void behavior.flushQueue();
+  },
+});
+
+/**
+ * 考试离线外壳（阶段 3）：挂载时注册 SW（路由级精确拦截断网重入刷新），
+ * 路由切换离开作答页时注销 SW（不干扰非考试页）。
+ */
+onMounted(() => {
+  void registerExamServiceWorker();
+});
+
+onBeforeRouteLeave(() => {
+  void unregisterExamServiceWorker();
 });
 
 /** 播种冲突时保留的本地那份（学生可显式改用，见上方 Alert）。 */
