@@ -113,27 +113,27 @@
   },
   {
     "number": 4,
-    "category": "阶段 4：门禁验证与交付自查（待复核后做）",
+    "category": "阶段 4：门禁验证与交付自查",
     "task": "双端门禁验证 + 字段完整性与零回归自查",
     "steps": [
       {
         "step": "全量运行后端门禁 mvnw.cmd clean test，核查计数净增且 0 失败 0 错误",
-        "completed": false
+        "completed": true
       },
       {
         "step": "全量运行前端门禁 npm.cmd run lint:check && npm.cmd run type-check:check && npm.cmd run test，核查计数净增",
-        "completed": false
+        "completed": true
       },
       {
         "step": "核心字段完整性自查：逐字段确认 myAnswer、correctAnswer、analysis 真实非占位",
-        "completed": false
+        "completed": true
       },
       {
         "step": "零回归证据核实：/api/scores/my 与 4 导出端点及 GradingScoreIntegrationTest 零回归",
-        "completed": false
+        "completed": true
       }
     ],
-    "passes": false,
-    "evidence": "待指导主 agent 复核后执行最终合并与关闭。"
+    "passes": true,
+    "evidence": "全量后端门禁 mvnw.cmd clean test 退出码 0，Tests run: 382, Failures: 0, Errors: 0, Skipped: 1（BUILD SUCCESS，基线 378 净增 4 用例）；全量前端门禁 npm.cmd --prefix frontend run lint:check（exit 0）、type-check:check（真实 vue-tsc/tsc banner，exit 0）、test（70 测试文件 527 用例全部通过，exit 0，基线 68/519 净增 2 文件 8 例）；字段完整性自查：myAnswer 来自 report.answers()、correctAnswer 来自卷面 q.correctAnswer()、analysis 取自题库实体 questions.analysis，0 处 TODO/空串占位；零回归自查：既有 ScoreService.java 零改动，GradingScoreIntegrationTest 3/3 绿，ExamAnalysisReportIntegrationTest 与 ScorePublishTransactionIntegrationTest 全绿；变异 A/B 独立复现精准红（撤发布门控红于 wrongQuestionsAndReview_requirePublishedRoot:308，撤部分对判定红于 wrongQuestions_identifiesWrongQuestionsAndAnalysis:226），复原后 4/4 绿且 git diff 逐字节归零。"
   }
 ]
