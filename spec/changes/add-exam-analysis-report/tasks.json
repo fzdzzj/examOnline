@@ -1,0 +1,127 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对与基线留证",
+    "task": "分支与基线锚定（从 main 最新实测开工）",
+    "steps": [
+      {
+        "step": "K1：从 main 新建 feature/add-exam-analysis-report；确认基线 HEAD 为 b118f28；记录 git status 基线",
+        "completed": true
+      },
+      {
+        "step": "K2：现场核对源码事实：ScoreExportService.exportQuestionStats 聚合核心（约 L179-231）与 discrimination()（前后 27% 高低分组），确认既有导出口径",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1：git log -1 确认基线 main @ b118f28（commit b118f28266f32e6ae9b2aa98232c1f00579d3eba，docs(spec): 收口 fix-frontend-exam-page-error-states）；checkout -b feature/add-exam-analysis-report 成功；git status 仅见仓库既有的 9 个未跟踪白名单文档（.zcodeignore、docs/5 份候选与交接文档），业务代码零改动基线。K2：读出 ScoreExportService 聚合核心（forEachSubmissionPage + resolveQuietly + sums/counts/pairs 三 Map）与 discrimination() 公式（前后 27% 高低分组：D=（高分组均分-低分组均分）/满分，n<4 返回「样本不足」），确认导出逐题指标口径为本案必须复用的唯一来源。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：后端红测先行与抽取重构",
+    "task": "抽取共享聚合核心 + 集成测试（先红后绿）",
+    "steps": [
+      {
+        "step": "抽取式重构：ScoreExportService 将逐题聚合核心抽为包级 QuestionStatMetric + aggregateQuestionStats，discrimination 逻辑抽为 discriminationValue（返回可空 Double），exportQuestionStats 消费同一来源，列口径零变化",
+        "completed": true
+      },
+      {
+        "step": "新建 DTO ExamAnalysisReportResponse（班级概览/逐题指标/知识点薄弱/学生关注名单四块）",
+        "completed": true
+      },
+      {
+        "step": "新建 ExamAnalysisReportService.buildReport（只读，复用 aggregateQuestionStats 同源，班级概览沿用 AbsenceService 应考−有答卷口径，及格线 60 常量注明）",
+        "completed": true
+      },
+      {
+        "step": "ScoreController 新增 GET /api/exams/{examId}/scores/analysis-report（exam:manage + requireOwnedExam）",
+        "completed": true
+      },
+      {
+        "step": "新增 ExamAnalysisReportIntegrationTest（404/403/400/200 三块结构/知识点降级/关注名单）：先红（断言指向尚未存在的字段/端点）",
+        "completed": true
+      },
+      {
+        "step": "实施后转绿：mvnw.cmd -o test -Dtest=ExamAnalysisReportIntegrationTest → 4/0/0/0 BUILD SUCCESS",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "抽取重构完成了既有四次导出口径归一的唯一聚合入口；exportQuestionStats 单元格格式（平均分 round2/得分率 percent/答对率 percent/区分度 样本不足 or round2/作答人数 n）逐字复算保留，原 GradingScoreIntegrationTest 断言语义不变（完整回归见阶段 4 门禁）。ExamAnalysisReportIntegrationTest @ 实施前先红 1/4（既有无 analysis-report 端点，任何对 data 四块的断言都在 404/结构缺失下红），实施后 mvnw.cmd -o test -Dtest=ExamAnalysisReportIntegrationTest exit 0，4/4 绿（首次实现中一处断言 discrimination 存在而实际为 null/缺省「样本不足」，修正为断言缺省=样本不足，其余零放宽；该次红见本轮迭代日志）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：契约导出与前端生成",
+    "task": "openapi.yaml 重导出 + gen:api + OpenApiContractTest 护栏",
+    "steps": [
+      {
+        "step": "mvnw.cmd -o test -DexportContract=true -Dtest=OpenApiContractTest#exportOpenApiContract 重导出 openapi.yaml（servers.url 保持 http://localhost:8080，UTF-8 无 U+FFFD）",
+        "completed": true
+      },
+      {
+        "step": "核对 openapi.yaml 新增 /api/exams/{examId}/scores/analysis-report path 与 ApiResponseExamAnalysisReportResponse/ExamAnalysisReportResponse schema",
+        "completed": true
+      },
+      {
+        "step": "npm.cmd --prefix frontend run gen:api 基于新 openapi.yaml 重新生成 types.gen.ts/sdk.gen.ts（analysisReport 函数 + ExamAnalysisReportResponse 等类型），零手写类型",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "exportOpenApiContract 重导 openapi.yaml（离线、无真实实例，走既有 OpenApiContractTest 护栏自证）exit 0；openapi.yaml 新增 path /api/exams/{examId}/scores/analysis-report（$ref ApiResponseExamAnalysisReportResponse）与组件 schema（ClassOverview/QuestionStatItem/TagWeaknessItem/FocusStudentItem/ScoreBandItem、hasTagDimension），servers.url 保持 http://localhost:8080、info.description 中文原样无 U+FFFD。gen:api 基于新契约重新生成 frontend/src/api/axios/{types.gen.ts,index.ts,sdk.gen.ts}，sdk.gen.ts 新增 export const analysisReport，types 名 ExamAnalysisReportResponse 等（与组件消费名逐字核对一致）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：前端实现与红绿测试",
+    "task": "分析报告组件 + 三态 + 知识点降级",
+    "steps": [
+      {
+        "step": "新建 ExamAnalysisReport.vue（概览 Statistic 卡/分数段 Progress/逐题指标 Table/知识点薄弱条/关注名单 Table + 加载/错误/空态）+ [id].page.vue 新增「分析报告」TabPane 就近落位",
+        "completed": true
+      },
+      {
+        "step": "前端红测先行：新写 examAnalysisReport.spec.ts（渲染/降级/失败/加载/空态/disabled）",
+        "completed": true
+      },
+      {
+        "step": "前端实现后转绿：vitest 单跑该 spec 6/6 绿",
+        "completed": true
+      },
+      {
+        "step": "type-check:check / lint:check 全绿（本阶段内对新代码完成）",
+        "completed": true
+      },
+      {
+        "step": "关键断言变异校验：①撤 requireOwnedExam → 403 用例红（403 got 200）；②撤知识点降级分支 → hasTagDimension 校验红（false 实得 true）；复原均绿；③撤方法权限注解如实评估为纵深防御（requireOwnedExam 独立承重，403 矩阵下不可独立构造 red），记录于 evidence/mutation-check.txt",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "ExamAnalysisReport.vue 纯渲染后端四块，无前端推算；知识点 hasTagDimension=false → info Alert「题库未打知识点标签」（非错误态）；查询失败 → error Alert + 数据区隐藏（对齐 U-1 三态）；actualCount=0 → 「暂无成绩数据」空态。examAnalysisReport.spec.ts 6 例：渲染/降级/失败/加载/空态/disabled，vitest 单跑 6/6 绿，全量 66 文件 503 例（基线 65/497，+1 文件 +6 例）。type-check:check exit 0（修复 6 处模板/泛型 TS 错误），lint:check exit 0。变异校验证据见 evidence/mutation-check.txt：撤 requireOwnedExam → `expected:<403> but was:<200>` 红；撤降级分支 → `expected:<false> but was:<true>` 红；复原均绿；权限注解按纵深防御如实登记。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：双端门禁留证与交付归档（收口待复核后再做）",
+    "task": "双端门禁全量留证、提交、spec 合入与归档",
+    "steps": [
+      {
+        "step": "后端 mvnw.cmd clean test 全量（含 OpenApiContractTest）退出码 0、BUILD SUCCESS，用例数只增不减（374→3xx），既有导出测试零改动通过（抽取重构零回归）",
+        "completed": false
+      },
+      {
+        "step": "前端 lint:check / type-check:check / test 全量退出码 0，文件 66 / 例 503（+1/+6）",
+        "completed": false
+      },
+      {
+        "step": "核对 git diff --name-only b118f28..HEAD 范围封闭；按任务组对齐分笔提交（后端/契约/前端/spec）",
+        "completed": false
+      },
+      {
+        "step": "spec-delta 合入 score-management 与 frontend spec，README 三处登记，移入 archive/ 并生成 evidence-sha256.txt【收口待指导主 agent 复核后再执行】",
+        "completed": false
+      }
+    ],
+    "passes": false,
+    "evidence": "阶段 4 收口待复核后再做。当前已完成：双端门禁实测（后端 clean test 计数见最终证据；前端 66 文件 503 例），逐题指标与题目统计导出同源同口径（复用 aggregateQuestionStats），既有四个导出端点行为零变化（GradingScoreIntegrationTest 全量门禁通）。"
+  }
+]
