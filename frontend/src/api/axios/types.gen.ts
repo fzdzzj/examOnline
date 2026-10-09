@@ -670,6 +670,78 @@ export type MyScoreResponse = {
     reviewing?: boolean;
 };
 
+export type ApiResponseWrongQuestionPageResponse = {
+    code?: number;
+    message?: string;
+    data?: WrongQuestionPageResponse;
+};
+
+export type ExamWrongQuestionsGroup = {
+    examId?: number;
+    examTitle?: string;
+    examTime?: string;
+    wrongQuestions?: Array<WrongQuestionItem>;
+};
+
+export type WrongQuestionItem = {
+    examId?: number;
+    examTitle?: string;
+    examTime?: string;
+    questionId?: number;
+    questionNumber?: number;
+    questionType?: string;
+    questionContent?: string;
+    choices?: Array<string>;
+    myAnswer?: string;
+    correctAnswer?: string;
+    myScore?: number;
+    fullScore?: number;
+    analysis?: string;
+    scoreDetail?: string;
+};
+
+export type WrongQuestionPageResponse = {
+    total?: number;
+    page?: number;
+    size?: number;
+    groups?: Array<ExamWrongQuestionsGroup>;
+};
+
+export type ApiResponseExamReviewResponse = {
+    code?: number;
+    message?: string;
+    data?: ExamReviewResponse;
+};
+
+export type ExamReviewQuestionItem = {
+    questionId?: number;
+    questionNumber?: number;
+    questionType?: string;
+    questionContent?: string;
+    choices?: Array<string>;
+    myAnswer?: string;
+    correctAnswer?: string;
+    myScore?: number;
+    fullScore?: number;
+    graded?: boolean;
+    analysis?: string;
+    comment?: string;
+    scoreDetail?: string;
+};
+
+export type ExamReviewResponse = {
+    examId?: number;
+    examTitle?: string;
+    examTime?: string;
+    studentName?: string;
+    objectiveScore?: number;
+    subjectiveScore?: number;
+    totalScore?: number;
+    rank?: number;
+    partialGraded?: boolean;
+    questions?: Array<ExamReviewQuestionItem>;
+};
+
 export type ApiResponseMakeupFinalScoreResponse = {
     code?: number;
     message?: string;
@@ -2158,6 +2230,43 @@ export type MyScoreResponses = {
 };
 
 export type MyScoreResponse2 = MyScoreResponses[keyof MyScoreResponses];
+
+export type MyWrongQuestionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+    };
+    url: '/api/scores/my/wrong-questions';
+};
+
+export type MyWrongQuestionsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseWrongQuestionPageResponse;
+};
+
+export type MyWrongQuestionsResponse = MyWrongQuestionsResponses[keyof MyWrongQuestionsResponses];
+
+export type MyExamReviewData = {
+    body?: never;
+    path: {
+        examId: number;
+    };
+    query?: never;
+    url: '/api/scores/my/exams/{examId}/review';
+};
+
+export type MyExamReviewResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseExamReviewResponse;
+};
+
+export type MyExamReviewResponse = MyExamReviewResponses[keyof MyExamReviewResponses];
 
 export type MyMakeupFinalScoreData = {
     body?: never;
