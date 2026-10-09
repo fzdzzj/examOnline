@@ -94,10 +94,10 @@
     "steps": [
       {
         "step": "待主 agent 抽查并出复核提示词通过后，合入 spec/specs/frontend/spec.md 并移动归档",
-        "completed": false
+        "completed": true
       }
     ],
-    "passes": false,
-    "evidence": "待主 agent 复核通过后执行"
+    "passes": true,
+    "evidence": "--no-ff 合并笔 SHA 为 e61ba024a9a0af247d1771f50b6c2c9a610e229f（short: e61ba02）。首次收口合并后门禁复跑暴露 type-check 红（3 处 TS2322），根因为 System32 空文件 npm 假绿导致前次漏检；按裁决方案 A 回退 main 至 f352fe3，feature 追加修复笔 78a1785（回调类型对齐 ValueType + Number 归一 + 1 条回归用例），轻量复核通过（陷阱复现 + 变异 + 门禁 68 文件 519 例/378/0/0/1）后重收口。spec-delta ADDED Requirement 已并入 spec/specs/frontend/spec.md；变更目录已归档至 spec/changes/archive/add-frontend-paper-blueprint，冗余镜像已删除；spec/README.md 已完成状态、能力域与归档表三处登记。"
   }
 ]
