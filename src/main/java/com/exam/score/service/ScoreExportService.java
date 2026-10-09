@@ -175,7 +175,43 @@ public class ScoreExportService {
         assertExportable(examId);
         GradingPaper paper = paperReader.readByExamId(examId);
         List<GradingQuestion> questions = paper.questions();
+        List<QuestionStatMetric> metrics = aggregateQuestionStats(examId, paper, questions);
 
+        return ExcelSheetWriter.withStreamingWorkbook(workbook -> {
+            SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "题目统计");
+            ExcelSheetWriter.writeHeader(sheet, "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数");
+            int rowIndex = 1;
+            for (QuestionStatMetric metric : metrics) {
+                Row row = sheet.createRow(rowIndex++);
+                int n = metric.answeredCount();
+                double max = metric.question().score().doubleValue();
+                row.createCell(0).setCellValue(metric.question().number());
+                row.createCell(1).setCellValue(labelOf(metric.question().type()));
+                row.createCell(2).setCellValue(metric.question().content());
+                row.createCell(3).setCellValue(decimal(metric.question().score()));
+                row.createCell(4).setCellValue(n == 0 ? "-" : round2(metric.averageScore()));
+                row.createCell(5).setCellValue(n == 0 || max == 0 ? "-" : percent(metric.scoreRate()));
+                row.createCell(6).setCellValue(n == 0 ? "-" : percent(metric.correctRate()));
+                row.createCell(7).setCellValue(n == 0 ? "-" : (metric.discrimination() == null
+                        ? "样本不足" : round2(metric.discrimination())));
+                row.createCell(8).setCellValue(n);
+            }
+            ExcelSheetWriter.autoSize(sheet, 9);
+        });
+    }
+
+    /**
+     * 逐题指标聚合核心（Excel 导出 {@link #exportQuestionStats} 与 JSON 分析报告接口
+     * 共用的**唯一**指标来源，禁止另造第二套公式）：
+     * 平均分/得分率/答对率按 all answered 的「每生一行×逐题得分」路径，区分度为前后 27%
+     * 高低分组法（与 {@link #discriminationValue} 同公式）。返回按试卷题目顺序排列的指标快照。
+     */
+    record QuestionStatMetric(GradingQuestion question, int answeredCount, double averageScore,
+                              double scoreRate, double correctRate, Double discrimination) {
+    }
+
+    List<QuestionStatMetric> aggregateQuestionStats(Long examId, GradingPaper paper,
+                                                    List<GradingQuestion> questions) {
         // 聚合器：逐题得分/满分计数 + 区分度所需的 (总分, 该题得分) 对。
         // 内存量级：5000 生 × 30 题 × 16B ≈ 2.4MB，可控；再大可改两遍扫描。
         Map<Long, double[]> sums = new HashMap<>();
@@ -210,30 +246,43 @@ public class ScoreExportService {
             }
         });
 
-        return ExcelSheetWriter.withStreamingWorkbook(workbook -> {
-            SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "题目统计");
-            ExcelSheetWriter.writeHeader(sheet, "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数");
-            int rowIndex = 1;
-            for (GradingQuestion question : questions) {
-                Row row = sheet.createRow(rowIndex++);
-                int[] questionCounts = counts.getOrDefault(question.questionId(), new int[2]);
-                int n = questionCounts[0];
-                int full = questionCounts[1];
-                double sum = sums.getOrDefault(question.questionId(), new double[1])[0];
-                double max = question.score().doubleValue();
-                row.createCell(0).setCellValue(question.number());
-                row.createCell(1).setCellValue(labelOf(question.type()));
-                row.createCell(2).setCellValue(question.content());
-                row.createCell(3).setCellValue(decimal(question.score()));
-                row.createCell(4).setCellValue(n == 0 ? "-" : round2(sum / n));
-                row.createCell(5).setCellValue(n == 0 || max == 0 ? "-" : percent(sum / n / max));
-                row.createCell(6).setCellValue(n == 0 ? "-" : percent((double) full / n));
-                row.createCell(7).setCellValue(n == 0 ? "-" : discrimination(
-                        pairs.getOrDefault(question.questionId(), List.of()), max));
-                row.createCell(8).setCellValue(n);
-            }
-            ExcelSheetWriter.autoSize(sheet, 9);
-        });
+        List<QuestionStatMetric> result = new ArrayList<>();
+        for (GradingQuestion question : questions) {
+            int[] questionCounts = counts.getOrDefault(question.questionId(), new int[2]);
+            int n = questionCounts[0];
+            int full = questionCounts[1];
+            double sum = sums.getOrDefault(question.questionId(), new double[1])[0];
+            double max = question.score().doubleValue();
+            double averageScore = n == 0 ? 0 : sum / n;
+            double scoreRate = (n == 0 || max == 0) ? 0 : sum / n / max;
+            double correctRate = n == 0 ? 0 : (double) full / n;
+            Double discrimination = n == 0 ? null : discriminationValue(
+                    pairs.getOrDefault(question.questionId(), List.of()), max);
+            result.add(new QuestionStatMetric(question, n, averageScore, scoreRate, correctRate,
+                    discrimination));
+        }
+        return result;
+    }
+
+    /**
+     * 区分度（前后 27% 高低分组法）：D = (高分组均分 - 低分组均分) / 满分，保留 2 位。
+     * 样本不足（n &lt; 4 或分组大小 &lt; 1）返回 null，交由消费方呈现「样本不足」。
+     */
+    private Double discriminationValue(List<double[]> pairs, double max) {
+        int n = pairs.size();
+        int groupSize = (int) Math.floor(n * DISCRIMINATION_GROUP_RATIO.doubleValue());
+        if (n < 4 || groupSize < 1) {
+            return null;
+        }
+        List<double[]> sorted = new ArrayList<>(pairs);
+        sorted.sort((a, b) -> Double.compare(b[0], a[0]));   // 按总分降序
+        double highSum = 0;
+        double lowSum = 0;
+        for (int i = 0; i < groupSize; i++) {
+            highSum += sorted.get(i)[1];
+            lowSum += sorted.get(n - 1 - i)[1];
+        }
+        return Double.valueOf(round2((highSum / groupSize - lowSum / groupSize) / max));
     }
 
     /** 个人成绩单 Excel：学生信息 + 逐题得分/评语 + 判分依据。 */
@@ -445,24 +494,6 @@ public class ScoreExportService {
             }
         }
         return result;
-    }
-
-    /** 区分度（前后 27% 高低分组法）：D = (高分组均分 - 低分组均分) / 满分，保留 2 位。 */
-    private String discrimination(List<double[]> pairs, double max) {
-        int n = pairs.size();
-        int groupSize = (int) Math.floor(n * DISCRIMINATION_GROUP_RATIO.doubleValue());
-        if (n < 4 || groupSize < 1) {
-            return "样本不足";
-        }
-        List<double[]> sorted = new ArrayList<>(pairs);
-        sorted.sort((a, b) -> Double.compare(b[0], a[0]));   // 按总分降序
-        double highSum = 0;
-        double lowSum = 0;
-        for (int i = 0; i < groupSize; i++) {
-            highSum += sorted.get(i)[1];
-            lowSum += sorted.get(n - 1 - i)[1];
-        }
-        return round2((highSum / groupSize - lowSum / groupSize) / max);
     }
 
     // ==================== 查询与校验辅助 ====================

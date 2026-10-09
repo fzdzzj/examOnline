@@ -12,10 +12,12 @@ import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.exam.service.MakeupScoreService;
 import com.exam.score.dto.BatchScoreRequest;
+import com.exam.score.dto.ExamAnalysisReportResponse;
 import com.exam.score.dto.MakeupFinalScoreResponse;
 import com.exam.score.dto.MyScoreResponse;
 import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.dto.ScorePreviewResponse;
+import com.exam.score.service.ExamAnalysisReportService;
 import com.exam.score.service.ScoreExportService;
 import com.exam.score.service.ScoreReviewService;
 import com.exam.score.service.ScoreService;
@@ -57,15 +59,18 @@ public class ScoreController {
 
     private final ScoreService scoreService;
     private final ScoreExportService scoreExportService;
+    private final ExamAnalysisReportService examAnalysisReportService;
     private final MakeupScoreService makeupScoreService;
     private final ExamMapper examMapper;
     private final ScoreReviewService scoreReviewService;
 
     public ScoreController(ScoreService scoreService, ScoreExportService scoreExportService,
+                           ExamAnalysisReportService examAnalysisReportService,
                            MakeupScoreService makeupScoreService, ExamMapper examMapper,
                            ScoreReviewService scoreReviewService) {
         this.scoreService = scoreService;
         this.scoreExportService = scoreExportService;
+        this.examAnalysisReportService = examAnalysisReportService;
         this.makeupScoreService = makeupScoreService;
         this.examMapper = examMapper;
         this.scoreReviewService = scoreReviewService;
@@ -197,6 +202,18 @@ public class ScoreController {
         }
         return attachment(examId, "个人成绩单", ".xlsx", XLSX_MEDIA_TYPE,
                 scoreExportService.exportPersonalSheet(examId, studentId));
+    }
+
+    /**
+     * 考试数据分析报告（创新点4 ⭐⭐⭐，Phase 2）：班级/逐题/知识点/学生关注名单四维只读聚合。
+     * 权限 {@code exam:manage} + {@link #requireOwnedExam} 越权校验，口径同既有导出端点；
+     * 逐题指标与题目统计导出共用同一聚合来源（{@code ScoreExportService.aggregateQuestionStats}）。
+     */
+    @GetMapping("/api/exams/{examId}/scores/analysis-report")
+    @RequirePermission("exam:manage")
+    public ApiResponse<ExamAnalysisReportResponse> analysisReport(@PathVariable Long examId) {
+        requireOwnedExam(examId);
+        return ApiResponse.success(examAnalysisReportService.buildReport(examId));
     }
 
     // ==================== 私有工具 ====================
