@@ -1,4 +1,6 @@
-﻿clean test: Tests run: 378, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS (2026-10-09 10:57:39, jacoco pipe exit 1 为无害噪声)
-GradingScoreIntegrationTest 3/0/0/0 (既有导出零回归)
-ExamAnalysisReportIntegrationTest 4/0/0/0 (新增)
-OpenApiContractTest 3/0/0/1 (smoke+static guard 绿，export 仅 -DexportContract 时跑)
+﻿Gate 于工作树已复原全部变异后运行，与 feature 分支提交头一致（src 零改动差异，git status 仅白名单未跟踪文档）。
+backend: mvnw.cmd -o clean test -> Tests run: 378, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS (2026-10-09 10:57:39 exit 1 为 jacoco/管道无害噪声)
+  - GradingScoreIntegrationTest 3/0/0/0（既有四个导出端点零回归）
+  - ExamAnalysisReportIntegrationTest 4/0/0/0（新增）
+  - OpenApiContractTest 3/0/0/1（smoke+static guard 绿；export 仅 -DexportContract=true 时跑，已用其重导 openapi.yaml）
+frontend: vitest 66 files 503 tests passed（基线 65/497，+1 文件 +6 例）；lint:check exit 0；type-check:check exit 0
