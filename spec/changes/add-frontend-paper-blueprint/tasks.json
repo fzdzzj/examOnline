@@ -1,0 +1,103 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：开工核对与基线留证",
+    "task": "分支与基线锚定（从 main 最新实测开工）",
+    "steps": [
+      {
+        "step": "K1：从 main 新建 feature/add-frontend-paper-blueprint；确认基线 HEAD 为 f352fe3；记录 git status 基线",
+        "completed": true
+      },
+      {
+        "step": "K2：核对组卷引擎事实：后端 RandomDrawRequest.Rule 支持 type/difficulty/tagIds/count；前端 papers/[id].page.vue 既有 drawFlow 与 ruleDrafts 抽题区完备，本卡零后端零契约",
+        "completed": true
+      },
+      {
+        "step": "K3：全量基线门禁留证：前端 vitest 66 文件 503 例全部通过、lint:check / type-check:check exit 0；后端门禁基线预期 378/0/0/1 持平",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "K1：git log -1 确认基线 main @ f352fe3558f07a2b24896fb29bb57b003db9889c（docs(spec): 收口 add-exam-analysis-report）；已切至新分支 feature/add-frontend-paper-blueprint；git status 仅见仓库既有的未跟踪白名单文档。K2：核对后端 RandomDrawRequest.Rule（支持 type/difficulty/tagIds/count，预览 previewDraw 不落库、commitRandomDraw 确认入卷，400 题量不足错误处理），前端 [id].page.vue 约 L62-101 与 L537-590 完备。K3：实跑前端 vitest run 66 test files passed, 503 tests passed (duration 65.82s)；lint:check 与 type-check:check 均 exit 0。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：矩阵编译工具函数（TDD 先红后绿）",
+    "task": "独立工具函数 blueprint.ts 与单测（先红后绿）",
+    "steps": [
+      {
+        "step": "新建 frontend/src/utils/blueprint.ts 接口定义与骨架",
+        "completed": true
+      },
+      {
+        "step": "新建 frontend/src/utils/__tests__/blueprint.spec.ts 单测（多格编译/空格与0跳过/全空拦截/规则顺序确定性/覆盖度题数合计/非法题量拦截）：先红",
+        "completed": true
+      },
+      {
+        "step": "实现 blueprint.ts 编译、校验与合计纯函数，单测转绿",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "blueprint.spec.ts 9 例单测：先红 8 failed | 1 passed（断言指向尚未实现的编译映射与拦截规则），性质如实登记；实现 compileBlueprintToRules/validateBlueprint/totalBlueprintCount 后，npx vitest run src/utils/__tests__/blueprint.spec.ts exit 0，9/9 全部转绿。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：页面矩阵蓝图模式与抽题区增强（TDD 先红后绿）",
+    "task": "页面蓝图模式交互、三态与零回归（先红后绿）",
+    "steps": [
+      {
+        "step": "新建 frontend/src/pages/(dashboard)/teacher/papers/__tests__/paperBlueprintDraw.spec.ts 测试用例：模式切换/矩阵渲染与勾选/摘要合计/空态/失败态/既有规则模式零回归：先红",
+        "completed": true
+      },
+      {
+        "step": "在 [id].page.vue 实现抽题区「矩阵蓝图」模式：RadioGroup 切换、标签勾选、InputNumber 细目表矩阵、覆盖度合计行、三态处理、drawFlow 复用与提交拦截重置",
+        "completed": true
+      },
+      {
+        "step": "单跑 paperBlueprintDraw.spec.ts 与既有 paperDetailTable.spec.ts 转绿，零回归",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "paperBlueprintDraw.spec.ts 6 例组件单测：实施前先红 5 failed | 1 passed（未实现蓝图模式前，5 条新断言全部红灯，1 条既有规则列表模式断言通过）；实施后单跑 paperBlueprintDraw.spec.ts 6/6 全绿；既有 paperDetailTable.spec.ts 2/2 全绿，零回归；type-check:check 与 lint:check 均 exit 0。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：关键断言变异校验与门禁验证",
+    "task": "变异校验留证 + 双端完整门禁",
+    "steps": [
+      {
+        "step": "变异校验 1：撤编译中 difficulty 映射 → 单元测试变红 → 复原转绿",
+        "completed": true
+      },
+      {
+        "step": "变异校验 2：撤空矩阵拦截校验 → 测试变红 → 复原转绿",
+        "completed": true
+      },
+      {
+        "step": "前端门禁：npm run lint:check / npm run type-check:check / npm run test 全部 exit 0，测试计数净增（66+新文件 / 503+新例）",
+        "completed": true
+      },
+      {
+        "step": "后端门禁：mvnw.cmd clean test → 378/0/0/1 BUILD SUCCESS 持平（零代码变动）",
+        "completed": true
+      }
+    ],
+    "passes": true,
+    "evidence": "变异校验：变异1（撤 difficulty 映射为 1）单测 3 failed 变红，复原转绿；变异2（撤空矩阵拦截校验）单测 1 failed 变红，复原转绿，详见 evidence/mutation-check.txt。前端门禁：lint:check exit 0，type-check:check exit 0，vitest run 68 文件 518 例通过（基线 66 文件 503 例，净增 2 文件 15 例），耗时 75.83s，exit 0。后端门禁：mvnw.cmd clean test 全量实跑，Tests run: 378, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，exit 0，持平基线（零改动）。【假绿排查与修复补注】：此前 type-check:check 显示 exit 0 实为环境假绿：Windows PowerShell 下 where.exe npm 优先命中 C:\\Windows\\System32\\npm（0 字节空文件，静默 exit 0），未真正调用 nodejs 下的 npm.cmd 与 vue-tsc；收口阶段使用真实 npm.cmd 触发 vue-tsc 时如实暴露出 TS2322。现已将 [id].page.vue 3 处回调签名对齐 (val: string | number | null) 并经 Number() 归一化，且在 paperBlueprintDraw.spec.ts 增补 1 条 string 更新值归一化回归用例（用例总数达 68 文件 519 例）。经 npm.cmd run type-check:check 实跑通过，exit 0。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：收口待复核后做",
+    "task": "spec-delta 合入基线、README 登记、变更归档（待主 agent 复核后执行）",
+    "steps": [
+      {
+        "step": "待主 agent 抽查并出复核提示词通过后，合入 spec/specs/frontend/spec.md 并移动归档",
+        "completed": false
+      }
+    ],
+    "passes": false,
+    "evidence": "待主 agent 复核通过后执行"
+  }
+]

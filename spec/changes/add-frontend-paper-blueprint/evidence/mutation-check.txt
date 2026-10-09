@@ -1,0 +1,28 @@
+变异校验记录：add-frontend-paper-blueprint
+===================================================
+
+变异 1：撤编译中 difficulty 映射（写死为常量 1，破坏列难度与契约 difficulty 的绑定）
+---------------------------------------------------------------------------------
+- 变异代码：frontend/src/utils/blueprint.ts 将 difficulty: diff 改为 difficulty: 1
+- 执行命令：npx vitest run src/utils/__tests__/blueprint.spec.ts
+- 变异结果（RED）：
+  ❯ src/utils/__tests__/blueprint.spec.ts (9 tests | 3 failed)
+    × 多格编译：生成契约规则列表（单标签数组、难度对应、题量对应、type 不设）
+      AssertionError: expected [ ... difficulty: 1 ... ] to deeply equal [ ... difficulty: 2 ... ]
+    × 空格与 0 跳过：未填、undefined、0 的单元格不生成规则
+      AssertionError: expected [ { difficulty: 1 } ] to deeply equal [ { difficulty: 3 } ]
+    × 规则顺序确定性：严格按勾选标签顺序及难度升序（易1 → 中2 → 难3）生成
+      AssertionError: expected [ { difficulty: 1 } ] to deeply equal [ { difficulty: 2 } ]
+- 恢复代码：将 difficulty: 1 复原为 difficulty: diff
+- 恢复结果（GREEN）：9/9 passed 全部转绿。
+
+变异 2：撤空矩阵拦截校验（注释掉全空/0 题量拦截，破坏未录入题量阻止发请求的安全防线）
+---------------------------------------------------------------------------------
+- 变异代码：frontend/src/utils/blueprint.ts 注释掉 if (totalValidCount === 0) 检查分支
+- 执行命令：npx vitest run src/utils/__tests__/blueprint.spec.ts
+- 变异结果（RED）：
+  ❯ src/utils/__tests__/blueprint.spec.ts (9 tests | 1 failed)
+    × 录入校验：所有单元格为空或 0 时拦截
+      AssertionError: expected [] to deeply equal [ '请在细目表矩阵中至少配置一道抽题数量' ]
+- 恢复代码：取消注释复原 if (totalValidCount === 0) 检查分支
+- 恢复结果（GREEN）：9/9 passed 全部转绿。

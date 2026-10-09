@@ -48,7 +48,7 @@
         />
       </Card>
 
-      <Tabs v-if="!isLocked" class="mb-4">
+      <Tabs v-if="!isLocked" v-model:activeKey="activeTabKey" class="mb-4">
         <TabPane key="manual" tab="手动选题">
           <p class="mb-0 text-gray-500">
             点击右上角「从题库选题」加入题目；加入后可在下方题目列表覆盖单题分值、调整顺序或移出。
@@ -57,7 +57,16 @@
         </TabPane>
 
         <TabPane key="draw" tab="随机抽题">
-          <div class="mb-3 space-y-2">
+          <div class="mb-3 flex items-center gap-2">
+            <span class="text-sm text-gray-500">抽题模式：</span>
+            <RadioGroup v-model:value="drawMode" button-style="solid" size="small">
+              <RadioButton value="rules">规则列表</RadioButton>
+              <RadioButton value="blueprint">矩阵蓝图</RadioButton>
+            </RadioGroup>
+          </div>
+
+          <!-- 规则列表模式：既有逻辑保持不变 -->
+          <div v-if="drawMode === 'rules'" class="mb-3 space-y-2">
             <div
               v-for="(rule, index) in ruleDrafts"
               :key="index"
@@ -99,6 +108,135 @@
               </Button>
             </div>
             <Button size="small" @click="addRule">+ 添加规则</Button>
+          </div>
+
+          <!-- 矩阵蓝图（双向细目表）模式 -->
+          <div v-else class="mb-3">
+            <!-- 1. 标签接口加载失败：显性呈现错误 Alert 且数据区隐藏（U-1 三态规范） -->
+            <Alert
+              v-if="tagsErrorText"
+              type="error"
+              show-icon
+              :message="tagsErrorText"
+              data-test="blueprint-tags-error"
+              class="mb-3"
+            />
+
+            <!-- 2. 题库无任何标签空态 -->
+            <Empty
+              v-else-if="!tagsFetching && (!tags || tags.length === 0)"
+              description="题库尚无标签，请先在题库管理中创建并打标"
+              data-test="blueprint-no-tags"
+              class="py-4"
+            />
+
+            <!-- 3. 正常细目表矩阵录入区 -->
+            <div v-else class="space-y-3">
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500 whitespace-nowrap">知识点标签：</span>
+                <Select
+                  v-model:value="selectedBlueprintTagIds"
+                  mode="multiple"
+                  :options="tagOptions"
+                  placeholder="请勾选要纳入蓝图的知识点标签"
+                  class="flex-1"
+                  allow-clear
+                  data-test="blueprint-tag-select"
+                />
+              </div>
+
+              <div
+                v-if="selectedBlueprintTagIds.length === 0"
+                class="rounded border border-dashed border-gray-200 py-4 text-center text-sm text-gray-400"
+              >
+                请勾选要纳入蓝图的知识点标签以生成细目表矩阵
+              </div>
+
+              <div v-else class="overflow-x-auto rounded border border-gray-200">
+                <table
+                  data-test="blueprint-matrix-table"
+                  class="min-w-full divide-y divide-gray-200 text-sm"
+                >
+                  <thead class="bg-gray-50 text-gray-700">
+                    <tr>
+                      <th class="px-4 py-2 text-left font-medium">知识点标签</th>
+                      <th class="w-32 px-4 py-2 text-center font-medium">简单 (易)</th>
+                      <th class="w-32 px-4 py-2 text-center font-medium">中等 (中)</th>
+                      <th class="w-32 px-4 py-2 text-center font-medium">困难 (难)</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 bg-white">
+                    <tr v-for="tag in blueprintSelectedTags" :key="tag.id" class="hover:bg-gray-50">
+                      <td class="px-4 py-2 font-medium text-gray-800">{{ tag.name }}</td>
+                      <td class="px-4 py-2 text-center">
+                        <InputNumber
+                          :value="blueprintMatrix[tag.id as number]?.[1]"
+                          :min="0"
+                          :max="100"
+                          size="small"
+                          class="w-20"
+                          placeholder="0"
+                          @update:value="
+                            (val: string | number | null) =>
+                              updateBlueprintCell(
+                                tag.id as number,
+                                1,
+                                val !== null && val !== '' ? Number(val) : null
+                              )
+                          "
+                        />
+                      </td>
+                      <td class="px-4 py-2 text-center">
+                        <InputNumber
+                          :value="blueprintMatrix[tag.id as number]?.[2]"
+                          :min="0"
+                          :max="100"
+                          size="small"
+                          class="w-20"
+                          placeholder="0"
+                          @update:value="
+                            (val: string | number | null) =>
+                              updateBlueprintCell(
+                                tag.id as number,
+                                2,
+                                val !== null && val !== '' ? Number(val) : null
+                              )
+                          "
+                        />
+                      </td>
+                      <td class="px-4 py-2 text-center">
+                        <InputNumber
+                          :value="blueprintMatrix[tag.id as number]?.[3]"
+                          :min="0"
+                          :max="100"
+                          size="small"
+                          class="w-20"
+                          placeholder="0"
+                          @update:value="
+                            (val: string | number | null) =>
+                              updateBlueprintCell(
+                                tag.id as number,
+                                3,
+                                val !== null && val !== '' ? Number(val) : null
+                              )
+                          "
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot class="bg-gray-50 font-medium text-gray-700">
+                    <tr>
+                      <td class="px-4 py-2">覆盖度摘要</td>
+                      <td colspan="3" class="px-4 py-2 text-right">
+                        合计
+                        <span class="font-bold text-blue-600">{{ blueprintTotalQuestions }}</span>
+                        题
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div class="flex gap-2">
@@ -274,6 +412,8 @@ import {
   InputNumber,
   Modal,
   Popconfirm,
+  RadioButton,
+  RadioGroup,
   Select,
   Spin,
   TabPane,
@@ -309,6 +449,12 @@ import { queryClient } from '@/api/queryClient';
 import { createDrawFlow } from '@/hooks/useRandomDraw';
 import { moveItem, scoreDistribution, sumPaperScores } from '@/utils/paperMath';
 import { drawRulesErrors, toDrawRules, type DrawRuleDraft } from '@/utils/drawRules';
+import {
+  compileBlueprintToRules,
+  totalBlueprintCount,
+  validateBlueprint,
+  type BlueprintMatrixState,
+} from '@/utils/blueprint';
 import {
   DIFFICULTY_OPTIONS,
   PAPER_STATUS_LOCKED,
@@ -349,8 +495,9 @@ function invalidatePaper(): void {
   void queryClient.invalidateQueries({ queryKey: ['papers'] });
 }
 
-// ==================== 手动组卷 ====================
+// ==================== 手动组卷与抽题 Tab ====================
 
+const activeTabKey = ref('manual');
 const pickerOpen = ref(false);
 
 async function onPick(selected: QuestionResponse[]): Promise<void> {
@@ -530,17 +677,28 @@ async function onMetaSave(): Promise<void> {
   }
 }
 
-// ==================== 标签随机抽题 ====================
+// ==================== 标签随机抽题与矩阵蓝图 ====================
 
-const { data: tags } = useQuery({
+const {
+  data: tags,
+  error: rawTagsError,
+  isFetching: tagsFetching,
+} = useQuery({
   queryKey: ['tags'],
   queryFn: () => unwrap<TagResponse[]>(listTags({ client, throwOnError: true })),
+});
+
+const tagsErrorText = computed<string | null>(() => {
+  const caught = rawTagsError?.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : String(caught);
 });
 
 const tagOptions = computed(() =>
   (tags.value ?? []).map((tag) => ({ value: tag.id as number, label: tag.name ?? String(tag.id) }))
 );
 
+// --- 规则列表模式状态与操作 ---
 function emptyRule(): DrawRuleDraft {
   return { type: undefined, difficulty: undefined, tagIds: [], count: 5 };
 }
@@ -557,6 +715,39 @@ function removeRule(index: number): void {
   }
 }
 
+// --- 矩阵蓝图（双向细目表）模式状态与操作 ---
+const drawMode = ref<'rules' | 'blueprint'>('rules');
+const selectedBlueprintTagIds = ref<number[]>([]);
+const blueprintMatrix = reactive<BlueprintMatrixState>({});
+
+const blueprintSelectedTags = computed(() => {
+  const tagMap = new Map((tags.value ?? []).map((t) => [t.id as number, t]));
+  return selectedBlueprintTagIds.value
+    .map((id) => tagMap.get(id))
+    .filter((t): t is TagResponse => t !== undefined);
+});
+
+function updateBlueprintCell(
+  tagId: number,
+  difficulty: number,
+  value: number | null | undefined
+): void {
+  if (!blueprintMatrix[tagId]) {
+    blueprintMatrix[tagId] = {};
+  }
+  blueprintMatrix[tagId][difficulty] = value ?? undefined;
+}
+
+const blueprintTotalQuestions = computed(() =>
+  totalBlueprintCount(selectedBlueprintTagIds.value, blueprintMatrix)
+);
+
+function resetBlueprint(): void {
+  for (const key of Object.keys(blueprintMatrix)) {
+    delete blueprintMatrix[Number(key)];
+  }
+}
+
 /** 生产注入：走 gen:api 生成客户端；单测注入 mock（见 useRandomDraw.spec.ts）。 */
 const drawFlow = createDrawFlow({
   previewDraw: (rules) =>
@@ -565,9 +756,9 @@ const drawFlow = createDrawFlow({
     unwrap(commitRandomDraw({ client, throwOnError: true, path: { id }, body: { rules } })),
 });
 
-// 规则一旦被修改，旧预览即作废：预览结果永远与当前规则一一对应
+// 规则一旦被修改或切换模式，旧预览即作废：预览结果永远与当前规则一一对应
 watch(
-  ruleDrafts,
+  [ruleDrafts, drawMode, selectedBlueprintTagIds, blueprintMatrix],
   () => {
     drawFlow.invalidate();
   },
@@ -575,6 +766,15 @@ watch(
 );
 
 async function onPreview(): Promise<void> {
+  if (drawMode.value === 'blueprint') {
+    const errors = validateBlueprint(selectedBlueprintTagIds.value, blueprintMatrix);
+    if (errors.length > 0) {
+      message.warning(errors[0] as string);
+      return;
+    }
+    await drawFlow.preview(compileBlueprintToRules(selectedBlueprintTagIds.value, blueprintMatrix));
+    return;
+  }
   const errors = drawRulesErrors(ruleDrafts.value);
   if (errors.length > 0) {
     message.warning(errors[0] as string);
@@ -587,7 +787,11 @@ async function onCommit(): Promise<void> {
   const ok = await drawFlow.commit(paperId.value);
   if (ok) {
     message.success('抽题已入卷');
-    ruleDrafts.value = [emptyRule()];
+    if (drawMode.value === 'rules') {
+      ruleDrafts.value = [emptyRule()];
+    } else {
+      resetBlueprint();
+    }
     invalidatePaper();
   }
 }
