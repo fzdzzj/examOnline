@@ -1606,6 +1606,25 @@ paths:
               schema:
                 type: string
                 format: byte
+  /api/exams/{examId}/scores/analysis-report:
+    get:
+      tags:
+      - score-controller
+      operationId: analysisReport
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExamAnalysisReportResponse"
   /api/exams/{examId}/monitor/overview:
     get:
       tags:
@@ -3612,6 +3631,111 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ScoreItem"
+    ApiResponseExamAnalysisReportResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ExamAnalysisReportResponse"
+    ClassOverview:
+      type: object
+      properties:
+        expectedCount:
+          type: integer
+          format: int32
+        actualCount:
+          type: integer
+          format: int32
+        absenceCount:
+          type: integer
+          format: int32
+        averageScore:
+          type: number
+        passRate:
+          type: number
+          format: double
+        scoreBands:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreBandItem"
+    ExamAnalysisReportResponse:
+      type: object
+      properties:
+        classOverview:
+          $ref: "#/components/schemas/ClassOverview"
+        questionStats:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionStatItem"
+        tagWeakness:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagWeaknessItem"
+        hasTagDimension:
+          type: boolean
+        focusList:
+          type: array
+          items:
+            $ref: "#/components/schemas/FocusStudentItem"
+    FocusStudentItem:
+      type: object
+      properties:
+        studentId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        studentName:
+          type: string
+        totalScore:
+          type: number
+    QuestionStatItem:
+      type: object
+      properties:
+        order:
+          type: integer
+          format: int32
+        type:
+          type: string
+        fullScore:
+          type: number
+        averageScore:
+          type: number
+        scoreRate:
+          type: number
+          format: double
+        correctRate:
+          type: number
+          format: double
+        discrimination:
+          type: number
+          format: double
+        answeredCount:
+          type: integer
+          format: int32
+    ScoreBandItem:
+      type: object
+      properties:
+        band:
+          type: string
+        count:
+          type: integer
+          format: int32
+    TagWeaknessItem:
+      type: object
+      properties:
+        tagId:
+          type: integer
+          format: int64
+        tagName:
+          type: string
+        scoreRate:
+          type: number
+          format: double
     ApiResponseListScoreReview:
       type: object
       properties:
