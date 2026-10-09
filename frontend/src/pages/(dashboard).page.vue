@@ -115,6 +115,7 @@ const menuItems = computed<MenuProps['items']>(() => {
         // 阶段 22 第 1 片：我的考试（列表 → 进入 → 极简作答 → 倒计时锁定）
         { key: '/student/exams', label: '我的考试' },
         { key: '/student/scores', label: '我的成绩与复核' },
+        { key: '/student/wrong-questions', label: '我的错题本' },
       ],
     });
   }
@@ -149,6 +150,7 @@ const NAVIGABLE_PATHS: readonly string[] = [
   '/teacher/makeups',
   '/student/exams',
   '/student/scores',
+  '/student/wrong-questions',
   '/admin/invite-codes',
   '/admin/audit-logs',
 ];
