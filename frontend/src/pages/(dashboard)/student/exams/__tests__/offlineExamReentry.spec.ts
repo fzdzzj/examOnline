@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { Modal } from 'ant-design-vue';
 import { ref } from 'vue';
 
 import type { EnterExamResponse } from '@/api/axios';
@@ -252,13 +253,23 @@ describe('作答页离线重入与降级链路 ([id].page.vue)', () => {
     const wrapper = mount(StudentExamTakingPage);
     await flushPromises();
 
-    // 手动交卷触发
-    const submitBtn = wrapper.find('[data-test="manual-submit-button"]');
-    if (submitBtn.exists()) {
-      await submitBtn.trigger('click');
-      await flushPromises();
-      // 快照行被成功清理
+    // 走真实交卷链路：点交卷按钮开确认 Modal → 确认 → emit('submit') → 页面 submitExam
+    const submitBtn = wrapper.find('[data-test="submit-button"]');
+    expect(submitBtn.exists()).toBe(true);
+    await submitBtn.trigger('click');
+    await flushPromises();
+
+    const confirmModal = wrapper
+      .findAllComponents(Modal)
+      .find((m) => m.props('title') === '确认交卷');
+    expect(confirmModal).toBeTruthy();
+    confirmModal?.vm.$emit('ok');
+    await flushPromises();
+
+    // submit 被调用，且成功路径清理快照行
+    expect(submitMock).toHaveBeenCalledTimes(1);
+    await vi.waitFor(async () => {
       expect(await testSnapshotStorage.load(42)).toBeNull();
-    }
+    });
   });
 });
