@@ -9,7 +9,11 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { registerExamServiceWorker, unregisterExamServiceWorker } from '@/utils/swRegister';
+import {
+  isStudentExamRoute,
+  registerExamServiceWorker,
+  unregisterExamServiceWorker,
+} from '@/utils/swRegister';
 
 describe('SW 注册与注销 (mock navigator.serviceWorker)', () => {
   const originalSW = navigator.serviceWorker;
@@ -80,5 +84,15 @@ describe('SW 注册与注销 (mock navigator.serviceWorker)', () => {
 
     const unreg = await unregisterExamServiceWorker();
     expect(unreg).toBe(false);
+  });
+
+  it('isStudentExamRoute: 正确判断是否属于学生考试域（列表与作答页）', () => {
+    expect(isStudentExamRoute('/student/exams')).toBe(true);
+    expect(isStudentExamRoute('/student/exams/42')).toBe(true);
+    expect(isStudentExamRoute('/student/exams/42/review')).toBe(true);
+    expect(isStudentExamRoute('/student/scores')).toBe(false);
+    expect(isStudentExamRoute('/')).toBe(false);
+    expect(isStudentExamRoute('/login')).toBe(false);
+    expect(isStudentExamRoute('/teacher/exams')).toBe(false);
   });
 });

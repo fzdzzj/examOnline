@@ -197,7 +197,7 @@ import { answerMapOf, computeOfflineRemainingSeconds, navStatesOf, type AnswerMa
 import { mergeDrafts, resolveSeed, serverDraftOf, type DraftRecord } from '@/utils/draftMerge';
 import { createStudentDraftStorage } from '@/utils/draftStorage';
 import { createStudentExamSnapshotStorage, type StoredExamSnapshotRow } from '@/utils/examSnapshotStorage';
-import { registerExamServiceWorker, unregisterExamServiceWorker } from '@/utils/swRegister';
+import { isStudentExamRoute, registerExamServiceWorker, unregisterExamServiceWorker } from '@/utils/swRegister';
 
 const route = useRoute('/(dashboard)/student/exams/[id]');
 const router = useRouter();
@@ -387,15 +387,17 @@ watch(
 );
 
 /**
- * 考试离线外壳（阶段 3）：挂载时注册 SW（路由级精确拦截断网重入刷新），
- * 路由切换离开作答页时注销 SW（不干扰非考试页）。
+ * 考试离线外壳（阶段 4 · 学生考试域化）：挂载时注册 SW，
+ * 仅在离开学生考试域时注销 SW（域内列表与作答页跳转不注销）。
  */
 onMounted(() => {
   void registerExamServiceWorker();
 });
 
-onBeforeRouteLeave(() => {
-  void unregisterExamServiceWorker();
+onBeforeRouteLeave((to) => {
+  if (!isStudentExamRoute(to.path)) {
+    void unregisterExamServiceWorker();
+  }
 });
 
 /** 播种冲突时保留的本地那份（学生可显式改用，见上方 Alert）。 */

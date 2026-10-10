@@ -142,4 +142,11 @@ describe('sw.js 词法护栏 · 缓存红线与双清单一致性', () => {
     // 顺序与内容必须完全一致（漂移即红）
     expect(staticExtensionsFromSwJs).toEqual(staticExtensionsFromSwCore);
   });
+
+  it('⑥ swRegister.ts 注册域扩大为学生考试域且包含离开域卸载逻辑', () => {
+    const swRegisterPath = path.resolve(HERE, '../swRegister.ts');
+    const swRegisterCode = readFileSync(swRegisterPath, 'utf-8');
+    expect(swRegisterCode).toContain('isStudentExamRoute');
+    expect(swRegisterCode).toMatch(/\/student\/exams/);
+  });
 });

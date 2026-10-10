@@ -24,8 +24,9 @@
     {
       "id": 4,
       "title": "阶段 4：SW 学生域化与列表离线降级（先红后绿）",
-      "status": "pending",
-      "description": "SW 注册域扩至学生考试域（列表页与作答页挂载均注册，register 幂等；onBeforeRouteLeave 仅在离开 /student/exams 域时 unregister；swRegister.ts 注释与 swGuard 词法护栏同步更新）；列表断网降级渲染（error && !onLine && 缓存 userId 匹配 → 渲染缓存 items + 「离线缓存」标注，canEnter 用缓存值）；超窗风险告知文案（离线状态条/降级标注包含「断网期间新保存的答案可能无法补交，以系统收卷为准」语义，集中于常量文件）；措辞护栏测试（全部渲染文案不含「离线考试/离线作答/offline exam/offline answer」）。"
+      "status": "completed",
+      "description": "SW 注册域扩至学生考试域（列表页与作答页挂载均注册，register 幂等；onBeforeRouteLeave 仅在离开 /student/exams 域时 unregister；swRegister.ts 注释与 swGuard 词法护栏同步更新）；列表断网降级渲染（error && !onLine && 缓存 userId 匹配 → 渲染缓存 items + 「离线缓存」标注，canEnter 用缓存值）；超窗风险告知文案（离线状态条/降级标注包含「断网期间新保存的答案可能无法补交，以系统收卷为准」语义，集中于常量文件）；措辞护栏测试（全部渲染文案不含「离线考试/离线作答/offline exam/offline answer」）。",
+      "evidence": "SW 注册域扩大至学生考试域（isStudentExamRoute）；列表页完成断网降级与换号防串缓存；超窗风险显性告知；措辞护栏 wordingGuard.spec.ts 与 offlineExamList.spec.ts 全绿通过。"
     },
     {
       "id": 5,
