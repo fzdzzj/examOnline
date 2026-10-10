@@ -11,7 +11,7 @@ import com.exam.grading.entity.GradingSubmission;
 import com.exam.score.dto.MyScoreResponse;
 import com.exam.score.dto.ReviewHandleRequest;
 import com.exam.score.service.ScoreReviewService;
-import com.exam.score.service.ScoreService;
+import com.exam.score.service.ScoreQueryService;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.taking.dto.ExamListItem;
 import com.exam.taking.service.ExamTakingService;
@@ -176,7 +176,7 @@ class ScalarReadsAttributionMeasureIT {
     @Autowired
     private AbsenceService absenceService;
     @Autowired
-    private ScoreService scoreService;
+    private ScoreQueryService scoreQueryService;
     @Autowired
     private ScoreReviewService scoreReviewService;
     @Autowired
@@ -796,7 +796,7 @@ class ScalarReadsAttributionMeasureIT {
             case "s3" -> {
                 SecurityUtil.set(studentLogin(sharedStudent(n, 0)));
                 try {
-                    return scoreService.myScore(E(n));
+                    return scoreQueryService.myScore(E(n));
                 } finally {
                     SecurityUtil.clear();
                 }

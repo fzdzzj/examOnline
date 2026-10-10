@@ -8,7 +8,7 @@ import com.exam.grading.entity.GradingSubmission;
 import com.exam.grading.mapper.GradingSubmissionMapper;
 import com.exam.score.dto.MyScoreResponse;
 import com.exam.score.service.RankCalculator;
-import com.exam.score.service.ScoreService;
+import com.exam.score.service.ScoreQueryService;
 import com.exam.submission.entity.ExamSubmission;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -308,7 +308,7 @@ class RankAttributionMeasureIT {
     @Autowired
     private GradingSubmissionMapper gradingSubmissionMapper;
     @Autowired
-    private ScoreService scoreService;
+    private ScoreQueryService scoreQueryService;
 
     /** 生产实现的原味实例（绕过计时包装器），用于微基准与语义自检。 */
     private final RankCalculator rawCalculator = new RankCalculator();
@@ -754,7 +754,7 @@ class RankAttributionMeasureIT {
     /** 直调一次 myScore 并做语义核对；返回 null=通过，否则返回问题描述（不抛出，不中断臂内循环）。 */
     private String callMyScoreDirect(long examId, int expected) {
         try {
-            MyScoreResponse response = scoreService.myScore(examId);
+            MyScoreResponse response = scoreQueryService.myScore(examId);
             if (response.getRank() != expected) {
                 return "rank mismatch got=" + response.getRank() + " expected=" + expected;
             }

@@ -23,6 +23,7 @@ import com.exam.score.dto.WrongQuestionPageResponse;
 import com.exam.score.service.ExamAnalysisReportService;
 import com.exam.score.service.ScoreExportService;
 import com.exam.score.service.ScoreLeaderboardService;
+import com.exam.score.service.ScoreQueryService;
 import com.exam.score.service.ScoreReviewService;
 import com.exam.score.service.ScoreService;
 import com.exam.score.service.StudentWrongQuestionService;
@@ -63,6 +64,7 @@ public class ScoreController {
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     private final ScoreService scoreService;
+    private final ScoreQueryService scoreQueryService;
     private final ScoreExportService scoreExportService;
     private final ExamAnalysisReportService examAnalysisReportService;
     private final MakeupScoreService makeupScoreService;
@@ -71,13 +73,15 @@ public class ScoreController {
     private final StudentWrongQuestionService studentWrongQuestionService;
     private final ScoreLeaderboardService scoreLeaderboardService;
 
-    public ScoreController(ScoreService scoreService, ScoreExportService scoreExportService,
+    public ScoreController(ScoreService scoreService, ScoreQueryService scoreQueryService,
+                           ScoreExportService scoreExportService,
                            ExamAnalysisReportService examAnalysisReportService,
                            MakeupScoreService makeupScoreService, ExamMapper examMapper,
                            ScoreReviewService scoreReviewService,
                            StudentWrongQuestionService studentWrongQuestionService,
                            ScoreLeaderboardService scoreLeaderboardService) {
         this.scoreService = scoreService;
+        this.scoreQueryService = scoreQueryService;
         this.scoreExportService = scoreExportService;
         this.examAnalysisReportService = examAnalysisReportService;
         this.makeupScoreService = makeupScoreService;
@@ -98,7 +102,7 @@ public class ScoreController {
     @GetMapping("/api/exams/{examId}/scores/publish-preview")
     @RequirePermission("exam:manage")
     public ApiResponse<ScorePreviewResponse> publishPreview(@PathVariable Long examId) {
-        return ApiResponse.success(scoreService.publishPreview(examId));
+        return ApiResponse.success(scoreQueryService.publishPreview(examId));
     }
 
     /** 批量发布：单场失败不影响其余（部分成功语义），逐场返回结果。 */
@@ -120,7 +124,7 @@ public class ScoreController {
     /** 学生查自己成绩：成绩未发布时统一返回"成绩待发布"。 */
     @GetMapping("/api/scores/my")
     public ApiResponse<MyScoreResponse> myScore(@RequestParam Long examId) {
-        return ApiResponse.success(scoreService.myScore(examId));
+        return ApiResponse.success(scoreQueryService.myScore(examId));
     }
 
     /**

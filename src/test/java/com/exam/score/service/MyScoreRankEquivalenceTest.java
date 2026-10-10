@@ -132,7 +132,7 @@ class MyScoreRankEquivalenceTest {
     private static final long STUDENT_BASE = 942_000_000L;
 
     @Autowired
-    private ScoreService scoreService;
+    private ScoreQueryService scoreQueryService;
     @Autowired
     private JdbcTemplate jdbc;
     @Autowired
@@ -175,11 +175,11 @@ class MyScoreRankEquivalenceTest {
 
     private MyScoreResponse myScoreOf(long studentId, long examId) {
         loginAs(studentId);
-        return scoreService.myScore(examId);
+        return scoreQueryService.myScore(examId);
     }
 
     private void assertOwnRecordNotFound(long examId) {
-        BusinessException e = assertThrows(BusinessException.class, () -> scoreService.myScore(examId));
+        BusinessException e = assertThrows(BusinessException.class, () -> scoreQueryService.myScore(examId));
         assertEquals("暂无本人成绩记录", e.getMessage());
     }
 
@@ -361,7 +361,7 @@ class MyScoreRankEquivalenceTest {
         SubmissionsRowGuard.reset();
         loginAs(STUDENT_BASE);
         // 恰好一次 myScore 调用（学生 0 总分=400.0 为确定值），随后读护栏累计的答卷表行级取数
-        MyScoreResponse response = scoreService.myScore(examId);
+        MyScoreResponse response = scoreQueryService.myScore(examId);
         assertTrue(response.getRank() >= 1 && response.getRank() <= n, "名次应落在 1..n");
         assertEquals(0, response.getTotalScore().compareTo(new BigDecimal("400")),
                 "返回总分应为学生 0 的 400.0，实际=" + response.getTotalScore());
@@ -396,6 +396,12 @@ class MyScoreRankEquivalenceTest {
         for (java.lang.reflect.Method method : ScoreService.class.getDeclaredMethods()) {
             assertFalse(method.isAnnotationPresent(dsClass),
                     "ScoreService." + method.getName() + " 不得标注 @DS 从库路由");
+        }
+        assertFalse(ScoreQueryService.class.isAnnotationPresent(dsClass),
+                "ScoreQueryService 不得标注 @DS 从库路由");
+        for (java.lang.reflect.Method method : ScoreQueryService.class.getDeclaredMethods()) {
+            assertFalse(method.isAnnotationPresent(dsClass),
+                    "ScoreQueryService." + method.getName() + " 不得标注 @DS 从库路由");
         }
         assertFalse(GradingSubmissionMapper.class.isAnnotationPresent(dsClass),
                 "GradingSubmissionMapper 不得标注 @DS 从库路由");
