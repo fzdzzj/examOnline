@@ -10,6 +10,7 @@ import com.exam.grading.entity.GradingSubmission;
 import com.exam.grading.entity.SubjectiveGrade;
 import com.exam.grading.service.GradingQueryService;
 import com.exam.score.dto.ScorePreviewResponse;
+import com.exam.score.service.ScoreQueryService;
 import com.exam.score.service.ScoreService;
 import com.exam.submission.entity.ExamSubmission;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -169,6 +170,8 @@ class GradingScoreProjectionMeasureIT {
     private GradingQueryService gradingQueryService;
     @Autowired
     private ScoreService scoreService;
+    @Autowired
+    private ScoreQueryService scoreQueryService;
 
     @DynamicPropertySource
     static void datasource(DynamicPropertyRegistry registry) {
@@ -1051,7 +1054,7 @@ class GradingScoreProjectionMeasureIT {
             case "preview" -> {
                 SecurityUtil.set(teacherLogin());
                 try {
-                    yield scoreService.publishPreview(examV(n));
+                    yield scoreQueryService.publishPreview(examV(n));
                 } finally {
                     SecurityUtil.clear();
                 }

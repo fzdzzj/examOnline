@@ -2,15 +2,11 @@ package com.exam.score.service;
 
 import com.exam.auth.security.LoginUser;
 import com.exam.auth.security.SecurityUtil;
-import com.exam.config.ReadYourWriteMark;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.grading.entity.GradingSubmission;
 import com.exam.grading.mapper.GradingSubmissionMapper;
-import com.exam.grading.mapper.SubjectiveGradeMapper;
-import com.exam.grading.support.GradingPaperReader;
 import com.exam.score.dto.MyScoreResponse;
-import com.exam.score.mapper.ScoreAuditLogMapper;
 import com.exam.user.mapper.UserMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -42,22 +38,14 @@ class ScoreServiceReviewHideTest {
     @Mock
     private GradingSubmissionMapper gradingSubmissionMapper;
     @Mock
-    private SubjectiveGradeMapper subjectiveGradeMapper;
-    @Mock
-    private GradingPaperReader paperReader;
-    @Mock
     private UserMapper userMapper;
     @Mock
-    private ScoreAuditLogMapper auditLogMapper;
-    @Mock
     private RankCalculator rankCalculator;
-    @Mock
-    private ReadYourWriteMark readYourWriteMark;
     @Mock
     private ScoreReviewService scoreReviewService;
 
     @InjectMocks
-    private ScoreService scoreService;
+    private ScoreQueryService scoreQueryService;
 
     @AfterEach
     void clearSecurity() {
@@ -101,7 +89,7 @@ class ScoreServiceReviewHideTest {
         // 有进行中复核 → 隐藏分数，置 reviewing=true（§5.4 "复核中"）
         when(scoreReviewService.hasPendingReview(10L, 1L)).thenReturn(true);
 
-        MyScoreResponse response = scoreService.myScore(10L);
+        MyScoreResponse response = scoreQueryService.myScore(10L);
 
         assertTrue(Boolean.TRUE.equals(response.getReviewing()));
         assertNull(response.getTotalScore());
@@ -116,7 +104,7 @@ class ScoreServiceReviewHideTest {
         // 无进行中复核（含同意/驳回均已结束后）→ 恢复显示原成绩
         when(scoreReviewService.hasPendingReview(10L, 1L)).thenReturn(false);
 
-        MyScoreResponse response = scoreService.myScore(10L);
+        MyScoreResponse response = scoreQueryService.myScore(10L);
 
         assertEquals(false, response.getReviewing());
         assertEquals(0, response.getTotalScore().compareTo(new BigDecimal("20.0")));

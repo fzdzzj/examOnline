@@ -1,0 +1,59 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与基线",
+    "task": "现场核对分支/HEAD/工作树与前后端门禁基线",
+    "steps": [
+      { "step": "K1 从 main @ b32ca46 新建 feature/split-score-query-service 并切换；K2 git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、spec/changes/split-score-query-service/），零已跟踪修改", "completed": true },
+      { "step": "K3 后端基线：仓库根 mvnw.cmd clean test → 398/0/0/1 BUILD SUCCESS；K4 前端基线：npm.cmd --prefix frontend run lint:check 与 type-check:check 退出码 0，npm.cmd --prefix frontend run test → 86 文件 / 610 例全绿（核实输出非空，防 System32 空 npm 假绿）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "K1 b32ca46 上 git checkout -b feature/split-score-query-service 成功（git rev-parse --abbrev-ref HEAD = feature/split-score-query-service，--short HEAD = b32ca46）；K2 git status --porcelain 仅 .zcodeignore、docs/* 八件、spec/changes/split-score-query-service/ 白名单未跟踪，零已跟踪修改；K3 仓库根 mvnw.cmd clean test → 「Tests run: 398, Failures: 0, Errors: 0, Skipped: 1」+ BUILD SUCCESS（04:41 min，@b32ca46，原始日志 D:/code/examOnline-measure/split-score-query-service/baseline-backend-K3.log）；K4 npm.cmd --prefix frontend run lint:check / type-check:check 退出码 0 / 0，npm.cmd --prefix frontend run test → 「Test Files 86 passed (86)」「Tests 610 passed (610)」（baseline-frontend-K4-lint/typecheck/test.log）"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：新类落地与写侧收缩",
+    "task": "ScoreQueryService 新建（读侧逐字迁移）、ScoreService 收缩为纯写侧、Controller 改注入",
+    "steps": [
+      { "step": "新建 com.exam.score.service.ScoreQueryService：publishPreview 与 myScore 方法体逐字迁移（含 M5 列投影注释、强一致读 javadoc、404 显式判定、复核隐藏逻辑）；私有 requireOwnedExam / loadUsers 内联副本；依赖恰 5 个（ExamMapper、GradingSubmissionMapper、UserMapper、RankCalculator、ScoreReviewService）", "completed": true },
+      { "step": "ScoreService 收缩：删除读侧两方法与 userMapper / rankCalculator / scoreReviewService 依赖（构造器 9→6）；SummarizeStats record 原地不动；写侧方法（summarize / publish / revoke 及私有链）零改动", "completed": true },
+      { "step": "ScoreController 新增注入 ScoreQueryService，publishPreview / myScore 两端点改调新类，summarize / publish / revoke 端点与全部注解零改动；mvnw.cmd compile 或等价编译通过后按显式路径与阶段 3 一并提交", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "ScoreQueryService 新建 196 行：方法块 L56-176 与 b32ca46 ScoreService L216-336 diff 为空（METHODS_VERBATIM_OK）、工具块 L180-195 与 L483-498 diff 为空（HELPERS_VERBATIM_OK），对照产物 verify-{methods,helpers}-{expected,actual}.txt 存 D:/code/examOnline-measure/split-score-query-service/；ScoreService 收缩 git diff --stat = 1 insertion(+), 148 deletions(-)（唯一新增行=构造器收尾「ReadYourWriteMark readYourWriteMark) {」，写侧方法与注释零改动），构造器依赖 9→6；ScoreController 新增 scoreQueryService 注入、publishPreview/myScore 两端点改调新类，summarize/publish/revoke 端点与全部注解零改动；mvnw.cmd compile -q 退出码 0"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：测试迁移与护栏同步",
+    "task": "读侧用例迁 ScoreQueryServiceTest、@DS 护栏扩展、M5 护栏锚点随迁、measure IT 改注入，全量门禁",
+    "steps": [
+      { "step": "ScoreServiceTest 读侧 10 例（publishPreview 3 + myScore 7）整体迁至新文件 ScoreQueryServiceTest（loginAs / 造数基建随迁或等价复用，写侧用例零改动）；MyScoreRankEquivalenceTest、ScoreServiceReviewHideTest、GradingScoreProjectionGuardTest 改注入 / 改锚点；e8b @DS 反射护栏扩展：增加对 ScoreQueryService 类级 + 方法级的 @DS 禁令断言", "completed": true },
+      { "step": "measure IT 四件（RankAttributionMeasureIT / MyScoreCountCaptureMeasureIT / ScalarReadsAttributionMeasureIT / GradingScoreProjectionMeasureIT）字段与直调改指新类，(ScoreService.SummarizeStats) 强转不动；全量门禁：mvnw.cmd clean test 用例数只增不减（基线 398，迁移守恒或净增）且 BUILD SUCCESS；前端三门禁持平全绿（86/610）；git diff --name-only main...HEAD -- openapi.yaml 为空", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "读侧 10 例迁入 ScoreQueryServiceTest（@Test 计 10）：preview 段 L113-158 与 b32ca46 L653-698 逐字节等价、myScore 段 L160-240 与 L700-780 逐字节等价，恰 10 处 scoreService.→scoreQueryService. 替换（v-preview/v-myscore diff 为空）；ScoreServiceTest 保留写侧 30 例（diff 145 deletions / 0 insertions，纯删除）；e8b 扩展 ScoreQueryService 类级+方法级 @DS 禁令断言且 ScoreService 既有断言原样保留；ScoreServiceReviewHideTest @InjectMocks 改 ScoreQueryService（mock 收缩至新类 5 依赖）；GradingScoreProjectionGuardTest import/字段/调用与 javadoc {@link} 锚点改指 ScoreQueryService#publishPreview；measure IT 四件改注入目标与字段类型（GradingScoreProjectionMeasureIT 另注 scoreQueryService 字段供 publishPreview，summarize 与 (ScoreService.SummarizeStats) 强转不动）；mvnw.cmd clean test → 「Tests run: 398, Failures: 0, Errors: 0, Skipped: 1」+ BUILD SUCCESS（task3-backend-gate.log，与基线 398 持平）；前端三门禁退出码 0/0/0、86 文件 610 例（task3-frontend-*.log）；openapi.yaml 不在改动清单（实施笔后 git diff --name-only main...HEAD -- openapi.yaml 为空复核）"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：变异校验",
+    "task": "三变异注入击红复原（执行侧自报仅供参考，复核子 agent 将独立复现）",
+    "steps": [
+      { "step": "变异 a：破坏 ScoreQueryService.myScore 名次聚合（如去 gt 条件）→ 名次相关用例击红；变异 b：移除 publishPreview 的 M5 列投影（恢复全列）→ GradingScoreProjectionGuardTest 击红", "completed": true },
+      { "step": "变异 c：给 ScoreQueryService 类或任一方法加 @DS(\"slave\") → 扩展后 e8b 反射护栏击红；三变异逐一复原，git status 无残留注入、git diff 归零后门禁回绿，按显式路径提交实施笔", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "变异 a（mutate.py a 去 myScore 名次 gt 条件）→ mvnw.cmd clean test -Dtest=MyScoreRankEquivalenceTest → 「Tests run: 9, Failures: 5」（e1/e2/e5/e6/e7 名次用例击红）BUILD FAILURE 退出码 1（mutation-a.log）；变异 b（去 publishPreview M5 .select 投影）→ -Dtest=GradingScoreProjectionGuardTest → 「Failures: 1」「列投影后目标语句返回实体的 answers 必须为 null ==> expected: <0> but was: <3>」退出码 1（mutation-b.log）；变异 c（ScoreQueryService 类级 @DS(\"slave\")）→ -Dtest=MyScoreRankEquivalenceTest → 「Failures: 1」恰为 e8bMyScoreStaysOnPrimaryAndSeesPrimaryWritesImmediately 退出码 1（mutation-c.log）；三次 mutate.py restore 均「RESTORED byte-identical to pristine」，cmp 新文件与 pristine 备份一致、git status 已跟踪改动恒为 10 个预期文件；复原后 mvnw.cmd clean test → 「Tests run: 398, Failures: 0, Errors: 0, Skipped: 1」+ BUILD SUCCESS（task4-backend-gate-restore.log）。工具与原始日志在 D:/code/examOnline-measure/split-score-query-service/（mutate.py、ScoreQueryService.pristine.java）"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：门禁复验、规范合入与一次性归档",
+    "task": "全量门禁复验、spec-delta 合入基线、--no-ff 合入 main、归档与 README 登记",
+    "steps": [
+      { "step": "实施笔 revision 上全量门禁留证（后端只增不减、前端持平、openapi.yaml 零改动自证）；--no-ff 合入 main；spec/specs/score-management/spec.md 末尾 ADDED「成绩服务读写分置」Requirement（五 Scenario 与 proposal What Changes 第 5 条逐字一致）；提案两件套整体移入 spec/changes/archive/split-score-query-service/", "completed": false },
+      { "step": "spec/README.md 三处登记：「当前无进行中变更」段收口句、score-management 能力域行来源变更列追加、已归档变更表新增行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml 输出为空；收口笔后在 main 复跑双端门禁并留证", "completed": false },
+      { "step": "【台账回填机制，先例 fix-frontend-query-failure-states】本任务（任务 5）的勾选与 evidence 不在收口笔前伪造：收口笔按冻结三件套 R100 归档后，须以独立台账返修笔按复核子 agent 独立复跑的实测证据回填本任务 completed/passes/evidence（命令 + 当次输出 + 短 revision），再视归档流程收尾；不得 R100 原样移动留空", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]

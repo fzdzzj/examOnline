@@ -16,14 +16,11 @@ import com.exam.grading.model.GradingPaper;
 import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.support.GradingPaperReader;
 import com.exam.question.entity.QuestionType;
-import com.exam.score.dto.MyScoreResponse;
 import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.dto.ScorePreviewResponse;
 import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.mapper.ScoreAuditLogMapper;
 import com.exam.submission.entity.ExamSubmission;
-import com.exam.user.entity.User;
-import com.exam.user.mapper.UserMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,15 +75,9 @@ class ScoreServiceTest {
     @Mock
     private GradingPaperReader paperReader;
     @Mock
-    private UserMapper userMapper;
-    @Mock
     private ScoreAuditLogMapper auditLogMapper;
     @Mock
-    private RankCalculator rankCalculator;
-    @Mock
     private ReadYourWriteMark readYourWriteMark;
-    @Mock
-    private ScoreReviewService scoreReviewService;
 
     @InjectMocks
     private ScoreService scoreService;
@@ -148,13 +139,6 @@ class ScoreServiceTest {
     private GradingQuestion singleChoice(long questionId, int number) {
         return new GradingQuestion(number, questionId, QuestionType.SINGLE,
                 "单选题" + number, List.of("A", "B"), "A", new BigDecimal("5"));
-    }
-
-    private User user(long id, String name) {
-        User user = new User();
-        user.setId(id);
-        user.setName(name);
-        return user;
     }
 
     private void loginAs(Long userId, int roleLevel) {
@@ -648,134 +632,5 @@ class ScoreServiceTest {
         verify(subjectiveGradeMapper, times(1)).selectList(any());
         verify(gradingSubmissionMapper).casSummarize(1L, new BigDecimal("10.0"), new BigDecimal("40.0"), 0);
         verify(gradingSubmissionMapper).casSummarize(2L, new BigDecimal("0"), new BigDecimal("30.0"), 1);
-    }
-
-    // ==================== 发布前预览 ====================
-
-    @Test
-    void publishPreviewRejectsBeforeSummarize() {
-        loginAsTeacher();
-        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_ENDED));
-
-        assertEquals("成绩尚未汇总，请先执行汇总",
-                assertThrows(BusinessException.class, () -> scoreService.publishPreview(EXAM_ID)).getMessage());
-    }
-
-    @Test
-    void publishPreviewRanksStudentsAndCountsPartialGraded() {
-        loginAsTeacher();
-        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_GRADED));
-        when(gradingSubmissionMapper.selectList(any())).thenReturn(List.of(
-                submission(1L, 201L, "90.0", "90.0", 0),
-                submission(2L, 202L, "88.0", "88.0", 1),
-                submission(3L, 203L, "88.0", "88.0", null)));
-        // 203 号学生查不到 → 兜底"未知学生"，不整表失败
-        when(userMapper.selectBatchIds(any())).thenReturn(List.of(user(201L, "张三"), user(202L, "李四")));
-        when(rankCalculator.rank(any())).thenReturn(new int[]{1, 2, 2});
-
-        ScorePreviewResponse response = scoreService.publishPreview(EXAM_ID);
-
-        assertEquals(EXAM_ID, response.getExamId());
-        assertEquals("期末考-" + EXAM_ID, response.getExamTitle());
-        assertEquals(3, response.getSummarizedCount());
-        assertEquals(1, response.getPartialGradedCount(), "partial_graded 为 null 的历史数据不计入");
-        assertEquals(List.of("张三", "李四", "未知学生"),
-                response.getItems().stream().map(item -> item.getStudentName()).toList());
-        assertEquals(List.of(1, 2, 2), response.getItems().stream().map(item -> item.getRank()).toList());
-    }
-
-    @Test
-    void publishPreviewStillWorksAfterPublishAndSkipsUserLookupOnEmptyBoard() {
-        loginAsTeacher();
-        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_PUBLISHED));
-        when(gradingSubmissionMapper.selectList(any())).thenReturn(List.of());
-
-        ScorePreviewResponse response = scoreService.publishPreview(EXAM_ID);
-
-        assertEquals(0, response.getSummarizedCount());
-        assertTrue(response.getItems().isEmpty());
-        verifyNoInteractions(userMapper);
-    }
-
-    // ==================== 学生查成绩（异常口径） ====================
-
-    @Test
-    void myScoreRejectsUnauthenticatedCaller() {
-        assertEquals(messageOf(ResponseCode.TOKEN_INVALID),
-                assertThrows(BusinessException.class, () -> scoreService.myScore(EXAM_ID)).getMessage());
-    }
-
-    @Test
-    void myScoreRejectsMissingExam() {
-        loginAs(201L, RoleHierarchy.levelOf(RoleHierarchy.STUDENT));
-        when(examMapper.selectById(EXAM_ID)).thenReturn(null);
-
-        assertEquals("考试不存在",
-                assertThrows(BusinessException.class, () -> scoreService.myScore(EXAM_ID)).getMessage());
-    }
-
-    @Test
-    void myScoreShowsSamePendingMessageForGradedAndRevokedExam() {
-        loginAs(201L, RoleHierarchy.levelOf(RoleHierarchy.STUDENT));
-        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_GRADED));
-
-        BusinessException e = assertThrows(BusinessException.class, () -> scoreService.myScore(EXAM_ID));
-
-        assertEquals("成绩待发布", e.getMessage(), "撤回后不得泄露批改进度（§5.3 统一口径）");
-        verifyNoInteractions(gradingSubmissionMapper);
-    }
-
-    @Test
-    void myScoreRejectsWhenOwnRecordIsMissing() {
-        loginAs(201L, RoleHierarchy.levelOf(RoleHierarchy.STUDENT));
-        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_PUBLISHED));
-        when(gradingSubmissionMapper.selectOne(any())).thenReturn(null);
-
-        assertEquals("暂无本人成绩记录",
-                assertThrows(BusinessException.class, () -> scoreService.myScore(EXAM_ID)).getMessage());
-    }
-
-    @Test
-    void myScoreRejectsWhenOwnRecordHasNoTotalScoreYet() {
-        loginAs(201L, RoleHierarchy.levelOf(RoleHierarchy.STUDENT));
-        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_PUBLISHED));
-        when(gradingSubmissionMapper.selectOne(any()))
-                .thenReturn(submission(1L, 201L, "14.0", null, null));
-
-        assertEquals("暂无本人成绩记录",
-                assertThrows(BusinessException.class, () -> scoreService.myScore(EXAM_ID)).getMessage());
-    }
-
-    @Test
-    void myScoreRejectsWhenOwnRecordIsAbsentFromRankedList() {
-        loginAs(201L, RoleHierarchy.levelOf(RoleHierarchy.STUDENT));
-        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_PUBLISHED));
-        // 场景不变：本人行不在全班 GRADED 集合里。旧实现靠「selectList 榜单无本人」隐式表达，
-        // 名次改聚合后等价显式化为 status 判定——已交卷(2)且有总分仍不属于已汇总集合，一律 404。
-        GradingSubmission notGraded = submission(1L, 201L, "14.0", "14.0", 0);
-        notGraded.setStatus(ExamSubmission.STATUS_SUBMITTED);
-        when(gradingSubmissionMapper.selectOne(any())).thenReturn(notGraded);
-
-        assertEquals("暂无本人成绩记录",
-                assertThrows(BusinessException.class, () -> scoreService.myScore(EXAM_ID)).getMessage());
-    }
-
-    @Test
-    void myScoreReturnsRankAndKeepsPartialFlagWhenNothingIsPending() {
-        loginAs(201L, RoleHierarchy.levelOf(RoleHierarchy.STUDENT));
-        when(examMapper.selectById(EXAM_ID)).thenReturn(exam(EXAM_ID, Exam.STATUS_PUBLISHED));
-        GradingSubmission mine = submission(1L, 201L, "14.0", "20.0", 1);
-        mine.setStatus(ExamSubmission.STATUS_GRADED);
-        when(gradingSubmissionMapper.selectOne(any())).thenReturn(mine);
-        // 名次 = 严格更高分人数 + 1（optimize-my-score-rank-fetch）：count=2 ⇒ rank=3，与原期望一致
-        when(gradingSubmissionMapper.selectCount(any())).thenReturn(2L);
-        when(scoreReviewService.hasPendingReview(EXAM_ID, 201L)).thenReturn(false);
-
-        MyScoreResponse response = scoreService.myScore(EXAM_ID);
-
-        assertFalse(response.getReviewing());
-        assertEquals(3, response.getRank());
-        assertEquals(0, response.getTotalScore().compareTo(new BigDecimal("20.0")));
-        assertEquals(1, response.getPartialGraded());
     }
 }

@@ -4,7 +4,7 @@ import com.exam.auth.security.LoginUser;
 import com.exam.auth.security.RoleHierarchy;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.score.dto.MyScoreResponse;
-import com.exam.score.service.ScoreService;
+import com.exam.score.service.ScoreQueryService;
 import com.exam.submission.entity.ExamSubmission;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -108,7 +108,7 @@ class MyScoreCountCaptureMeasureIT {
     @Autowired
     private JdbcTemplate jdbc;
     @Autowired
-    private ScoreService scoreService;
+    private ScoreQueryService scoreQueryService;
 
     /** 测试侧捕获拦截器：StatementHandler.prepare 时读取最终 BoundSql 与绑定参数，仅本上下文生效。 */
     @TestConfiguration
@@ -211,7 +211,7 @@ class MyScoreCountCaptureMeasureIT {
             SecurityUtil.set(loginAs(ownStudentId));
             MyScoreResponse response;
             try {
-                response = scoreService.myScore(examId);
+                response = scoreQueryService.myScore(examId);
             } finally {
                 SecurityUtil.clear();
             }

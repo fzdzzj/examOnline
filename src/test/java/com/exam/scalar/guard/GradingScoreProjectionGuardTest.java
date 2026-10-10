@@ -6,7 +6,7 @@ import com.exam.auth.security.SecurityUtil;
 import com.exam.exam.entity.Exam;
 import com.exam.score.dto.ScoreItem;
 import com.exam.score.dto.ScorePreviewResponse;
-import com.exam.score.service.ScoreService;
+import com.exam.score.service.ScoreQueryService;
 import com.exam.submission.entity.ExamSubmission;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 判分/成绩读形态列投影的常驻护栏（change project-grading-score-scalar-projection 阶段 3）：
- * 唯一 GO 站点——发布前预览（{@link ScoreService#publishPreview}，单元 M5）——对答卷行只消费
+ * 唯一 GO 站点——发布前预览（{@link ScoreQueryService#publishPreview}，单元 M5）——对答卷行只消费
  * 冻结标量列（student_id、objective_score、subjective_score、total_score、partial_graded）。
  * 目标语句（{@code GradingSubmissionMapper.selectList}）返回实体的 {@code answers}
  * 必须为 null，而库内同批行该列非 null（seed 前置断言，排除“库本来就空”的伪绿）；
@@ -75,7 +75,7 @@ class GradingScoreProjectionGuardTest {
     @Autowired
     private JdbcTemplate jdbc;
     @Autowired
-    private ScoreService scoreService;
+    private ScoreQueryService scoreQueryService;
 
     @TestConfiguration
     static class GuardConfig {
@@ -127,7 +127,7 @@ class GradingScoreProjectionGuardTest {
         SecurityUtil.set(teacherLogin(GV_OWNER));
         try {
             SubmissionSelectGuardInterceptor.armed = true;
-            resp = scoreService.publishPreview(GV_EXAM);
+            resp = scoreQueryService.publishPreview(GV_EXAM);
             SubmissionSelectGuardInterceptor.armed = false;
         } finally {
             SecurityUtil.clear();
