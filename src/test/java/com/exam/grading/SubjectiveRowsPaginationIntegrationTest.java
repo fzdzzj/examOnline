@@ -243,7 +243,40 @@ class SubjectiveRowsPaginationIntegrationTest extends IntegrationTestBase {
         assertEquals(ids, collected);
     }
 
+    @Test
+    void outOfBoundsPageReturnsEmptyRows() throws Exception {
+        Seed seed = seed();
+        // 总数 5 条，size=2 时共 3 页；page=4 或 page=999 为越界页，rows 为空，total=5，graded=2
+        JsonNode dataPage4 = rowsBody(seed, Map.of("page", "4", "size", "2"), 200).get("data");
+        assertEquals(5, dataPage4.get("total").asInt(), "越界页 total 仍为真实总数");
+        assertEquals(2, dataPage4.get("graded").asInt(), "越界页 graded 仍为真实已批数");
+        assertEquals(0, dataPage4.get("rows").size(), "越界页 rows 为空");
+
+        JsonNode dataPage999 = rowsBody(seed, Map.of("page", "999", "size", "10"), 200).get("data");
+        assertEquals(5, dataPage999.get("total").asInt());
+        assertEquals(2, dataPage999.get("graded").asInt());
+        assertEquals(0, dataPage999.get("rows").size());
+    }
+
+    @Test
+    void adjacentPagesAreDisjointAndConsecutiveWithoutOverlap() throws Exception {
+        Seed seed = seed();
+        JsonNode page1 = rowsBody(seed, Map.of("page", "1", "size", "2"), 200).get("data");
+        JsonNode page2 = rowsBody(seed, Map.of("page", "2", "size", "2"), 200).get("data");
+
+        assertEquals(2, page1.get("rows").size());
+        assertEquals(2, page2.get("rows").size());
+
+        long page1LastStudentId = page1.get("rows").get(1).get("studentId").asLong();
+        long page2FirstStudentId = page2.get("rows").get(0).get("studentId").asLong();
+
+        // 排序稳定严格递增：page1 末行 student_id < page2 首行 student_id，无缝隙无重叠
+        assertTrue(page1LastStudentId < page2FirstStudentId,
+                "相邻页严格递增无重叠：page1 末行 " + page1LastStudentId + " < page2 首行 " + page2FirstStudentId);
+    }
+
     // ==================== 缺省全量 ====================
+
 
     @Test
     void defaultParamsReturnFullEnvelope() throws Exception {
