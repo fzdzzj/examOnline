@@ -185,4 +185,30 @@ WHEN 教师逐行提交批改（saveSubjectiveScore）
 
 THEN 校验链、打回重批语义、读己之写口径与分页前完全一致
 
+#### Scenario: 越界页返回空行（补强）
+
+GIVEN 一场考试某主观题已有若干交卷学生行  
+WHEN 传入的 page 超过根据 size 计算的最大有效页码（例如总数 5 条、size=2、传入 page=4 或 page=999）  
+THEN 响应信封内 rows 返回空数组 `[]`，且 total 与 graded 仍保持真实全量统计数值。
+
+#### Scenario: 相邻页无缝无重叠稳定排序（补强）
+
+GIVEN 一场考试某主观题有多名交卷学生（student_id 严格不同）  
+WHEN 连续请求相邻分页（Page 1 与 Page 2，统一 size）  
+THEN 各页内行均按 student_id 升序排列，且 Page 1 最后一项的 student_id 严格小于 Page 2 第一项的 student_id，相邻页行集合无重叠、无遗漏。
+
+#### Scenario: 越界页前端空态渲染与全量统计保持（补强）
+
+GIVEN 前端批改面板接收到越界页数据（rows: []，total > 0，graded > 0）  
+WHEN 渲染批改面板  
+THEN 表格组件正确渲染空数据状态（无假数据报错），且顶部题级元信息「已批 X/Y」仍忠实反映信封中 graded 与 total 真实全量统计。
+
+#### Scenario: 筛选作用域与题级进度口径一致性（补强）
+
+GIVEN 教师在批改面板中输入学生姓名筛选或勾选只看未批改  
+WHEN 触发筛选状态变更并上抛事件  
+THEN 筛选操作仅对当前页展示或查询条件生效，题级进度「已批 X/Y」恒定维持信封中的全局全量统计口径，绝不同屏产生计数冲突。
+
 > 合入注记（2026-10-02，`add-subjective-grading-pagination`）：批改工作台行端点由「单题 × 全部交卷学生全量行裸 List」就地扩参为分页信封——`SubjectiveGradePageResponse{rows, total, graded}` 恒定形状（不做裸 List/信封 oneOf 双形态），`page/size/onlyUngraded/name/submissionId` 全部可选：page/size 均缺省返回全量，`onlyUngraded`（score IS NULL）与 `name`（LIKE 包含）筛选下沉服务端、语义对齐面板既有客户端筛选，`submissionId` 单行取数（至多 1 行）专供 409/1012 冲突回填；`ORDER BY g.student_id` 稳定排序不动。`graded` 与题级进度 `SubjectiveQuestionItem.gradedStudents` 同口径（`score IS NOT NULL` 的该题全量计数，不受行筛选影响）。**两处 spec-delta 未明说的实现口径（如实登记）**：① page/size 只给其一另一参数取兜底（page=1 / size=100 上限），越界 400；② `total` 为「与 rows 同口径（筛选后、分页前）」的计数——前端据此算服务端分页页数，缺省无筛选时即总行数。**乐观锁链路零改动**：`casSaveScore`、`saveScore` 校验链、`readYourWriteMark.mark()` 主库回读（仍走未动的原 `selectWorkbenchRows`）与前端 `useGradingFlow` 协议/409/1012 语义原样。**前端协同改造**：批改页 `useQuery` queryKey 持有 page/size/onlyUngraded/nameFilter（切题目/筛选自动回第 1 页），面板移除客户端全量筛选链（filteredRows）与静态客户端分页、筛选输入与分页控件经 defineModel 上抛服务端驱动、已批计数改信封 graded/total，`refreshRow` 改 `submissionId` 单行拉取。**测试与证据**：新增集成测试 `SubjectiveRowsPaginationIntegrationTest` 8 例（分页稳定子集与 total/graded / 缺省全量 / onlyUngraded / name / submissionId 单行 / 非法参数 400 / 越权 403 / graded 与题级进度口径一致）先红（8 例中 7 红：响应非信封 NPE + 非法参数 200≠400，`evidence/red-backend.txt`）后绿（8/0/0/0，`evidence/green-backend.txt`）；前端 `gradingServerPaging.spec.ts` 9 例（词法护栏 4：无 filteredRows / 无静态客户端分页 pageSize:10 / refreshRow 含 submissionId 查询参数 / queryKey 含 page、size、筛选参数 + 行为 5：信封驱动计数 / 表格翻页与页大小上抛 / 筛选上抛 / 409 冲突后 refreshRow 单行取数并刷新 / queryFn 携带服务端分页与筛选参数且切筛选回第 1 页）先红（9/9 红）后绿（9/9，`evidence/red-frontend.txt`/`green-frontend.txt`）；`openapi.yaml` 路 A 离线重导出（响应改信封 + 5 个新查询参数）+ `gen:api` 再生成。**验收边界**＝实施笔 `c1c3ba0` 已提交状态双端全量门禁：仓库根 `mvnw.cmd clean test` → **368/0/0/1 BUILD SUCCESS 退出码 0**（基线 360/0/0/1@8db79d4 + 8 个新集成用例）；前端 lint:check / type-check:check / test 三项退出码 0，vitest 46 文件 394 例 → **47 文件 403 例**（+1 文件 +9 例）；零表变更、零迁移。**纯静态 + 集成/单测可证：未启 dev server、未跑前端构建、未碰 Docker/共享 dev。**
+
+> 合入注记（2026-10-10，`update-grading-subjective-paging`）：本案为既有能力「主观题批改行分页与筛选」之护栏补强案（零业务实现代码、零 API 契约改动），追加上述 4 个边界与端到端协同 Scenario 并落地自动化用例。后端 `SubjectiveRowsPaginationIntegrationTest` 净增 2 例（越界页返回空 rows 且统计维持全量、相邻页严格有序递增无重叠），全量测试总数由基线 382 净增至 384（384/0/0/1）；前端 `gradingServerPaging.spec.ts` 净增 2 例（越界页空态面板渲染且顶部信封统计全量维持、筛选作用域与题级进度口径一致），全量测试总数由基线 557 净增至 559（77 文件 559 例）。三项变异校验（撤 Service 分页参数透传 3 例红、撤信封 graded 口径 5 例红、撤前端 409 回填 1 例红）经独立复核实测闭环变红并复原归零，执行侧失真记录已在 tasks.json 纠偏登记。验收边界＝main 已提交状态双端全量门禁：后端 `mvnw.cmd clean test` 384/0/0/1 BUILD SUCCESS 退出码 0，前端三门禁全绿（77 文件 559 例）。纯测试+spec，零业务改动。
