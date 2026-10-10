@@ -843,6 +843,32 @@ export type ScorePreviewResponse = {
     items?: Array<ScoreItem>;
 };
 
+export type ApiResponseScoreLeaderboardResponse = {
+    code?: number;
+    message?: string;
+    data?: ScoreLeaderboardResponse;
+};
+
+export type LeaderboardItem = {
+    rank?: number;
+    displayName?: string;
+    totalScore?: number;
+    isMe?: boolean;
+};
+
+export type LeaderboardMyRow = {
+    rank?: number;
+    totalScore?: number;
+    isMe?: boolean;
+};
+
+export type ScoreLeaderboardResponse = {
+    examId?: number;
+    examTitle?: string;
+    myRow?: LeaderboardMyRow;
+    top?: Array<LeaderboardItem>;
+};
+
 export type ApiResponseExamAnalysisReportResponse = {
     code?: number;
     message?: string;
@@ -2378,6 +2404,24 @@ export type MakeupFinalScoreResponses = {
 };
 
 export type MakeupFinalScoreResponse2 = MakeupFinalScoreResponses[keyof MakeupFinalScoreResponses];
+
+export type LeaderboardData = {
+    body?: never;
+    path: {
+        examId: number;
+    };
+    query?: never;
+    url: '/api/exams/{examId}/scores/leaderboard';
+};
+
+export type LeaderboardResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseScoreLeaderboardResponse;
+};
+
+export type LeaderboardResponse = LeaderboardResponses[keyof LeaderboardResponses];
 
 export type ExportQuestionStatsData = {
     body?: never;

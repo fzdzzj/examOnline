@@ -17,10 +17,12 @@ import com.exam.score.dto.ExamReviewResponse;
 import com.exam.score.dto.MakeupFinalScoreResponse;
 import com.exam.score.dto.MyScoreResponse;
 import com.exam.score.dto.ScoreActionItem;
+import com.exam.score.dto.ScoreLeaderboardResponse;
 import com.exam.score.dto.ScorePreviewResponse;
 import com.exam.score.dto.WrongQuestionPageResponse;
 import com.exam.score.service.ExamAnalysisReportService;
 import com.exam.score.service.ScoreExportService;
+import com.exam.score.service.ScoreLeaderboardService;
 import com.exam.score.service.ScoreReviewService;
 import com.exam.score.service.ScoreService;
 import com.exam.score.service.StudentWrongQuestionService;
@@ -67,12 +69,14 @@ public class ScoreController {
     private final ExamMapper examMapper;
     private final ScoreReviewService scoreReviewService;
     private final StudentWrongQuestionService studentWrongQuestionService;
+    private final ScoreLeaderboardService scoreLeaderboardService;
 
     public ScoreController(ScoreService scoreService, ScoreExportService scoreExportService,
                            ExamAnalysisReportService examAnalysisReportService,
                            MakeupScoreService makeupScoreService, ExamMapper examMapper,
                            ScoreReviewService scoreReviewService,
-                           StudentWrongQuestionService studentWrongQuestionService) {
+                           StudentWrongQuestionService studentWrongQuestionService,
+                           ScoreLeaderboardService scoreLeaderboardService) {
         this.scoreService = scoreService;
         this.scoreExportService = scoreExportService;
         this.examAnalysisReportService = examAnalysisReportService;
@@ -80,6 +84,7 @@ public class ScoreController {
         this.examMapper = examMapper;
         this.scoreReviewService = scoreReviewService;
         this.studentWrongQuestionService = studentWrongQuestionService;
+        this.scoreLeaderboardService = scoreLeaderboardService;
     }
 
     /** 成绩汇总（幂等：重判/补批后可重复执行刷新总分与部分批改标记）。 */
@@ -116,6 +121,18 @@ public class ScoreController {
     @GetMapping("/api/scores/my")
     public ApiResponse<MyScoreResponse> myScore(@RequestParam Long examId) {
         return ApiResponse.success(scoreService.myScore(examId));
+    }
+
+    /**
+     * 学生查班级匿名榜单（add-class-leaderboard）：已发布考试匿名前 10 + 本人位置。
+     */
+    @GetMapping("/api/exams/{examId}/scores/leaderboard")
+    public ApiResponse<ScoreLeaderboardResponse> leaderboard(@PathVariable Long examId) {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        return ApiResponse.success(scoreLeaderboardService.leaderboard(examId, studentId));
     }
 
     /**

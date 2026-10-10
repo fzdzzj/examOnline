@@ -1560,6 +1560,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMakeupFinalScoreResponse"
+  /api/exams/{examId}/scores/leaderboard:
+    get:
+      tags:
+      - score-controller
+      operationId: leaderboard
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseScoreLeaderboardResponse"
   /api/exams/{examId}/scores/export/question-stats:
     get:
       tags:
@@ -3826,6 +3845,52 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ScoreItem"
+    ApiResponseScoreLeaderboardResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ScoreLeaderboardResponse"
+    LeaderboardItem:
+      type: object
+      properties:
+        rank:
+          type: integer
+          format: int32
+        displayName:
+          type: string
+        totalScore:
+          type: number
+        isMe:
+          type: boolean
+    LeaderboardMyRow:
+      type: object
+      properties:
+        rank:
+          type: integer
+          format: int32
+        totalScore:
+          type: number
+        isMe:
+          type: boolean
+    ScoreLeaderboardResponse:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        myRow:
+          $ref: "#/components/schemas/LeaderboardMyRow"
+        top:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardItem"
     ApiResponseExamAnalysisReportResponse:
       type: object
       properties:

@@ -15,6 +15,7 @@ vi.mock('@/api/axios', () => ({
   myMakeupFinalScore: vi.fn(),
   myScore: vi.fn(),
   myExamReview: vi.fn(),
+  leaderboard: vi.fn(),
 }));
 
 import { myExams, myScore, myExamReview } from '@/api/axios';
