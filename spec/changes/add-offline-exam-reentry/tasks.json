@@ -1,0 +1,37 @@
+{
+  "change": "add-offline-exam-reentry",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：调研核实与三件套制定",
+      "status": "completed",
+      "description": "指导主 agent 完成阶段 0 查证：一期能力缺口（断网刷新后 enter network-only 失败、题目实际不可得；draftStorage 不缓存题目；SW 仅作答页注册）、服务端权威链路核实（enter 幂等快照/起表时间戳/三路收卷/超时答案取 Redis 草稿）、红线 1 本质拆解（准入校验/起表见证/快照生成/在线心跳四要素，已领取考试的离线重入可安全解禁）；用户裁决范围（完整离线重入链路 + 超窗风险显性告知）；编制 proposal.md 与 specs/frontend/spec-delta.md，明确二期红线四条。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：本地快照与列表缓存仓库（先红后绿）",
+      "status": "completed",
+      "description": "核实 behaviorStorage 既有库/版本结构后，IndexedDB exam-online-student-drafts 递增 DB_VERSION，新增 exam_snapshots（keyPath examId，脱敏快照行含 capturedWallClock 与 payload，不含 answers/marked）与 exam_list_cache（带 userId 防换号串号）两仓库；沿用 draftStorage 端口模式（可注入接口 + 内存实现 + 浏览器薄封装 + 降级不阻断）；结构损坏容忍；Vitest 覆盖读写/脱敏形状断言/换号弃用/remove 幂等。",
+      "evidence": "核实 behaviorQueue 独立使用 exam-online-student-behaviors(v1)；exam-online-student-drafts 递增 DB_VERSION 至 2；新增 examSnapshotStorage.ts 与 examListCacheStorage.ts；单测 11/11 绿（脱敏形状断言、换号防串、损坏容忍、remove 幂等）。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：作答页离线重入降级（先红后绿）",
+      "status": "pending",
+      "description": "enter 失败 && !navigator.onLine && 本地快照存在时以本地快照降级渲染（snapshot 计算链服务端优先、降级取本地 payload；题目/导航/交卷面板/草稿播种全部复用既有链路，本地快照无 answers、mergeDrafts 保守合并后本地草稿生效）；倒计时墙钟校正（数据层 remainingSeconds' = max(0, remainingSeconds − (Date.now() − capturedWallClock)/1000)，零改 useServerCountdown）；恢复网络服务端快照接管、本地永不优先；交卷成功删除快照行；显性标注「离线重入中，题目来自本机缓存」；Vitest 覆盖降级触发/不触发分支、校正、播种、恢复接管。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：SW 学生域化与列表离线降级（先红后绿）",
+      "status": "pending",
+      "description": "SW 注册域扩至学生考试域（列表页与作答页挂载均注册，register 幂等；onBeforeRouteLeave 仅在离开 /student/exams 域时 unregister；swRegister.ts 注释与 swGuard 词法护栏同步更新）；列表断网降级渲染（error && !onLine && 缓存 userId 匹配 → 渲染缓存 items + 「离线缓存」标注，canEnter 用缓存值）；超窗风险告知文案（离线状态条/降级标注包含「断网期间新保存的答案可能无法补交，以系统收卷为准」语义，集中于常量文件）；措辞护栏测试（全部渲染文案不含「离线考试/离线作答/offline exam/offline answer」）。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：全量门禁、变异校验与分支提交",
+      "status": "pending",
+      "description": "前端 npm.cmd --prefix frontend run lint:check / type-check:check / test 三门禁全绿（核实输出非空、真实 vue-tsc/tsc 双 banner、文件/用例数净增）；后端 .\\mvnw.cmd clean test 零改动零影响（基线 384/0/0/1）；至少三项变异校验（A 撤作答页离线降级、B 撤倒计时墙钟校正、C 撤列表降级或注入违规措辞）先红后复原归零、git diff 逐字节归零；红线域 git diff 为空（src/、pom.xml、schema.sql、反作弊域）；八段格式交付回传。",
+      "evidence": ""
+    }
+  ]
+}
