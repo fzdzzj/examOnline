@@ -129,6 +129,9 @@
             </div>
           </div>
 
+          <!-- 班级匿名榜单（前 10 名及本人位置） -->
+          <LeaderboardPanel :exam-id="reviewData.examId ?? (selectedExamId as number)" />
+
           <!-- 逐题列表 -->
           <div
             v-for="q in reviewData.questions || []"
@@ -258,6 +261,7 @@ import {
   isNotPublishedError,
 } from '@/utils/scoreVisibility';
 import ScoreVisibilityCard from '@/components/postexam/ScoreVisibilityCard.vue';
+import LeaderboardPanel from '@/components/postexam/LeaderboardPanel.vue';
 
 /**
  * 学生成绩查询与复核申请（阶段 23，补考最终成绩见 add-makeup-final-score-frontend）：

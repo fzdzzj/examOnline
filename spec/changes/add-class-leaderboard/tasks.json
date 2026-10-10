@@ -18,8 +18,9 @@
     {
       "id": 3,
       "title": "阶段 3：前端榜单组件与挂载（先红后绿）",
-      "status": "pending",
-      "description": "新增 LeaderboardPanel.vue（名次/脱敏姓名/总分三列，isMe 行高亮实名，榜尾 myRow，空态与逐题回顾页文案风格一致）；挂载学生单场考试逐题回顾页；API SDK 按既有代码生成方式接入新端点；Vitest 覆盖渲染、本人高亮、榜尾行、空态。"
+      "status": "completed",
+      "description": "新增 LeaderboardPanel.vue（名次/脱敏姓名/总分三列，isMe 行高亮实名，榜尾 myRow，空态与逐题回顾页文案风格一致）；挂载学生单场考试逐题回顾页；API SDK 按既有代码生成方式接入新端点；Vitest 覆盖渲染、本人高亮、榜尾行、空态。",
+      "evidence": "LeaderboardPanel.vue 组件就绪并挂载于 student/scores 逐题回顾弹层；gen:api 重生成 SDK；LeaderboardPanel.spec.ts 覆盖 4 个核心场景（渲染与本人高亮、榜尾 myRow、404 空态、真错误态）；前端三大门禁 lint:check / type-check:check / test 全部通过（测试用例数由基线 84 文件/604 例净增至 85 文件/608 例）。"
     },
     {
       "id": 4,
