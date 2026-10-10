@@ -22,7 +22,7 @@ export interface ExamSnapshotPayload {
   remainingSeconds?: number;
   questions?: QuestionView[];
   version?: number | null;
-  draftVersion?: number | null;
+  draftVersion?: number;
 }
 
 export interface StoredExamSnapshotRow {
@@ -70,7 +70,7 @@ export function sanitizeSnapshotPayload(
       ? JSON.parse(JSON.stringify(source.questions))
       : undefined,
     version,
-    draftVersion: version,
+    draftVersion: typeof version === 'number' ? version : undefined,
   };
 }
 

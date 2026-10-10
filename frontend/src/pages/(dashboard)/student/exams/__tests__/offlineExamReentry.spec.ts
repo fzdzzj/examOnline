@@ -98,9 +98,7 @@ describe('作答页离线重入与降级链路 ([id].page.vue)', () => {
     deadlineTime: '2026-10-10T11:00:00Z',
     serverTime: '2026-10-10T09:30:00Z',
     remainingSeconds: 3600,
-    questions: [
-      { number: 1, questionId: 1001, type: 1, content: '什么是二叉树？', score: 10 },
-    ],
+    questions: [{ number: 1, questionId: 1001, type: 1, content: '什么是二叉树？', score: 10 }],
     draftVersion: 1,
   };
 
@@ -181,7 +179,11 @@ describe('作答页离线重入与降级链路 ([id].page.vue)', () => {
     Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
     const now = Date.now();
     // 快照在 300 秒（5分钟）前捕获
-    await testSnapshotStorage.save(42, { ...SAMPLE_SNAPSHOT_PAYLOAD, remainingSeconds: 3600 }, now - 300_000);
+    await testSnapshotStorage.save(
+      42,
+      { ...SAMPLE_SNAPSHOT_PAYLOAD, remainingSeconds: 3600 },
+      now - 300_000
+    );
 
     queryData.value = undefined;
     queryError.value = new Error('Network Error');

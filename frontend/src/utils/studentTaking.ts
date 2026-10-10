@@ -160,4 +160,3 @@ export function computeOfflineRemainingSeconds(
   const elapsedSeconds = Math.max(0, Math.floor((nowWallClock - capturedWallClock) / 1000));
   return Math.max(0, remainingSeconds - elapsedSeconds);
 }
-

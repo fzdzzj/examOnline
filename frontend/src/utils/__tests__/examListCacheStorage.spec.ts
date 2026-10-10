@@ -24,7 +24,7 @@ describe('examListCacheStorage 列表缓存仓库（端口模式与换号防串�
       title: '大学物理',
       group: 'UPCOMING',
       canEnter: false,
-      remainingSeconds: null,
+      remainingSeconds: undefined,
       startTime: '2026-10-11T09:00:00Z',
       endTime: '2026-10-11T11:00:00Z',
     },

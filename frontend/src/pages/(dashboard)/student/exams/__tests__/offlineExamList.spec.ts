@@ -99,7 +99,7 @@ describe('学生考试列表离线降级与 SW 注册域 (index.page.vue)', () =
       title: '大学英语（待考）',
       group: 'UPCOMING',
       canEnter: false,
-      remainingSeconds: null,
+      remainingSeconds: undefined,
       startTime: '2026-10-11T09:00:00Z',
       endTime: '2026-10-11T11:00:00Z',
     },
@@ -197,8 +197,12 @@ describe('学生考试列表离线降级与 SW 注册域 (index.page.vue)', () =
   });
 
   it('⑤ SW 学生考试域化生命周期：挂载注册 SW，离开学生考试域注销，域内跳转不注销', async () => {
-    const registerSpy = vi.spyOn(swRegisterModule, 'registerExamServiceWorker').mockResolvedValue(null);
-    const unregisterSpy = vi.spyOn(swRegisterModule, 'unregisterExamServiceWorker').mockResolvedValue(false);
+    const registerSpy = vi
+      .spyOn(swRegisterModule, 'registerExamServiceWorker')
+      .mockResolvedValue(null);
+    const unregisterSpy = vi
+      .spyOn(swRegisterModule, 'unregisterExamServiceWorker')
+      .mockResolvedValue(false);
 
     mount(StudentExamsPage);
     await flushPromises();

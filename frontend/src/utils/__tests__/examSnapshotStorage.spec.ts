@@ -80,7 +80,11 @@ describe('examSnapshotStorage 快照仓库（端口模式与脱敏纪律）', ()
     expect(await memory.load(1)).toBeNull();
 
     // 损坏形式 B: payload 非对象
-    store.set(2, { examId: 2, capturedWallClock: Date.now(), payload: null } as unknown as StoredExamSnapshotRow);
+    store.set(2, {
+      examId: 2,
+      capturedWallClock: Date.now(),
+      payload: null,
+    } as unknown as StoredExamSnapshotRow);
     expect(await memory.load(2)).toBeNull();
 
     // 损坏形式 C: 存储值为非对象原始值

@@ -141,4 +141,3 @@ export const OFFLINE_LIST_NOTICE = {
   ALERT_DESCRIPTION:
     '若超过考试截止时间仍未恢复网络，断网期间新保存的答案可能无法补交，以系统收卷为准。',
 } as const;
-

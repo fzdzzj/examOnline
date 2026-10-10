@@ -38,19 +38,34 @@ function stripComments(code: string): string {
 describe('措辞纪律护栏（禁用「离线考试 / 离线作答」等表述）', () => {
   it('① 常量文件 OFFLINE_REENTRY_NOTICE 严格遵守措辞纪律', () => {
     assertNoForbiddenWords(OFFLINE_REENTRY_NOTICE.TITLE, 'OFFLINE_REENTRY_NOTICE.TITLE');
-    assertNoForbiddenWords(OFFLINE_REENTRY_NOTICE.RISK_WARNING, 'OFFLINE_REENTRY_NOTICE.RISK_WARNING');
-    assertNoForbiddenWords(OFFLINE_REENTRY_NOTICE.DESCRIPTION, 'OFFLINE_REENTRY_NOTICE.DESCRIPTION');
+    assertNoForbiddenWords(
+      OFFLINE_REENTRY_NOTICE.RISK_WARNING,
+      'OFFLINE_REENTRY_NOTICE.RISK_WARNING'
+    );
+    assertNoForbiddenWords(
+      OFFLINE_REENTRY_NOTICE.DESCRIPTION,
+      'OFFLINE_REENTRY_NOTICE.DESCRIPTION'
+    );
   });
 
   it('② 常量文件 OFFLINE_STATUS_BANNER_TEXT 严格遵守措辞纪律', () => {
-    assertNoForbiddenWords(OFFLINE_STATUS_BANNER_TEXT.MESSAGE, 'OFFLINE_STATUS_BANNER_TEXT.MESSAGE');
-    assertNoForbiddenWords(OFFLINE_STATUS_BANNER_TEXT.DESCRIPTION, 'OFFLINE_STATUS_BANNER_TEXT.DESCRIPTION');
+    assertNoForbiddenWords(
+      OFFLINE_STATUS_BANNER_TEXT.MESSAGE,
+      'OFFLINE_STATUS_BANNER_TEXT.MESSAGE'
+    );
+    assertNoForbiddenWords(
+      OFFLINE_STATUS_BANNER_TEXT.DESCRIPTION,
+      'OFFLINE_STATUS_BANNER_TEXT.DESCRIPTION'
+    );
   });
 
   it('③ 常量文件 OFFLINE_LIST_NOTICE 严格遵守措辞纪律', () => {
     assertNoForbiddenWords(OFFLINE_LIST_NOTICE.BADGE, 'OFFLINE_LIST_NOTICE.BADGE');
     assertNoForbiddenWords(OFFLINE_LIST_NOTICE.ALERT_MESSAGE, 'OFFLINE_LIST_NOTICE.ALERT_MESSAGE');
-    assertNoForbiddenWords(OFFLINE_LIST_NOTICE.ALERT_DESCRIPTION, 'OFFLINE_LIST_NOTICE.ALERT_DESCRIPTION');
+    assertNoForbiddenWords(
+      OFFLINE_LIST_NOTICE.ALERT_DESCRIPTION,
+      'OFFLINE_LIST_NOTICE.ALERT_DESCRIPTION'
+    );
   });
 
   it('④ OfflineStatusBanner.vue 组件源码中不含禁用词', () => {

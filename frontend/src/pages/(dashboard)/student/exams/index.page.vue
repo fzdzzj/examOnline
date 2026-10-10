@@ -49,7 +49,11 @@ import StudentExamList from '@/components/student/StudentExamList.vue';
 import { createStudentExamsQueryOptions } from '@/hooks/useStudentTaking';
 import { ApiError } from '@/api/types';
 import { createStudentExamListCacheStorage } from '@/utils/examListCacheStorage';
-import { isStudentExamRoute, registerExamServiceWorker, unregisterExamServiceWorker } from '@/utils/swRegister';
+import {
+  isStudentExamRoute,
+  registerExamServiceWorker,
+  unregisterExamServiceWorker,
+} from '@/utils/swRegister';
 import { OFFLINE_LIST_NOTICE } from '@/constants/studentTaking';
 
 const router = useRouter();
@@ -112,11 +116,7 @@ const isOffline = computed<boolean>(() => {
 });
 
 const isFallbackActive = computed<boolean>(() => {
-  return Boolean(
-    error.value &&
-    isOffline.value &&
-    cachedRows.value.length > 0
-  );
+  return Boolean(error.value && isOffline.value && cachedRows.value.length > 0);
 });
 
 watch(

@@ -193,11 +193,23 @@ import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { createEnterExamQueryOptions, examIdOf, isClosedByBackend } from '@/hooks/useStudentTaking';
 import { OFFLINE_REENTRY_NOTICE, SUBMIT_TYPE } from '@/constants/studentTaking';
 import { ApiError } from '@/api/types';
-import { answerMapOf, computeOfflineRemainingSeconds, navStatesOf, type AnswerMap } from '@/utils/studentTaking';
+import {
+  answerMapOf,
+  computeOfflineRemainingSeconds,
+  navStatesOf,
+  type AnswerMap,
+} from '@/utils/studentTaking';
 import { mergeDrafts, resolveSeed, serverDraftOf, type DraftRecord } from '@/utils/draftMerge';
 import { createStudentDraftStorage } from '@/utils/draftStorage';
-import { createStudentExamSnapshotStorage, type StoredExamSnapshotRow } from '@/utils/examSnapshotStorage';
-import { isStudentExamRoute, registerExamServiceWorker, unregisterExamServiceWorker } from '@/utils/swRegister';
+import {
+  createStudentExamSnapshotStorage,
+  type StoredExamSnapshotRow,
+} from '@/utils/examSnapshotStorage';
+import {
+  isStudentExamRoute,
+  registerExamServiceWorker,
+  unregisterExamServiceWorker,
+} from '@/utils/swRegister';
 
 const route = useRoute('/(dashboard)/student/exams/[id]');
 const router = useRouter();
@@ -233,7 +245,13 @@ async function syncLocalSnapshot(): Promise<void> {
   localSnapshot.value = await snapshotStorage.load(examId.value);
 }
 
-watch([examIdValid, examId], () => { void syncLocalSnapshot(); }, { immediate: true });
+watch(
+  [examIdValid, examId],
+  () => {
+    void syncLocalSnapshot();
+  },
+  { immediate: true }
+);
 
 const offlineStatus = useOfflineStatus({
   autoSaveStatus: () => autoSave.status.value,
@@ -273,9 +291,16 @@ const snapshot = computed<EnterExamResponse | null | undefined>(() => {
       raw.remainingSeconds,
       localSnapshot.value.capturedWallClock
     );
+    const draftVersion =
+      typeof raw.draftVersion === 'number'
+        ? raw.draftVersion
+        : typeof raw.version === 'number'
+          ? raw.version
+          : undefined;
     return {
       ...raw,
       remainingSeconds: remaining ?? raw.remainingSeconds,
+      draftVersion,
     };
   }
   return null;
