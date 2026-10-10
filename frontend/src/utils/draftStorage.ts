@@ -45,10 +45,10 @@ export function createMemoryDraftStorage(): DraftStorage & {
   };
 }
 
-/** IndexedDB 库名 / 仓库名。就一个仓库一个键，不存在版本迁移问题（版本号固定 1）。 */
+/** IndexedDB 库名 / 仓库名。阶段 2 顺势递增版本号至 2，新增快照与列表缓存仓库。 */
 const DB_NAME = 'exam-online-student-drafts';
 const STORE_NAME = 'drafts';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 /** 落库记录形状（IndexedDB structured clone 存的就是这个普通对象）。 */
 interface StoredDraftRow {
@@ -100,6 +100,12 @@ export function createStudentDraftStorage(): DraftStorage {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'examId' });
+      }
+      if (!db.objectStoreNames.contains('exam_snapshots')) {
+        db.createObjectStore('exam_snapshots', { keyPath: 'examId' });
+      }
+      if (!db.objectStoreNames.contains('exam_list_cache')) {
+        db.createObjectStore('exam_list_cache', { keyPath: 'cacheKey' });
       }
     };
     request.onsuccess = () => resolve(request.result);

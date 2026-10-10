@@ -16,6 +16,7 @@ import {
   answerMapOf,
   answerOfLetters,
   choicesOf,
+  computeOfflineRemainingSeconds,
   formatCountdown,
   groupLabelOf,
   isAnswered,
@@ -163,5 +164,17 @@ describe('formatCountdown / serverRemainingOf', () => {
     expect(serverRemainingOf(undefined)).toBeNull();
     expect(serverRemainingOf(0)).toBe(0);
     expect(serverRemainingOf(120)).toBe(120);
+  });
+
+  it('computeOfflineRemainingSeconds: 数据层倒计时墙钟校正计算正确', () => {
+    // 正常扣减
+    expect(computeOfflineRemainingSeconds(3600, 1_000_000, 1_060_000)).toBe(3540);
+    // 超时截断为 0，不出现负数
+    expect(computeOfflineRemainingSeconds(60, 1_000_000, 1_100_000)).toBe(0);
+    // 墙钟倒流防负值
+    expect(computeOfflineRemainingSeconds(100, 1_000_000, 900_000)).toBe(100);
+    // 非数字返回 null
+    expect(computeOfflineRemainingSeconds(null, 1_000_000)).toBeNull();
+    expect(computeOfflineRemainingSeconds(undefined, 1_000_000)).toBeNull();
   });
 });

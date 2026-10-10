@@ -140,3 +140,23 @@ export function formatCountdown(seconds: number | null | undefined): string {
 export function serverRemainingOf(value: number | null | undefined): number | null {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
 }
+
+/**
+ * 离线倒计时估算校正（创新点 5 二期 · 阶段 3）。
+ *
+ * 规则：
+ * remainingSeconds' = max(0, remainingSeconds − (当前墙钟 − capturedWallClock) / 1000)
+ *
+ * 关键约束：
+ * - 纯数据层校正，不修改 useServerCountdown 本体；
+ * - 仅影响前端倒计时显示，归零锁定作答，超时裁决 100% 在服务端。
+ */
+export function computeOfflineRemainingSeconds(
+  remainingSeconds: number | null | undefined,
+  capturedWallClock: number,
+  nowWallClock: number = Date.now()
+): number | null {
+  if (typeof remainingSeconds !== 'number' || !Number.isFinite(remainingSeconds)) return null;
+  const elapsedSeconds = Math.max(0, Math.floor((nowWallClock - capturedWallClock) / 1000));
+  return Math.max(0, remainingSeconds - elapsedSeconds);
+}

@@ -113,3 +113,31 @@ export const BEHAVIOR_EVENT = {
 } as const;
 
 export type BehaviorEventType = (typeof BEHAVIOR_EVENT)[keyof typeof BEHAVIOR_EVENT];
+
+/**
+ * 离线保护与重入显性文案常量（创新点 5 二期）。
+ *
+ * 措辞纪律：
+ * 严禁出现「离线考试 / 离线作答 / offline exam / offline answer」字样；
+ * 统一表述为「离线保护中 / 本地保存 / 离线重入中 / 题目来自本机缓存 / 离线缓存」。
+ */
+export const OFFLINE_REENTRY_NOTICE = {
+  TITLE: '离线重入中，题目来自本机缓存',
+  RISK_WARNING:
+    '若超过考试截止时间仍未恢复网络，断网期间新保存的答案可能无法补交，以系统收卷为准。',
+  DESCRIPTION:
+    '当前网络已断开，正以本机缓存的试卷快照继续作答。若超过考试截止时间仍未恢复网络，断网期间新保存的答案可能无法补交，以系统收卷为准。',
+} as const;
+
+export const OFFLINE_STATUS_BANNER_TEXT = {
+  MESSAGE: '离线保护中，答案已本地保存',
+  DESCRIPTION:
+    '当前网络连接已断开或草稿同步未送达服务器。您的答案已实时保存在本机，请继续作答；恢复网络后系统将自动同步。若超过考试截止时间仍未恢复网络，断网期间新保存的答案可能无法补交，以系统收卷为准。',
+} as const;
+
+export const OFFLINE_LIST_NOTICE = {
+  BADGE: '离线缓存',
+  ALERT_MESSAGE: '当前处于离线状态，展示本机缓存的考试列表',
+  ALERT_DESCRIPTION:
+    '若超过考试截止时间仍未恢复网络，断网期间新保存的答案可能无法补交，以系统收卷为准。',
+} as const;
