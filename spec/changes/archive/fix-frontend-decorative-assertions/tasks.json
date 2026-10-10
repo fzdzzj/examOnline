@@ -1,0 +1,59 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与基线",
+    "task": "现场核对分支/HEAD/工作树与前后端门禁基线",
+    "steps": [
+      { "step": "K1 从 main @ ef14867 新建 feature/fix-frontend-decorative-assertions 并切换；K2 git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*），零已跟踪修改", "completed": true },
+      { "step": "K3 前端基线：npm.cmd --prefix frontend run lint:check 与 type-check:check 退出码 0，npm.cmd --prefix frontend run test → 85 文件 / 608 例全绿（核实输出非空，防 System32 空 npm 假绿）；K4 后端基线：仓库根 mvnw.cmd clean test → 398/0/0/1 BUILD SUCCESS", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "基线 revision ef14867（feature 分支新建后无提交）。K1: git checkout -b feature/fix-frontend-decorative-assertions 自 main@ef14867，git rev-parse --short HEAD=ef14867。K2: git status --porcelain 输出恰为白名单——.zcodeignore、docs/backend-optimization-candidates.md、docs/frontend-improvement-candidates-r2.md、docs/frontend-improvement-candidates.md、docs/frontend-optimization-candidates.md、docs/production-hardening-candidates.md、docs/指导主Agent交接文档-2026-09-30/10-01/10-02/10-09/10-10.md、spec/changes/fix-frontend-decorative-assertions/，零已跟踪修改。K3: npm.cmd --prefix frontend run lint:check → LINT_EXIT=0（eslint src e2e *.config.ts）；type-check:check → TYPECHECK_EXIT=0（vue-tsc+tsc 双段）；npm.cmd --prefix frontend run test → Test Files 85 passed、Tests 608 passed，TEST_EXIT=0，输出非空。K4: 仓库根 .\\mvnw.cmd clean test → Results: Tests run: 398, Failures: 0, Errors: 0, Skipped: 1；BUILD SUCCESS；MVN_EXIT=0。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：全量普查",
+    "task": "对 frontend 全部测试文件按六判据逐文件扫描，产出普查矩阵",
+    "steps": [
+      { "step": "六判据逐文件扫描全部测试文件（含阶段 0 已知 2 处复核）：① if(...exists()) 守卫包断言 ② exists() || 双通 ③ ?. 可选链吞断言 ④ try-catch 吞断言 ⑤ 动态集合 forEach/for-of 空集吞断言 ⑥ if(length) 守卫", "completed": true },
+      { "step": "普查矩阵报告写入本任务 evidence：文件 × 判据命中矩阵 + 命中行号 + 形态摘录 + 扫描命令与 revision；预期仅坐实 offlineExamReentry.spec.ts L257 守卫与 ExamMonitorPanel.spec.ts L101 双通；新发现超出预期时逐处登记并上报指导 agent 裁决是否扩入本案，不得静默扩改", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "扫描命令（revision ef14867）：git grep -n \"if\\s*(\\.*.\\\\.exists()\" -- 'frontend/src/**/*.spec.ts'；git grep -n \"\\\\.exists()\\\\s*||\" -- 'frontend/src/**/*.spec.ts'；git grep -n \"if\\s*(\\.*\\\\.length\" -- 'frontend/src/**/*.spec.ts'；git grep -nE \"expect(\\[^)]*?\\\\.|\\\\)?\\\\.(toBe|toContain|...)|\" 与 for-of/forEach 枚举。矩阵（全部 85 个 spec 文件 × 6 判据）：① if(...exists()) 守卫 → 命中恰 1 处：offlineExamReentry.spec.ts:257 `if (submitBtn.exists()) {`；② exists() || 双通 → 命中恰 1 处：ExamMonitorPanel.spec.ts:101-103 `exists() || html().includes('abnormal-row')`；③ ?. 可选链吞断言 → 41 处 `?.trigger()/?.text()/expect(x?.field)` 全部为「已知存在对象上取属性/触发交互」形态，期望值均非 undefined（如 expect(h.result.value?.submissionId).toBe(501)），对象缺失时取 undefined 会自然击红，不吞断言 → 判合法；④ try-catch 吞断言 → 35 处 .catch() 为 API 错误捕获、try{}finally{}为时钟恢复、try/catch 为 useQuery mock 基建，均不包裹测试断言 → 判合法；⑤ 动态集合 forEach/for-of → 全部为常量字面量数组/FORBIDDEN_WORDS/apiSpies 静态枚举驱动，属声明合法形态（proposal L20 防误伤）→ 判合法；⑥ if(...length) 守卫 → 0 命中。结论：全仓仅坐实预期 2 处，无超出预期的新发现，无需上报裁决。扫描 revision=ef14867（feature 分支首提交前）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：修复坐实缺陷（先证装饰性 → 修复 → 变异可红）",
+    "task": "按证据链修复两处坐实缺陷并在变异下验证可红",
+    "steps": [
+      { "step": "用例⑦（offlineExamReentry.spec.ts）：修复前先证装饰性——原样跑该用例得绿 + grep 证 manual-submit-button 全仓仅测试自引用；按真实交互链重写：点 [data-test=submit-button] 开确认 → Modal [data-test=submit-confirm] ok 按钮（文本「确认交卷」）触发 → emit('submit') 后断言 submitMock 被调且 testSnapshotStorage.load(42) 为 null；变异校验：临时注释页面交卷成功路径的快照清理调用 → 用例⑦击红 → 复原转绿", "completed": true },
+      { "step": "ExamMonitorPanel.spec.ts L101：双通形态先证弱化（临时移除 .abnormal-row class 绑定演示原断言仍绿后复原）；改为直断 expect(wrapper.find('.abnormal-row').exists()).toBe(true)；变异校验：同变异下直断击红后复原", "completed": true },
+      { "step": "两文件修复后单文件跑绿；全部临时变异复原（git status 无残留注入）；与阶段 4 护栏文件一并按显式路径提交实施笔", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "Defect1 (offlineExamReentry 用例⑦) 先证装饰性：原样单跑该 spec → ⑦ 通过（恒绿）；git grep -n \"manual-submit-button\" 全仓仅 spec L256 自引用 + tasks/proposal 文档，生产代码零命中。修复：按真实交互链重写 + 新增 ant-design-vue Modal 导入 → 单跑 7 passed。变异击红：临时注释 [id].page.vue watch(submitHook.phase) 内 snapshotStorage.remove 调用 → 用例⑦ AssertionError: expected {examId:42,…} to be null（1 failed）；复原 → 7 passed，git status 无残留。Defect2 (ExamMonitorPanel L101) 先证弱化：临时把 row-class-name 'abnormal-row' 改 'abnormal-row-BROKEN' → 原双通断言仍 9 passed（html().includes('abnormal-row') 子串兜住）→ 证明弱化后复原。修复：改直断 → 9 passed。变异击红：同变异下直断 → AssertionError: expected false to be true（1 failed）；复原 → 9 passed，git status 无残留。修复后 git diff --name-only -- frontend/src 仅 __tests__ 目录下两文件；src / pom.xml / schema.sql 零改动。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：词法护栏",
+    "task": "新增护栏 spec 拦截两禁形态并演示有效性",
+    "steps": [
+      { "step": "新增护栏 spec（readFileSync + 源码扫描，先例 questionBatchDelete.spec.ts 词法护栏段）：扫描 frontend/src/**/__tests__/**/*.spec.ts 源码，断言不含 if(...exists()) 守卫与 exists() || 双通两禁形态；护栏文件自身从扫描集排除或以拆分构造避免模式自命中（自引用陷阱）", "completed": true },
+      { "step": "护栏有效性变异演示：临时向任一 spec 文件注入守卫形态 → 护栏击红 → 撤销 → 护栏转绿，演示输出留 evidence；护栏对合法直断形态零误伤（修复后两文件即活例）；护栏对自身源码不自命中", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "新增 frontend/src/__tests__/decorativeAssertionGuard.spec.ts：readdirSync 递归 walk src 下全部 *.spec.ts（85 文件，vitest include 同口径），按 SELF_BASENAME 精确排除护栏自身免自命中；两禁检测：守卫=同行 `if (` 且 `.exists()`（覆盖嵌套内层括号变体），双通=`.exists() ||` 正则；动态 set for-of 不做护栏（常量驱动合法，防误伤）。单跑该护栏 → Test Files 1 passed / Tests 2 passed（自排除 + 全量扫描两禁为零命中），对修复后 2 文件（含 128 例合法直断）零误伤。变异击红：向 ExamMonitorPanel.spec.ts 注入 `if (wrapper.find(...).exists())` + `exists() ||` → 护栏 AssertionError: expected […(2)] to deeply equal []（列出两处 offender 行）→ 1 failed；撤销 → 转绿 2 passed。早期版本曾用 `/if\\s*\\([^)]*\\.exists\\(\\)/` 单正则漏检嵌套括号变体，已升级为「同行 if( + .exists()」双条件判定后复验通过（稳健性修正，非扩改）。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：门禁、规范合入与一次性归档",
+    "task": "全量门禁复验、delta 合入基线、--no-ff 合入、提案归档与 r2 尾巴收口",
+    "steps": [
+      { "step": "实施笔 revision 上全量门禁：前端三门禁全绿且只增不减（预期 86 文件 610+ 例）；后端 mvnw.cmd clean test 持平 398/0/0/1；git diff --name-only main...HEAD -- src pom.xml schema.sql 为空，且 git diff --name-only main...HEAD -- frontend/src 输出全部位于 __tests__ 目录（零生产代码改动自证）", "completed": false },
+      { "step": "--no-ff 合入 main；spec/specs/frontend/spec.md 末尾 ADDED「测试断言有效性纪律」Requirement（五 Scenario 与 spec-delta 逐字一致）；提案三件套整体移入 spec/changes/archive/fix-frontend-decorative-assertions/；spec/README.md 三处登记：「当前无进行中变更」段收口句、frontend 能力域行来源变更列追加、已归档变更表新增行", "completed": false },
+      { "step": "r2 尾巴并入本收口笔：spec/changes/survey-frontend-candidates-r2/ 整体移入 archive/（内容零改动，其 evidence 已于 b424c91 入库）+ spec/README.md 已归档变更表补 r2 登记行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml 输出为空；收口笔后在 main 复跑双端门禁（前端三门禁 + 后端 mvnw.cmd clean test）并留证", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]

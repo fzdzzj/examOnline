@@ -98,9 +98,8 @@ describe('ExamMonitorPanel', () => {
 
     expect(wrapper.text()).toContain('最高 高');
     expect(wrapper.text()).toContain('异常 4 次');
-    expect(wrapper.find('.abnormal-row').exists() || wrapper.html().includes('abnormal-row')).toBe(
-      true
-    );
+    // 直断：`.abnormal-row` 行类绑定（被测行为）必须真实存在，不做字符串兜底
+    expect(wrapper.find('.abnormal-row').exists()).toBe(true);
   });
 
   it('轮询拿到新数据后界面随后端变，不残留上一场快照（props 驱动，无本地副本）', async () => {
