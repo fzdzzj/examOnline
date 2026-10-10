@@ -49,11 +49,11 @@
     "category": "阶段 5：门禁、规范合入与一次性归档",
     "task": "全量门禁复验、delta 合入基线、--no-ff 合入、提案归档与 r2 尾巴收口",
     "steps": [
-      { "step": "实施笔 revision 上全量门禁：前端三门禁全绿且只增不减（预期 86 文件 610+ 例）；后端 mvnw.cmd clean test 持平 398/0/0/1；git diff --name-only main...HEAD -- src pom.xml schema.sql 为空，且 git diff --name-only main...HEAD -- frontend/src 输出全部位于 __tests__ 目录（零生产代码改动自证）", "completed": false },
-      { "step": "--no-ff 合入 main；spec/specs/frontend/spec.md 末尾 ADDED「测试断言有效性纪律」Requirement（五 Scenario 与 spec-delta 逐字一致）；提案三件套整体移入 spec/changes/archive/fix-frontend-decorative-assertions/；spec/README.md 三处登记：「当前无进行中变更」段收口句、frontend 能力域行来源变更列追加、已归档变更表新增行", "completed": false },
-      { "step": "r2 尾巴并入本收口笔：spec/changes/survey-frontend-candidates-r2/ 整体移入 archive/（内容零改动，其 evidence 已于 b424c91 入库）+ spec/README.md 已归档变更表补 r2 登记行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml 输出为空；收口笔后在 main 复跑双端门禁（前端三门禁 + 后端 mvnw.cmd clean test）并留证", "completed": false }
+      { "step": "实施笔 revision 上全量门禁：前端三门禁全绿且只增不减（预期 86 文件 610+ 例）；后端 mvnw.cmd clean test 持平 398/0/0/1；git diff --name-only main...HEAD -- src pom.xml schema.sql 为空，且 git diff --name-only main...HEAD -- frontend/src 输出全部位于 __tests__ 目录（零生产代码改动自证）", "completed": true },
+      { "step": "--no-ff 合入 main；spec/specs/frontend/spec.md 末尾 ADDED「测试断言有效性纪律」Requirement（五 Scenario 与 spec-delta 逐字一致）；提案三件套整体移入 spec/changes/archive/fix-frontend-decorative-assertions/；spec/README.md 三处登记：「当前无进行中变更」段收口句、frontend 能力域行来源变更列追加、已归档变更表新增行", "completed": true },
+      { "step": "r2 尾巴并入本收口笔：spec/changes/survey-frontend-candidates-r2/ 整体移入 archive/（内容零改动，其 evidence 已于 b424c91 入库）+ spec/README.md 已归档变更表补 r2 登记行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml 输出为空；收口笔后在 main 复跑双端门禁（前端三门禁 + 后端 mvnw.cmd clean test）并留证", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "收口与合入（拓扑与门禁由复核子 agent 于 main @ a6fe7ce 独立复跑证实，2026-10-11）：① 拓扑：实施笔 fe8d734 → 收口笔 ca65d0a 为 feature 分支连续两笔（收口笔父恰为实施笔），--no-ff 合并笔 a6fe7ce（第一父 ef14867、第二父 ca65d0a），HEAD=main @ a6fe7ce。② 全量门禁（main @ a6fe7ce）：npm.cmd --prefix frontend run lint:check exit 0（npm.cmd 实测 /d/develop1/nodejs/npm.cmd 10.9.3，非 System32 空 npm）；type-check:check exit 0（vue-tsc+tsc 双段）；test → Test Files 86 passed (86) / Tests 610 passed (610)，基线 85/608 只增不减；仓库根 mvnw.cmd clean test → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1、BUILD SUCCESS（持平）。③ 零改动自证：git diff ef14867..fe8d734 -- frontend/src 恰 3 文件且全在 __tests__，-- src pom.xml 与 -- schema.sql 为空；收口笔 git diff ca65d0a~1 ca65d0a -- src frontend pom.xml 为空（收口笔在 feature 分支、父恰为实施笔，证明收口笔自身零代码）。④ 变异三注入三击红三复原（复核独立复现，复原后 git diff 逐字节归零）：a. 注释 [id].page.vue snapshotStorage.remove → 用例⑦ waitFor 击红（expected {...} to be null）；b. ExamMonitorPanel 行类改 abnormal-row-BROKEN → 直断击红（expected false to be true）；c. 注入守卫+双通两形态 → 护栏击红并列入 offender 行号。⑤ 规范与登记：spec/specs/frontend/spec.md:2316 起 ADDED「测试断言有效性纪律」五 Scenario（+50 行纯新增，与 spec-delta 逐字一致）；spec/README.md 三处登记（L29 收口句、L62 能力域来源列、L165 归档表行）+ r2 登记行 L158；r2 尾巴十文件 R100、git diff b424c91:旧路径 HEAD:新路径 树对树字节一致。⑥ 本格为收口后台账返修笔回填（返修笔零代码），先例：fix-frontend-query-failure-states 收口任务 evidence 回填。"
   }
 ]
