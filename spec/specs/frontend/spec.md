@@ -464,6 +464,20 @@ AND 切回消费页签时恢复轮询并刷新数据
 
 AND 轮询间隔与「准实时轮询」措辞不变
 
+#### Scenario: 浏览器页签非激活暂停轮询与恢复刷新
+
+GIVEN 教师处于消费监考总览的页签（监考 / 考生名单与进度）且处于 10s 轮询中
+
+WHEN 浏览器页签切换到非激活/隐藏状态（document.visibilityState === 'hidden'）
+
+THEN 监考总览轮询暂停，不发出 10s 周期性请求
+
+AND 当浏览器页签恢复为可见激活状态（document.visibilityState === 'visible'）
+
+THEN 立即主动触发一次监考总览数据拉取（确保恢复时数据新鲜）
+
+AND 恢复 10s 周期性轮询调度
+
 ---
 
 ### Requirement: 主观题批改工作台
