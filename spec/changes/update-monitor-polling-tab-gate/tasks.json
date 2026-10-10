@@ -58,9 +58,13 @@
     "steps": [
       { "step": "审查 git status 与 git diff，确认无多余改动，反作弊域/后端零修改", "completed": true },
       { "step": "提交特性分支变更", "completed": true },
-      { "step": "组织八段格式最终总结汇报", "completed": true }
+      { "step": "组织八段格式最终总结汇报", "completed": true },
+      {
+        "step": "复核独立复跑（reviewer @ 8dd27ce）：双端门禁独立验证（后端 384/0/0/1、前端 79/572）；变异 A 精准击红 3 例清单确认；变异 B/C 护栏缺口发现与 8dd27ce 词法护栏补强闭环；正交性结论确认",
+        "completed": true
+      }
     ],
     "passes": true,
-    "evidence": "特性分支 feature/update-monitor-polling-tab-gate 提交完成；反作弊域零触碰、后端零改动、纯前端实现；按八段格式回传完整实施与验证记录。"
+    "evidence": "特性分支 feature/update-monitor-polling-tab-gate 提交完成；反作弊域零触碰、后端零改动、纯前端实现；按八段格式回传完整实施与验证记录。复核独立复跑（reviewer @ 8dd27ce，evidence 补录笔）：① 双端门禁独立复跑全绿：前端三门禁 npm.cmd --prefix frontend run lint:check（exit 0）、type-check:check（exit 0，含完整 vue-tsc/tsc 双 banner）、test（exit 0，Test Files 79 passed (79), Tests 572 passed (572)，较基线 77/559 净增 2 文件 13 例，含 8dd27ce 补强护栏）；后端 .\\mvnw.cmd clean test exit 0，Tests run: 384, Failures: 0, Errors: 0, Skipped: 1 BUILD SUCCESS（保持 384/0/0/1 零影响）。② 变异 A 独立复测精准击红 3 例：注入 useExamMonitor.ts:53 恒返回 10000 撤销门控，运行单测 exit 1，击红清单为：1) src/hooks/__tests__/useExamMonitor.spec.ts > 浏览器页签可见性门控：isPageVisible 返回 false 时 refetchInterval 暂停为 false，返回 true 时为 10s（AssertionError: expected 10000 to be false）；2) src/pages/(dashboard)/teacher/exams/__tests__/monitorTabVisibilityGate.spec.ts > 页签隐藏：切换到 hidden 时暂停轮询（refetchInterval 变为 false），不产生定时请求（AssertionError: expected 10000 to be false）；3) 同文件 > 恢复可见：从 hidden 恢复到 visible 时立即触发一次拉取，且轮询间隔恢复为 10s（隐藏初始断言 AssertionError: expected 10000 to be false）；复原后 21/21 绿，git diff 归零。③ 变异 B/C 护栏缺口发现与 8dd27ce 补强闭环：执行侧原有测试 monitorTabVisibilityGate.spec.ts 仅在闭包 mock 中模拟回调，页面 [id].page.vue 若被篡改（如移除 onVisible 中 refetchMonitor 或漏传 isMonitorConsumerTab）单测不会变红，存在护栏缺口；复核阶段定位该缺口并提交护栏笔 8dd27ce（test(frontend): 监考页签门控词法护栏——守护 onVisible 真实接线），在 useExamMonitor.spec.ts 中新增针对 [id].page.vue 源码的词法护栏（剥除注释后强断言包含 onVisible、refetchMonitor 与 isMonitorConsumerTab），使变异 B/C 均能精准击红词法护栏，达成有效闭环。④ 正交性结论：变更严格限定在教师端监考总览页的本地轮询调度优化，反作弊切屏域（学生作答 visibilitychange）、后端考务服务与数据表 schema 均零触碰，全仓 384 后端用例及 572 前端用例全绿，具备完备正交性。"
   }
 ]
