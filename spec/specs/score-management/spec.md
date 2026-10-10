@@ -470,3 +470,57 @@ GIVEN 榜单返回
 THEN 每个非本人行仅含名次、脱敏姓名、总分
 
 AND 不含他人 studentId / 学号等可定位标识
+
+### Requirement: 成绩服务读写分置
+
+成绩能力的服务层 SHALL 按「读侧 / 写侧」分置：读侧（发布前预览、学生查分）唯一实现归属 `ScoreQueryService`，写侧（汇总、发布、撤回及其私有链、审计与 `SummarizeStats` record）唯一实现归属 `ScoreService`；两侧互不共享事务上下文。此类拆分为纯重构：读侧方法体 SHALL 逐字迁移（含全部注释与 javadoc），SHALL NOT 顺手重构、改写语义或删改注释。
+
+#### Scenario: 读侧归属
+
+GIVEN 发布前预览与学生查分两个强一致读方法
+
+WHEN 查看服务层归属
+
+THEN publishPreview 与 myScore 的唯一实现位于 ScoreQueryService，其构造器依赖恰为 ExamMapper、GradingSubmissionMapper、UserMapper、RankCalculator、ScoreReviewService 五个
+
+AND ScoreService 不再持有读侧方法，构造器依赖降为纯写侧集合（不含 userMapper、rankCalculator、scoreReviewService）
+
+#### Scenario: 写侧归属
+
+GIVEN 汇总、发布、撤回三个写方法及其私有链
+
+WHEN 查看服务层归属
+
+THEN 写侧实现与 SummarizeStats record 原地保留在 ScoreService，方法体零改动
+
+AND Controller 的 summarize/publish/revoke 端点签名与注解零改动，publishPreview/myScore 两端点改调 ScoreQueryService
+
+#### Scenario: 强一致读护栏随类迁移
+
+GIVEN myScore 的强一致读护栏（类/方法/Mapper 禁 @DS 从库路由）
+
+WHEN 读侧拆出新类
+
+THEN 反射护栏同时覆盖 ScoreService 与 ScoreQueryService 的类级与方法级（ScoreService 既有断言原样保留）
+
+AND M5 列投影护栏锚点随迁至 ScoreQueryService#publishPreview，冻结列集与断言阈值不变
+
+#### Scenario: 外部契约零变化
+
+GIVEN openapi.yaml 契约与端点路径、schema 名、错误码、响应结构
+
+WHEN 拆分合入
+
+THEN 契约文件零改动（SummarizeStats record 仍嵌套于 ScoreService，契约 schema 的 simple name 形态稳定）
+
+AND OpenApiContractTest 全绿
+
+#### Scenario: 历史约束边界裁决
+
+GIVEN MakeupScoreService javadoc 载有「补考成绩合并逻辑不得修改 ScoreService 现有方法体」的历史约束
+
+WHEN 执行用户显式立项的读侧拆出变更卡
+
+THEN 该单卡写侧边界系 add-makeup-final-score 的防顺手改边界、已随其归档完成使命，不适用于本案读侧方法迁移
+
+AND MakeupScoreService 自身独立性不受影响（本案零触碰该类）
