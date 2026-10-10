@@ -25,9 +25,9 @@
     {
       "id": 4,
       "title": "阶段 4：全量门禁、变异校验与分支提交",
-      "status": "pending",
+      "status": "completed",
       "description": "后端 .\\mvnw.cmd clean test 全绿且用例数净增（基线 384/0/0/1 只增不减）；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test 全绿净增（基线 84 文件/604 例，核实输出非空与真实双 banner）；至少三项变异自校（A 撤发布门控→未发布可查榜→红；B 撤匿名脱敏/下发他人 ID→红；C 撤本人行 myRow→红）先红后复原逐字节归零；红线域 git diff 为空（com.exam.clazz 包、ScoreService/MakeupScoreService 既有方法体、schema.sql、既有 spec/specs/ 基线）；OpenAPI 契约基线同步（新端点按既有契约测试惯例）；八段格式交付回传。",
-      "evidence": ""
+      "evidence": "后端 clean test 398/0/0/1 全绿（净增 14 例）；前端三门禁全绿（lint:check 0错误、type-check:check 0错误、test 85文件/608例全过）；变异 A/B/C 验证全部命中预期红线且逐字节恢复归零；红线域 git diff 为空；OpenAPI 契约已同步至 openapi.yaml 与 OpenApiContractTest。"
     }
   ]
 }
