@@ -6,6 +6,9 @@
  * ② `queryFn` 把注入端点的返回原样交出去（不换形、不加字段），
  * ③ 措辞不声称「实时」。
  */
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MonitorOverviewResponse } from '@/api/axios';
@@ -16,9 +19,51 @@ import {
   isMonitorConsumerTab,
 } from '@/constants/monitor';
 import { createMonitorQueryOptions, submittedRatioOf } from '@/hooks/useExamMonitor';
-// 词法护栏直接读页面源码：门控接线若被悄悄移除，行为单测仍会全绿，只有对源码的断言能拦住
-// （先例：后端 PublisherConfirmScopeGuardTest 的词法护栏）。
-import examDetailPageSource from '@/pages/(dashboard)/teacher/exams/[id].page.vue?raw';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const EXAM_DETAIL_PAGE_PATH = path.resolve(
+  HERE,
+  '../../pages/(dashboard)/teacher/exams/[id].page.vue'
+);
+const examDetailPageSource = readFileSync(EXAM_DETAIL_PAGE_PATH, 'utf-8');
+
+/**
+ * 剔除注释后的源码（保留换行与位置），对齐 swGuard.spec.ts 与 PublisherConfirmScopeGuardTest，
+ * 确保红线断言只命中真实代码，避免注释中的残留文本造成假绿。
+ */
+function stripComments(code: string): string {
+  const out = code.split('');
+  let i = 0;
+  const n = out.length;
+  while (i < n) {
+    const c = out[i];
+    if (c === '/' && out[i + 1] === '/') {
+      while (i < n && out[i] !== '\n') {
+        out[i++] = ' ';
+      }
+    } else if (c === '/' && out[i + 1] === '*') {
+      out[i++] = ' ';
+      out[i++] = ' ';
+      while (i < n && !(out[i] === '*' && out[i + 1] === '/')) {
+        if (out[i] !== '\n') {
+          out[i] = ' ';
+        }
+        i++;
+      }
+      if (i < n) {
+        out[i++] = ' ';
+        if (i < n) {
+          out[i++] = ' ';
+        }
+      }
+    } else {
+      i++;
+    }
+  }
+  return out.join('');
+}
+
+const cleanExamDetailPageSource = stripComments(examDetailPageSource);
 
 const OVERVIEW: MonitorOverviewResponse = {
   examId: 9,
@@ -112,8 +157,20 @@ describe('页签门控', () => {
     expect(createMonitorQueryOptions(9, vi.fn(), consume).enabled).toBe(true);
   });
 
-  it('第三参缺省时保持旧行为：enabled 只由 examId 合法性决定（向后兼容）', () => {
-    expect(createMonitorQueryOptions(9, vi.fn()).enabled).toBe(true);
+  it('浏览器页签可见性门控：isPageVisible 返回 false 时 refetchInterval 暂停为 false，返回 true 时为 10s', () => {
+    const visible = { isPageVisible: () => true };
+    const hidden = { isPageVisible: () => false };
+
+    expect(createMonitorQueryOptions(9, vi.fn(), visible).refetchInterval).toBe(
+      MONITOR_POLLING_INTERVAL_MS
+    );
+    expect(createMonitorQueryOptions(9, vi.fn(), hidden).refetchInterval).toBe(false);
+  });
+
+  it('第三参缺省时保持旧行为：enabled 只由 examId 合法性决定，refetchInterval 为 10s（向后兼容）', () => {
+    const options = createMonitorQueryOptions(9, vi.fn());
+    expect(options.enabled).toBe(true);
+    expect(options.refetchInterval).toBe(MONITOR_POLLING_INTERVAL_MS);
     expect(createMonitorQueryOptions(Number.NaN, vi.fn()).enabled).toBe(false);
   });
 });
@@ -133,16 +190,54 @@ function extractBalancedCall(source: string, callee: string): string | null {
   return null;
 }
 
+/** 从调用块中提取 onVisible 键对应的回调函数体（{} 配平）。 */
+function extractOnVisibleBody(callBlock: string): string | null {
+  const onVisibleIndex = callBlock.indexOf('onVisible');
+  if (onVisibleIndex === -1) return null;
+  const braceStart = callBlock.indexOf('{', onVisibleIndex);
+  if (braceStart === -1) return null;
+  let depth = 0;
+  for (let i = braceStart; i < callBlock.length; i += 1) {
+    if (callBlock[i] === '{') depth += 1;
+    else if (callBlock[i] === '}') {
+      depth -= 1;
+      if (depth === 0) return callBlock.slice(braceStart, i + 1);
+    }
+  }
+  return null;
+}
+
 describe('页面接线词法护栏', () => {
   it('详情页构造监考轮询选项时注入了 isMonitorConsumerTab 页签谓词', () => {
-    const call = extractBalancedCall(examDetailPageSource, 'createMonitorQueryOptions');
+    const call = extractBalancedCall(cleanExamDetailPageSource, 'createMonitorQueryOptions');
     expect(call, '页面必须调用 createMonitorQueryOptions 构造轮询选项').not.toBeNull();
     expect(call ?? '').toContain('isMonitorConsumerTab');
   });
 
   it('页签谓词取自 @/constants/monitor 的权威导出，而非页面内自建比较', () => {
-    expect(examDetailPageSource).toMatch(
+    expect(cleanExamDetailPageSource).toMatch(
       /import\s*\{[^}]*\bisMonitorConsumerTab\b[^}]*\}\s*from\s*['"]@\/constants\/monitor['"]/
     );
+  });
+
+  it('详情页构造监考轮询选项时注入了 isPageVisible 浏览器可见性谓词', () => {
+    const call = extractBalancedCall(cleanExamDetailPageSource, 'createMonitorQueryOptions');
+    expect(call, '页面必须调用 createMonitorQueryOptions 构造轮询选项').not.toBeNull();
+    expect(call ?? '').toContain('isPageVisible');
+  });
+
+  it('详情页引入并使用了 usePageVisibility Hook，在可见时立即拉取', () => {
+    expect(cleanExamDetailPageSource).toMatch(
+      /import\s*\{[^}]*\busePageVisibility\b[^}]*\}\s*from\s*['"]@\/hooks\/usePageVisibility['"]/
+    );
+  });
+
+  it('onVisible 接线守护：usePageVisibility 内调用 refetchMonitor 且含 isMonitorConsumerTab 条件防御', () => {
+    const call = extractBalancedCall(cleanExamDetailPageSource, 'usePageVisibility');
+    expect(call, '页面必须调用 usePageVisibility').not.toBeNull();
+    const onVisibleBody = extractOnVisibleBody(call ?? '');
+    expect(onVisibleBody, 'usePageVisibility 传参必须包含 onVisible 回调函数体').not.toBeNull();
+    expect(onVisibleBody).toContain('refetchMonitor');
+    expect(onVisibleBody).toContain('isMonitorConsumerTab(');
   });
 });
