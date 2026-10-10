@@ -178,11 +178,11 @@ describe('作答页离线重入与降级链路 ([id].page.vue)', () => {
   it('④ 倒计时估算校正：降级渲染时倒计时按 capturedWallClock 差值校正', async () => {
     Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
     const now = Date.now();
-    // 快照在 300 秒（5分钟）前捕获
+    // 快照在 600 秒（10 分钟）前捕获
     await testSnapshotStorage.save(
       42,
       { ...SAMPLE_SNAPSHOT_PAYLOAD, remainingSeconds: 3600 },
-      now - 300_000
+      now - 600_000
     );
 
     queryData.value = undefined;
@@ -191,11 +191,10 @@ describe('作答页离线重入与降级链路 ([id].page.vue)', () => {
     const wrapper = mount(StudentExamTakingPage);
     await flushPromises();
 
-    // 倒计时应该不是 3600（1:00:00），而是被扣减了 300 秒约 3300 秒（55:00）
-    const countdown = wrapper.find('[data-test="countdown-remaining"]');
-    if (countdown.exists()) {
-      expect(countdown.text()).not.toContain('1:00:00');
-    }
+    // 倒计时应按偏移校正，渲染为 50:00（快照 3600 秒扣减 10 分钟），不得出现未校正的 1:00:00
+    const countdown = wrapper.find('[data-test="countdown-value"]');
+    expect(countdown.text()).toBe('50:00');
+    expect(countdown.text()).not.toContain('1:00:00');
     // 页面内无报错
     expect(wrapper.find('[data-test="offline-reentry-banner"]').exists()).toBe(true);
   });
