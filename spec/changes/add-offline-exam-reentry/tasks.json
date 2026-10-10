@@ -17,8 +17,9 @@
     {
       "id": 3,
       "title": "阶段 3：作答页离线重入降级（先红后绿）",
-      "status": "pending",
-      "description": "enter 失败 && !navigator.onLine && 本地快照存在时以本地快照降级渲染（snapshot 计算链服务端优先、降级取本地 payload；题目/导航/交卷面板/草稿播种全部复用既有链路，本地快照无 answers、mergeDrafts 保守合并后本地草稿生效）；倒计时墙钟校正（数据层 remainingSeconds' = max(0, remainingSeconds − (Date.now() − capturedWallClock)/1000)，零改 useServerCountdown）；恢复网络服务端快照接管、本地永不优先；交卷成功删除快照行；显性标注「离线重入中，题目来自本机缓存」；Vitest 覆盖降级触发/不触发分支、校正、播种、恢复接管。"
+      "status": "completed",
+      "description": "enter 失败 && !navigator.onLine && 本地快照存在时以本地快照降级渲染（snapshot 计算链服务端优先、降级取本地 payload；题目/导航/交卷面板/草稿播种全部复用既有链路，本地快照无 answers、mergeDrafts 保守合并后本地草稿生效）；倒计时墙钟校正（数据层 remainingSeconds' = max(0, remainingSeconds − (Date.now() − capturedWallClock)/1000)，零改 useServerCountdown）；恢复网络服务端快照接管、本地永不优先；交卷成功删除快照行；显性标注「离线重入中，题目来自本机缓存」；Vitest 覆盖降级触发/不触发分支、校正、播种、恢复接管。",
+      "evidence": "完成作答页本地快照降级与数据层倒计时墙钟校正（computeOfflineRemainingSeconds，零改 useServerCountdown）；enter 成功自动脱敏持久化、交卷成功删除快照；恢复网络服务端接管；offlineExamReentry.spec.ts 7/7 全绿。"
     },
     {
       "id": 4,

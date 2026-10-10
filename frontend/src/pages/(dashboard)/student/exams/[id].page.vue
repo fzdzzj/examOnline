@@ -11,6 +11,16 @@
     <template v-else>
       <OfflineStatusBanner v-if="!closedByBackend" :visible="offlineStatus.isOffline.value" />
 
+      <Alert
+        v-if="isFallbackActive"
+        type="info"
+        show-icon
+        :message="OFFLINE_REENTRY_NOTICE.TITLE"
+        :description="OFFLINE_REENTRY_NOTICE.DESCRIPTION"
+        data-test="offline-reentry-banner"
+        class="mb-3"
+      />
+
       <Card :title="snapshot?.examTitle ?? `考试 #${examId}`" class="mb-4">
         <template #extra>
           <Button size="small" @click="router.push('/student/exams')">返回列表</Button>
@@ -181,11 +191,12 @@ import { useSubmitExam } from '@/hooks/useSubmitExam';
 import { useBehaviorReport } from '@/hooks/useBehaviorReport';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { createEnterExamQueryOptions, examIdOf, isClosedByBackend } from '@/hooks/useStudentTaking';
-import { SUBMIT_TYPE } from '@/constants/studentTaking';
+import { OFFLINE_REENTRY_NOTICE, SUBMIT_TYPE } from '@/constants/studentTaking';
 import { ApiError } from '@/api/types';
-import { answerMapOf, navStatesOf, type AnswerMap } from '@/utils/studentTaking';
+import { answerMapOf, computeOfflineRemainingSeconds, navStatesOf, type AnswerMap } from '@/utils/studentTaking';
 import { mergeDrafts, resolveSeed, serverDraftOf, type DraftRecord } from '@/utils/draftMerge';
 import { createStudentDraftStorage } from '@/utils/draftStorage';
+import { createStudentExamSnapshotStorage, type StoredExamSnapshotRow } from '@/utils/examSnapshotStorage';
 import { registerExamServiceWorker, unregisterExamServiceWorker } from '@/utils/swRegister';
 
 const route = useRoute('/(dashboard)/student/exams/[id]');
@@ -199,7 +210,7 @@ const examIdValid = computed(() => Number.isInteger(examId.value) && examId.valu
  * （浏览器前进/后退在两场考试之间切换就是这条路径）。写成静态对象的话 key 会被冻结在
  * 挂载时那个 examId 上，URL 是 27 而卷是 9。`useQuery` 接受"返回 options 的 getter/computed"。
  */
-const { data, isFetching, error } = useQuery(
+const { data, isFetching, error, refetch } = useQuery(
   computed(() =>
     createEnterExamQueryOptions(examId.value, (id) =>
       unwrap<EnterExamResponse>(enterContract({ client, throwOnError: true, path: { examId: id } }))
@@ -207,7 +218,80 @@ const { data, isFetching, error } = useQuery(
   )
 );
 
-const snapshot = computed<EnterExamResponse | null | undefined>(() => data.value);
+const answers = ref<AnswerMap>({});
+
+/** 本地草稿与快照缓存：生产是 IndexedDB 薄封装；jsdom 下自动降级内存。 */
+const draftStorage = createStudentDraftStorage();
+const snapshotStorage = createStudentExamSnapshotStorage();
+const localSnapshot = ref<StoredExamSnapshotRow | null>(null);
+
+async function syncLocalSnapshot(): Promise<void> {
+  if (!examIdValid.value) {
+    localSnapshot.value = null;
+    return;
+  }
+  localSnapshot.value = await snapshotStorage.load(examId.value);
+}
+
+watch([examIdValid, examId], () => { void syncLocalSnapshot(); }, { immediate: true });
+
+const offlineStatus = useOfflineStatus({
+  autoSaveStatus: () => autoSave.status.value,
+  onRecover: () => {
+    void autoSave.flush();
+    void behavior.flushQueue();
+    void refetch();
+  },
+});
+
+/**
+ * 降级条件（全部满足才降级）：
+ * enter 请求失败 AND navigator.onLine === false AND 本地快照存在且匹配当前 examId。
+ * 否则维持既有错误态（不伪装降级）。
+ */
+const isFallbackActive = computed<boolean>(() => {
+  return Boolean(
+    error.value &&
+    !offlineStatus.isOnline.value &&
+    localSnapshot.value &&
+    localSnapshot.value.examId === examId.value
+  );
+});
+
+/**
+ * 答题上下文快照：
+ * 服务端数据优先；降级时使用本地脱敏快照 + 数据层倒计时墙钟估算校正。
+ * 本地快照永不优先于服务端数据。
+ */
+const snapshot = computed<EnterExamResponse | null | undefined>(() => {
+  if (data.value) {
+    return data.value;
+  }
+  if (isFallbackActive.value && localSnapshot.value) {
+    const raw = localSnapshot.value.payload;
+    const remaining = computeOfflineRemainingSeconds(
+      raw.remainingSeconds,
+      localSnapshot.value.capturedWallClock
+    );
+    return {
+      ...raw,
+      remainingSeconds: remaining ?? raw.remainingSeconds,
+    };
+  }
+  return null;
+});
+
+// 服务端快照到达后写入本地快照仓库（脱敏）
+watch(
+  data,
+  (val) => {
+    if (val && examId.value) {
+      void snapshotStorage.save(examId.value, val);
+    }
+  },
+  { immediate: true }
+);
+
 const questions = computed<QuestionView[]>(() => snapshot.value?.questions ?? []);
 const closedByBackend = computed(() => isClosedByBackend(snapshot.value));
 
@@ -216,19 +300,10 @@ const countdown = useServerCountdown(() => snapshot.value);
 /** 归零（本地秒表走完服务端给的那段时长）或后端已封闭 → 锁作答。导航不锁，学生要能回看。 */
 const locked = computed(() => countdown.isExpired.value || closedByBackend.value);
 
-const answers = ref<AnswerMap>({});
-
-/** 本地草稿缓存：生产是 IndexedDB 薄封装；jsdom 下自动降级内存（见 draftStorage 注释）。 */
-const draftStorage = createStudentDraftStorage();
-
 /**
  * 交卷引擎（第 3 片）。手动交卷与倒计时归零自动交卷共用唯一的 `submitExam` 入口
  * （硬约定 4），submitType 只区分来源不改变路径。答案所有权仍在页面 `answers`：
  * hook 失败时不清空、不改写，重试直接用当前作答状态。
- *
- * 重复交卷的语义来自后端（已核实 `ExamSubmitService`）：**没有专门的重复错误码**——
- * 幂等快速路径直接返回首次结果；只有 SETNX 锁竞争 2 秒未收敛才抛 STATE_CONFLICT(1012)
- * （「正在提交中，请稍候重试」），前端按码提示、不自行判「已交过」。
  */
 const submitHook = useSubmitExam({
   examId: () => examId.value,
@@ -241,6 +316,16 @@ const submitHook = useSubmitExam({
       ),
   },
 });
+
+// 交卷成功后删除快照行
+watch(
+  () => submitHook.phase.value,
+  (phase) => {
+    if (phase === 'submitted' && examIdValid.value) {
+      void snapshotStorage.remove(examId.value);
+    }
+  }
+);
 
 /**
  * 切屏 / 失焦上报（第 3 片）：一次离开一条（归并在 `reduceBehaviorSignal` 纯函数里），
@@ -292,13 +377,14 @@ const autoSave = useAutoSaveDraft({
   },
 });
 
-const offlineStatus = useOfflineStatus({
-  autoSaveStatus: () => autoSave.status.value,
-  onRecover: () => {
-    void autoSave.flush();
-    void behavior.flushQueue();
-  },
-});
+watch(
+  () => [Boolean(error.value), offlineStatus.isOffline.value] as const,
+  ([hasError, isOffline]) => {
+    if (hasError && isOffline) {
+      void syncLocalSnapshot();
+    }
+  }
+);
 
 /**
  * 考试离线外壳（阶段 3）：挂载时注册 SW（路由级精确拦截断网重入刷新），
@@ -410,6 +496,7 @@ watch(
 );
 
 const errorText = computed<string | null>(() => {
+  if (isFallbackActive.value) return null;
   const caught = error.value;
   if (!caught) return null;
   return caught instanceof ApiError || caught instanceof Error
