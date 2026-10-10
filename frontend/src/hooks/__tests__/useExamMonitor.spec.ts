@@ -112,8 +112,20 @@ describe('页签门控', () => {
     expect(createMonitorQueryOptions(9, vi.fn(), consume).enabled).toBe(true);
   });
 
-  it('第三参缺省时保持旧行为：enabled 只由 examId 合法性决定（向后兼容）', () => {
-    expect(createMonitorQueryOptions(9, vi.fn()).enabled).toBe(true);
+  it('浏览器页签可见性门控：isPageVisible 返回 false 时 refetchInterval 暂停为 false，返回 true 时为 10s', () => {
+    const visible = { isPageVisible: () => true };
+    const hidden = { isPageVisible: () => false };
+
+    expect(createMonitorQueryOptions(9, vi.fn(), visible).refetchInterval).toBe(
+      MONITOR_POLLING_INTERVAL_MS
+    );
+    expect(createMonitorQueryOptions(9, vi.fn(), hidden).refetchInterval).toBe(false);
+  });
+
+  it('第三参缺省时保持旧行为：enabled 只由 examId 合法性决定，refetchInterval 为 10s（向后兼容）', () => {
+    const options = createMonitorQueryOptions(9, vi.fn());
+    expect(options.enabled).toBe(true);
+    expect(options.refetchInterval).toBe(MONITOR_POLLING_INTERVAL_MS);
     expect(createMonitorQueryOptions(Number.NaN, vi.fn()).enabled).toBe(false);
   });
 });
@@ -143,6 +155,18 @@ describe('页面接线词法护栏', () => {
   it('页签谓词取自 @/constants/monitor 的权威导出，而非页面内自建比较', () => {
     expect(examDetailPageSource).toMatch(
       /import\s*\{[^}]*\bisMonitorConsumerTab\b[^}]*\}\s*from\s*['"]@\/constants\/monitor['"]/
+    );
+  });
+
+  it('详情页构造监考轮询选项时注入了 isPageVisible 浏览器可见性谓词', () => {
+    const call = extractBalancedCall(examDetailPageSource, 'createMonitorQueryOptions');
+    expect(call, '页面必须调用 createMonitorQueryOptions 构造轮询选项').not.toBeNull();
+    expect(call ?? '').toContain('isPageVisible');
+  });
+
+  it('详情页引入并使用了 usePageVisibility Hook，在可见时立即拉取', () => {
+    expect(examDetailPageSource).toMatch(
+      /import\s*\{[^}]*\busePageVisibility\b[^}]*\}\s*from\s*['"]@\/hooks\/usePageVisibility['"]/
     );
   });
 });

@@ -276,6 +276,7 @@ import ExamMonitorPanel from '@/components/exam/ExamMonitorPanel.vue';
 import ExamSnapshotPreview from '@/components/exam/ExamSnapshotPreview.vue';
 import GrafanaEntry from '@/components/observability/GrafanaEntry.vue';
 import { createMonitorQueryOptions } from '@/hooks/useExamMonitor';
+import { usePageVisibility } from '@/hooks/usePageVisibility';
 import { parseAntiCheatFields, type JsonField } from '@/utils/examSnapshot';
 
 /**
@@ -366,6 +367,18 @@ function isNotFound(error: unknown): boolean {
 
 // ==================== 监考总览（轮询） ====================
 
+const { isVisible: isPageVisible } = usePageVisibility({
+  onVisible: () => {
+    if (
+      isMonitorConsumerTab(activeTab.value) &&
+      Number.isInteger(examId.value) &&
+      examId.value > 0
+    ) {
+      void refetchMonitor();
+    }
+  },
+});
+
 const monitorOptions = computed(() =>
   createMonitorQueryOptions(
     examId.value,
@@ -373,8 +386,11 @@ const monitorOptions = computed(() =>
       unwrap<MonitorOverviewResponse>(
         monitorOverviewContract({ client, throwOnError: true, path: { examId: id } })
       ),
-    // 仅「监考」「考生名单与进度」页签消费 overview；其余页签暂停轮询
-    { isConsumerTabActive: () => isMonitorConsumerTab(activeTab.value) }
+    // 仅「监考」「考生名单与进度」页签消费 overview；页签非激活或浏览器隐藏时暂停轮询
+    {
+      isConsumerTabActive: () => isMonitorConsumerTab(activeTab.value),
+      isPageVisible: () => isPageVisible.value,
+    }
   )
 );
 
@@ -382,6 +398,7 @@ const {
   data: overview,
   isFetching: monitorFetching,
   error: monitorQueryError,
+  refetch: refetchMonitor,
 } = useQuery({
   queryKey: computed(() => monitorOptions.value.queryKey),
   queryFn: () => monitorOptions.value.queryFn(),

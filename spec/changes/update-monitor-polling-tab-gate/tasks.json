@@ -1,0 +1,66 @@
+[
+  {
+    "number": 0,
+    "category": "阶段 0：调研核对与基线留证",
+    "task": "切分支；基线门禁留证；调研阶段 0 四项并写入 proposal.md",
+    "steps": [
+      { "step": "从 main @ e717895 切出分支 feature/update-monitor-polling-tab-gate", "completed": true },
+      { "step": "后端基线实跑：.\\mvnw.cmd clean test 确认 384/0/0/1 BUILD SUCCESS", "completed": true },
+      { "step": "前端三门禁基线实跑：lint:check / type-check:check / test 退出码 0，vitest 77 文件 559 例全绿", "completed": true },
+      { "step": "阶段 0 四项核实：定位监考总览轮询、核实无 WebSocket/SSE、确认现有 visibilitychange 仅在反作弊切屏域、grep 确认监考域无同类页签门控", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "分支 feature/update-monitor-polling-tab-gate 基于 e717895；后端 mvnw.cmd clean test 退出码 0，Tests run: 384, Failures: 0, Errors: 0, Skipped: 1；前端三门禁 npm.cmd run lint:check / type-check:check / test 退出码 0，vitest 77 passed (77), Tests 559 passed (559)；阶段 0 四项调研结论完整记录于 proposal.md。"
+  },
+  {
+    "number": 1,
+    "category": "阶段 1：规范定义与先红测试（TDD Red）",
+    "task": "撰写 proposal/spec-delta/tasks.json；编写先红测试用例",
+    "steps": [
+      { "step": "规范文件落库：proposal.md + spec-delta.md + tasks.json", "completed": true },
+      { "step": "编写 usePageVisibility.spec.ts 测试：覆盖可见性感知、状态变化回调、依赖注入与注销", "completed": true },
+      { "step": "编写 monitorTabVisibilityGate.spec.ts 与扩展 useExamMonitor.spec.ts：断言 hidden 暂停轮询、visible 立即拉取一次且轮询恢复、词法护栏", "completed": true },
+      { "step": "运行 vitest 确认新用例红灯（Red），留存失败证据", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "规范文件已落库；先红测试执行输出：Test Files 3 failed (3), Tests 3 failed | 13 passed (16)，失败原因为 usePageVisibility 模块未就绪、页面词法护栏未接线以及 refetchInterval 未门控。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：功能实现（TDD Green）",
+    "task": "实现 usePageVisibility Hook；改造 useExamMonitor；接入监考总览页",
+    "steps": [
+      { "step": "实现 frontend/src/hooks/usePageVisibility.ts：状态与事件管理、回调触发、生命周期注销", "completed": true },
+      { "step": "改造 frontend/src/hooks/useExamMonitor.ts：isPageVisible 门控 refetchInterval、更新类型与不变式", "completed": true },
+      { "step": "接入 frontend/src/pages/(dashboard)/teacher/exams/[id].page.vue：接入 Hook、onVisible 立即 refetchMonitor、注入 isPageVisible", "completed": true },
+      { "step": "运行 vitest 确认全绿（Green），实现转绿验证", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "实现 usePageVisibility.ts；改造 useExamMonitor.ts（refetchInterval 支持 isPageVisible 门控并返回 false/10000）；[id].page.vue 接入 Hook 并解构 refetchMonitor 在 onVisible 时立即拉取；运行 vitest 结果：3 passed (3), Tests 25 passed (25)。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：变异验证与门禁留证",
+    "task": "双变异校验；全量前端三门禁；后端基线复核",
+    "steps": [
+      { "step": "变异 ①：撤销门控（refetchInterval 恒返回原间隔 10s）→ 确认暂停断言红灯，随后复原", "completed": true },
+      { "step": "变异 ②：撤销恢复立即拉取（移除 onVisible 中 refetchMonitor 调用）→ 确认恢复立即拉取断言红灯，随后复原", "completed": true },
+      { "step": "前端全量三门禁运行：lint:check / type-check:check / test 退出码 0，vitest 文件与用例数净增", "completed": true },
+      { "step": "后端全量门禁复核：.\\mvnw.cmd clean test 确认 384/0/0/1 BUILD SUCCESS 保持不变", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "变异 ① 注入后：useExamMonitor.spec.ts 与 monitorTabVisibilityGate.spec.ts 均红（AssertionError: expected 10000 to be false），复原后全绿；变异 ② 注入后：monitorTabVisibilityGate.spec.ts 确认红灯（AssertionError: expected vi.fn() to be called 1 times, but got 0 times），复原后全绿；前端三门禁 lint:check / type-check:check 退出码 0，vitest 79 passed (79), Tests 571 passed (571)（净增 2 文件 12 用例）；后端 clean test 384/0/0/1 BUILD SUCCESS。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：提交与收口回传",
+    "task": "特性分支代码与规范提交；格式化八段回传",
+    "steps": [
+      { "step": "审查 git status 与 git diff，确认无多余改动，反作弊域/后端零修改", "completed": true },
+      { "step": "提交特性分支变更", "completed": true },
+      { "step": "组织八段格式最终总结汇报", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "特性分支 feature/update-monitor-polling-tab-gate 提交完成；反作弊域零触碰、后端零改动、纯前端实现；按八段格式回传完整实施与验证记录。"
+  }
+]

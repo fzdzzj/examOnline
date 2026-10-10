@@ -11,7 +11,9 @@
  * 3. **人数与进度全部来自 `GET /api/exams/{examId}/monitor/overview`**，
  *    前端不合计、不推算（`MonitorService` 的在线判定走 Redis 心跳，前端无从复算）；
  * 4. **轮询按页签门控**：只有消费监考总览的页签（monitor / roster）才启用，
- *    其余页签 `enabled=false` 不发起请求；间隔与措辞不因门控改变。
+ *    其余页签 `enabled=false` 不发起请求；间隔与措辞不因门控改变；
+ * 5. **浏览器页签非激活门控**：浏览器页签隐藏（`visibilityState === 'hidden'`）时，
+ *    `refetchInterval` 暂停为 false；恢复可见时立即拉取一次并恢复 10s 轮询，消除后台空转。
  */
 import { MONITOR_POLLING_INTERVAL_MS } from '@/constants/monitor';
 import type { MonitorOverviewResponse } from '@/api/axios';
@@ -19,34 +21,36 @@ import type { MonitorOverviewResponse } from '@/api/axios';
 export interface MonitorQueryOptions {
   queryKey: readonly ['exam', number, 'monitor'];
   queryFn: () => Promise<MonitorOverviewResponse | undefined>;
-  /** 轮询间隔（毫秒）；页面据此反复请求，不做本地计时器补数 */
-  refetchInterval: number;
+  /** 轮询间隔（毫秒），页签非激活时为 false 暂停轮询；页面据此反复请求，不做本地计时器补数 */
+  refetchInterval: number | false;
   enabled: boolean;
   /** 轮询属后台刷新：失败时不要弹「重试中」，与首屏加载区分开 */
   refetchOnWindowFocus: false;
 }
 
-/** 页签门控：仅在消费监考总览的页签返回 true（由页面注入 `isMonitorConsumerTab`）。 */
+/** 页签门控：仅在消费监考总览的页签返回 true（由页面注入 `isMonitorConsumerTab`），且浏览器页签可见时启用轮询。 */
 export interface MonitorQueryTabGate {
   /** 缺省视为常真——既有调用不传第三参时行为不变。 */
   isConsumerTabActive?: () => boolean;
+  /** 浏览器页签可见性门控：hidden 时返回 false 暂停轮询。缺省视为常真。 */
+  isPageVisible?: () => boolean;
 }
 
 /**
  * @param examId 考试 ID；NaN / 非正数时 `enabled=false`（详情路由参数缺失时不发无意义请求）
  * @param fetchOverview 注入的取数函数（生产为 gen:api `overview` + `unwrap`，单测为 mock）
- * @param tabGate 页签门控（可选）；缺省 `isConsumerTabActive = () => true`，保持旧行为
+ * @param tabGate 页签门控（可选）；缺省 `isConsumerTabActive = () => true`, `isPageVisible = () => true`，保持旧行为
  */
 export function createMonitorQueryOptions(
   examId: number,
   fetchOverview: (examId: number) => Promise<MonitorOverviewResponse | undefined>,
   tabGate: MonitorQueryTabGate = {}
 ): MonitorQueryOptions {
-  const { isConsumerTabActive = () => true } = tabGate;
+  const { isConsumerTabActive = () => true, isPageVisible = () => true } = tabGate;
   return {
     queryKey: ['exam', examId, 'monitor'] as const,
     queryFn: () => fetchOverview(examId),
-    refetchInterval: MONITOR_POLLING_INTERVAL_MS,
+    refetchInterval: isPageVisible() ? MONITOR_POLLING_INTERVAL_MS : false,
     enabled: Number.isInteger(examId) && examId > 0 && isConsumerTabActive(),
     refetchOnWindowFocus: false,
   };
