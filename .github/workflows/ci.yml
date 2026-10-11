@@ -107,3 +107,39 @@ jobs:
         shell: bash
         run: |
           bash .github/ci/assert_frontend.sh /tmp/ci-frontend-lint.log /tmp/ci-frontend-typecheck.log /tmp/ci-frontend-test.log .github/ci/gate-baseline.json
+
+  dependency-scan:
+    name: Dependency scan (Trivy fs, non-blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan (vuln report, exit-code 0)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          format: table
+          output: trivy-report.txt
+          exit-code: '0'
+          skip-dirs: .git,target,node_modules,frontend/node_modules,.m2-repo
+
+      - name: Tee report to log and write counts to job summary
+        shell: bash
+        run: |
+          cat trivy-report.txt
+          {
+            echo '## Trivy dependency scan (non-blocking report)'
+            echo ''
+            echo "- Report file: \`trivy-report.txt\` ($(wc -l < trivy-report.txt | tr -d ' ') lines)"
+            echo "- Distinct CVE count: $(grep -oE 'CVE-[0-9]{4}-[0-9]+' trivy-report.txt | sort -u | wc -l | tr -d ' ')"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload scan report artifact
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: trivy-dependency-report
+          path: trivy-report.txt
+          if-no-files-found: error
