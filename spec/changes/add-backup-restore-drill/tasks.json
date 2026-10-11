@@ -40,10 +40,10 @@
     "task": "prod 起栈备份→清库恢复→26 表+登录回归；双端门禁复跑持平",
     "steps": [
       { "step": "全新卷起 docker-compose.prod.yml 栈至 healthy → backup.sh --env prod 产 dump 留证 → down -v 清卷重起 → restore.sh 恢复 prod 库 → 校验 26 表 + admin 行 + 登录 200（复用 P3 验证口径）→ down -v 零残留（prod 与 dev 主从本体全程零写入自证）", "completed": true },
-      { "step": "实施笔 HEAD 双端门禁复跑：mvnw.cmd clean test 与前端三门禁串行，与 K2 基线逐值持平（零用例变化）；gate-baseline.json 零改动自证（合法持平）", "completed": false }
+      { "step": "实施笔 HEAD 双端门禁复跑：mvnw.cmd clean test 与前端三门禁串行，与 K2 基线逐值持平（零用例变化）；gate-baseline.json 零改动自证（合法持平）", "completed": true }
     ],
-    "passes": false,
-    "evidence": "执行子 agent 测 @ feature/add-backup-restore-drill。prod 全链（docker compose --env-file prod-smoke.env -f docker-compose.prod.yml，冒烟 env 位于 D:\\code\\examOnline-measure\\impl-add-backup-restore-drill\\，不入库）：①全新卷起（6 服务全 healthy）+ 预生成自签证书 docker/certs/out/server.{crt,key} 1274/1732B + 基线验证 26 表 + admin(id=1/admin/must_change_password=1) + 登录 200；②backup.sh --env prod（MYSQL_ROOT_PASSWORD=prodroot123）→ exam_online-20261012-014353.sql.gz（4069B）sha256 67d4a5ac...09a00c945、26 建表、GTID 元信息在场；③down -v 清卷重起 → restore.sh 恢复进 prod 主库 exam-online-prod-mysql-master/exam_online --confirm → 恢复后表数 26=dump26、admin 行 id=1/admin/must_change_password=1、actuator/health/db 200、HTTPS 登录 200（JSON Content-Type，accessToken/ADMIN）；④down -v 零残留（容器/卷/网络空）。zero-write 自证：dev 主从与 prod 本体（其它环境）未被写入——恢复仅写于编排内 prod 主库演练目标；dev 主库 27 表/15 users 不变、从库复制健康。门禁复跑见下步（尚待独立复跑）。" 
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-backup-restore-drill（实施笔 e4ba24b）。prod 全链（docker compose --env-file prod-smoke.env -f docker-compose.prod.yml，冒烟 env 位于 D:\\code\\examOnline-measure\\impl-add-backup-restore-drill\\，不入库）：①全新卷起（6 服务全 healthy）+ 预生成自签证书 docker/certs/out/server.{crt,key} 1274/1732B + 基线验证 26 表 + admin(id=1/admin/must_change_password=1) + 登录 200；②backup.sh --env prod（MYSQL_ROOT_PASSWORD=prodroot123）→ exam_online-20261012-014353.sql.gz（4069B）sha256 67d4a5ac...09a00c945、26 建表、GTID 元信息在场；③down -v 清卷重起 → restore.sh 恢复进 prod 主库 exam-online-prod-mysql-master/exam_online --confirm → 恢复后表数 26=dump26、admin 行 id=1/admin/must_change_password=1、actuator/health/db 200、HTTPS 登录 200（JSON Content-Type，accessToken/ADMIN）；④down -v 零残留（容器/卷/网络空）。zero-write 自证：dev 主从与 prod 本体未被写入——恢复仅写于编排内 prod 主库演练目标；dev 主库 27 表/15 users 不变、从库复制健康（Replica_IO/SQL_Running=Yes）。实施笔 HEAD 双端门禁复跑：后端 .\\mvnw.cmd clean test → Tests run: 401, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（与 K2 基线逐值持平）；前端 lint:check exit 0 / type-check:check exit 0 / vitest 86 文件 611 passed (611) exit 0（持平）；git diff fa06223 HEAD -- .github/ci/gate-baseline.json 为空（零改动合法持平）；src/frontend/pom/schema/openapi/.github diff 全空（零业务代码）。" 
   },
   {
     "number": 5,
