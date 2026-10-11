@@ -87,6 +87,8 @@ const REPORT = {
   tagWeakness: [{ tagId: 7, tagName: '力学', scoreRate: 0.58 }],
   hasTagDimension: true,
   focusList: [{ studentId: 101, username: 'stu1', studentName: '张一', totalScore: 48 }],
+  passLine: 60,
+  excellentLine: 90,
 };
 
 function mountReport(enabled = true) {
@@ -206,5 +208,21 @@ describe('考试数据分析报告组件', () => {
     await flushPromises();
     expect(vi.mocked(api.analysisReport)).not.toHaveBeenCalled();
     expect(wrapper.text()).not.toContain('加载中');
+  });
+
+  it('关注名单文案渲染下发 passLine（非硬编码 60）', async () => {
+    // 后端按总分派生下发 passLine（fix-analysis-report-pass-line）：前端文案单源渲染
+    vi.mocked(api.analysisReport).mockResolvedValue({
+      ...REPORT,
+      passLine: 12,
+    } as never);
+    const wrapper = mountReport();
+    await flushPromises();
+    await flushPromises();
+
+    // 直断：关注名单标题必须含下发 passLine 值
+    expect(wrapper.text()).toContain('学生关注名单（低于及格线 12 分）');
+    // 不落在硬编码 60（前端已被下发值取代）
+    expect(wrapper.text()).not.toContain('低于及格线 60 分');
   });
 });

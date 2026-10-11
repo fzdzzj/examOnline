@@ -22,6 +22,10 @@ public class ExamAnalysisReportResponse {
     private boolean hasTagDimension;
     /** 学生关注名单：低于及格线（&lt;60）学生的学号/姓名/总分。 */
     private List<FocusStudentItem> focusList;
+    /** 及格线（派生：总分 ×60%，HALF_UP 取整，fix-analysis-report-pass-line，前端单源渲染）。 */
+    private int passLine;
+    /** 优秀线（派生：总分 ×90%，HALF_UP 取整，fix-analysis-report-pass-line，前端单源渲染）。 */
+    private int excellentLine;
 
     public ClassOverview getClassOverview() {
         return classOverview;
@@ -61,6 +65,22 @@ public class ExamAnalysisReportResponse {
 
     public void setFocusList(List<FocusStudentItem> focusList) {
         this.focusList = focusList;
+    }
+
+    public int getPassLine() {
+        return passLine;
+    }
+
+    public void setPassLine(int passLine) {
+        this.passLine = passLine;
+    }
+
+    public int getExcellentLine() {
+        return excellentLine;
+    }
+
+    public void setExcellentLine(int excellentLine) {
+        this.excellentLine = excellentLine;
     }
 
     /** 班级概览聚合结果。 */

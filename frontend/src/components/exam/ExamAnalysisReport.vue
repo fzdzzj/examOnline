@@ -107,7 +107,7 @@
         <p v-else class="mb-4 text-gray-500">暂无可聚合的知识点数据。</p>
 
         <!-- ==================== 学生关注名单 ==================== -->
-        <p class="mb-2 text-sm font-semibold">学生关注名单（低于及格线 60 分）</p>
+        <p class="mb-2 text-sm font-semibold">学生关注名单（低于及格线 {{ passLine }} 分）</p>
         <Table
           :columns="focusColumns"
           :data-source="focusRows"
@@ -187,6 +187,9 @@ const overview = computed<ClassOverview | undefined>(() => analysis.value?.class
 const hasData = computed(() => (overview.value?.actualCount ?? 0) > 0);
 const hasTagDimension = computed(() => analysis.value?.hasTagDimension ?? false);
 const scoreBands = computed(() => overview.value?.scoreBands ?? []);
+// 及格线/优秀线由后端下发（fix-analysis-report-pass-line）：前端零硬编码，单源渲染。
+// 仅在 analysis 存在时渲染（数据区 v-if 内），passLine 恒由后端派生下发。
+const passLine = computed(() => analysis.value?.passLine);
 
 const averageScorePrecision = computed(() =>
   typeof overview.value?.averageScore === 'number' ? 1 : undefined
