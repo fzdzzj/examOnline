@@ -4,59 +4,59 @@
     "category": "阶段 1：开工核对与基线",
     "task": "现场核对分支/HEAD/工作树、双端门禁基线、容器与配置前置查证",
     "steps": [
-      { "step": "K1 从 main 最新 HEAD 新建 feature/add-alert-delivery 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": false },
-      { "step": "K2 双端门禁基线：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped 与 BUILD SUCCESS；AlertAssetsTest 在内全绿——规则零碰的开工基线）；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test（npm.cmd 形态 + 输出非空核验，串行跑防争用）", "completed": false },
-      { "step": "K3 前置查证：prom/alertmanager 可 pinned 的最新稳定具体版本号（禁 latest）并经既有 mirror 通道拉取成功；Read docker/observability/prometheus/prometheus.yml 确认 rule_files 挂载现状与 scrape 目标形态（alerting 段加法按实况定）；记录远端 main 最近 CI run 绿状态", "completed": false }
+      { "step": "K1 从 main 最新 HEAD 新建 feature/add-alert-delivery 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": true },
+      { "step": "K2 双端门禁基线：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped 与 BUILD SUCCESS；AlertAssetsTest 在内全绿——规则零碰的开工基线）；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test（npm.cmd 形态 + 输出非空核验，串行跑防争用）", "completed": true },
+      { "step": "K3 前置查证：prom/alertmanager 可 pinned 的最新稳定具体版本号（禁 latest）并经既有 mirror 通道拉取成功；Read docker/observability/prometheus/prometheus.yml 确认 rule_files 挂载现状与 scrape 目标形态（alerting 段加法按实况定）；记录远端 main 最近 CI run 绿状态", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "收入 independent 复核子 agent 独立复跑实测（authority: review-add-alert-delivery-VERDICT.md，本复核实测，不自造数值）。K1：基线 main HEAD = 783ef28，从其新建并切换 feature/add-alert-delivery；git status --porcelain 仅白名单未跟踪，零已跟踪修改（复核对含 HEAD=c551971 当前态复核：git status --short 仅白名单未跟踪 .zcodeignore/docs候选/review-VERDICT，零已跟踪修改）。K2 后端：仓库根 .\\mvnw.cmd clean test 独立复跑 → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（与 gate-baseline 398 持平）；AlertAssetsTest 在内 Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 全绿——规则零碰的基线+护栏执行层证据。K2 前端：npm.cmd --prefix frontend run lint:check exit 0（eslint 输出非空）、type-check:check exit 0（vue-tsc+tsc 输出非空）、test 复跑 86 passed (86) / 610 passed (610)（复核以 --testTimeout 20000 CLI-only 复跑得 610 全绿；默认 5s 超时下本机低内存环境水位偶发 14-17 例 jsdom 超时，非回归、如实标注）。K3：prom/alertmanager 可 pinned 到稳定具体版 prom/alertmanager:v0.34.1（禁 latest）并经 add-deployment-stack 解锁的 registry-mirror 通道拉取成功；prometheus.yml rule_files 已挂载 /etc/prometheus/rules/exam-online-alerts.yml，scrape 目标 job=exam-online（host.docker.internal:8080）；远端 main CI 绿 run 核证见任务5（gh 核证 main 基线 783ef28 run 38139964385 success）。"
   },
   {
     "number": 2,
     "category": "阶段 2：Alertmanager 接线与通道落地（实施笔）",
     "task": "三处编排/配置落地 + 五项自查 + 实施笔提交（三件套入库）",
     "steps": [
-      { "step": "按 proposal What Changes 落地：prometheus.yml 加 alerting 段（指向编排网内 alertmanager:9093；rule_files 未挂则同笔补并如实登记）；compose.observability 加 alertmanager 服务（pinned 具体版本、配置只读挂载）与 alert-receiver 服务（profile 门控、最小 POST 接收器、零业务绑定）；新增 docker/observability/alertmanager/alertmanager.yml（critical 立发 / warning 聚合 / info 不投递三层 route、inhibit、webhook receiver URL 环境变量可覆盖且默认指向网内 alert-receiver）", "completed": false },
-      { "step": "五项自查：① 零碰自证（exam-online-alerts.yml 与 AlertAssetsTest.java 零 diff；红线域 src/ frontend/ pom.xml schema.sql openapi.yaml .github 零 diff；既有文件受控修改仅 prometheus.yml 与 compose.observability 两处）；② compose config 解析通过且默认不启动 alert-receiver（profile 门控自证）；③ 零凭证自查（新增/修改文件 grep 真实平台 URL/token 明文零命中，webhook URL 走环境变量注入形态）；④ route 分层与 inhibit 存在性配置级自查；⑤ 三件套与实施文件同笔入库清单核对", "completed": false },
-      { "step": "实施笔提交：三处编排/配置 + 三件套一并入库；提交信息中文、按任务组、-F 文件形态", "completed": false }
+      { "step": "按 proposal What Changes 落地：prometheus.yml 加 alerting 段（指向编排网内 alertmanager:9093；rule_files 未挂则同笔补并如实登记）；compose.observability 加 alertmanager 服务（pinned 具体版本、配置只读挂载）与 alert-receiver 服务（profile 门控、最小 POST 接收器、零业务绑定）；新增 docker/observability/alertmanager/alertmanager.yml（critical 立发 / warning 聚合 / info 不投递三层 route、inhibit、webhook receiver URL 环境变量可覆盖且默认指向网内 alert-receiver）", "completed": true },
+      { "step": "五项自查：① 零碰自证（exam-online-alerts.yml 与 AlertAssetsTest.java 零 diff；红线域 src/ frontend/ pom.xml schema.sql openapi.yaml .github 零 diff；既有文件受控修改仅 prometheus.yml 与 compose.observability 两处）；② compose config 解析通过且默认不启动 alert-receiver（profile 门控自证）；③ 零凭证自查（新增/修改文件 grep 真实平台 URL/token 明文零命中，webhook URL 走环境变量注入形态）；④ route 分层与 inhibit 存在性配置级自查；⑤ 三件套与实施文件同笔入库清单核对", "completed": true },
+      { "step": "实施笔提交：三处编排/配置 + 三件套一并入库；提交信息中文、按任务组、-F 文件形态", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "收入独立复核子 agent 独立复跑实测。零碰判据（逐字节）：exam-online-alerts.yml 与 AlertAssetsTest.java 在 base 783ef28 / 合并笔 6934571 / HEAD 三点 blob 哈希全一致（alert yml 恒 8d53ea5e3011...、AlertAssetsTest 恒 f2b4f2f82081...）；磁盘 CRLF 差异归因（96/307 对 CRLF，git 视 clean）；红线域 src/ frontend/ pom.xml schema.sql openapi.yaml .github/ docker-compose.yml 在合并范围与合并后至 HEAD 双范围 diff 均空；既有受控修改仅 prometheus.yml + compose.observability 两处。alerting 指向：prometheus.yml alerting.alertmanagers → static_configs targets:[alertmanager:9093]，rule_files 已挂载不重复补。镜像全 pinned：prom/prometheus:v2.53.0、grafana/grafana:11.1.0、prom/alertmanager:v0.34.1、python:3.12-alpine，禁 latest。route 三层与 inhibit 逐项一致：critical matcher severity=\"critical\"→webhook-critical group_wait:0s 立发；warning 走默认 route group_wait:30s 聚合；info matcher severity=\"info\"→void 空 receiver 留观不投递；inhibit source_matchers severity=\"critical\" / target_matchers severity=\"warning\" / equal:[\"job\"]。webhook URL 经 ALERT_RECEIVER_URL 环境变量 sed 运行时注入（Alertmanager v0.34.1 原生不支持配置内 ${ENV}，compose entrypoint sed 替换占位再 exec 拉起），默认指向网内 alert-receiver:5000，真实平台 URL/token 零明文入库（grep 复核唯一命中均为注释陈述与内网 URL）。compose config 解析 RC=0，默认服务无 alert-receiver、--profile alert-receiver 下含（profile 门控自证）。实施笔 d3791d9 三套件（proposal/tasks/spec-delta）同笔入库（--name-only 含 spec/changes/add-alert-delivery/{proposal.md,tasks.json,spec-delta.md}）。"
   },
   {
     "number": 3,
     "category": "阶段 3：真实触发闭环验证",
     "task": "起栈制造 up==0 → ExamOnlineDown firing → webhook 真实投递留证",
     "steps": [
-      { "step": "起栈：docker compose -f docker/observability/docker-compose.observability.yml --profile <receiver-profile> up -d，不启动应用（制造 up==0）；prometheus 与 alertmanager 逐容器健康/就绪状态留证", "completed": false },
-      { "step": "真实触发：等待 up==0 持续超 for 窗口（1m 级），Prometheus UI/API 确认 ExamOnlineDown pending→firing，Alertmanager 收到并路由；全程时间线留证（何时 pending、何时 firing、何时投递）", "completed": false },
-      { "step": "投递实证：alert-receiver 日志收到 POST 且 body 含 alertname=ExamOnlineDown 与 severity=critical（逐字留证）；Alertmanager UI 告警状态与 Prometheus UI 规则状态同帧留证；三要素（命令+当次输出+短 revision）落 D:\\code\\examOnline-measure\\impl-add-alert-delivery\\", "completed": false }
+      { "step": "起栈：docker compose -f docker/observability/docker-compose.observability.yml --profile <receiver-profile> up -d，不启动应用（制造 up==0）；prometheus 与 alertmanager 逐容器健康/就绪状态留证", "completed": true },
+      { "step": "真实触发：等待 up==0 持续超 for 窗口（1m 级），Prometheus UI/API 确认 ExamOnlineDown pending→firing，Alertmanager 收到并路由；全程时间线留证（何时 pending、何时 firing、何时投递）", "completed": true },
+      { "step": "投递实证：alert-receiver 日志收到 POST 且 body 含 alertname=ExamOnlineDown 与 severity=critical（逐字留证）；Alertmanager UI 告警状态与 Prometheus UI 规则状态同帧留证；三要素（命令+当次输出+短 revision）落 D:\\code\\examOnline-measure\\impl-add-alert-delivery\\", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "收入独立复核子 agent 独立复现（权威：review-add-alert-delivery-VERDICT.md 复核 3，亲自起栈不复用执行侧自证）。起栈：docker compose -f docker/observability/docker-compose.observability.yml --profile alert-receiver up -d RC=0，4 容器（prometheus/grafana/alertmanager/alert-receiver 均 Up；receiver 就绪，AM v0.34.1 无配置加载错误），不启动应用（制造 up==0）。时间线（UTC）：14:18:15Z 栈 up；14:18:30.969Z ExamOnlineDown pending（Prometheus /api/v1/rules 显示 state=pending，up{job=\"exam-online\"}==0）；14:19:30.969Z pending→firing（恰满足 for=1m，AM POST body startsAt=14:19:30.969Z + Prometheus rules 转 firing）；14:19:31.150Z AlertManager 立发 updatedAt（firing+0.18s，severity=critical/group_wait 0s）；≤14:20:04Z receiver 收到 webhook POST。投递时序实证：docker logs exam-alert-receiver 见 ALERT-RECEIVER BODY: {\"receiver\":\"webhook-critical\",\"status\":\"firing\",\"labels\":{\"alertname\":\"ExamOnlineDown\",\"job\":\"exam-online\",\"severity\":\"critical\"}...}（alertname=ExamOnlineDown + severity=critical 逐字命中）；AM /api/v2/alerts 显示 receivers:[webhook-critical]、state=active、inhibitedBy:[]；receiver 共计且仅 1 条 POST（无 info/warning 杂投递）。三要素（命令+当次输出+短 revision/时间线）同 VERDICT 复核 3 记录。"
   },
   {
     "number": 4,
     "category": "阶段 4：路由分层核验 + 门禁复跑 + 清理",
     "task": "critical/warning/info 分层核验、护栏自证、双端门禁持平、环境清理",
     "steps": [
-      { "step": "路由分层核验：critical 立发语义以本次实测时间线核验（firing→POST 到达时距）；warning 聚合窗口与 info 不投递以 alertmanager.yml 配置形态核验 + amtool check-config / UI 辅助（info 级低成本不可制造时如实登记核验层级，不虚构触发实验）；inhibit 规则存在性核验", "completed": false },
-      { "step": "护栏与门禁：实施笔 HEAD 上后端 mvnw.cmd clean test（AlertAssetsTest 全绿为规则零碰执行层证据；计数持平基线）+ 前端 npm.cmd 三门禁串行（持平基线）；用例总量变化为零", "completed": false },
-      { "step": "清理：docker compose -f docker/observability/docker-compose.observability.yml --profile <receiver-profile> down -v，容器/卷/网络零残留（docker ps -a 与 volume 清单留证）；共享 dev 资源零触碰自证", "completed": false }
+      { "step": "路由分层核验：critical 立发语义以本次实测时间线核验（firing→POST 到达时距）；warning 聚合窗口与 info 不投递以 alertmanager.yml 配置形态核验 + amtool check-config / UI 辅助（info 级低成本不可制造时如实登记核验层级，不虚构触发实验）；inhibit 规则存在性核验", "completed": true },
+      { "step": "护栏与门禁：实施笔 HEAD 上后端 mvnw.cmd clean test（AlertAssetsTest 全绿为规则零碰执行层证据；计数持平基线）+ 前端 npm.cmd 三门禁串行（持平基线）；用例总量变化为零", "completed": true },
+      { "step": "清理：docker compose -f docker/observability/docker-compose.observability.yml --profile <receiver-profile> down -v，容器/卷/网络零残留（docker ps -a 与 volume 清单留证）；共享 dev 资源零触碰自证", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "收入独立复核子 agent 独立复跑实测。路由分层：critical 立发为执行层核验（firing 14:19:30.969Z → AM updatedAt 14:19:31.150Z 即 +0.18s 投递，severity=critical/group_wait 0s）；warning 聚合（默认 route group_wait:30s）与 info 不投递（AntiCheatEventSpike 属 info、不可低成本制造）为配置层核验 + receiver 实测仅 1 条 critical POST 佐证 info 不投递；inhibit 规则存在性配置核验（source severity=critical/target severity=warning/equal job）。护栏与门禁：backend .\\mvnw.cmd clean test 独立复跑 → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（持平 gate-baseline 398），AlertAssetsTest 7/0/0/0 全绿=规则零碰执行层证据；前端 npm.cmd lint:check/type-check:check exit 0、test 复核以 --testTimeout 20000 复跑 86 文件 610 例全绿（持平 gate-baseline 610；默认 5s 超时低内存偶发超时如实标注非回归）；用例总量变化为零，gate-baseline.json 零改动（398/610/74 合法持平）。清理：docker compose -f docker/observability/docker-compose.observability.yml --profile alert-receiver down -v RC=0，4 容器删除、observability_default 网络删除，docker ps -a / volume ls / network ls 复核容器/卷/网络零残留；共享 dev 资源（sport-verify-*、exam-mysql/redis）零触碰自证。"
   },
   {
     "number": 5,
     "category": "阶段 5：收口、归档与登记",
     "task": "push CI 绿、--no-ff 合入、spec-delta 合入 observability 域、R100 归档、登记、台账回填机制",
     "steps": [
-      { "step": "push feature → CI 三 job 绿（三要素留证）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿（gate-baseline.json 零触碰合法持平）", "completed": false },
-      { "step": "spec-delta 合入 spec/specs/observability/spec.md 末尾（五 Scenario 名称逐字一致，正文规范化展开）；spec/README.md 三处登记（进行中变更收口句 / observability 能力域行来源列 / 归档表新增行）；README.md observability 行按需补投递指针；收口笔零代码自证（红线域 diff 空，且 alerts.yml 与 AlertAssetsTest 零 diff）", "completed": false },
-      { "step": "三件套 R100 移入 spec/changes/archive/add-alert-delivery/（spec-delta 合入后按惯例删除，归档留 proposal + tasks）；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision），不得 R100 原样移动留空", "completed": false }
+      { "step": "push feature → CI 三 job 绿（三要素留证）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿（gate-baseline.json 零触碰合法持平）", "completed": true },
+      { "step": "spec-delta 合入 spec/specs/observability/spec.md 末尾（五 Scenario 名称逐字一致，正文规范化展开）；spec/README.md 三处登记（进行中变更收口句 / observability 能力域行来源列 / 归档表新增行）；README.md observability 行按需补投递指针；收口笔零代码自证（红线域 diff 空，且 alerts.yml 与 AlertAssetsTest 零 diff）", "completed": true },
+      { "step": "三件套 R100 移入 spec/changes/archive/add-alert-delivery/（spec-delta 合入后按惯例删除，归档留 proposal + tasks）；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision），不得 R100 原样移动留空", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "收入独立复核子 agent 独立复跑实测回填（台账返修笔，依据 review-add-alert-delivery-VERDICT.md，不在收口笔前伪造）。step1：收口三要素 CI run 经 gh 独立核证全 success——feature 实施笔 d3791d9 run 38143478124（#17）、feature 基线 5f72bc3 run 38143956088（#18）、收口 main run 38144769564（main@c551971）三 run 全绿；--no-ff 合并笔 6934571 双亲（^1=783ef28 main 侧、^2=5f72bc3 feature 基线）成立；main==origin/main==HEAD 三指一致；gate-baseline.json 零触碰（398/610/74 合法持平，git diff 783ef28 HEAD -- .github/ci/gate-baseline.json 为空）。step2：spec-delta 五 Scenario（alerting 接线/触发真实投递/severity 路由分层/webhook 目标外置/告警规则与阈值零碰）与合入 spec/specs/observability/spec.md「告警投递链路」Requirement 逐字一致；spec/README.md 三处登记齐全（进行中变更收口句 line29 / observability 能力域行来源列 line54 含 add-alert-delivery / 已归档变更表新增行 line172）；README.md observability 行补投递指针（line28）；收口笔 c551971 零代码自证（git diff 6934571 c551971 -- src frontend pom.xml schema.sql openapi.yaml .github docker-compose.yml 为空，alerts.yml 与 AlertAssetsTest 零 diff）。step3：三件套 R100 移入 spec/changes/archive/add-alert-delivery/（proposal+tasks；spec-delta 内容已在基线笔合入 spec.md 后删除）；台账回填机制——本笔即任务5（含任务1-4）回填动作，勾选与 evidence 由复核子 agent 独立复跑实测回填（命令+当次输出+短 revision 均记录于 VERDICT），非 R100 原样留空。关键数值（后端 398/0/0/1、AlertAssetsTest 7/0/0/0、前端 610/86、gate-baseline 398/610/74、触发时间线 activeAt14:18:30Z/startsAt14:19:30Z/firing+0.18s 立发）均出复核子 agent 独立复跑，与 VERDICT 逐字一致。"
   }
 ]
