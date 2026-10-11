@@ -39,11 +39,11 @@
     "category": "阶段 4：门禁复跑与基线上调",
     "task": "实施笔 HEAD 双端门禁 + gate-baseline 同笔上调 + 契约最终核验",
     "steps": [
-      { "step": "后端 mvnw.cmd clean test 全绿且 Tests run 恰增新增数；前端 npm.cmd 三门禁串行全绿且用例数恰增；与 gate-baseline.json 旧值对照，收口笔义务所需的新基线值以当次实测绑定 revision 记录", "completed": false },
-      { "step": "契约终验：重导出 openapi.yaml 与真实 dev 实例字节级一致（或如实登记比对环境受限时的降级形态与原因）；schema 仅新增两字段、paths 数零变化自证", "completed": false }
+      { "step": "后端 mvnw.cmd clean test 全绿且 Tests run 恰增新增数；前端 npm.cmd 三门禁串行全绿且用例数恰增；与 gate-baseline.json 旧值对照，收口笔义务所需的新基线值以当次实测绑定 revision 记录", "completed": true },
+      { "step": "契约终验：重导出 openapi.yaml 与真实 dev 实例字节级一致（或如实登记比对环境受限时的降级形态与原因）；schema 仅新增两字段、paths 数零变化自证", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "实施笔 093b750 后双端门禁复跑：后端仓库根 .\\mvnw.cmd clean test → Tests run: 401, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（398→401，恰增 3 例）；前端 npm.cmd lint:check exit 0、type-check:check exit 0、test --testTimeout 20000 → 611 passed (611)（610→611，恰增 1 例）。gate-baseline.json 收口笔 95e2d12 同笔上调 backendTests 398→401、frontendTests 610→611、openapiPaths 74 持平。契约终验：离线导出（getContentAsByteArray UTF-8）openapi.yaml diff 仅 ExamAnalysisReportResponse schema 增 passLine/excellentLine 两字段、paths 74 零变化自证；真实 dev 实例字节比对因本环境无运行中的 exam-online dev 实例（localhost:8080 不可达、docker ps 无 exam-app）而降级登记（离线导出权威 + 环境受限，非停止条件③不一致）。"
   },
   {
     "number": 5,
@@ -52,9 +52,9 @@
     "steps": [
       { "step": "push feature → CI 三 job 绿（新基线对齐，断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿；gate-baseline.json 双端用例数同笔上调（收口笔义务，不上调即红）", "completed": false },
       { "step": "spec-delta 六 Scenario 合入 spec/specs/score-management/spec.md 末尾（名称逐字一致）；spec/README.md 三处常规登记；收口笔零代码自证（红线域 diff：grading/paper/submission/clazz/schema.sql 零触碰）", "completed": false },
-      { "step": "三件套 R100 移入 spec/changes/archive/fix-analysis-report-pass-line/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": false }
+      { "step": "三件套 R100 移入 spec/changes/archive/fix-analysis-report-pass-line/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "step1：feature push → CI run 38152861327 三 job 全 success（backend/frontend/dependency-scan，含 ExamAnalysisReportIntegrationTest 7/0/0/0、backend Tests run 401 断言 OK）；--no-ff 合并笔 061c693（^1=1c8a765 main 侧、^2=95e2d12 feature 侧）成立；push main（1c8a765..061c693）→ CI run 38153372042 三 job 全 success；gate-baseline.json 收口笔 95e2d12 上调 401/611/74（同笔义务完成）。step2：spec-delta 六 Scenario（比例派生/100 分制零回归/非常规总分/总分不可得即拒绝/前端单源渲染/契约与用例同步）合入 spec/specs/score-management/spec.md 末尾逐字一致；spec/README.md 三处登记齐全（进行中变更收口句 / score-management 能力域行来源列 / 已归档变更表新增行）；收口笔 95e2d12 零代码自证（grading/paper/submission/clazz/schema.sql 零触碰）。step3：三件套 R100 移入 spec/changes/archive/fix-analysis-report-pass-line/（proposal+tasks；spec-delta 已于 95e2d12 合入 spec.md）；台账回填机制——本任务勾选与 evidence 为收口后真实记录，独立复核子 agent 复跑后以复核实测为准（不伪造）。"
   }
 ]
