@@ -1,0 +1,61 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与基线",
+    "task": "现场核对分支/HEAD/工作树、双端门禁基线、远端 main 当前 CI 绿状态",
+    "steps": [
+      { "step": "K1 确认 P2 任务 5 返修笔已落位 main（git log 核对返修笔存在），从 main 最新 HEAD 新建 feature/add-dependency-vuln-scan 并切换，git rev-parse --short HEAD 实测记录基线 revision；K2 git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、spec/changes/add-dependency-vuln-scan/），零已跟踪修改", "completed": false },
+      { "step": "K3 后端基线：仓库根 mvnw.cmd clean test → 398/0/0/1 BUILD SUCCESS（预期持平，本案零业务代码）；K4 前端基线：npm.cmd --prefix frontend run lint:check 与 type-check:check 退出码 0，npm.cmd --prefix frontend run test → 86 文件 / 610 例全绿（npm.cmd 形态 + 核实输出非空，防 System32 空 npm 假绿）", "completed": false },
+      { "step": "K5 远端现状留证：gh run list 记录 main 当前最近一次 CI run 的绿状态与 run id（本案开工前的远端基线）；确认 GitHub Actions 额度与 runner 可用性正常，异常即触发停止条件①", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：dependency-scan job 落地与实施笔",
+    "task": "ci.yml 新增第三 job（Trivy 非阻断报告），四项自查后实施笔提交（含三件套入库）",
+    "steps": [
+      { "step": "现场查证 aquasecurity/trivy-action 与 actions/upload-artifact 可 pinned 的最新稳定 tag 并记录版本号（仅 floating tag 可用即触发停止条件③）；按 proposal What Changes 第 1 条参数在 ci.yml 新增 dependency-scan job：checkout → trivy-action fs 扫描（skip-dirs 至少含 .git,target,node_modules,frontend/node_modules,.m2-repo；format: table；exit-code: 0；输出 tee 报告文件）→ 计数 echo 进 $GITHUB_STEP_SUMMARY → upload-artifact 上传报告", "completed": false },
+      { "step": "四项自查：① 既有 backend/frontend 两 job 段 diff 自证零改动（git diff 仅新增 dependency-scan job 段）；② gate-baseline.json 零触碰自证；③ 新增段 grep 零 secrets/零盘符绝对路径（对齐 agent-harness「CI 配置零机器绑定」）；④ YAML 结构自证（缩进层级与既有 job 对齐，提交前 git diff 逐行核对）", "completed": false },
+      { "step": "实施笔提交：ci.yml 新增 job + 本变更三件套（proposal/tasks/spec-delta）一并入库（对齐「立项三件套随实施笔入库」纪律，使收口笔为 R100 归档形态）；提交信息中文、按任务组", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：远端首跑验证（feature 分支）",
+    "task": "push feature 分支触发 CI，三 job 全绿 + scan artifact 下载核验，三要素留证",
+    "steps": [
+      { "step": "push feature/add-dependency-vuln-scan → gh run watch 等待完成 → 三 job 全绿：backend/frontend 断言照旧 + dependency-scan 绿；若既有双 job 出现任何行为变化（排队挤压、concurrency 语义破坏）即触发停止条件②", "completed": false },
+      { "step": "artifact 核验：gh run download（或 gh api）下载 dependency-scan 报告，确认存在且内容非空、双栈扫描痕迹可见（Maven 坐标与 pnpm-lock 均在扫描范围）；报告非空性留证", "completed": false },
+      { "step": "三要素留证：run URL + 三 job 汇总结论 + 实施笔短 revision，留存 measure 目录（命令 + 当次输出 + 短 revision）", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：probe 注入验证（可击红，用后即删）",
+    "task": "probe 分支注入必败步骤证明 scan job 真实执行非恒绿，留证后删除分支",
+    "steps": [
+      { "step": "从 feature 分支切 probe 注入分支，向 dependency-scan job 注入前置必败步骤（如 run: exit 1）push → gh run watch → 该 job 变红而 backend/frontend 两门禁 job 照常独立判定（绿）——证明 job 真实执行且其失败不改变门禁判定语义", "completed": false },
+      { "step": "红 run 三要素留证（run URL + scan job 红/门禁 job 绿的当次结论 + probe 分支短 revision）→ 删除 probe 分支（远端与本地）→ 回 feature 分支 git diff 自证零残留（probe 注入不污染 feature 分支历史）", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与登记",
+    "task": "--no-ff 合入 main、push main 远端三 job 全绿、spec-delta 合入基线、R100 归档、README 登记、台账回填机制",
+    "steps": [
+      { "step": "本地 --no-ff 合入 main → push main → gh run watch → main 上 CI 三 job 全绿（三要素留证：run URL + 汇总 + 合并笔短 revision）；spec/specs/agent-harness/spec.md 末尾 ADDED「依赖漏洞扫描非阻断报告」Requirement（六 Scenario 名称与 spec-delta 逐字一致，正文为其规范化展开）", "completed": false },
+      { "step": "spec/README.md 三处登记：「当前无进行中变更」段收口句、agent-harness 能力域行来源变更列追加、已归档变更表新增行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml schema.sql openapi.yaml .github/ci 输出为空（.github/workflows/ci.yml 属本案核心产出、在收口笔前已随实施笔合入）；gate-baseline.json 不在收口笔改动清单；三件套 R100 移入 spec/changes/archive/add-dependency-vuln-scan/", "completed": false },
+      { "step": "【台账回填机制，先例 fix-frontend-query-failure-states / split-score-query-service】本任务（任务 5）的勾选与 evidence 不在收口笔前伪造：收口笔按冻结三件套 R100 归档后，须以独立台账返修笔按复核子 agent 独立复跑的实测证据回填本任务 completed/passes/evidence（命令 + 当次输出 + 短 revision），再视归档流程收尾；不得 R100 原样移动留空", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]
