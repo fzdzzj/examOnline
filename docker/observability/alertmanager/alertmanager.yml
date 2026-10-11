@@ -1,0 +1,50 @@
+# Alertmanager 配置（add-alert-delivery，告警投递链路本地闭环）。
+#
+# 路由分层：
+#   - severity=critical（如 ExamOnlineDown）→ 立发（本 route group_wait: 0s），走 webhook-critical；
+#   - severity=warning → 分组聚合（group_wait 适度窗口后投递），走 webhook-warning；
+#   - severity=info（如 AntiCheatEventSpike）→ 不路由到任何 receiver（只留观，不打扰值班）。
+#
+# 禁止事项：
+#   - 本文件绝不写真实平台 URL / token 明文。webhook URL 统一走环境变量注入（见 compose 服务
+#     alertmanager 的 sed 运行时替换，ALERT_RECEIVER_URL 覆盖，默认指向 compose 网内 alert-receiver:5000）。
+#   - 不改既有的告警规则与阈值（rules/exam-online-alerts.yml 与 AlertAssetsTest 零触碰）。
+
+route:
+  # 按告警名聚合，便于同一告警的重复/恢复合并
+  group_by: ["alertname"]
+  # 默认聚合窗口：warning 及未显式定义的告警在此路由下延后投递
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: webhook-warning
+  routes:
+    # critical 立发：group_wait 0s，触发即投递
+    - matchers: ['severity = "critical"']
+      receiver: webhook-critical
+      group_wait: 0s
+      group_interval: 5m
+    # info 不投递（只留观）：指向空 receiver，Alertmanager 收起但不上送
+    - matchers: ['severity = "info"']
+      receiver: void
+
+inhibit_rules:
+  # 应用级故障（critical，如 ExamOnlineDown 应用宕机）活跃时，
+  # 抑制同一抓取 job（exam-online）下的 warning 噪音，避免故障风暴反复刷屏。
+  # Alertmanager 语义：源告警满足 source_matchers、目标告警满足 target_matchers、
+  # 且两者在 equal 列出的标签上相等时，目标告警被抑制。
+  - source_matchers: ['severity = "critical"']
+    target_matchers: ['severity = "warning"']
+    equal: ["job"]
+
+receivers:
+  # info 级留观：无任何投递配置，路由至此的告警仅保留在 Alertmanager 内供查看
+  - name: void
+  - name: webhook-critical
+    webhook_configs:
+      - url: "http://alert-receiver:5000/"
+        send_resolved: true
+  - name: webhook-warning
+    webhook_configs:
+      - url: "http://alert-receiver:5000/"
+        send_resolved: true
