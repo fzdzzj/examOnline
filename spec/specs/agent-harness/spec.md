@@ -336,3 +336,16 @@ GIVEN `.github/workflows/ci.yml` 中的 dependency-scan job 定义被纳入版�
 WHEN 审查其内容
 THEN 零 `secrets` 引用、零私有凭证、零指向仓库外机器的绝对路径
 AND Trivy action 以 pinned 稳定 tag 引用（禁 floating tag），对齐「构建配置的机器绑定不得进入版本库」与 CI 既有零秘钥口径
+
+> 合入注记（2026-10-11，变更 `add-dependency-vuln-scan`，生产化 P4，台账候选依赖漏洞扫描入 CI）：
+> 「依赖漏洞扫描非阻断报告」Requirement 合入（6 个 Scenario，名称与该卡 `specs/agent-harness/spec-delta.md` 逐字一致，正文按基线行文规范化）。
+> 实施边界：`.github/workflows/ci.yml` 新增第三 job dependency-scan（checkout@v4 → trivy-action@v0.36.0 fs 扫描，scan-ref `.` /
+> scanners vuln / format table / output trivy-report.txt / exit-code '0' / skip-dirs `.git,target,node_modules,frontend/node_modules,.m2-repo`
+> → 报告 tee 落日志、报告行数与 distinct CVE 计数 echo 进 `$GITHUB_STEP_SUMMARY` → upload-artifact@v7.0.2 上传 trivy-dependency-report
+> artifact，if-no-files-found: error）；非阻断语义写死：exit-code 0（首跑发现 9 项 CVE（pnpm 栈 5 + pom 栈 4）而 job 仍绿，
+> 报告 76 行如实列出），扫描器执行失败仍按 job 失败传导变红；零 secrets/零盘符绝对路径/零机器绑定；触发与 concurrency 沿用
+> workflow 级既有定义；`.github/ci/gate-baseline.json` 零改动（扫描不产生用例数与契约 paths 变化，合法持平）。
+> 验收边界＝GitHub Actions 真实 run 三要素：feature 首跑绿 run `38123773442`（headSha `f143ec4`，三 job success，artifact 13,636 字节/
+> 76 行非空，双栈覆盖 pnpm 5 + pom 4）；probe 注入红 run `38124945091`（headSha `8f00423`，前置必败步骤 `run: exit 1` → scan job 红
+> 而两门禁 job 照常绿，注入分支用后即删）；--no-ff 合并笔 `515b79d` 后 main 绿 run `38125602056`。本地双端门禁在实施笔前后两次
+> 持平全绿（398/0/0/1 + BUILD SUCCESS；vitest 86 文件 610 例 ×3 退出码 0），本案零业务代码改动。

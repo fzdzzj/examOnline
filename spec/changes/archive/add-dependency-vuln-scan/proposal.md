@@ -42,3 +42,11 @@
   ③ `--no-ff` 合并 main → push main → main 上 CI 三 job 全绿。
 - **本地可验证部分**：实施笔前后双端门禁持平全绿（零业务代码，预期持平基线）；grep 自查 ci.yml 新增段零 `secrets`/零盘符绝对路径；既有双 job 段 diff 自证零改动；`gate-baseline.json` 零改动自证。
 - **停止条件**：① Trivy action 在该仓库 runner 上不可用或必须引入 API key/secret 才能工作 → 停止上报，不擅自换扫描平台；② 新增 job 导致既有 backend/frontend job 任何行为变化（排队挤压致超时、concurrency 语义被破坏）→ 停止上报；③ 实施时查证不到可 pinned 的稳定 action tag（仅 floating tag 可用）→ 停止上报；④ workflow 被要求引入机器绝对路径或私有凭证 → 停止上报；⑤ scan job 任何配置必须改动 `gate-baseline.json` 或既有断言脚本才能工作 → 停止上报。
+
+## 验收边界（收口回填，2026-10-11）
+
+- **裁决 GO**。五条停止条件均未触发：trivy-action v0.36.0（2026-04-22 release）与 upload-artifact v7.0.2（2026-10-07 release，非 prerelease）均可 pinned 稳定 tag，零 floating；trivy 在 ubuntu-latest runner 首跑即绿、零 secret 依赖（github-pat 未传）；既有 backend/frontend 两 job 断言照旧全绿（BACKEND GATE ASSERT OK 398/0/0/1、OPENAPI PATHS ASSERT OK 74、FRONTEND GATE ASSERT OK vitest 610），行为零变化；ci.yml 新增段零 secrets/零盘符绝对路径；`gate-baseline.json` 零改动（合法持平）。
+- **远端验证三要素**：① feature 首跑绿 run `38123773442`（headSha `f143ec4`，三 job success；artifact `trivy-report.txt` 13,636 字节/76 行非空，双栈覆盖实证：`frontend/pnpm-lock.yaml (pnpm)` 5 项 + `pom.xml (pom)` 4 项，9 CVE 如实列出而 job 绿——非阻断语义生效）；② probe 注入红 run `38124945091`（headSha `8f00423`，dependency-scan job 前置必败步骤 `run: exit 1` → 该 job failure 而 backend/frontend 两门禁 job 照常 success——scan job 真实执行非恒绿装饰；注入分支远端本地均删，feature 分支 `git diff f143ec4 HEAD --stat` 空，零残留）；③ --no-ff 合并笔 `515b79d` 后 main 绿 run `38125602056`（三 job success）。
+- **本地可验证部分**：实施笔 `f143ec4` 前后双端门禁两次持平全绿（后端 `mvnw.cmd clean test` → 398/0/0/1 + BUILD SUCCESS；前端 lint/type-check/test 全绿 86 文件 610 例）；四项自查（diff 纯新增 36 行 / gate-baseline 零触碰 / 零 secrets 零盘符 / js-yaml 解析三 job 结构）全绿，留证 `D:\code\examOnline-measure\impl-add-dependency-vuln-scan\`。
+- **登记偏差一处（如实）**：任务 5 台账返修笔的 evidence 以**执行子 agent 自己的当次实测**（双端门禁实施笔前后复跑、三 run 三要素、零代码自证）回填，而非 P1/P2 先例的「复核子 agent VERDICT 逐字转录」——本卡派发为执行子 agent 一次性完成任务 1-5、复核轮尚未进行；独立复核子 agent 后续复跑时如发现出入，以复核实测为准修正本格。
+- **非目标保持排除**：阻断式阈值门禁（CVSS 分级变红）、OWASP dependency-check 与 NVD API key、Dependabot、CD、覆盖率上传、SARIF 上传 code scanning 全部未做；发现漏洞 job 仍绿（首跑 9 项 CVE 实证），未来若裁决升级为阈值门禁属新变更。
