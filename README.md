@@ -25,6 +25,7 @@
 | 启动需要哪些环境变量 | 上面两个文件里的 `${...}` 表达式 | 别在本文件维护变量清单——它已经过期过一次 |
 | 依赖服务的编排与宿主端口映射 | `docker-compose.yml`（顶部注释解释了宿主端口为何不是各组件的默认端口） | 实际生效的映射以 `docker ps --format "{{.Names}} {{.Ports}}"` 为准 |
 | 生产部署栈（应用镜像化 + Nginx TLS 终结 + 独立编排的外部端口/凭据面） | `docker-compose.prod.yml`（头注释自述拓扑、凭据必填变量与建表入口；凭据一律 `${VAR:?err}` 注入，缺变量即 compose 解析失败） | 与 dev 编排互不干扰（独立网络/容器名）；镜像由根 `Dockerfile` 与 `frontend/Dockerfile` 构建 |
+| 可观测栈与告警投递（Prometheus + Grafana + Alertmanager + 本地 webhook 探针） | `docker/observability/README.md`（启动顺序、9 条规则表、动态验证诚实边界）+ `docker/observability/docker-compose.observability.yml`（镜像 tag 用具体版本号；`alert-receiver` 由 `--profile alert-receiver` 门控默认不随栈启动；webhook 目标经 `ALERT_RECEIVER_URL` 环境变量注入） | 独立于主 `docker-compose.yml` 的可选编排，只消费应用已暴露指标；告警规则与阈值由 `AlertAssetsTest` 护栏守护，本表不写易变事实 |
 | 本机 dev 该怎么起、有哪些坑 | `docs/指导Agent交接文档.md` 的「本机 dev 启动环境」小节 | 含"哪个容器故意不要起"及其原因 |
 | 指导主 Agent 如何低成本给子 Agent 派工与验收 | `docs/主Agent执行指南.md` | 角色专用；新成员按需阅读，不属于必读顺序 |
 | 表结构 / 建表脚本 | `src/main/resources/schema.sql` | 建表唯一入口，见 `AGENTS.md` 约定 1 |
