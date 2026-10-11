@@ -39,17 +39,18 @@ import java.util.stream.Collectors;
  *
  * <p>只读聚合四块：班级概览 / 逐题指标 / 知识点薄弱 / 学生关注名单。逐题指标复用
  * {@link ScoreExportService#aggregateQuestionStats}（题目统计导出的唯一聚合来源，口径同源）。
- * 班级概览的应考/缺席沿用缺考域口径（应考=班级名单，缺席=应考−有答卷者），及格线口径
- * 见 {@link #PASS_LINE}。不写任何数据，不逐生×逐题交叉矩阵（留二期）。
+ * 班级概览的应考/缺席沿用缺考域口径（应考=班级名单，缺席=应考−有答卷者）。
+ * 及格线/优秀线不再绝对（fix-analysis-report-pass-line）：按试卷总分 ×60% / ×90% 派生
+ * （HALF_UP 取整到整数分），三处消费（及格率/分数段切分/关注名单）统一用派生值。
+ * 不写任何数据，不逐生×逐题交叉矩阵（留二期）。
  */
 @Service
 public class ExamAnalysisReportService {
 
-    /**
-     * 及格线（分析报告口径）：≥ {@code PASS_LINE} 记为及格。既有成绩汇总/导出口径未定义
-     * 及格率，本值为本次新增指标口径，注释在案。学生关注名单取低于该线的学生。
-     */
-    private static final BigDecimal PASS_LINE = new BigDecimal("60");
+    /** 及格线比例：试卷总分 × {@code PASS_RATE}（HALF_UP 取整），100 分制下为 60。 */
+    private static final BigDecimal PASS_RATE = new BigDecimal("0.60");
+    /** 优秀线比例：试卷总分 × {@code EXCELLENT_RATE}（HALF_UP 取整），100 分制下为 90。 */
+    private static final BigDecimal EXCELLENT_RATE = new BigDecimal("0.90");
 
     private final ExamMapper examMapper;
     private final ScoreExportService scoreExportService;
@@ -94,6 +95,11 @@ public class ExamAnalysisReportService {
         GradingPaper paper = paperReader.readByExamId(examId);
         List<GradingQuestion> questions = paper.questions();
 
+        // 及格线/优秀线统一派生（总分 ×60% / ×90%，HALF_UP 取整到整数分）；
+        // 总分不可得即 fail-fast 明确报错，不回退任何默认总分值（fix-analysis-report-pass-line）
+        int passLine = passLineOf(paper.totalScore());
+        int excellentLine = excellentLineOf(paper.totalScore());
+
         // 逐题指标：与题目统计导出同一聚合来源（同源同口径，禁止另造第二套公式）
         List<ScoreExportService.QuestionStatMetric> metrics =
                 scoreExportService.aggregateQuestionStats(examId, paper, questions);
@@ -108,20 +114,45 @@ public class ExamAnalysisReportService {
                 .toList();
 
         ExamAnalysisReportResponse response = new ExamAnalysisReportResponse();
-        response.setClassOverview(buildClassOverview(exam, gradedStudentIds, graded));
+        response.setPassLine(passLine);
+        response.setExcellentLine(excellentLine);
+        response.setClassOverview(buildClassOverview(exam, gradedStudentIds, graded,
+                passLine, excellentLine, paper.totalScore()));
         response.setQuestionStats(buildQuestionStats(questions, metrics));
         TagDimension tagDimension = buildTagWeakness(questions, metrics);
         response.setTagWeakness(tagDimension.items());
         response.setHasTagDimension(tagDimension.hasDimension());
-        response.setFocusList(buildFocusList(graded, gradedStudentIds));
+        response.setFocusList(buildFocusList(graded, gradedStudentIds, passLine));
         return response;
+    }
+
+    /** 及格线 = 总分 ×60%（HALF_UP 取整到整数分）。总分不可得（null/非正）→ fail-fast。 */
+    private static int passLineOf(BigDecimal total) {
+        return fractionOf(total, PASS_RATE);
+    }
+
+    /** 优秀线 = 总分 ×90%（HALF_UP 取整到整数分）。总分不可得（null/非正）→ fail-fast。 */
+    private static int excellentLineOf(BigDecimal total) {
+        return fractionOf(total, EXCELLENT_RATE);
+    }
+
+    /** 总分 × 比例，HALF_UP 取整到整数分；总分不可得（null/≤0）明确报错，不回退默认值。 */
+    private static int fractionOf(BigDecimal total, BigDecimal rate) {
+        if (total == null || total.signum() <= 0) {
+            throw new BusinessException(ResponseCode.INTERNAL_ERROR,
+                    "无法取到试卷总分，无法派生及格线/优秀线");
+        }
+        return total.multiply(rate).setScale(0, RoundingMode.HALF_UP).intValue();
     }
 
     // ==================== 班级概览 ====================
 
     private ExamAnalysisReportResponse.ClassOverview buildClassOverview(Exam exam,
                                                                         List<Integer> gradedStudentIds,
-                                                                        List<GradingSubmission> graded) {
+                                                                        List<GradingSubmission> graded,
+                                                                        int passLine,
+                                                                        int excellentLine,
+                                                                        BigDecimal totalScore) {
         ExamAnalysisReportResponse.ClassOverview overview = new ExamAnalysisReportResponse.ClassOverview();
 
         List<Long> expectedIds = exam.getClassId() == null
@@ -156,8 +187,8 @@ public class ExamAnalysisReportService {
                 .filter(Objects::nonNull)
                 .toList();
         overview.setAverageScore(averageOf(totals));
-        overview.setPassRate(passRateOf(totals));
-        overview.setScoreBands(scoreBandsOf(totals));
+        overview.setPassRate(passRateOf(totals, passLine));
+        overview.setScoreBands(scoreBandsOf(totals, passLine, excellentLine, totalScore));
         return overview;
     }
 
@@ -169,36 +200,58 @@ public class ExamAnalysisReportService {
         return sum.divide(BigDecimal.valueOf(totals.size()), 1, RoundingMode.HALF_UP);
     }
 
-    private static Double passRateOf(List<BigDecimal> totals) {
+    private static Double passRateOf(List<BigDecimal> totals, int passLine) {
         if (totals.isEmpty()) {
             return null;
         }
-        long pass = totals.stream().filter(t -> t.compareTo(PASS_LINE) >= 0).count();
+        long pass = totals.stream().filter(t -> t.compareTo(BigDecimal.valueOf(passLine)) >= 0).count();
         return (double) pass / totals.size();
     }
 
-    private static List<ExamAnalysisReportResponse.ScoreBandItem> scoreBandsOf(List<BigDecimal> totals) {
+    /**
+     * 分数段（5 段制维持，切点由总分百分比派生，fix-analysis-report-pass-line）：
+     * 切点 = 总分 ×{@literal 60%/70%/80%/90%}（HALF_UP 取整）。100 分制下恒为
+     * 0-59/60-69/70-79/80-89/90-100（与既有输出逐字一致，零回归）。50 分制下为
+     * 0-29/30-34/35-39/40-44/45-50；150 分制下为 0-89/90-104/105-119/120-134/135-150
+     * （最外切点恰为及格线/优秀线）。
+     */
+    private static List<ExamAnalysisReportResponse.ScoreBandItem> scoreBandsOf(
+            List<BigDecimal> totals, int passLine, int excellentLine, BigDecimal totalScore) {
+        // 5 个切点阈值：60%/70%/80%/90% 的整数分（首/末切点即及格线/优秀线）
+        int[] thresholds = {
+                passLine,
+                fractionOf(totalScore, new BigDecimal("0.70")),
+                fractionOf(totalScore, new BigDecimal("0.80")),
+                excellentLine
+        };
         int[] bands = {0, 0, 0, 0, 0};
         for (BigDecimal total : totals) {
+            if (total == null) {
+                continue;
+            }
             int score = total.setScale(0, RoundingMode.HALF_UP).intValue();
-            if (score < 60) {
+            if (score < thresholds[0]) {
                 bands[0]++;
-            } else if (score < 70) {
+            } else if (score < thresholds[1]) {
                 bands[1]++;
-            } else if (score < 80) {
+            } else if (score < thresholds[2]) {
                 bands[2]++;
-            } else if (score < 90) {
+            } else if (score < thresholds[3]) {
                 bands[3]++;
             } else {
                 bands[4]++;
             }
         }
         return List.of(
-                new ExamAnalysisReportResponse.ScoreBandItem("0-59", bands[0]),
-                new ExamAnalysisReportResponse.ScoreBandItem("60-69", bands[1]),
-                new ExamAnalysisReportResponse.ScoreBandItem("70-79", bands[2]),
-                new ExamAnalysisReportResponse.ScoreBandItem("80-89", bands[3]),
-                new ExamAnalysisReportResponse.ScoreBandItem("90-100", bands[4]));
+                new ExamAnalysisReportResponse.ScoreBandItem("0-" + (thresholds[0] - 1), bands[0]),
+                new ExamAnalysisReportResponse.ScoreBandItem(
+                        thresholds[0] + "-" + (thresholds[1] - 1), bands[1]),
+                new ExamAnalysisReportResponse.ScoreBandItem(
+                        thresholds[1] + "-" + (thresholds[2] - 1), bands[2]),
+                new ExamAnalysisReportResponse.ScoreBandItem(
+                        thresholds[2] + "-" + (thresholds[3] - 1), bands[3]),
+                new ExamAnalysisReportResponse.ScoreBandItem(
+                        thresholds[3] + "-" + totalScore.setScale(0, RoundingMode.HALF_UP), bands[4]));
     }
 
     // ==================== 逐题指标 ====================
@@ -297,13 +350,13 @@ public class ExamAnalysisReportService {
     // ==================== 学生关注名单 ====================
 
     private List<ExamAnalysisReportResponse.FocusStudentItem> buildFocusList(
-            List<GradingSubmission> graded, List<Integer> gradedStudentIds) {
+            List<GradingSubmission> graded, List<Integer> gradedStudentIds, int passLine) {
         if (gradedStudentIds.isEmpty()) {
             return List.of();
         }
         List<GradingSubmission> below = graded.stream()
                 .filter(g -> g.getTotalScore() != null)
-                .filter(g -> g.getTotalScore().compareTo(PASS_LINE) < 0)
+                .filter(g -> g.getTotalScore().compareTo(BigDecimal.valueOf(passLine)) < 0)
                 .distinct()
                 .toList();
         if (below.isEmpty()) {

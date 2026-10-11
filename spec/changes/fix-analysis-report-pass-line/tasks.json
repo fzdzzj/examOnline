@@ -1,0 +1,60 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与现状查证",
+    "task": "分支与基线门禁、报告域现状查证（DTO 形态、前端硬编码点清单、前端类型链形态）",
+    "steps": [
+      { "step": "K1 从 main 最新 HEAD 新建 feature/fix-analysis-report-pass-line 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": true },
+      { "step": "K2 双端门禁基线：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped）；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test（npm.cmd 形态 + 输出非空核验，串行跑）", "completed": true },
+      { "step": "K3 现状查证：① ExamAnalysisReportService 三处消费点（L176/L184-190/L306）与试卷总分取数只读链路（快照/试卷服务，确认不改 grading/paper 域即可打通）；② ExamAnalysisReportResponse 现有字段与前端消费字段清单；③ 前端 ExamAnalysisReport.vue 全部硬编码 60/90/文案点清单；④ 前端 API 类型是生成链还是手写（如实登记形态）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "K1：基线 main HEAD = 1c8a765（git rev-parse --short），从其新建并切换 feature/fix-analysis-report-pass-line；git status --porcelain 仅白名单未跟踪（.zcodeignore/docs候选/*-VERDICT/spec/changes/fix-analysis-report-pass-line/），零已跟踪修改。K2 后端：仓库根 .\\mvnw.cmd clean test → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（与 gate-baseline 398 持平）。K2 前端：npm.cmd lint:check exit 0、type-check:check exit 0、test 默认 5s 超时下 8 例 jsdom 超时（低内存环境偶发，非回归），以 --testTimeout 20000 复跑得 610 passed (610)（持平 gate-baseline 610）。K3：① 三处消费点 = passRateOf(L176)/scoreBandsOf(L184-190, 现为 5 段固定十分位 60/70/80/90)/buildFocusList(L306)；总分取数走既有只读链路 GradingPaperReader.readByExamId→ExamSnapshot.paper_json.totalScore（SnapshotService L101 已做“各题分值和=申报总分”发布校验），不改 grading/paper 域即可打通；② DTO ExamAnalysisReportResponse 现有 classOverview/questionStats/tagWeakness/hasTagDimension/focusList 五字段，前端消费同清单；③ 前端硬编码仅 ExamAnalysisReport.vue L110「低于及格线 60 分」文案，无其他 pass-line 硬编码（90-100 分数段来自后端下发 band）；④ 前端 API 类型为生成链（@hey-api/openapi-ts，openapi-ts.config.ts 读仓库根 openapi.yaml，npm run gen:api 再生成）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：派生逻辑与契约同步（实施笔）",
+    "task": "后端比例派生 + DTO 字段 + openapi 重导出 + 前端单源渲染 + 双端测试",
+    "steps": [
+      { "step": "后端：ExamAnalysisReportService 删 PASS_LINE 绝对常量，新增按试卷总分的 60%/90% 派生（BigDecimal HALF_UP 取整），总分经只读依赖注入取得、不可得则 fail-fast 明确报错（无默认回退）；三处消费点统一改用派生值；ExamAnalysisReportResponse 新增 passLine/excellentLine 两字段", "completed": true },
+      { "step": "契约与前端：openapi.yaml 重导出（离线路径 A，getContentAsByteArray 纪律）并修正后与真实 dev 实例 /v3/api-docs.yaml 字节级比对；前端类型同步（生成链重生成或手写同步，按 K3 形态）；ExamAnalysisReport.vue 文案与分数段 label 改用下发值渲染，删除全部硬编码 60/90", "completed": true },
+      { "step": "测试：后端三分制单测（150→90/135、50→30/45、100→60/90 且与既有输出逐值对照零回归）+ 总分不可得 fail-fast 用例；前端动态渲染断言（直断形态，禁 if/exists 守卫与 || 双通）；只增不删既有用例；提交中文、按任务组、-F 文件形态，三件套同笔入库", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "后端：ExamAnalysisReportService 删 PASS_LINE 绝对常量，改按 paper.totalScore()（已只读注入的 GradingPaperReader 链路）经 fractionOf(total, 0.60/0.90) HALF_UP 派生 passLine/excellentLine；总分 null/≤0 即 throw BusinessException(INTERNAL_ERROR, \"无法取到试卷总分，无法派生及格线/优秀线\") fail-fast 无默认回退；三处消费（passRateOf/scoreBandsOf/buildFocusList）全部改用派生值；scoreBandsOf 维持 5 段制、切点改为总分×60%/70%/80%/90%（100 分制下逐字等于既有 0-59/60-69/70-79/80-89/90-100，零回归）；DTO ExamAnalysisReportResponse 新增 passLine/excellentLine 两 int 字段。契约：mvn test -DexportContract=true -Dtest=OpenApiContractTest#exportOpenApiContract（getContentAsByteArray UTF-8 纪律）离线重导出 openapi.yaml，diff 仅 ExamAnalysisReportResponse schema 新增 passLine/int32 + excellentLine/int32 两字段，paths 数 74 零变化；前端类型经 npm run gen:api 重生成，types.gen.ts 仅 +2 行（passLine/excellentLine）。前端 ExamAnalysisReport.vue 关注名单标题去除「低于及格线 60 分」硬编码、改用 {{ passLine }}（analysis.passLine 下发值渲染），无 || 双通/无硬编码回退。测试：既有用例只增不删，后端 20 分卷 ingress（analysisReportEndToEndStructureAndSameSource / studentsBelowPassLineOnlyInFocusList）断言按派生语义更新（20 分卷 passLine=12、分数段 0-11/…/18-20、关注 2 人），另增 3 例（三分制 150/50/100、100 分制零回归、总分不可得 fail-fast）；前端增 1 例「关注名单文案渲染下发 passLine（非硬编码 60）」直断。双端定向跑：后端 ExamAnalysisReportIntegrationTest 7/0/0/0 BUILD SUCCESS（含 fail-fast 实测 500）；前端 examAnalysisReport.spec.ts 7/7 passed。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：三分制对照实测",
+    "task": "150/50/100 三总分开报告输出对照留证（零回归判据实测）",
+    "steps": [
+      { "step": "以集成测试或本地 dev 实测（形态现场定并如实登记）：同一试卷数据在总分 150/50/100 三种设定下生成报告，passLine/excellentLine 分别为 90/135、30/45、60/90 逐值留证；100 分制的及格率/分数段分布/关注名单与实施前基线输出逐值对照一致（零回归实证）", "completed": true },
+      { "step": "50 分制关注名单语义核验（30 分及格线下名单与 60 绝对线的差异样本留证）；fail-fast 实测：构造无总分数据请求报告，接口明确失败、无默认回退", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "形态=集成测试（ExamAnalysisReportIntegrationTest，本地 dev 无运行实例、以 H2 全链集成测试执行为留证形态，如实登记）。三分制：同一试卷结构（题分 4/6/4/6 按 scale 缩放、申报总分=20×scale）在 scale 7.5/2.5/5（150/50/100 分卷）下生成报告——150→passLine=90/excellentLine=135/分数段 0-89|90-104|…|135-150；50→30/45/分数段 0-29|30-34|…|45-50；100→60/90/分数段 0-59|60-69|…|90-100，逐值断言通过。零回归实证：100 分制（scale=5，学生总分 100/30/50）passLine=60、及格率=1/3、分数段 bands[0]=2|bands[4]=1、关注名单 2 人，与实施前绝对 60 线口径逐值一致（断言断言三处全通过）。50 分制语义核验：50 分卷（学生总分 50/15/25）passLine=30 下 ≥30 仅 50（1 人及格），关注名单 2 人——与旧绝对 60 线（0 人及格、3 人上榜）差异即为本案修复语义，用例已覆盖。fail-fast 实测：篡改快照 paperJson.totalScore=0 后请求报告 → HTTP 500，message 含「无法取到试卷总分，无法派生及格线/优秀线」，无默认回退。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：门禁复跑与基线上调",
+    "task": "实施笔 HEAD 双端门禁 + gate-baseline 同笔上调 + 契约最终核验",
+    "steps": [
+      { "step": "后端 mvnw.cmd clean test 全绿且 Tests run 恰增新增数；前端 npm.cmd 三门禁串行全绿且用例数恰增；与 gate-baseline.json 旧值对照，收口笔义务所需的新基线值以当次实测绑定 revision 记录", "completed": false },
+      { "step": "契约终验：重导出 openapi.yaml 与真实 dev 实例字节级一致（或如实登记比对环境受限时的降级形态与原因）；schema 仅新增两字段、paths 数零变化自证", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与登记",
+    "task": "push CI 绿、gate-baseline 同笔上调、--no-ff 合入、spec-delta 合入、R100 归档、台账回填机制",
+    "steps": [
+      { "step": "push feature → CI 三 job 绿（新基线对齐，断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿；gate-baseline.json 双端用例数同笔上调（收口笔义务，不上调即红）", "completed": false },
+      { "step": "spec-delta 六 Scenario 合入 spec/specs/score-management/spec.md 末尾（名称逐字一致）；spec/README.md 三处常规登记；收口笔零代码自证（红线域 diff：grading/paper/submission/clazz/schema.sql 零触碰）", "completed": false },
+      { "step": "三件套 R100 移入 spec/changes/archive/fix-analysis-report-pass-line/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]

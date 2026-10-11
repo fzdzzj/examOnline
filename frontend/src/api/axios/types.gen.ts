@@ -890,6 +890,8 @@ export type ExamAnalysisReportResponse = {
     tagWeakness?: Array<TagWeaknessItem>;
     hasTagDimension?: boolean;
     focusList?: Array<FocusStudentItem>;
+    passLine?: number;
+    excellentLine?: number;
 };
 
 export type FocusStudentItem = {
