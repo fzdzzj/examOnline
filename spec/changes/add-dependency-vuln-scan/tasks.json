@@ -4,47 +4,47 @@
     "category": "阶段 1：开工核对与基线",
     "task": "现场核对分支/HEAD/工作树、双端门禁基线、远端 main 当前 CI 绿状态",
     "steps": [
-      { "step": "K1 确认 P2 任务 5 返修笔已落位 main（git log 核对返修笔存在），从 main 最新 HEAD 新建 feature/add-dependency-vuln-scan 并切换，git rev-parse --short HEAD 实测记录基线 revision；K2 git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、spec/changes/add-dependency-vuln-scan/），零已跟踪修改", "completed": false },
-      { "step": "K3 后端基线：仓库根 mvnw.cmd clean test → 398/0/0/1 BUILD SUCCESS（预期持平，本案零业务代码）；K4 前端基线：npm.cmd --prefix frontend run lint:check 与 type-check:check 退出码 0，npm.cmd --prefix frontend run test → 86 文件 / 610 例全绿（npm.cmd 形态 + 核实输出非空，防 System32 空 npm 假绿）", "completed": false },
-      { "step": "K5 远端现状留证：gh run list 记录 main 当前最近一次 CI run 的绿状态与 run id（本案开工前的远端基线）；确认 GitHub Actions 额度与 runner 可用性正常，异常即触发停止条件①", "completed": false }
+      { "step": "K1 确认 P2 任务 5 返修笔已落位 main（git log 核对返修笔存在），从 main 最新 HEAD 新建 feature/add-dependency-vuln-scan 并切换，git rev-parse --short HEAD 实测记录基线 revision；K2 git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、spec/changes/add-dependency-vuln-scan/），零已跟踪修改", "completed": true },
+      { "step": "K3 后端基线：仓库根 mvnw.cmd clean test → 398/0/0/1 BUILD SUCCESS（预期持平，本案零业务代码）；K4 前端基线：npm.cmd --prefix frontend run lint:check 与 type-check:check 退出码 0，npm.cmd --prefix frontend run test → 86 文件 / 610 例全绿（npm.cmd 形态 + 核实输出非空，防 System32 空 npm 假绿）", "completed": true },
+      { "step": "K5 远端现状留证：gh run list 记录 main 当前最近一次 CI run 的绿状态与 run id（本案开工前的远端基线）；确认 GitHub Actions 额度与 runner 可用性正常，异常即触发停止条件①", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ main d5d9362（2026-10-11），留证 D:\\code\\examOnline-measure\\impl-add-dependency-vuln-scan\\01-task1-baseline.md。K1：git log --oneline -1 d5d9362 命中返修笔（main 顶端第 1 笔）→ git rev-parse --short HEAD = d5d9362，feature/add-dependency-vuln-scan 自此建立并切换。K2：git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/ 候选与交接文档若干、spec/changes/add-dependency-vuln-scan/），零已跟踪修改。K3：仓库根 ./mvnw.cmd clean test → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（05:17 min，JAVA_HOME=D:\\develop1\\jdk21 ≥ release 17）。K4：npm.cmd --prefix frontend run lint:check exit 0（eslint banner 真实输出）、type-check:check exit 0（vue-tsc + tsc 双 banner 真实输出）、test exit 0 → Test Files 86 passed (86) / Tests 610 passed (610)，输出非空核验通过。K5：gh run list --branch main --limit 3 → 最近 run 38121561079（headSha d5d9362）completed success（2026-10-11T07:29:55Z），Actions 可用正常，停止条件①未触发。"
   },
   {
     "number": 2,
     "category": "阶段 2：dependency-scan job 落地与实施笔",
     "task": "ci.yml 新增第三 job（Trivy 非阻断报告），四项自查后实施笔提交（含三件套入库）",
     "steps": [
-      { "step": "现场查证 aquasecurity/trivy-action 与 actions/upload-artifact 可 pinned 的最新稳定 tag 并记录版本号（仅 floating tag 可用即触发停止条件③）；按 proposal What Changes 第 1 条参数在 ci.yml 新增 dependency-scan job：checkout → trivy-action fs 扫描（skip-dirs 至少含 .git,target,node_modules,frontend/node_modules,.m2-repo；format: table；exit-code: 0；输出 tee 报告文件）→ 计数 echo 进 $GITHUB_STEP_SUMMARY → upload-artifact 上传报告", "completed": false },
-      { "step": "四项自查：① 既有 backend/frontend 两 job 段 diff 自证零改动（git diff 仅新增 dependency-scan job 段）；② gate-baseline.json 零触碰自证；③ 新增段 grep 零 secrets/零盘符绝对路径（对齐 agent-harness「CI 配置零机器绑定」）；④ YAML 结构自证（缩进层级与既有 job 对齐，提交前 git diff 逐行核对）", "completed": false },
-      { "step": "实施笔提交：ci.yml 新增 job + 本变更三件套（proposal/tasks/spec-delta）一并入库（对齐「立项三件套随实施笔入库」纪律，使收口笔为 R100 归档形态）；提交信息中文、按任务组", "completed": false }
+      { "step": "现场查证 aquasecurity/trivy-action 与 actions/upload-artifact 可 pinned 的最新稳定 tag 并记录版本号（仅 floating tag 可用即触发停止条件③）；按 proposal What Changes 第 1 条参数在 ci.yml 新增 dependency-scan job：checkout → trivy-action fs 扫描（skip-dirs 至少含 .git,target,node_modules,frontend/node_modules,.m2-repo；format: table；exit-code: 0；输出 tee 报告文件）→ 计数 echo 进 $GITHUB_STEP_SUMMARY → upload-artifact 上传报告", "completed": true },
+      { "step": "四项自查：① 既有 backend/frontend 两 job 段 diff 自证零改动（git diff 仅新增 dependency-scan job 段）；② gate-baseline.json 零触碰自证；③ 新增段 grep 零 secrets/零盘符绝对路径（对齐 agent-harness「CI 配置零机器绑定」）；④ YAML 结构自证（缩进层级与既有 job 对齐，提交前 git diff 逐行核对）", "completed": true },
+      { "step": "实施笔提交：ci.yml 新增 job + 本变更三件套（proposal/tasks/spec-delta）一并入库（对齐「立项三件套随实施笔入库」纪律，使收口笔为 R100 归档形态）；提交信息中文、按任务组", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-dependency-vuln-scan（基线 d5d9362），留证 D:\\code\\examOnline-measure\\impl-add-dependency-vuln-scan\\02-task2-selfchecks.md。tag 查证：gh api repos/aquasecurity/trivy-action/releases/latest → v0.36.0（2026-04-22）；repos/actions/upload-artifact/releases 列表 → 最新稳定 v7.0.2（2026-10-07，非 prerelease），均非 floating，停止条件③未触发；trivy-action v0.36.0 action.yaml 输入面核实（scan-type/scan-ref/scanners/format/output/exit-code/skip-dirs 均在，skip-dirs 为 comma separated，github-pat 可选不传）。落地：ci.yml 纯新增 36 行 job dependency-scan（checkout@v4 → trivy-action@v0.36.0 scan-type fs / scan-ref . / scanners vuln / format table / output trivy-report.txt / exit-code '0' / skip-dirs .git,target,node_modules,frontend/node_modules,.m2-repo → run 步 cat 报告 tee 落日志 + wc -l 行数与 grep -oE 'CVE-[0-9]{4}-[0-9]+'|sort -u|wc -l 计数 echo 进 $GITHUB_STEP_SUMMARY → upload-artifact@v7.0.2 name trivy-dependency-report / path trivy-report.txt / if-no-files-found: error）。四项自查：① git diff --stat 仅 ci.yml 36 insertions 0 deletions，diff 全 + 行（既有两 job 零改动）；② git diff .github/ci/gate-baseline.json 输出空；③ 新增行 grep secrets 与盘符模式零命中（exit 1）、GITHUB_TOKEN 计 0；④ node+js-yaml@4.3.2 解析通过，JOBS=[backend,frontend,dependency-scan]、TRIVY_WITH/UPLOAD_WITH 逐项与设计一致、缩进对齐。实施笔 f143ec4（4 文件 191 insertions：ci.yml + 三件套 proposal/tasks/spec-delta 入库）。"
   },
   {
     "number": 3,
     "category": "阶段 3：远端首跑验证（feature 分支）",
     "task": "push feature 分支触发 CI，三 job 全绿 + scan artifact 下载核验，三要素留证",
     "steps": [
-      { "step": "push feature/add-dependency-vuln-scan → gh run watch 等待完成 → 三 job 全绿：backend/frontend 断言照旧 + dependency-scan 绿；若既有双 job 出现任何行为变化（排队挤压、concurrency 语义破坏）即触发停止条件②", "completed": false },
-      { "step": "artifact 核验：gh run download（或 gh api）下载 dependency-scan 报告，确认存在且内容非空、双栈扫描痕迹可见（Maven 坐标与 pnpm-lock 均在扫描范围）；报告非空性留证", "completed": false },
-      { "step": "三要素留证：run URL + 三 job 汇总结论 + 实施笔短 revision，留存 measure 目录（命令 + 当次输出 + 短 revision）", "completed": false }
+      { "step": "push feature/add-dependency-vuln-scan → gh run watch 等待完成 → 三 job 全绿：backend/frontend 断言照旧 + dependency-scan 绿；若既有双 job 出现任何行为变化（排队挤压、concurrency 语义破坏）即触发停止条件②", "completed": true },
+      { "step": "artifact 核验：gh run download（或 gh api）下载 dependency-scan 报告，确认存在且内容非空、双栈扫描痕迹可见（Maven 坐标与 pnpm-lock 均在扫描范围）；报告非空性留证", "completed": true },
+      { "step": "三要素留证：run URL + 三 job 汇总结论 + 实施笔短 revision，留存 measure 目录（命令 + 当次输出 + 短 revision）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "执行子 agent 实测（2026-10-11），留证 D:\\code\\examOnline-measure\\impl-add-dependency-vuln-scan\\03-task3-feature-run.md。三要素①：push feature → run 38123773442（https://github.com/fzdzzj/examOnline/actions/runs/38123773442）@ f143ec4：conclusion success，三 job 全绿（Backend gate success / Dependency scan (Trivy fs, non-blocking) success，job id 114423746799 / Frontend gate success），停止条件②未触发（双门禁行为零变化）；断言照旧命中逐字：BACKEND GATE ASSERT OK: Tests run=398, Failures=0, Errors=0, Skipped=1 (baseline >= 398)；OPENAPI PATHS ASSERT OK: paths=74 (baseline >= 74)；FRONTEND GATE ASSERT OK: vitest passed=610 (baseline >= 610), lint/typecheck logs non-empty, both banners present。artifact 核验：gh run download 38123773442 -n trivy-dependency-report → trivy-report.txt 13,636 字节 / 76 行非空，双栈痕迹 Report Summary 逐字 frontend/pnpm-lock.yaml (pnpm)=5 与 pom.xml (pom)=4（Total 5=MEDIUM 1+HIGH 4、Total 4=MEDIUM 2+HIGH 2），9 CVE 如实列出而 job 绿——非阻断语义（exit-code 0）生效实证。summary 计数留证：scan job log 实证 tee/summary echo 块执行；summary 走 $GITHUB_STEP_SUMMARY（GitHub 无公开 API 读 step summary、run 页前端懒加载），以同公式对 artifact 本地复算：76 行 / distinct CVE 9（CVE-2026-22731/22733/40992/45292/53550/59869/59870/84375/93749），与两栈 Total 5+4=9 吻合。实施笔后本地双端门禁复跑持平：backend 398/0/0/1 + BUILD SUCCESS（08:17 min）；frontend lint/type-check exit 0、test exit 0 86 文件 610 例。"
   },
   {
     "number": 4,
     "category": "阶段 4：probe 注入验证（可击红，用后即删）",
     "task": "probe 分支注入必败步骤证明 scan job 真实执行非恒绿，留证后删除分支",
     "steps": [
-      { "step": "从 feature 分支切 probe 注入分支，向 dependency-scan job 注入前置必败步骤（如 run: exit 1）push → gh run watch → 该 job 变红而 backend/frontend 两门禁 job 照常独立判定（绿）——证明 job 真实执行且其失败不改变门禁判定语义", "completed": false },
-      { "step": "红 run 三要素留证（run URL + scan job 红/门禁 job 绿的当次结论 + probe 分支短 revision）→ 删除 probe 分支（远端与本地）→ 回 feature 分支 git diff 自证零残留（probe 注入不污染 feature 分支历史）", "completed": false }
+      { "step": "从 feature 分支切 probe 注入分支，向 dependency-scan job 注入前置必败步骤（如 run: exit 1）push → gh run watch → 该 job 变红而 backend/frontend 两门禁 job 照常独立判定（绿）——证明 job 真实执行且其失败不改变门禁判定语义", "completed": true },
+      { "step": "红 run 三要素留证（run URL + scan job 红/门禁 job 绿的当次结论 + probe 分支短 revision）→ 删除 probe 分支（远端与本地）→ 回 feature 分支 git diff 自证零残留（probe 注入不污染 feature 分支历史）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "执行子 agent 实测（2026-10-11），留证 D:\\code\\examOnline-measure\\impl-add-dependency-vuln-scan\\04-task4-probe-run.md。三要素②：分支 feature/vuln-scan-probe（自 feature f143ec4 切出）注入 dependency-scan job 前置必败步骤（name Probe must-fail injection / shell bash / run: exit 1，probe 笔 8f00423 = 1 file 4 insertions）→ run 38124945091（https://github.com/fzdzzj/examOnline/actions/runs/38124945091）：run conclusion failure，Dependency scan job = failure（击红），Backend gate = success、Frontend gate = success（照常独立判定）——scan job 真实执行非恒绿装饰且其失败不改变门禁判定语义；--log-failed 逐字命中 Probe must-fail injection 步骤 Run exit 1。用后即删：git push origin --delete feature/vuln-scan-probe → [deleted]；git branch -D → Deleted branch feature/vuln-scan-probe (was 8f00423)；回 feature：git log --oneline -3 = f143ec4/d5d9362/4d70035（probe 笔不在 feature 历史）、git diff f143ec4 HEAD --stat 输出空（零残留）。"
   },
   {
     "number": 5,
