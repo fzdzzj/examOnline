@@ -40,6 +40,11 @@ application-local.yml
 # 真实证书替换是后续人工动作；证书一律不入库。
 docker/certs/out/
 
+# ==== MySQL 备份产物（add-backup-restore-drill）====
+# docker/mysql/backup/backup.sh 产出的全量 dump（.sql.gz + .sha256）只落本机，不入库；
+# 是否/何时备份以 BACKUPS.md 台账为准，脚本入库 ≠ 备份已运行。
+docker/mysql/backup/out/
+
 # ==== 工具工作目录 ====
 # .workbuddy/ 是 WorkBuddy 的项目记忆（MEMORY.md + 每日工作日志），属工具产物而非
 # 项目代码：它随开发者的机器与工具走，入库只会给协作者制造无意义的 diff。

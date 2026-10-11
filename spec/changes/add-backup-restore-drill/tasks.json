@@ -1,0 +1,60 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与现状查证",
+    "task": "分支与基线门禁、compose.prod mysql 形态与容器名事实、data-consistency 既有结论核对",
+    "steps": [
+      { "step": "K1 从 main 最新 HEAD 新建 feature/add-backup-restore-drill 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪", "completed": true },
+      { "step": "K2 双端门禁基线（串行）：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped 与 BUILD SUCCESS）；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test（npm.cmd 形态 + 输出非空核验）", "completed": true },
+      { "step": "K3 现状查证：① docker-compose.prod.yml 的 mysql 服务 container_name 与凭据环境变量形态（脚本映射依据）；② dev 主库 mysqldump 可用性与版本（docker exec 探测）；③ data-consistency 域 spec 中 Redis 草稿/RabbitMQ 持久化既有结论原文（边界文档引用依据，发现冲突即触发停止条件⑤）；④ .gitignore 现有 certs/out 行形态（追加锚点）；⑤ 记录远端 main 最近 CI run 绿状态", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-backup-restore-drill（main HEAD fa06223）。K1：从 main 最新 HEAD（fa06223，与 origin/main 同 commit）新建并切换 feature/add-backup-restore-drill，HEAD=fa06223；git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、review-*-VERDICT.md、spec/changes/add-backup-restore-drill/）零已跟踪业务修改。K2 后端：仓库根 .\\mvnw.cmd clean test → Tests run: 401, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（401 为 fix-analysis-report-pass-line 后的当前 main 基线）。K2 前端：npm.cmd --prefix frontend run lint:check exit 0（eslint）、type-check:check exit 0（vue-tsc+tsc）、test 纯净跑 86 文件 611 例全绿（lint/type-check 输出非空核验；初跑并发时 2 个 jsdom 组件 5s 超时，隔离重跑该两文件 6/6 与 4/4 全绿、全量纯净复跑 611/611，属已知低内存偶发超时非代码缺陷，同 add-deployment-stack 归档口径）。K3：① compose.prod mysql container_name=exam-online-prod-mysql-master、凭据 ${MYSQL_ROOT_PASSWORD:?必填}、库 exam_online（读 docker-compose.prod.yml）；② dev 主库 docker exec mysqldump 版本 8.0.46（--source-data 兼容，停止条件①解除）；③ data-consistency/spec.md 无 Redis/RabbitMQ 结论，边界引用 docker-compose.yml redis `--appendonly yes` + reliability spec RabbitMQ durable/DLQ 既有事实（无冲突，停止条件⑤不触发）；④ .gitignore 现有 `docker/certs/out/` 行（追加锚点）；⑤ 远端 main 最近 CI run 38158192988 success。" 
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：脚本与文档实施（实施笔）",
+    "task": "backup.sh + restore.sh + README SOP/边界 + BACKUPS.md 台账 + .gitignore 追加 + README 登记行",
+    "steps": [
+      { "step": "docker/mysql/backup/ 四文件落地：backup.sh（--single-transaction --source-data、gzip、sha256、--env dev|prod 映射固定 container_name、--container 覆盖、${MYSQL_ROOT_PASSWORD:?required}、--keep 轮转、幂等）；restore.sh（目标显式参数 + dump 元信息打印 + 显式确认参数缺省拒绝 + 恢复后表数与抽样校验）；README.md（SOP、crontab 示例、无自动执行者声明、Redis/RabbitMQ/binlog 边界三段对齐 data-consistency 既有结论、异地容灾与 PITR 显式排除）；BACKUPS.md（台账表头 + 纪律说明，对齐 migrations APPLIED.md 先例）", "completed": true },
+      { "step": "受控既有文件：.gitignore 追加 docker/mysql/backup/out/；README.md 登记行 + 顺手补 certs 生成步骤序一行（P3 观察项收敛）；spec/README.md 三处常规登记；提交中文、按任务组、-F 文件形态，三件套随实施笔一并入库", "completed": true },
+      { "step": "五项自查逐项留证：零业务代码 diff（红线域全空）；新文件零机器绝对路径零硬编码口令（grep 自查）；凭据全部环境变量 required 形态；compose 既有文件零触碰；产物目录 gitignored 生效（备份产物 git status 不出现）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-backup-restore-drill。四文件落地：docker/mysql/backup/backup.sh（--single-transaction --source-data=2、--routines --events、gzip、sha256sum 落 <db>-<ts>.sha256、--env dev|prod 映射 exam-mysql-master / exam-online-prod-mysql-master、--container 覆盖、--keep 默认 7、${MYSQL_ROOT_PASSWORD:?required} 零硬编码、幂等 cron 可调用）；restore.sh（--dump/--container/--db 显式、恢复前打印 dump 元信息+sha256 校验、--confirm 缺省退出码 3 拒绝、恢复用 sed 剥 CREATE DATABASE/USE/GTID_PURGED 使 --db 唯一目标 + 恢复后表数与抽样）；README.md（SOP、宿主 crontab 示例、无自动执行者声明、Redis/RabbitMQ/binlog 丢失边界三段、异地容灾与 PITR 显式排除）；BACKUPS.md（台账表头+纪律对齐 APPLIED.md）。受控既有文件：.gitignore 追加 docker/mysql/backup/out/；README.md 备份登记行 + prod 证书步骤序一行；spec/README.md 进行中变更表登记 add-backup-restore-drill 行。五项自查全过：①红线域 git status/src/frontend/pom/schema/openapi/.github/compose.yml/migrations/observability/application*.yml 零触碰；②新增文件 grep 盘符绝对路径零命中；③grep 硬编码口令仅 MYSQL_ROOT_PASSWORD 环境变量名转义命中、无 root123 等字面值，全部 ${VAR:?required}；④docker-compose.yml/migrations/observability git diff 为空；⑤git check-ignore docker/mysql/backup/out/ 退出 0（产物不入库）。三件套 proposal/tasks/spec-delta 随本笔一并入库。" 
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：dev 主库全链实测",
+    "task": "dev 真实备份 → 隔离容器真实恢复 → 一致性校验 → BACKUPS.md 首登",
+    "steps": [
+      { "step": "真实执行 backup.sh --env dev（MYSQL_ROOT_PASSWORD 经环境注入）产 dump：文件、gzip、sha256 留证；轮转实测：预置过期旧 dump 文件后复跑，--keep 删除恰按预期留证", "completed": true },
+      { "step": "一次性隔离 MySQL 容器（独立卷、一次性容器名、不触碰 dev/prod 本体）执行 restore.sh（显式确认参数路径走通 + 缺确认拒绝路径实测）→ 校验：恢复表数=dump 表数=主库表数、关键行抽样逐值一致、GTID 元信息在场 → 台账 BACKUPS.md 首行登记 → 清理一次性容器与卷零残留", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-backup-restore-drill（dev 主库 exam-mysql-master 启动回源，mysqldump 8.0.46）。①真实备份：Git Bash bash backup.sh --env dev（MYSQL_ROOT_PASSWORD=root123）→ exam_online-20261012-013713.sql.gz（17369B）sha256 4d2a39ae...a1176e53f7、sha256sum -c OK、gzip -t 通过、GTID 元信息在场（SET @@GLOBAL.GTID_PURGED + -- Position）。轮转实测：预置 5 过期+1 真 = 6 份后复跑 --keep 3 → 轮转删除 4 份最旧仅留 3 份、新 dump 生成，恰按预期。②隔离恢复：一次性容器 backup-drill-restore-1（独立卷 backup-drill-vol-1，独占偏远不碰 dev/prod）+ 库 restore_verify；缺 --confirm 路径实测退出码 3「拒绝执行」且目标库保持空；带 --confirm 真实恢复成功：sha256 OK、恢复后表数 27 = dump 27 = 主库 27、关键表行数 users15/exams11/questions25/papers12/exam_submissions8/exam_snapshots5/roles3 全 MATCH、users 15 行逐值 diff MATCH、exams 11 行逐值 MATCH。BACKUPS.md 首行登记。清理：docker rm -f backup-drill-restore-1 + volume rm 零残留；dev 主从 DB 全程只读（mysqldump --single-transaction），主库 27 表/15 users 不变、从库 Replica_IO/SQL_Running=Yes 复制健康。" 
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：prod 编排库全链实测与门禁复跑",
+    "task": "prod 起栈备份→清库恢复→26 表+登录回归；双端门禁复跑持平",
+    "steps": [
+      { "step": "全新卷起 docker-compose.prod.yml 栈至 healthy → backup.sh --env prod 产 dump 留证 → down -v 清卷重起 → restore.sh 恢复 prod 库 → 校验 26 表 + admin 行 + 登录 200（复用 P3 验证口径）→ down -v 零残留（prod 与 dev 主从本体全程零写入自证）", "completed": true },
+      { "step": "实施笔 HEAD 双端门禁复跑：mvnw.cmd clean test 与前端三门禁串行，与 K2 基线逐值持平（零用例变化）；gate-baseline.json 零改动自证（合法持平）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-backup-restore-drill（实施笔 e4ba24b）。prod 全链（docker compose --env-file prod-smoke.env -f docker-compose.prod.yml，冒烟 env 位于 D:\\code\\examOnline-measure\\impl-add-backup-restore-drill\\，不入库）：①全新卷起（6 服务全 healthy）+ 预生成自签证书 docker/certs/out/server.{crt,key} 1274/1732B + 基线验证 26 表 + admin(id=1/admin/must_change_password=1) + 登录 200；②backup.sh --env prod（MYSQL_ROOT_PASSWORD=prodroot123）→ exam_online-20261012-014353.sql.gz（4069B）sha256 67d4a5ac...09a00c945、26 建表、GTID 元信息在场；③down -v 清卷重起 → restore.sh 恢复进 prod 主库 exam-online-prod-mysql-master/exam_online --confirm → 恢复后表数 26=dump26、admin 行 id=1/admin/must_change_password=1、actuator/health/db 200、HTTPS 登录 200（JSON Content-Type，accessToken/ADMIN）；④down -v 零残留（容器/卷/网络空）。zero-write 自证：dev 主从与 prod 本体未被写入——恢复仅写于编排内 prod 主库演练目标；dev 主库 27 表/15 users 不变、从库复制健康（Replica_IO/SQL_Running=Yes）。实施笔 HEAD 双端门禁复跑：后端 .\\mvnw.cmd clean test → Tests run: 401, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（与 K2 基线逐值持平）；前端 lint:check exit 0 / type-check:check exit 0 / vitest 86 文件 611 passed (611) exit 0（持平）；git diff fa06223 HEAD -- .github/ci/gate-baseline.json 为空（零改动合法持平）；src/frontend/pom/schema/openapi/.github diff 全空（零业务代码）。" 
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与登记",
+    "task": "push CI 绿、--no-ff 合入、spec-delta 合入、R100 归档、台账回填机制",
+    "steps": [
+      { "step": "push feature → CI 三 job 绿（gate-baseline 零改动合法持平断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿", "completed": false },
+      { "step": "spec-delta 六 Scenario 合入 spec/specs/reliability/spec.md 末尾（名称逐字一致）；spec/README.md 三处常规登记核对；收口笔零代码自证（红线域 diff：docker-compose.yml、migrations、observability、application*.yml、src/、frontend/ 全空）", "completed": false },
+      { "step": "三件套 R100 移入 spec/changes/archive/add-backup-restore-drill/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]
