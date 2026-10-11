@@ -499,3 +499,73 @@ THEN 测试失败（防静默失效）
 > `@AutoConfigureObservability`，原始响应打进 surefire 输出）与 `BusinessMetricsTest` 桶配置
 > 单测守住，变异验证红绿均有留存。Grafana 总览面板补线程水位图（PromQL 无业务键）。
 > 验收门禁：`mvn -o clean test` @ `3b8bcfa` → 293/0/0/1（指导 agent 独立复跑）。
+
+---
+
+### Requirement: 告警投递链路
+
+WHEN 既有告警规则触发,
+
+系统 SHALL 经 Alertmanager 投递告警至 webhook 通道, SHALL 按 severity 分层路由, AND SHALL 保持告警规则与阈值在既有护栏下零改动。
+
+#### Scenario: alerting 接线
+
+GIVEN observability 栈启动
+
+WHEN Prometheus 配置加载
+
+THEN alerting 段指向编排内 Alertmanager
+
+AND 既有告警规则文件被规则加载链路挂载
+
+#### Scenario: 触发真实投递
+
+GIVEN observability 栈与告警接收器就绪且抓取目标不可达
+
+WHEN up==0 持续超过规则 for 窗口
+
+THEN 告警经 pending 转 firing
+
+AND Alertmanager 向 webhook 接收器真实投递（POST 含 alertname 与 severity）
+
+#### Scenario: severity 路由分层
+
+GIVEN 同一投递链路承载 critical、warning、info 三级告警
+
+WHEN 各级告警触发
+
+THEN critical 立即投递
+
+AND warning 按聚合窗口分组投递
+
+AND info 不投递（仅留观）
+
+#### Scenario: webhook 目标外置
+
+GIVEN webhook receiver 配置存在
+
+WHEN 生产对接真实平台
+
+THEN webhook URL 经环境变量注入覆盖且不入库
+
+AND 仓库文件不含任何真实平台 token 或凭证
+
+#### Scenario: 告警规则与阈值零碰
+
+GIVEN 既有 9 条告警规则与词法护栏测试
+
+WHEN 本变更合入
+
+THEN 规则文件内容与护栏测试内容均零改动
+
+AND 后端门禁中护栏测试全绿即为执行层证据
+
+---
+
+> 合入注记（2026-10-11，`add-alert-delivery`）：新增「告警投递链路」Requirement（五 Scenario）。
+> 落地形态：prometheus.yml 增 alerting 段指向编排网内 alertmanager:9093（rule_files 已挂载，
+> 不重复补）；compose.observability 增 alertmanager（prom/alertmanager:v0.34.1）与 profile 门控的
+> alert-receiver（python:3.12-alpine 最小 POST 接收器，零业务绑定）；alertmanager.yml 按
+> critical立发/warning聚合/info不投递 分层 + inhibit + webhook URL 环境变量注入（默认网内
+> alert-receiver:5000，真实平台 URL/token 不入库）。真实触发闭环与路由分层核验见归档
+> add-alert-delivery tasks.json 于台账返修笔回填；既有 Requirement 零改动。
