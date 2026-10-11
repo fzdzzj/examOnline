@@ -1,0 +1,62 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与基线",
+    "task": "现场核对分支/HEAD/工作树、双端门禁基线、容器环境预检",
+    "steps": [
+      { "step": "K1 从 main 最新 HEAD 新建 feature/add-deployment-stack 并切换，git rev-parse --short HEAD 实测记录基线 revision；git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、spec/changes/add-deployment-stack/），零已跟踪修改", "completed": false },
+      { "step": "K2 双端门禁基线：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped 与 BUILD SUCCESS）；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test（npm.cmd 形态 + 核实输出非空，防 System32 空 npm 假绿）；本案零业务代码，预期全程持平", "completed": false },
+      { "step": "K3 容器环境预检：docker version 与 docker compose version 正常；磁盘余量足以构建双镜像；temurin 17 / node 22 / nginx / mysql:8.0 基础镜像可拉取（拉取持续失败即触发停止条件①）；记录远端 main 最近一次 CI run 绿状态", "completed": false }
+    ],
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-deployment-stack（基线 46cac1d，主 agent 解锁）。K1：从 main 最新 HEAD 新建并切换 feature/add-deployment-stack，git rev-parse --short HEAD = 46cac1d；git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、spec/changes/add-deployment-stack/）+ 本案新增部署文件，零已跟踪业务修改。K2 后端：仓库根 .\\mvnw.cmd clean test → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（与归档先例基线 398/0/0/1 一致）。K2 前端：npm.cmd --prefix frontend run lint:check exit 0（eslint banner）、type-check:check exit 0（vue-tsc+tsc banner）、test 串行复跑 Tests 610 passed (610) / Test Files 86 passed (86)、TEST_EXIT=0（npm.cmd 形态 + 输出非空核验；正式 K2 基线 610 全绿留证）。K3 容器：docker version 29.6.2 / docker compose v5.3.1 正常；磁盘 158GB 余量足够；远端 main 最近 CI run 38126922130（success）。【停止条件①解除】Docker Hub registry-1.docker.io 不可达致基础镜像拉取失败 → 主 agent 裁决解锁：核实本机 3128 无可用代理，于 Docker Desktop 本机 daemon.json（C:\\Users\\fzdzzj\\.docker\\daemon.json，非仓库文件）配置 registry-mirrors 指向已实测可达的加速点 docker.m.daocloud.io，eclipse-temurin:17-jdk/jre、node:22、nginx:stable-alpine 四镜像全部下载成功（mysql:8.0 已缓存）——mirror 地址未写入任何仓库文件。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：镜像、反代与生产编排落地（实施笔）",
+    "task": "七项部署文件落地 + 自查 + 实施笔提交（三件套入库）",
+    "steps": [
+      { "step": "按 proposal What Changes 落地：根 Dockerfile（后端多阶段：temurin 17 JDK 构建层 ./mvnw package 分层缓存、temurin 17 JRE 运行层、JAVA_OPTS 挂载点、不打包 .m2-repo）；根 .dockerignore 与 frontend/.dockerignore（.git/target/.m2-repo/node_modules/dist/docs/spec/loadtest 等）；frontend/Dockerfile（node 22 + corepack 对齐 packageManager 锁定版 pnpm --frozen-lockfile + vite build → nginx stable-alpine）；frontend/nginx.conf（HTTP→HTTPS 301、TLS server 段证书挂载点、SPA try_files、/api/ 同源反代 app、client_max_body_size 对齐后端 multipart 50MB、gzip）；docker/certs/generate-selfsigned.sh（openssl SAN localhost，产物落 docker/certs/out/）；.gitignore 追加 docker/certs/out/；docker-compose.prod.yml（web/app/redis/mysql 主从/rabbitmq，凭据全 ${VAR:?err} required 形态，app 与中间件默认不映射宿主端口、web 唯一对外且默认端口避开 dev 编排已占端口可覆盖，mysql init 单文件挂载既有复制用户脚本 + src/main/resources/schema.sql 物理引用零副本，逐服务 healthcheck，头注释自述）", "completed": false },
+      { "step": "五项自查：① 红线域零 diff 自证（git status 仅白名单新增 + .gitignore/README 登记，src/ frontend/src/ pom.xml schema.sql openapi.yaml .github/ docker-compose.yml docker/observability docker/mysql 零触碰）；② compose fail-fast 实证（不设 required 变量跑 docker compose -f docker-compose.prod.yml config 必须明确报错）；③ 零机器绑定自查（新增文件 grep 盘符绝对路径与裸凭证零命中；docker/certs/out/ 确认 gitignored）；④ schema.sql 零副本自证（编排内为挂载引用，仓库无 schema.sql 复制件）；⑤ nginx 上传上限与后端 multipart 口径对齐自查（client_max_body_size ≥ application.yml max-request-size）", "completed": false },
+      { "step": "实施笔提交：七项部署文件 + .gitignore + 三件套（proposal/tasks/spec-delta）一并入库（对齐「三件套随实施笔入库」纪律，使收口笔为 R100 归档形态）；提交信息中文、按任务组", "completed": false }
+    ],
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-deployment-stack（基线 46cac1d，解锁后）。七项部署文件落地：根 Dockerfile（多阶段 temurin17 JDK 构建层→JRE 运行层；.mvn+maven-settings.xml 随带；CRLF mvnw 转 LF 赋执行位；不加 go-offline——该插件拉可选/absent jar 会失败，直接 package 按需拉取与宿主门禁成功路径一致；不打包 .m2-repo）；根 .dockerignore 与 frontend/.dockerignore（.git/target/.m2-repo/node_modules/dist/docs/spec/loadtest 等瘦身）；frontend/Dockerfile（node22+corepack pnpm--frozen-lockfile+vite build→nginx stable-alpine，证书挂载点目录）；frontend/nginx.conf（HTTP→HTTPS 301、SSL server 段证书挂载点、SPA try_files、/api/ 反代 app:8080、client_max_body_size 50m 对齐后端 max-request-size 50MB、gzip）；docker/certs/generate-selfsigned.sh（MINGW/Git Bash MSYS 路径归一 cygpath -w + MSYS_NO_PATHCONV 保护 -subj，产物落 docker/certs/out/，运行 OK）；.gitignore 追加 docker/certs/out/；docker-compose.prod.yml（web/app/redis/mysql 主从/rabbitmq，凭据全 ${VAR:?err} fail-fast，app 与中间件默认不映射宿主端口、web 唯一对外 8081/8443 可覆盖，mysql init 单文件挂载既有 repl-user 脚本 + src/main/resources/schema.sql 物理引用零副本，逐服务 healthcheck，头注释自述）。五项自查全过：①红线域零 diff（git status 仅白名单+新部署文件+.gitignore，src/frontend/src/pom/schema/openapi/.github/docker-compose.yml/docker-observability/docker-mysql 零触碰）；②compose fail-fast 实证（不设 required 变量 docker compose -f docker-compose.prod.yml config → 明确报错 required variable RABBITMQ_USERNAME missing，exit 1）；③零机器绑定（新增文件 grep 盘符绝对路径零命中；docker/certs/out/ 经 git check-ignore 确认 ignored）；④schema.sql 零副本（编排内 L133 为 ./src/main/resources/schema.sql 物理挂载，仓库无源码级复制件）；⑤nginx client_max_body_size 50m ≥ 后端 max-request-size 50MB。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：构建、证书与起栈验证",
+    "task": "双镜像构建成功 + 自签证书 + 生产编排起栈全栈 healthy（新库建表实证）",
+    "steps": [
+      { "step": "构建验证：根 docker build 后端镜像成功、frontend docker build 前端镜像成功（镜像清单与关键构建日志留证：多阶段两层、wrapper 构建真实执行）；构建脚手架失败两轮即按停止条件对应项上报，不绕过", "completed": false },
+      { "step": "证书与起栈：宿主 Git Bash 跑 docker/certs/generate-selfsigned.sh 产出证书（跑不通即停止条件④）；设置 required 环境变量后 docker compose -f docker-compose.prod.yml up -d；等待全栈 healthy（逐服务 healthcheck 状态留证；主从复制建立失败两轮即停止条件⑤）", "completed": false },
+      { "step": "新库建表实证 + 留证：全新数据卷起栈后经 web 以 HTTPS 登录成功即证明 schema.sql init 生效（建表唯一入口）；全部三要素留证（命令 + 当次输出 + 短 revision）至 D:\\code\\examOnline-measure\\impl-add-deployment-stack\\", "completed": false }
+    ],
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-deployment-stack（解锁后）。①双镜像构建成功：docker build -t exam-online-app:prod . → BUILD SUCCESS（Temurin17 JDK 构建层/JRE 运行层，Repackaging jar，03:27min；镜像 599MB，容器内 java -version=17.0.20.1、/app/exam-online.jar 85MB）；docker build -f frontend/Dockerfile -t exam-online-web:prod frontend/ → BUILD SUCCESS（node22 corepack pnpm --frozen-lockfile + vite build 3497 modules ✓ built in 7.07s→ nginx stable-alpine；95.2MB）。②自签证书与起栈：宿主 Git Bash bash ./docker/certs/generate-selfsigned.sh 跑通（MINGW 路径归一实施，产物 docker/certs/out/server.{crt,key} 1274/1732B）；导出 prod-smoke.env（measure 目录，不入库）后 docker compose -f docker-compose.prod.yml up -d 全栈起 → **全栈 healthy**：exam-online-prod-{web,app,redis,mysql-master,mysql-slave,rabbitmq} 全部 Healthy，网络 exam-online-prod_default 独立，卷全新；app 日志 Started in 17.66s + AdminInitializer 首次启动创建 admin（凭据经环境变量注入）+ JWT_SECRET validated(len 54)；app healthcheck 用 /actuator/health/db（核心 DB 就绪；全量 /actuator/health 会因冒烟占位 SMTP 无有效凭据致 mail DOWN 而 503，mail 不影响核心链路，真实生产须提供有效 SMTP）。③新库建表实证：master 全新卷首起经单文件挂载 ./src/main/resources/schema.sql 作为 init 执行，AdminInitializer 成功写入 users（登录成功）即证明 schema.sql init 生效（建表唯一入口物理引用零副本）。三要素留证 D:\\code\\examOnline-measure\\impl-add-deployment-stack\\02-smoke-evidence.md。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：HTTPS 全链路冒烟 + 门禁复跑",
+    "task": "重定向/登录/静态资源/反代链路/SPA 回退实测 + 双端门禁持平",
+    "steps": [
+      { "step": "HTTPS 冒烟五点实测（真实调用非敷衍单点）：① HTTP→HTTPS 301 重定向；② HTTPS 登录接口真实调用成功（AdminInitializer 注入账号）；③ 前端静态资源 200；④ /api/ 反代链路 web→app 实证（响应经 web 返回）；⑤ SPA 路由回退（直接访问前端路由路径返回入口 HTML）；冒烟全部留证", "completed": false },
+      { "step": "既有编排零影响自证：docker-compose.yml 与 docker/observability/** 零 diff（红线域判据）；prod 编排容器与 dev 编排互不干扰（容器名/网络隔离形态自查）", "completed": false },
+      { "step": "双端门禁复跑：实施笔 HEAD 上后端 mvnw.cmd clean test 与前端 npm.cmd 三门禁全程持平基线（K2 记录值）；随后清理本案起栈产物（docker compose -f docker-compose.prod.yml down -v，删除本案构建的镜像与卷可选留证形态如实登记）", "completed": false }
+    ],
+    "passes": true,
+    "evidence": "执行子 agent 实测 @ feature/add-deployment-stack（解锁后，基线 46cac1d）。①HTTPS 冒烟五点全实测：①HTTP→HTTPS 301：curl.exe -k http://localhost:8081/ → 301 LOCATION=https://localhost/；②HTTPS 登录接口真实调用成功：curl.exe -k -X POST https://localhost:8443/api/auth/login --data-binary @login-body.json → HTTP 200，返回 accessToken/refreshToken/Bearer（username=admin, role=ADMIN，AdminInitializer 环境变量注入账号生效；注：PowerShell 单引号 -d 会把 JSON 发成格式错 400，改 --data-binary 即 200）；③前端静态资源 200：curl.exe -k https://localhost:8443/ → 200 text/html；④/api/ 反代链路 web→app 实证：经 https://localhost:8443 由 nginx 转发至 app，响应头 Server: nginx/1.30.5 + 后端 X-Request-Id/X-Trace-Id（RequestIdFilter/OTel 由 app 注入）→ 链路实证；⑤SPA 路由回退：直接 GET https://localhost:8443/teacher/papers → 200 text/html body 首行 <!doctype html>（try_files 回退 index.html）。②既有编排零影响自证：docker-compose.yml git diff 为空、docker/observability 零 change；prod 用 exam-online-prod_default 独立网络 + exam-online-prod-* 容器名，与 dev/sport-verify 隔离。③双端门禁复跑持平基线：后端仓库根 .\\mvnw.cmd clean test → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS；前端 npm.cmd lint:check exit 0 / type-check:check exit 0 / test Tests 610 passed (610) Test Files 86 passed (86) exit 0（内存 4GB 空闲纯净单跑；低内存偶发 jsdom 组件 5s 超时、非代码缺陷，纯净跑可 610 全绿）。随后清理：docker compose -f docker-compose.prod.yml down -v 删除容器/网络/卷（确认空），镜像与临时产物按需删除（measure 留证不入库）。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与登记",
+    "task": "--no-ff 合入 main、push CI 三 job 绿、spec-delta 合入新域能力域、R100 归档、README 登记、台账回填机制",
+    "steps": [
+      { "step": "push feature → CI 三 job 绿（三要素留证）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿（三要素留证；gate-baseline.json 零触碰合法持平）", "completed": false },
+      { "step": "spec-delta 合入：新建 spec/specs/deployment/spec.md（第 20 能力域，六 Scenario 名称与 spec-delta 逐字一致，正文为其规范化展开）；spec/README.md 三处登记：「进行中变更」行收口、能力域表新增 deployment 行、已归档变更表新增行；README.md「要查什么去哪儿查」表 +1 行部署栈指针；收口笔零代码自证（git diff --name-only HEAD~1 HEAD -- src frontend pom.xml schema.sql openapi.yaml .github 需为空）", "completed": false },
+      { "step": "三件套 R100 移入 spec/changes/archive/add-deployment-stack/（spec-delta 合入基线后按惯例删除，归档留 proposal + tasks）；【台账回填机制，先例 fix-frontend-query-failure-states / add-dependency-vuln-scan 任务5】本任务勾选与 evidence 不在收口笔前伪造：收口笔归档后以独立台账返修笔按复核子 agent 独立复跑的实测证据回填本任务 completed/passes/evidence（命令 + 当次输出 + 短 revision），再视归档流程收尾；不得 R100 原样移动留空", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]

@@ -1,0 +1,195 @@
+# =============================================================
+# examOnline —— 生产部署编排（add-deployment-stack）
+#   docker compose -f docker-compose.prod.yml up -d
+#   依赖镜像：根 Dockerfile（后端多阶段）与 frontend/Dockerfile（前端多阶段）先构建：
+#     docker build -t exam-online-app:prod .
+#     docker build -f frontend/Dockerfile -t exam-online-web:prod frontend/
+#
+# 拓扑：web（Nginx：TLS 终结 + SPA 托管 + /api/ 同源反代，唯一对外端口）
+#        └─ app（后端，仅经容器网络被 web 反代，不映射宿主端口）
+#             └─ redis / rabbitmq / mysql-master / mysql-slave（GTID 主从）
+#
+# 零触碰既有 docker-compose.yml（dev 中间件编排）与 docker/observability/**。
+# 与 dev 编排隔离：容器名/网络各不相同；prod 容器默认不映射宿主端口，
+# web 是唯一对外服务，默认端口 8443(HTTPS)/8081(HTTP) 避开 dev 编排已占端口，全可环境变量覆盖。
+#
+# 凭据哲学（对齐 dev-config + application-prod.yml fail-fast）：
+#   所有凭据一律 ${VAR:?err} 必填形态——缺变量时 compose 解析即失败，绝不回退默认凭据。
+#   必填：MYSQL_ROOT_PASSWORD DB* SLAVE_DB* REDIS_PASSWORD SMTP_* JWT_SECRET
+#           ADMIN_* RABBITMQ_*（见各 service environment）。
+#
+# 建表唯一入口（AGENTS.md 硬约定 1）：经 src/main/resources/schema.sql 单文件挂载引用，
+#   零副本（不复制 schema.sql 内容到新位置）；全新数据卷首起时由 MySQL init 执行，
+#   CREATE TABLE IF NOT EXISTS 幂等。migrations/ 目录不挂进任何 init（无自动执行者语义保持）。
+# =============================================================
+name: exam-online-prod
+
+services:
+
+  # ---------- Nginx 前端（唯一对外，TLS 终结 + 同源反代 + SPA） ----------
+  web:
+    image: exam-online-web:prod
+    container_name: exam-online-prod-web
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${WEB_HTTP_PORT:-8081}:80"    # HTTP（301 到 HTTPS）
+      - "${WEB_HTTPS_PORT:-8443}:443"  # HTTPS（对外主入口）
+    volumes:
+      # 自签证书挂载点（docker/certs/generate-selfsigned.sh 产物；真实证书替换属后续人工动作）
+      - ./docker/certs/out:/etc/nginx/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null --no-check-certificate https://127.0.0.1:443/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------- 后端应用（仅经 web 反代，不映射宿主端口） ----------
+  app:
+    image: exam-online-app:prod
+    container_name: exam-online-prod-app
+    restart: unless-stopped
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+      mysql-slave:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: "8080"
+      # 数据源（主从）
+      DB_URL: "${DB_URL:?必填 DB_URL}"
+      DB_USERNAME: "${DB_USERNAME:?必填 DB_USERNAME}"
+      DB_PASSWORD: "${DB_PASSWORD:?必填 DB_PASSWORD}"
+      SLAVE_DB_URL: "${SLAVE_DB_URL:?必填 SLAVE_DB_URL}"
+      SLAVE_DB_USERNAME: "${SLAVE_DB_USERNAME:?必填 SLAVE_DB_USERNAME}"
+      SLAVE_DB_PASSWORD: "${SLAVE_DB_PASSWORD:?必填 SLAVE_DB_PASSWORD}"
+      # Redis
+      REDIS_HOST: "${REDIS_HOST:?必填 REDIS_HOST}"
+      REDIS_PORT: "${REDIS_PORT:-6379}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?必填 REDIS_PASSWORD}"
+      REDIS_DATABASE: "${REDIS_DATABASE:-0}"
+      # SMTP 邮件（找回密码/注册验证码）
+      SMTP_HOST: "${SMTP_HOST:?必填 SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT:-465}"
+      SMTP_USERNAME: "${SMTP_USERNAME:?必填 SMTP_USERNAME}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:?必填 SMTP_PASSWORD}"
+      # 认证
+      JWT_SECRET: "${JWT_SECRET:?必填 JWT_SECRET}"
+      ADMIN_USERNAME: "${ADMIN_USERNAME:?必填 ADMIN_USERNAME}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?必填 ADMIN_PASSWORD}"
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: "${RABBITMQ_USERNAME:?必填 RABBITMQ_USERNAME}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD:?必填 RABBITMQ_PASSWORD}"
+    healthcheck:
+      # 核心就绪以 DB 组件为准：/actuator/health/db 返回 UP 即应用已连上主库。
+      # 不 gate 在 mail 等辅助组件上——冒烟/本地的 SMTP 无有效凭据会使 mail 组件 DOWN，
+      # 但 mail 不影响核心登录链路；真实生产应提供有效 SMTP 凭据。
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health/db"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+
+  # ---------- Redis（生产直起，无 dev 的 profile 门） ----------
+  redis:
+    image: redis:7
+    container_name: exam-online-prod-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?必填 REDIS_PASSWORD}"]
+    volumes:
+      - redis-prod-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD:?}\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------- MySQL 主库（GTID，默认不映射宿主端口） ----------
+  mysql-master:
+    image: mysql:8.0
+    container_name: exam-online-prod-mysql-master
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?必填 MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: exam_online
+      TZ: Asia/Shanghai
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --binlog-do-db=exam_online
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --innodb-redo-log-capacity=268435456
+    volumes:
+      # 建表唯一入口：schema.sql 物理引用（零副本）；复制用户脚本沿用既有文件（单文件挂载）
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
+      - ./docker/mysql/master/init/01-repl-user.sql:/docker-entrypoint-initdb.d/01-repl-user.sql:ro
+      - master-prod-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # ---------- MySQL 从库（GTID，默认不映射宿主端口） ----------
+  mysql-slave:
+    image: mysql:8.0
+    container_name: exam-online-prod-mysql-slave
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?必填 MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: exam_online
+      TZ: Asia/Shanghai
+    command:
+      - --server-id=2
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --skip-log-bin
+    volumes:
+      # 既有复制脚本（MASTER_HOST='mysql-master' 回指本编排同服务名，零副本沿用）
+      - ./docker/mysql/slave/init/01-setup-replication.sql:/docker-entrypoint-initdb.d/01-setup-replication.sql:ro
+      - slave-prod-data:/var/lib/mysql
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # ---------- RabbitMQ（凭据 injected，同 dev 定义语义） ----------
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: exam-online-prod-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USERNAME:?必填 RABBITMQ_USERNAME}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASSWORD:?必填 RABBITMQ_PASSWORD}"
+    volumes:
+      - rabbitmq-prod-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  master-prod-data:
+  slave-prod-data:
+  redis-prod-data:
+  rabbitmq-prod-data:
