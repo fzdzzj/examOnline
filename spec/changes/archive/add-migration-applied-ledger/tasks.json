@@ -52,11 +52,11 @@
     "category": "阶段 5：收口、归档与登记",
     "task": "spec-delta 合入基线、--no-ff 合入 main、R100 归档、README 登记、台账回填机制",
     "steps": [
-      { "step": "spec/specs/data-access/spec.md 末尾 ADDED「存量库迁移执行台账与核验」Requirement（五 Scenario 名称与 proposal What Changes 第 4 条逐字一致，正文为其规范化展开）；--no-ff 合入 main；三件套 R100 移入 spec/changes/archive/add-migration-applied-ledger/", "completed": false },
-      { "step": "spec/README.md 三处登记：「当前无进行中变更」段收口句、data-access 能力域行来源变更列追加、已归档变更表新增行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml schema.sql openapi.yaml .github docker 输出为空；gate-baseline.json 不在收口笔改动清单", "completed": false },
-      { "step": "【台账回填机制，先例 fix-frontend-query-failure-states / split-score-query-service】本任务（任务 5）的勾选与 evidence 不在收口笔前伪造：收口笔按冻结三件套 R100 归档后，须以独立台账返修笔按复核子 agent 独立复跑的实测证据回填本任务 completed/passes/evidence（命令 + 当次输出 + 短 revision），再视归档流程收尾；不得 R100 原样移动留空", "completed": false }
+      { "step": "spec/specs/data-access/spec.md 末尾 ADDED「存量库迁移执行台账与核验」Requirement（五 Scenario 名称与 proposal What Changes 第 4 条逐字一致，正文为其规范化展开）；--no-ff 合入 main；三件套 R100 移入 spec/changes/archive/add-migration-applied-ledger/", "completed": true },
+      { "step": "spec/README.md 三处登记：「当前无进行中变更」段收口句、data-access 能力域行来源变更列追加、已归档变更表新增行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml schema.sql openapi.yaml .github docker 输出为空；gate-baseline.json 不在收口笔改动清单", "completed": true },
+      { "step": "【台账回填机制，先例 fix-frontend-query-failure-states / split-score-query-service】本任务（任务 5）的勾选与 evidence 不在收口笔前伪造：收口笔按冻结三件套 R100 归档后，须以独立台账返修笔按复核子 agent 独立复跑的实测证据回填本任务 completed/passes/evidence（命令 + 当次输出 + 短 revision），再视归档流程收尾；不得 R100 原样移动留空", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "step1（基线合入/合入/归档）：合并笔 d5a1438 双亲 = c4425b0 + 96dedb5，--no-ff 成立（复核 R1 独立实测）；spec/specs/data-access/spec.md 五 Scenario 与 proposal What Changes 第 4 条逐字一致（复核 R2）；归档形态 git 实测为 R084(proposal)/R100(tasks)/R100(spec-delta)——proposal 的 R084 系收口笔追加「验收边界」小节的预期实质修改（如实登记，不用「三件套 R100」简写）。step2（README 登记/零代码自证）：spec/README.md 三处登记 L29/L53/L168（复核 R2 实测）；四笔 diff 逐文件核对 src/frontend/pom.xml/schema.sql/openapi.yaml/.github/既有脚本/gate-baseline 全零触碰（复核 R2）；gate-baseline.json 不在收口笔改动清单。step3（台账回填机制）：本返修笔即回填动作，先例 e71a6fa/c4425b0；evidence 全部引用复核子 agent 独立复跑结果（六项全 PASS、13 项失真对照零失真；后端 398/0/0/1 BUILD SUCCESS、前端 86 文件/610 例全绿为复核独立实测；dev 真值抽查 W7 六列 6/6、W10 两表在、W40 EXPLAIN type=ref、主从四脚本一致、GTID 1-280571 对齐）。复核结论：整体裁决 PASS，VERDICT 已由复核侧留档。"
   }
 ]
