@@ -49,11 +49,11 @@
     "category": "阶段 5：门禁复验、规范合入与一次性归档",
     "task": "全量门禁复验、spec-delta 合入基线、--no-ff 合入 main、归档与 README 登记",
     "steps": [
-      { "step": "实施笔 revision 上全量门禁留证（后端只增不减、前端持平、openapi.yaml 零改动自证）；--no-ff 合入 main；spec/specs/score-management/spec.md 末尾 ADDED「成绩服务读写分置」Requirement（五 Scenario 与 proposal What Changes 第 5 条逐字一致）；提案两件套整体移入 spec/changes/archive/split-score-query-service/", "completed": false },
-      { "step": "spec/README.md 三处登记：「当前无进行中变更」段收口句、score-management 能力域行来源变更列追加、已归档变更表新增行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml 输出为空；收口笔后在 main 复跑双端门禁并留证", "completed": false },
-      { "step": "【台账回填机制，先例 fix-frontend-query-failure-states】本任务（任务 5）的勾选与 evidence 不在收口笔前伪造：收口笔按冻结三件套 R100 归档后，须以独立台账返修笔按复核子 agent 独立复跑的实测证据回填本任务 completed/passes/evidence（命令 + 当次输出 + 短 revision），再视归档流程收尾；不得 R100 原样移动留空", "completed": false }
+      { "step": "实施笔 revision 上全量门禁留证（后端只增不减、前端持平、openapi.yaml 零改动自证）；--no-ff 合入 main；spec/specs/score-management/spec.md 末尾 ADDED「成绩服务读写分置」Requirement（五 Scenario 与 proposal What Changes 第 5 条逐字一致）；提案两件套整体移入 spec/changes/archive/split-score-query-service/", "completed": true },
+      { "step": "spec/README.md 三处登记：「当前无进行中变更」段收口句、score-management 能力域行来源变更列追加、已归档变更表新增行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml 输出为空；收口笔后在 main 复跑双端门禁并留证", "completed": true },
+      { "step": "【台账回填机制，先例 fix-frontend-query-failure-states】本任务（任务 5）的勾选与 evidence 不在收口笔前伪造：收口笔按冻结三件套 R100 归档后，须以独立台账返修笔按复核子 agent 独立复跑的实测证据回填本任务 completed/passes/evidence（命令 + 当次输出 + 短 revision），再视归档流程收尾；不得 R100 原样移动留空", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "收口与合入（拓扑与门禁由复核子 agent 于 main @ 76df34d 独立复跑证实，2026-10-11，证据 D:\\code\\examOnline-measure\\review-split-score-query-service\\VERDICT.md）：① 拓扑：实施笔 38fb5a9（自 b32ca46 直系，无中间提交）→ --no-ff 合并笔 16ac206（第一父 b32ca46、第二父 38fb5a9）→ 收口笔 76df34d；工作树仅白名单未跟踪。② 全量门禁（复核独立复跑）：仓库根 mvnw.cmd clean test → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1、BUILD SUCCESS（用例守恒 40=30+10）；OpenApiContractTest 全量中通过；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test → 退出码 0/0/0、Test Files 86 passed (86) / Tests 610 passed (610)，npm.cmd 解析 D:\\develop1\\nodejs\\npm.cmd 非 System32 stub。③ 零改动与契约自证：收口笔 git diff 76df34d~1 76df34d -- src frontend pom.xml 为空；实施笔 14 文件无 openapi.yaml/schema.sql/pom.xml；契约三件（openapi.yaml、sdk.gen.ts、types.gen.ts）git diff b32ca46..76df34d 为 0 字节。④ 逐字迁移（复核字节级独立重做）：b32ca46 ScoreService L216-336/L483-498 与 ScoreQueryService L56-176/L180-195 RAW EQUAL；写侧 diff 1 插入/148 删除且六 hunk 均为读侧删除或构造器收缩；ScoreQueryServiceTest 10 例迁移段逐字节相等（恰 10 处 token 替换）；ScoreServiceTest 0 插入/145 删除、@Test 40→30、零残留引用。⑤ 三变异独立复现均击红：a 去名次 gt 条件 → MyScoreRankEquivalenceTest 9 例 5 失败（e1/e2/e5/e6/e7）；b 移除 M5 列投影 → GradingScoreProjectionGuardTest 1 失败（answers 必须为 null expected: <0> but was: <3>）；c 类级 @DS(\"slave\") → 恰 e8b 一例失败；三复原 cmp 字节一致。⑥ 规范与登记：spec/specs/score-management/spec.md +54/-0 纯新增（L474-527 五 Scenario，名称与 proposal 逐字一致、正文为其规范化展开）；spec/README.md 三处登记（收口句/能力域来源列/归档表行，归档行如实声明三变异以复核独立复现为准），README diff 恰 3+/2-、CRCRLF=0。⑦ 本格为收口后台账返修笔回填（返修笔零代码），先例：fix-frontend-decorative-assertions 收口任务 evidence 回填（b32ca46）。"
   }
 ]
