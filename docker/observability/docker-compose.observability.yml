@@ -1,5 +1,7 @@
 # 观测栈独立编排片段：可选依赖，与 docker/mysql/（必需运行依赖）分离，
 # 只想跑业务的人不必拉起监控。镜像 tag 用具体版本号，不用 latest。
+# 告警投递链路（add-alert-delivery）：alertmanager 接入 + alert-receiver 本地闭环验收探针
+# （alert-receiver 由 --profile alert-receiver 门控，默认不随栈启动）。
 services:
   prometheus:
     image: prom/prometheus:v2.53.0
@@ -28,3 +30,34 @@ services:
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+  alertmanager:
+    image: prom/alertmanager:v0.34.1
+    container_name: exam-alertmanager
+    ports:
+      - "9093:9093"
+    environment:
+      # webhook 目标外置：默认指向编排网内 alert-receiver，生产对接真实平台时经此变量覆盖，
+      # 真实 URL/token 只走环境变量注入，绝不写入仓库文件。
+      - ALERT_RECEIVER_URL=${ALERT_RECEIVER_URL:-http://alert-receiver:5000/}
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    # 镜像 ENTRYPOINT 为 /bin/alertmanager，故用 entrypoint 覆盖为 sh -c 以便执行 sed 注入。
+    # Alertmanager 原生不支持配置文件内 ${ENV} 展开（实测 v0.34.1），
+    # 启动时把占位默认 URL 替换为环境变量 ALERT_RECEIVER_URL 值，写入运行时配置再 exec 拉起。
+    entrypoint:
+      - "sh"
+      - "-c"
+      # 注意 $$ 转义：compose 会插值 $VAR，需用 $$ 让字面量 $ALERT_RECEIVER_URL 存活到容器 shell 再展开（容器 env 来自上面 ALERT_RECEIVER_URL 环境注入）
+      - "sed 's|http://alert-receiver:5000/|'\"$$ALERT_RECEIVER_URL\"'|g' /etc/alertmanager/alertmanager.yml > /etc/alertmanager/alertmanager-runtime.yml && exec /bin/alertmanager --config.file=/etc/alertmanager/alertmanager-runtime.yml"
+
+  # 本地验收专用探针：最小 POST 接收器，收 Alertmanager webhook 落日志，零业务绑定。
+  # 默认不随栈启动（profile 门控，先例：主编排 redis 的 host-redis-unavailable，见 docker-compose.yml）。
+  alert-receiver:
+    image: python:3.12-alpine
+    container_name: exam-alert-receiver
+    profiles:
+      - alert-receiver
+    volumes:
+      - ./alert-receiver/receiver.py:/receiver.py:ro
+    command: ["python", "/receiver.py", "5000"]

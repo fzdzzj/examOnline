@@ -1,0 +1,62 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与基线",
+    "task": "现场核对分支/HEAD/工作树、双端门禁基线、容器与配置前置查证",
+    "steps": [
+      { "step": "K1 从 main 最新 HEAD 新建 feature/add-alert-delivery 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": false },
+      { "step": "K2 双端门禁基线：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped 与 BUILD SUCCESS；AlertAssetsTest 在内全绿——规则零碰的开工基线）；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test（npm.cmd 形态 + 输出非空核验，串行跑防争用）", "completed": false },
+      { "step": "K3 前置查证：prom/alertmanager 可 pinned 的最新稳定具体版本号（禁 latest）并经既有 mirror 通道拉取成功；Read docker/observability/prometheus/prometheus.yml 确认 rule_files 挂载现状与 scrape 目标形态（alerting 段加法按实况定）；记录远端 main 最近 CI run 绿状态", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：Alertmanager 接线与通道落地（实施笔）",
+    "task": "三处编排/配置落地 + 五项自查 + 实施笔提交（三件套入库）",
+    "steps": [
+      { "step": "按 proposal What Changes 落地：prometheus.yml 加 alerting 段（指向编排网内 alertmanager:9093；rule_files 未挂则同笔补并如实登记）；compose.observability 加 alertmanager 服务（pinned 具体版本、配置只读挂载）与 alert-receiver 服务（profile 门控、最小 POST 接收器、零业务绑定）；新增 docker/observability/alertmanager/alertmanager.yml（critical 立发 / warning 聚合 / info 不投递三层 route、inhibit、webhook receiver URL 环境变量可覆盖且默认指向网内 alert-receiver）", "completed": false },
+      { "step": "五项自查：① 零碰自证（exam-online-alerts.yml 与 AlertAssetsTest.java 零 diff；红线域 src/ frontend/ pom.xml schema.sql openapi.yaml .github 零 diff；既有文件受控修改仅 prometheus.yml 与 compose.observability 两处）；② compose config 解析通过且默认不启动 alert-receiver（profile 门控自证）；③ 零凭证自查（新增/修改文件 grep 真实平台 URL/token 明文零命中，webhook URL 走环境变量注入形态）；④ route 分层与 inhibit 存在性配置级自查；⑤ 三件套与实施文件同笔入库清单核对", "completed": false },
+      { "step": "实施笔提交：三处编排/配置 + 三件套一并入库；提交信息中文、按任务组、-F 文件形态", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：真实触发闭环验证",
+    "task": "起栈制造 up==0 → ExamOnlineDown firing → webhook 真实投递留证",
+    "steps": [
+      { "step": "起栈：docker compose -f docker/observability/docker-compose.observability.yml --profile <receiver-profile> up -d，不启动应用（制造 up==0）；prometheus 与 alertmanager 逐容器健康/就绪状态留证", "completed": false },
+      { "step": "真实触发：等待 up==0 持续超 for 窗口（1m 级），Prometheus UI/API 确认 ExamOnlineDown pending→firing，Alertmanager 收到并路由；全程时间线留证（何时 pending、何时 firing、何时投递）", "completed": false },
+      { "step": "投递实证：alert-receiver 日志收到 POST 且 body 含 alertname=ExamOnlineDown 与 severity=critical（逐字留证）；Alertmanager UI 告警状态与 Prometheus UI 规则状态同帧留证；三要素（命令+当次输出+短 revision）落 D:\\code\\examOnline-measure\\impl-add-alert-delivery\\", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：路由分层核验 + 门禁复跑 + 清理",
+    "task": "critical/warning/info 分层核验、护栏自证、双端门禁持平、环境清理",
+    "steps": [
+      { "step": "路由分层核验：critical 立发语义以本次实测时间线核验（firing→POST 到达时距）；warning 聚合窗口与 info 不投递以 alertmanager.yml 配置形态核验 + amtool check-config / UI 辅助（info 级低成本不可制造时如实登记核验层级，不虚构触发实验）；inhibit 规则存在性核验", "completed": false },
+      { "step": "护栏与门禁：实施笔 HEAD 上后端 mvnw.cmd clean test（AlertAssetsTest 全绿为规则零碰执行层证据；计数持平基线）+ 前端 npm.cmd 三门禁串行（持平基线）；用例总量变化为零", "completed": false },
+      { "step": "清理：docker compose -f docker/observability/docker-compose.observability.yml --profile <receiver-profile> down -v，容器/卷/网络零残留（docker ps -a 与 volume 清单留证）；共享 dev 资源零触碰自证", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与登记",
+    "task": "push CI 绿、--no-ff 合入、spec-delta 合入 observability 域、R100 归档、登记、台账回填机制",
+    "steps": [
+      { "step": "push feature → CI 三 job 绿（三要素留证）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿（gate-baseline.json 零触碰合法持平）", "completed": false },
+      { "step": "spec-delta 合入 spec/specs/observability/spec.md 末尾（五 Scenario 名称逐字一致，正文规范化展开）；spec/README.md 三处登记（进行中变更收口句 / observability 能力域行来源列 / 归档表新增行）；README.md observability 行按需补投递指针；收口笔零代码自证（红线域 diff 空，且 alerts.yml 与 AlertAssetsTest 零 diff）", "completed": false },
+      { "step": "三件套 R100 移入 spec/changes/archive/add-alert-delivery/（spec-delta 合入后按惯例删除，归档留 proposal + tasks）；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision），不得 R100 原样移动留空", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]

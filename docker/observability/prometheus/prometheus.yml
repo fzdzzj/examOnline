@@ -9,6 +9,12 @@ global:
 rule_files:
   - /etc/prometheus/rules/exam-online-alerts.yml
 
+# 告警投递：Alertmanager 接入（compose 编排网内，add-alert-delivery）
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
 scrape_configs:
   # job 名固定为 exam-online：告警规则与面板中的 job 标签都引用它
   - job_name: exam-online
