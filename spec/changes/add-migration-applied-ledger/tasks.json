@@ -1,0 +1,62 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与基线",
+    "task": "现场核对分支/HEAD/工作树、双端门禁基线与起容器前置",
+    "steps": [
+      { "step": "K1 从 main @ c4425b0 新建 feature/add-migration-applied-ledger 并切换；K2 git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、spec/changes/add-migration-applied-ledger/），零已跟踪修改", "completed": true },
+      { "step": "K3 后端基线：仓库根 mvnw.cmd clean test → 398/0/0/1 BUILD SUCCESS；K4 前端基线：npm.cmd --prefix frontend run lint:check 与 type-check:check 退出码 0，npm.cmd --prefix frontend run test → 86 文件 / 610 例全绿（核实输出非空，防 System32 空 npm 假绿）；本案零业务代码，两基线预期持平", "completed": true },
+      { "step": "K5 起容器前置核对：docker ps -a 清点在跑与他项目容器（如 sport-verify-*），对照 docker-compose.yml 核对本 compose 的 MySQL 主/从声明端口无占用冲突；确认只起本 compose 的 MySQL 服务、不触碰他项目容器；冲突且无法避开即触发停止条件①", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "K1 git checkout -b feature/add-migration-applied-ledger 自 main c4425b0 成功；K2 git status --porcelain 仅 .zcodeignore、docs/*、spec/changes/add-migration-applied-ledger/ 白名单未跟踪，零已跟踪修改（c4425b0）；K3 仓库根 mvnw.cmd clean test → [WARNING] Tests run: 398, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS，日志留 measure/task1-k3-backend-gate-c4425b0.log；K4 lint:check=0、type-check:check=0、test → Test Files 86 passed (86) / Tests 610 passed (610)、日志 383 行非空，留 measure/task1-k4-frontend-gates-c4425b0.log；K5 docker ps -a 在跑容器仅 sport-verify-* 四件（他项目），exam-mysql-master/slave 为本 compose 既有退出态容器，compose 声明的宿主端口经 netstat 复核空闲无冲突（端口字面值不入库，见 measure/task1-k5-docker-ps-a.txt）；停止条件①未触发"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：dev 现场盘点",
+    "task": "起 dev 主/从容器，逐脚本对两库现场核验，产出盘点报告（盘点为只读动作）",
+    "steps": [
+      { "step": "起本 compose 的 MySQL 主/从服务（服务名现场查 docker-compose.yml，容器名现场确认）；核对 slave 复制通道状态（SHOW REPLICA STATUS 口径，记录关键指标）；复制异常即触发停止条件②", "completed": true },
+      { "step": "以 git ls-files docker/mysql/migrations 现场清点脚本集，按文件名周期升序逐脚本对 master 与 slave 各跑核验 SQL（README 第 6 步口径：SHOW CREATE TABLE / SHOW INDEX / information_schema 计数——验证对象而非「命令没报错」），逐脚本登记「已应用/未应用」", "completed": true },
+      { "step": "文献对照：与归档 evidence、需求决策记录中的「已应用」声称逐条对照，差异如实记录（登记真值以现场实测为准，文献仅作对照）；盘点报告留存 measure 目录（命令 + 当次输出 + 短 revision）；发现 dev 实际结构与 schema.sql + 脚本集预期存在脚本外漂移即触发停止条件④，如实登记上报不擅自补写新脚本", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "docker start 既有容器 exam-mysql-master/exam-mysql-slave（数据卷保留）；复制通道起库瞬间 IO=Connecting（错误 2003 连接被拒，恰为启动窗口）一个重试周期后自愈，稳态 IO/SQL=Yes、延迟 0、主从 GTID 对齐（measure/task2-replication-status.txt），停止条件②未触发；git ls-files 清点脚本集后按周期升序对主/从各跑 information_schema + SHOW INDEX + SHOW CREATE TABLE 对象级核验，主从逐项一致（measure/task2-inventory-raw.txt、task2-inventory-report.md）：唯一未应用缺口 = exam_submissions.idx_submissions_student（2026-W40 脚本），另 idx_exams_parent 登记为未应用死对象（schema.sql 无此索引、ADD KEY IF NOT EXISTS 语法 MySQL 8 报 1064 两分支探针直接观测 measure/task2-w10-syntax-probe.txt、代码零引用）；漂移审计：列级 220 列 ONLY_IN_DEV/ONLY_IN_SCHEMA/TYPE_MISMATCH 全 0、索引级唯一 schema-only 缺口即 W40 对象、表级仅已登记遗留 rep_test（measure/task2-drift-audit.txt、task2-dev-columns-master.txt、task2-dev-indexes-master.txt），停止条件④未触发；文献对照：归档与决策记录零「已对 dev 应用脚本」声称，唯一声称冲突为 W10 脚本头注幂等说明失真（已如实登记）"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：补应用与台账落地",
+    "task": "未应用缺口升序补应用（授权内写 dev 库）并落地 APPLIED.md + 两处指针，实施笔含三件套入库",
+    "steps": [
+      { "step": "对盘点确认的未应用缺口按文件名周期升序对 master 人工补应用（命令行用容器名、不用端口拼连接串；口令取 application-dev.yml 实际值、不写入任何入库文件）；每次应用后按 README 第 6 步验证对象；遇头注幂等说明之外的非预期错误码即触发停止条件③，不得 --force 硬闯；slave 复制正常则由复制同步并逐对象复核，异常即停", "completed": true },
+      { "step": "逐脚本留存完整应用链三段证据：应用前状态 → 应用命令 → 应用后验证输出（留存 measure 目录）；全部脚本无缺口时本步记「无缺口，跳过」并以任务 2 盘点报告为证", "completed": true },
+      { "step": "新建 docker/mysql/migrations/APPLIED.md 单文件承载：登记表（每脚本一行——脚本名/对象/幂等预期错误码/核验 SQL/dev 主库状态/dev 从库状态，状态含核验输出摘要 + 核验时间 + 当时 commit；脚本集与 git ls-files 恒对齐、表内不写计数）+ 新环境从零建库 runbook（起库 → schema.sql 一次建全 → 新建库无需迁移脚本 → 与既有环境一致性核验口径；引用 verify-mysql8-init 既有证据、不复制数值结论）+ 更新纪律（应用 + 验证 + 登记三件套齐才算完成）", "completed": true },
+      { "step": "docker/mysql/migrations/README.md 与 AGENTS.md 各加一行指针指向 APPLIED.md（AGENTS 加在硬约定 4 的出处段；只加指针不复制清单，尊重 README 红线与 AGENTS「不承载易变事实」）；实施笔提交：APPLIED.md + README/AGENTS 指针 + 本变更三件套（proposal/tasks/spec-delta）一并入库（对齐「立项三件套随实施笔入库」纪律，使收口笔为 R100 归档形态）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "缺口唯一 = 2026-W40-add-submissions-student-index.sql，对 master 补应用：应用前 idx ABSENT → docker exec -i exam-mysql-master mysql（容器名连接，口令取 application-dev.yml 实际值不入库）< 脚本 → 退出 0 → SHOW INDEX 对象在（student_id BTREE）+ EXPLAIN 按 student_id 查询实走该索引（type=ref）→ 幂等复跑 ERROR 1061 与头注预期一致、对象无变化（measure/task3-w40-application-chain.txt）；从库由复制同步：应用后主从 gtid_executed 对齐（:1-280571，恰增一笔）、Seconds_Behind=0、对象级核验与 EXPLAIN 与主库一致（measure/task3-w40-slave-verification.txt）；停止条件③未触发；APPLIED.md 新建（登记表每脚本一行含 A1-A5 核验 SQL 口径 + 差异登记 idx_exams_parent 死对象不补应用的三条实测理由 + 新环境 runbook 引用 verify-mysql8-init 不复制数值 + 更新纪律三件套；全文件无口令/端口字面值/计数）；docker/mysql/migrations/README.md 第 7 步与 AGENTS.md 硬约定 4 出处段各加一行指针；实施笔将 APPLIED.md + 两指针 + 三件套一并入库"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：文档完整性与自查",
+    "task": "APPLIED.md 三项自查与双端门禁持平复验",
+    "steps": [
+      { "step": "自查一：本变更全部新增/修改入库文件 grep 无连接口令与端口字面值（口令以 application-dev.yml 为准不复制，README 惯例）；自查二：登记表脚本集与 git ls-files docker/mysql/migrations 输出恒对齐（无多登/漏登）；自查三：README/AGENTS 指针指向的文件与段落存在且有效", "completed": true },
+      { "step": "双端门禁在实施笔 revision 复验持平全绿：仓库根 mvnw.cmd clean test → 398/0/0/1 BUILD SUCCESS；前端三门禁 86 文件/610 例（npm.cmd 形态 + 输出非空）；AGENTS 四条自查 + 既有门禁自查全绿；确认 gate-baseline.json 零改动（纯文档笔用例数与 paths 零变化，合法持平不须上调）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "自查一：六个新增/修改入库文件（AGENTS.md、docker/mysql/migrations/APPLIED.md、docker/mysql/migrations/README.md、三件套）grep 口令模式与端口模式输出均为空（measure/task4-selfchecks.txt）；自查二：git ls-files 脚本集与 APPLIED.md 登记表双向比对逐条 OK（正向每脚本有行、反向无幻影行）；自查三：APPLIED.md 文件存在，指针落点 docker/mysql/migrations/README.md 第 7 步与 AGENTS.md 硬约定 4 出处段均有效；门禁复验 @ 实施笔 203b7f7：mvnw.cmd clean test → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（measure/task4-backend-gate-203b7f7.log），前端 lint:check/type-check:check 退出码 0 + vitest 86 文件/610 例全绿（measure/task4-frontend-gates-203b7f7.log），与 c4425b0 基线持平；AGENTS 四条自查（端口/口令/计数、README 连接事实、@Sql、裸行号）输出全空；gate-baseline.json 自 c4425b0 零改动（git diff 输出为空）"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与登记",
+    "task": "spec-delta 合入基线、--no-ff 合入 main、R100 归档、README 登记、台账回填机制",
+    "steps": [
+      { "step": "spec/specs/data-access/spec.md 末尾 ADDED「存量库迁移执行台账与核验」Requirement（五 Scenario 名称与 proposal What Changes 第 4 条逐字一致，正文为其规范化展开）；--no-ff 合入 main；三件套 R100 移入 spec/changes/archive/add-migration-applied-ledger/", "completed": false },
+      { "step": "spec/README.md 三处登记：「当前无进行中变更」段收口句、data-access 能力域行来源变更列追加、已归档变更表新增行；收口笔零代码自证：git diff --name-only HEAD~1 HEAD -- src frontend pom.xml schema.sql openapi.yaml .github docker 输出为空；gate-baseline.json 不在收口笔改动清单", "completed": false },
+      { "step": "【台账回填机制，先例 fix-frontend-query-failure-states / split-score-query-service】本任务（任务 5）的勾选与 evidence 不在收口笔前伪造：收口笔按冻结三件套 R100 归档后，须以独立台账返修笔按复核子 agent 独立复跑的实测证据回填本任务 completed/passes/evidence（命令 + 当次输出 + 短 revision），再视归档流程收尾；不得 R100 原样移动留空", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]

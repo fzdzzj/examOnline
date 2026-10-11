@@ -31,7 +31,7 @@
 ### 4. 存量库改表走 `docker/mysql/migrations/`，而该目录没有自动执行者
 
 - **规则**：`schema.sql` 是 `CREATE TABLE IF NOT EXISTS`，**存量库不会因此补表**；把脚本放进 `docker/mysql/migrations/` **不等于变更已生效**，必须由人按顺序应用到存量库并验证（缺表的写库路径可能被 `catch` 静默吞掉，测试还看不见）。写脚本前先查 `schema.sql` 是否已有等价对象。
-- **出处**：`docs/需求决策记录.md` 第十八节「建表与迁移的唯一事实源」 + 该目录自述 `docker/mysql/migrations/README.md`。
+- **出处**：`docs/需求决策记录.md` 第十八节「建表与迁移的唯一事实源」 + 该目录自述 `docker/mysql/migrations/README.md`。各环境已应用脚本的执行台账：`docker/mysql/migrations/APPLIED.md`。
 - **自查**：`grep -n 'docker/mysql' docker-compose.yml` → 命中只有 `master/init` 与 `slave/init` 两处，本目录不在其中，因此**不存在**自动执行者。任何声称"脚本已提交＝迁移已完成"的回报按违规处理。
 
 ## 上手顺序（新 agent）

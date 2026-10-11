@@ -494,6 +494,68 @@ AND 对账补发 `selectSubmittedWithoutAnswers`（命中量为个位数行）�
 
 ---
 
+### Requirement: 存量库迁移执行台账与核验
+
+WHEN `docker/mysql/migrations/` 下的存量库迁移脚本需要对某个已存在的库确认或执行应用,
+
+系统 SHALL 以入库的执行台账（`docker/mysql/migrations/APPLIED.md`）作为「环境 × 已应用脚本」的唯一结构化载体，且登记真值 SHALL 来自对该库现场执行核验 SQL 的实测（验证对象而非「命令没报错」）；文献与回报中的「已应用」声称仅作对照，不构成登记真值。
+
+#### Scenario: 登记表唯一结构化载体
+
+GIVEN `docker/mysql/migrations/` 下的迁移脚本集
+
+WHEN 需要回答「某环境的哪些脚本已应用、哪些未应用」
+
+THEN 唯一的结构化答案是 APPLIED.md 登记表（每脚本一行：脚本名、对象、幂等预期错误码、核验 SQL、各环境状态与核验时间、当时 commit）
+
+AND 登记表脚本集与 `git ls-files docker/mysql/migrations` 恒对齐，表内不写脚本计数（计数随新增即过期，与本目录 README 红线同源）
+
+AND 本目录 README 与 AGENTS 只保留指向登记表的指针，不复制清单
+
+#### Scenario: 现场实测优先于文献自述
+
+GIVEN 归档 evidence、决策记录或任何回报中出现「脚本 X 已应用于某库」的声称
+
+WHEN 该声称需要成为登记真值
+
+THEN 必须以对目标库现场执行核验 SQL（SHOW CREATE TABLE / SHOW INDEX / information_schema 计数口径）的实测结果为准，文献声称仅作对照
+
+AND 实测与文献冲突时如实登记差异并上报裁决，不取任何一方静默覆盖
+
+#### Scenario: 应用后必须更新登记表
+
+GIVEN 一次对存量库的人工迁移应用已完成（应用 + 执行后验证）
+
+WHEN 该应用被认定为「完成」
+
+THEN 同笔更新 APPLIED.md 对应行（状态、核验输出摘要、核验时间、当时 commit）——应用、验证、登记三件套齐才算完成
+
+AND 只提交脚本不应用、或只应用不登记，均不构成迁移完成（与 AGENTS 约定 4「脚本已提交 ≠ 迁移已完成」同源）
+
+#### Scenario: 未应用缺口显性可见
+
+GIVEN dev 主/从库的现场盘点完成
+
+WHEN 某脚本的目标对象在库中不存在
+
+THEN 登记表该行状态为「未应用」，缺口对任何读者显性可见
+
+AND 补应用按文件名周期升序执行（同表多脚本存在依赖顺序）；从库先核复制状态——复制正常由复制同步并逐对象复核，异常即停上报不擅修
+
+AND 每次补应用留存完整链证据：应用前状态 → 应用命令 → 应用后验证输出
+
+#### Scenario: 新环境从零建库走 runbook
+
+GIVEN 一个新建的空 MySQL 环境
+
+WHEN 需要建库
+
+THEN 按 APPLIED.md 的 runbook 走：起库 → `schema.sql` 一次建全 → 迁移脚本一律无需执行（新建库不是存量库）
+
+AND 需要与既有环境核对一致性时，按登记表的核验 SQL 口径逐对象核对，不重放迁移脚本
+
+---
+
 > 合入注记（2026-10-01，`project-sweep-candidates-scalar-projection`，**GO**）：机械归因驱动的单站点投影，**无三臂测量**——消费字段唯一且确定（全仓唯一调用方 `ExamSweepService.forceSubmitOverdue` 仅读 `getExamId()`/`getStudentId()`，`forceSubmitByBackend` 按 (examId, studentId) 重新定位答卷），不存在需测量裁决的 GO/NO-GO 不确定点；本卡为 `project-grading-score-scalar-projection` 确立的「列投影 + 常驻护栏」形态在 `exam_submissions` 上的直接应用，字节收益以判据表述（长字段退出 SELECT 列表＝每行必省 `paper_json` 全量，机械事实），时间侧该语句已有归档实测（JOIN_INDEX 提示优化，grep 锚 `JOIN_INDEX`）。**实施**：`selectForceSubmitCandidates` 由 `s.*` 冻结为 `s.exam_id, s.student_id`，提示/谓词/LIMIT 原样保留、执行计划不变仅减传输。`SweepCandidatesProjectionGuardTest` 先红后绿（旧实现 `expected: <0> but was: <3>`，投影后绿）常驻全量门禁，`mvnw.cmd clean test` @ 实施笔 `e14fd68` → **350/0/0/1** BUILD SUCCESS（基线 349→350；`MultiInstanceSweepSafetyTest` 端到端回归全绿，三路竞态幂等语义不变）。**验收边界＝本地 H2 测试上下文 + 仓库门禁——不外推生产 MySQL/Tomcat，不构成交卷链路 P99 结论。**
 > 合入注记（2026-10-01，`project-grading-score-scalar-projection`，逐单元裁决 **GO 1/5**：仅 M5 发布预览）：判据测量前冻结于该变更 `evidence/PREREGISTRATION.md`（sha256 `bb4f289b…e39`），机械复算脚本 `analyze-grading-score-projection.cjs` 按 M1–M5／S1–S4 算子出裁决。**M5（`ScoreService.publishPreview` 主语句）GO 并实施 `.select(student_id,objective_score,subjective_score,total_score,partial_graded)`**：应传字节比 97.45（三形状恒定），逐轮 wall-clock 均在 OLD∪OLDrep 噪声带上界内，语义 oracle 逐形状严格相等，语句条数/返回行数不变。**M1–M4 NO-GO 未实施**——字节收益成立（356.17／91.25／214.54／42.94 倍）但时间侧「**不稳定/无净收益**」（progress n=1000 与 n=3000、summarize n=3000 各有投影臂单轮超噪声带上界，按冻结算子逐轮判、不挑轮、不取中位数；progress 端点耗时由其自身嵌套换算主导，字段节省不显形）。`GradingScoreProjectionGuardTest` 先红后绿（旧实现 `expected: <0> but was: <3>`，投影后绿）常驻全量门禁，`mvnw.cmd clean test` @ 实施笔 `6a33faf` → **330/0/0/1** BUILD SUCCESS。**装置级披露**：测量装置在出裁决前做三处装置级修正（tmpfs 3g→8g；容器加 `--skip-log-bin`；护栏实体包裹由 `Mockito.spy` 改 stub-only mock），逐条落证于该变更 `evidence/apparatus-correction-note.md`；裁决输入为单一完整装置上的全量重跑。**验收边界＝一次性本地 MySQL 8 容器（tmpfs 数据目录、127.0.0.1 高位端口、独立库，用毕 `docker rm -f` 销毁）+ 单机 + 空并发（逐条语句串行计时）+ H2 测试上下文——不外推生产 MySQL/Tomcat，不构成判分或成绩发布 P99 结论。**
 > 合入注记（2026-09-30，`attribute-my-exams-list-index`，整卡裁决 **GO**，分渠道采用 **submissions=A1, candidates=未采纳**）：判据测量前冻结于该变更 `evidence/PREREGISTRATION.md`（sha256 `1b3a5f0e…2ea9d`），机械裁决脚本 `analyze-index-arms.cjs` 按 B1–B5 算子出裁决。**答卷渠道（T1，`exam_submissions` 按 `student_id` 单列查询）实施 A1 臂单列索引 `idx_submissions_student (student_id)`**：基线 A0 为全表扫且耗时远超门槛（B1 过）；A1 臂扫描行数比两形状逐轮恒定（n1 10051 倍 / n2 40001 倍，远超下界要求，B2 过）；单次耗时降至亚毫秒级且无单轮回归（B3 过）；热写批耗时均在基线噪声带上界内，未见写放大（B4 过）；选臂遵循最小充分原则（A1 与 A2 读端收益等价，单列 A1 维护成本低于复合索引 A2）。**补考渠道（T2，`exam_candidates` 按 `student_id` 单列查询）C1 未采纳**：基线 C0 并非全表扫——MySQL 8.0 对 `exam_candidates` 走 Covering index skip scan（既有唯一键 `uk_candidate_exam_student`，type=range，actual rows=1），最快轮耗时低于瓶颈门槛（亚毫秒级）；不采纳 C1 的完整理由＝既有唯一键已通过 skip scan 服务该谓词 + 基线亚毫秒未达门槛，小表场景无需增建索引增加写负担；按分渠道 gate 规则，C0 不满足瓶颈门槛只否决 C1 采纳，不否决整卡。由此落成判据：**既有索引可能已通过 skip scan 服务该谓词，新增索引前必须以真实引擎的 EXPLAIN 认定，不得凭结构推演**。实施提交为 `02d933e`（实施门禁 @ `02d933e` 329/0/0/1，原记录保留）；2026-09-30 证据返修（解析器违背冻结 §6 的 cost/actual 段取值已修正、以保留 rounds.json 重算未重测，C1 的 B2 改判 false）后注释口径复验门禁 @ 第 2 笔 `bf93c3f` → 329/0/0/1，指导 agent 曾在已提交状态 `83459aa` 独立复跑全绿。**验收边界＝一次性本地 MySQL 8 容器（tmpfs 数据目录、高位端口、独立库，用毕 `docker rm -f` 销毁）+ 单机 + 空并发串行测量 + H2 测试上下文——不外推生产参数、真实数据量与并发负载。**
