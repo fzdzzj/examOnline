@@ -1,0 +1,51 @@
+# =============================================================================
+# 后端镜像 build context 瘦身（add-deployment-stack）
+# 只把构建与运行必要的最小集合送进 build context，其余一律排除：
+#   .git / target（构建层会重新产出）/ .m2-repo（可达 GB 级）/ 文档证据目录
+#   / spec 变更目录 / 前端产物 / 测试与本地工具产物 / 其他 compose 编排。
+# .m2-repo 不 ignore 会拖死构建：容器构建走公共仓库，零机器绑定。
+# =============================================================================
+
+# 版本库与 CI
+.git
+.github
+
+# 构建产物与本地依赖缓存
+target
+.m2-repo
+**/target
+**/.m2-repo
+
+# 前端（后端 context 不需要；前端有自己的 Dockerfile 与 .dockerignore）
+frontend/node_modules
+frontend/dist
+frontend/coverage
+frontend/test-results
+frontend/playwright-report
+frontend/.vite
+frontend/e2e
+
+# 本地运行产物 / 临时文件
+*.log
+*.tmp
+*.bak
+logs
+
+# 文档与证据目录（不是运行时的一部分）
+docs
+spec
+loadtest
+docker/observability/docker-compose.observability.yml
+
+# 工具与 IDE 本地目录
+.idea
+.vscode
+.trae
+.codex
+.qoder
+.workbuddy
+
+# 其他编排文件（既有 compose 不进后端镜像 context）
+docker-compose.yml
+docker-compose.prod.yml
+frontend/docker-compose.prod.yml

@@ -1,0 +1,38 @@
+# =============================================================================
+# 前端镜像 build context 瘦身（add-deployment-stack）
+# 只把 pnpm 构建与 nginx 托管需要的最小集合送进 context。
+# =============================================================================
+
+# 版本库与 CI
+.git
+.github
+
+# 依赖与构建产物（构建层会重新产出）
+node_modules
+dist
+coverage
+test-results
+playwright-report
+blob-report
+.vite
+
+# 测试与 e2e 凭据（明文，不入镜像）
+e2e
+output
+.playwright-cli
+
+# 本地产物与临时文件
+*.log
+*.tmp
+*.bak
+*.md
+Dockerfile
+.dockerignore
+
+# IDE / 工具本地目录
+.idea
+.vscode
+.trae
+.codex
+.qoder
+.workbuddy

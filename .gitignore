@@ -35,6 +35,11 @@ Thumbs.db
 .env
 application-local.yml
 
+# ==== 自签证书产物（add-deployment-stack）====
+# docker/certs/generate-selfsigned.sh 生成的自签证书本体：只用于本地 HTTPS 冒烟，
+# 真实证书替换是后续人工动作；证书一律不入库。
+docker/certs/out/
+
 # ==== 工具工作目录 ====
 # .workbuddy/ 是 WorkBuddy 的项目记忆（MEMORY.md + 每日工作日志），属工具产物而非
 # 项目代码：它随开发者的机器与工具走，入库只会给协作者制造无意义的 diff。
