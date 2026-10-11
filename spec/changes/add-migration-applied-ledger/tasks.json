@@ -41,11 +41,11 @@
     "category": "阶段 4：文档完整性与自查",
     "task": "APPLIED.md 三项自查与双端门禁持平复验",
     "steps": [
-      { "step": "自查一：本变更全部新增/修改入库文件 grep 无连接口令与端口字面值（口令以 application-dev.yml 为准不复制，README 惯例）；自查二：登记表脚本集与 git ls-files docker/mysql/migrations 输出恒对齐（无多登/漏登）；自查三：README/AGENTS 指针指向的文件与段落存在且有效", "completed": false },
-      { "step": "双端门禁在实施笔 revision 复验持平全绿：仓库根 mvnw.cmd clean test → 398/0/0/1 BUILD SUCCESS；前端三门禁 86 文件/610 例（npm.cmd 形态 + 输出非空）；AGENTS 四条自查 + 既有门禁自查全绿；确认 gate-baseline.json 零改动（纯文档笔用例数与 paths 零变化，合法持平不须上调）", "completed": false }
+      { "step": "自查一：本变更全部新增/修改入库文件 grep 无连接口令与端口字面值（口令以 application-dev.yml 为准不复制，README 惯例）；自查二：登记表脚本集与 git ls-files docker/mysql/migrations 输出恒对齐（无多登/漏登）；自查三：README/AGENTS 指针指向的文件与段落存在且有效", "completed": true },
+      { "step": "双端门禁在实施笔 revision 复验持平全绿：仓库根 mvnw.cmd clean test → 398/0/0/1 BUILD SUCCESS；前端三门禁 86 文件/610 例（npm.cmd 形态 + 输出非空）；AGENTS 四条自查 + 既有门禁自查全绿；确认 gate-baseline.json 零改动（纯文档笔用例数与 paths 零变化，合法持平不须上调）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "自查一：六个新增/修改入库文件（AGENTS.md、docker/mysql/migrations/APPLIED.md、docker/mysql/migrations/README.md、三件套）grep 口令模式与端口模式输出均为空（measure/task4-selfchecks.txt）；自查二：git ls-files 脚本集与 APPLIED.md 登记表双向比对逐条 OK（正向每脚本有行、反向无幻影行）；自查三：APPLIED.md 文件存在，指针落点 docker/mysql/migrations/README.md 第 7 步与 AGENTS.md 硬约定 4 出处段均有效；门禁复验 @ 实施笔 203b7f7：mvnw.cmd clean test → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（measure/task4-backend-gate-203b7f7.log），前端 lint:check/type-check:check 退出码 0 + vitest 86 文件/610 例全绿（measure/task4-frontend-gates-203b7f7.log），与 c4425b0 基线持平；AGENTS 四条自查（端口/口令/计数、README 连接事实、@Sql、裸行号）输出全空；gate-baseline.json 自 c4425b0 零改动（git diff 输出为空）"
   },
   {
     "number": 5,
