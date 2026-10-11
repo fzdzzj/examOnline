@@ -34,12 +34,13 @@
 | 产品愿景原文 | `docs/examOnline需求规格说明书.md` | |
 | 前端工程 | `frontend/`；进行中的前端变更见 `spec/README.md` 进行中表 | 前端与后端测试基线的关系见 `spec/README.md` 的「前端系列纪律」，本文件不复述 |
 | 跑哪一条命令算门禁通过 | `AGENTS.md`「唯一门禁命令」（`./mvnw clean test`，已由 `update-agent-gate-single-source` B-2 回填） | 验收判据见 `spec/specs/agent-harness/spec.md`，不在本文件复述 |
+| 远端 CI 双端门禁跑什么、机检基线在哪 | `.github/workflows/ci.yml` + `.github/ci/gate-baseline.json` | push/PR 自动复跑双端门禁并比对基线（用例数与契约 paths 只增不减）；收口笔同步上调基线的纪律见 `spec/README.md` 工作流；CI 是第二防线，不改变本地唯一门禁命令的地位 |
 | 当前进行到哪一步 / 下一步做什么 | `spec/README.md`「当前状态」的进行中变更表 | 本文件不再写"下一变更是 X"——它过期在阶段 2 |
 
 ## 快速开始（只给入口，数值一律去上面那张表查）
 
 1. **起依赖**：`docker compose up -d`（服务清单与宿主映射见 `docker-compose.yml`；本机 Redis 用宿主实例，哪个容器故意不要起见交接文档小节）
-2. **构建与测试**：门禁命令当前**未定稿**，见上表最后一行；在 E2 落地前，按 `docs/指导Agent交接文档.md` 的工具链约束自行拼命令，并把实测输出记进回报
+2. **构建与测试**：门禁命令已定稿——后端 `./mvnw clean test`（见 `AGENTS.md`「唯一门禁命令」）；前端 `npm.cmd --prefix frontend run lint:check` / `type-check:check` / `test` 三门禁。远端 push/PR 由 GitHub Actions 双 job 机检化复跑（见上表 CI 行）
 3. **起应用**：dev profile；连接与凭据的默认值全部来自 `src/main/resources/application-dev.yml`
 4. **自检**：`GET /actuator/health` 返回 `UP`（HTTP 端口见 `application.yml` 的 `server.port`）
 5. **验证完停掉实例并回报**——残留实例会让下一次"连不上"变成互踩

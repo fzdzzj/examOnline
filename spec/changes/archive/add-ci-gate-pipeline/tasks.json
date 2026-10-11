@@ -1,0 +1,62 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与基线",
+    "task": "现场核对分支/HEAD/工作树、双端门禁基线实测、CI 前置版本口径现场定版",
+    "steps": [
+      { "step": "K1 从 main @ e71a6fa 新建 feature/add-ci-gate-pipeline 并切换；K2 git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、spec/changes/add-ci-gate-pipeline/），零已跟踪修改", "completed": true },
+      { "step": "K3 后端基线：仓库根 mvnw.cmd clean test → Failures=0/Errors=0 BUILD SUCCESS，Tests run 当次数值记入回传（gate-baseline.json 写入依据）；K4 前端基线：npm.cmd --prefix frontend run lint:check 与 type-check:check 退出码 0、输出非空，npm.cmd --prefix frontend run test → 文件数/用例数当次数值全绿（写入依据）", "completed": true },
+      { "step": "K5 CI 前置现场定版：pnpm 精确版本（lockfileVersion 9.0 兼容口径，本地 pnpm 可用则 pnpm -v 实测，不可用则以 pnpm 9 系最新稳定版定版并回传依据）、openapi.yaml paths 键数实测计数（写入依据，附计数命令与当次输出）、actionlint 可用性（不可用则选等效 YAML 静态检查手段并回传形态）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "K1/K2：分支 feature/add-ci-gate-pipeline 自 main@e71a6fa 建立并切换（git log -1 = e71a6fa）；git status --porcelain 仅白名单未跟踪（.zcodeignore、docs/*、spec/changes/add-ci-gate-pipeline/），零已跟踪修改。K3 @ e71a6fa：仓库根 mvnw.cmd clean test 退出码 0 → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS 计 1（原始日志 k3-backend-baseline.log 于 D:\\code\\examOnline-measure\\add-ci-gate-pipeline\\）。K4 @ e71a6fa：npm.cmd --prefix frontend run lint:check / type-check:check / test 三项退出码 0，lint 输出非空（eslint 命令行头在），type-check 日志含 vue-tsc 与 tsc 两条真实 banner，vitest Test Files 86 passed (86) / Tests 610 passed (610)。K5：本地 pnpm -v = 10.25.0（pnpm-lock.yaml lockfileVersion 9.0 兼容；npm view pnpm@10.25.0 version 核在 registry 返回 10.25.0）；openapi.yaml paths 键数 = 74，grep -c '^  /' 与 python yaml.safe_load len(paths) 双口径一致；actionlint 本机 PATH 不可用 → 下载官方 release 二进制 v1.7.7（windows/amd64，存仓库外 measure 目录）作为等效静态检查手段，CI 端无需该工具（GitHub 自校验 workflow 语法）。"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：workflow 与机检资产落地",
+    "task": "ci.yml 工作流、gate-baseline.json 基线文件、解析断言脚本、packageManager 字段",
+    "steps": [
+      { "step": ".github/workflows/ci.yml：触发 push（main、feature/**）+ pull_request，concurrency 取消同 ref 旧跑；backend job = checkout + setup-java temurin 17 + redis:7 service（6379）+ cache .m2-repo + 仓库根 ./mvnw clean test（tee 日志）+ surefire 解析断言（Failures=0/Errors=0/Tests run ≥ 基线/BUILD SUCCESS banner）+ openapi.yaml paths ≥ 基线；frontend job = checkout + setup-node 22 + corepack pnpm（packageManager 固定）+ pnpm install --frozen-lockfile + lint:check/type-check:check/test 三门禁串行（各自 tee）+ 解析断言（passed ≥ 基线/三份日志非空/vue-tsc 与 tsc 双 banner 存在）", "completed": true },
+      { "step": ".github/ci/gate-baseline.json：backendTests/frontendTests/openapiPaths 三下限以 K3/K4/K5 实测数值写入；.github/ci/ 解析断言脚本（bash/python3）：任一检查失败以非零退出码结束；frontend/package.json 补 packageManager 字段一行（K5 定版版本）", "completed": true },
+      { "step": "红线自查：src/、pom.xml、schema.sql、openapi.yaml 零触碰；.github/ 新增文件 grep 无机器绝对路径（盘符模式）无私有凭证；mvnw.cmd compile 或等价编译通过后按显式路径与阶段 3 一并提交", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "ci.yml 双 job 按步骤落地（backend＝temurin 17 + redis:7 service 6379 + actions/cache .m2-repo + ./mvnw clean test tee 至 /tmp + assert_backend.sh + check_openapi_paths.sh；frontend＝node 22 + pnpm/action-setup@v4 从 packageManager 字段定版 + pnpm install --frozen-lockfile + 三门禁串行 tee + assert_frontend.sh），触发 push（main、feature/**）+ pull_request，concurrency group=ci-gate-${{ github.ref }} cancel-in-progress。gate-baseline.json 写入 backendTests=398 / frontendTests=610 / openapiPaths=74（K3/K4/K5 实测 @ e71a6fa）。三脚本（assert_backend/assert_frontend/check_openapi_paths，bash + runner 自带 grep/awk/sed）任一被包含检查失败 fail() 非零退出。frontend/package.json 补 packageManager 一行 pnpm@10.25.0。机制偏离如实登记：pnpm 定版用 pnpm/action-setup@v4（proposal 字面 corepack 替换——规避 corepack 对新版 pnpm 签名密钥已知校验风险），交付语义「packageManager 字段固定的 pnpm」不变。红线自查：git diff eaec0e7^ eaec0e7 --name-only 仅 .github/* 与 frontend/package.json（src/、pom.xml、schema.sql、openapi.yaml 零触碰）；.github/ grep 盘符模式与凭证词双 CLEAN；实施笔零 Java 改动故编译判据由全量 mvnw clean test 覆盖（退出码 0）；5 个新增文件入库 blob tr -dc '\\r' | wc -c 全 0（纯 LF，规避 runner 上 CRLF 脚本故障；本地曾实测 Windows 写出为 CRLF 后就地转换）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：本地自测与门禁持平",
+    "task": "workflow 语法静态检查、解析脚本样例红绿、双端门禁持平、提交实施笔",
+    "steps": [
+      { "step": "workflow 语法静态检查（actionlint 或 K5 定版的等效手段）通过；.github/ 新增文件 grep 自查零机器绝对路径零私有凭证（命令与输出留证）", "completed": true },
+      { "step": "解析断言脚本样例红绿自测：构造低于基线样例 → 非零退出、达标样例 → 零退出、无 banner/空日志样例 → 非零退出（样例与输出留证）；本地双端门禁复跑：mvnw.cmd clean test 与前端 npm.cmd 三门禁与 K3/K4 持平全绿（CI 引入不改业务测试）", "completed": true },
+      { "step": "提交实施笔（feature/add-ci-gate-pipeline）：git diff --cached --check 干净、显式路径暂存、提交信息经 -F 文件（仓库外）、中文、按任务组 2/3 描述", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "actionlint 1.7.7 对 .github/workflows/ci.yml 退出码 0（零诊断）；grep 自查两条均 CLEAN（机器绝对路径盘符模式零命中、凭证词零命中，输出留证于会话记录）。样例红绿 12/12（驱动 run-sample-tests.sh 与样例均在 D:\\code\\examOnline-measure\\add-ci-gate-pipeline\\samples\\，用 K3/K4 真实日志 + 变体构造）：3 绿（backend/frontend/paths 真实日志 × 真实基线全部 rc=0，可见输出 BACKEND GATE ASSERT OK: Tests run=398... / FRONTEND GATE ASSERT OK: vitest passed=610... / OPENAPI PATHS ASSERT OK: paths=74）；9 红（基线抬至 399/611/75 三例、无 BUILD SUCCESS、Failures=1、空 lint 日志、type-check 缺 tsc banner、基线键缺失 fail-closed 两例，全部 rc=1）。双端门禁在已提交状态 eaec0e7 持平复跑：backend mvnw.cmd clean test → Tests run: 398, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS 退出码 0（与 K3@e71a6fa 持平）；frontend lint/type-check/test 三项退出码 0、vitest 86 文件 610 例（与 K4 持平）。实施笔 eaec0e7：显式路径暂存 6 文件 +245 行，git diff --cached --check 干净，提交信息中文经仓库外 -F 文件。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：远端 CI 验证（绿 → 变异红 → 复绿 → main 绿）",
+    "task": "真实 GitHub Actions 运行验证机检门禁可绿可红（三要素留证：run URL + 汇总数字 + 短 revision）",
+    "steps": [
+      { "step": "push feature/add-ci-gate-pipeline → CI 首跑 backend/frontend 两 job 全绿；若红：按停止条件② 区分环境性失败（两轮调整上限）与配置错误，如实回传", "completed": true },
+      { "step": "从 feature 切 feature/ci-gate-probe 分支，注入变异（gate-baseline.json 三数值抬高至超限）→ push → CI 断言层红（证明基线机检真在比对非恒真）→ 留证后删除 probe 分支；feature 分支保持零注入干净态（git diff feature 分支与实施笔一致自证）", "completed": true },
+      { "step": "本地 --no-ff 合并 main → push main → main 上 CI 绿（三要素留证）；合并后 main 复跑本地双端门禁持平留证", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "① push feature → run 38104764997（https://github.com/fzdzzj/examOnline/actions/runs/38104764997）@ eaec0e7：conclusion success、双 job success，CI 端 surefire Tests run: 398, Failures: 0, Errors: 0, Skipped: 1，BACKEND GATE ASSERT OK: Tests run=398 (baseline >= 398)，OPENAPI PATHS ASSERT OK: paths=74，FRONTEND GATE ASSERT OK: vitest passed=610 + 双真实 banner（pnpm 输出下命中），vitest Test Files 86 passed (86)。② probe feature/ci-gate-probe @ f292025（基线抬至 399/611/75）→ run 38105268913（https://github.com/fzdzzj/examOnline/actions/runs/38105268913）：conclusion failure、双 job 均红于断言层——BACKEND GATE ASSERT FAIL: Tests run=398 < baseline 399（surefire 本体仍 398/0/0/1 绿）、FRONTEND GATE ASSERT FAIL: vitest passed=610 < baseline 611，证明基线机检真在比对非恒真（paths 断言步因前一断言步已失败未达，其红样例由本地 12/12 覆盖）；取证（--log-failed 与全量日志存 measure 目录）后删除远端与本地 probe（git push origin --delete + branch -D），git diff eaec0e7 HEAD --name-only 计 0 = feature 零注入污染自证。③ --no-ff 合并笔 fc21d90（'Merge made by the recursive strategy'，提交信息经仓库外 -F 文件）push main → run 38105772968（https://github.com/fzdzzj/examOnline/actions/runs/38105772968）：conclusion success、双 job success；合并后 main 本地双端门禁持平复跑：backend 398/0/0/1 + BUILD SUCCESS、frontend lint/type-check/test 退出码 0、vitest 86 文件 610 例。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：规范合入与一次性归档",
+    "task": "spec-delta 合入 agent-harness 基线、三处登记、归档与台账回填",
+    "steps": [
+      { "step": "spec/specs/agent-harness/spec.md 末尾 ADDED「CI 门禁机检化」Requirement（六 Scenario 与 proposal What Changes 第 6 条一致）；提案三件套整体移入 spec/changes/archive/add-ci-gate-pipeline/", "completed": false },
+      { "step": "spec/README.md 登记：收口句、agent-harness 能力域行来源变更列追加、归档表新增行，及工作流补「收口笔同步上调 gate-baseline.json（只增不减机检载体）」纪律条目；README.md 表格加 CI 行 + 校正快速开始第 2 条陈旧文案（门禁未定稿→已定稿指针）；AGENTS.md 加 CI 指针行（只加指针不加正文）；收口笔零业务代码自证（git diff --name-only HEAD~1 HEAD -- src pom.xml schema.sql openapi.yaml 为空）", "completed": false },
+      { "step": "【台账回填机制，先例 fix-frontend-decorative-assertions / split-score-query-service】本任务（任务 5）的勾选与 evidence 不在收口笔前伪造：收口笔按冻结三件套 R100 归档后，须以独立台账返修笔按复核子 agent 独立复跑的实测证据回填本任务 completed/passes/evidence（命令 + 当次输出 + 短 revision），再视归档流程收尾；不得 R100 原样移动留空", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]

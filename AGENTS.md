@@ -65,6 +65,11 @@
 test -x mvnw && test -f mvnw.cmd && test -f .mvn/wrapper/maven-wrapper.properties && test -f .mvn/wrapper/maven-wrapper.jar && echo OK
 ```
 
+### 远端第二防线（CI，只指路）
+
+- **规则**：push/PR 由 GitHub Actions 双 job 复跑双端门禁并机检入库基线（后端 surefire 用例数、前端 vitest 用例数、`openapi.yaml` paths 数，只增不减）；**每个变更的收口笔新增用例或契约路径时须同笔上调 `.github/ci/gate-baseline.json`，不上调该笔 push 即红，下调使数字吻合按用例下降同罪**。CI 是机检化复核与第二防线，不改变「唯一门禁命令」的地位。
+- **出处**：workflow `.github/workflows/ci.yml` 与解析断言脚本 `.github/ci/`；纪律条目 `spec/README.md`「工作流」的 gate-baseline 上调条；规范判据 `spec/specs/agent-harness/spec.md`「CI 门禁机检化」。
+
 ## 本文件与 `README.md` 不承载易变事实
 
 禁止出现：端口号、口令、用例计数、覆盖比例数值、表清单，以及"共 N 个"这类计数（能力域数、归档变更数、迁移脚本数都不例外）。
