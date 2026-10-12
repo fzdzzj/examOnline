@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -163,14 +164,14 @@ public class ExamAnalysisReportService {
         // 缺席 = 应考 − 有答卷（沿用缺考域 AbsenceService 口径：应考名单 − 有答卷者）
         int absent = 0;
         if (!expectedIds.isEmpty()) {
-            List<Long> submittedIds = submissionMapper.selectList(Wrappers.<ExamSubmission>lambdaQuery()
+            // 有答卷者集合（Set 语义查重 O(1)，缺席计数口径与既有 List 判重逐字一致）
+            Set<Long> submittedIds = submissionMapper.selectList(Wrappers.<ExamSubmission>lambdaQuery()
                             .select(ExamSubmission::getStudentId)
                             .eq(ExamSubmission::getExamId, exam.getId())
                             .in(ExamSubmission::getStudentId, expectedIds)).stream()
                     .map(ExamSubmission::getStudentId)
                     .filter(Objects::nonNull)
-                    .distinct()
-                    .toList();
+                    .collect(Collectors.toSet());
             for (Long expectedId : expectedIds) {
                 if (!submittedIds.contains(expectedId)) {
                     absent++;
@@ -380,12 +381,14 @@ public class ExamAnalysisReportService {
 
     // ==================== 查询辅助 ====================
 
-    /** 已汇总（GRADED）答卷列表（实考口径，与导出处 path 同源）。 */
+    /** 已汇总（GRADED）答卷列表（实考口径，与导出处 path 同源）。只投影消费列 studentId/totalScore；
+     *  消费列若增列须同步扩投影（常驻护栏 AnalysisReportGradedProjectionGuardTest 防漂移）。 */
     private List<GradingSubmission> listGraded(Long examId) {
         return gradingSubmissionMapper.selectList(
                 Wrappers.<GradingSubmission>lambdaQuery()
                         .eq(GradingSubmission::getExamId, examId)
                         .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_GRADED)
-                        .isNotNull(GradingSubmission::getTotalScore));
+                        .isNotNull(GradingSubmission::getTotalScore)
+                        .select(GradingSubmission::getStudentId, GradingSubmission::getTotalScore));
     }
 }
