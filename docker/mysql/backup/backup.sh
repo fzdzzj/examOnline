@@ -121,13 +121,16 @@ echo "[backup] 大小: $(du -h "$OUT_GZ" | awk '{print $1}')"
 
 # ---- 轮转：仅保留最近 KEEP 份本库备份，过期即删 ---------------------------
 # 匹配本库同名备份产物，按时间序保留最近 KEEP 份，其余删除（含对应 .sha256）。
+# 产物对：每份 dump 为 <db>-<ts>.sql.gz 与其校验 <db>-<ts>.sha256（无 .sql）；
+# 删除时从 dump 文件名推导校验名（去掉 .sql.gz 后缀换 .sha256），与创建命名同源。
 mapfile -t OLD_FILES < <(find "$OUT_DIR" -maxdepth 1 -type f -name "${DB_NAME}-*.sql.gz" | sort -r)
 COUNT="${#OLD_FILES[@]}"
 if [[ "$COUNT" -gt "$KEEP" ]]; then
   echo "[backup] 轮转: 现存 ${COUNT} 份，保留最近 ${KEEP} 份"
   for ((i=KEEP; i<COUNT; i++)); do
     target="${OLD_FILES[$i]}"
-    rm -f "$target" "${target%.gz}.sha256"
+    sha_file="${target%.sql.gz}.sha256"
+    rm -f "$target" "$sha_file"
     echo "[backup]   删除过期: ${target##*/}"
   done
 else

@@ -14,7 +14,7 @@
 #
 # 用法：
 #   ./restore.sh --dump <dump.sql.gz> --container <容器名> --db <库名> \
-#                --confirm-prod-not-target   # 显式确认参数（必须）
+#                --confirm   # 显式确认参数（必须）
 #   凭据经环境变量 MYSQL_ROOT_PASSWORD 注入（${VAR:?required}，零硬编码口令）。
 #   --binlog-passthrough 说明：目标库开放 binlog 时恢复会写 binlog，不影响数据。
 # ============================================================================
