@@ -1,0 +1,14 @@
+=== gate gate-frontend-typecheck.txt @ fix-frontend-offline-reservation-ux 实施笔 (eslint --fix 归一化后) ===
+CMD: npm.cmd run type-check:check
+
+> examonline-front@0.0.0 type-check:check
+> npm run type-check:app:check && npm run type-check:config:check
+
+
+> examonline-front@0.0.0 type-check:app:check
+> vue-tsc --project ./tsconfig.app.json --noEmit
+
+
+> examonline-front@0.0.0 type-check:config:check
+> tsc --project ./tsconfig.config.json --noEmit
+

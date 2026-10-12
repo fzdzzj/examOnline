@@ -1,0 +1,48 @@
+
+> examonline-front@0.0.0 test
+> vitest run --testTimeout=20000 src/components/__tests__/MessageCenter.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+ [31m❯[39m src/components/__tests__/MessageCenter.spec.ts [2m([22m[2m7 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 438[2mms[22m[39m
+     [32m✓[39m 未读角标呈现服务端未读数 ≠ 0[32m 256[2mms[22m[39m
+     [32m✓[39m 消息列表按倒序呈现本人消息（最新在上发在前）[32m 69[2mms[22m[39m
+     [32m✓[39m 未读消息行呈现「标为已读」，点击调用 markRead 并联动刷新未读查询[32m 26[2mms[22m[39m
+[31m     [31m×[31m 消息列表查询失败 → 错误 Alert 呈现后端 message，「暂无消息」空态与列表均不渲染[39m[32m 26[2mms[22m[39m
+[31m     [31m×[31m 未读数查询失败且列表成功 → 错误 Alert 呈现、角标不出现、消息列表照常渲染[39m[32m 20[2mms[22m[39m
+     [32m✓[39m 两查询成功且消息为空数组 → 保留「暂无消息」业务空态且无错误 Alert[32m 17[2mms[22m[39m
+     [32m✓[39m 标已读失败 → message.error 显性反馈，不静默[32m 21[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageCenter.spec.ts[2m > [22mMessageCenter[2m > [22m消息列表查询失败 → 错误 Alert 呈现后端 message，「暂无消息」空态与列表均不渲染
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m src/components/__tests__/MessageCenter.spec.ts:[2m171:23[22m[39m
+    [90m169|[39m
+    [90m170|[39m     const alert = document.body.querySelector('[data-test="mc-error"]'…
+    [90m171|[39m     [34mexpect[39m(alert)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m172|[39m     [34mexpect[39m(alert[33m?.[39mtextContent)[33m.[39m[34mtoContain[39m([32m'消息服务暂不可用'[39m)[33m;[39m
+    [90m173|[39m     [90m// 失败不得伪装成「暂无消息」空态[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageCenter.spec.ts[2m > [22mMessageCenter[2m > [22m未读数查询失败且列表成功 → 错误 Alert 呈现、角标不出现、消息列表照常渲染
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m src/components/__tests__/MessageCenter.spec.ts:[2m186:23[22m[39m
+    [90m184|[39m
+    [90m185|[39m     const alert = document.body.querySelector('[data-test="mc-error"]'…
+    [90m186|[39m     [34mexpect[39m(alert)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m187|[39m     [34mexpect[39m(alert[33m?.[39mtextContent)[33m.[39m[34mtoContain[39m([32m'未读数服务暂不可用'[39m)[33m;[39m
+    [90m188|[39m     [90m// 不伪造可用未读数[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 23:02:57
+[2m   Duration [22m 5.85s[2m (transform 295ms, setup 40ms, import 4.11s, tests 438ms, environment 958ms)[22m
+

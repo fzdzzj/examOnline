@@ -7,8 +7,8 @@
  * 学生据此反复点进入。这条断言就是防止那种实现溜回来。
  */
 import { describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { Alert, Button, Table } from 'ant-design-vue';
+import { flushPromises, mount } from '@vue/test-utils';
+import { Alert, Button, Popconfirm, Table } from 'ant-design-vue';
 
 import type { ExamListItem } from '@/api/axios';
 import { EXAM_GROUP_LABELS, UNKNOWN_GROUP_LABEL } from '@/constants/studentTaking';
@@ -147,7 +147,7 @@ describe('StudentExamList', () => {
     expect(wrapper.emitted('reserve')).toBeDefined();
   });
 
-  it('预约制考试未开始已预约 → 呈现「取消预约」入口，点击 emit cancel', async () => {
+  it('预约制考试未开始已预约 → 呈现「取消预约」入口，经知情确认后 emit cancel', async () => {
     const reservedItem: ExamListItem = {
       ...UPCOMING,
       reservationRequired: true,
@@ -157,8 +157,67 @@ describe('StudentExamList', () => {
     const cancelBtn = wrapper.find('[data-test="cancel-reservation-button"]');
     expect(cancelBtn.exists()).toBe(true);
     expect(wrapper.find('[data-test="reserve-button"]').exists()).toBe(false);
-    await cancelBtn.trigger('click');
+    // 取消需经 Popconfirm 确认（spec-delta：确认前不发起取消请求）
+    wrapper.findAllComponents(Popconfirm)[0].vm.$emit('confirm');
+    await flushPromises();
     expect(wrapper.emitted('cancel')).toBeDefined();
+  });
+
+  it('取消预约知情确认：点击按钮不立即 emit cancel，确认气泡文案点明「取消后需重新预约」', async () => {
+    const reservedItem: ExamListItem = {
+      ...UPCOMING,
+      reservationRequired: true,
+      reserved: true,
+    };
+    const wrapper = mountList([reservedItem]);
+    const cancelBtn = wrapper.find('[data-test="cancel-reservation-button"]');
+    expect(cancelBtn.exists()).toBe(true);
+
+    // 点击只打开确认气泡，不发起取消
+    await cancelBtn.trigger('click');
+    expect(wrapper.emitted('cancel')).toBeUndefined();
+
+    const popconfirms = wrapper.findAllComponents(Popconfirm);
+    expect(popconfirms).toHaveLength(1);
+    expect(String(popconfirms[0].props('title'))).toContain('取消后需重新预约');
+
+    // 确认后才走既有取消链路
+    popconfirms[0].vm.$emit('confirm');
+    await flushPromises();
+    expect(wrapper.emitted('cancel')).toBeDefined();
+  });
+
+  it('离线门控 prop 只禁用预约/取消入口：进入按钮仍只认后端 canEnter', () => {
+    const reserveable: ExamListItem = { ...UPCOMING, reservationRequired: true, reserved: false };
+    const reserved: ExamListItem = {
+      ...UPCOMING,
+      examId: 7,
+      reservationRequired: true,
+      reserved: true,
+    };
+    const enterable: ExamListItem = { ...ONGOING, examId: 8, canEnter: true };
+
+    const offlineWrapper = mountList([reserveable, reserved, enterable], {
+      reservationActionsDisabled: true,
+    });
+    expect(
+      offlineWrapper.find('[data-test="reserve-button"]').attributes('disabled')
+    ).toBeDefined();
+    expect(
+      offlineWrapper.find('[data-test="cancel-reservation-button"]').attributes('disabled')
+    ).toBeDefined();
+    // 「进入」按钮不受离线门控影响
+    const enterButtons = offlineWrapper.findAll('[data-test="enter-button"]');
+    expect(enterButtons[0].attributes('disabled')).toBeUndefined();
+
+    // 门控关闭（默认）时预约/取消入口可点
+    const onlineWrapper = mountList([reserveable, reserved, enterable]);
+    expect(
+      onlineWrapper.find('[data-test="reserve-button"]').attributes('disabled')
+    ).toBeUndefined();
+    expect(
+      onlineWrapper.find('[data-test="cancel-reservation-button"]').attributes('disabled')
+    ).toBeUndefined();
   });
 
   it('预约制考试开考后已预约 → 只读「已预约」Tag，无预约/取消入口', () => {

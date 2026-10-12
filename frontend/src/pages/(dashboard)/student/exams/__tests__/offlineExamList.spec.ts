@@ -197,6 +197,88 @@ describe('学生考试列表离线降级与 SW 注册域 (index.page.vue)', () =
     expect(loaded?.items[0].title).toBe('高数期中（已领取）');
   });
 
+  it('⑥ 会话中途断网刷新激活离线降级：在线成功 → 断网事件 + 刷新失败 → 降级激活（响应式离线判定）', async () => {
+    // 在线加载成功（首求值即在线，直查 navigator.onLine 的非响应式实现此刻也会得 true）
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    await testListCacheStorage.save(1001, SAMPLE_ITEMS);
+    queryData.value = SAMPLE_ITEMS;
+    queryError.value = null;
+
+    const wrapper = mount(StudentExamsPage);
+    await flushPromises();
+
+    // 在线成功态：无降级横幅、无错误
+    expect(wrapper.find('[data-test="offline-list-banner"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="list-error"]').exists()).toBe(false);
+
+    // 会话中途断网：navigator.onLine=false + window 派发 offline 事件；随后刷新请求失败
+    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+    window.dispatchEvent(new Event('offline'));
+    queryData.value = undefined;
+    queryError.value = new Error('Network Error');
+    await flushPromises();
+
+    // 离线降级激活：缓存标注 + 降级横幅在场、错误 Alert 不在场（降级优先于报错）、缓存行渲染
+    expect(wrapper.find('[data-test="offline-list-banner"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="offline-cache-badge"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="list-error"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain('高数期中（已领取）');
+  });
+
+  it('⑦ 离线禁用预约与取消预约：降级态两按钮禁用、进入按钮不受影响，恢复在线复原', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+    const offlineItems: ExamListItem[] = [
+      {
+        ...SAMPLE_ITEMS[1],
+        examId: 21,
+        title: '需预约未预约',
+        group: 'UPCOMING',
+        canEnter: false,
+        reservationRequired: true,
+        reserved: false,
+      },
+      {
+        ...SAMPLE_ITEMS[1],
+        examId: 22,
+        title: '需预约已预约',
+        group: 'UPCOMING',
+        canEnter: true,
+        reservationRequired: true,
+        reserved: true,
+      },
+    ];
+    await testListCacheStorage.save(1001, offlineItems);
+    queryData.value = undefined;
+    queryError.value = new Error('Network Error');
+
+    const wrapper = mount(StudentExamsPage);
+    await flushPromises();
+
+    // 离线降级态：缓存行渲染，预约/取消入口呈禁用态
+    expect(wrapper.text()).toContain('需预约未预约');
+    expect(wrapper.find('[data-test="reserve-button"]').attributes('disabled')).toBeDefined();
+    expect(
+      wrapper.find('[data-test="cancel-reservation-button"]').attributes('disabled')
+    ).toBeDefined();
+
+    // 「进入」按钮不因离线禁用：仍只认后端 canEnter（红线）
+    const enterButtons = wrapper.findAll('[data-test="enter-button"]');
+    expect(enterButtons[0].attributes('disabled')).toBeDefined();
+    expect(enterButtons[1].attributes('disabled')).toBeUndefined();
+
+    // 网络恢复在线 + 刷新成功 → 预约/取消入口自动复原
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    window.dispatchEvent(new Event('online'));
+    queryData.value = offlineItems;
+    queryError.value = null;
+    await flushPromises();
+
+    expect(wrapper.find('[data-test="reserve-button"]').attributes('disabled')).toBeUndefined();
+    expect(
+      wrapper.find('[data-test="cancel-reservation-button"]').attributes('disabled')
+    ).toBeUndefined();
+  });
+
   it('⑤ SW 学生考试域化生命周期：挂载注册 SW，离开学生考试域注销，域内跳转不注销', async () => {
     const registerSpy = vi
       .spyOn(swRegisterModule, 'registerExamServiceWorker')

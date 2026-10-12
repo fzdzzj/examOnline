@@ -1,0 +1,82 @@
+
+> examonline-front@0.0.0 test
+> vitest run --testTimeout=20000 src/components/student/__tests__/StudentExamList.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/components/student/__tests__/StudentExamList.spec.ts [2m([22m[2m15 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1000[2mms[22m[39m
+     [33m[2m✓[22m[39m 三个后端分组各渲染自己的文案，顺序与后端一致 [33m 337[2mms[22m[39m
+     [32m✓[39m 状态只取后端 group：时间窗在未来的行后端说已完成，界面就不许显示待考/进行中[32m 45[2mms[22m[39m
+     [32m✓[39m 契约外的分组值显示"后端未返回分组"，不套一个看起来合理的状态[32m 39[2mms[22m[39m
+     [32m✓[39m 剩余时长就是后端给的 remainingSeconds：没有则占位，不用 endTime 减本地时间补[32m 43[2mms[22m[39m
+     [32m✓[39m 入口可点性只认 canEnter：true 可点、false 与缺失都禁用[32m 53[2mms[22m[39m
+     [32m✓[39m 进行中的行文案是"继续作答"，其余是"进入考试"——措辞跟着后端分组走[32m 43[2mms[22m[39m
+     [32m✓[39m 拉取失败渲染错误 Alert，不伪装成"暂无可参加的考试"[32m 15[2mms[22m[39m
+     [32m✓[39m 没有考试（后端返回空数组）才显示空态[32m 1[2mms[22m[39m
+     [32m✓[39m 列表仍交给 Table 渲染（分页/排序交给后端与表格，不自己拼 DOM）[32m 42[2mms[22m[39m
+     [32m✓[39m 预约制考试未开始未预约 → 呈现预约入口，点击 emit reserve[32m 41[2mms[22m[39m
+     [32m✓[39m 预约制考试未开始已预约 → 呈现「取消预约」入口，经知情确认后 emit cancel[32m 80[2mms[22m[39m
+[31m     [31m×[31m 取消预约知情确认：点击按钮不立即 emit cancel，确认气泡文案点明「取消后需重新预约」[39m[32m 54[2mms[22m[39m
+     [32m✓[39m 离线门控 prop 只禁用预约/取消入口：进入按钮仍只认后端 canEnter[32m 117[2mms[22m[39m
+     [32m✓[39m 预约制考试开考后已预约 → 只读「已预约」Tag，无预约/取消入口[32m 40[2mms[22m[39m
+     [32m✓[39m 非预约制考试不呈现预约入口[32m 46[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/StudentExamList.spec.ts[2m > [22mStudentExamList[2m > [22m取消预约知情确认：点击按钮不立即 emit cancel，确认气泡文案点明「取消后需重新预约」
+[31m[1mAssertionError[22m: expected [ [ { examId: 3, …(11) } ] ] to be undefined[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+[
+  [
+    {
+      "canEnter": true,
+      "durationMinutes": 60,
+      "endTime": "2026-09-22T11:00:00",
+      "examId": 3,
+      "examStatus": 1,
+      "group": "UPCOMING",
+      "remainingSeconds": 900,
+      "reservationRequired": true,
+      "reserved": true,
+      "startTime": "2026-09-22T09:00:00",
+      "submissionStatus": 1,
+      "title": "待考考试",
+    },
+  ],
+]
+
+[36m [2m❯[22m src/components/student/__tests__/StudentExamList.spec.ts:[2m178:39[22m[39m
+    [90m176|[39m     [90m// 点击只打开确认气泡，不发起取消[39m
+    [90m177|[39m     [35mawait[39m cancelBtn[33m.[39m[34mtrigger[39m([32m'click'[39m)[33m;[39m
+    [90m178|[39m     [34mexpect[39m(wrapper[33m.[39m[34memitted[39m([32m'cancel'[39m))[33m.[39m[34mtoBeUndefined[39m()[33m;[39m
+    [90m   |[39m                                       [31m^[39m
+    [90m179|[39m
+    [90m180|[39m     [35mconst[39m popconfirms [33m=[39m wrapper[33m.[39m[34mfindAllComponents[39m([33mPopconfirm[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m14 passed[39m[22m[90m (15)[39m
+[2m   Start at [22m 23:03:13
+[2m   Duration [22m 5.25s[2m (transform 146ms, setup 41ms, import 3.05s, tests 1.00s, environment 888ms)[22m
+

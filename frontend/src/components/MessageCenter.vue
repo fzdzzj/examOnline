@@ -6,33 +6,43 @@
           <span class="mc-title">消息中心</span>
           <Button size="small" type="link" @click="refresh">刷新</Button>
         </div>
+        <!-- 查询失败显性化：失败不得伪装成「暂无消息」空态（对齐列表页 error Alert 范式） -->
+        <Alert
+          v-if="queryError"
+          type="error"
+          show-icon
+          :message="queryError"
+          data-test="mc-error"
+        />
         <div v-if="loading" class="mc-empty">加载中…</div>
-        <div v-else-if="messages.length === 0" class="mc-empty" data-test="mc-empty">暂无消息</div>
-        <ul v-else class="mc-list">
-          <li v-for="m in messages" :key="m.id" class="mc-item" data-test="mc-item">
-            <div class="mc-item-title" data-test="mc-item-title">{{ m.title }}</div>
-            <div class="mc-item-content">{{ m.content }}</div>
-            <div class="mc-item-foot">
-              <span class="mc-item-time">{{ (m as UserMessage).createdTime ?? '' }}</span>
-              <Button
-                v-if="(m as UserMessage).readFlag === 0"
-                size="small"
-                type="link"
-                data-test="mark-read-button"
-                @click="openMarkRead(requiredId(m as UserMessage))"
-              >
-                标为已读
-              </Button>
-              <Tag v-else color="default">已读</Tag>
-            </div>
-          </li>
-        </ul>
+        <template v-else-if="!listError">
+          <div v-if="messages.length === 0" class="mc-empty" data-test="mc-empty">暂无消息</div>
+          <ul v-else class="mc-list">
+            <li v-for="m in messages" :key="m.id" class="mc-item" data-test="mc-item">
+              <div class="mc-item-title" data-test="mc-item-title">{{ m.title }}</div>
+              <div class="mc-item-content">{{ m.content }}</div>
+              <div class="mc-item-foot">
+                <span class="mc-item-time">{{ (m as UserMessage).createdTime ?? '' }}</span>
+                <Button
+                  v-if="(m as UserMessage).readFlag === 0"
+                  size="small"
+                  type="link"
+                  data-test="mark-read-button"
+                  @click="openMarkRead(requiredId(m as UserMessage))"
+                >
+                  标为已读
+                </Button>
+                <Tag v-else color="default">已读</Tag>
+              </div>
+            </li>
+          </ul>
+        </template>
       </div>
     </template>
     <span class="bell-trigger" data-test="message-bell">
       🔔
       <Badge
-        v-if="unread > 0"
+        v-if="!unreadError && unread > 0"
         :count="unread"
         :overflow-count="99"
         data-test="unread-badge"
@@ -52,7 +62,7 @@
  *
  * 仅登录鉴权（后端不特判角色），教师天然可拥有空消息箱。
  */
-import { Badge, Button, Popover, Tag } from 'ant-design-vue';
+import { Alert, Badge, Button, Popover, Tag, message } from 'ant-design-vue';
 import { computed, onMounted } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 
@@ -75,6 +85,15 @@ const listQuery = useQuery({
 const unread = computed(() => unreadQuery.data.value ?? 0);
 const messages = computed(() => listQuery.data.value ?? []);
 const loading = computed(() => listQuery.isLoading.value);
+// 查询失败显性化：error 必须被消费，否则失败会被 data=undefined 伪装成「暂无消息」
+const unreadError = computed<string | null>(() => unwrapQueryError(unreadQuery.error.value));
+const listError = computed<string | null>(() => unwrapQueryError(listQuery.error.value));
+const queryError = computed<string | null>(() => listError.value ?? unreadError.value);
+
+function unwrapQueryError(error: unknown): string | null {
+  if (!error) return null;
+  return error instanceof Error ? error.message : '消息加载失败';
+}
 
 onMounted(() => {
   void queryClient.invalidateQueries({ queryKey: ['messages', 'unread-count'] });
@@ -88,7 +107,12 @@ async function refresh(): Promise<void> {
 }
 
 async function openMarkRead(messageId: number): Promise<void> {
-  await unwrap(markRead({ client, throwOnError: true, path: { id: messageId } }));
+  try {
+    await unwrap(markRead({ client, throwOnError: true, path: { id: messageId } }));
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '标记已读失败，请稍后重试');
+    return;
+  }
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ['messages', 'list'] }),
     queryClient.invalidateQueries({ queryKey: ['messages', 'unread-count'] }),

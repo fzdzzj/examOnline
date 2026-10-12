@@ -22,6 +22,7 @@
         :items="rows"
         :loading="isFetching"
         :error="errorText"
+        :reservation-actions-disabled="isOffline"
         @enter="onEnter"
         @reserve="onReserve"
         @cancel="onCancelReservation"
@@ -60,6 +61,7 @@ import { client, unwrap } from '@/api/apiClient';
 import { message } from 'ant-design-vue';
 import StudentExamList from '@/components/student/StudentExamList.vue';
 import { createStudentExamsQueryOptions } from '@/hooks/useStudentTaking';
+import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { ApiError } from '@/api/types';
 import { createStudentExamListCacheStorage } from '@/utils/examListCacheStorage';
 import {
@@ -124,9 +126,12 @@ watch(
   { immediate: true }
 );
 
-const isOffline = computed<boolean>(() => {
-  return typeof navigator !== 'undefined' ? !navigator.onLine : false;
-});
+/**
+ * 离线判定与作答页同源（useOfflineStatus 监听 online/offline 事件），会话中途断网
+ * 亦能响应；SHALL NOT 用无响应式依赖的 navigator.onLine 直查冻结取值。
+ * 列表页无草稿心跳，autoSaveStatus 传恒非 unsynced 的中性值，仅网络通道生效。
+ */
+const { isOffline } = useOfflineStatus({ autoSaveStatus: () => 'idle' });
 
 const isFallbackActive = computed<boolean>(() => {
   return Boolean(error.value && isOffline.value && cachedRows.value.length > 0);

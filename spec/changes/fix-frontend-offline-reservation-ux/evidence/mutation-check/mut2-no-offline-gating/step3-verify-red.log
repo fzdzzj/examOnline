@@ -1,0 +1,57 @@
+
+> examonline-front@0.0.0 test
+> vitest run --testTimeout=20000 src/components/student/__tests__/StudentExamList.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/components/student/__tests__/StudentExamList.spec.ts [2m([22m[2m15 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1020[2mms[22m[39m
+     [33m[2m✓[22m[39m 三个后端分组各渲染自己的文案，顺序与后端一致 [33m 388[2mms[22m[39m
+     [32m✓[39m 状态只取后端 group：时间窗在未来的行后端说已完成，界面就不许显示待考/进行中[32m 49[2mms[22m[39m
+     [32m✓[39m 契约外的分组值显示"后端未返回分组"，不套一个看起来合理的状态[32m 50[2mms[22m[39m
+     [32m✓[39m 剩余时长就是后端给的 remainingSeconds：没有则占位，不用 endTime 减本地时间补[32m 42[2mms[22m[39m
+     [32m✓[39m 入口可点性只认 canEnter：true 可点、false 与缺失都禁用[32m 53[2mms[22m[39m
+     [32m✓[39m 进行中的行文案是"继续作答"，其余是"进入考试"——措辞跟着后端分组走[32m 46[2mms[22m[39m
+     [32m✓[39m 拉取失败渲染错误 Alert，不伪装成"暂无可参加的考试"[32m 15[2mms[22m[39m
+     [32m✓[39m 没有考试（后端返回空数组）才显示空态[32m 1[2mms[22m[39m
+     [32m✓[39m 列表仍交给 Table 渲染（分页/排序交给后端与表格，不自己拼 DOM）[32m 42[2mms[22m[39m
+     [32m✓[39m 预约制考试未开始未预约 → 呈现预约入口，点击 emit reserve[32m 45[2mms[22m[39m
+     [32m✓[39m 预约制考试未开始已预约 → 呈现「取消预约」入口，经知情确认后 emit cancel[32m 76[2mms[22m[39m
+     [32m✓[39m 取消预约知情确认：点击按钮不立即 emit cancel，确认气泡文案点明「取消后需重新预约」[32m 60[2mms[22m[39m
+[31m     [31m×[31m 离线门控 prop 只禁用预约/取消入口：进入按钮仍只认后端 canEnter[39m[32m 62[2mms[22m[39m
+     [32m✓[39m 预约制考试开考后已预约 → 只读「已预约」Tag，无预约/取消入口[32m 43[2mms[22m[39m
+     [32m✓[39m 非预约制考试不呈现预约入口[32m 43[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/StudentExamList.spec.ts[2m > [22mStudentExamList[2m > [22m离线门控 prop 只禁用预约/取消入口：进入按钮仍只认后端 canEnter
+[31m[1mAssertionError[22m: expected undefined to be defined[39m
+[36m [2m❯[22m src/components/student/__tests__/StudentExamList.spec.ts:[2m203:88[22m[39m
+    [90m201|[39m       reservationActionsDisabled[33m:[39m [35mtrue[39m[33m,[39m
+    [90m202|[39m     })[33m;[39m
+    [90m203|[39m     expect(offlineWrapper.find('[data-test="reserve-button"]').attribu…
+    [90m   |[39m                                                                                        [31m^[39m
+    [90m204|[39m     [34mexpect[39m(
+    [90m205|[39m       offlineWrapper.find('[data-test="cancel-reservation-button"]').a…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m14 passed[39m[22m[90m (15)[39m
+[2m   Start at [22m 23:02:41
+[2m   Duration [22m 5.46s[2m (transform 179ms, setup 38ms, import 3.23s, tests 1.02s, environment 888ms)[22m
+

@@ -1,0 +1,9 @@
+mutation-check 五步汇总 —— label: mut1-offline-nonreactive
+target: frontend/src/pages/(dashboard)/student/exams/index.page.vue
+verify: cd frontend && npm.cmd run test -- --testTimeout=20000 "src/pages/(dashboard)/student/exams/__tests__/offlineExamList.spec.ts"
+PASS  ① 备份：frontend/src/pages/(dashboard)/student/exams/index.page.vue -> spec/changes/fix-frontend-offline-reservation-ux/evidence/mutation-check/mut1-offline-nonreactive/backup/original
+PASS  ② 注入+命中：注入标志在场（const isOffline = computed(() => !navigator.onLine); /* MUT_NONREACTIVE_ONLINE */）
+PASS  ③ 击红：--verify 非零退出（exit=1），留证 spec/changes/fix-frontend-offline-reservation-ux/evidence/mutation-check/mut1-offline-nonreactive/step3-verify-red.log
+PASS  ④ 复原+归零：cmp 字节一致，注入标志不在场
+PASS  ⑤ 回绿：--verify 零退出（exit=0），留证 spec/changes/fix-frontend-offline-reservation-ux/evidence/mutation-check/mut1-offline-nonreactive/step5-verify-green.log
+PASS  留证目录：spec/changes/fix-frontend-offline-reservation-ux/evidence/mutation-check/mut1-offline-nonreactive
