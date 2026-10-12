@@ -42,6 +42,9 @@ public class ExamResponse {
     /** 1=教师提前结束（强制交卷标记） */
     private Integer forceEnd;
 
+    /** 0=普通考试 1=需预约（add-exam-reservation） */
+    private Integer reservationRequired;
+
     /** 考试快照 ID（发布后回填） */
     private Long snapshotId;
 

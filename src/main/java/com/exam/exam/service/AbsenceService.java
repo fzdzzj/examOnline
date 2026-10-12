@@ -50,15 +50,18 @@ public class AbsenceService {
     private final ExamMapper examMapper;
     private final ExamSubmissionMapper submissionMapper;
     private final ClassService classService;
+    private final ExamReservationService reservationService;
     private final UserMapper userMapper;
 
     public AbsenceService(ExamAbsenceMapper absenceMapper, ExamMapper examMapper,
                           ExamSubmissionMapper submissionMapper, ClassService classService,
+                          ExamReservationService reservationService,
                           UserMapper userMapper) {
         this.absenceMapper = absenceMapper;
         this.examMapper = examMapper;
         this.submissionMapper = submissionMapper;
         this.classService = classService;
+        this.reservationService = reservationService;
         this.userMapper = userMapper;
     }
 
@@ -69,12 +72,25 @@ public class AbsenceService {
     @Transactional(rollbackFor = Exception.class)
     public int markAbsence(Long examId) {
         Exam exam = examMapper.selectById(examId);
-        if (exam == null || exam.getClassId() == null) {
-            return 0;   // 无班级归属：无应考名单可言，不标记
-        }
-        List<Long> expectedIds = classService.listStudentIds(exam.getClassId());
-        if (expectedIds.isEmpty()) {
+        if (exam == null) {
             return 0;
+        }
+        // add-exam-reservation 应考口径分流：「预约即应考」——预约制考试按有效预约名单计应考，
+        // 非预约制维持既有班级名单口径（ClassService.listStudentIds 仍是唯一班级名单入口，clazz 包零触碰）。
+        List<Long> expectedIds;
+        if (isReservationRequired(exam)) {
+            expectedIds = reservationService.listReservedStudentIds(exam.getId());
+            if (expectedIds.isEmpty()) {
+                return 0;   // 预约制但无人预约：无应考名单，无缺考可标记
+            }
+        } else {
+            if (exam.getClassId() == null) {
+                return 0;   // 无班级归属：无应考名单可言，不标记
+            }
+            expectedIds = classService.listStudentIds(exam.getClassId());
+            if (expectedIds.isEmpty()) {
+                return 0;
+            }
         }
 
         // 有答卷的学生（老师可跨班拉名单，这里仅需当前应考名单内的答卷）
@@ -140,5 +156,10 @@ public class AbsenceService {
             throw new BusinessException(ResponseCode.NOT_FOUND, "考试不存在");
         }
         OwnershipGuard.assertOwner(exam.getCreatedBy(), SecurityUtil.getCurrentUser(), "考试");
+    }
+
+    /** 预约制考试判定（add-exam-reservation）：reservation_required=1 即预约制。 */
+    public static boolean isReservationRequired(Exam exam) {
+        return exam.getReservationRequired() != null && exam.getReservationRequired() == 1;
     }
 }

@@ -189,6 +189,7 @@ CREATE TABLE IF NOT EXISTS exams (
     status             TINYINT      NOT NULL DEFAULT 0,  -- 0未开始 1进行中 2已结束 3已批改 4已发布
     published          TINYINT      NOT NULL DEFAULT 0,  -- 0=未发布（学生不可见） 1=已发布（发布即生成考试快照）
     force_end          TINYINT      NOT NULL DEFAULT 0,  -- 1=教师提前结束标记（强制交卷在阶段 5 按最后自动保存处理，§1.5）
+    reservation_required TINYINT    NOT NULL DEFAULT 0,  -- 0=普通考试（班级即时进入） 1=需预约（add-exam-reservation）
     anti_cheat_config  TEXT,                             -- 防作弊配置 JSON（切屏检测/禁复制等开关，阶段 5 消费）
     snapshot_id        BIGINT                DEFAULT NULL, -- 考试快照 ID（发布时回填）
     version            INT          NOT NULL DEFAULT 0,  -- 乐观锁版本号：CAS 状态流转的并发护栏
@@ -465,4 +466,41 @@ CREATE TABLE IF NOT EXISTS audit_log (
     -- 保留清理按年龄删（WHERE created_time < ?）。缺这条索引时，"没有东西可删"这一稳态
     -- 也要把整张表读穿才敢返回 0：10 万行实测 34ms 且随行数线性增长；有索引 0.16-0.7ms 且与表大小无关。
     KEY idx_audit_time (created_time)
+);
+
+-- =============================================================
+-- 考试预约 + 学生消息中心（add-exam-reservation）
+-- 存量库另需手工执行 docker/mysql/migrations/2026-W41-add-exam-reservation.sql
+-- （CREATE TABLE IF NOT EXISTS 不会为已存在的库补表/补列）。
+-- =============================================================
+
+-- 考试预约表：学生预约制考试（reservation_required=1）时写入；开考瞬间名单锁定，
+-- 缺席/应考统计按有效预约名单计（「预约即应考」）。reminded_time 为开考提醒投递的行级幂等标记，
+-- 扫描投递 UPDATE ... WHERE reminded_time IS NULL 命中 1 行才写消息，重复扫描/重启/多实例竞争不重发。
+-- uk_reservation_exam_student 唯一索引避让 H2 全局约束名碰撞（仿 uk_absence_exam_student 先例），
+-- 同时作为重约幂等（取消即物理删除，重约 = 重新插入，一人一场至多一条有效预约）。
+CREATE TABLE IF NOT EXISTS exam_reservations (
+    id            BIGINT   NOT NULL AUTO_INCREMENT,
+    exam_id       BIGINT   NOT NULL,
+    student_id    BIGINT   NOT NULL,
+    reminded_time DATETIME          DEFAULT NULL,  -- 开考提醒投递时间；NULL=尚未投递（扫描候选）
+    created_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_reservation_exam_student UNIQUE (exam_id, student_id),
+    KEY idx_reservations_exam (exam_id)             -- 按考试取预约名单/提醒扫描
+);
+
+-- 学生消息中心（本期唯一投递方为开考预约提醒；表按 user_id 通用建模，为后续功能留口径）。
+-- 端点：本人消息列表（倒序）/ 未读数 / 单条标记已读；鉴权仅要求登录，不特判角色。
+-- idx_user_messages_user(user_id, id) 支撑"按用户倒序列出本人消息"（id 自增即时间倒序）。
+CREATE TABLE IF NOT EXISTS user_messages (
+    id           BIGINT        NOT NULL AUTO_INCREMENT,
+    user_id      BIGINT        NOT NULL,             -- 收件人 user id
+    exam_id      BIGINT                 DEFAULT NULL, -- 关联考试（可为空，通用消息预留）
+    title        VARCHAR(128)  NOT NULL,
+    content      VARCHAR(512)           DEFAULT '',
+    read_flag    TINYINT       NOT NULL DEFAULT 0,   -- 0=未读 1=已读
+    created_time DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_user_messages_user (user_id, id)         -- 本人消息列表倒序
 );

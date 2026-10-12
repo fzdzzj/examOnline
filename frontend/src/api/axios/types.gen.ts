@@ -106,6 +106,7 @@ export type ExamUpdateRequest = {
     durationMinutes?: number;
     allowLateMinutes?: number;
     antiCheatConfig?: JsonNode;
+    reservationRequired?: boolean;
 };
 
 export type JsonNode = unknown;
@@ -131,6 +132,7 @@ export type ExamDetailResponse = {
     status?: number;
     published?: number;
     forceEnd?: number;
+    reservationRequired?: number;
     antiCheatConfig?: JsonNode;
     snapshotId?: number;
     createdBy?: number;
@@ -342,6 +344,7 @@ export type ExamCreateRequest = {
     durationMinutes: number;
     allowLateMinutes?: number;
     antiCheatConfig?: JsonNode;
+    reservationRequired?: boolean;
 };
 
 export type ApiResponseExamResponse = {
@@ -363,6 +366,7 @@ export type ExamResponse = {
     status?: number;
     published?: number;
     forceEnd?: number;
+    reservationRequired?: number;
     snapshotId?: number;
     createdBy?: number;
     createdTime?: string;
@@ -774,6 +778,28 @@ export type ApiResponseListPaperResponse = {
     data?: Array<PaperResponse>;
 };
 
+export type ApiResponseListUserMessage = {
+    code?: number;
+    message?: string;
+    data?: Array<UserMessage>;
+};
+
+export type UserMessage = {
+    id?: number;
+    userId?: number;
+    examId?: number;
+    title?: string;
+    content?: string;
+    readFlag?: number;
+    createdTime?: string;
+};
+
+export type ApiResponseLong = {
+    code?: number;
+    message?: string;
+    data?: number;
+};
+
 export type ApiResponseListExamResponse = {
     code?: number;
     message?: string;
@@ -1061,6 +1087,8 @@ export type ExamListItem = {
     canEnter?: boolean;
     submissionStatus?: number;
     remainingSeconds?: number;
+    reservationRequired?: boolean;
+    reserved?: boolean;
 };
 
 export type ApiResponseClassPageResponse = {
@@ -1273,6 +1301,24 @@ export type UpdateOrderResponses = {
 };
 
 export type UpdateOrderResponse = UpdateOrderResponses[keyof UpdateOrderResponses];
+
+export type MarkReadData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/api/messages/{id}/read';
+};
+
+export type MarkReadResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseVoid;
+};
+
+export type MarkReadResponse = MarkReadResponses[keyof MarkReadResponses];
 
 export type Delete2Data = {
     body?: never;
@@ -1972,6 +2018,42 @@ export type ReportBehaviorResponses = {
 
 export type ReportBehaviorResponse = ReportBehaviorResponses[keyof ReportBehaviorResponses];
 
+export type CancelData = {
+    body?: never;
+    path: {
+        examId: number;
+    };
+    query?: never;
+    url: '/api/exam-reservations/{examId}';
+};
+
+export type CancelResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseVoid;
+};
+
+export type CancelResponse = CancelResponses[keyof CancelResponses];
+
+export type ReserveData = {
+    body?: never;
+    path: {
+        examId: number;
+    };
+    query?: never;
+    url: '/api/exam-reservations/{examId}';
+};
+
+export type ReserveResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseVoid;
+};
+
+export type ReserveResponse = ReserveResponses[keyof ReserveResponses];
+
 export type Page3Data = {
     body?: never;
     path?: never;
@@ -2313,6 +2395,40 @@ export type MyMakeupFinalScoreResponses = {
 };
 
 export type MyMakeupFinalScoreResponse = MyMakeupFinalScoreResponses[keyof MyMakeupFinalScoreResponses];
+
+export type List1Data = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/api/messages';
+};
+
+export type List1Responses = {
+    /**
+     * OK
+     */
+    200: ApiResponseListUserMessage;
+};
+
+export type List1Response = List1Responses[keyof List1Responses];
+
+export type UnreadCountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/messages/unread-count';
+};
+
+export type UnreadCountResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseLong;
+};
+
+export type UnreadCountResponse = UnreadCountResponses[keyof UnreadCountResponses];
 
 export type GetSnapshot1Data = {
     body?: never;

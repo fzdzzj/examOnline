@@ -90,6 +90,8 @@ public class ExamService {
         exam.setStatus(Exam.STATUS_NOT_STARTED);
         exam.setPublished(0);
         exam.setForceEnd(0);
+        exam.setReservationRequired(
+                Boolean.TRUE.equals(request.getReservationRequired()) ? 1 : 0);
         exam.setAntiCheatConfig(toJsonString(request.getAntiCheatConfig()));
         exam.setVersion(0);
         exam.setCreatedBy(operator.getId());
@@ -153,7 +155,26 @@ public class ExamService {
     @Transactional(rollbackFor = Exception.class)
     public ExamDetailResponse update(Long id, ExamUpdateRequest request) {
         Exam exam = getOwnedExam(id);
-        assertEditable(exam);
+        // 预约开关守卫（add-exam-reservation）：仅未开始(status=0)可改；开考后预约名单已锁定，一律拒绝。
+        // 其余字段仍走 assertEditable 的"未发布且未开始"既有约束（逐字不动）。
+        // 已发布但未开始的考试允许单独改预约开关（名单在开考瞬间才锁定，未开始前门禁未生效）——
+        // 此时请求若只带 reservationRequired，跳过 assertEditable 对已发布考试的拒绝。
+        boolean reservationOnly = request.getReservationRequired() != null
+                && request.getTitle() == null && request.getDescription() == null
+                && request.getPaperId() == null && request.getCourseId() == null
+                && request.getClassId() == null && request.getStartTime() == null
+                && request.getEndTime() == null && request.getDurationMinutes() == null
+                && request.getAllowLateMinutes() == null && request.getAntiCheatConfig() == null;
+        if (request.getReservationRequired() != null
+                && (exam.getStatus() == null || exam.getStatus() != Exam.STATUS_NOT_STARTED)) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "开考后预约开关不可修改（预约名单已锁定）");
+        }
+        if (!reservationOnly) {
+            assertEditable(exam);
+        }
+        if (request.getReservationRequired() != null) {
+            exam.setReservationRequired(Boolean.TRUE.equals(request.getReservationRequired()) ? 1 : 0);
+        }
 
         if (request.getTitle() != null) {
             exam.setTitle(request.getTitle().trim());
@@ -303,7 +324,7 @@ public class ExamService {
                 exam.getPaperId(), paper == null ? null : paper.getTitle(),
                 exam.getCourseId(), exam.getClassId(),
                 exam.getStartTime(), exam.getEndTime(), exam.getDurationMinutes(), exam.getAllowLateMinutes(),
-                exam.getStatus(), exam.getPublished(), exam.getForceEnd(),
+                exam.getStatus(), exam.getPublished(), exam.getForceEnd(), exam.getReservationRequired(),
                 parseConfig(exam.getAntiCheatConfig()), exam.getSnapshotId(),
                 exam.getCreatedBy(), exam.getCreatedTime(), exam.getUpdatedTime());
     }

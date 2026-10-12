@@ -18,6 +18,7 @@
           {{ collapsed ? '☰' : '✕' }}
         </span>
         <div class="header-right">
+          <MessageCenter v-if="isAuthenticatedOf(store.state.user)" />
           <Tag v-for="role in roles" :key="role" color="blue">{{ roleLabel(role) }}</Tag>
           <Dropdown>
             <span class="user-trigger">
@@ -49,6 +50,7 @@ import { useStore } from 'vuex';
 
 import { canAccess } from '@/router/access';
 import { highestRoleOf, isAuthenticatedOf, type State } from '@/store';
+import MessageCenter from '@/components/MessageCenter.vue';
 
 const router = useRouter();
 const route = useRoute();

@@ -91,6 +91,9 @@ exam:
   schedule:
     # 考试状态机扫表间隔（定时发布/自然结束推进），毫秒；不依赖外部调度中间件
     fixed-delay-ms: 10000
+  reservation:
+    # 开考提醒投递提前量（分钟）（add-exam-reservation）：距开考 <= 该提前量的未提醒预约收到提醒
+    remind-ahead-minutes: 30
   taking:
     # 交卷链路（add-exam-taking）
     submit:

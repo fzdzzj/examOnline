@@ -42,6 +42,8 @@ class AbsenceServiceTest {
     @Mock
     private ClassService classService;
     @Mock
+    private ExamReservationService reservationService;
+    @Mock
     private UserMapper userMapper;
 
     @InjectMocks
@@ -97,6 +99,38 @@ class AbsenceServiceTest {
 
         assertEquals(0, service.markAbsence(10L));
         verify(absenceMapper, never()).insertIgnoreBatch(any());
+    }
+
+    /** 名单分流不可绕过（add-exam-reservation 护栏）：reservation_required=1 时不得走班级名单。 */
+    @Test
+    void reservationExamAbsenceUsesReservationRosterNotClass() {
+        Exam exam = exam(10L, 100L);
+        exam.setReservationRequired(1);
+        when(examMapper.selectById(10L)).thenReturn(exam);
+        when(reservationService.listReservedStudentIds(10L)).thenReturn(List.of(1L, 3L));
+        when(submissionMapper.selectList(any())).thenReturn(List.of(submission(10L, 1L)));
+        when(absenceMapper.insertIgnoreBatch(any())).thenReturn(1);
+
+        int inserted = service.markAbsence(10L);
+
+        // 预约制：应考名单来自预约名单（[1,3]），有答卷者=1 → 缺考仅 3，且绝不触碰班级名单
+        assertEquals(1, inserted);
+        ArgumentCaptor<List<ExamAbsence>> captor = ArgumentCaptor.forClass(List.class);
+        verify(absenceMapper).insertIgnoreBatch(captor.capture());
+        assertEquals(List.of(3L), captor.getValue().stream().map(ExamAbsence::getStudentId).toList());
+        verify(classService, never()).listStudentIds(any());
+    }
+
+    @Test
+    void reservationExamWithNoReservationMarksNothing() {
+        Exam exam = exam(10L, 100L);
+        exam.setReservationRequired(1);
+        when(examMapper.selectById(10L)).thenReturn(exam);
+        when(reservationService.listReservedStudentIds(10L)).thenReturn(List.of());
+
+        assertEquals(0, service.markAbsence(10L));
+        verify(absenceMapper, never()).insertIgnoreBatch(any());
+        verify(classService, never()).listStudentIds(any());
     }
 
     private ExamSubmission submission(Long examId, Long studentId) {

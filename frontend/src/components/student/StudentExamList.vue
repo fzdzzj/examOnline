@@ -39,15 +39,41 @@
         </template>
 
         <template v-else-if="column.key === 'actions'">
-          <Button
-            type="primary"
-            size="small"
-            data-test="enter-button"
-            :disabled="!canEnterOf(record as ExamListItem)"
-            @click="emit('enter', record as ExamListItem)"
-          >
-            {{ (record as ExamListItem).group === EXAM_GROUP.ONGOING ? '继续作答' : '进入考试' }}
-          </Button>
+          <Space>
+            <Button
+              v-if="reservationActionOf(record as ExamListItem).showReserve"
+              size="small"
+              data-test="reserve-button"
+              @click="emit('reserve', record as ExamListItem)"
+            >
+              预约
+            </Button>
+            <Button
+              v-else-if="reservationActionOf(record as ExamListItem).showCancel"
+              size="small"
+              danger
+              data-test="cancel-reservation-button"
+              @click="emit('cancel', record as ExamListItem)"
+            >
+              取消预约
+            </Button>
+            <Tag
+              v-else-if="reservationActionOf(record as ExamListItem).showReservedTag"
+              color="green"
+              data-test="reserved-tag"
+            >
+              已预约
+            </Tag>
+            <Button
+              type="primary"
+              size="small"
+              data-test="enter-button"
+              :disabled="!canEnterOf(record as ExamListItem)"
+              @click="emit('enter', record as ExamListItem)"
+            >
+              {{ (record as ExamListItem).group === EXAM_GROUP.ONGOING ? '继续作答' : '进入考试' }}
+            </Button>
+          </Space>
         </template>
       </template>
     </Table>
@@ -70,7 +96,7 @@
  * 前端任何一处"我看时间也像进行中"的推断都会跟它打架，所以这里一处都不推。
  * 「进入考试」入口的可点性同理，只认后端 `canEnter`。
  */
-import { Alert, Button, Table, Tag, type TableColumnsType } from 'ant-design-vue';
+import { Alert, Button, Space, Table, Tag, type TableColumnsType } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import type { ExamListItem } from '@/api/axios';
@@ -88,7 +114,40 @@ withDefaults(
   { loading: false, error: null }
 );
 
-const emit = defineEmits<{ enter: [item: ExamListItem] }>();
+const emit = defineEmits<{
+  enter: [item: ExamListItem];
+  /** 预约制考试开考前：学生点「预约」 */
+  reserve: [item: ExamListItem];
+  /** 预约制考试开考前：学生点「取消预约」 */
+  cancel: [item: ExamListItem];
+}>();
+
+/**
+ * 预约入口三态（add-exam-reservation）：只对「需预约」考试呈现，且仅开考前（group=UPCOMING）。
+ * - 未预约 → 预约按钮；
+ * - 已预约且开考后 → 「已预约」只读 Tag（锁定，不可取消）；
+ * - 已预约且未开始 → 取消预约按钮；
+ * - 开考后未预约 → 不呈现预约/取消（名单已锁定）。
+ * 三态判定只用后端下发的 reservationRequired / reserved 与 group，不做本地时间推断。
+ */
+interface ReservationAction {
+  showReserve: boolean;
+  showCancel: boolean;
+  showReservedTag: boolean;
+}
+
+function reservationActionOf(item: ExamListItem): ReservationAction {
+  if (item.reservationRequired !== true) {
+    return { showReserve: false, showCancel: false, showReservedTag: false };
+  }
+  const upcoming = item.group === EXAM_GROUP.UPCOMING;
+  const reserved = item.reserved === true;
+  return {
+    showReserve: upcoming && !reserved,
+    showCancel: upcoming && reserved,
+    showReservedTag: !upcoming && reserved,
+  };
+}
 
 const columns: TableColumnsType = [
   { title: '考试', key: 'title', dataIndex: 'title' },

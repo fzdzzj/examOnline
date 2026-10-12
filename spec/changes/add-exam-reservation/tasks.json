@@ -1,0 +1,64 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与现状查证",
+    "task": "分支与基线门禁、预约/缺席/建考链现状查证（DTO 全链、消费矩阵、扫描先例、前端落点）",
+    "steps": [
+      { "step": "K1 从 main 最新 HEAD 新建 feature/add-exam-reservation；git rev-parse --short HEAD=ad06385（与 origin/main 一致）；git status --porcelain 零已跟踪修改，新增仅白名单 spec/changes/add-exam-reservation/ 与既有未跟踪噪声（docs/review/.zcodeignore 等非本变更文件，不触碰不提交）；本地 HEAD ad06385 新建分支后 rev-parse --short HEAD=ad06385", "completed": true },
+      { "step": "K2 双端门禁基线：仓库根 .\\mvnw.cmd clean test → BUILD SUCCESS, [WARNING] Tests run: 404, Failures: 0, Errors: 0, Skipped: 1（gate-baseline backendTests=404 吻合）；前端 npm.cmd run lint:check → exit 0 输出非空；type-check:check → exit 0；npm.cmd run test → 86 files / 611 passed（初测 14 例 5000ms 默认 testTimeout 超时属低内存水位，--testTimeout=20000 复跑 611 全绿，如实区分；gate-baseline frontendTests=611 吻合）", "completed": true },
+      { "step": "K3 现状查证：① DTO 全链（ExamCreateRequest/UpdateRequest/Response/DetailResponse 原无 reservationRequired；MakeupCreateRequest 无，补考链隔离）；ExamService.create 置 status=0/published=0，assertEditable 守卫更新删除为未发布且未开始；② assertAdmission 既有两层（补考 parent_exam_id!=null→makeupService.assertCanEnter / 普通类班级归属 userClassMapper 计数），requireEnterableExam 已发布且进行中，enter 首发才校验；③ markAbsence 与 buildClassOverview 均用 classService.listStudentIds(classId) 为 expectedIds；grep listStudentIds/expectedIds/应考名单仅命中这两处消费点（停止条件②未触发）；④ ExamSweepService @Scheduled fixedDelayString + ApplicationReadyEvent 启动补偿（多实例竞态安全先例，作提醒投递同构蓝本）；⑤ 消息基础设施零命中（grep notification|UserMessage|站内|inbox|readFlag 在 src/main/java 零命中）；⑥ 实体-建表双向核对 26↔26 空差集（AGENTS 硬约定3 基线绿）；⑦ 前端三落点存在（student/exams/index.page.vue + StudentExamList、dashboard 壳、teacher/exams/create.page.vue），类型生成链 openapi-ts 读 openapi.yaml（gen:api）；⑧ docker/mysql/migrations/ 形态、头注释惯例（W15 加列 1060 / W40 加索引 1061）、APPLIED.md 台账", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "K1: `git checkout -b feature/add-exam-reservation` from HEAD ad06385 (main==origin/main), `git rev-parse --short HEAD`=ad06385, `git status --porcelain` 零已跟踪修改.\nK2: `.\\mvnw.cmd clean test` → `[WARNING] Tests run: 404, Failures: 0, Errors: 0, Skipped: 1` + `BUILD SUCCESS`. `npm.cmd run lint:check` exit 0 non-empty. `npm.cmd run type-check:check` exit 0. `npm.cmd run test -- --testTimeout=20000` → `Tests 611 passed (611)` `Test Files 86 passed (86)`. (无 testTimeout 初测 14→5000ms 环境超时，复跑区分).\nK3: 逐项查证见 step 文本；停止条件②未触发（应考名单消费点恰两处）；消息基础设施零存在"
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：预约域后端实施",
+    "task": "schema 双轨（两新表 + exams 加列 + migrations 脚本）、预约服务与准入叠加、建考开关、列表状态下发",
+    "steps": [
+      { "step": "数据层：schema.sql 新增 exam_reservations（uk_reservation_exam_student 唯一索引命名避让 H2 全局约束名碰撞 + idx_reservations_exam）与 user_messages（idx_user_messages_user）两表（CREATE TABLE IF NOT EXISTS + AUTO_INCREMENT 同批 PRIMARY KEY (id)）；exams 加列 reservation_required TINYINT NOT NULL DEFAULT 0；实体 ExamReservation/UserMessage 与 Exam 加字段同步（实体-建表双向一致硬约定 28↔28 空差集）；新增 docker/mysql/migrations/2026-W41-add-exam-reservation.sql（头注释预期错误码：加列 1060 / 建表 IF NOT EXISTS 同名跳过属登 1050 语义），与 schema.sql 同对象逐字一致自证（exam_reservations/user_messages 规范化 DDL 与迁移逐字一致，reservation_required 列两轨一致）；脚本语法验证由全仓 .\\mvnw.cmd clean test 中 SchemaSqlMysqlCompatibilityTest 覆盖（H2 建表失败即红），不动共享 dev", "completed": true },
+      { "step": "预约域：新增 ExamReservationService（独立 service）：预约（published=1 AND status=0 窗口 + 与 assertAdmission 班级分支同源的 UserClassMapper 归属校验，外班拒约 403）、取消（仅开考前、物理删除）、listReservedStudentIds/isReserved；ExamTakingService.assertAdmission 追加预约校验分支（既有班级/补考分支逐字不动，预约制未预约 FORBIDDEN 403）；ExamCreateRequest/UpdateRequest/Response/DetailResponse 加 reservationRequired（补考链 MakeupCreateRequest 不加）+ ExamService.update 加 status=0 才可改开关守卫（仅未开始可改，已发布未开始仅允许单独改开关）；ExamListItem 增 reservationRequired/reserved，myExams canEnter 联动（预约制未预约进行中也 false）；ReservationController（POST/DELETE /api/exam-reservations/{examId}）", "completed": true },
+      { "step": "后端测试：ExamReservationIntegrationTest 8 用例（开考前预约/取消/重约幂等、开考后拒约拒取消、未预约进入 403、外班拒约、列表字段下发与 canEnter 联动、非预约制 false 标志、开关 status=0 守卫/未开始可改）+ 既有 14 exam-taking 与建考编辑用例零改动零回归（全仓 423 用例绿）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "schema: `src/main/resources/schema.sql` 加列+两表；`docker/mysql/migrations/2026-W41-add-exam-reservation.sql`；同对象逐字一致自证见输出比对（exam_reservations/user_messages DDL 与迁移规范化后逐字相同；reservation_required 两轨 TINYINT NOT NULL DEFAULT 0 一致）。实体-建表双向 28↔28 空差集。\n代码：ExamReservationService / ReservationController / ExamTakingService.assertAdmission 追加分支 / ExamService.update 守卫 / ExamListItem 增字段。\n测试：`mvnw test` 单跑新类后全仓 `.\\mvnw.cmd clean test` → `Tests run: 423, Failures: 0, Errors: 0, Skipped: 1` BUILD SUCCESS（既有用例零回归）。"
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：开考提醒投递与口径联动",
+    "task": "消息中心端点、提醒扫描（行级幂等）、缺席与应考口径分流",
+    "steps": [
+      { "step": "消息中心：UserMessage 实体/Mapper + MessageService + MessageController（GET /api/messages 本人列表倒序 / GET /api/messages/unread-count 未读数 / PUT /api/messages/{id}/read 单条标记已读），仅登录鉴权（类无 @RequirePermission/@RequireRole，AuthenticationInterceptor 统一登录鉴权，不特判角色），按 user_id 隔离（listMine/unreadCount/markReadByOwner 全部 eq userId）；新增 config 键 exam.reservation.remind-ahead-minutes=30（application.yml 仅新增该键，diff 自证 +3 行既有键零改动）", "completed": true },
+      { "step": "提醒投递：新增 ReservationRemindService（@Scheduled fixedDelayString 沿用 exam.taking.sweep.* + ApplicationReadyEvent 启动补偿，同构 ExamSweepService）：扫描 reservation_required=1∧published=1∧status=0∧start_time<=now+remindAheadMinutes 的考试未提醒预约行；投递 = ExamReservationMapper.markRemindedIfNull（UPDATE ... SET reminded_time WHERE id AND reminded_time IS NULL 影响行数=1 才写 user_messages）；行级幂等实证（重复扫描/重启/多实例竞争不重发）经两处护栏：reminded_time IS NULL 扫描过滤 + 原子 UPDATE 影响行数判等；H2/MySQL 影响行数语义一致（全程 H2 测试验证，停止条件④未触发）", "completed": true },
+      { "step": "口径联动：AbsenceService.markAbsence 的 expectedIds 按 reservation_required 分流（isReservationRequired(exam) → reservationService.listReservedStudentIds；普通 → classService.listStudentIds 逐字维持，INSERT IGNORE 幂等与『进行中→已结束』触发时机不变）；ExamAnalysisReportService.buildClassOverview 同源分流（expectedIds 预约制取预约名单、非预约制班级名单，其余维度零变化）；clazz 包零触碰（git diff clazz 0 行）", "completed": true },
+      { "step": "测试：ExamReservationRemindIntegrationTest 5 用例（同一考试两次扫描仅一条消息行级幂等、提前量窗外不投窗内必投、消息 user_id 隔离与未读数/已读联动、未登录 401、缺席名单分流（预约制按预约名单、普通按班级名单，缺席既有用例零回归））+ ExamAnalysisReportIntegrationTest 新增 analysisReportUsesReservationRoster（预约制应考=预约名单 2 人、absenceCount=0）+ AbsenceServiceTest 新增护栏 reservationExamAbsenceUsesReservationRosterNotClass / reservationExamWithNoReservationMarksNothing（名单分流不可绕过）+ ReservationRemindServiceTest 3 用例（deliverWritesMessageOnlyWhenMarkClaimed / deliverSkipsWhenMarkNotClaimed / noCandidateExamsNoScan）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "代码：MessageService/MessageController/UserMessage(com.exam.message)/ReservationRemindService/ExamReservationMapper.markRemindedIfNull/AbsenceService.isReservationRequired 分流/ExamAnalysisReportService 分流。application.yml 仅新增 exam.reservation.remind-ahead-minutes（git diff 只 +3 行，既有键零改动）。\n测试：`mvnw test -Dtest=ExamReservationRemindIntegrationTest,ReservationRemindServiceTest,AbsenceServiceTest,ExamAnalysisReportIntegrationTest` 与单跑新类全绿；全仓 `.\\mvnw.cmd clean test` → `Tests run: 423, Failures: 0` BUILD SUCCESS。停止条件④未触发（H2 中 UPDATE 影响行数幂等判据成立）。\n护栏：AbsenceServiceTest.reservationExamAbsenceUsesReservationRosterNotClass 断言 reservation_required=1 时绝不调 classService.listStudentIds（名单分流不可绕过）。"
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：契约重导出、前端实施、双端门禁与实施笔（分级②停笔）",
+    "task": "openapi 重导出、前端三落点与类型同步、全量门禁、变异自证、三件套入库、实施笔本地提交",
+    "steps": [
+      { "step": "契约：mvn test -DexportContract=true -Dtest=OpenApiContractTest#exportOpenApiContract 离线重导出成功（BUILD SUCCESS）；openapi.yaml paths 74→78 恰增 4 新端点（/api/exam-reservations/{examId} POST+DELETE、/api/messages、/api/messages/unread-count、/api/messages/{id}/read）；diff 自证无删除行、无 U+FFFD（count=0）、servers.url http://localhost:8080 非降级；既有 schema 新增 reservationRequired/reserved；与真实 dev 实例字节级比对：本地 localhost:8080 不可达（Probe 超时），如实登记降级形态（离线路径 A 仅；dev 实例比对留待用户合入后补），非静默跳过", "completed": true },
+      { "step": "前端：gen:api 重生成（@hey-api/openapi-ts 输出 src/api/axios 4 文件）；student/exams/index.page.vue + StudentExamList.vue 预约三态入口（未开始未预约→预约、未开始已预约→取消、开考后已预约→只读已预约 Tag、非预约制不呈现）+ onReserve/onCancelReservation 调 API + refetch 刷新；(dashboard).page.vue 导航壳挂 MessageCenter（消息铃铛未读角标 + 消息列表/标已读，不本地持久化）；teacher/exams/create.page.vue「需预约」开关（默认关闭、编辑表单回填 reservationRequired=1/0→boolean）；API 请求 network-only（无本地缓存持久化预约/消息状态）；前端用例直断形态命中真实 data-test：StudentExamList +4、MessageCenter +3、examCreateReservationSwitch +4；既有 offlineExamList/wrongQuestionsPage 因导航壳新增 MessageCenter 需补 useQueryClient mock（4 行），断言零改动", "completed": true },
+      { "step": "门禁与变异自证：后端 .\\mvnw.cmd clean test → Tests run: 423, Failures: 0, Errors: 0, Skipped: 1 BUILD SUCCESS（基线 404 +19）；前端 npm.cmd run lint:check / type-check:check / test 三门禁串行全绿，npm.cmd test --testTimeout=20000 → 88 files / Tests 622 passed (622)（基线 611 +11，输出非空）；变异自证 scripts/mutation-check.sh（Git-Bash D:\\git\\Git\\bin\\bash.exe 驱动，4.4.23）三组全 PASS：①撤 assertAdmission 预约校验（ExamTakingService 注入 ==999）击红 ExamReservationIntegrationTest#unreservedStudentForbiddenToEnterReservedExam（exit=1）复原回绿；②撤 markAbsence 名单分流（AbsenceService 注入 !true）击红 #absenceMarkedFromReservationRoster（exit=1）复原回绿；③撤提醒幂等回填（ReservationRemindService 注入 if(false)）击红 ReservationRemindServiceTest#deliverSkipsWhenMarkNotClaimed（exit=1）复原回绿；逐组 ①备份②注入命中③击红④cmp 复原归零⑤回绿 留证 target/mutation-check/mut{1,2,3}-*（gitignored）", "completed": true },
+      { "step": "实施笔（分级②停笔）：三件套（proposal/五域 spec-delta/tasks.json）随实施笔入库；git add 核对 git diff --cached --name-only + git diff --cached --check；提交信息中文、按任务组、-F 文件形态；实施笔保持本地（不 push、不合入、不归档、不勾任务 5）；红线域 diff 自证全空（auth/security 0、config 0、pom.xml 0、clazz 包 0、monitoring 0、补考域 Makeup* 0、application.yml 既有键仅 +3 行 reservation 新键）；回报 git 拓扑/状态/双端门禁实测/变异留证/契约 diff/停止条件触发情况（均未触发）", "completed": true }
+    ],
+    "passes": true,
+    "evidence": "契约：`mvn test -DexportContract=true -Dtest=OpenApiContractTest#exportOpenApiContract` BUILD SUCCESS；`(Select-String openapi.yaml '^  /')` 74→78；diff 无删除行/U+FFFD=0/servers.url 1；dev 实例 localhost:8080 Probe 超时不可达→如实登记降级（离线路径A仅）。\n前端：gen:api 再生；页面/组件/用例见 step；lint exit 0、type-check exit 0、`npm.cmd run test -- --testTimeout=20000`→`Tests 622 passed (622)` `Test Files 88 passed (88)`。\n门禁：`.\\mvnw.cmd clean test`→`Tests run: 423, Failures: 0, Errors: 0, Skipped: 1` BUILD SUCCESS（+19）；`npm run test` 622（+11）。变异 3 组全 PASS（report.txt 各 ①②③④⑤ PASS，exit=1击红/exit=0回绿），Git-Bash 驱动留证 target/mutation-check/。\n停止条件：①未触发（无绕过 assertAdmission 直连 createSubmission）、②未触发（应考名单消费点恰两处）、③未触发（schema/迁移逐字一致）、④未触发（H2 影响行数幂等判据成立）、⑤未触发（openapi-ts 承载新端点类型，未改 vite.config.ts/生成配置）。"
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与登记（复核 PASS 后另派收口时回填）",
+    "task": "push CI 绿、--no-ff 合入、spec-delta 五域合入、归档、README 登记、gate-baseline 同笔上调、台账回填",
+    "steps": [
+      { "step": "push feature → CI 三 job 绿（gh run view 核 conclusion=success，仅登记终态 success run，cancelled 中间 run 不算绿地）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿（conclusion 同口径核验）", "completed": false },
+      { "step": "gate-baseline.json 三下限同笔上调（backendTests 增新用例数 / frontendTests 增新用例数 / openapiPaths 增新端点数，数值以当次实测绑定 revision，不抄台账旧值）；spec-delta 五份逐字合入：exam-taking ADDED Requirement 合入基线末尾、exam-management 与 absence-makeup 与 score-management 三处 Scenario 追加至对应 Requirement 末尾、frontend ADDED Requirement 合入基线末尾（逐字一致）；spec/README.md 常规登记（进行中变更表/能力域来源列/已归档变更表）", "completed": false },
+      { "step": "三件套归档至 spec/changes/archive/add-exam-reservation/（三件套已随实施笔入库则 R100 移动，否则如实写新增形态归档、不沿用 R100 话术）；收口笔零业务代码自证（仅 spec/README/gate-baseline/归档文件）；dev 存量库 migrations 应用与 APPLIED.md 登记提醒用户执行；本任务勾选与 evidence 于收口完成后按台账回填机制回填（evidence 引用复核子 agent 独立复跑实测，不自造数值），不在收口笔前伪造", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]

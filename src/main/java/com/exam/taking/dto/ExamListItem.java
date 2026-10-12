@@ -46,7 +46,7 @@ public class ExamListItem {
     /** 分组：UPCOMING / ONGOING / FINISHED */
     private String group;
 
-    /** 是否允许进入（进行中且本人答卷仍处于进行中或未创建） */
+    /** 是否允许进入（进行中且本人答卷仍处于进行中或未创建；预约制考试未预约亦不允许） */
     private boolean canEnter;
 
     /** 个人答卷状态：1进行中 2已交卷；未进入为 null */
@@ -54,4 +54,10 @@ public class ExamListItem {
 
     /** 答题中的剩余秒数（服务端时间为准），其余场景为 null */
     private Long remainingSeconds;
+
+    /** 是否为预约制考试（exams.reservation_required=1，add-exam-reservation） */
+    private Boolean reservationRequired;
+
+    /** 本人在该场考试的有效预约状态（仅预约制考试有意义） */
+    private Boolean reserved;
 }
