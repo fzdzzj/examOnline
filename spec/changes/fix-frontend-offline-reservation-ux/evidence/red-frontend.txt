@@ -1,0 +1,331 @@
+﻿=== RED run (pre-implementation) @ 5750fff ===
+CMD: npm.cmd run test -- --testTimeout=20000 MessageCenter.spec.ts offlineExamList.spec.ts StudentExamList.spec.ts
+
+> examonline-front@0.0.0 test
+> vitest run --testTimeout=20000 src/components/__tests__/MessageCenter.spec.ts src/pages/(dashboard)/student/exams/__tests__/offlineExamList.spec.ts src/components/student/__tests__/StudentExamList.spec.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+npm.cmd : Not implemented: Window's getComputedStyle() method: with pseudo-elements
+At line:18 char:1
++ npm.cmd run test -- --testTimeout=20000 "src/components/__tests__/Mes ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Not implemented...pseudo-elements:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/components/student/__tests__/StudentExamList.spec.ts [2m([22m[2m15 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 1057[2mms[22m[39m
+     [33m[2m✓[22m[39m 三个后端分组各渲染自己的文案，顺序与后端一致 [33m 351[2mms[22m[39m
+     [32m✓[39m 状态只取后端 group：时间窗在未来的行后端说已完成，界面就不许显示待考/进行中[32m 49[2mms[22m[39m
+     [32m✓[39m 契约外的分组值显示"后端未返回分组"，不套一个看起来合理的状态[32m 42[2mms[22m[39m
+     [32m✓[39m 剩余时长就是后端给的 remainingSeconds：没有则占位，不用 endTime 减本地时间补[32m 44[2mms[22m[39m
+     [32m✓[39m 入口可点性只认 canEnter：true 可点、false 与缺失都禁用[32m 61[2mms[22m[39m
+     [32m✓[39m 进行中的行文案是"继续作答"，其余是"进入考试"——措辞跟着后端分组走[32m 57[2mms[22m[39m
+     [32m✓[39m 拉取失败渲染错误 Alert，不伪装成"暂无可参加的考试"[32m 37[2mms[22m[39m
+     [32m✓[39m 没有考试（后端返回空数组）才显示空态[32m 2[2mms[22m[39m
+     [32m✓[39m 列表仍交给 Table 渲染（分页/排序交给后端与表格，不自己拼 DOM）[32m 66[2mms[22m[39m
+     [32m✓[39m 预约制考试未开始未预约 → 呈现预约入口，点击 emit reserve[32m 59[2mms[22m[39m
+[31m     [31m×[31m 预约制考试未开始已预约 → 呈现「取消预约」入口，经知情确认后 emit cancel[39m[32m 52[2mms[22m[39m
+[31m     [31m×[31m 取消预约知情确认：点击按钮不立即 emit cancel，确认气泡文案点明「取消后需重新预约」[39m[32m 47[2mms[22m[39m
+[31m     [31m×[31m 离线门控 prop 只禁用预约/取消入口：进入按钮仍只认后端 canEnter[39m[32m 67[2mms[22m[39m
+     [32m✓[39m 预约制考试开考后已预约 → 只读「已预约」Tag，无预约/取消入口[32m 62[2mms[22m[39m
+     [32m✓[39m 非预约制考试不呈现预约入口[32m 55[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+[90mstderr[2m | src/components/__tests__/MessageCenter.spec.ts[2m > [22m[2mMessageCenter[2m > [22m[2m标已读失败 → me
+ssage.error 显性反馈，不静默
+[22m[39m[Vue warn]: Unhandled error during execution of component event handler 
+  at <AButton key=0 size="small" type="link"  ... > 
+  at <TooltipContent key="content" prefixCls="ant-popover" id=undefined  ... > 
+  at <Align target=fn<bound getRootDomNode> key="popup" ref=Ref< { forceAlign: [36m[Function: forceAlign][39m } >  ..
+. > 
+  at <Transition ref=Ref< {
+  mode: [36m[Getter/Setter][39m,
+  appear: [36m[Getter/Setter][39m,
+  persisted: [36m[Getter/Setter][39m,
+  onBeforeEnter: [36m[Getter/Setter][39m,
+  onEnter: [36m[Getter/Setter][39m,
+  onAfterEnter: [36m[Getter/Setter][39m,
+  onEnterCancelled: [36m[Getter/Setter][39m,
+  onBeforeLeave: [36m[Getter/Setter][39m,
+  onLeave: [36m[Getter/Setter][39m,
+  onAfterLeave: [36m[Getter/Setter][39m,
+  onLeaveCancelled: [36m[Getter/Setter][39m,
+  onBeforeAppear: [36m[Getter/Setter][39m,
+  onAppear: [36m[Getter/Setter][39m,
+  onAfterAppear: [36m[Getter/Setter][39m,
+  onAppearCancelled: [36m[Getter/Setter][39m,
+  name: [36m[Getter/Setter][39m,
+  type: [36m[Getter/Setter][39m,
+  css: [36m[Getter/Setter][39m,
+  duration: [36m[Getter/Setter][39m,
+  enterFromClass: [36m[Getter/Setter][39m,
+  enterActiveClass: [36m[Getter/Setter][39m,
+  enterToClass: [36m[Getter/Setter][39m,
+  appearFromClass: [36m[Getter/Setter][39m,
+  appearActiveClass: [36m[Getter/Setter][39m,
+  appearToClass: [36m[Getter/Setter][39m,
+  leaveFromClass: [36m[Getter/Setter][39m,
+  leaveActiveClass: [36m[Getter/Setter][39m,
+  leaveToClass: [36m[Getter/Setter][39m
+} > name="ant-zoom-big" appear=true  ... > 
+  at <PopupInner prefixCls="ant-popover" point=null align= {
+  points: [ [32m'tr'[39m, [32m'br'[39m ],
+  overflow: { adjustX: [33m1[39m, adjustY: [33m1[39m },
+  offset: [ [33m0[39m, [33m4[39m ],
+  targetOffset: [ [33m0[39m, [33m0[39m ],
+  ignoreShake: [33mtrue[39m
+}  ... > 
+  at <Popup prefixCls="ant-popover" arrow=true destroyPopupOnHide=false  ... > 
+  at <Portal getContainer=fn<getContainer> ref=Ref< { getContainer: [36m[Getter/Setter][39m, didUpdate: [36m[Getter/
+Setter][39m } > didUpdate=fn<bound handlePortalUpdate> > 
+  at <PortalWrapper key="portal" getContainer=fn didUpdate=fn<bound handlePortalUpdate>  ... > 
+  at <Trigger popupClassName="message-center-popover css-dev-only-do-not-override-1p3hq3p css-dev-only-do-not-override-
+1p3hq3p" prefixCls="ant-popover" action="click"  ... > 
+  at <Tooltip data-popover-inject=true overlayClassName="message-center-popover css-dev-only-do-not-override-1p3hq3p cs
+s-dev-only-do-not-override-1p3hq3p" color=undefined  ... > 
+  at <ATooltip overlayClassName="message-center-popover css-dev-only-do-not-override-1p3hq3p" trigger="click" open=unde
+fined  ... > 
+  at <APopover trigger="click" placement="bottomRight" overlayClassName="message-center-popover" > 
+  at <MessageCenter ref="VTU_COMPONENT" > 
+  at <VTUROOT>
+
+ [31m❯[39m src/components/__tests__/MessageCenter.spec.ts [2m([22m[2m7 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 686[2mms[22m[39m
+     [32m✓[39m 未读角标呈现服务端未读数 ≠ 0[32m 257[2mms[22m[39m
+     [32m✓[39m 消息列表按倒序呈现本人消息（最新在上发在前）[32m 93[2mms[22m[39m
+     [32m✓[39m 未读消息行呈现「标为已读」，点击调用 markRead 并联动刷新未读查询[32m 63[2mms[22m[39m
+[31m     [31m×[31m 消息列表查询失败 → 错误 Alert 呈现后端 message，「暂无消息」空态与列表均不渲染[39m[32m 74[2mms[22m[39m
+[31m     [31m×[31m 未读数查询失败且列表成功 → 错误 Alert 呈现、角标不出现、消息列表照常渲染[39m[32m 53[2mms[22m[39m
+     [32m✓[39m 两查询成功且消息为空数组 → 保留「暂无消息」业务空态且无错误 Alert[32m 58[2mms[22m[39m
+[31m     [31m×[31m 标已读失败 → message.error 显性反馈，不静默[39m[32m 86[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/pages/(dashboard)/student/exams/__tests__/offlineExamList.spec.ts [2m([22m[2m7 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 1401[2mms[22m[39m
+     [33m[2m✓[22m[39m ① 断网降级渲染缓存列表：error && !onLine && 缓存匹配 → 渲染缓存项并展示「离线缓存」显性标注 [33m 506[2mms[22m[39m
+     [32m✓[39m ② 换号不串缓存：本地缓存用户为 1001，当前登录 1002 断网访问 → 不降级，维持错误态[32m 87[2mms[22m[39m
+     [32m✓[39m ③ 在线失败不伪装降级：navigator.onLine === true 但后端失败 → 维持错误态，不降级[32m 80[2mms[22m[39m
+     [32m✓[39m ④ 在线成功写入缓存：联网请求成功时自动更新本地列表缓存[32m 210[2mms[22m[39m
+[31m     [31m×[31m ⑥ 会话中途断网刷新激活离线降级：在线成功 → 断网事件 + 刷新失败 → 降级激活（响应式离线判定）[39m[33m 323[2mms[22m[39m
+[31m     [31m×[31m ⑦ 离线禁用预约与取消预约：降级态两按钮禁用、进入按钮不受影响，恢复在线复原[39m[32m 176[2mms[22m[39m
+     [32m✓[39m ⑤ SW 学生考试域化生命周期：挂载注册 SW，离开学生考试域注销，域内跳转不注销[32m 17[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 8 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageCenter.spec.ts[2m > [22mMessageCenter[2m > [22m消息列表查询失败 →
+ 错误 Alert 呈现后端 message，「暂无消息」空态与列表均不渲染
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m src/components/__tests__/MessageCenter.spec.ts:[2m166:23[22m[39m
+    [90m164|[39m
+    [90m165|[39m     const alert = document.body.querySelector('[data-test="mc-error"]'…
+    [90m166|[39m     [34mexpect[39m(alert)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m167|[39m     [34mexpect[39m(alert[33m?.[39mtextContent)[33m.[39m[34mtoContain[39m([32m'消息服务暂不可用'[39
+m)[33m;[39m
+    [90m168|[39m     [90m// 失败不得伪装成「暂无消息」空态[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageCenter.spec.ts[2m > [22mMessageCenter[2m > [22m未读数查询失败且列表
+成功 → 错误 Alert 呈现、角标不出现、消息列表照常渲染
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m src/components/__tests__/MessageCenter.spec.ts:[2m181:23[22m[39m
+    [90m179|[39m
+    [90m180|[39m     const alert = document.body.querySelector('[data-test="mc-error"]'…
+    [90m181|[39m     [34mexpect[39m(alert)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m182|[39m     [34mexpect[39m(alert[33m?.[39mtextContent)[33m.[39m[34mtoContain[39m([32m'未读数服务暂不可用'[3
+9m)[33m;[39m
+    [90m183|[39m     [90m// 不伪造可用未读数[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageCenter.spec.ts[2m > [22mMessageCenter[2m > [22m标已读失败 → me
+ssage.error 显性反馈，不静默
+[31m[1mAssertionError[22m: expected "Mock" to be called with arguments: [ '标记失败' ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[36m [2m❯[22m src/components/__tests__/MessageCenter.spec.ts:[2m213:22[22m[39m
+    [90m211|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m212|[39m
+    [90m213|[39m     [34mexpect[39m(errorSpy)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m'标记失败'[39m)[33m;[39m
+    [90m   |[39m                      [31m^[39m
+    [90m214|[39m   })[33m;[39m
+    [90m215|[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/StudentExamList.spec.ts[2m > [22mStudentExamList[2m > [2
+2m预约制考试未开始已预约 → 呈现「取消预约」入口，经知情确认后 emit cancel
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'vm')[39m
+[36m [2m❯[22m src/components/student/__tests__/StudentExamList.spec.ts:[2m161:44[22m[39m
+    [90m159|[39m     expect(wrapper.find('[data-test="reserve-button"]').exists()).toBe…
+    [90m160|[39m     [90m// 取消需经 Popconfirm 确认（spec-delta：确认前不发起取消请求）[39m
+    [90m161|[39m     wrapper[33m.[39m[34mfindAllComponents[39m([33mPopconfirm[39m)[[34m0[39m][33m.[39mvm[3
+3m.[39m[34m$emit[39m([32m'confirm'[39m)[33m;[39m
+    [90m   |[39m                                            [31m^[39m
+    [90m162|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m163|[39m     [34mexpect[39m(wrapper[33m.[39m[34memitted[39m([32m'cancel'[39m))[33m.[39m[34mtoBeDef
+ined[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/StudentExamList.spec.ts[2m > [22mStudentExamList[2m > [2
+2m取消预约知情确认：点击按钮不立即 emit cancel，确认气泡文案点明「取消后需重新预约」
+[31m[1mAssertionError[22m: expected [ [ { examId: 3, …(11) } ] ] to be undefined[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+[
+  [
+    {
+      "canEnter": true,
+      "durationMinutes": 60,
+      "endTime": "2026-09-22T11:00:00",
+      "examId": 3,
+      "examStatus": 1,
+      "group": "UPCOMING",
+      "remainingSeconds": 900,
+      "reservationRequired": true,
+      "reserved": true,
+      "startTime": "2026-09-22T09:00:00",
+      "submissionStatus": 1,
+      "title": "待考考试",
+    },
+  ],
+]
+
+[36m [2m❯[22m src/components/student/__tests__/StudentExamList.spec.ts:[2m178:39[22m[39m
+    [90m176|[39m     [90m// 点击只打开确认气泡，不发起取消[39m
+    [90m177|[39m     [35mawait[39m cancelBtn[33m.[39m[34mtrigger[39m([32m'click'[39m)[33m;[39m
+    [90m178|[39m     [34mexpect[39m(wrapper[33m.[39m[34memitted[39m([32m'cancel'[39m))[33m.[39m[34mtoBeUnd
+efined[39m()[33m;[39m
+    [90m   |[39m                                       [31m^[39m
+    [90m179|[39m
+    [90m180|[39m     [35mconst[39m popconfirms [33m=[39m wrapper[33m.[39m[34mfindAllComponents[39m([33mPopco
+nfirm[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/StudentExamList.spec.ts[2m > [22mStudentExamList[2m > [2
+2m离线门控 prop 只禁用预约/取消入口：进入按钮仍只认后端 canEnter
+[31m[1mAssertionError[22m: expected undefined to be defined[39m
+[36m [2m❯[22m src/components/student/__tests__/StudentExamList.spec.ts:[2m203:88[22m[39m
+    [90m201|[39m       reservationActionsDisabled[33m:[39m [35mtrue[39m[33m,[39m
+    [90m202|[39m     })[33m;[39m
+    [90m203|[39m     expect(offlineWrapper.find('[data-test="reserve-button"]').attribu…
+    [90m   |[39m                                                                                        [31m^[39m
+    [90m204|[39m     [34mexpect[39m(
+    [90m205|[39m       offlineWrapper.find('[data-test="cancel-reservation-button"]').a…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/student/exams/__tests__/offlineExamList.spec.ts[2m > [22m学生考试列表离线降级与 
+SW 注册域 (index.page.vue)[2m > [22m⑥ 会话中途断网刷新激活离线降级：在线成功 → 断网事件 + 刷新失败 → 降级激活（响应式离线判定）
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/student/exams/__tests__/offlineExamList.spec.ts:[2m222:72[22m[39m
+    [90m220|[39m
+    [90m221|[39m     [90m// 离线降级激活：缓存标注 + 降级横幅在场、错误 Alert 不在场（降级优先于报错）、缓存行渲染[39m
+    [90m222|[39m     expect(wrapper.find('[data-test="offline-list-banner"]').exists())…
+    [90m   |[39m                                                                        [31m^[39m
+    [90m223|[39m     expect(wrapper.find('[data-test="offline-cache-badge"]').exists())…
+    [90m224|[39m     expect(wrapper.find('[data-test="list-error"]').exists()).toBe(fal…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/student/exams/__tests__/offlineExamList.spec.ts[2m > [22m学生考试列表离线降级与 
+SW 注册域 (index.page.vue)[2m > [22m⑦ 离线禁用预约与取消预约：降级态两按钮禁用、进入按钮不受影响，恢复在线复原
+[31m[1mAssertionError[22m: expected undefined to be defined[39m
+[36m [2m❯[22m src/pages/(dashboard)/student/exams/__tests__/offlineExamList.spec.ts:[2m259:81[22m[39m
+    [90m257|[39m     [90m// 离线降级态：缓存行渲染，预约/取消入口呈禁用态[39m
+    [90m258|[39m     [34mexpect[39m(wrapper[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'需预约未预约'
+[39m)[33m;[39m
+    [90m259|[39m     expect(wrapper.find('[data-test="reserve-button"]').attributes('di…
+    [90m   |[39m                                                                                 [31m^[39m
+    [90m260|[39m     expect(wrapper.find('[data-test="cancel-reservation-button"]').att…
+    [90m261|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: 标记失败[39m
+[36m [2m❯[22m src/components/__tests__/MessageCenter.spec.ts:[2m202:40[22m[39m
+    [90m200|[39m   [34mit[39m([32m'标已读失败 → message.error 显性反馈，不静默'[39m[33m,[39m [35masync[39m () [33m=>[39m
+ {
+    [90m201|[39m     const errorSpy = vi.spyOn(message, 'error').mockImplementation(() …
+    [90m202|[39m     markReadMock[33m.[39m[34mmockRejectedValueOnce[39m([35mnew[39m [33mError[39m([32m'标记失败'
+[39m))[33m;[39m
+    [90m   |[39m                                        [31m^[39m
+    [90m203|[39m     [35mconst[39m wrapper [33m=[39m [34mmount[39m([33mMessageCenter[39m[33m,[39m { attachT
+o[33m:[39m document[33m.[39mbody })[33m;[39m
+    [90m204|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m302:11
+[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m1903:2
+6[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m2326:2
+0[22m[39m
+[90m [2m❯[22m runWithCancel node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact
+.js:[2m2323:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m2305:2
+0[22m[39m
+[90m [2m❯[22m runWithTimeout node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifac
+t.js:[2m2272:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m2956:6
+4[22m[39m
+
+[31mThis error originated in "[1msrc/components/__tests__/MessageCenter.spec.ts[22m" test file. It doesn't mean the 
+error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1m标已读失败 → message.error 显性反馈，不静默[22m". It might mean one of 
+the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[31m3 failed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[31m8 failed[39m[22m[2m | [22m[1m[32m21 passed[39m[22m[90m (29)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 22:59:23
+[2m   Duration [22m 6.93s[2m (transform 459ms, setup 96ms, import 11.92s, tests 3.14s, environment 2.99s)[22m
+
+
+SUMMARY (pre-impl, 预期红) @5750fff: Test Files 3 failed; Tests 8 failed | 21 passed (29); EXIT=1；既有断言除 1 例适配外层绿

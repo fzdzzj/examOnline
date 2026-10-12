@@ -44,19 +44,25 @@
               v-if="reservationActionOf(record as ExamListItem).showReserve"
               size="small"
               data-test="reserve-button"
+              :disabled="reservationActionsDisabled"
               @click="emit('reserve', record as ExamListItem)"
             >
               预约
             </Button>
-            <Button
+            <Popconfirm
               v-else-if="reservationActionOf(record as ExamListItem).showCancel"
-              size="small"
-              danger
-              data-test="cancel-reservation-button"
-              @click="emit('cancel', record as ExamListItem)"
+              title="取消后需重新预约，确认取消？"
+              @confirm="emit('cancel', record as ExamListItem)"
             >
-              取消预约
-            </Button>
+              <Button
+                size="small"
+                danger
+                data-test="cancel-reservation-button"
+                :disabled="reservationActionsDisabled"
+              >
+                取消预约
+              </Button>
+            </Popconfirm>
             <Tag
               v-else-if="reservationActionOf(record as ExamListItem).showReservedTag"
               color="green"
@@ -96,7 +102,15 @@
  * 前端任何一处"我看时间也像进行中"的推断都会跟它打架，所以这里一处都不推。
  * 「进入考试」入口的可点性同理，只认后端 `canEnter`。
  */
-import { Alert, Button, Space, Table, Tag, type TableColumnsType } from 'ant-design-vue';
+import {
+  Alert,
+  Button,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
+  type TableColumnsType,
+} from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import type { ExamListItem } from '@/api/axios';
@@ -110,8 +124,13 @@ withDefaults(
     loading?: boolean;
     /** 拉取失败时由页面把后端的 message 传进来；列表不伪装成「暂无考试」 */
     error?: string | null;
+    /**
+     * 离线门控（U-8）：离线（含离线降级态）时禁用「预约」/「取消预约」入口。
+     * 只作用于预约类入口——「进入考试/继续作答」仍只认后端 canEnter，不因离线禁用。
+     */
+    reservationActionsDisabled?: boolean;
   }>(),
-  { loading: false, error: null }
+  { loading: false, error: null, reservationActionsDisabled: false }
 );
 
 const emit = defineEmits<{
