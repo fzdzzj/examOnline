@@ -4,57 +4,57 @@
     "category": "阶段 1：开工核对与现状查证",
     "task": "分支与基线门禁、错题本调用矩阵现状查证",
     "steps": [
-      { "step": "K1 从 main 最新 HEAD 新建 feature/update-wrong-question-list-skip-rank 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": false },
-      { "step": "K2 基线门禁：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped）；前端三门禁 npm.cmd --prefix frontend run lint:check / type-check:check / test（npm.cmd 形态 + 输出非空核验；本变更前端零触碰，前端跑基线即可，后续不再复跑）", "completed": false },
-      { "step": "K3 现状查证：① ScoreExportService.loadPersonalReport（判分段 vs rank/用户段的边界行号）与三个完整口径消费方（reviewExam :213、PDF :291、逐题明细 :337）调用形态；② PersonalReport record 字段在 listWrongQuestions 的实际消费清单（预期仅 questions/scores/answers）；③ 既有错题本测试类清单（列表/回顾/导出各有哪些用例）；④ 确认列表路径对 rank/用户字段无隐藏依赖（若发现依赖立即停止上报）", "completed": false }
+      { "step": "K1 从 main 最新 HEAD 新建 feature/update-wrong-question-list-skip-rank 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": true },
+      { "step": "K2 基线门禁：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped）；前端三门禁 npm.cmd --prefix frontend run lint:check / type-check:check / test（npm.cmd 形态 + 输出非空核验；本变更前端零触碰，前端跑基线即可，后续不再复跑）", "completed": true },
+      { "step": "K3 现状查证：① ScoreExportService.loadPersonalReport（判分段 vs rank/用户段的边界行号）与三个完整口径消费方（reviewExam :213、PDF :291、逐题明细 :337）调用形态；② PersonalReport record 字段在 listWrongQuestions 的实际消费清单（预期仅 questions/scores/answers）；③ 既有错题本测试类清单（列表/回顾/导出各有哪些用例）；④ 确认列表路径对 rank/用户字段无隐藏依赖（若发现依赖立即停止上报）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "任务1-4 evidence 转录复核子 agent 独立复跑（VERDICT: PASS 已在案；来源如实标注「复核子 agent 独立复跑」，不自造数值）。K1 从 main HEAD（c75ad1e）新建 feature/update-wrong-question-list-skip-rank 并切换；实施笔 0762737 parent=c75ad1e 单笔。K2 复核独立复算全量门禁：后端仓库根 mvnw.cmd clean test 实测 401/0/0/1 BUILD SUCCESS（基线，含 openapi 导出 Skipped:1）；前端三门禁 lint:check/type-check:check exit 0（输出非空）、vitest 86 文件 611 passed（前端零触碰仅跑基线）。K3 现状查证复核核证调用矩阵：listWrongQuestions 仅消费 questions/scores/answers；rankBySubmissionId 全场投影查询 + RankCalculator O(n log n) 排名与 userMapper.selectById 用户取数在列表响应零消费、纯丢弃；需要 rank/用户字段的路径为单场回顾（:213）、个人成绩单 PDF（:291）、逐题明细导出（:337）两处导出；列表路径对 rank/用户字段无隐藏依赖——判定可安全切换轻量入口。"
   },
   {
     "number": 2,
     "category": "阶段 2：轻量入口实施（实施笔）",
     "task": "抽取判分核心装配 + 新增轻量入口 + 列表路径切换",
     "steps": [
-      { "step": "ScoreExportService：抽取「判分核心装配」私有方法（readByExamId + GRADED selectOne + scoreResolver.resolve + parseAnswers），新增轻量入口（不调用 userMapper.selectById 与 rankBySubmissionId，判分三要素与完整口径共用同一装配）；loadPersonalReport 完整口径与其余调用方零改动", "completed": false },
-      { "step": "StudentWrongQuestionService.listWrongQuestions 切换轻量入口；reviewExam 与异常语义（含「该学生暂无已汇总成绩」NOT_FOUND 路径）逐字保持", "completed": false },
-      { "step": "新增护栏单测（纯 JUnit + Mockito）：①轻量入口对 RankCalculator 零交互断言（构造性实证：verifyNoInteractions）②轻量入口 questions/scores/answers 与完整入口一致断言（判分同源护栏）；提交中文、按任务组、-F 文件形态，三件套同笔入库", "completed": false }
+      { "step": "ScoreExportService：抽取「判分核心装配」私有方法（readByExamId + GRADED selectOne + scoreResolver.resolve + parseAnswers），新增轻量入口（不调用 userMapper.selectById 与 rankBySubmissionId，判分三要素与完整口径共用同一装配）；loadPersonalReport 完整口径与其余调用方零改动", "completed": true },
+      { "step": "StudentWrongQuestionService.listWrongQuestions 切换轻量入口；reviewExam 与异常语义（含「该学生暂无已汇总成绩」NOT_FOUND 路径）逐字保持", "completed": true },
+      { "step": "新增护栏单测（纯 JUnit + Mockito）：①轻量入口对 RankCalculator 零交互断言（构造性实证：verifyNoInteractions）②轻量入口 questions/scores/answers 与完整入口一致断言（判分同源护栏）；提交中文、按任务组、-F 文件形态，三件套同笔入库", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "任务1-4 evidence 转录复核子 agent 独立复跑（VERDICT: PASS 已在案）。实施笔 0762737（--stat 6 文件 +339/−16：ScoreExportService.java、StudentWrongQuestionService.java、ScoreExportServiceSkipRankGuardTest.java、proposal/spec-delta/tasks 三件套）；私有判分核心装配 assembleGradingCore（readByExamId + GRADED selectOne + scoreResolver.resolve + parseAnswers，含「该学生暂无已汇总成绩」NOT_FOUND 路径）为轻量与完整入口共用同一判分核心（判分同源绝不另造第二套口径）；loadPersonalReport 完整口径与 reviewExam、两处导出方法体零改动。新增护栏单测 ScoreExportServiceSkipRankGuardTest @Test ×2：①轻量入口对 RankCalculator verifyNoInteractions 零交互 + userMapper.selectById 零调用构造性实证；②questions/scores/answers 判分三要素与完整入口一致。rankBySubmissionId 本身、RankCalculator、schema.sql、pom.xml、openapi.yaml 零 diff（红线域全空）。"
   },
   {
     "number": 3,
     "category": "阶段 3：零回归实证",
     "task": "既有测试零回归 + openapi.yaml 零变更自证",
     "steps": [
-      { "step": "既有错题本列表/回顾、个人成绩单 PDF、逐题明细导出全部既有用例原样全绿（不修改任何既有断言）；定向跑三类测试类留证", "completed": false },
-      { "step": "openapi.yaml 零变更自证（git diff 为空）；响应形状零变化由「既有用例未改动且全绿」+ 契约零 diff 双证支撑", "completed": false }
+      { "step": "既有错题本列表/回顾、个人成绩单 PDF、逐题明细导出全部既有用例原样全绿（不修改任何既有断言）；定向跑三类测试类留证", "completed": true },
+      { "step": "openapi.yaml 零变更自证（git diff 为空）；响应形状零变化由「既有用例未改动且全绿」+ 契约零 diff 双证支撑", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "任务1-4 evidence 转录复核子 agent 独立复跑（VERDICT: PASS 已在案）。复核独立复跑实施笔 HEAD 0762737：后端全量 mvnw.cmd clean test 实测 403/0/0/1 BUILD SUCCESS（基线 401 → 恰增 2 护栏单测；Failures/Errors 0，Skipped 与基线一致 1）——既有错题本列表/回顾、个人成绩单 PDF、逐题明细导出全部既有用例零回归（未改任何既有断言）。openapi.yaml 零变更自证：git diff 0762737 的 openapi.yaml 为空、paths 74 持平；响应形状零变化由「既有用例未改动且全绿」+ 契约零 diff 双证支撑（列表响应仅切换装配来源，total/page/size/groups 及错题条目各字段不变）。"
   },
   {
     "number": 4,
     "category": "阶段 4：门禁复跑与实施笔提交",
     "task": "实施笔 HEAD 后端门禁全绿留证 + 本地提交（分级②：不 push 不合入）",
     "steps": [
-      { "step": "仓库根 mvnw.cmd clean test 全绿，Tests run 恰增新增用例数（与 K2 基线对照），Failures/Errors 0，Skipped 与基线一致；记录命令、当次输出与短 revision", "completed": false },
-      { "step": "实施笔提交：git diff --cached --name-only 仅 ScoreExportService.java、StudentWrongQuestionService.java 与新增测试文件，红线域 diff 全空；git diff --cached --check 干净；提交信息中文；提交后停在此笔，等待复核（分级②先复核后收口）", "completed": false }
+      { "step": "仓库根 mvnw.cmd clean test 全绿，Tests run 恰增新增用例数（与 K2 基线对照），Failures/Errors 0，Skipped 与基线一致；记录命令、当次输出与短 revision", "completed": true },
+      { "step": "实施笔提交：git diff --cached --name-only 仅 ScoreExportService.java、StudentWrongQuestionService.java 与新增测试文件，红线域 diff 全空；git diff --cached --check 干净；提交信息中文；提交后停在此笔，等待复核（分级②先复核后收口）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "任务1-4 evidence 转录复核子 agent 独立复跑（VERDICT: PASS 已在案）。复核在实施笔 HEAD=0762737 独立复跑全量门禁：仓库根 mvnw.cmd clean test 实测 403/0/0/1 BUILD SUCCESS（Tests run 恰好 401→403 增 2，Failures/Errors 0，Skipped 与基线一致 1），命令/当次输出/短 revision 已记录。实施笔提交：git diff --cached --name-only 仅 ScoreExportService.java、StudentWrongQuestionService.java 与新增 ScoreExportServiceSkipRankGuardTest.java，红线域 diff（rankBySubmissionId 本身/RankCalculator/reviewExam/两处导出方法体/schema.sql/pom.xml/openapi.yaml）全空；提交信息中文；按分级②停在实施笔等待复核，复核 VERDICT: PASS 后另行派发收口。"
   },
   {
     "number": 5,
     "category": "阶段 5：收口、归档与登记（复核 PASS 后另行派发）",
     "task": "push CI 绿、gate-baseline 同笔上调、--no-ff 合入、spec-delta 合入、R100 归档、台账回填机制",
     "steps": [
-      { "step": "push feature → CI 三 job 绿（新基线对齐，断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿；gate-baseline.json backendTests 同笔上调恰等于新增用例数（frontendTests/openapiPaths 持平）", "completed": false },
-      { "step": "spec-delta 三 Scenario 合入 performance 基线（名称逐字一致；挂载位以基线实际结构为准）；spec/README.md 三处常规登记；收口笔零代码自证（红线域 diff 全空）", "completed": false },
-      { "step": "三件套 R100 移入 spec/changes/archive/update-wrong-question-list-skip-rank/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": false }
+      { "step": "push feature → CI 三 job 绿（新基线对齐，断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿；gate-baseline.json backendTests 同笔上调恰等于新增用例数（frontendTests/openapiPaths 持平）", "completed": true },
+      { "step": "spec-delta 三 Scenario 合入 performance 基线（名称逐字一致；挂载位以基线实际结构为准）；spec/README.md 三处常规登记；收口笔零代码自证（红线域 diff 全空）", "completed": true },
+      { "step": "三件套 R100 移入 spec/changes/archive/update-wrong-question-list-skip-rank/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "任务5 为收口执行子 agent 当次执行实测（CI run ID + 结论 + 短 revision，来源如实标注收口执行实测；图表引复核 VERDICT: PASS 任务1-4 配 403/0/0/1）。git 拓扑定稿：实施笔 0762737 → 收口笔 8513620（parent=0762737，--stat spec/specs/score-management/spec.md、spec/README.md、.github/ci/gate-baseline.json 共 3 文件，红线域 diff 全空零代码自证）→ push feature → CI run 38209143315 三 job 全 success（BACKEND GATE ASSERT OK: Tests run=403, Failures=0, Errors=0, Skipped=1 (baseline >= 403)；FRONTEND GATE ASSERT OK: vitest passed=611 (baseline >= 611)）→ --no-ff 合并笔 50a6738（双亲 c75ad1e + 8513620，9 文件 368+/19-，红线域 diff 空）→ push main → main CI run 38209809006 三 job 全 success（后端 403/0/0/1、前端 611）→ 归档笔 3526398（parent=50a6738）git mv 三件套 spec/changes/update-wrong-question-list-skip-rank → spec/changes/archive/update-wrong-question-list-skip-rank 纯 rename R100×3（3 files changed 0 增删）R100 话术成立。gate-baseline.json backendTests 401→403 同笔上调恰等于新增 2 护栏单测（frontendTests 611、openapiPaths 74 持平）。spec-delta 三 Scenario（错题本列表不计算班级排名 / 判分口径同源保持 / 护栏常驻）名称与正文逐字合入 score-management 基线「错题本分页查询」之后（挂载位以基线实际结构为准——错题本行为落 score-management 更贴合），既有 Requirement 零改动；spec/README.md 三处常规登记（进行中变更收口句、能力域行来源列、已归档变更表新增行）。本任务勾选与 evidence 在收口笔前未伪造，收口归档后以独立台账返修笔回填。"
   }
 ]
