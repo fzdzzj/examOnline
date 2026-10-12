@@ -50,11 +50,11 @@
     "category": "阶段 5：收口、归档与登记",
     "task": "push CI 绿、--no-ff 合入、spec-delta 合入、R100 归档、台账回填机制",
     "steps": [
-      { "step": "push feature → CI 三 job 绿（gate-baseline 零改动合法持平断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿", "completed": false },
-      { "step": "spec-delta 六 Scenario 合入 spec/specs/reliability/spec.md 末尾（名称逐字一致）；spec/README.md 三处常规登记核对；收口笔零代码自证（红线域 diff：docker-compose.yml、migrations、observability、application*.yml、src/、frontend/ 全空）", "completed": false },
-      { "step": "三件套 R100 移入 spec/changes/archive/add-backup-restore-drill/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": false }
+      { "step": "push feature → CI 三 job 绿（gate-baseline 零改动合法持平断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿", "completed": true },
+      { "step": "spec-delta 六 Scenario 合入 spec/specs/reliability/spec.md 末尾（名称逐字一致）；spec/README.md 三处常规登记核对；收口笔零代码自证（红线域 diff：docker-compose.yml、migrations、observability、application*.yml、src/、frontend/ 全空）", "completed": true },
+      { "step": "三件套 R100 移入 spec/changes/archive/add-backup-restore-drill/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "主 agent 终局裁决后由小修笔+本返修笔按复核独立复跑实测回填（命令+当次输出+短 revision，对齐 fa06223/1c8a765 先例）。复核留证 review-add-backup-restore-drill-VERDICT.md。CI 三要素（gh run list 亲查）：feature 笔 2c7951d → CI 38161960588 success（https://github.com/fzdzzj/examOnline/actions/runs/38161960588）；--no-ff 合并笔 8c76658（双亲 fa06223 + 2c7951d）→ CI 38162479474 cancelled（如实登记：合并 push 触发后被取消，非 success）；main 归档笔 c0e99a0 → CI 38162621428 success（https://github.com/fzdzzj/examOnline/actions/runs/38162621428）；远端最新 run 以绿为准，小修笔 c823695 与二笔 push 后 main CI 复绿。六项复核实测（与 VERDICT 数值逐字一致）：①后端 mvnw clean test 401/0/0/1 BUILD SUCCESS；②前端 npm.cmd 串行 lint:check / type-check:check exit 0、vitest 86 文件 611 例全绿；③dev 主库 27 表 / users 15 行，隔离容器恢复 27=27=27、users/exams 逐值 Compare-Object IDENTICAL；④备份 sha256sum -c OK、gzip -t OK、GTID_PURGED + Position 在场；⑤缺 --confirm 退出码 3 拒绝；⑥六 Scenario 与 spec/specs/reliability/spec.md#L495-553 逐字一致、既有 Requirement 零改动；gate-baseline.json（401/611/74）零改动合法持平。轮转缺陷 A 链（如实标注）：复核独立实证 backup.sh 轮转 ${target%.gz}.sha256 模式串错配致 .sha256 孤儿 → 小修笔 c823695 改为 ${target%.sql.gz}.sha256 → 修后实测预置超保留数复跑 --keep 4 恰删最旧且 .gz/.sha256 成对消失 0 孤儿（4 gz=4 sha）。本任务为收口归档后独立返修笔，不在收口笔前伪造。"
   }
 ]
