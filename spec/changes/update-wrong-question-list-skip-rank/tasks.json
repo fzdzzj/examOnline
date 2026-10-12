@@ -1,0 +1,60 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与现状查证",
+    "task": "分支与基线门禁、错题本调用矩阵现状查证",
+    "steps": [
+      { "step": "K1 从 main 最新 HEAD 新建 feature/update-wrong-question-list-skip-rank 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": false },
+      { "step": "K2 基线门禁：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped）；前端三门禁 npm.cmd --prefix frontend run lint:check / type-check:check / test（npm.cmd 形态 + 输出非空核验；本变更前端零触碰，前端跑基线即可，后续不再复跑）", "completed": false },
+      { "step": "K3 现状查证：① ScoreExportService.loadPersonalReport（判分段 vs rank/用户段的边界行号）与三个完整口径消费方（reviewExam :213、PDF :291、逐题明细 :337）调用形态；② PersonalReport record 字段在 listWrongQuestions 的实际消费清单（预期仅 questions/scores/answers）；③ 既有错题本测试类清单（列表/回顾/导出各有哪些用例）；④ 确认列表路径对 rank/用户字段无隐藏依赖（若发现依赖立即停止上报）", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：轻量入口实施（实施笔）",
+    "task": "抽取判分核心装配 + 新增轻量入口 + 列表路径切换",
+    "steps": [
+      { "step": "ScoreExportService：抽取「判分核心装配」私有方法（readByExamId + GRADED selectOne + scoreResolver.resolve + parseAnswers），新增轻量入口（不调用 userMapper.selectById 与 rankBySubmissionId，判分三要素与完整口径共用同一装配）；loadPersonalReport 完整口径与其余调用方零改动", "completed": false },
+      { "step": "StudentWrongQuestionService.listWrongQuestions 切换轻量入口；reviewExam 与异常语义（含「该学生暂无已汇总成绩」NOT_FOUND 路径）逐字保持", "completed": false },
+      { "step": "新增护栏单测（纯 JUnit + Mockito）：①轻量入口对 RankCalculator 零交互断言（构造性实证：verifyNoInteractions）②轻量入口 questions/scores/answers 与完整入口一致断言（判分同源护栏）；提交中文、按任务组、-F 文件形态，三件套同笔入库", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：零回归实证",
+    "task": "既有测试零回归 + openapi.yaml 零变更自证",
+    "steps": [
+      { "step": "既有错题本列表/回顾、个人成绩单 PDF、逐题明细导出全部既有用例原样全绿（不修改任何既有断言）；定向跑三类测试类留证", "completed": false },
+      { "step": "openapi.yaml 零变更自证（git diff 为空）；响应形状零变化由「既有用例未改动且全绿」+ 契约零 diff 双证支撑", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：门禁复跑与实施笔提交",
+    "task": "实施笔 HEAD 后端门禁全绿留证 + 本地提交（分级②：不 push 不合入）",
+    "steps": [
+      { "step": "仓库根 mvnw.cmd clean test 全绿，Tests run 恰增新增用例数（与 K2 基线对照），Failures/Errors 0，Skipped 与基线一致；记录命令、当次输出与短 revision", "completed": false },
+      { "step": "实施笔提交：git diff --cached --name-only 仅 ScoreExportService.java、StudentWrongQuestionService.java 与新增测试文件，红线域 diff 全空；git diff --cached --check 干净；提交信息中文；提交后停在此笔，等待复核（分级②先复核后收口）", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与登记（复核 PASS 后另行派发）",
+    "task": "push CI 绿、gate-baseline 同笔上调、--no-ff 合入、spec-delta 合入、R100 归档、台账回填机制",
+    "steps": [
+      { "step": "push feature → CI 三 job 绿（新基线对齐，断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿；gate-baseline.json backendTests 同笔上调恰等于新增用例数（frontendTests/openapiPaths 持平）", "completed": false },
+      { "step": "spec-delta 三 Scenario 合入 performance 基线（名称逐字一致；挂载位以基线实际结构为准）；spec/README.md 三处常规登记；收口笔零代码自证（红线域 diff 全空）", "completed": false },
+      { "step": "三件套 R100 移入 spec/changes/archive/update-wrong-question-list-skip-rank/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]
