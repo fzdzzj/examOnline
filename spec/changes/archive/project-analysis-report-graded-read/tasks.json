@@ -4,57 +4,57 @@
     "category": "阶段 1：开工核对与现状查证",
     "task": "分支与基线门禁、listGraded 消费列清单现状查证",
     "steps": [
-      { "step": "K1 从 main 最新 HEAD 新建 feature/project-analysis-report-graded-read 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": false },
-      { "step": "K2 基线门禁：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped，预期 403/0/0/1）；前端三门禁 npm.cmd 形态跑基线即可（本变更前端零触碰，后续不再复跑）", "completed": false },
-      { "step": "K3 现状查证：逐点核证 listGraded 的全部消费方及消费列（班级概览 totals / gradedStudentIds studentId / 关注名单 studentId+totalScore），确认消费列恰为 studentId/totalScore 两列、无间接消费（如反射、日志、序列化取全字段）；发现超出清单立即停止上报；顺带核对 buildClassOverview 缺席计数 :174-178 List.contains 形态", "completed": false }
+      { "step": "K1 从 main 最新 HEAD 新建 feature/project-analysis-report-graded-read 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": true },
+      { "step": "K2 基线门禁：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped，预期 403/0/0/1）；前端三门禁 npm.cmd 形态跑基线即可（本变更前端零触碰，后续不再复跑）", "completed": true },
+      { "step": "K3 现状查证：逐点核证 listGraded 的全部消费方及消费列（班级概览 totals / gradedStudentIds studentId / 关注名单 studentId+totalScore），确认消费列恰为 studentId/totalScore 两列、无间接消费（如反射、日志、序列化取全字段）；发现超出清单立即停止上报；顺带核对 buildClassOverview 缺席计数 :174-178 List.contains 形态", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "复核子 agent 独立复跑（VERDICT: PASS 已在案，实测逐字转录，不自造数值）：K1 分支 feature/project-analysis-report-graded-read 自 main 最新 HEAD 新建（merge-base main HEAD = 48eeb60，实施笔 9831382 为唯一增量 commit，未 push/未合入/未归档），git status --porcelain 仅白名单未跟踪、零已跟踪修改；K2 基线从 gate-baseline.json 读 backendTests=403（任务5收口前未上调，分级②预期），独立 mvnw.cmd clean test 403/0/0/1 BUILD SUCCESS（前端本变更零触碰，K2 跑基线即可不再复跑）；K3 消费列清单亲手核证——buildReport:108-115 gradedStudentIds 仅 getStudentId、buildClassOverview:186-189 仅 getTotalScore、buildFocusList:358-378 仅 getStudentId+getTotalScore，无反射/日志/序列化全字段取数，submittedIds/exam/classService/userMapper 为各自独立查询、不消费 listGraded 结果，消费列恰为 studentId/totalScore 两列；buildClassOverview 缺席计数 :174-178 List.contains 形态核对为 List 线性查找（应考×实考 O(n)）。"
   },
   {
     "number": 2,
     "category": "阶段 2：列投影实施（实施笔）",
     "task": "listGraded 两列投影 + 缺席计数 Set 化 + 常驻护栏",
     "steps": [
-      { "step": "ExamAnalysisReportService.listGraded 加 .select(GradingSubmission::getStudentId, GradingSubmission::getTotalScore) 两列投影；其余消费路径零改动", "completed": false },
-      { "step": "顺手项：buildClassOverview 缺席计数 submittedIds 由 List 换 Set 查找（同方法内数据结构替换，缺席口径零变化）", "completed": false },
-      { "step": "新增常驻护栏测试（按 project-scalar-only-submission-reads 先例形态）：断言投影列集与消费列集一致，防未来消费未投影列得 null；提交中文、按任务组、-F 文件形态，三件套同笔入库", "completed": false }
+      { "step": "ExamAnalysisReportService.listGraded 加 .select(GradingSubmission::getStudentId, GradingSubmission::getTotalScore) 两列投影；其余消费路径零改动", "completed": true },
+      { "step": "顺手项：buildClassOverview 缺席计数 submittedIds 由 List 换 Set 查找（同方法内数据结构替换，缺席口径零变化）", "completed": true },
+      { "step": "新增常驻护栏测试（按 project-scalar-only-submission-reads 先例形态）：断言投影列集与消费列集一致，防未来消费未投影列得 null；提交中文、按任务组、-F 文件形态，三件套同笔入库", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "复核子 agent 独立复跑（VERDICT: PASS 已在案，实测逐字转录，不自造数值）：listGraded:392 加 .select(GradingSubmission::getStudentId, GradingSubmission::getTotalScore) 两列投影（仅 studentId/totalScore，其余消费路径零改动）；顺手项 buildClassOverview:168-179 submittedIds 由 List.distinct() 改 Collectors.toSet()（两形态均去重、contains 判等结果逐字一致，List→Set 仅 O(n)→O(1) 查找语义，缺席 absent++ 逻辑未变）；新增常驻护栏 AnalysisReportGradedProjectionGuardTest（seed 前置断言「库内确有 answers 非 null」排除假绿 + canary assertEquals(1, EXPLOIT) 断言实单语句防「语句没跑外观全绿」，捕获 SQL SELECT student_id,total_score，双向变异——graded-read-mut1-fullfetch 移除投影 / graded-read-mut2-addanswers 投影扩进 answers——均真实击红 exit=1、复原回绿 exit=0）；提交中文、按任务组、-F 文件形态；三件套因实施笔任务4验收文本本身仍留工作树（白名单 untracked），收口归档时以新增 A 形态随归档笔入库。"
   },
   {
     "number": 3,
     "category": "阶段 3：零回归实证",
     "task": "既有分析报告用例零回归 + openapi.yaml 零变更自证",
     "steps": [
-      { "step": "既有分析报告全部既有用例原样全绿（含 fix-analysis-report-pass-line 三分制对照与 fail-fast 用例），不修改任何既有断言；定向跑留证", "completed": false },
-      { "step": "openapi.yaml 零变更自证（git diff 为空）；顺手项缺席口径由既有用例断言覆盖零变化", "completed": false }
+      { "step": "既有分析报告全部既有用例原样全绿（含 fix-analysis-report-pass-line 三分制对照与 fail-fast 用例），不修改任何既有断言；定向跑留证", "completed": true },
+      { "step": "openapi.yaml 零变更自证（git diff 为空）；顺手项缺席口径由既有用例断言覆盖零变化", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "复核子 agent 独立复跑（VERDICT: PASS 已在案，实测逐字转录，不自造数值）：既有分析报告全部既有用例（含 fix-analysis-report-pass-line 的三分制/fail-fast 用例）原样全绿——全量门禁 404/0/0/1 BUILD SUCCESS，git diff 全程仅 +2 文件（ExamAnalysisReportService.java + AnalysisReportGradedProjectionGuardTest.java）、零既有断言被改，响应零回归实证；openapi.yaml 零变更（全域 diff 契约零触碰）；顺手项缺席口径由既有用例断言覆盖零变化。"
   },
   {
     "number": 4,
     "category": "阶段 4：门禁复跑与实施笔提交",
     "task": "实施笔 HEAD 后端门禁全绿留证 + 本地提交（分级②：不 push 不合入）",
     "steps": [
-      { "step": "仓库根 mvnw.cmd clean test 全绿，Tests run = 403 + 新增用例数（与 K2 基线对照恰增），Failures/Errors 0，Skipped 1；记录命令、当次输出与短 revision", "completed": false },
-      { "step": "实施笔提交：git diff --cached --name-only 仅 ExamAnalysisReportService.java 与新增测试文件，红线域 diff 全空（ScoreExportService/StudentWrongQuestionService/aggregateQuestionStats/grading/paper/submission/clazz/schema.sql/pom.xml/openapi.yaml 零触碰）；git diff --cached --check 干净；提交后停在此笔等待复核（分级②先复核后收口）", "completed": false }
+      { "step": "仓库根 mvnw.cmd clean test 全绿，Tests run = 403 + 新增用例数（与 K2 基线对照恰增），Failures/Errors 0，Skipped 1；记录命令、当次输出与短 revision", "completed": true },
+      { "step": "实施笔提交：git diff --cached --name-only 仅 ExamAnalysisReportService.java 与新增测试文件，红线域 diff 全空（ScoreExportService/StudentWrongQuestionService/aggregateQuestionStats/grading/paper/submission/clazz/schema.sql/pom.xml/openapi.yaml 零触碰）；git diff --cached --check 干净；提交后停在此笔等待复核（分级②先复核后收口）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "复核子 agent 独立复跑（VERDICT: PASS 已在案，实测逐字转录，不自造数值）：仓库根 mvnw.cmd clean test（本人独立执行，Tee 落 %TEMP%\\review-gate-graded-read.log）→ Tests run: 404, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS；404 = 基线 403 + 恰增 1（护栏类 AnalysisReportGradedProjectionGuardTest Tests run 1/0/0/0，@Test 量确为 1，@TestConfiguration/@TestPropertySource 非测试方法）；process 报 [exit code:1] 为 Tee-Object 管道假真、日志明示 BUILD SUCCESS；实施笔 diff --name-only 仅 ExamAnalysisReportService.java 与 AnalysisReportGradedProjectionGuardTest.java 两文件，红线域（ScoreExportService/StudentWrongQuestionService/aggregateQuestionStats/grading/paper/submission/clazz/schema.sql/pom.xml/openapi.yaml/frontend）定域 grep 全程 diff 全空，git diff --check 0；实施笔 HEAD 9831382，分级②停在此笔未 push 未合入。"
   },
   {
     "number": 5,
     "category": "阶段 5：收口、归档与登记（复核 PASS 后另行派发）",
     "task": "push CI 绿、gate-baseline 同笔上调、--no-ff 合入、spec-delta 合入、R100 归档、台账回填机制",
     "steps": [
-      { "step": "push feature → CI 三 job 绿（新基线对齐，断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿；gate-baseline.json backendTests 同笔上调恰等于新增用例数（frontendTests 611/openapiPaths 74 持平）", "completed": false },
-      { "step": "spec-delta 三 Scenario 合入基线（名称逐字一致；挂载位以基线实际结构为准，优先 score-management 分析报告 Requirement 挂载位）；spec/README.md 三处常规登记；收口笔零代码自证（红线域 diff 全空）", "completed": false },
-      { "step": "三件套 R100 移入 spec/changes/archive/project-analysis-report-graded-read/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": false }
+      { "step": "push feature → CI 三 job 绿（新基线对齐，断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿；gate-baseline.json backendTests 同笔上调恰等于新增用例数（frontendTests 611/openapiPaths 74 持平）", "completed": true },
+      { "step": "spec-delta 三 Scenario 合入基线（名称逐字一致；挂载位以基线实际结构为准，优先 score-management 分析报告 Requirement 挂载位）；spec/README.md 三处常规登记；收口笔零代码自证（红线域 diff 全空）", "completed": true },
+      { "step": "三件套 R100 移入 spec/changes/archive/project-analysis-report-graded-read/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": true }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "收口执行子 agent 收口实测（命令 + CI run ID + 短 revision）：push feature 收口笔 78a9e16 → CI run 38217648188（backend/frontend/dependency-scan 三 job success，surefire 404 断言 OK）；本地 --no-ff 合入 main → 合并笔 0988914（双亲 48eeb60 + 78a9e16）→ push main → CI run 38218090735（三 job success，404 断言 OK）；gate-baseline.json backendTests 403→404（frontendTests 611/openapiPaths 74 持平）；spec-delta 三 Scenario 逐字合入 spec/specs/score-management/spec.md「考试数据分析报告」Requirement（既有 Requirement 零改动）；spec/README.md 三处常规登记；归档笔 f43590a；收口笔零业务代码自证（仅 spec 基线 + README + gate-baseline 三类文件，src/、frontend/src/、pom.xml、schema.sql、openapi.yaml 零触碰）。注：本步 step 原文「三件套 R100 移入」因三件套为白名单 untracked（未随实施笔入库）不适用——归档笔实为新增（A）形态 git add（git diff --cached --name-status = A），提交信息如实写「新增形态归档」，未沿用 R100 话术。"
   }
 ]
