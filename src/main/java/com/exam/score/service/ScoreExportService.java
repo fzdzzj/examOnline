@@ -411,6 +411,48 @@ public class ScoreExportService {
     }
 
     private PersonalReport loadPersonalReport(Exam exam, Long studentId) {
+        GradingCore core = assembleGradingCore(exam, studentId);
+        User user = userMapper.selectById(studentId);
+        Map<Long, Integer> ranks = rankBySubmissionId(exam.getId());
+        return new PersonalReport(
+                user == null ? "" : user.getUsername(),
+                user == null ? "未知学生" : user.getName(),
+                core.submission().getObjectiveScore(),
+                core.submission().getSubjectiveScore(),
+                core.submission().getTotalScore(),
+                ranks.getOrDefault(core.submission().getId(), 0),
+                isPartial(core.submission()),
+                core.paper().questions(),
+                core.scores(),
+                core.answers());
+    }
+
+    /**
+     * 轻量装配入口（错题本列表路径专用）：仅装配判分三要素（questions/scores/answers），
+     * 不调用 userMapper.selectById（用户字段列表响应零消费）与 rankBySubmissionId
+     * （列表路径不消费名次，全场投影查询 + RankCalculator 排名纯丢弃）。
+     * 判分核心与完整口径共用 {@link #assembleGradingCore}（判分同源，绝不另造第二套口径）；
+     * rank/用户/汇总/partial 字段以占位值填充，列表路径不消费。
+     * 异常语义「该学生暂无已汇总成绩」与完整口径逐字一致。
+     */
+    public PersonalReport getPersonalReportWithoutRank(Exam exam, Long studentId) {
+        GradingCore core = assembleGradingCore(exam, studentId);
+        return new PersonalReport(null, null, null, null, null, 0, false,
+                core.paper().questions(), core.scores(), core.answers());
+    }
+
+    /** 判分核心装配快照：答卷 + 试卷 + 逐题得分 + 答案文本。 */
+    private record GradingCore(GradingSubmission submission, GradingPaper paper,
+                               Map<Long, QuestionScoreResolver.ResolvedQuestionScore> scores,
+                               Map<Long, String> answers) {
+    }
+
+    /**
+     * 判分核心装配（readByExamId + GRADED selectOne + scoreResolver.resolve + parseAnswers）：
+     * 完整入口 {@link #loadPersonalReport} 与轻量入口 {@link #getPersonalReportWithoutRank} 共用本装配，
+     * 保证判分口径唯一（判分同源）。答卷缺失或未汇总成绩抛 NOT_FOUND「该学生暂无已汇总成绩」。
+     */
+    private GradingCore assembleGradingCore(Exam exam, Long studentId) {
         GradingPaper paper = paperReader.readByExamId(exam.getId());
         GradingSubmission submission = gradingSubmissionMapper.selectOne(
                 Wrappers.<GradingSubmission>lambdaQuery()
@@ -420,23 +462,10 @@ public class ScoreExportService {
         if (submission == null || submission.getTotalScore() == null) {
             throw new BusinessException(ResponseCode.NOT_FOUND, "该学生暂无已汇总成绩");
         }
-        User user = userMapper.selectById(studentId);
-
-        Map<Long, Integer> ranks = rankBySubmissionId(exam.getId());
         Map<Long, QuestionScoreResolver.ResolvedQuestionScore> scores =
                 scoreResolver.resolve(submission, paper);
         Map<Long, String> answers = paperReader.parseAnswers(submission.getAnswers());
-        return new PersonalReport(
-                user == null ? "" : user.getUsername(),
-                user == null ? "未知学生" : user.getName(),
-                submission.getObjectiveScore(),
-                submission.getSubjectiveScore(),
-                submission.getTotalScore(),
-                ranks.getOrDefault(submission.getId(), 0),
-                isPartial(submission),
-                paper.questions(),
-                scores,
-                answers);
+        return new GradingCore(submission, paper, scores, answers);
     }
 
     /** 全班排名：submissionId → 名次（与发布预览同一 RankCalculator 口径）。 */

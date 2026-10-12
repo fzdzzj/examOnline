@@ -36,7 +36,9 @@ import java.util.stream.Collectors;
  *
  * <p>核心约束（前案硬伤收口）：
  * <ul>
- *   <li>逐题判分同源：唯一事实源为 {@link ScoreExportService#getPersonalReport(Exam, Long)} 现场重算，
+ *   <li>逐题判分同源：唯一事实源为 {@link ScoreExportService} 现场重算——完整入口
+ *       {@link ScoreExportService#getPersonalReport(Exam, Long)} 与列表轻量入口
+ *       {@link ScoreExportService#getPersonalReportWithoutRank(Exam, Long)} 共用同一判分核心装配，
  *       绝不另造第二套判分口径；</li>
  *   <li>考试粒度分页：仅对页内 N 场（N &le; 10）已发布考试调用重算，严禁全量重算后内存分页；</li>
  *   <li>语义隔离：analysis 严格取自题库实体 {@code questions.analysis}，非判分依据 detail；</li>
@@ -123,7 +125,8 @@ public class StudentWrongQuestionService {
         for (Exam exam : pageExams) {
             ScoreExportService.PersonalReport report;
             try {
-                report = scoreExportService.getPersonalReport(exam, studentId);
+                // 轻量入口：仅装配判分三要素（questions/scores/answers），不取用户、不计算全班排名
+                report = scoreExportService.getPersonalReportWithoutRank(exam, studentId);
             } catch (Exception e) {
                 log.warn("错题本加载个人成绩单异常，跳过考试 {}: {}", exam.getId(), e.getMessage());
                 continue;
