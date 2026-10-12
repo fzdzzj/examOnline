@@ -1,0 +1,60 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与现状查证",
+    "task": "分支与基线门禁、listGraded 消费列清单现状查证",
+    "steps": [
+      { "step": "K1 从 main 最新 HEAD 新建 feature/project-analysis-report-graded-read 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": false },
+      { "step": "K2 基线门禁：仓库根 mvnw.cmd clean test（记录 Tests run/Failures/Errors/Skipped，预期 403/0/0/1）；前端三门禁 npm.cmd 形态跑基线即可（本变更前端零触碰，后续不再复跑）", "completed": false },
+      { "step": "K3 现状查证：逐点核证 listGraded 的全部消费方及消费列（班级概览 totals / gradedStudentIds studentId / 关注名单 studentId+totalScore），确认消费列恰为 studentId/totalScore 两列、无间接消费（如反射、日志、序列化取全字段）；发现超出清单立即停止上报；顺带核对 buildClassOverview 缺席计数 :174-178 List.contains 形态", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：列投影实施（实施笔）",
+    "task": "listGraded 两列投影 + 缺席计数 Set 化 + 常驻护栏",
+    "steps": [
+      { "step": "ExamAnalysisReportService.listGraded 加 .select(GradingSubmission::getStudentId, GradingSubmission::getTotalScore) 两列投影；其余消费路径零改动", "completed": false },
+      { "step": "顺手项：buildClassOverview 缺席计数 submittedIds 由 List 换 Set 查找（同方法内数据结构替换，缺席口径零变化）", "completed": false },
+      { "step": "新增常驻护栏测试（按 project-scalar-only-submission-reads 先例形态）：断言投影列集与消费列集一致，防未来消费未投影列得 null；提交中文、按任务组、-F 文件形态，三件套同笔入库", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：零回归实证",
+    "task": "既有分析报告用例零回归 + openapi.yaml 零变更自证",
+    "steps": [
+      { "step": "既有分析报告全部既有用例原样全绿（含 fix-analysis-report-pass-line 三分制对照与 fail-fast 用例），不修改任何既有断言；定向跑留证", "completed": false },
+      { "step": "openapi.yaml 零变更自证（git diff 为空）；顺手项缺席口径由既有用例断言覆盖零变化", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：门禁复跑与实施笔提交",
+    "task": "实施笔 HEAD 后端门禁全绿留证 + 本地提交（分级②：不 push 不合入）",
+    "steps": [
+      { "step": "仓库根 mvnw.cmd clean test 全绿，Tests run = 403 + 新增用例数（与 K2 基线对照恰增），Failures/Errors 0，Skipped 1；记录命令、当次输出与短 revision", "completed": false },
+      { "step": "实施笔提交：git diff --cached --name-only 仅 ExamAnalysisReportService.java 与新增测试文件，红线域 diff 全空（ScoreExportService/StudentWrongQuestionService/aggregateQuestionStats/grading/paper/submission/clazz/schema.sql/pom.xml/openapi.yaml 零触碰）；git diff --cached --check 干净；提交后停在此笔等待复核（分级②先复核后收口）", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与登记（复核 PASS 后另行派发）",
+    "task": "push CI 绿、gate-baseline 同笔上调、--no-ff 合入、spec-delta 合入、R100 归档、台账回填机制",
+    "steps": [
+      { "step": "push feature → CI 三 job 绿（新基线对齐，断言 OK）→ 本地 --no-ff 合入 main → push main → main CI 三 job 绿；gate-baseline.json backendTests 同笔上调恰等于新增用例数（frontendTests 611/openapiPaths 74 持平）", "completed": false },
+      { "step": "spec-delta 三 Scenario 合入基线（名称逐字一致；挂载位以基线实际结构为准，优先 score-management 分析报告 Requirement 挂载位）；spec/README.md 三处常规登记；收口笔零代码自证（红线域 diff 全空）", "completed": false },
+      { "step": "三件套 R100 移入 spec/changes/archive/project-analysis-report-graded-read/；台账回填机制同先例：本任务勾选与 evidence 不在收口笔前伪造，收口归档后以独立台账返修笔按复核子 agent 独立复跑实测回填（命令 + 当次输出 + 短 revision）", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]
