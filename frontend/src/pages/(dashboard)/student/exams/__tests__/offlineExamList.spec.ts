@@ -81,6 +81,7 @@ vi.mock('@tanstack/vue-query', () => ({
       refetch: refetchMock,
     };
   },
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
 describe('学生考试列表离线降级与 SW 注册域 (index.page.vue)', () => {

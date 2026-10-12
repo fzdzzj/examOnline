@@ -89,6 +89,17 @@
           </FormItem>
         </div>
 
+        <!-- add-exam-reservation：教师建考「需预约」开关（默认关闭，编辑表单回填） -->
+        <FormItem label="需预约">
+          <Space>
+            <Switch
+              v-model:checked="form.reservationRequired"
+              data-test="reservation-required-switch"
+            />
+            <span class="text-sm text-gray-500">开启后学生须先预约方可进入（预约即应考）</span>
+          </Space>
+        </FormItem>
+
         <Divider>防作弊配置</Divider>
 
         <FormItem label="启用切屏检测">
@@ -190,6 +201,7 @@ const form = ref({
   endTime: undefined as string | undefined,
   durationMinutes: 60,
   allowLateMinutes: 0,
+  reservationRequired: false,
 });
 
 const enableSwitchScreen = ref(true);
@@ -241,6 +253,7 @@ watch(
       form.value.endTime = detail.endTime;
       form.value.durationMinutes = detail.durationMinutes ?? 60;
       form.value.allowLateMinutes = detail.allowLateMinutes ?? 0;
+      form.value.reservationRequired = detail.reservationRequired === 1;
       const antiCheat = readAntiCheatConfig(detail.antiCheatConfig);
       enableSwitchScreen.value = antiCheat.switchScreen;
       enableForbidCopy.value = antiCheat.forbidCopy;
@@ -331,6 +344,7 @@ async function handleSubmit(): Promise<void> {
       endTime: form.value.endTime as string,
       durationMinutes: form.value.durationMinutes,
       allowLateMinutes: form.value.allowLateMinutes ?? 0,
+      reservationRequired: form.value.reservationRequired,
       antiCheatConfig: {
         switchScreen: enableSwitchScreen.value,
         forbidCopy: enableForbidCopy.value,

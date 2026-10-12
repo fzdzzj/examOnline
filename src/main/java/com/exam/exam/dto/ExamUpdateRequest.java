@@ -36,4 +36,7 @@ public class ExamUpdateRequest {
 
     /** 防作弊配置 JSON（null=保留原值） */
     private JsonNode antiCheatConfig;
+
+    /** 需预约开关（add-exam-reservation）：null=保留原值；仅 status=0（未开始）可改，开考后与名单一并锁定 */
+    private Boolean reservationRequired;
 }

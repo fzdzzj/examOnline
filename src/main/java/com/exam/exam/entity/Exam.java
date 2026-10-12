@@ -108,6 +108,9 @@ public class Exam {
     /** 1=教师提前结束标记：阶段 5 强制交卷（按最后自动保存）据此识别 */
     private Integer forceEnd;
 
+    /** 0=普通考试（班级即时进入） 1=需预约（add-exam-reservation：未预约者不可进入，"预约即应考"） */
+    private Integer reservationRequired;
+
     /** 防作弊配置 JSON 字符串（切屏检测/禁复制等开关；null=使用默认配置） */
     private String antiCheatConfig;
 

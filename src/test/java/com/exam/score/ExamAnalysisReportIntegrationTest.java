@@ -73,6 +73,8 @@ class ExamAnalysisReportIntegrationTest extends IntegrationTestBase {
     private ScoreExportService scoreExportService;
     @Autowired
     private JwtUtil jwtUtil;
+    @Autowired
+    private com.exam.exam.mapper.ExamReservationMapper reservationMapper;
 
     @BeforeEach
     void runRabbitInvokeCallbacks() {
@@ -412,5 +414,70 @@ class ExamAnalysisReportIntegrationTest extends IntegrationTestBase {
         JsonNode err = perform(jsonGet("/api/exams/" + examId + "/scores/analysis-report", teacher), 500);
         assertTrue(err.get("message").asText().contains("无法取到试卷总分"),
                 "总分不可得须 fail-fast 明确报错");
+    }
+
+    /**
+     * 分析报告应考口径随预约制分流（add-exam-reservation score-management spec-delta）：
+     * 预约制考试班级概览的应考/缺席按有效预约名单计，与缺考域同源，不出现两套缺席数。
+     * 班级 3 人，仅 2 人预约且 2 人全部交卷成绩 → 应考 expectedCount=2（非班级 3）、absenceCount=0；
+     * 未预约的第 3 人绝不进入应考名单。
+     */
+    @Test
+    void analysisReportUsesReservationRoster() throws Exception {
+        String teacher = registerTeacher();
+        String r1 = registerStudent();
+        String r2 = registerStudent();
+        String guest = registerStudent();
+        long examId = preparedInProgressReservationExam(teacher, r1, r2, guest);
+
+        Map<Integer, Long> q1 = enterAndMapQuestionsReserved(r1, examId);
+        submit(r1, examId, q1, "A", "A,C", "T", "HTTP 是无状态的协议");
+        Map<Integer, Long> q2 = enterAndMapQuestionsReserved(r2, examId);
+        submit(r2, examId, q2, "A", "A,C", "F", "HTTP");
+        // guest 未预约：即便班内也不进入应考名单（不提交，也不应被计为应考）
+        perform(jsonPost("/api/exams/" + examId + "/force-end", teacher, null), 200);
+        perform(jsonPost("/api/exams/" + examId + "/grading/run", teacher, null), 200);
+        long shortQ = q1.get(4);
+        saveSubjective(teacher, examId, studentIdOf(r1), shortQ, "6", 0, "表述完整");
+        saveSubjective(teacher, examId, studentIdOf(r2), shortQ, "6", 0, "表述完整");
+        perform(jsonPost("/api/exams/" + examId + "/scores/summarize", teacher, null), 200);
+
+        JsonNode data = perform(jsonGet("/api/exams/" + examId + "/scores/analysis-report", teacher), 200)
+                .get("data");
+        JsonNode overview = data.get("classOverview");
+        assertEquals(2, overview.get("expectedCount").asInt(), "预约制应考=有效预约名单 2 人");
+        assertEquals(2, overview.get("actualCount").asInt());
+        assertEquals(0, overview.get("absenceCount").asInt(), "预约者全部作答，无缺席");
+    }
+
+    /** 造预约制考试（需预约，班级含 3 人，仅前两者预约）。 */
+    private long preparedInProgressReservationExam(String teacher, String r1, String r2, String guest)
+            throws Exception {
+        long paperId = preparePaper(teacher, false);
+        long classId = createClassForExam(teacher, r1, r2, guest);
+        ObjectNode body = objectMapper.createObjectNode();
+        body.put("title", unique("考试"));
+        body.put("paperId", paperId);
+        body.put("classId", classId);
+        body.put("startTime", LocalDateTime.now().minusMinutes(1).toString());
+        body.put("endTime", LocalDateTime.now().plusHours(2).toString());
+        body.put("durationMinutes", 30);
+        body.put("reservationRequired", true);
+        long examId = perform(jsonPost("/api/exams", teacher, objectMapper.writeValueAsString(body)), 200)
+                .get("data").get("id").asLong();
+        perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
+        perform(jsonPost("/api/exam-reservations/" + examId, r1, null), 200);
+        perform(jsonPost("/api/exam-reservations/" + examId, r2, null), 200);
+        stateMachineService.autoAdvance();
+        return examId;
+    }
+
+    /** 预约者进入（已预约，走预约准入；先确保班内归属已建）。 */
+    private Map<Integer, Long> enterAndMapQuestionsReserved(String student, long examId) throws Exception {
+        JsonNode data = perform(jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null), 200)
+                .get("data");
+        Map<Integer, Long> byType = new HashMap<>();
+        data.get("questions").forEach(q -> byType.put(q.get("type").asInt(), q.get("questionId").asLong()));
+        return byType;
     }
 }

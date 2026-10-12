@@ -129,4 +129,51 @@ describe('StudentExamList', () => {
     const wrapper = mountList([ONGOING]);
     expect(wrapper.findComponent(Table).props('dataSource')).toHaveLength(1);
   });
+
+  // ===== add-exam-reservation：预约入口三态（只对需预约考试、仅开考前） =====
+
+  it('预约制考试未开始未预约 → 呈现预约入口，点击 emit reserve', async () => {
+    const reserveable: ExamListItem = {
+      ...UPCOMING,
+      reservationRequired: true,
+      reserved: false,
+    };
+    const wrapper = mountList([reserveable]);
+    const reserveBtn = wrapper.find('[data-test="reserve-button"]');
+    expect(reserveBtn.exists()).toBe(true);
+    expect(wrapper.find('[data-test="cancel-reservation-button"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="reserved-tag"]').exists()).toBe(false);
+    await reserveBtn.trigger('click');
+    expect(wrapper.emitted('reserve')).toBeDefined();
+  });
+
+  it('预约制考试未开始已预约 → 呈现「取消预约」入口，点击 emit cancel', async () => {
+    const reservedItem: ExamListItem = {
+      ...UPCOMING,
+      reservationRequired: true,
+      reserved: true,
+    };
+    const wrapper = mountList([reservedItem]);
+    const cancelBtn = wrapper.find('[data-test="cancel-reservation-button"]');
+    expect(cancelBtn.exists()).toBe(true);
+    expect(wrapper.find('[data-test="reserve-button"]').exists()).toBe(false);
+    await cancelBtn.trigger('click');
+    expect(wrapper.emitted('cancel')).toBeDefined();
+  });
+
+  it('预约制考试开考后已预约 → 只读「已预约」Tag，无预约/取消入口', () => {
+    const wrapper = mountList([
+      { ...ONGOING, examStatus: 1, reservationRequired: true, reserved: true },
+    ]);
+    expect(wrapper.find('[data-test="reserved-tag"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="reserve-button"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="cancel-reservation-button"]').exists()).toBe(false);
+  });
+
+  it('非预约制考试不呈现预约入口', () => {
+    const wrapper = mountList([UPCOMING, ONGOING]);
+    expect(wrapper.find('[data-test="reserve-button"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="cancel-reservation-button"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="reserved-tag"]').exists()).toBe(false);
+  });
 });

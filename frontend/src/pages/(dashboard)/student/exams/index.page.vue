@@ -18,7 +18,14 @@
         class="mb-3"
       />
 
-      <StudentExamList :items="rows" :loading="isFetching" :error="errorText" @enter="onEnter" />
+      <StudentExamList
+        :items="rows"
+        :loading="isFetching"
+        :error="errorText"
+        @enter="onEnter"
+        @reserve="onReserve"
+        @cancel="onCancelReservation"
+      />
     </Card>
   </div>
 </template>
@@ -43,8 +50,14 @@ import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { useStore } from 'vuex';
 
-import { myExams as myExamsContract, type ExamListItem } from '@/api/axios';
+import {
+  myExams as myExamsContract,
+  cancel as cancelReservation,
+  reserve as reserveExam,
+  type ExamListItem,
+} from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
+import { message } from 'ant-design-vue';
 import StudentExamList from '@/components/student/StudentExamList.vue';
 import { createStudentExamsQueryOptions } from '@/hooks/useStudentTaking';
 import { ApiError } from '@/api/types';
@@ -150,6 +163,30 @@ const errorText = computed<string | null>(() => {
 function onEnter(item: ExamListItem): void {
   if (item.examId === undefined) return;
   void router.push(`/student/exams/${item.examId}`);
+}
+
+/** 预约制考试：学生点「预约」→ POST 预约并刷新列表（network-only，不本地持久化）。 */
+async function onReserve(item: ExamListItem): Promise<void> {
+  if (item.examId === undefined) return;
+  try {
+    await unwrap(reserveExam({ client, throwOnError: true, path: { examId: item.examId } }));
+    message.success('预约成功');
+    await refetch();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '预约失败，请稍后重试');
+  }
+}
+
+/** 预约制考试：学生点「取消预约」→ DELETE 预约并刷新列表（仅开考前）。 */
+async function onCancelReservation(item: ExamListItem): Promise<void> {
+  if (item.examId === undefined) return;
+  try {
+    await unwrap(cancelReservation({ client, throwOnError: true, path: { examId: item.examId } }));
+    message.success('已取消预约');
+    await refetch();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '取消预约失败，请稍后重试');
+  }
 }
 </script>
 

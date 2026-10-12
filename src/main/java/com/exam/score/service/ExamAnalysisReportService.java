@@ -5,7 +5,9 @@ import com.exam.clazz.service.ClassService;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.exam.entity.Exam;
+import static com.exam.exam.service.AbsenceService.isReservationRequired;
 import com.exam.exam.mapper.ExamMapper;
+import com.exam.exam.service.ExamReservationService;
 import com.exam.grading.entity.GradingSubmission;
 import com.exam.grading.mapper.GradingSubmissionMapper;
 import com.exam.grading.model.GradingPaper;
@@ -59,6 +61,7 @@ public class ExamAnalysisReportService {
     private final GradingSubmissionMapper gradingSubmissionMapper;
     private final ExamSubmissionMapper submissionMapper;
     private final ClassService classService;
+    private final ExamReservationService reservationService;
     private final UserMapper userMapper;
     private final QuestionTagMapper questionTagMapper;
     private final TagMapper tagMapper;
@@ -69,6 +72,7 @@ public class ExamAnalysisReportService {
                                      GradingSubmissionMapper gradingSubmissionMapper,
                                      ExamSubmissionMapper submissionMapper,
                                      ClassService classService,
+                                     ExamReservationService reservationService,
                                      UserMapper userMapper,
                                      QuestionTagMapper questionTagMapper,
                                      TagMapper tagMapper) {
@@ -78,6 +82,7 @@ public class ExamAnalysisReportService {
         this.gradingSubmissionMapper = gradingSubmissionMapper;
         this.submissionMapper = submissionMapper;
         this.classService = classService;
+        this.reservationService = reservationService;
         this.userMapper = userMapper;
         this.questionTagMapper = questionTagMapper;
         this.tagMapper = tagMapper;
@@ -156,9 +161,16 @@ public class ExamAnalysisReportService {
                                                                         BigDecimal totalScore) {
         ExamAnalysisReportResponse.ClassOverview overview = new ExamAnalysisReportResponse.ClassOverview();
 
-        List<Long> expectedIds = exam.getClassId() == null
-                ? List.of()
-                : classService.listStudentIds(exam.getClassId());
+        // add-exam-reservation 应考口径分流：预约制考试按有效预约名单计应考（与缺考域 exam_absence 同源，
+        // 不出现两套缺席数）；非预约制维持既有班级名单口径（ClassService.listStudentIds 仍是唯一班级名单入口）。
+        List<Long> expectedIds;
+        if (isReservationRequired(exam)) {
+            expectedIds = reservationService.listReservedStudentIds(exam.getId());
+        } else {
+            expectedIds = exam.getClassId() == null
+                    ? List.of()
+                    : classService.listStudentIds(exam.getClassId());
+        }
         overview.setExpectedCount(expectedIds.size());
 
         // 缺席 = 应考 − 有答卷（沿用缺考域 AbsenceService 口径：应考名单 − 有答卷者）

@@ -49,4 +49,7 @@ public class ExamCreateRequest {
 
     /** 防作弊配置 JSON（可选，如 {"switchScreen":true,"forbidCopy":false}） */
     private JsonNode antiCheatConfig;
+
+    /** 需预约开关（add-exam-reservation）：默认 false=普通考试（班级即时进入）；仅主考可设，补考链不暴露 */
+    private Boolean reservationRequired;
 }

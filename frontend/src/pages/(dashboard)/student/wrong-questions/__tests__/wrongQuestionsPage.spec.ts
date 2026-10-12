@@ -13,6 +13,9 @@ vi.mock('@/api/apiClient', () => ({
 
 vi.mock('@/api/axios', () => ({
   myWrongQuestions: vi.fn(),
+  list1: vi.fn().mockResolvedValue([]),
+  unreadCount: vi.fn().mockResolvedValue(0),
+  markRead: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { myWrongQuestions } from '@/api/axios';
@@ -34,6 +37,7 @@ vi.mock('@tanstack/vue-query', () => ({
     }
     return { data, error, isFetching, refetch: vi.fn() };
   },
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
 vi.mock('vue-router', () => ({

@@ -47,6 +47,9 @@ public class ExamDetailResponse {
     /** 1=教师提前结束（强制交卷标记） */
     private Integer forceEnd;
 
+    /** 0=普通考试 1=需预约（add-exam-reservation） */
+    private Integer reservationRequired;
+
     /** 防作弊配置（解析后的 JSON，未配置为 null） */
     private JsonNode antiCheatConfig;
 

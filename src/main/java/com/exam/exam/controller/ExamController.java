@@ -148,7 +148,7 @@ public class ExamController {
         return new ExamResponse(exam.getId(), exam.getTitle(), exam.getPaperId(),
                 exam.getCourseId(), exam.getClassId(),
                 exam.getStartTime(), exam.getEndTime(), exam.getDurationMinutes(), exam.getAllowLateMinutes(),
-                exam.getStatus(), exam.getPublished(), exam.getForceEnd(),
+                exam.getStatus(), exam.getPublished(), exam.getForceEnd(), exam.getReservationRequired(),
                 exam.getSnapshotId(), exam.getCreatedBy(), exam.getCreatedTime());
     }
 }

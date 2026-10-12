@@ -10,6 +10,8 @@ import com.exam.common.ResponseCode;
 import com.exam.exam.dto.ExamSnapshotResponse;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
+import com.exam.exam.entity.ExamReservation;
+import com.exam.exam.mapper.ExamReservationMapper;
 import com.exam.exam.service.ExamSnapshotService;
 import com.exam.exam.service.MakeupService;
 import com.exam.submission.entity.ExamSubmission;
@@ -40,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 进入考试与答题服务（spec「进入考试」「答题导航与采集」需求）：
@@ -67,6 +70,7 @@ public class ExamTakingService {
     private final ExamSubmissionMapper submissionMapper;
     private final UserClassMapper userClassMapper;
     private final ExamCandidateMapper examCandidateMapper;
+    private final ExamReservationMapper reservationMapper;
     private final ExamSnapshotService examSnapshotService;
     private final PersonalPaperService personalPaperService;
     private final ExamDraftService draftService;
@@ -77,6 +81,7 @@ public class ExamTakingService {
 
     public ExamTakingService(ExamMapper examMapper, ExamSubmissionMapper submissionMapper,
                              UserClassMapper userClassMapper, ExamCandidateMapper examCandidateMapper,
+                             ExamReservationMapper reservationMapper,
                              ExamSnapshotService examSnapshotService, PersonalPaperService personalPaperService,
                              ExamDraftService draftService, BehaviorEventCollectService eventCollectService,
                              ExamSubmitService submitService, OnlinePresenceService presenceService,
@@ -85,6 +90,7 @@ public class ExamTakingService {
         this.submissionMapper = submissionMapper;
         this.userClassMapper = userClassMapper;
         this.examCandidateMapper = examCandidateMapper;
+        this.reservationMapper = reservationMapper;
         this.examSnapshotService = examSnapshotService;
         this.personalPaperService = personalPaperService;
         this.draftService = draftService;
@@ -136,6 +142,16 @@ public class ExamTakingService {
                 .eq(UserClass::getClassId, exam.getClassId()));
         if (inClass == null || inClass == 0) {
             throw new BusinessException(ResponseCode.FORBIDDEN, "您不属于该考试指定的班级，无法参加");
+        }
+        // add-exam-reservation 预约校验（叠加在既有两层之上的过滤层，不替代）：
+        // 预约制考试（reservation_required=1）须已预约方可进入——「预约即应考」，未预约者不可进入。
+        if (exam.getReservationRequired() != null && exam.getReservationRequired() == 1) {
+            Long reserved = reservationMapper.selectCount(Wrappers.<ExamReservation>lambdaQuery()
+                    .eq(ExamReservation::getExamId, exam.getId())
+                    .eq(ExamReservation::getStudentId, studentId));
+            if (reserved == null || reserved == 0) {
+                throw new BusinessException(ResponseCode.FORBIDDEN, "该考试需预约后才能参加，您尚未预约");
+            }
         }
     }
 
@@ -241,9 +257,20 @@ public class ExamTakingService {
                 .eq(Exam::getPublished, 1)
                 .in(Exam::getId, myExamIds));
 
+        // 4. 预约状态（add-exam-reservation）：一次性取本人全部有效预约（examId → true），
+        //    reserved 下发 + 预约制考试未预约时 canEnter 联动置 false
+        Set<Long> reservedExamIds = reservationMapper.selectList(Wrappers.<ExamReservation>lambdaQuery()
+                        .select(ExamReservation::getExamId)
+                        .eq(ExamReservation::getStudentId, studentId))
+                .stream().map(ExamReservation::getExamId).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
         LocalDateTime now = LocalDateTime.now();
         return exams.stream().map(exam -> {
             ExamSubmission submission = mine.get(exam.getId());
+            boolean reservationRequired = exam.getReservationRequired() != null
+                    && exam.getReservationRequired() == 1;
+            boolean reserved = reservedExamIds.contains(exam.getId());
             String group;
             boolean canEnter = false;
             Long remaining = null;
@@ -259,13 +286,16 @@ public class ExamTakingService {
                 group = ExamListItem.GROUP_FINISHED;       // 已交卷，或考试已结束/已批改
             } else if (exam.getStatus() == Exam.STATUS_IN_PROGRESS) {
                 group = ExamListItem.GROUP_UPCOMING;       // 进行中且未进入：可进入并开始
-                canEnter = true;
+                // 预约制考试未预约即便进行中也不可进入（「预约即应考」：未预约者不可进入）
+                canEnter = !reservationRequired || reserved;
             } else {
                 group = ExamListItem.GROUP_UPCOMING;       // 未开始：待考
             }
             return new ExamListItem(exam.getId(), exam.getTitle(), exam.getStartTime(), exam.getEndTime(),
                     exam.getDurationMinutes(), exam.getStatus(), group, canEnter,
-                    submission == null ? null : submission.getStatus(), remaining);
+                    submission == null ? null : submission.getStatus(), remaining,
+                    reservationRequired ? Boolean.TRUE : Boolean.FALSE,
+                    reserved ? Boolean.TRUE : Boolean.FALSE);
         })
         .sorted(Comparator
                 .comparingInt((ExamListItem item) -> groupPriority(item.getGroup()))
