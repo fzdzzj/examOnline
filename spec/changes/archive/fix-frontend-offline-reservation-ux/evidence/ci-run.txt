@@ -1,0 +1,14 @@
+=== fix-frontend-offline-reservation-ux 收口 CI 核证 ===
+
+收口主段 push（origin/main：5750fff..bab6897，含 --no-ff 合并笔 934ca83 与收口笔 bab6897）
+  run id  : 38278746764
+  headSha : bab68975d5a22a5e3dc0b3e46c527d6be625c148
+  结论    : status=completed conclusion=success（终态，三 job 全绿）
+    - Backend gate (mvnw clean test)           : success
+    - Frontend gate (lint / type-check / test) : success
+    - Dependency scan (Trivy fs, non-blocking) : success
+  核证命令: gh run view 38278746764 --json status,conclusion,jobs
+  纪律    : 只认终态 run——concurrency cancel-in-progress 产生的中间 cancelled run 不计。
+
+说明：本文件由收口回填段（承接收口主段核证结果）写入，随回填段提交入库；
+回填段自身 push 的 CI 终态 run 在收口回报中另行核证登记（自引用无法写入本文件）。
