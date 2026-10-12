@@ -11,7 +11,8 @@
 #       --inject-sed '<sed 替换表达式 s/OLD/NEW/ 或 s|OLD|NEW|>' \
 #          （或 --inject-file <file> 整文件替换形态，二选一） \
 #       --verify '<command>' \
-#       --label <name>
+#       --label <name> \
+#       [--out-dir <dir>]
 #   scripts/mutation-check.sh --help        # 自述用法
 #
 # 参数契约：
@@ -19,8 +20,13 @@
 #   --inject-sed  sed 替换表达式；替换侧 NEW 即注入标志，注入后会被 grep 核验在场
 #   --inject-file 整文件替换形态；目标将整体覆盖为该文件内容（与 --inject-sed 互斥）
 #   --verify      验证命令串；预期注入后非零退出（击红）、复原后零退出（回绿）
-#   --label       变异标识，用于留证目录命名（target/mutation-check/<label>/）
+#   --label       变异标识，用于留证目录命名（<out-dir>/<label>/）
+#   --out-dir     留证根目录（可选）；缺省为 target/mutation-check/（行为与既有形态逐字一致），
+#                 指定时为留证跨 mvnw clean 存续的逃生口——留证落 <out-dir>/<label>/
 #   --help        打印用法并退出 0
+#
+# Windows 下驱动形态：WSL 不可挂盘时以 Git-Bash 驱动同工具可行（两案复核实证）——
+#   在 Git-Bash 中执行 scripts/mutation-check.sh 即可（bash 4.x 兼容，无 bash5 专属变量）。
 #
 # 五步原子流程（任一步失败 → 先基准备份带回复原，再以非零退出并指明失败步骤）：
 #   ① 备份      ：目标字节级复制到 target/mutation-check/<label>/backup/original
@@ -50,23 +56,45 @@ mutation-check.sh —— 变异校验驱动脚本（生产化 T2）
       --inject-sed '<sed 替换表达式 s/OLD/NEW/ 或 s|OLD|NEW|>' \
          （或 --inject-file <file> 整文件替换形态，二选一） \
       --verify '<command>' \
-      --label <name>
+      --label <name> [--out-dir <dir>]
   scripts/mutation-check.sh --help
 
 参数：
   --target      注入目标文件  --inject-sed  sed 替换表达式
   --inject-file 整文件替换源   --verify    验证命令串（注入后非零、复原后零）
-  --label       变异标识（留证 target/mutation-check/<label>/）  --help 本用法
+  --label       变异标识（留证 <out-dir>/<label>/）  --out-dir 留证根目录（缺省 target/mutation-check/）
+  --help        本用法
 
 五步：①备份 ②注入+命中核验 ③击红非零断言 ④复原 cmp 字节一致+归零 ⑤回绿零退出。
-任一步失败非零退出并指明步骤；全部留证落 target/ 之下；零 target/ 之外写入。
+任一步失败非零退出并指明步骤；判败同样写 report.txt 留证；全部留证落 out-dir 之下；零 out-dir 之外写入。
+Windows：WSL 不可挂盘时以 Git-Bash 驱动同工具可行。
 EOF
 }
 
-fail() { echo "mutation-check FAIL [$1]: $2" >&2; exit "${3:-1}"; }
+fail() {
+  # 判败亦留证（红线 ①）：任一步骤判败退出前补写 report.txt——判败轮次与判胜轮次同规格留证。
+  # 尽力而为：参数/环境态缺失（REPORT 未定义，如参数校验期）时按缺省/指定 out-dir 构造；
+  # 留证写入即使失败也不掩盖判败本体（`|| true`）。
+  local fstep="$1" fmsg="${2:-}" fexit="${3:-1}" rpt ri
+  rpt="${REPORT:-}"
+  if [ -n "$rpt" ]; then
+    ri="$rpt"
+  else
+    ri="${OUT_DIR:+$OUT_DIR/}${LABEL:-}/report.txt"
+  fi
+  mkdir -p "$(dirname "$ri")" 2>/dev/null || true
+  {
+    echo "mutation-check 五步汇总 —— label: ${LABEL:-}"
+    echo "target: ${TARGET:-}"
+    echo "verify: ${VERIFY:-}"
+    echo "FAIL $fstep: $fmsg"
+  } > "$ri" 2>/dev/null || true
+  echo "mutation-check FAIL [$fstep]: $fmsg" >&2
+  exit "$fexit"
+}
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-TARGET=""; INJECT_SED=""; INJECT_FILE=""; VERIFY=""; LABEL=""
+TARGET=""; INJECT_SED=""; INJECT_FILE=""; VERIFY=""; LABEL=""; OUT_DIR=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -76,9 +104,13 @@ while [ "$#" -gt 0 ]; do
     --inject-file) INJECT_FILE="${2:-}"; shift 2 ;;
     --verify) VERIFY="${2:-}"; shift 2 ;;
     --label) LABEL="${2:-}"; shift 2 ;;
+    --out-dir) OUT_DIR="${2:-}"; shift 2 ;;
     *) echo "mutation-check: 未知参数：$1（用 --help 查看用法）" >&2; exit 2 ;;
   esac
 done
+
+# ---- 留证根目录：--out-dir 缺省时行为与既有形态逐字一致（仍落 target/mutation-check/）----
+OUT_DIR="${OUT_DIR:-$ROOT/target/mutation-check}"
 
 # ---- 参数完整性 ----
 [ -n "$TARGET" ] || fail "参数" "--target 必填" 2
@@ -95,8 +127,8 @@ if [ -n "$INJECT_FILE" ]; then
   [ -f "$INJECT_FILE" ] || fail "参数" "--inject-file 不是普通文件：$INJECT_FILE" 2
 fi
 
-# ---- 留证路径（只写 target/，gitignored）----
-EVID="$ROOT/target/mutation-check/$LABEL"
+# ---- 留证路径（可 --out-dir 指定逃生目录；缺省只写 target/，gitignored）----
+EVID="$OUT_DIR/$LABEL"
 BACKUP_DIR="$EVID/backup"
 REPORT="$EVID/report.txt"
 mkdir -p "$BACKUP_DIR"

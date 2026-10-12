@@ -411,3 +411,37 @@ WHEN 此后执行侧以变异自证护栏、或复核侧独立复现变异
 THEN 优先以本工具驱动（注入点仍按变更定制），手工五步仅作兜底
 
 AND 该义务登记于工作流纪律而非仅存于工具头注释
+
+---
+
+> 合入注记（2026-10-12，`polish-mutation-and-ci-tooling`）：ADDED「变异校验工具与 CI 解析脚本的留证与失败传播完善」Requirement（分级①收口）。
+> 多 Scenario 名称与正文与 `spec/changes/archive/polish-mutation-and-ci-tooling/spec-delta.md` 逐字一致；纯脚本/文档域（scripts/mutation-check.sh、.github/ci/ 三脚本、spec/README.md）零业务代码，
+> 用例数零变化、gate-baseline.json 零改动合法持平；既有 Requirement 零改动。
+
+### Requirement: 变异校验工具与 CI 解析脚本的留证与失败传播完善
+
+#### Scenario: 判败亦留证
+
+WHEN mutation-check.sh 任一步骤判败退出（含注入失配、击红断言失败、复原不一致）
+
+THEN 该轮 report.txt 已写入留证目录后以非零码退出——判败轮次与判胜轮次同规格留证
+
+AND fail-closed 性质零变化（任何非测试失败的非零退出仍整体判败，不假绿放行）
+
+#### Scenario: 留证目录可指定
+
+WHEN 调用方以 --out-dir 指定留证目录
+
+THEN 五步留证（备份、注入核验、击红输出、复原比对、回绿输出）落指定目录
+
+AND 未指定时留证路径与既有行为逐字一致（仍落 target/mutation-check/，被 mvnw clean 清空的生命周期形态不变）
+
+#### Scenario: 失败传播无噪音与文档形态
+
+WHEN .github/ci/ 解析断言脚本遇到缺键或检查点失败
+
+THEN 直接以非零码退出，不携带空基线或无效输入走到后续比较行产生告警噪音
+
+AND 任一检查点失败必须非零退出的既有断言性质零变化
+
+AND mutation-check.sh 文档记载 Windows 下 Git-Bash 驱动形态（WSL 不可挂盘时的实证可行路径）
