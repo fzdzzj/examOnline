@@ -4,56 +4,92 @@
     "category": "阶段 1：开工核对与基线",
     "task": "分支、git 状态与基线记录",
     "steps": [
-      { "step": "K1 从 main 最新 HEAD 新建 feature/polish-mutation-and-ci-tooling 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": false },
-      { "step": "K2 基线记录：仓库根 mvnw.cmd clean test 一次留证（预期 404/0/0/1，作为 CI 断言对齐基准）；前端零触碰免跑", "completed": false },
-      { "step": "K3 现状查证：①mutation-check.sh 的 fail() 调用点清单与留证写入点（判败路径不落盘的具体位置）②--out-dir 缺省路径构造③.github/ci/ 三脚本 $() 子壳 fail() 不传播的具体位置（get_baseline 等）④spec/README.md 与归档 proposal 措辞不齐处逐点定位", "completed": false }
+      {
+        "step": "K1 从 main 最新 HEAD 新建 feature/polish-mutation-and-ci-tooling 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改",
+        "completed": true
+      },
+      {
+        "step": "K2 基线记录：仓库根 mvnw.cmd clean test 一次留证（预期 404/0/0/1，作为 CI 断言对齐基准）；前端零触碰免跑",
+        "completed": true
+      },
+      {
+        "step": "K3 现状查证：①mutation-check.sh 的 fail() 调用点清单与留证写入点（判败路径不落盘的具体位置）②--out-dir 缺省路径构造③.github/ci/ 三脚本 $() 子壳 fail() 不传播的具体位置（get_baseline 等）④spec/README.md 与归档 proposal 措辞不齐处逐点定位",
+        "completed": true
+      }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "K1 分支：从 main 最新 HEAD 93c07a9（git rev-parse --short HEAD=93c07a9）新建 feature/polish-mutation-and-ci-tooling 并切换，git status --porcelain 仅白名单未跟踪（docs/*、review-*.md、.zcodeignore、三件套），零已跟踪修改。K2 基线：仓库根 mvnw.cmd clean test 一次留证（JAVA_HOME=D:\\develop1\\jdk21）→ [WARNING] Tests run: 404, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（退出码 1 系 mvn wrapper 管道收尾非失败门禁），与预期 404/0/0/1 对齐，作 CI surefire 断言基准。K3 现状查证：①mutation-check.sh fail()（L66→L74）调用点 10 处（参数校验 L84-96、L109、注入失配 L143/L151/L156、inject-file L163/L167）判败均不写 report.txt（判胜走 write_report_exit 才写）；②--out-dir 缺省路径构造 EVID=$ROOT/target/mutation-check/$LABEL（L99原/L131现）；③.github/ci/ 三脚本 get_baseline 内 `v=$(grep ...)` 后 `[ -n \"$v\" ] || fail`——$(get_baseline) 命令替换子壳的 fail-exit 传不回主脚本（set -u 无 -e），缺键时空基线 MIN_TESTS 走到比较行 `[ : integer expression expected` 告警噪音后才 rc=1，安全性质成立仅消息噪音（实测定证）；④spec/README.md L28/L62 写「五步原子流程固化为可复现留证」而 proposal 用「变异校验工具化」，措辞不齐无语义冲突（review-add-mutation-check-tool-VERDICT.md 观测4）；⑤Windows 驱动形态：Git-Bash bash 4.4.23 + GNU sed 4.5 可用，WSL 不可挂盘时以 Git-Bash 驱动同工具可行（两案复核实证）。"
   },
   {
     "number": 2,
     "category": "阶段 2：工具与脚本实施（实施笔）",
     "task": "mutation-check.sh 三处增强 + CI 三脚本噪音收敛 + README 措辞对齐",
     "steps": [
-      { "step": "mutation-check.sh：①判败路径（各 fail() 调用点）补写 report.txt 后退出②新增 --out-dir 可选参数（缺省行为逐字不变，指定时五步留证落指定目录）③头注释/用法补 Windows Git-Bash 驱动形态说明；五步原子流程与 fail-closed 性质零变化", "completed": false },
-      { "step": ".github/ci/ 三脚本：$() 子壳 fail() 不传播处改命令替换退出码判断或内联 fail——「任一检查点失败必须非零退出」断言性质保留，仅收敛告警噪音", "completed": false },
-      { "step": "spec/README.md 工具措辞与归档 proposal 对齐（零语义变化）；实施笔提交：git diff --cached --name-only 仅 scripts/mutation-check.sh、.github/ci/ 三脚本、spec/README.md 与本三件套（建议三件套同笔入库），红线域全空，git diff --cached --check 干净，提交信息中文、按任务组", "completed": false }
+      {
+        "step": "mutation-check.sh：①判败路径（各 fail() 调用点）补写 report.txt 后退出②新增 --out-dir 可选参数（缺省行为逐字不变，指定时五步留证落指定目录）③头注释/用法补 Windows Git-Bash 驱动形态说明；五步原子流程与 fail-closed 性质零变化",
+        "completed": true
+      },
+      {
+        "step": ".github/ci/ 三脚本：$() 子壳 fail() 不传播处改命令替换退出码判断或内联 fail——「任一检查点失败必须非零退出」断言性质保留，仅收敛告警噪音",
+        "completed": true
+      },
+      {
+        "step": "spec/README.md 工具措辞与归档 proposal 对齐（零语义变化）；实施笔提交：git diff --cached --name-only 仅 scripts/mutation-check.sh、.github/ci/ 三脚本、spec/README.md 与本三件套（建议三件套同笔入库），红线域全空，git diff --cached --check 干净，提交信息中文、按任务组",
+        "completed": true
+      }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "实施笔 10c669e（parent=93c07a9，单笔）：git diff --cached --name-only 恰 8 文件=scripts/mutation-check.sh + .github/ci/ 三脚本 + spec/README.md + 三件套（proposal/spec-delta/tasks，A 态同笔入库）；git diff --cached --check 干净；提交信息中文按任务组。mutation-check.sh 三处增强：①fail() 改造为判败亦留证——退出前 mkdir 并写 report.txt（REPORT 未定义时按 ${OUT_DIR}/${LABEL}/report.txt 构造，`|| true` 不掩盖判败本体）；②新增 --out-dir 可选参数，OUT_DIR 缺省 $ROOT/target/mutation-check，EVID=$OUT_DIR/$LABEL，缺省留证路径逐字不变仍 target/mutation-check/<label>/；③头注释/用法补 Windows Git-Bash 驱动形态说明。五步原子流程与 fail-closed 性质零变化（推理核证 + self-c 假绿仍判败非零实证）。CI 三脚本：get_baseline 缺键改 `[ -n \"$v\" ] || return 1` 不再内嵌 fail-exit，调用侧改 `MIN_TESTS=$(get_baseline key) || fail \"baseline key missing: ...\"`——命令替换退出码判断，判败不携带空基线到比较行，噪音收敛，非零退出断言性质保留。spec/README.md：L62 能力域行「五步原子流程固化为可复现留证」措辞对齐 proposal「变异校验工具化」（④，零语义变化，review 观测4 修）。"
   },
   {
     "number": 3,
     "category": "阶段 3：自测实证",
     "task": "工具三证 + CI 脚本双向红绿自测",
     "steps": [
-      { "step": "工具自测三证留证：①self-c 判败轮 report.txt 存在且内容正确②--out-dir 指定目录留证成功且缺省路径行为零变化（与改动前对照）③既有 self-a 全绿样例回归绿；自测不进 surefire 用例", "completed": false },
-      { "step": "CI 脚本双向自测留证：注入违规（基线缺键/断言失败场景）→ 非零退出且无空基线走到比较行的告警噪音；正常路径 → 零退出；复原后工作树与 HEAD 零 diff", "completed": false }
+      {
+        "step": "工具自测三证留证：①self-c 判败轮 report.txt 存在且内容正确②--out-dir 指定目录留证成功且缺省路径行为零变化（与改动前对照）③既有 self-a 全绿样例回归绿；自测不进 surefire 用例",
+        "completed": true
+      },
+      {
+        "step": "CI 脚本双向自测留证：注入违规（基线缺键/断言失败场景）→ 非零退出且无空基线走到比较行的告警噪音；正常路径 → 零退出；复原后工作树与 HEAD 零 diff",
+        "completed": true
+      }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "工具三证（Git-Bash git-bash bash 4.4.23 驱动，假目标/假 verify 落 /tmp + target/(gitignored)，工作树零残留）：①self-c 判败轮留证——假绿样例（注入后 verify 仍零退出）→ TOOL_EXIT=1 判败，且 target/mutation-check/selftest_fakegreen/report.txt 已写存在，内容含 FAIL ③击红（判败亦留证实现实证，改动前 self-c 无 report.txt 属设计形态现已修复）；②--out-dir 指定目录留证成功——/tmp/.../custom_outdir/selftest_outdir/ 下 backup/report.txt/step3-verify-red.log/step5-verify-green.log 五步留证完整，且缺省路径 target/mutation-check/ 无 selftest_outdir 标签（缺省行为零变化）；③self-a 全绿样例回归绿——selftest_green 五步全 PASS TOOL_EXIT=0，report.txt 留证（①备份/②注入命中/③击红 exit=1/④复原 cmp 一致/⑤回绿 exit=0）。自测进 target/ 留证不进 surefire 用例。CI 三脚本双向红绿（Git-Bash 驱动，临时 baseline/日志不落工作树）：RED 注入违规——assert_backend 缺 backendTests 键 → EXIT=1 且干净报「baseline key missing: backendTests」无 `integer expression expected` 噪音；assert_frontend 缺 frontendTests → EXIT=1 同样干净；check_openapi_paths 缺 openapiPaths → EXIT=1 干净（改动前同输入产生 `[ : integer expression expected` 噪音后才判败，噪音已收敛）；GREEN 正常——assert_backend 404/0/0/1 + BUILD SUCCESS + baseline=404 → EXIT=0 GATE ASSERT OK；assert_frontend → EXIT=0；check_openapi_paths 80 paths vs baseline 74 → EXIT=0 OPENAPI PATHS ASSERT OK。复原后工作树与 HEAD 零 diff（临时文件均在 /tmp 与 target/，git status 实证仅本变更目标文件）。"
   },
   {
     "number": 4,
     "category": "阶段 4：push 与 CI run 核证（分级①门禁形态）",
     "task": "push feature 三 job 绿核证",
     "steps": [
-      { "step": "push feature → gh 核证 CI 三 job 全绿（surefire 断言 404 与 K2 基线对齐、gate-baseline 持平断言 OK、dependency scan 绿）；CI run ID 与各 job 结论实测记录", "completed": false }
+      {
+        "step": "push feature → gh 核证 CI 三 job 全绿（surefire 断言 404 与 K2 基线对齐、gate-baseline 持平断言 OK、dependency scan 绿）；CI run ID 与各 job 结论实测记录",
+        "completed": true
+      }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "push feature → gh 核证 CI run 38221124302（headSha 10c669ec055047b5d52a218a560feea0052fa722，2026-10-12T08:01Z）三 job 全 success：Frontend gate (lint / type-check / test)=success、Backend gate (mvnw clean test)=success（含 Assert surefire baseline and BUILD SUCCESS banner + Assert openapi paths baseline 两断言 job step success→gate-baseline 404/74 持平断言 OK）、Dependency scan (Trivy fs, non-blocking)=success。分级①门禁形态：后端 404 与 K2 基线对齐、gate-baseline.json 零改动合法持平（surefire 断言层绿实证），未本地全量复跑。"
   },
   {
     "number": 5,
     "category": "阶段 5：收口、归档与台账回填（分级①执行侧一次到底）",
     "task": "spec-delta 合入 + --no-ff 合入 + CI 核证 + 归档 + 台账回填",
     "steps": [
-      { "step": "spec-delta 三 Scenario 合入 agent-harness 基线（名称与正文逐字；既有 Requirement 零改动）；spec/README.md 三处常规登记；收口笔零业务代码自证（红线域 diff 全空）", "completed": false },
-      { "step": "本地 --no-ff 合入 main（双亲核验）→ push main → gh 核证 main CI 三 job 绿；三件套归档（随实施笔入库则 R100 rename，未入库则新增 A 形态并如实声明，不沿用 R100 话术）", "completed": false },
-      { "step": "台账回填：任务勾选与 evidence 按台账回填机制回填（执行实测来源如实标注；复核子 agent 终验 main 后如独立复算零出入则不再另派转录返修笔——46cac1d 形态②先例；若复核发现出入则走独立台账返修笔）；step 文本零改动、JSON 可解析自证", "completed": false }
+      {
+        "step": "spec-delta 三 Scenario 合入 agent-harness 基线（名称与正文逐字；既有 Requirement 零改动）；spec/README.md 三处常规登记；收口笔零业务代码自证（红线域 diff 全空）",
+        "completed": true
+      },
+      {
+        "step": "本地 --no-ff 合入 main（双亲核验）→ push main → gh 核证 main CI 三 job 绿；三件套归档（随实施笔入库则 R100 rename，未入库则新增 A 形态并如实声明，不沿用 R100 话术）",
+        "completed": true
+      },
+      {
+        "step": "台账回填：任务勾选与 evidence 按台账回填机制回填（执行实测来源如实标注；复核子 agent 终验 main 后如独立复算零出入则不再另派转录返修笔——46cac1d 形态②先例；若复核发现出入则走独立台账返修笔）；step 文本零改动、JSON 可解析自证",
+        "completed": true
+      }
     ],
-    "passes": false,
-    "evidence": ""
+    "passes": true,
+    "evidence": "收口执行侧一次到底实测（来源如实标注执行实测，复核子 agent 终验 main 后可独立复算）。①spec-delta 三 Scenario 合入 agent-harness 基线：收口笔 8b57404 提交 spec/specs/agent-harness/spec.md（新增 ADDED「变异校验工具与 CI 解析脚本的留证与失败传播完善」Requirement + 三 Scenario：判败亦留证/留证目录可指定/失败传播无噪音与文档形态）+ spec/README.md 三处常规登记（in-progress 表/进行中注记/能力域列）；三 Scenario 名称与正文与 spec-delta 原文程序化比对逐字一致（统一基线挂载格式：#### Scenario + 裸 WHEN/THEN/AND，正文句子与 delta 逐字）；既有 Requirement 零改动。收口笔零业务代码自证：git diff 红线域（src/、frontend/src/、pom.xml、schema.sql、openapi.yaml、docker-compose.yml、.github/workflows/、gate-baseline.json、docker/）全空。②--no-ff 合入 main：本地 git merge --no-ff feature → 合并笔 ad306c5，双亲 93c07a9 + 8b57404 核验成立；push main（93c07a9..ad306c5）→ main CI run 38221951355（headSha ad306c5）三 job 全绿核证；三件套归档：随实施笔 A 态入库 → R100 rename 笔 9e065ed（git mv → spec/changes/archive/polish-mutation-and-ci-tooling/，3 files 0增删 100% rename，R100 话术成立）。③台账回填笔：本文件——任务勾选与 evidence 按回填机制回填（执行实测来源如实标注）；step 文本零改动（回填脚本逐字比对 steps 数组相等）、JSON 可解析（python json.load OK）。既有 Requirement 零改动、gate-baseline.json 全程零改动合法持平。"
   }
 ]
