@@ -1,0 +1,59 @@
+[
+  {
+    "number": 1,
+    "category": "阶段 1：开工核对与基线",
+    "task": "分支、git 状态与基线记录",
+    "steps": [
+      { "step": "K1 从 main 最新 HEAD 新建 feature/polish-mutation-and-ci-tooling 并切换，git rev-parse --short HEAD 实测记录；git status --porcelain 仅白名单未跟踪，零已跟踪修改", "completed": false },
+      { "step": "K2 基线记录：仓库根 mvnw.cmd clean test 一次留证（预期 404/0/0/1，作为 CI 断言对齐基准）；前端零触碰免跑", "completed": false },
+      { "step": "K3 现状查证：①mutation-check.sh 的 fail() 调用点清单与留证写入点（判败路径不落盘的具体位置）②--out-dir 缺省路径构造③.github/ci/ 三脚本 $() 子壳 fail() 不传播的具体位置（get_baseline 等）④spec/README.md 与归档 proposal 措辞不齐处逐点定位", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 2,
+    "category": "阶段 2：工具与脚本实施（实施笔）",
+    "task": "mutation-check.sh 三处增强 + CI 三脚本噪音收敛 + README 措辞对齐",
+    "steps": [
+      { "step": "mutation-check.sh：①判败路径（各 fail() 调用点）补写 report.txt 后退出②新增 --out-dir 可选参数（缺省行为逐字不变，指定时五步留证落指定目录）③头注释/用法补 Windows Git-Bash 驱动形态说明；五步原子流程与 fail-closed 性质零变化", "completed": false },
+      { "step": ".github/ci/ 三脚本：$() 子壳 fail() 不传播处改命令替换退出码判断或内联 fail——「任一检查点失败必须非零退出」断言性质保留，仅收敛告警噪音", "completed": false },
+      { "step": "spec/README.md 工具措辞与归档 proposal 对齐（零语义变化）；实施笔提交：git diff --cached --name-only 仅 scripts/mutation-check.sh、.github/ci/ 三脚本、spec/README.md 与本三件套（建议三件套同笔入库），红线域全空，git diff --cached --check 干净，提交信息中文、按任务组", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 3,
+    "category": "阶段 3：自测实证",
+    "task": "工具三证 + CI 脚本双向红绿自测",
+    "steps": [
+      { "step": "工具自测三证留证：①self-c 判败轮 report.txt 存在且内容正确②--out-dir 指定目录留证成功且缺省路径行为零变化（与改动前对照）③既有 self-a 全绿样例回归绿；自测不进 surefire 用例", "completed": false },
+      { "step": "CI 脚本双向自测留证：注入违规（基线缺键/断言失败场景）→ 非零退出且无空基线走到比较行的告警噪音；正常路径 → 零退出；复原后工作树与 HEAD 零 diff", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 4,
+    "category": "阶段 4：push 与 CI run 核证（分级①门禁形态）",
+    "task": "push feature 三 job 绿核证",
+    "steps": [
+      { "step": "push feature → gh 核证 CI 三 job 全绿（surefire 断言 404 与 K2 基线对齐、gate-baseline 持平断言 OK、dependency scan 绿）；CI run ID 与各 job 结论实测记录", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  },
+  {
+    "number": 5,
+    "category": "阶段 5：收口、归档与台账回填（分级①执行侧一次到底）",
+    "task": "spec-delta 合入 + --no-ff 合入 + CI 核证 + 归档 + 台账回填",
+    "steps": [
+      { "step": "spec-delta 三 Scenario 合入 agent-harness 基线（名称与正文逐字；既有 Requirement 零改动）；spec/README.md 三处常规登记；收口笔零业务代码自证（红线域 diff 全空）", "completed": false },
+      { "step": "本地 --no-ff 合入 main（双亲核验）→ push main → gh 核证 main CI 三 job 绿；三件套归档（随实施笔入库则 R100 rename，未入库则新增 A 形态并如实声明，不沿用 R100 话术）", "completed": false },
+      { "step": "台账回填：任务勾选与 evidence 按台账回填机制回填（执行实测来源如实标注；复核子 agent 终验 main 后如独立复算零出入则不再另派转录返修笔——46cac1d 形态②先例；若复核发现出入则走独立台账返修笔）；step 文本零改动、JSON 可解析自证", "completed": false }
+    ],
+    "passes": false,
+    "evidence": ""
+  }
+]

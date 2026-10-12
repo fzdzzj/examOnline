@@ -17,11 +17,14 @@ BASE="$2"
 get_baseline() {
   local v
   v=$(grep -oE "\"$1\"[[:space:]]*:[[:space:]]*[0-9]+" "$BASE" | head -n 1 | grep -oE '[0-9]+$')
-  [ -n "$v" ] || fail "baseline key missing: $1"
+  # 缺键时只返回非零、不在此处 fail——$(get_baseline) 是命令替换子壳，fail 的 exit 传不回主脚本
+  # （否则空基线会带走到后续比较行、产生参数校验告警噪音后才判败）；由调用侧 `|| fail` 干净判败。
+  [ -n "$v" ] || return 1
   echo "$v"
 }
 
-MIN_TESTS=$(get_baseline backendTests)
+# 任一检查点失败必须以非零码退出：缺键通过命令替换退出码向上传播，判败不携带空基线到比较行。
+MIN_TESTS=$(get_baseline backendTests) || fail "baseline key missing: backendTests"
 
 grep -aq "BUILD SUCCESS" "$LOG" || fail "BUILD SUCCESS banner not found in backend log"
 
