@@ -59,6 +59,45 @@ GIVEN 题库中存在填空题
 WHEN 教师按题型 5 筛选题库列表
 THEN 既有筛选链路对 5 透明生效，返回填空题
 
+#### Scenario: 上传题干图片
+
+GIVEN 教师具备 question:manage 权限
+WHEN 教师通过 POST /api/question-images 上传题干图片（单文件）
+THEN 服务端校验扩展名白名单（png/jpg/jpeg/gif/webp）+ 魔数校验防伪装 + 单文件 ≤5MB
+AND 校验通过后服务端生成 UUID 文件名存储，不采纳客户端文件名
+AND 存储成功返回 `{url}`（相对 URL `/images/{uuid}.{ext}`）
+
+#### Scenario: 上传校验拒绝
+
+GIVEN 教师上传题干图片但文件不合法或超限
+WHEN 非白名单扩展名 / 魔数不匹配 / 超大文件
+THEN 均返回 4xx 并带明确 message，不落盘
+AND 无 question:manage 权限返回 403
+
+#### Scenario: 题干图片下载
+
+GIVEN 任意请求方访问 GET /images/{filename}
+WHEN 该资源存在且文件名通过白名单正则
+THEN 返回图片内容并按扩展名回 Content-Type
+AND 文件名白名单正则防路径穿越，查无文件返回 404
+AND 公开只读（随机文件名即凭据，不可枚举）
+AND 既有快照消费方（判分/导出/监考）对快照新增 imageUrl 字段零回归
+
+#### Scenario: 建题带图
+
+GIVEN 教师创建或编辑题目
+WHEN 请求携带可选的 imageUrl
+THEN imageUrl 以 `/images/` 开头或为空（≤512），任意外链 URL 返回 400
+AND 与题型正交，五种题型均可选配
+AND 响应回显 imageUrl
+
+#### Scenario: 组卷快照携带图片
+
+GIVEN 试卷快照/考试快照/个人快照中的题目对象
+WHEN 序列化
+THEN 携带 imageUrl（无图题目为 null），既有字段映射行零改动
+AND 既有无图题目全链路（组卷/发布/拉卷/判分/回顾）逐字零回归
+
 ---
 
 ### Requirement: 批量删除题目
