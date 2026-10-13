@@ -1,0 +1,40 @@
+{
+  "change": "add-question-import-export",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：调研核实与三件套制定",
+      "status": "completed",
+      "description": "指导主 agent 完成立案前现场查证（POI 5.4.0 既有与 ExcelSheetWriter 可复用写出管道；成绩导出四下载端点的 attachment 形态先例；五题型答案口径/difficulty 三档/② image_url 契约终态；tags 教师共享全局资源 + question_tags 关联 + tagIds 语义；决策记录 12.7 容错+错误报告语义；零 DDL 前提成立故无迁移脚本）；裁决设计口径（三端点与权限点复用、模板列口径与共用列定义防漂移、仅接受已存在标签名、逐行独立事务容错、行数上限 1000 可配置整批拒绝、全量导出 round-trip、零新依赖零 DDL、九项边界不做）；编制 proposal.md 与 question-bank/frontend 两域 spec-delta。",
+      "evidence": "三件套已落盘 spec/changes/add-question-import-export/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端导入/导出/模板三端点与逐行容错（先红后绿）",
+      "status": "pending",
+      "description": "新增 QuestionImportExportController（/api/questions 命名空间，类级 @RequirePermission(\"question:manage\") 复用题库权限点）：POST /api/questions/import（multipart 单文件 xlsx；文件级前置校验：扩展名/可解析/数据行数 ≤ @Value(\"${exam.question-import.max-rows:1000}\") 超限整批 400；逐行校验按 proposal 模板列口径——题型五词、题干必填、选项A–F 与题型匹配、答案按题型口径（多选去重升序、判断 T/F、填空 | 分隔对齐 ① 归一化）、标签仅已存在标签名（逗号分隔，未知记行错误）、难度易/中/难空则对齐单条建题缺省口径、图片URL 契约同 ②；错误行跳过记 {行号,原因}，正确行入库含 question_tags 关联；逐行独立事务；响应 {imported,failed,errors}）；GET /api/questions/export（全量未软删，对齐列表查询口径；SXSSF 复用 ExcelSheetWriter；列口径与模板逐字一致；attachment 响应对齐成绩导出形态）；GET /api/questions/import-template（表头+五题型示例行+填写说明，与导入校验共用同一份列定义）。行校验优先复用 QuestionService/既有校验口径，不可复用则同口径独立实现并上报差异；QuestionController/QuestionService 既有方法体零改动（扩展走新增方法）。集成测试覆盖 spec-delta question-bank 全部 Scenario（导入成功含标签/难度/图片URL→列表可见可组卷；混合错误行→报告逐项一致且正确行入库；行数超限整批 400；学生 403/未登录 401；导出列口径与模板一致；round-trip 导出→改→再导入；模板下载 200 可解析含示例行）。pom.xml/application*.yml/schema.sql/auth-security/判分核心/PaperSnapshotService/ExcelSheetWriter 既有方法体零触碰。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：前端导入导出入口、结果弹层与 SDK（先红后绿）",
+      "status": "pending",
+      "description": "SDK 按既有方式再生成（npm.cmd --prefix frontend run gen:api，三端点自动携带）；题库管理页工具区加「导入/导出/下载模板」：导入为选择 xlsx→提交→结果弹层（成功数/失败数/行号+原因表，与后端响应逐字段一致，失败行可定位）；导出/模板为文件下载，对齐前端既有成绩导出下载形态（现场核证后复用同一工具，无既有形态则上报）；Vitest 覆盖 spec-delta frontend 全部 Scenario，遵守断言有效性纪律（无 exists 守卫/无 || 双通兜底）。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：全量门禁、变异校验、契约同步与实施笔提交",
+      "status": "pending",
+      "description": "后端 .\\mvnw.cmd clean test 全绿净增；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test 全绿净增（npm.cmd 形态+输出非空核实）；变异自证≥3 项（撤行级容错→一行错整批失败→红；撤 question:manage→学生可导入→红；撤图片URL 前缀行校验→外链入库→红；撤行数上限→超限被受理→红——任选≥3，优先 scripts/mutation-check.sh 驱动，五步原子）；openapi.yaml 按离线路径 A 重导出（paths 79→82，仅增三端点，导入端点 multipart 口径对齐 ② 修复终态，无 U+FFFD、servers.url 不降级）；.github/ci/gate-baseline.json 双端用例数与 openapiPaths 同批上调；受控修改白名单核对（openapi.yaml/gate-baseline.json/前端 questions 页与 SDK 生成物，白名单外零触碰）；红线域 git diff 为空（含 schema.sql 零改动、pom.xml 零改动、ExcelSheetWriter 既有方法体零改动）；feature/add-question-import-export 分支实施笔本地提交（先复核后收口形态：不合并/不 push/不收口，三件套随笔入库），八段回报。",
+      "evidence": ""
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：复核后收口",
+      "status": "pending",
+      "description": "复核子agent 独立复跑双端门禁与变异复现、核对红线域 diff 与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线、三件套归档 spec/changes/archive/add-question-import-export/、spec/README.md 登记行、docs/功能待办清单.md 串行队列 ③ 行状态更新（三案队列至此全部闭环）；收口笔零业务代码改动；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
+      "evidence": ""
+    }
+  ]
+}
