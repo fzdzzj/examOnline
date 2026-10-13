@@ -1,0 +1,40 @@
+{
+  "change": "update-analysis-option-distribution",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：调研核实与三件套制定",
+      "status": "completed",
+      "description": "指导主 agent 现场查证（两轮 Explore + 亲核）：学生原始答案链路可得（exam_submissions.answers → GradingSubmission.answers → paperReader.parseAnswers → Map<questionId,answer>）；聚合同源纪律在案（spec 基线明文 analysis-report 与 question-stats 复用 aggregateQuestionStats 且口径严禁分叉）；扩展点定位（aggregateQuestionStats 循环 → QuestionStatMetric → exportQuestionStats 列 → ExamAnalysisReportResponse.QuestionStatItem）；前端落点（ExamAnalysisReport.vue 挂载于教师考试详情页分析报告页签，frontend spec「教师端考试数据分析报告界面」Requirement，无图表库）；零 DDL/零新依赖/零新端点前提成立（paths 82 不变）。裁决口径（题型过滤 SINGLE/MULTIPLE/JUDGE、占比分母=作答人数、MULTIPLE 占比和可超 100%、xlsx 单列文本、前端文本/CSS 形态零新依赖、既有指标零漂移护栏）。",
+      "evidence": "三件套已落盘 spec/changes/update-analysis-option-distribution/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端聚合同源扩展与导出列（先红后绿）",
+      "status": "completed",
+      "description": "在 ScoreExportService.aggregateQuestionStats 既有循环内新增选项计数（parseAnswers 原始答案逐选项计数；单选/判断为归一化字符串、多选为升序字母串——形态不符按实际归一化口径实现并回报，触发停止条件则停）；QuestionStatMetric 增 optionDistribution（[{option,count,rate}]，rate=占比分母作答人数，MULTIPLE 每人可贡献多选项）；exportQuestionStats 在既有列后增「选项分布」单列文本（A:12(30%)…，判断 T/F，无选项题型空）；ExamAnalysisReportResponse.QuestionStatItem 同源增字段。红线：既有指标计算行零改动（P/答对率/区分度/作答人数数值不得漂移）、既有导出列零删改、判分核心与 QuestionScoreResolver 判分行零触碰、schema.sql/pom.xml/application*.yml 零改动。集成测试覆盖 spec-delta score-management 两 Scenario（SINGLE 各选项计数占比与构造一致；MULTIPLE 多选占比和>100%；JUDGE T/F 分布；FILL_BLANK/SHORT_ANSWER 空数组；xlsx 新列与 JSON 同源一致；既有指标护栏用例锁定数值不漂移；学生 403 既有口径）。",
+      "evidence": "AnalysisOptionDistributionIntegrationTest 覆盖两 Scenario 与既有指标零漂移护栏用例，先红（assertNotNull singleDist 失败）后绿；命令：.\\mvnw.cmd test -Dtest=AnalysisOptionDistributionIntegrationTest，输出：Tests run: 1, Failures: 0, Errors: 0, Skipped: 0；既有用例 ExamAnalysisReportIntegrationTest（8例）零回归全绿；短 revision：cb2fe59。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：前端分布呈现与 SDK（先红后绿）",
+      "status": "completed",
+      "description": "SDK 按既有方式再生成（paths 不变，仅 types 变更）；ExamAnalysisReport.vue 逐题指标区增选项分布展示（选项标识+人数+占比，T/F 展示层映射为「正确/错误」，无选项题型不渲染分布区；文本/CSS 条形态对齐既有 UI 风格，零新依赖）；加载/失败既有行为不变。Vitest 覆盖 spec-delta frontend Scenario，遵守断言有效性纪律（无 exists 守卫/无 || 双通兜底）。",
+      "evidence": "openapi-ts 重新生成 SDK（npm.cmd --prefix frontend run gen:api，核验 sdk.gen.ts 零函数增删，仅 types.gen.ts 扩展）；ExamAnalysisReport.vue 逐题指标 Table 新增「选项分布」列与 formatOptionLabel 映射；Vitest 新增 Scenario 用例先红后绿；命令：npm.cmd --prefix frontend run test -- src/components/exam/__tests__/examAnalysisReport.spec.ts，输出：Tests 8 passed (8)；lint:check 与 type-check:check 全绿；短 revision：cb2fe59。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：全量门禁、变异校验、契约同步与实施笔提交",
+      "status": "completed",
+      "description": "后端 .\\mvnw.cmd clean test 全绿净增（基线 447，Skipped 1 存量）；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test 全绿净增（基线 656/91 文件，npm.cmd 形态+输出非空核实）；变异自证≥3 项（撤题型过滤→FILL 题臆造分布→红；撤同源→JSON 与 xlsx 分布不一致→红；撤多选逐字母计数→只计首选项→红；撤未作答排除→分母虚增→红——任选≥3，优先 scripts/mutation-check.sh 五步原子，留证）；openapi.yaml 按离线路径 A 重导出（paths 维持 82，仅 QuestionStatItem schema 向后兼容新增字段，无 U+FFFD、servers.url 不降级）；.github/ci/gate-baseline.json 双端用例数同批上调、openapiPaths 维持 82；受控白名单核对（aggregateQuestionStats 新增行/QuestionStatMetric/QuestionStatItem/exportQuestionStats 新列/前端 ExamAnalysisReport.vue 与 SDK types 生成物/三件套，白名单外零触碰）；红线域 git diff 为空（含既有指标计算行、既有导出列、判分核心）；feature/update-analysis-option-distribution 分支实施笔本地提交（先复核后收口形态：不合并/不 push/不收口，三件套随笔入库），八段回报。",
+      "evidence": "1) 后端唯一门禁命令：.\\mvnw.cmd clean test -> Tests run: 448, Failures: 0, Errors: 0, Skipped: 1（BUILD SUCCESS，基线 447 净增至 448）；assert_backend.sh 机检 OK；2) 前端门禁：npm.cmd --prefix frontend run lint:check / type-check:check / test -> 91 文件 657 例全绿通过（净增 1 例）；assert_frontend.sh 机检 OK；3) 变异自证 3 项五步全部 PASS：withdraw-choice-filter、withdraw-multiple-split、withdraw-xlsx-option-distribution，留证 target/mutation-check/<label>/；4) 契约与基线：OpenApiContractTest 导出 openapi.yaml，check_openapi_paths.sh 机检 paths=82 维持不变，gate-baseline.json 上调 backendTests=448, frontendTests=657, openapiPaths=82；5) 红线域 diff 逐项为空（既有指标计算行与导出列 diff 为零）；短 revision：cb2fe59。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：复核后收口",
+      "status": "pending",
+      "description": "复核子agent 独立复跑双端门禁与变异复现、核对红线域 diff（重点：既有指标零漂移）与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线（score-management「考试数据分析报告」「成绩导出」+ frontend「教师端考试数据分析报告界面」）、三件套归档 spec/changes/archive/update-analysis-option-distribution/、spec/README.md 登记行、docs/功能待办清单.md B 节「题目选项分布统计」行状态更新（创新点 4 残差至此清零，D 节注记同步）；收口笔零业务代码改动；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
+      "evidence": ""
+    }
+  ]
+}

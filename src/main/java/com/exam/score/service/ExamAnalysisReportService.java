@@ -281,6 +281,13 @@ public class ExamAnalysisReportService {
             Double scoreRate = metric.answeredCount() == 0 || max == 0
                     ? null : metric.scoreRate();
             Double correctRate = metric.answeredCount() == 0 ? null : metric.correctRate();
+            List<ExamAnalysisReportResponse.OptionDistributionItem> optionDistribution =
+                    metric.optionDistribution() == null
+                            ? List.of()
+                            : metric.optionDistribution().stream()
+                                    .map(d -> new ExamAnalysisReportResponse.OptionDistributionItem(
+                                            d.option(), d.count(), d.rate()))
+                                    .toList();
             items.add(new ExamAnalysisReportResponse.QuestionStatItem(
                     question.number(),
                     labelOfType(question.type()),
@@ -289,7 +296,8 @@ public class ExamAnalysisReportService {
                     scoreRate,
                     correctRate,
                     metric.discrimination(),
-                    metric.answeredCount()));
+                    metric.answeredCount(),
+                    optionDistribution));
         }
         return items;
     }
