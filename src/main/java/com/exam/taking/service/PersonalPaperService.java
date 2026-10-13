@@ -81,6 +81,7 @@ public class PersonalPaperService {
                     question.get("questionId").asLong(),
                     question.get("type").asInt(),
                     question.get("content").asText(),
+                    question.path("imageUrl").asText(null),
                     question.get("choices"),
                     question.get("score").decimalValue()));
         }

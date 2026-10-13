@@ -30,6 +30,9 @@ public class PaperQuestionItemResponse {
     /** 题干（题目已删除时为 null） */
     private String content;
 
+    /** 题干图片相对 URL（add-question-image；题目已删除时为 null，无图为 null） */
+    private String imageUrl;
+
     /** 选项文本列表 */
     private List<String> choices;
 

@@ -173,6 +173,52 @@ describe('学生错题本页面 (student/wrong-questions)', () => {
     expect(correctCell.text()).toContain('北京 / beijing');
   });
 
+  it('错题本题干图（add-question-image）：含图条目渲染图片、无图条目零回归', async () => {
+    vi.mocked(myWrongQuestions).mockResolvedValueOnce({
+      total: 1,
+      page: 1,
+      size: 10,
+      groups: [
+        {
+          examId: 104,
+          examTitle: '带图考试',
+          wrongQuestions: [
+            {
+              questionId: 41,
+              questionNumber: 1,
+              questionType: '简答',
+              questionContent: '看图作答',
+              imageUrl: '/images/wrong-img.png',
+              myAnswer: '答',
+              correctAnswer: '标准',
+              myScore: 3,
+              fullScore: 6,
+            },
+            {
+              questionId: 42,
+              questionNumber: 2,
+              questionType: '单选',
+              questionContent: '无图单选题',
+              myAnswer: 'A',
+              correctAnswer: 'B',
+              myScore: 0,
+              fullScore: 4,
+            },
+          ],
+        },
+      ],
+    } as never);
+
+    const wrapper = mount(WrongQuestionsPage);
+    await flushPromises();
+
+    const image = wrapper.find('[data-test="question-image"]');
+    expect(image.exists()).toBe(true);
+    expect(image.attributes('src')).toBe('/images/wrong-img.png');
+    // 无图条目不渲染：整页只有含图错题那一张
+    expect(wrapper.findAll('[data-test="question-image"]').length).toBe(1);
+  });
+
   it('空态：无错题时展示「暂无错题」正向空态，不弹错误 Alert', async () => {
     vi.mocked(myWrongQuestions).mockResolvedValueOnce({
       total: 0,

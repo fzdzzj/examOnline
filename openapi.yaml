@@ -566,6 +566,27 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseBatchDeleteQuestionsResponse"
+  /api/question-images:
+    post:
+      tags:
+      - question-image-controller
+      operationId: upload
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseQuestionImageUploadResponse"
   /api/papers:
     get:
       tags:
@@ -2129,6 +2150,11 @@ components:
           type: string
           maxLength: 5000
           minLength: 0
+        imageUrl:
+          type: string
+          maxLength: 512
+          minLength: 0
+          pattern: ^(|/images/.*)$
         choices:
           type: array
           items:
@@ -2185,6 +2211,8 @@ components:
         typeName:
           type: string
         content:
+          type: string
+        imageUrl:
           type: string
         choices:
           type: array
@@ -2296,6 +2324,8 @@ components:
           type: integer
           format: int32
         content:
+          type: string
+        imageUrl:
           type: string
         choices:
           type: array
@@ -2636,6 +2666,21 @@ components:
           format: int64
         reason:
           type: string
+    ApiResponseQuestionImageUploadResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/QuestionImageUploadResponse"
+    QuestionImageUploadResponse:
+      type: object
+      properties:
+        url:
+          type: string
     PaperCreateRequest:
       type: object
       properties:
@@ -2824,6 +2869,8 @@ components:
         typeName:
           type: string
         content:
+          type: string
+        imageUrl:
           type: string
         score:
           type: number
@@ -3313,6 +3360,8 @@ components:
           format: int32
         content:
           type: string
+        imageUrl:
+          type: string
         choices:
           $ref: "#/components/schemas/JsonNode"
         score:
@@ -3645,6 +3694,8 @@ components:
           type: string
         questionContent:
           type: string
+        imageUrl:
+          type: string
         choices:
           type: array
           items:
@@ -3699,6 +3750,8 @@ components:
         questionType:
           type: string
         questionContent:
+          type: string
+        imageUrl:
           type: string
         choices:
           type: array
@@ -4272,6 +4325,8 @@ components:
           type: integer
           format: int32
         content:
+          type: string
+        imageUrl:
           type: string
         score:
           type: number

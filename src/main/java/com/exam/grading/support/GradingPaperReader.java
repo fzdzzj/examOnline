@@ -76,6 +76,8 @@ public class GradingPaperReader {
                     node.get("questionId").asLong(),
                     type,
                     node.get("content").asText(),
+                    // imageUrl 为快照新增字段（add-question-image）：旧快照缺字段/显式 null 均按无图
+                    node.path("imageUrl").asText(null),
                     choices,
                     node.path("correctAnswer").asText(""),
                     node.get("score").decimalValue()));

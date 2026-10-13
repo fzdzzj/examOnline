@@ -187,4 +187,57 @@ describe('查分页逐题回顾入口与弹层 (student/scores)', () => {
     expect(document.body.textContent).toContain('北京 / beijing');
     expect(document.body.textContent).toContain('中国的首都是 ____');
   });
+
+  it('逐题回顾题干图（add-question-image）：含图题目渲染图片、无图题目零回归', async () => {
+    vi.mocked(myExams).mockResolvedValueOnce([
+      { examId: 104, title: '带图考试', status: 3 },
+    ] as never);
+    vi.mocked(myScore).mockResolvedValueOnce({
+      examId: 104,
+      examTitle: '带图考试',
+      totalScore: 10,
+      reviewing: false,
+    } as never);
+    vi.mocked(myExamReview).mockResolvedValueOnce({
+      examId: 104,
+      examTitle: '带图考试',
+      studentName: '王五',
+      totalScore: 10,
+      questions: [
+        {
+          questionId: 31,
+          questionNumber: 1,
+          questionType: '简答',
+          questionContent: '看图作答',
+          imageUrl: '/images/review-img.png',
+          myAnswer: '答',
+          correctAnswer: '标准',
+          myScore: 6,
+          fullScore: 6,
+        },
+        {
+          questionId: 32,
+          questionNumber: 2,
+          questionType: '单选',
+          questionContent: '无图单选题',
+          myAnswer: 'A',
+          correctAnswer: 'A',
+          myScore: 4,
+          fullScore: 4,
+        },
+      ],
+    } as never);
+
+    const wrapper = mount(StudentScoresPage);
+    (wrapper.vm as unknown as { selectedExamId?: number }).selectedExamId = 104;
+    await flushPromises();
+    await wrapper.find('[data-test="review-exam-btn"]').trigger('click');
+    await flushPromises();
+
+    const image = document.body.querySelector('[data-test="question-image"]');
+    expect(image).not.toBeNull();
+    expect((image as HTMLImageElement | null)?.getAttribute('src')).toBe('/images/review-img.png');
+    // 无图题不渲染图片：全弹层只有含图题那一张
+    expect(document.body.querySelectorAll('[data-test="question-image"]').length).toBe(1);
+  });
 });

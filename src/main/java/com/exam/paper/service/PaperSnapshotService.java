@@ -201,6 +201,12 @@ public class PaperSnapshotService {
             node.put("questionId", question.getId());
             node.put("type", question.getType());
             node.put("content", question.getContent());
+            // imageUrl 在题库存单值（add-question-image），null→putNull 对齐 choices 模式
+            if (question.getImageUrl() == null) {
+                node.putNull("imageUrl");
+            } else {
+                node.put("imageUrl", question.getImageUrl());
+            }
             // choices 在题库存 JSON 字符串，解析后嵌入（判断/简答为 null）
             if (question.getChoices() == null) {
                 node.putNull("choices");

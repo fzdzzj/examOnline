@@ -403,17 +403,17 @@ class ObjectiveGradingServiceTest {
 
     private GradingQuestion singleChoice(long questionId, int number) {
         return new GradingQuestion(number, questionId, QuestionType.SINGLE,
-                "单选题", List.of("A", "B"), "A", new BigDecimal("5"));
+                "单选题", null, List.of("A", "B"), "A", new BigDecimal("5"));
     }
 
     private GradingQuestion judge(long questionId, int number) {
         return new GradingQuestion(number, questionId, QuestionType.JUDGE,
-                "判断题", null, "T", new BigDecimal("4"));
+                "判断题", null, null, "T", new BigDecimal("4"));
     }
 
     private GradingQuestion shortAnswer(long questionId, int number, String keywords, String score) {
         return new GradingQuestion(number, questionId, QuestionType.SHORT_ANSWER,
-                "简答题", null, keywords, new BigDecimal(score));
+                "简答题", null, null, keywords, new BigDecimal(score));
     }
 
     private static AbstractWrapper<?, ?, ?> asAbstractWrapper(Object wrapper) {

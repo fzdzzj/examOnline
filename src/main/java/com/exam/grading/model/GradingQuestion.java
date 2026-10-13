@@ -17,6 +17,7 @@ import java.util.List;
  * @param questionId    题目真实主键（作答与判分的对齐键）
  * @param type          题型（策略分派依据）
  * @param content       题干（工作台/个人成绩单展示）
+ * @param imageUrl      题干图片相对 URL（快照携带，add-question-image；无图为 null）
  * @param choices       客观题选项内容列表（判断/简答为 null）
  * @param correctAnswer 归一化标准答案（阶段 3 AnswerNormalizer 口径：单选字母/多选升序字母列表/判断 T-F/简答原文）
  * @param score         试卷内分值（快照锁定，覆盖题库默认分）
@@ -26,6 +27,7 @@ public record GradingQuestion(
         Long questionId,
         QuestionType type,
         String content,
+        String imageUrl,
         List<String> choices,
         String correctAnswer,
         BigDecimal score) {

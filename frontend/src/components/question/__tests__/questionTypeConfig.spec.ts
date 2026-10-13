@@ -27,6 +27,7 @@ function validDraft(
   const draft: QuestionFormDraft = {
     type,
     content: '题干',
+    imageUrl: '',
     choices: objective
       ? [
           { text: '选项甲', isCorrect: true },
@@ -246,6 +247,14 @@ describe('草稿 ↔ 契约请求转换', () => {
     expect(toCreateRequest(withTags).tagIds).toEqual([7, 9]);
     expect(toCreateRequest(validDraft({ type: 3 })).tagIds).toEqual([]);
   });
+
+  it('题干图片（add-question-image）：非空 URL trim 后随表单提交，空串=移除图片（后端归一为 null）', () => {
+    const withImage = validDraft({ type: 4, imageUrl: '  /images/aaa.png  ' });
+    expect(toCreateRequest(withImage).imageUrl).toBe('/images/aaa.png');
+
+    const removed = validDraft({ type: 4, imageUrl: '' });
+    expect(toCreateRequest(removed).imageUrl).toBe('');
+  });
 });
 
 describe('编辑回填 draftFromResponse', () => {
@@ -285,5 +294,12 @@ describe('编辑回填 draftFromResponse', () => {
 
     const empty = draftFromResponse({ id: 15, type: 5, correctAnswer: '' });
     expect(empty.acceptedAnswers).toEqual(['']);
+  });
+
+  it('题干图片回填（add-question-image）：响应 imageUrl 进草稿；缺省按无图（空串）', () => {
+    expect(draftFromResponse({ id: 16, type: 4, imageUrl: '/images/bbb.png' }).imageUrl).toBe(
+      '/images/bbb.png'
+    );
+    expect(draftFromResponse({ id: 17, type: 4 }).imageUrl).toBe('');
   });
 });

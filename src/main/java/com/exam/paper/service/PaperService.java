@@ -444,10 +444,10 @@ public class PaperService {
     private PaperQuestionItemResponse toItem(PaperQuestion row, Question question) {
         if (question == null) {
             return new PaperQuestionItemResponse(row.getQuestionId(), row.getNumber(), row.getScore(),
-                    null, null, List.of(), null, null, true);
+                    null, null, null, List.of(), null, null, true);
         }
         return new PaperQuestionItemResponse(row.getQuestionId(), row.getNumber(), row.getScore(),
-                question.getType(), question.getContent(),
+                question.getType(), question.getContent(), question.getImageUrl(),
                 questionService.parseChoices(question.getChoices()),
                 question.getCorrectAnswer(), question.getScore(), false);
     }
@@ -462,7 +462,7 @@ public class PaperService {
     private RandomDrawPreviewResponse.DrawnQuestion toDrawn(Question question) {
         QuestionType type = QuestionType.of(question.getType());
         return new RandomDrawPreviewResponse.DrawnQuestion(question.getId(), question.getType(),
-                type == null ? null : type.getLabel(), question.getContent(),
+                type == null ? null : type.getLabel(), question.getContent(), question.getImageUrl(),
                 question.getScore(), question.getDifficulty());
     }
 

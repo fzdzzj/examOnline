@@ -29,6 +29,9 @@ public class Question {
     /** 题干 */
     private String content;
 
+    /** 题干图片相对 URL（add-question-image）：/images/{uuid}.{ext}，可选单图；与题型正交 */
+    private String imageUrl;
+
     /** 客观题选项 JSON 数组（如 ["选项A","选项B"]，按顺序对应 A/B/...）；判断/简答为 null */
     private String choices;
 

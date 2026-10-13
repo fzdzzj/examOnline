@@ -279,6 +279,7 @@
                 <li v-for="question in ruleResult.questions ?? []" :key="question.id" class="mb-1">
                   <Tag>{{ question.typeName ?? typeLabelOf(question.type) }}</Tag>
                   {{ question.content }}
+                  <QuestionImage :src="question.imageUrl" />
                   <span class="text-gray-400">
                     默认 {{ question.score }} 分 · 难度 {{ difficultyLabelOf(question.difficulty) }}
                   </span>
@@ -313,6 +314,8 @@
               <span :class="record.questionDeleted ? 'text-gray-400' : ''">
                 {{ record.questionDeleted ? '原题目已被删除，仅保留占位与分值' : record.content }}
               </span>
+              <!-- 题干图片（add-question-image）：已删题 imageUrl 为 null 天然不渲染 -->
+              <QuestionImage :src="record.imageUrl" />
             </template>
             <template v-else-if="column.key === 'score'">
               <template v-if="!isLocked">
@@ -429,6 +432,7 @@ import { useRoute } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 
 import QuestionPickerModal from '@/components/question/QuestionPickerModal.vue';
+import QuestionImage from '@/components/question/QuestionImage.vue';
 import {
   addQuestions,
   commitRandomDraw,

@@ -7,6 +7,7 @@ export type ClientOptions = {
 export type QuestionCreateRequest = {
     type: number;
     content: string;
+    imageUrl?: string;
     choices?: Array<string>;
     correctAnswer: string;
     score: number;
@@ -26,6 +27,7 @@ export type QuestionResponse = {
     type?: number;
     typeName?: string;
     content?: string;
+    imageUrl?: string;
     choices?: Array<string>;
     correctAnswer?: string;
     score?: number;
@@ -75,6 +77,7 @@ export type PaperQuestionItemResponse = {
     score?: number;
     questionType?: number;
     content?: string;
+    imageUrl?: string;
     choices?: Array<string>;
     correctAnswer?: string;
     defaultScore?: number;
@@ -236,6 +239,16 @@ export type FailedItem = {
     reason?: string;
 };
 
+export type ApiResponseQuestionImageUploadResponse = {
+    code?: number;
+    message?: string;
+    data?: QuestionImageUploadResponse;
+};
+
+export type QuestionImageUploadResponse = {
+    url?: string;
+};
+
 export type PaperCreateRequest = {
     title: string;
     description?: string;
@@ -318,6 +331,7 @@ export type DrawnQuestion = {
     type?: number;
     typeName?: string;
     content?: string;
+    imageUrl?: string;
     score?: number;
     difficulty?: number;
 };
@@ -539,6 +553,7 @@ export type QuestionView = {
     questionId?: number;
     type?: number;
     content?: string;
+    imageUrl?: string;
     choices?: JsonNode;
     score?: number;
 };
@@ -695,6 +710,7 @@ export type WrongQuestionItem = {
     questionNumber?: number;
     questionType?: string;
     questionContent?: string;
+    imageUrl?: string;
     choices?: Array<string>;
     myAnswer?: string;
     correctAnswer?: string;
@@ -722,6 +738,7 @@ export type ExamReviewQuestionItem = {
     questionNumber?: number;
     questionType?: string;
     questionContent?: string;
+    imageUrl?: string;
     choices?: Array<string>;
     myAnswer?: string;
     correctAnswer?: string;
@@ -1008,6 +1025,7 @@ export type SubjectiveQuestionItem = {
     questionId?: number;
     number?: number;
     content?: string;
+    imageUrl?: string;
     score?: number;
     totalStudents?: number;
     gradedStudents?: number;
@@ -1603,6 +1621,24 @@ export type BatchDeleteResponses = {
 };
 
 export type BatchDeleteResponse = BatchDeleteResponses[keyof BatchDeleteResponses];
+
+export type UploadData = {
+    body?: {
+        file?: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/question-images';
+};
+
+export type UploadResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseQuestionImageUploadResponse;
+};
+
+export type UploadResponse = UploadResponses[keyof UploadResponses];
 
 export type Page1Data = {
     body?: never;

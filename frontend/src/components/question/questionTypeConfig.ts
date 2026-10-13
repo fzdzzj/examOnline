@@ -136,6 +136,8 @@ export interface ChoiceDraft {
 export interface QuestionFormDraft {
   type: QuestionTypeCode;
   content: string;
+  /** 题干图片相对 URL（add-question-image）：上传成功回填 /images/{uuid}.{ext}，移除置空 */
+  imageUrl: string;
   choices: ChoiceDraft[];
   /** 判断题答案：只存后端约定的 'T'/'F'（硬约定 4，见文件头注释） */
   judgeAnswer: 'T' | 'F' | '';
@@ -160,6 +162,7 @@ export function createEmptyDraft(type: QuestionTypeCode): QuestionFormDraft {
   return {
     type,
     content: '',
+    imageUrl: '',
     choices: config.showChoices ? [0, 1].map(() => ({ text: '', isCorrect: false })) : [],
     judgeAnswer: '',
     shortAnswer: '',
@@ -187,6 +190,7 @@ export function draftFromResponse(response: QuestionResponse): QuestionFormDraft
   return {
     type,
     content: response.content ?? '',
+    imageUrl: response.imageUrl ?? '',
     choices: (response.choices ?? []).map((text, index) => ({
       text,
       isCorrect: correctLetters.includes(letterOfIndex(index)),
@@ -306,6 +310,8 @@ export function toCreateRequest(draft: QuestionFormDraft): QuestionCreateRequest
   return {
     type: draft.type,
     content: draft.content.trim(),
+    // imageUrl 恒传：空串 = 移除图片（后端归一为 null），非空 = 上传端点返回的相对 URL
+    imageUrl: draft.imageUrl.trim(),
     ...(config.showChoices ? { choices: draft.choices.map((choice) => choice.text.trim()) } : {}),
     correctAnswer,
     score: draft.score as number,

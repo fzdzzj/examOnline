@@ -133,12 +133,12 @@ class ScoreServiceTest {
 
     private GradingQuestion shortAnswer(long questionId, int number) {
         return new GradingQuestion(number, questionId, QuestionType.SHORT_ANSWER,
-                "简答题" + number, null, "参考答案", new BigDecimal("10"));
+                "简答题" + number, null, null, "参考答案", new BigDecimal("10"));
     }
 
     private GradingQuestion singleChoice(long questionId, int number) {
         return new GradingQuestion(number, questionId, QuestionType.SINGLE,
-                "单选题" + number, List.of("A", "B"), "A", new BigDecimal("5"));
+                "单选题" + number, null, List.of("A", "B"), "A", new BigDecimal("5"));
     }
 
     private void loginAs(Long userId, int roleLevel) {

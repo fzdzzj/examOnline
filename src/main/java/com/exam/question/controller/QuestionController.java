@@ -115,6 +115,7 @@ public class QuestionController {
                 QuestionType.of(question.getType()) == null ? null
                         : QuestionType.of(question.getType()).getLabel(),
                 question.getContent(),
+                question.getImageUrl(),
                 questionService.parseChoices(question.getChoices()),
                 question.getCorrectAnswer(),
                 question.getScore(),

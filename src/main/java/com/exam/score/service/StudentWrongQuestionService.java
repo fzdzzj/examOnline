@@ -157,6 +157,7 @@ public class StudentWrongQuestionService {
                     item.setQuestionNumber(q.number());
                     item.setQuestionType(labelOf(q.type()));
                     item.setQuestionContent(q.content());
+                    item.setImageUrl(q.imageUrl());
                     item.setChoices(q.choices());
 
                     // 学生答案与正确答案真实映射（非空串占位）
@@ -225,6 +226,7 @@ public class StudentWrongQuestionService {
             item.setQuestionNumber(q.number());
             item.setQuestionType(labelOf(q.type()));
             item.setQuestionContent(q.content());
+            item.setImageUrl(q.imageUrl());
             item.setChoices(q.choices());
 
             String myAns = report.answers() != null ? report.answers().get(q.questionId()) : null;

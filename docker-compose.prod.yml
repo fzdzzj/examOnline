@@ -90,6 +90,10 @@ services:
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: "${RABBITMQ_USERNAME:?必填 RABBITMQ_USERNAME}"
       RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD:?必填 RABBITMQ_PASSWORD}"
+      # 题干图片存储目录（add-question-image）：覆盖 @Value 默认值，指向命名卷持久化
+      QUESTION_IMAGE_DIR: /data/question-images
+    volumes:
+      - question-images-data:/data/question-images
     healthcheck:
       # 核心就绪以 DB 组件为准：/actuator/health/db 返回 UP 即应用已连上主库。
       # 不 gate 在 mail 等辅助组件上——冒烟/本地的 SMTP 无有效凭据会使 mail 组件 DOWN，
@@ -193,3 +197,6 @@ volumes:
   slave-prod-data:
   redis-prod-data:
   rabbitmq-prod-data:
+  # 题干图片持久卷（add-question-image）：图片是运行时业务数据（含用户上传内容），
+  # 随 app 容器走命名卷存续；卷内不做生命周期清理（孤儿图片物理清理另行立项）。
+  question-images-data:

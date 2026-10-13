@@ -137,6 +137,29 @@ describe('QuestionAnswerCard 题型分支', () => {
   });
 });
 
+describe('QuestionAnswerCard 题干图片（add-question-image）', () => {
+  it('imageUrl 非空：题干下方渲染图片（src 原样，相对 URL 同源直用）', () => {
+    const wrapper = mountCard({ ...SINGLE, imageUrl: '/images/abc-123.png' });
+    const img = wrapper.find('[data-test="question-image"]');
+    expect(img.attributes('src')).toBe('/images/abc-123.png');
+    expect(img.attributes('alt')).toBeTruthy();
+  });
+
+  it('imageUrl 为 null/缺省：不渲染任何图片元素（既有无图题目零回归）', () => {
+    const wrapper = mountCard(SINGLE);
+    expect(wrapper.find('[data-test="question-image"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="question-image-fallback"]').exists()).toBe(false);
+  });
+
+  it('图片加载失败：显示占位文案且不阻塞作答控件', async () => {
+    const wrapper = mountCard({ ...SINGLE, imageUrl: '/images/abc-123.png' });
+    await wrapper.find('[data-test="question-image"]').trigger('error');
+    expect(wrapper.find('[data-test="question-image-fallback"]').text()).toContain('图片加载失败');
+    // 作答控件不受影响（占位不阻塞作答）
+    expect(wrapper.findComponent(RadioGroup).exists()).toBe(true);
+  });
+});
+
 describe('QuestionAnswerCard 归零锁定', () => {
   it('locked 时五种控件全部 disabled', () => {
     const cases: Array<[QuestionView, Component]> = [

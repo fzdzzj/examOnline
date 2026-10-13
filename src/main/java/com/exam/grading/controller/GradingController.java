@@ -9,9 +9,12 @@ import com.exam.grading.dto.SubjectiveGradePageResponse;
 import com.exam.grading.dto.SubjectiveGradeRow;
 import com.exam.grading.dto.SubjectiveQuestionItem;
 import com.exam.grading.dto.SubjectiveScoreRequest;
+import com.exam.grading.model.GradingPaper;
+import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.service.ExamGradingService;
 import com.exam.grading.service.GradingQueryService;
 import com.exam.grading.service.SubjectiveGradingService;
+import com.exam.grading.support.GradingPaperReader;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +24,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 教师判分接口（add-grading-score，W7）：
@@ -44,13 +49,16 @@ public class GradingController {
     private final ExamGradingService examGradingService;
     private final GradingQueryService gradingQueryService;
     private final SubjectiveGradingService subjectiveGradingService;
+    private final GradingPaperReader paperReader;
 
     public GradingController(ExamGradingService examGradingService,
                              GradingQueryService gradingQueryService,
-                             SubjectiveGradingService subjectiveGradingService) {
+                             SubjectiveGradingService subjectiveGradingService,
+                             GradingPaperReader paperReader) {
         this.examGradingService = examGradingService;
         this.gradingQueryService = gradingQueryService;
         this.subjectiveGradingService = subjectiveGradingService;
+        this.paperReader = paperReader;
     }
 
     /**
@@ -101,7 +109,16 @@ public class GradingController {
     /** 待批题目清单：快照简答题 + 各题批改进度（已批/需批人数）。 */
     @GetMapping("/subjective/questions")
     public ApiResponse<List<SubjectiveQuestionItem>> subjectiveQuestions(@PathVariable Long examId) {
-        return ApiResponse.success(subjectiveGradingService.listQuestions(examId));
+        List<SubjectiveQuestionItem> items = subjectiveGradingService.listQuestions(examId);
+        // 题干图（add-question-image）：清单由红线域 SubjectiveGradingService 装配，此处不再回改其
+        // 既有方法体；imageUrl 以快照为事实源（工作台展示与学生所见同一来源）在 Controller 层补齐。
+        GradingPaper paper = paperReader.readByExamId(examId);
+        Map<Long, String> imageByQuestion = new HashMap<>();
+        for (GradingQuestion question : paper.questions()) {
+            imageByQuestion.put(question.questionId(), question.imageUrl());
+        }
+        items.forEach(item -> item.setImageUrl(imageByQuestion.get(item.getQuestionId())));
+        return ApiResponse.success(items);
     }
 
     /**

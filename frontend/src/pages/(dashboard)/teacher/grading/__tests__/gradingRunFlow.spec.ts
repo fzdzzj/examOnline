@@ -210,4 +210,27 @@ describe('教师批改工作台显式运行判分', () => {
       wrapper.findAllComponents(Alert).some((alert) => alert.text().includes('判分完成'))
     ).toBe(false);
   });
+
+  it('批改工作台题干图（add-question-image）：主观题清单含图渲染、无图零回归', async () => {
+    queryStore.data.grading = [
+      {
+        questionId: 21,
+        number: 1,
+        content: '带图简答题',
+        imageUrl: '/images/grading-img.png',
+        score: 10,
+      },
+      { questionId: 22, number: 2, content: '无图简答题', score: 10 },
+    ];
+    const wrapper = mount(TeacherGradingPage, { attachTo: document.body });
+    await selectExam(wrapper, ENDED_EXAM.id);
+
+    const image = wrapper.find('[data-test="question-image"]');
+    expect(image.exists()).toBe(true);
+    expect(image.attributes('src')).toBe('/images/grading-img.png');
+    // 无图题不渲染：整表只有含图题那一张
+    expect(wrapper.findAll('[data-test="question-image"]').length).toBe(1);
+    expect(wrapper.text()).toContain('带图简答题');
+    expect(wrapper.text()).toContain('无图简答题');
+  });
 });
