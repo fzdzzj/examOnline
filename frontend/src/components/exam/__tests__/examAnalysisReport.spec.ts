@@ -225,4 +225,83 @@ describe('考试数据分析报告组件', () => {
     // 不落在硬编码 60（前端已被下发值取代）
     expect(wrapper.text()).not.toContain('低于及格线 60 分');
   });
+
+  it('逐题选项分布呈现：单选/多选展示选项+人数+占比，判断题映射「正确/错误」，无选项题型不渲染分布', async () => {
+    vi.mocked(api.analysisReport).mockResolvedValue({
+      ...REPORT,
+      questionStats: [
+        {
+          order: 1,
+          type: '单选',
+          fullScore: 4,
+          averageScore: 3,
+          scoreRate: 0.75,
+          correctRate: 0.75,
+          answeredCount: 28,
+          optionDistribution: [
+            { option: 'A', count: 18, rate: 0.6429 },
+            { option: 'B', count: 6, rate: 0.2143 },
+            { option: 'C', count: 4, rate: 0.1429 },
+            { option: 'D', count: 0, rate: 0.0 },
+          ],
+        },
+        {
+          order: 2,
+          type: '多选',
+          fullScore: 6,
+          averageScore: 4.5,
+          scoreRate: 0.75,
+          correctRate: 0.5,
+          answeredCount: 28,
+          optionDistribution: [
+            { option: 'A', count: 20, rate: 0.7143 },
+            { option: 'B', count: 15, rate: 0.5357 },
+            { option: 'C', count: 10, rate: 0.3571 },
+          ],
+        },
+        {
+          order: 3,
+          type: '判断',
+          fullScore: 4,
+          averageScore: 3.5,
+          scoreRate: 0.875,
+          correctRate: 0.875,
+          answeredCount: 28,
+          optionDistribution: [
+            { option: 'T', count: 24, rate: 0.8571 },
+            { option: 'F', count: 4, rate: 0.1429 },
+          ],
+        },
+        {
+          order: 4,
+          type: '简答',
+          fullScore: 6,
+          averageScore: 4,
+          scoreRate: 0.67,
+          correctRate: 0.5,
+          answeredCount: 28,
+          optionDistribution: [],
+        },
+      ],
+    } as never);
+
+    const wrapper = mountReport();
+    await flushPromises();
+    await flushPromises();
+
+    // 单选题：选项标识 + 人数 + 占比
+    expect(wrapper.text()).toContain('A: 18人 (64%)');
+    expect(wrapper.text()).toContain('B: 6人 (21%)');
+
+    // 多选题：选项标识 + 人数 + 占比
+    expect(wrapper.text()).toContain('A: 20人 (71%)');
+    expect(wrapper.text()).toContain('B: 15人 (54%)');
+
+    // 判断题：T/F 展示层映射为「正确/错误」
+    expect(wrapper.text()).toContain('正确: 24人 (86%)');
+    expect(wrapper.text()).toContain('错误: 4人 (14%)');
+    // 判断题展示层不应暴露原始 T/F 标识
+    expect(wrapper.text()).not.toContain('T: 24人');
+    expect(wrapper.text()).not.toContain('F: 4人');
+  });
 });
