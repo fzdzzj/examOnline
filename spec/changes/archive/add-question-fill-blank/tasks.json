@@ -32,9 +32,9 @@
     {
       "id": 5,
       "title": "阶段 5：复核后收口",
-      "status": "pending",
+      "status": "completed",
       "description": "复核子agent 独立复跑双端门禁与变异复现、核对红线域 diff 与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线、三件套归档 spec/changes/archive/add-question-fill-blank/、README/spec README 登记行；收口笔零业务代码改动；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
-      "evidence": ""
+      "evidence": "收口（复核子agent 独立复验 PASS 后，全链引用复核实测、不采信自证）。复核六项 PASS：后端 `mvnw.cmd clean test` → Tests run 429, Failures 0, Errors 0, Skipped 1, BUILD SUCCESS（基线 423，净增 6）；前端 `npm.cmd --prefix frontend run test` → 88 文件 636 例全通过（基线 630，净增 6）；变异三项（撤忽略大小写 / 撤多答案任一命中 / 撤 trim）经 `scripts/mutation-check.sh` 各五步原子 PASS（击红—复原逐字节一致—回绿）；红线域（判分核心既有方法体 ExamGradingService/ObjectiveGradingService/SubjectiveGradingService、com.exam.clazz、ScoreService/MakeupScoreService、schema.sql 结构、openapi.yaml 结构、既有 spec 基线、pom.xml）零改动；执行侧回报与独立实测零失真。本收口实测：`git merge --no-ff feature/add-question-fill-blank`（main@1192a7e，无冲突）→ 合并笔 0af42a8；合并后双端门禁各复跑一次——后端 Tests run 429, Failures 0, Errors 0, Skipped 1, BUILD SUCCESS；前端 88 文件 636 例全通过（gate-baseline.json 已于实施笔 9152b5c 同批上调 429/636/78，收口零改动）；收口笔 1069166（spec-delta 三域合入 + R100 归档 + spec/README 登记，零业务代码）；CI 终态 run 38364574471（headSha 1069166，run completed 且 conclusion=success，三 job 全 success：backend gate / frontend gate / dependency scan）。spec-delta 合入：question-bank「题目管理」追加 4 Scenario（含裁定项文案精确化——「填空题答案校验拒绝」的「单项含 |」子例改为前端录入边界预校验 + 服务端线格式说明）、「答案归一化」追加 2 Scenario；grading 末尾 ADDED「填空题自动判分」Requirement（5 Scenario）；frontend「题库管理界面」追加「填空题录入」、「在线考试作答界面」追加「填空作答渲染」、「查分页逐题回顾入口与弹层」追加「逐题回顾填空展示」（spec-delta 的「学生作答」两条按语义分放两处，经指导侧确认）；根 README.md 为纯路由索引（AGENTS.md 纪律），本案无新增可路由文件/配置，经指导侧确认仅登记 spec/README.md、根 README 不动。三件套 R100 移入 spec/changes/archive/add-question-fill-blank/（仅 proposal.md / spec-delta.md / tasks.json，本案无 evidence/ 目录）。spec/README.md 三处登记（当前状态收口句 + question-bank/grading/frontend 来源列 + 归档表行）。备注（复核指出的低风险非阻断项，如实登记、不代拟）：两处测试覆盖缺口——① 填空草稿保存恢复无专项用例；② 大小写命中时 student_answer 原文存档无直接断言。复核报告的 O1/O2 两项观察项明细未随本收口任务提供，以复核回报为准。实施笔 25c0052（后端）+ 9152b5c（前端与门禁）。本笔为收口回填笔（纯台账，零业务代码）；本笔之后 HEAD 的 CI 终态由终验以 gh 实测核证（自引用限制）。"
     }
   ]
 }
