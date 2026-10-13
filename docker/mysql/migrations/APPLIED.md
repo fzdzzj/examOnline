@@ -38,6 +38,7 @@
 | 2026-W38-add-audit-log-time-index.sql | audit_log 补 idx_audit_time | 1061 | A2 | 已应用（索引在）·2026-10-11 12:16 @ c4425b0 | 同主库·2026-10-11 12:16 @ c4425b0 |
 | 2026-W38-add-republish-index.sql | exam_submissions 补虚拟列 answers_missing + idx_submissions_republish | 1060、1061 | A1 + A2 | 已应用（列与索引均在）·2026-10-11 12:16 @ c4425b0 | 同主库·2026-10-11 12:16 @ c4425b0 |
 | 2026-W40-add-submissions-student-index.sql | exam_submissions 补 idx_submissions_student | 1061（**本仓实测吻合**：重复执行报 `ERROR 1061 Duplicate key name 'idx_submissions_student'`，对象无变化） | A2 + A5 | 已应用（**2026-10-11 本案补应用**：应用前 ABSENT → 应用后索引在，EXPLAIN 按 student_id 查询实走本索引 type=ref；复跑 1061 对象无变化）·2026-10-11 12:23 @ c4425b0 | 已应用（由复制同步：应用后主从 GTID 对齐、秒级延迟 0，索引与 EXPLAIN 与主库一致）·2026-10-11 12:23 @ c4425b0 |
+| 2026-W41-add-exam-reservation.sql | exam_reservations（5 列）、user_messages（7 列）两表 + exams 补 reservation_required 列 | 表 IF NOT EXISTS 重复执行不报错（**实测吻合**：两表静默跳过）；列 1060（**实测吻合**：重复执行报 `ERROR 1060 (42S21) at line 51: Duplicate column name 'reservation_required'`，对象无变化） | A3 + A1 + A2 + A4 + A5 | 已应用（2/2 表 + exams 列在；索引形状 uk_reservation_exam_student(exam_id,student_id)、idx_reservations_exam(exam_id)、idx_user_messages_user(user_id,id) + 两表各含 PRIMARY(id)，缺主键清单空；EXPLAIN 按 exam_id 查询走 uk_reservation_exam_student——唯一前缀优先于 idx_reservations_exam，后者在 possible_keys 且 FORCE INDEX 下 type=ref 实证可用，按 user_id 倒序查询走 idx_user_messages_user）·2026-10-13 10:51 @ 720eab1 | 已应用（由复制同步：主从 GTID 对齐、秒级延迟 0，对象与 EXPLAIN 与主库逐项一致）·2026-10-13 10:51 @ 720eab1 |
 
 ### 核验 SQL（A1–A5，对象级口径）
 
