@@ -150,6 +150,23 @@ class QuestionImageIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void uploadAcceptsMultipartPartViaRequestPart() throws Exception {
+        // 复核阻断项 §7 修复：上传端点注解由 @RequestParam 迁移为 @RequestPart + consumes=multipart/form-data。
+        // MockMvc.multipart 经 @RequestPart 绑定 multipart part——确认注解迁移后上传链路无行为回归；
+        // multipart-only 口径由 OpenApiImageUploadContractGuardTest 在契约层锁定
+        // （JSON 请求不再可达控制器，落既有 Exception 兜底，非本修复回归）。
+        String teacher = registerTeacher();
+        JsonNode upload = perform(multipart("/api/question-images")
+                        .file(new MockMultipartFile("file", "part.png",
+                                MediaType.IMAGE_PNG_VALUE, PNG_BYTES))
+                        .header("Authorization", bearer(teacher)), 200)
+                .get("data");
+        assertTrue(upload.get("url").asText().matches(
+                        "^/images/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.png$"),
+                "url 应为 /images/{uuid}.png：实际 " + upload.get("url").asText());
+    }
+
+    @Test
     void downloadRejectsNonWhitelistedFilenameEvenIfFileExists() throws Exception {
         // 存储目录内真实放置一个非 UUID 形态文件名：白名单仍必须 404（防任意文件被服务/路径穿越）
         Path dir = Paths.get(imageDir);

@@ -7,9 +7,10 @@ import com.exam.common.ResponseCode;
 import com.exam.question.dto.QuestionImageUploadResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,7 +26,11 @@ import java.util.UUID;
 /**
  * 题干图片上传端点（add-question-image）：
  * <ul>
- *   <li>{@code POST /api/question-images}：multipart 单文件。类级
+ *   <li>{@code POST /api/question-images}：multipart 单文件（复核阻断项修复：
+ *       {@code @RequestPart("file")} + {@code consumes = multipart/form-data}，使 springdoc 契约
+ *       如实导出 multipart/form-data + binary，SDK 生成 FormData 序列化调用——此前
+ *       {@code @RequestParam MultipartFile} 被导出为 application/json，生成 SDK 发 JSON
+ *       导致浏览器端上传恒 400）。类级
  *       {@code @RequirePermission("question:manage")} 复用题库权限点（零 RBAC 表变更）；</li>
  *   <li>安全校验链（全部先于落盘）：扩展名白名单（png/jpg/jpeg/gif/webp）→
  *       魔数校验防伪装（扩展名与文件头逐一对应）→ 单文件 ≤5MB；</li>
@@ -72,9 +77,9 @@ public class QuestionImageController {
         this.maxBytes = maxSizeMb * 1024 * 1024;
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<QuestionImageUploadResponse> upload(
-            @RequestParam(value = "file", required = false) MultipartFile file) {
+            @RequestPart(value = "file", required = false) MultipartFile file) {
         if (file == null) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "请选择图片文件");
         }
