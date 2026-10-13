@@ -32,9 +32,9 @@
     {
       "id": 5,
       "title": "阶段 5：复核后收口",
-      "status": "pending",
+      "status": "completed",
       "description": "复核子agent 独立复跑双端门禁与变异复现、核对红线域 diff 与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线、三件套归档 spec/changes/archive/add-question-image/、spec/README.md 登记行；收口笔零业务代码改动；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）；W42 迁移 dev 应用时机由用户另行裁决派发，不随本案收口。",
-      "evidence": ""
+      "evidence": "①收口执行摘要：--no-ff 合并笔 da94a0f（main@97b260e 上无冲突，feature/add-question-image 直系三笔合入）；spec-delta 两域合入基线（question-bank「题目管理」追加 5 Scenario：上传题干图片/上传校验拒绝/题干图片下载/建题带图/组卷快照携带图片；frontend「题库管理界面」「在线考试作答界面」「查分页逐题回顾入口与弹层」各追加 1 Scenario），既有约束引用节不重复正文、契约节作合入注记；三件套归档 spec/changes/archive/add-question-image/（proposal.md/spec-delta.md/tasks.json 纯 rename 零内容改动）；spec/README.md 能力域表 question-bank/frontend 两行各追加登记项 + 归档表新增本卡行。②复核独立实测引用（数值均来自复核独立复跑，未自造/改动）：全量复核 VERDICT 六项 PASS、变异 m1–m4 击红-复原-回绿；修复笔定点复核——后端 .\\mvnw.cmd clean test → Tests run 438, Failures: 0, Errors: 0, Skipped: 1 BUILD SUCCESS（实施 429→435，修复笔 +护栏 2 例 + 集成 1 例 → 438）；前端 lint:check/type-check:check exit 0 + vitest 90 文件 649 例一次全绿（实施 636→648，修复笔 +uploadFormDataGuard 1 例 → 649）；双护栏 g1（openapi 回退 JSON 口径击红）/g2（SDK 撤 FormData 序列化击红 '{\"file\":{}}' oracle）击红-复原-回绿；gate-baseline.json 终值 438/649/79；openapiPaths 实施 78→79。③收口段 CI 终态 run id：合并笔 38407440420（push 触发，backend/frontend/dependency-scan 三 job 均 success）、收口笔 38408492135（同三 job 均 success）。收口笔 8b878af 与回填笔均为零业务代码（git diff 仅 spec/README.md、spec/specs/{question-bank,frontend}/spec.md 与三件套 rename/tasks.json 回填）。W42 迁移脚本入库、dev 应用由用户另行裁决派发，未随本案收口。"
     }
   ]
 }
