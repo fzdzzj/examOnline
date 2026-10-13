@@ -90,6 +90,27 @@ class AnswerNormalizerTest {
         assertEquals("参考答案内容", AnswerNormalizer.normalize(QuestionType.SHORT_ANSWER, "  参考答案内容  ", 0));
     }
 
+    // ==================== 填空题 -> | 分隔的可接受答案列表 ====================
+
+    @Test
+    void fillBlankTrimsSplitsDropsEmptyAndRejoins() {
+        // trim 首尾 + 各项再 trim + 以 | 重组
+        assertEquals("答案1|答案2", AnswerNormalizer.normalize(QuestionType.FILL_BLANK, "  答案1 | 答案2  ", 0));
+        // 空项剔除（连续/首尾分隔符产生的空项）
+        assertEquals("a|b", AnswerNormalizer.normalize(QuestionType.FILL_BLANK, "a|| b |", 0));
+        // 单答案（单空最常见形态）
+        assertEquals("北京", AnswerNormalizer.normalize(QuestionType.FILL_BLANK, "  北京  ", 0));
+    }
+
+    @Test
+    void fillBlankEmptyListRejected() {
+        // 拆完无有效项（全为空项）→ 空答案列表拒绝
+        assertThrows(BusinessException.class,
+                () -> AnswerNormalizer.normalize(QuestionType.FILL_BLANK, "|", 0));
+        assertThrows(BusinessException.class,
+                () -> AnswerNormalizer.normalize(QuestionType.FILL_BLANK, " || ", 0));
+    }
+
     @Test
     void blankAnswerRejected() {
         assertThrows(BusinessException.class,

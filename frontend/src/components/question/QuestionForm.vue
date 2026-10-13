@@ -93,6 +93,37 @@
         />
       </FormItem>
 
+      <FormItem v-if="config.answerKind === 'fill'" label="可接受答案" required>
+        <div
+          v-for="(item, index) in draft.acceptedAnswers"
+          :key="index"
+          class="mb-2 flex items-center gap-2"
+        >
+          <Input
+            :value="item"
+            :maxlength="512"
+            :placeholder="`可接受答案 ${index + 1}`"
+            :aria-label="`可接受答案 ${index + 1}`"
+            class="flex-1"
+            @update:value="(value: string) => (draft.acceptedAnswers[index] = value)"
+          />
+          <Button
+            size="small"
+            danger
+            :disabled="draft.acceptedAnswers.length <= 1"
+            @click="removeAcceptedAnswer(index)"
+          >
+            删除
+          </Button>
+        </div>
+        <Button size="small" @click="addAcceptedAnswer">
+          + 添加可接受答案（{{ draft.acceptedAnswers.length }}）
+        </Button>
+        <div class="mt-1 text-gray-500">
+          命中任一即满分；中文精确匹配、英文忽略大小写；单项不可含 | 分隔符
+        </div>
+      </FormItem>
+
       <FormItem label="默认分值" required>
         <InputNumber v-model:value="draft.score" :min="0.5" :max="999.9" :step="0.5" class="w-40" />
         <span class="ml-2 text-gray-500">0.5–999.9，组卷时可在试卷内覆盖，不影响题库</span>
@@ -204,7 +235,7 @@ const tagOptions = computed(() =>
   (tags.value ?? []).map((tag) => ({ value: tag.id as number, label: tag.name ?? String(tag.id) }))
 );
 
-/** 切题型时只修正选项区形态，其余字段保留教师已录入内容。 */
+/** 切题型时只修正选项区/可接受答案区形态，其余字段保留教师已录入内容。 */
 watch(
   () => draft.value.type,
   (type) => {
@@ -216,6 +247,9 @@ watch(
       return;
     }
     draft.value.choices = [];
+    if (nextConfig.answerKind === 'fill' && draft.value.acceptedAnswers.length === 0) {
+      draft.value.acceptedAnswers = [''];
+    }
   }
 );
 
@@ -240,6 +274,16 @@ function addChoice(): void {
 function removeChoice(index: number): void {
   if (draft.value.choices.length <= config.value.minChoices) return;
   draft.value.choices.splice(index, 1);
+}
+
+/** 填空题：增删可接受答案项（至少保留 1 项，与后端「非空列表」口径一致）。 */
+function addAcceptedAnswer(): void {
+  draft.value.acceptedAnswers.push('');
+}
+
+function removeAcceptedAnswer(index: number): void {
+  if (draft.value.acceptedAnswers.length <= 1) return;
+  draft.value.acceptedAnswers.splice(index, 1);
 }
 
 function onCancel(): void {

@@ -51,7 +51,7 @@ public class QuestionController {
 
     /**
      * 分页查询题目：page 从 1 起；
-     * 筛选参数均可选——type（1单选 2多选 3判断 4简答）、difficulty（1易 2中 3难）、tagId、keyword（题干模糊）。
+     * 筛选参数均可选——type（1单选 2多选 3判断 4简答 5填空）、difficulty（1易 2中 3难）、tagId、keyword（题干模糊）。
      */
     @GetMapping
     public ApiResponse<QuestionPageResponse> page(@RequestParam(defaultValue = "1") long page,

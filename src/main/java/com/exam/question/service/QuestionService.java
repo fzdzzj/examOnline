@@ -264,10 +264,11 @@ public class QuestionService {
 
     /**
      * 选项校验：单选/多选必须提供 2-26 个非空选项（对应 A-Z）；
-     * 判断/简答忽略选项。
+     * 判断/简答/填空忽略选项。
      */
     private List<String> validateChoices(QuestionType type, List<String> choices) {
-        if (type == QuestionType.JUDGE || type == QuestionType.SHORT_ANSWER) {
+        if (type == QuestionType.JUDGE || type == QuestionType.SHORT_ANSWER
+                || type == QuestionType.FILL_BLANK) {
             return List.of();
         }
         if (choices == null || choices.size() < 2) {
@@ -281,7 +282,7 @@ public class QuestionService {
         return choices;
     }
 
-    /** 选项列表 -> JSON 数组字符串（判断/简答传入空列表，存 null）。 */
+    /** 选项列表 -> JSON 数组字符串（判断/简答/填空传入空列表，存 null）。 */
     private String toJson(List<String> choices) {
         if (choices.isEmpty()) {
             return null;

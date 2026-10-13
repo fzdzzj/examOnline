@@ -83,9 +83,15 @@
                       <span class="font-medium">我的作答：</span>
                       <span>{{ item.myAnswer ? item.myAnswer : '（未作答）' }}</span>
                     </div>
-                    <div class="text-green-600">
-                      <span class="font-medium">正确答案：</span>
-                      <span>{{ item.correctAnswer ? item.correctAnswer : '（无）' }}</span>
+                    <div class="text-green-600" data-test="wrong-correct-answer">
+                      <template v-if="isFillBlankType(item.questionType)">
+                        <span class="font-medium">可接受答案（命中任一即可）：</span>
+                        <span>{{ acceptedAnswersOf(item.correctAnswer).join(' / ') }}</span>
+                      </template>
+                      <template v-else>
+                        <span class="font-medium">正确答案：</span>
+                        <span>{{ item.correctAnswer ? item.correctAnswer : '（无）' }}</span>
+                      </template>
                     </div>
                   </div>
 
@@ -133,6 +139,7 @@ import dayjs from 'dayjs';
 import { myWrongQuestions, type WrongQuestionPageResponse } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { ApiError } from '@/api/types';
+import { acceptedAnswersOf, isFillBlankType } from '@/utils/questionTypes';
 
 const currentPage = ref(1);
 const pageSize = ref(10);

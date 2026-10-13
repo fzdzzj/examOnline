@@ -25,9 +25,9 @@ public class RandomDrawRequest {
     @Data
     public static class Rule {
 
-        /** 题型：1单选 2多选 3判断 4简答（可选） */
+        /** 题型：1单选 2多选 3判断 4简答 5填空（可选） */
         @Min(value = 1, message = "非法题型")
-        @Max(value = 4, message = "非法题型")
+        @Max(value = 5, message = "非法题型")
         private Integer type;
 
         /** 难度：1易 2中 3难（可选） */

@@ -43,6 +43,16 @@
       @update:value="onSingle"
     />
 
+    <!-- 填空：单行文本输入；不展示任何可接受答案提示（学生端不泄露答案） -->
+    <Input
+      v-else-if="kind === 'fill'"
+      :value="textValue"
+      :disabled="locked"
+      placeholder="请输入答案"
+      data-test="answer-fill"
+      @update:value="onText"
+    />
+
     <!-- 简答：原文提交，不做前端截断（长度上限由后端校验，前端截了会静默丢字） -->
     <Textarea
       v-else
@@ -64,7 +74,7 @@
 /**
  * 单题作答控件（阶段 22 第 1 片）。
  *
- * 四种题型共用这一份骨架，分支由 `questionTypeConfig.QUESTION_TYPE_CONFIGS` 的
+ * 五种题型共用这一份骨架，分支由 `questionTypeConfig.QUESTION_TYPE_CONFIGS` 的
  * `answerKind` + `correctMode` 驱动——**复用阶段 20 的题型配置驱动做法**，但那是编辑表单、
  * 这里是作答控件，所以字段清单与录入校验都不带过来（学生不需要也不该看到"正确项"）。
  *
@@ -75,7 +85,7 @@
  * `locked`（倒计时归零）是硬约束：不仅控件置 disabled，emit 前还再判一次——
  * 只靠 disabled 属于"浏览器帮你挡住"，改判成本太低。
  */
-import { Alert, Card, CheckboxGroup, RadioGroup, Textarea } from 'ant-design-vue';
+import { Alert, Card, CheckboxGroup, Input, RadioGroup, Textarea } from 'ant-design-vue';
 import { computed } from 'vue';
 
 import type { QuestionView } from '@/api/axios';
@@ -106,7 +116,7 @@ const JUDGE_OPTIONS = [
   { value: 'F', label: '错误' },
 ];
 
-type AnswerKind = 'single' | 'multiple' | 'judge' | 'text' | 'unsupported';
+type AnswerKind = 'single' | 'multiple' | 'judge' | 'text' | 'fill' | 'unsupported';
 
 const kind = computed<AnswerKind>(() => {
   const config = QUESTION_TYPE_CONFIGS[props.question.type as QuestionTypeCode];

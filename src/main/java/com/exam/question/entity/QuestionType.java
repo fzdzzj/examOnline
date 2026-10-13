@@ -2,7 +2,7 @@ package com.exam.question.entity;
 
 /**
  * 题型枚举：与 questions.type 列及前端约定一致。
- * 仅 4 类（单选/多选/判断/简答），代码/公式/听力/口语等题型已在方案中裁剪。
+ * 共 5 类（单选/多选/判断/简答/填空），代码/公式/听力/口语等题型已在方案中裁剪。
  */
 public enum QuestionType {
 
@@ -13,7 +13,9 @@ public enum QuestionType {
     /** 判断题：答案归一化为 T/F */
     JUDGE(3, "判断"),
     /** 简答题：答案为参考答案原文 */
-    SHORT_ANSWER(4, "简答");
+    SHORT_ANSWER(4, "简答"),
+    /** 填空题：单空，答案为以 `|` 分隔的可接受答案列表（客观自动判分） */
+    FILL_BLANK(5, "填空");
 
     private final int code;
     private final String label;

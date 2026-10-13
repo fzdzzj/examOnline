@@ -14,7 +14,9 @@ import java.util.TreeSet;
  *   <li>单选：单个大写选项字母，如 {@code A}；</li>
  *   <li>多选：去重升序的选项字母列表（逗号分隔），如 {@code A,B,C}，消除录入顺序歧义；</li>
  *   <li>判断：只存 {@code T}/{@code F}（"正确/对/A/是/√" 归一为 T，"错误/错/B/否/×" 归一为 F）；</li>
- *   <li>简答：参考答案原文，仅去首尾空白。</li>
+ *   <li>简答：参考答案原文，仅去首尾空白；</li>
+ *   <li>填空：多个可接受答案以 {@code |} 分隔（如 {@code 答案1|答案2}），trim 首尾后拆分、
+ *       各项再 trim、空项剔除、以 {@code |} 重组。</li>
  * </ul>
  */
 public final class AnswerNormalizer {
@@ -51,7 +53,30 @@ public final class AnswerNormalizer {
             case MULTIPLE -> normalizeMultiple(rawAnswer, choiceCount);
             case JUDGE -> normalizeJudge(rawAnswer.trim());
             case SHORT_ANSWER -> rawAnswer.trim();
+            case FILL_BLANK -> normalizeFillBlank(rawAnswer);
         };
+    }
+
+    /**
+     * 填空：多个可接受答案以 {@code |} 分隔——trim 首尾后拆分、各项再 trim、空项剔除，
+     * 以 {@code |} 重组为归一化串。空列表（拆完无有效项）报错，防"录入了空答案"入库。
+     */
+    private static String normalizeFillBlank(String raw) {
+        StringBuilder sb = new StringBuilder();
+        for (String part : raw.split("\\|", -1)) {
+            String item = part.trim();
+            if (item.isEmpty()) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('|');
+            }
+            sb.append(item);
+        }
+        if (sb.length() == 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "填空答案不能为空");
+        }
+        return sb.toString();
     }
 
     /** 单选：一个大写选项字母，且必须在选项范围内。 */
