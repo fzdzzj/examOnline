@@ -300,6 +300,7 @@ public class ExamAnalysisReportService {
             case MULTIPLE -> "多选";
             case JUDGE -> "判断";
             case SHORT_ANSWER -> "简答";
+            case FILL_BLANK -> "填空";
         };
     }
 

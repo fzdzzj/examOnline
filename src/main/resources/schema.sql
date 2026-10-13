@@ -77,16 +77,16 @@ CREATE TABLE IF NOT EXISTS invite_codes (
 
 -- =============================================================
 -- 题库与组卷六表（add-question-bank）
--- 题型仅 4 类：1单选 2多选 3判断 4简答（其余题型已裁剪，见 docs/面试版实施方案.md §2.3）
+-- 题型 5 类：1单选 2多选 3判断 4简答 5填空（其余题型已裁剪，见 docs/面试版实施方案.md §2.3）
 -- =============================================================
 
 -- 题目表：软删除（is_deleted），被组卷/快照引用后删除不影响历史
 CREATE TABLE IF NOT EXISTS questions (
     id             BIGINT       NOT NULL AUTO_INCREMENT,
-    type           TINYINT      NOT NULL,            -- 1单选 2多选 3判断 4简答
+    type           TINYINT      NOT NULL,            -- 1单选 2多选 3判断 4简答 5填空
     content        TEXT         NOT NULL,            -- 题干
-    choices        TEXT,                             -- 客观题选项 JSON 数组，如 ["选项A","选项B"]；判断/简答为 NULL
-    correct_answer VARCHAR(512) NOT NULL,            -- 归一化答案：单选字母/多选升序字母列表/判断 T-F/简答参考答案
+    choices        TEXT,                             -- 客观题选项 JSON 数组，如 ["选项A","选项B"]；判断/简答/填空为 NULL
+    correct_answer VARCHAR(512) NOT NULL,            -- 归一化答案：单选字母/多选升序字母列表/判断 T-F/简答参考答案/填空以 | 分隔的可接受答案列表
     score          DECIMAL(5,1) NOT NULL DEFAULT 5,  -- 默认分值（组卷可在试卷内覆盖，互不影响）
     difficulty     TINYINT      NOT NULL DEFAULT 1,  -- 1易 2中 3难
     analysis       TEXT,                             -- 答案解析

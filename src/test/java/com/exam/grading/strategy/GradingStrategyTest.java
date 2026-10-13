@@ -30,6 +30,7 @@ class GradingStrategyTest {
     private MultipleChoiceGradingStrategy multiple;
     private JudgeGradingStrategy judge;
     private ShortAnswerGradingStrategy shortAnswer;
+    private FillBlankGradingStrategy fillBlank;
 
     @BeforeEach
     void setUp() {
@@ -37,6 +38,7 @@ class GradingStrategyTest {
         multiple = new MultipleChoiceGradingStrategy();
         judge = new JudgeGradingStrategy();
         shortAnswer = new ShortAnswerGradingStrategy();
+        fillBlank = new FillBlankGradingStrategy();
     }
 
     private GradingQuestion question(QuestionType type, String correctAnswer, double score) {
@@ -157,13 +159,47 @@ class GradingStrategyTest {
         assertEquals(0, shortAnswer.grade(q, null, config).score().compareTo(BigDecimal.ZERO));
     }
 
+    // ==================== 填空 ====================
+
+    @Test
+    @DisplayName("填空：中文精确命中、多答案任一命中、trim 后命中、未命中0分")
+    void fillBlankExactAndAnyAccepted() {
+        // 标准答案 "北京|beijing"（归一化后），命中任一可接受答案即满分
+        GradingQuestion q = question(QuestionType.FILL_BLANK, "北京|beijing", 5);
+        assertTrue(fillBlank.grade(q, "北京", config).correct());
+        assertEquals(0, fillBlank.grade(q, "北京", config).score().compareTo(BigDecimal.valueOf(5)));
+        assertTrue(fillBlank.grade(q, "beijing", config).correct(), "命中第二项可接受答案");
+        // 学生答案仅 trim，不改写原文
+        assertTrue(fillBlank.grade(q, "  北京  ", config).correct(), "trim 后命中");
+        assertFalse(fillBlank.grade(q, "上海", config).correct());
+        assertEquals(0, fillBlank.grade(q, "上海", config).score().compareTo(BigDecimal.ZERO));
+        assertTrue(fillBlank.grade(q, "Beijing", config).correct(), "第二项可接受答案同样忽略大小写");
+        // 未作答 0 分（不是判分失败）
+        assertEquals(0, fillBlank.grade(q, null, config).score().compareTo(BigDecimal.ZERO));
+        assertEquals(0, fillBlank.grade(q, "  ", config).score().compareTo(BigDecimal.ZERO));
+    }
+
+    @Test
+    @DisplayName("填空：纯英文字母答案忽略大小写；含非字母字符只走精确匹配")
+    void fillBlankCaseInsensitiveForEnglishLetters() {
+        GradingQuestion q = question(QuestionType.FILL_BLANK, "Http", 4);
+        assertTrue(fillBlank.grade(q, "http", config).correct());
+        assertTrue(fillBlank.grade(q, "HTTP", config).correct());
+        assertTrue(fillBlank.grade(q, "  hTTp ", config).correct());
+
+        // 含非字母字符：不做忽略大小写，只认精确
+        GradingQuestion code = question(QuestionType.FILL_BLANK, "a1", 4);
+        assertTrue(fillBlank.grade(code, "a1", config).correct());
+        assertFalse(fillBlank.grade(code, "A1", config).correct());
+    }
+
     // ==================== 策略注册 ====================
 
     @Test
     @DisplayName("策略注册中心：按题型分派，重复注册快速失败")
     void registryDispatch() {
         GradingStrategyRegistry registry = new GradingStrategyRegistry(
-                List.of(single, multiple, judge, shortAnswer));
+                List.of(single, multiple, judge, shortAnswer, fillBlank));
         GradingQuestion q = question(QuestionType.SINGLE, "A", 5);
         assertTrue(registry.dispatch(q) instanceof SingleChoiceGradingStrategy);
         assertTrue(registry.dispatch(question(QuestionType.MULTIPLE, "A", 5))
@@ -171,6 +207,8 @@ class GradingStrategyTest {
         assertTrue(registry.dispatch(question(QuestionType.JUDGE, "T", 5)) instanceof JudgeGradingStrategy);
         assertTrue(registry.dispatch(question(QuestionType.SHORT_ANSWER, "x", 5))
                 instanceof ShortAnswerGradingStrategy);
+        assertTrue(registry.dispatch(question(QuestionType.FILL_BLANK, "x", 5))
+                instanceof FillBlankGradingStrategy);
 
         // 同题型两个实现：装配事故必须快速失败，不能随机分派
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
