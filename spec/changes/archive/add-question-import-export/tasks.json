@@ -32,9 +32,9 @@
     {
       "id": 5,
       "title": "阶段 5：复核后收口",
-      "status": "pending",
+      "status": "completed",
       "description": "复核子agent 独立复跑双端门禁与变异复现、核对红线域 diff 与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线、三件套归档 spec/changes/archive/add-question-import-export/、spec/README.md 登记行、docs/功能待办清单.md 串行队列 ③ 行状态更新（三案队列至此全部闭环）；收口笔零业务代码改动；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
-      "evidence": ""
+      "evidence": "①收口执行摘要：--no-ff 合并笔 1acfbab（main@5a239f3 上无冲突，feature/add-question-import-export 直系四笔合入）；spec-delta 两域合入基线（question-bank「题目管理」追加 3 Scenario：题库导入模板下载/题库批量导入（容错与错误报告）/题库导出与 round-trip；frontend「题库管理界面」追加 1 Scenario：批量导入导出入口与结果呈现），既有约束引用节不重复正文、契约节作合入注记；三件套归档 spec/changes/archive/add-question-import-export/（proposal.md/spec-delta.md/tasks.json 纯 rename 零内容改动）；spec/README.md 能力域表 question-bank/frontend 两行各追加登记项 + 归档表新增本卡行；docs/功能待办清单.md A 节 ③ 行状态更新为已闭环并注明三案串行队列至此全部闭环；docs/主Agent执行指南.md 指针随笔入库。②复核独立实测引用（数值均来自复核独立复跑，未自造/改动）：后端 .\\mvnw.cmd clean test → Tests run: 447, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS；前端 lint:check/type-check:check 零 error，--testTimeout=60000 下 91 文件 656 例全绿（默认 5s 首跑 32 例超时为既有慢机环境性，非缺陷）；变异 m1–m4 复核独立重建五步原子全 PASS（击红逐一命中登记 oracle，cmp 复原字节一致 + 标志归零 + 回绿）；VERDICT 六项 PASS、零阻断、证据链对账（执行侧文件数过计 18→实测 17 已勘正）；低风险观察：导入答案长度无 app 层校验（DB 兜底、文案不对称，收口后小修）；gate-baseline.json 终值 447/656/82（backend 438→447，frontend 649→656，openapiPaths 79→82）；零 DDL 无迁移脚本。③收口段 CI 终态 run id：合并笔 38431379831（push 触发，backend/frontend/dependency-scan 三 job 均 success）、收口笔 38433461980（同三 job 均 success）。收口笔 11a4343 与回填笔均为零业务代码（git diff 仅 spec/README.md、spec/specs/{question-bank,frontend}/spec.md、三件套 rename/tasks.json 回填与 docs）。"
     }
   ]
 }
