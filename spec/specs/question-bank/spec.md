@@ -98,6 +98,18 @@ WHEN 序列化
 THEN 携带 imageUrl（无图题目为 null），既有字段映射行零改动
 AND 既有无图题目全链路（组卷/发布/拉卷/判分/回顾）逐字零回归
 
+#### Scenario: 题库导入模板下载
+
+教师（question:manage 权限）GET /api/questions/import-template 下载 xlsx 模板：固定列序（题型/题干/选项A–F/答案/标签/难度/图片URL）+ 五题型示例行 + 填写说明；模板产出与导入校验共用同一份列定义，不漂移。
+
+#### Scenario: 题库批量导入（容错与错误报告）
+
+POST /api/questions/import（multipart xlsx）逐行校验：错误行（坏题型/答案与题型不匹配/选项不足/未知标签名/图片URL 非 /images/ 前缀等）跳过并记 {行号, 原因}，正确行入库（含标签关联、难度、图片URL），逐行独立事务；响应 {imported, failed, errors} 即报告，不持久化；数据行数超上限（默认 1000，可配置）整批 400；无 question:manage 权限 403。
+
+#### Scenario: 题库导出与 round-trip
+
+GET /api/questions/export 全量导出未软删题目，列口径与导入模板逐字一致（导出→修改→再导入可用）；SXSSF 流式写出（复用既有 ExcelSheetWriter，防 OOM）；响应为 xlsx 附件下载（对齐既有成绩导出 attachment 形态）。
+
 ---
 
 ### Requirement: 批量删除题目

@@ -61,4 +61,4 @@
 
 ## 6. 起手指针
 
-入口先读 `README.md` 的阅读路由；需要当前任务看 `spec/README.md` 和对应的 `spec/changes/<change-id>/`，需要业务边界看 `spec/specs/<capability>/spec.md`；需了解本机历史坑再查 `docs/指导Agent交接文档.md` 的对应小节。环境、测试数字、已完成事项以现场与各自真源为准，本指南不另设一套。
+入口先读 `README.md` 的阅读路由；需要当前任务看 `spec/README.md` 和对应的 `spec/changes/<change-id>/`，需要业务边界看 `spec/specs/<capability>/spec.md`；需要规划下一案功能时看 `docs/功能待办清单.md`（串行队列与候选池的唯一登记处，裁决与立案状态以该文件为准）；需了解本机历史坑再查 `docs/指导Agent交接文档.md` 的对应小节。环境、测试数字、已完成事项以现场与各自真源为准，本指南不另设一套。
