@@ -43,6 +43,7 @@ class GradingStrategyTest {
 
     private GradingQuestion question(QuestionType type, String correctAnswer, double score) {
         return new GradingQuestion(1, 100L, type, "题干",
+                null,
                 type == QuestionType.SINGLE || type == QuestionType.MULTIPLE
                         ? List.of("选项A", "选项B", "选项C", "选项D") : null,
                 correctAnswer, BigDecimal.valueOf(score));

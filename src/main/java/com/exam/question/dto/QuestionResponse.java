@@ -24,6 +24,9 @@ public class QuestionResponse {
 
     private String content;
 
+    /** 题干图片相对 URL /images/{uuid}.{ext}（add-question-image，无图为 null） */
+    private String imageUrl;
+
     /** 选项文本列表（判断/简答为空列表） */
     private List<String> choices;
 

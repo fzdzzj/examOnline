@@ -18,6 +18,9 @@ public class SubjectiveQuestionItem {
     /** 题干（工作台左侧题目列表展示） */
     private String content;
 
+    /** 题干图片相对 URL（add-question-image；快照事实源，无图为 null） */
+    private String imageUrl;
+
     /** 本题满分 */
     private BigDecimal score;
 

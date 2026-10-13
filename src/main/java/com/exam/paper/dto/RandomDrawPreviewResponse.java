@@ -52,6 +52,9 @@ public class RandomDrawPreviewResponse {
 
         private String content;
 
+        /** 题干图片相对 URL（add-question-image；无图为 null） */
+        private String imageUrl;
+
         private BigDecimal score;
 
         private Integer difficulty;

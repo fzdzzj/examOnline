@@ -74,6 +74,7 @@ public class QuestionService {
         Question question = new Question();
         question.setType(type.getCode());
         question.setContent(request.getContent().trim());
+        question.setImageUrl(imageUrlOf(request.getImageUrl()));
         question.setChoices(toJson(choices));
         question.setCorrectAnswer(AnswerNormalizer.normalize(type, request.getCorrectAnswer(), choices.size()));
         question.setScore(request.getScore());
@@ -101,6 +102,7 @@ public class QuestionService {
 
         question.setType(type.getCode());
         question.setContent(request.getContent().trim());
+        question.setImageUrl(imageUrlOf(request.getImageUrl()));
         question.setChoices(toJson(choices));
         question.setCorrectAnswer(AnswerNormalizer.normalize(type, request.getCorrectAnswer(), choices.size()));
         question.setScore(request.getScore());
@@ -305,6 +307,15 @@ public class QuestionService {
         } catch (JsonProcessingException e) {
             return List.of();
         }
+    }
+
+    /**
+     * 图片地址入库归一（add-question-image）：空/纯空白按无图（null）存储，
+     * 非空去首尾空白（上传端点返回的 URL 恒为干净形态，此处仅兜底手输空格）。
+     * 格式约束（/images/ 前缀、≤512）由 DTO 校验先行拦截。
+     */
+    private String imageUrlOf(String imageUrl) {
+        return StringUtils.hasText(imageUrl) ? imageUrl.trim() : null;
     }
 
     private LoginUser requireLogin() {

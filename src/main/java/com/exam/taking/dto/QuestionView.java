@@ -27,6 +27,9 @@ public class QuestionView {
 
     private String content;
 
+    /** 题干图片相对 URL（add-question-image；个人快照携带，无图为 null） */
+    private String imageUrl;
+
     /** 选项数组（个人快照内已乱序锁定；判断/简答为 null） */
     private JsonNode choices;
 

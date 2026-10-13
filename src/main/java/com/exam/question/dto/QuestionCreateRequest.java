@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -30,6 +31,15 @@ public class QuestionCreateRequest {
     @NotBlank(message = "题干不能为空")
     @Size(max = 5000, message = "题干最长 5000 字")
     private String content;
+
+    /**
+     * 题干图片相对 URL（add-question-image，可选）：须以 /images/ 开头或为空——
+     * 服务端校验防任意外链注入（上传端点返回的 URL 恒为 /images/{uuid}.{ext}，
+     * 下载端点另有文件名白名单正则兜底，非白名单文件名一律 404）。
+     */
+    @Size(max = 512, message = "图片地址最长 512 字")
+    @Pattern(regexp = "^(|/images/.*)$", message = "图片地址必须以 /images/ 开头")
+    private String imageUrl;
 
     /** 客观题选项文本（单选/多选必填 2-26 项）；判断/简答无需提供 */
     @Size(max = 26, message = "选项最多 26 个")

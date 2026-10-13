@@ -64,9 +64,9 @@ class ScoreExportServiceSkipRankGuardTest {
     private final Exam exam = exam();
 
     private final GradingQuestion q1 = new GradingQuestion(1, 11L, QuestionType.SINGLE,
-            "单选1", java.util.List.of("A", "B"), "A", new BigDecimal("4.0"));
+            "单选1", null, java.util.List.of("A", "B"), "A", new BigDecimal("4.0"));
     private final GradingQuestion q2 = new GradingQuestion(2, 12L, QuestionType.SINGLE,
-            "单选2", java.util.List.of("C", "D"), "C", new BigDecimal("6.0"));
+            "单选2", null, java.util.List.of("C", "D"), "C", new BigDecimal("6.0"));
     private final GradingPaper paper = new GradingPaper(900L, "试卷", new BigDecimal("10.0"),
             java.util.List.of(q1, q2));
     private final GradingSubmission submission = gradedSubmission();

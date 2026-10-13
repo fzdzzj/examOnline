@@ -22,6 +22,9 @@ public class ExamReviewQuestionItem {
     /** 题干 */
     private String questionContent;
 
+    /** 题干图片相对 URL（add-question-image；快照事实源，无图为 null） */
+    private String imageUrl;
+
     /** 客观题选项列表（判断/简答为 null） */
     private List<String> choices;
 
