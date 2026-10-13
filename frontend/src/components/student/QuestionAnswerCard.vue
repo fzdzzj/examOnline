@@ -4,6 +4,9 @@
       {{ question.content ?? '（题干为空）' }}
     </p>
 
+    <!-- 题干图片（add-question-image）：imageUrl 非空渲染于题干下方；null 逐字零回归；失败占位不阻塞作答 -->
+    <QuestionImage :src="question.imageUrl" />
+
     <!-- 题型未知：如实说明，绝不退化成单选题控件（那会让学生答出一个后端认不了的答案） -->
     <Alert
       v-if="kind === 'unsupported'"
@@ -89,6 +92,7 @@ import { Alert, Card, CheckboxGroup, Input, RadioGroup, Textarea } from 'ant-des
 import { computed } from 'vue';
 
 import type { QuestionView } from '@/api/axios';
+import QuestionImage from '@/components/question/QuestionImage.vue';
 import { QUESTION_TYPE_CONFIGS } from '@/components/question/questionTypeConfig';
 import type { QuestionTypeCode } from '@/utils/questionTypes';
 import {

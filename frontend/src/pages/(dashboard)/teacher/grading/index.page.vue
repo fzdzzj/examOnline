@@ -130,7 +130,12 @@
           size="middle"
         >
           <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'progress'">
+            <template v-if="column.key === 'content'">
+              <!-- 题干 + 题干图（add-question-image）：含图渲染、无图零回归 -->
+              <span>{{ (record as SubjectiveQuestionItem).content }}</span>
+              <QuestionImage :src="(record as SubjectiveQuestionItem).imageUrl" />
+            </template>
+            <template v-else-if="column.key === 'progress'">
               <span>
                 {{ (record as SubjectiveQuestionItem).gradedStudents ?? 0 }} /
                 {{ (record as SubjectiveQuestionItem).totalStudents ?? 0 }}
@@ -211,6 +216,7 @@ import { client, unwrap } from '@/api/apiClient';
 import { EXAM_STATUS } from '@/constants/examStatus';
 import { createTeacherExamsQueryOptions } from '@/hooks/useTeacherExams';
 import { resolveScoreActions } from '@/utils/scoreActions';
+import QuestionImage from '@/components/question/QuestionImage.vue';
 import SubjectiveGradingPanel from '@/components/postexam/SubjectiveGradingPanel.vue';
 
 /**

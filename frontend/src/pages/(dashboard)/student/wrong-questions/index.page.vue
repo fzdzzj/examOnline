@@ -65,6 +65,9 @@
                     {{ item.questionContent }}
                   </div>
 
+                  <!-- 题干图片（add-question-image）：含图渲染、无图零回归 -->
+                  <QuestionImage :src="item.imageUrl" class="mb-3" />
+
                   <!-- 客观题选项 -->
                   <div
                     v-if="item.choices && item.choices.length > 0"
@@ -139,6 +142,7 @@ import dayjs from 'dayjs';
 import { myWrongQuestions, type WrongQuestionPageResponse } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { ApiError } from '@/api/types';
+import QuestionImage from '@/components/question/QuestionImage.vue';
 import { acceptedAnswersOf, isFillBlankType } from '@/utils/questionTypes';
 
 const currentPage = ref(1);

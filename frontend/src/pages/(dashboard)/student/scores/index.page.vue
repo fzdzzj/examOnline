@@ -156,6 +156,9 @@
             <!-- 题干 -->
             <div class="text-gray-800 font-medium whitespace-pre-wrap">{{ q.questionContent }}</div>
 
+            <!-- 题干图片（add-question-image）：含图渲染、无图零回归 -->
+            <QuestionImage :src="q.imageUrl" />
+
             <!-- 选项 -->
             <div
               v-if="q.choices && q.choices.length > 0"
@@ -270,6 +273,7 @@ import {
 } from '@/utils/scoreVisibility';
 import ScoreVisibilityCard from '@/components/postexam/ScoreVisibilityCard.vue';
 import LeaderboardPanel from '@/components/postexam/LeaderboardPanel.vue';
+import QuestionImage from '@/components/question/QuestionImage.vue';
 import { acceptedAnswersOf, isFillBlankType } from '@/utils/questionTypes';
 
 /**

@@ -29,6 +29,35 @@
         />
       </FormItem>
 
+      <FormItem label="题干图片">
+        <div class="flex items-start gap-3">
+          <Upload
+            :show-upload-list="false"
+            :before-upload="beforeUpload"
+            :custom-request="customUpload"
+            :disabled="uploading"
+            accept=".png,.jpg,.jpeg,.gif,.webp"
+          >
+            <Button :loading="uploading" :disabled="!!draft.imageUrl">上传图片</Button>
+          </Upload>
+          <div v-if="draft.imageUrl" class="image-preview">
+            <img
+              :src="draft.imageUrl"
+              alt="题干图片预览"
+              data-test="image-preview"
+              class="max-h-32 max-w-56 rounded border"
+            />
+            <Button size="small" danger class="ml-2" @click="removeImage">移除</Button>
+          </div>
+        </div>
+        <div v-if="uploadError" class="upload-error mt-1" data-test="image-upload-error">
+          {{ uploadError }}
+        </div>
+        <div class="mt-1 text-gray-500 text-xs">
+          支持 png/jpg/jpeg/gif/webp，单文件 ≤5MB；先上传拿 URL，保存题目时随表单提交
+        </div>
+      </FormItem>
+
       <template v-if="config.showChoices">
         <FormItem required>
           <template #label>
@@ -172,12 +201,20 @@ import {
   RadioGroup,
   Select,
   Textarea,
+  Upload,
   message,
 } from 'ant-design-vue';
 import { computed, ref, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 
-import { create1, list, update, type QuestionResponse, type TagResponse } from '@/api/axios';
+import {
+  create1,
+  list,
+  update,
+  upload,
+  type QuestionResponse,
+  type TagResponse,
+} from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { DIFFICULTY_OPTIONS, QUESTION_TYPE_OPTIONS } from '@/utils/questionTypes';
 import {
@@ -214,6 +251,50 @@ const config = computed(() => QUESTION_TYPE_CONFIGS[draft.value.type]);
 const draft = ref<QuestionFormDraft>(createEmptyDraft(1));
 const errors = ref<string[]>([]);
 const saving = ref(false);
+
+// ===== 题干图片上传（add-question-image）：本地预校验与后端口径一致（扩展名白名单 + ≤5MB）=====
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+const MAX_IMAGE_MB = 5;
+
+const uploading = ref(false);
+const uploadError = ref<string | null>(null);
+
+/** 本地预校验：非白名单扩展名 / 超 5MB 直接拦截（与后端上传端点校验口径一致，不发起无效上传）。 */
+function beforeUpload(file: File): boolean {
+  uploadError.value = null;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  if (!IMAGE_EXTENSIONS.includes(ext)) {
+    uploadError.value = '仅支持 png/jpg/jpeg/gif/webp 格式';
+    return false;
+  }
+  if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+    uploadError.value = `图片大小不能超过 ${MAX_IMAGE_MB}MB`;
+    return false;
+  }
+  return true;
+}
+
+/** 上传：POST /api/question-images → 回填相对 URL；失败态与错误提示（后端拒绝文案原样透出）。 */
+async function customUpload(options: { file?: string | Blob | File }): Promise<void> {
+  const file =
+    typeof options.file === 'object' && options.file !== null ? (options.file as File) : undefined;
+  if (!file) return;
+  uploading.value = true;
+  uploadError.value = null;
+  try {
+    const result = await unwrap(upload({ client, throwOnError: true, body: { file } }));
+    draft.value.imageUrl = result?.url ?? '';
+  } catch (error) {
+    uploadError.value = error instanceof Error ? error.message : '图片上传失败，请稍后重试';
+  } finally {
+    uploading.value = false;
+  }
+}
+
+/** 移除：置空（保存时随表单以空串提交 = 后端归一为无图）。 */
+function removeImage(): void {
+  draft.value.imageUrl = '';
+}
 
 watch(
   () => [props.open, props.question] as const,

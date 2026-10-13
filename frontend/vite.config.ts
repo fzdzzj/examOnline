@@ -42,6 +42,13 @@ export default defineConfig(() => {
           changeOrigin: true,
           cookieDomainRewrite: 'localhost',
         },
+        // 题干图片（add-question-image）：下载端点置 /api 外（公开只读，随机文件名即凭据），
+        // dev 同源形态与 /api 一致——不加 rewrite，原样转发到后端 /images/*
+        '/images': {
+          target: env.VITE_DEV_PROXY_TARGET || 'http://localhost:8080',
+          changeOrigin: true,
+          cookieDomainRewrite: 'localhost',
+        },
       },
     },
   };

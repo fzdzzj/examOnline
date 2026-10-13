@@ -131,4 +131,17 @@ describe('教师试卷详情：题目表真实呈现', () => {
     const warnings = vi.mocked(console.warn).mock.calls.flat().join(' ');
     expect(warnings).not.toContain('Failed to resolve component: Table');
   });
+
+  it('组卷预览题干图（add-question-image）：含图题目在题目表渲染图片、无图题目零回归', async () => {
+    const withImage = paper(0);
+    withImage.questions = [{ ...QUESTIONS[0], imageUrl: '/images/paper-img.png' }, QUESTIONS[1]];
+    const wrapper = mountPage(withImage);
+    await flushPromises();
+
+    const image = wrapper.find('[data-test="question-image"]');
+    expect(image.exists()).toBe(true);
+    expect(image.attributes('src')).toBe('/images/paper-img.png');
+    // 无图题目不渲染：整表只有含图题那一张
+    expect(wrapper.findAll('[data-test="question-image"]').length).toBe(1);
+  });
 });
