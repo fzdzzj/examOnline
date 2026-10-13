@@ -174,11 +174,19 @@
                   {{ q.myAnswer ? q.myAnswer : '（未作答）' }}
                 </span>
               </div>
-              <div>
-                正确答案：
-                <span class="font-medium text-green-600">
-                  {{ q.correctAnswer ? q.correctAnswer : '（无）' }}
-                </span>
+              <div data-test="review-correct-answer">
+                <template v-if="isFillBlankType(q.questionType)">
+                  可接受答案（命中任一即可）：
+                  <span class="font-medium text-green-600">
+                    {{ acceptedAnswersOf(q.correctAnswer).join(' / ') }}
+                  </span>
+                </template>
+                <template v-else>
+                  正确答案：
+                  <span class="font-medium text-green-600">
+                    {{ q.correctAnswer ? q.correctAnswer : '（无）' }}
+                  </span>
+                </template>
               </div>
             </div>
 
@@ -262,6 +270,7 @@ import {
 } from '@/utils/scoreVisibility';
 import ScoreVisibilityCard from '@/components/postexam/ScoreVisibilityCard.vue';
 import LeaderboardPanel from '@/components/postexam/LeaderboardPanel.vue';
+import { acceptedAnswersOf, isFillBlankType } from '@/utils/questionTypes';
 
 /**
  * 学生成绩查询与复核申请（阶段 23，补考最终成绩见 add-makeup-final-score-frontend）：

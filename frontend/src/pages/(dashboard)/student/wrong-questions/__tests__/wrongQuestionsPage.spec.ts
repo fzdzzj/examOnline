@@ -138,6 +138,41 @@ describe('学生错题本页面 (student/wrong-questions)', () => {
     expect(wrapper.text()).toContain('暂无解析');
   });
 
+  it('填空题错题：可接受答案以列表形态展示（命中任一），与简答参考答案区分', async () => {
+    vi.mocked(myWrongQuestions).mockResolvedValueOnce({
+      total: 1,
+      page: 1,
+      size: 10,
+      groups: [
+        {
+          examId: 103,
+          examTitle: '填空考试',
+          wrongQuestions: [
+            {
+              questionId: 3,
+              questionNumber: 1,
+              questionType: '填空',
+              questionContent: '中国的首都是 ____',
+              myAnswer: '上海',
+              correctAnswer: '北京|beijing',
+              myScore: 0,
+              fullScore: 6,
+              analysis: '首都是北京',
+            },
+          ],
+        },
+      ],
+    } as never);
+
+    const wrapper = mount(WrongQuestionsPage);
+    await flushPromises();
+
+    const correctCell = wrapper.find('[data-test="wrong-correct-answer"]');
+    expect(correctCell.exists()).toBe(true);
+    expect(correctCell.text()).toContain('可接受答案（命中任一即可）');
+    expect(correctCell.text()).toContain('北京 / beijing');
+  });
+
   it('空态：无错题时展示「暂无错题」正向空态，不弹错误 Alert', async () => {
     vi.mocked(myWrongQuestions).mockResolvedValueOnce({
       total: 0,

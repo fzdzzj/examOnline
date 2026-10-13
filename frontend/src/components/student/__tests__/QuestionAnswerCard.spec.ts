@@ -1,5 +1,5 @@
 /**
- * 四种题型的作答控件与归零锁定（阶段 22 第 1 片）。
+ * 五种题型的作答控件与归零锁定（阶段 22 第 1 片）。
  *
  * 两条最容易做错的点各断一次：
  * 1. **选项顺序**：个人快照里的选项已被后端 `shuffleChoicesAndRemapAnswer` 洗过，
@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { Alert, CheckboxGroup, RadioGroup, Textarea } from 'ant-design-vue';
+import { Alert, CheckboxGroup, Input, RadioGroup, Textarea } from 'ant-design-vue';
 import type { Component } from 'vue';
 
 import type { QuestionView } from '@/api/axios';
@@ -40,6 +40,14 @@ const SHORT: QuestionView = {
   content: '简述三重幂等',
   choices: null,
   score: 10,
+};
+const FILL: QuestionView = {
+  number: 5,
+  questionId: 15,
+  type: 5,
+  content: '中国的首都是 ____',
+  choices: null,
+  score: 6,
 };
 
 function mountCard(question: QuestionView, props: Record<string, unknown> = {}) {
@@ -95,6 +103,21 @@ describe('QuestionAnswerCard 题型分支', () => {
     expect(wrapper.emitted('update:answer')?.[0]).toEqual(['  防重表 + 唯一索引 + SETNX  ']);
   });
 
+  it('填空：渲染单行输入（与简答文本域区分），原文回抛，不展示任何可接受答案提示', () => {
+    const wrapper = mountCard(FILL);
+    const box = wrapper.findComponent(Input);
+    expect(box.exists()).toBe(true);
+    expect(wrapper.find('[data-test="answer-fill"]').exists()).toBe(true);
+    // 与简答区分：不渲染多行文本域
+    expect(wrapper.find('[data-test="answer-text"]').exists()).toBe(false);
+    expect(wrapper.findComponent(RadioGroup).exists()).toBe(false);
+    expect(wrapper.findComponent(CheckboxGroup).exists()).toBe(false);
+    // 学生端不泄露可接受答案（模板里不渲染任何答案提示）
+    expect(wrapper.text()).not.toContain('可接受答案');
+    box.vm.$emit('update:value', '北京');
+    expect(wrapper.emitted('update:answer')?.[0]).toEqual(['北京']);
+  });
+
   it('契约外的题型值：明确告知不支持，不悄悄按单选题渲染（那会答出一个后端认不了的答案）', () => {
     const wrapper = mountCard({ number: 5, questionId: 15, type: 9, content: '听力' });
     expect(wrapper.findComponent(Alert).exists()).toBe(true);
@@ -110,16 +133,18 @@ describe('QuestionAnswerCard 题型分支', () => {
     ).toEqual(['A', 'C']);
     expect(mountCard(SINGLE, { answer: 'B' }).findComponent(RadioGroup).props('value')).toBe('B');
     expect(mountCard(SHORT, { answer: '略' }).findComponent(Textarea).props('value')).toBe('略');
+    expect(mountCard(FILL, { answer: '北京' }).findComponent(Input).props('value')).toBe('北京');
   });
 });
 
 describe('QuestionAnswerCard 归零锁定', () => {
-  it('locked 时四种控件全部 disabled', () => {
+  it('locked 时五种控件全部 disabled', () => {
     const cases: Array<[QuestionView, Component]> = [
       [SINGLE, RadioGroup],
       [MULTIPLE, CheckboxGroup],
       [JUDGE, RadioGroup],
       [SHORT, Textarea],
+      [FILL, Input],
     ];
     for (const [question, component] of cases) {
       const wrapper = mountCard(question, { locked: true });
@@ -141,6 +166,10 @@ describe('QuestionAnswerCard 归零锁定', () => {
     const text = mountCard(SHORT, { locked: true });
     text.findComponent(Textarea).vm.$emit('update:value', '补一句');
     expect(text.emitted('update:answer')).toBeUndefined();
+
+    const fill = mountCard(FILL, { locked: true });
+    fill.findComponent(Input).vm.$emit('update:value', '北京');
+    expect(fill.emitted('update:answer')).toBeUndefined();
   });
 
   it('锁定态给出可见提示，措辞不宣称"已超时"（那是后端的判定权）', () => {

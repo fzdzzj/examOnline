@@ -2,10 +2,10 @@
  * 题型 / 难度 / 标签类型的展示映射（纯数据 + 纯函数，便于 vitest 直测）。
  *
  * 题型清单以后端枚举为准（src/main/java/com/exam/question/entity/QuestionType.java）：
- * 仅 4 类——1 单选 / 2 多选 / 3 判断 / 4 简答；需求文档里的填空/公式/代码/听力/口语
+ * 共 5 类——1 单选 / 2 多选 / 3 判断 / 4 简答 / 5 填空；公式/代码/听力/口语
  * 已在 v3 方案裁剪，界面不做（硬约定 7：不夹带砍掉项）。
  */
-export type QuestionTypeCode = 1 | 2 | 3 | 4;
+export type QuestionTypeCode = 1 | 2 | 3 | 4 | 5;
 export type DifficultyCode = 1 | 2 | 3;
 
 export const QUESTION_TYPE_LABELS: Record<QuestionTypeCode, string> = {
@@ -13,6 +13,7 @@ export const QUESTION_TYPE_LABELS: Record<QuestionTypeCode, string> = {
   2: '多选',
   3: '判断',
   4: '简答',
+  5: '填空',
 };
 
 export const QUESTION_TYPE_OPTIONS: Array<{ value: QuestionTypeCode; label: string }> = (
@@ -25,6 +26,28 @@ export const QUESTION_TYPE_OPTIONS: Array<{ value: QuestionTypeCode; label: stri
 export function typeLabelOf(type?: number | null): string {
   if (type === null || type === undefined) return '未知题型';
   return QUESTION_TYPE_LABELS[type as QuestionTypeCode] ?? '未知题型';
+}
+
+/**
+ * 回顾/错题本行是否填空题。
+ *
+ * 逐题回顾与错题本 DTO 只下发题型中文名（`questionType`，无数字码），故以标签判别；
+ * 该标签由后端 `QuestionType.FILL_BLANK` 的 label 单一来源产生（score 域 labelOf），
+ * 与题型枚举同源，不与前端硬编码漂移。
+ */
+export function isFillBlankType(questionType?: string | null): boolean {
+  return questionType === QUESTION_TYPE_LABELS[5];
+}
+
+/**
+ * 填空可接受答案串（归一化存储形态 `答案1|答案2`）→ 展示用列表；
+ * 非填空题型、空串或纯空项时返回空数组（调用方回退展示原串）。
+ */
+export function acceptedAnswersOf(correctAnswer?: string | null): string[] {
+  return (correctAnswer ?? '')
+    .split('|')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 export const DIFFICULTY_LABELS: Record<DifficultyCode, string> = {

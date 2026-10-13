@@ -1,6 +1,6 @@
 /**
  * 题型驱动的表单配置（本阶段主要工程质量点）：
- * 四种题型共用一套表单骨架 + 这一份题型字段配置，**禁止四份复制粘贴的表单代码**；
+ * 五种题型共用一套表单骨架 + 这一份题型字段配置，**禁止五份复制粘贴的表单代码**；
  * 新增题型时只需在 QUESTION_TYPE_CONFIGS 追加一个条目。
  *
  * 职责边界（硬约定 4）：这里只做「录入格式校验」；
@@ -9,10 +9,12 @@
  * 「正确/对/A/1」等别名归一**绝不**搬进前端，防止两端判分口径漂移。
  *
  * 校验规则依据（已核实）：
- * - 后端 QuestionCreateRequest：type 1–4、content ≤5000、choices ≤26、
+ * - 后端 QuestionCreateRequest：type 1–5、content ≤5000、choices ≤26、
  *   correctAnswer ≤512、score 0.5–999.9、difficulty 1–3、analysis ≤2000；
  * - 后端 QuestionService.validateChoices：单选/多选须 2–26 个非空选项；
- * - 多选「正确项 ≥2」是 spec 的录入侧产品约束（后端归一化仅要求非空），前端按更严的一侧执行。
+ * - 多选「正确项 ≥2」是 spec 的录入侧产品约束（后端归一化仅要求非空），前端按更严的一侧执行；
+ * - 填空可接受答案以 `|` 分隔提交（后端 AnswerNormalizer：拆分/剔空项/以 | 重组），
+ *   故单项不可含 `|`（否则编码歧义）——本地预校验与后端口径对齐。
  */
 import type { QuestionCreateRequest, QuestionResponse } from '@/api/axios';
 import type { DifficultyCode, QuestionTypeCode } from '@/utils/questionTypes';
@@ -21,8 +23,8 @@ import type { DifficultyCode, QuestionTypeCode } from '@/utils/questionTypes';
 export type QuestionFormField =
   'content' | 'choices' | 'answer' | 'score' | 'difficulty' | 'analysis' | 'tags';
 
-/** 答案录入区形态：客观题勾选项字母 / 判断题二选一 / 简答题参考答案文本。 */
-export type AnswerInputKind = 'letters' | 'judge' | 'text';
+/** 答案录入区形态：客观题勾选项字母 / 判断题二选一 / 简答题参考答案文本 / 填空题可接受答案列表。 */
+export type AnswerInputKind = 'letters' | 'judge' | 'text' | 'fill';
 
 export interface QuestionTypeConfig {
   type: QuestionTypeCode;
@@ -106,9 +108,20 @@ export const QUESTION_TYPE_CONFIGS: Record<QuestionTypeCode, QuestionTypeConfig>
     minCorrect: 1,
     fields: SUBJECTIVE_FIELDS,
   },
+  5: {
+    type: 5,
+    label: '填空',
+    showChoices: false,
+    correctMode: 'single',
+    minChoices: 0,
+    maxChoices: 0,
+    answerKind: 'fill',
+    minCorrect: 1,
+    fields: SUBJECTIVE_FIELDS,
+  },
 };
 
-export const QUESTION_TYPE_LIST: readonly QuestionTypeConfig[] = [1, 2, 3, 4].map(
+export const QUESTION_TYPE_LIST: readonly QuestionTypeConfig[] = [1, 2, 3, 4, 5].map(
   (type) => QUESTION_TYPE_CONFIGS[type as QuestionTypeCode]
 );
 
@@ -128,6 +141,8 @@ export interface QuestionFormDraft {
   judgeAnswer: 'T' | 'F' | '';
   /** 简答题参考答案原文 */
   shortAnswer: string;
+  /** 填空题可接受答案列表（提交时以 `|` 分隔；命中任一即满分） */
+  acceptedAnswers: string[];
   score: number | undefined;
   difficulty: DifficultyCode | undefined;
   analysis: string;
@@ -139,7 +154,7 @@ export function letterOfIndex(index: number): string {
   return String.fromCharCode(65 + index);
 }
 
-/** 新建表单的初始草稿：客观题给两个空选项（后端下限即 2）。 */
+/** 新建表单的初始草稿：客观题给两个空选项（后端下限即 2）；填空题给一条空可接受答案。 */
 export function createEmptyDraft(type: QuestionTypeCode): QuestionFormDraft {
   const config = QUESTION_TYPE_CONFIGS[type];
   return {
@@ -148,6 +163,7 @@ export function createEmptyDraft(type: QuestionTypeCode): QuestionFormDraft {
     choices: config.showChoices ? [0, 1].map(() => ({ text: '', isCorrect: false })) : [],
     judgeAnswer: '',
     shortAnswer: '',
+    acceptedAnswers: config.answerKind === 'fill' ? [''] : [],
     score: undefined,
     difficulty: undefined,
     analysis: '',
@@ -163,6 +179,11 @@ export function draftFromResponse(response: QuestionResponse): QuestionFormDraft
     .split(',')
     .map((letter) => letter.trim().toUpperCase())
     .filter(Boolean);
+  // 填空：归一化串（'a|b'）按 `|` 还原为可接受答案列表；空串保底一条空行
+  const acceptedAnswers = (response.correctAnswer ?? '')
+    .split('|')
+    .map((item) => item.trim())
+    .filter(Boolean);
   return {
     type,
     content: response.content ?? '',
@@ -175,6 +196,8 @@ export function draftFromResponse(response: QuestionResponse): QuestionFormDraft
         ? response.correctAnswer
         : '',
     shortAnswer: config.answerKind === 'text' ? (response.correctAnswer ?? '') : '',
+    acceptedAnswers:
+      config.answerKind === 'fill' ? (acceptedAnswers.length > 0 ? acceptedAnswers : ['']) : [],
     score: response.score ?? undefined,
     difficulty: (response.difficulty ?? undefined) as DifficultyCode | undefined,
     analysis: response.analysis ?? '',
@@ -228,6 +251,18 @@ export function validateQuestionDraft(draft: QuestionFormDraft): string[] {
     } else if (answer.length > 512) {
       errors.push('答案最长 512 字');
     }
+  } else if (config.answerKind === 'fill') {
+    // 填空：每项必填、单项不含 `|`（分隔符）、重组串 ≤512（与后端归一化/长度口径对齐）
+    const items = draft.acceptedAnswers;
+    if (items.length === 0 || items.every((item) => !item.trim())) {
+      errors.push('请至少填写一个可接受答案');
+    } else if (items.some((item) => !item.trim())) {
+      errors.push('可接受答案不能为空');
+    } else if (items.some((item) => item.includes('|'))) {
+      errors.push('单项答案不能包含 | 分隔符');
+    } else if (items.map((item) => item.trim()).join('|').length > 512) {
+      errors.push('答案最长 512 字');
+    }
   }
 
   if (draft.score === undefined || !Number.isFinite(draft.score)) {
@@ -261,6 +296,9 @@ export function toCreateRequest(draft: QuestionFormDraft): QuestionCreateRequest
   } else if (config.answerKind === 'judge') {
     // 硬约定 4：只提交后端约定的 T/F 原始格式；别名归一（正确/对/A/1…）在后端 AnswerNormalizer
     correctAnswer = draft.judgeAnswer;
+  } else if (config.answerKind === 'fill') {
+    // 填空：可接受答案以 `|` 分隔提交（后端 AnswerNormalizer 拆分/剔空项/以 | 重组）
+    correctAnswer = draft.acceptedAnswers.map((item) => item.trim()).join('|');
   } else {
     correctAnswer = draft.shortAnswer.trim();
   }

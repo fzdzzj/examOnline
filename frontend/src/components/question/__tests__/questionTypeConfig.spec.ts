@@ -18,7 +18,7 @@ import type { QuestionResponse } from '@/api/axios';
  * 策略：先设好基线值，然后仅应用 overrides 中显式提供的字段（避免 ...overrides 全量覆盖）。
  */
 function validDraft(
-  overrides: Partial<QuestionFormDraft> & { type: 1 | 2 | 3 | 4 }
+  overrides: Partial<QuestionFormDraft> & { type: 1 | 2 | 3 | 4 | 5 }
 ): QuestionFormDraft {
   const type = overrides.type;
   const objective = QUESTION_TYPE_CONFIGS[type].showChoices;
@@ -36,6 +36,7 @@ function validDraft(
       : [],
     judgeAnswer: type === 3 ? 'T' : '',
     shortAnswer: type === 4 ? '参考答案' : '',
+    acceptedAnswers: type === 5 ? ['可接受答案'] : [],
     score: 2,
     difficulty: 2,
     analysis: '',
@@ -60,13 +61,14 @@ function validDraft(
 }
 
 describe('题型配置：各题型渲染字段与校验形态（配置驱动）', () => {
-  it('共 4 种题型，与后端 QuestionType 枚举一一对应（1单选 2多选 3判断 4简答）', () => {
-    expect(QUESTION_TYPE_LIST.map((config) => config.type)).toEqual([1, 2, 3, 4]);
+  it('共 5 种题型，与后端 QuestionType 枚举一一对应（1单选 2多选 3判断 4简答 5填空）', () => {
+    expect(QUESTION_TYPE_LIST.map((config) => config.type)).toEqual([1, 2, 3, 4, 5]);
     expect(QUESTION_TYPE_LIST.map((config) => config.label)).toEqual([
       '单选',
       '多选',
       '判断',
       '简答',
+      '填空',
     ]);
   });
 
@@ -81,13 +83,16 @@ describe('题型配置：各题型渲染字段与校验形态（配置驱动）'
     }
   });
 
-  it('判断/简答不渲染选项区；判断答案为 T/F 二选一，简答为参考答案文本', () => {
+  it('判断/简答/填空不渲染选项区；判断答案为 T/F 二选一，简答为参考答案文本，填空为可接受答案列表', () => {
     expect(QUESTION_TYPE_CONFIGS[3].showChoices).toBe(false);
     expect(QUESTION_TYPE_CONFIGS[3].answerKind).toBe('judge');
     expect(QUESTION_TYPE_CONFIGS[3].fields).not.toContain('choices');
     expect(QUESTION_TYPE_CONFIGS[4].showChoices).toBe(false);
     expect(QUESTION_TYPE_CONFIGS[4].answerKind).toBe('text');
     expect(QUESTION_TYPE_CONFIGS[4].fields).not.toContain('choices');
+    expect(QUESTION_TYPE_CONFIGS[5].showChoices).toBe(false);
+    expect(QUESTION_TYPE_CONFIGS[5].answerKind).toBe('fill');
+    expect(QUESTION_TYPE_CONFIGS[5].fields).not.toContain('choices');
   });
 
   it('多选正确项下限为 2（spec 录入约束），单选为 1', () => {
@@ -101,8 +106,8 @@ describe('题型配置：各题型渲染字段与校验形态（配置驱动）'
 });
 
 describe('题型校验规则', () => {
-  it('合法草稿：四种题型均通过', () => {
-    for (const type of [1, 2, 3, 4] as const) {
+  it('合法草稿：五种题型均通过', () => {
+    for (const type of [1, 2, 3, 4, 5] as const) {
       expect(validateQuestionDraft(validDraft({ type }))).toEqual([]);
     }
   });
@@ -176,6 +181,24 @@ describe('题型校验规则', () => {
     const empty = validDraft({ type: 4, shortAnswer: '  ' });
     expect(validateQuestionDraft(empty)).toContain('请填写参考答案');
   });
+
+  it('填空：可接受答案列表为空项/单项含 | /超长分别报错（与后端校验口径一致）', () => {
+    // 全部空项 → 至少填写一个
+    const allBlank = validDraft({ type: 5, acceptedAnswers: ['  ', ''] });
+    expect(validateQuestionDraft(allBlank)).toContain('请至少填写一个可接受答案');
+
+    // 部分空项 → 每项必填
+    const partialBlank = validDraft({ type: 5, acceptedAnswers: ['北京', ' '] });
+    expect(validateQuestionDraft(partialBlank)).toContain('可接受答案不能为空');
+
+    // 单项含分隔符 `|` → 编码歧义，拒绝
+    const withSeparator = validDraft({ type: 5, acceptedAnswers: ['北京|上海'] });
+    expect(validateQuestionDraft(withSeparator)).toContain('单项答案不能包含 | 分隔符');
+
+    // 重组串超 512 → 超长
+    const tooLong = validDraft({ type: 5, acceptedAnswers: ['答'.repeat(300), '案'.repeat(300)] });
+    expect(validateQuestionDraft(tooLong)).toContain('答案最长 512 字');
+  });
 });
 
 describe('草稿 ↔ 契约请求转换', () => {
@@ -207,6 +230,15 @@ describe('草稿 ↔ 契约请求转换', () => {
     expect(request.correctAnswer).toBe('参考答案');
     expect('choices' in request).toBe(false);
     expect('analysis' in request).toBe(false);
+  });
+
+  it('填空提交：可接受答案以 | 分隔提交（各项 trim）；不携带 choices 字段', () => {
+    const request = toCreateRequest(
+      validDraft({ type: 5, acceptedAnswers: [' 北京 ', 'beijing '] })
+    );
+    expect(request.type).toBe(5);
+    expect(request.correctAnswer).toBe('北京|beijing');
+    expect('choices' in request).toBe(false);
   });
 
   it('tagIds 恒传（空数组=清空关联；后端 null 才是保留原关联）', () => {
@@ -244,5 +276,14 @@ describe('编辑回填 draftFromResponse', () => {
   it('简答题：correctAnswer 原文进 shortAnswer', () => {
     const draft = draftFromResponse({ id: 13, type: 4, correctAnswer: '参考答案原文' });
     expect(draft.shortAnswer).toBe('参考答案原文');
+  });
+
+  it('填空题：归一化串（a|b）按 | 还原为可接受答案列表；无答案保底一条空行', () => {
+    const draft = draftFromResponse({ id: 14, type: 5, correctAnswer: '北京|beijing' });
+    expect(draft.acceptedAnswers).toEqual(['北京', 'beijing']);
+    expect(draft.shortAnswer).toBe('');
+
+    const empty = draftFromResponse({ id: 15, type: 5, correctAnswer: '' });
+    expect(empty.acceptedAnswers).toEqual(['']);
   });
 });

@@ -1,0 +1,40 @@
+{
+  "change": "add-question-fill-blank",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：调研核实与三件套制定",
+      "status": "completed",
+      "description": "指导主 agent 完成差距分析核证（题型仅 4 种、判分策略注册表、AnswerNormalizer 扩展位、correct_answer VARCHAR(512) 零 DDL）；裁决设计口径（type=5 单空、`|` 分隔多可接受答案、客观自动判分、中文精确/英文忽略大小写、trim 后比对、命中任一满分）；编制 proposal.md 与 question-bank/grading/frontend 三域 spec-delta。",
+      "evidence": "三件套已落盘 spec/changes/add-question-fill-blank/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端题型枚举、归一化与判分策略（先红后绿）",
+      "status": "completed",
+      "description": "QuestionType 加 FILL_BLANK(5,\"填空\")；schema.sql 仅 type 列注释更新（1单选 2多选 3判断 4简答 5填空，零结构变更）；AnswerNormalizer 加 FILL_BLANK 归一化分支（trim/拆分/剔空项/重组）；新增 FillBlankGradingStrategy 注册入 GradingStrategyRegistry（判分核心既有方法体零改动，分流点若为最小分派行插入须逐一登记）；填空走客观链不进主观批改工作台；现场核证并同批扩展：抽题 QUESTION_TYPE 标签供给、提交侧按题型答案校验链（若有）；题目创建/编辑/查询链路对 type=5 生效（校验：空列表/含|/超长 400）；集成测试覆盖 spec-delta 全部 Scenario（含既有四题型零回归对照）。",
+      "evidence": "实现：QuestionType 加 FILL_BLANK(5,\"填空\")；AnswerNormalizer.normalize 加 FILL_BLANK 分支 + normalizeFillBlank（trim 首尾→按 | 拆分→各项 trim→空项剔除→以 | 重组；拆完无有效项抛 400「填空答案不能为空」）；新增 FillBlankGradingStrategy（@Component，经注册表接入）：学生答案仅 trim，与 correctAnswer 逐项比对——中文精确全等、纯英文字母忽略大小写全等、命中任一满分、全不中零分，学生答案原样不改写。分流核证（5 处客观/主观分流点全部以 SHORT_ANSWER 硬编码判定）：ObjectiveGradingService.doGrade（type==SHORT_ANSWER→主观 else 客观）、GradingPaper.objectiveTotalScore（!=SHORT_ANSWER）、GradingPaper.shortAnswerQuestions（==SHORT_ANSWER）、QuestionScoreResolver.resolveOne（==SHORT_ANSWER）、SubjectiveGradingService.saveScore（!=SHORT_ANSWER 抛「仅简答题支持人工批改」）——FILL_BLANK≠SHORT_ANSWER 天然走客观链且不进主观工作台，5 处零改动（GradingPaper/QuestionScoreResolver/ObjectiveGradingService/SubjectiveGradingService git diff 为空）。抽题链核证：PaperService.draw 按 questions.type 数值列过滤（第 310 行 eq(Question::getType, rule.getType())），题型无关；tags 表无种子数据、TagType.QUESTION_TYPE 仅标签分类，无需登记新题型标签行。提交链核证：GradingPaperReader.parseAnswers 按 questionId→文本，无按题型的答案格式校验分支，无需补分支。编译必改的最小分派行（逐一登记）：①QuestionService.validateChoices 早返回集加 FILL_BLANK（否则要求 2-26 选项，第 270-271 行）；②QuestionCreateRequest.type @Max 4→5；③RandomDrawRequest.Rule.type @Max 4→5（否则抽题规则 type=5 被拒）；④StudentWrongQuestionService.labelOf 加 case FILL_BLANK（穷尽 switch，编译必需）；⑤ScoreExportService.labelOf 加 case FILL_BLANK；⑥ExamAnalysisReportService.labelOfType 加 case FILL_BLANK；⑦测试侧 QuestionStatsExportAttributionMeasureIT.labelOf 加 case FILL_BLANK。既有四题型行为路径零改动（仅在上列早返回集/穷尽 switch 中追加新题型分支）。schema.sql 仅 4 行注释更新（表头/type/choices/correct_answer 注释，零 DDL）。测试：AnswerNormalizerTest +2（归一化 trim/剔空项/重组、空列表拒绝）、GradingStrategyTest +2（精确+任一命中+trim+未命中；英文忽略大小写+含非字母只精确；registryDispatch 加 FILL_BLANK）、新增 FillBlankQuestionIntegrationTest（2 用例：创建归一化回显/空列表与超长 400/type=5 筛选/随机抽题含填空；全链路建题→组卷→自动判分（精确6/忽略大小写6/未命中0）→主观工作台仅列简答→汇总发布→逐题回顾展示）。后端门禁 .\\mvnw.cmd clean test：Tests run 429, Failures 0, Errors 0, Skipped 1，BUILD SUCCESS（基线 423，净增 6）。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：前端录入、作答与回顾（先红后绿）",
+      "status": "completed",
+      "description": "题目编辑表单加填空类型与可接受答案动态列表（本地预校验与后端口径一致）；作答页 type=5 文本输入（草稿保存恢复生效）；逐题回顾/错题本按题型正确展示（可接受答案列表与简答参考答案区分）；SDK 按既有方式再生成；Vitest 覆盖 spec-delta 前端全部 Scenario，遵守断言有效性纪律（无 exists 守卫/无 || 双通兜底）。",
+      "evidence": "实现：questionTypes.ts QuestionTypeCode 扩 1|2|3|4|5、QUESTION_TYPE_LABELS 加 5:'填空'，新增 isFillBlankType（按后端同源 label 判别，review/错题 DTO 只下发题型中文名）与 acceptedAnswersOf（'a|b'→列表）。questionTypeConfig.ts：AnswerInputKind 加 'fill'、type 5 配置（showChoices:false、answerKind:'fill'、SUBJECTIVE_FIELDS）、QUESTION_TYPE_LIST 扩 [1..5]、QuestionFormDraft 加 acceptedAnswers、createEmptyDraft/draftFromResponse（| 拆分还原）/validateQuestionDraft（至少一项/每项必填/单项不含 |/重组串≤512）/toCreateRequest（| 拼接）。QuestionForm.vue 加可接受答案动态列表（增删项，至少保留 1 项）。QuestionAnswerCard.vue 加 answerKind 'fill' → 单行 Input（data-test=answer-fill），与简答 Textarea 区分、不渲染任何可接受答案提示。scores/index.page.vue（data-test=review-correct-answer）与 wrong-questions/index.page.vue（data-test=wrong-correct-answer）按 isFillBlankType 渲染「可接受答案（命中任一即可）：a / b」，简答仍展示「正确答案：原文」。SDK：npm.cmd --prefix frontend run gen:api 按 openapi.yaml 再生成，生成物 type 为 number，产物零字节变化（worktree blob 与 index 一致）。测试净增 6：questionTypeConfig.spec +3（填空校验/提交/回填）、QuestionAnswerCard.spec +1（填空单行输入渲染与回抛、不泄露答案）、examReviewEntry.spec +1（回顾可接受答案列表）、wrongQuestionsPage.spec +1（错题本可接受答案列表）；既有 4 题型用例断言同步扩为 5 题型。断言有效性纪律：新增断言均为直断（expect(...).toBe/toEqual/not.toContain），无 exists 守卫与 || 双通兜底。前端门禁 npm.cmd --prefix frontend run lint:check / type-check:check / test 全绿：Test Files 88 passed，Tests 636 passed（基线 630，净增 6）。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：全量门禁、变异校验、契约同步与实施笔提交",
+      "status": "completed",
+      "description": "后端 .\\mvnw.cmd clean test 全绿净增；前端 npm.cmd --prefix frontend run lint:check / type-check:check / test 全绿净增（输出非空核实）；变异自证≥3 项（撤忽略大小写/撤多答案任一命中/撤 trim 各自独立击红再复原逐字节归零，优先 scripts/mutation-check.sh 驱动）；openapi.yaml 同步 type 枚举 5（契约导出按离线路径 A）；.github/ci/gate-baseline.json 双端用例数按实测同批上调；红线域 git diff 为空（判分核心既有方法体、schema.sql 结构、com.exam.clazz、ScoreService/MakeupScoreService、既有 spec 基线）；feature/add-question-fill-blank 分支实施笔本地提交（收口待复核 PASS 后另行派发），八段回报。",
+      "evidence": "双端门禁（本笔本地实测）：后端 .\\mvnw.cmd clean test → Tests run 429, Failures 0, Errors 0, Skipped 1，BUILD SUCCESS（基线 423，净增 6）；前端 npm.cmd --prefix frontend run lint:check（零输出通过）、type-check:check（零输出通过）、test → Test Files 88 passed / Tests 636 passed（基线 630，净增 6）。变异自证 3 项经 scripts/mutation-check.sh（Git Bash 驱动：bash scripts/mutation-check.sh，--verify './mvnw.cmd test -Dtest=GradingStrategyTest -DfailIfNoTests=false'，五步原子）全部 PASS（rc=0）：m1-drop-case-insensitive 注入 accepted.equalsIgnoreCase(student)→Boolean.FALSE，击红 exit=1（fillBlankExactAndAnyAccepted「第二项可接受答案同样忽略大小写 expected:<true> but was:<false>」，2 failures）；m2-single-accepted-only 注入 for 循环只取 split[0]，击红 exit=1（「命中第二项可接受答案 expected:<true> but was:<false>」，1 failure）；m3-drop-trim 注入去除 studentAnswer.trim()，击红 exit=1（「trim 后命中 expected:<true> but was:<false>」）；每项复原 cmp 字节一致 + 标志不在场 + 回绿 exit=0。留证目录 target/mutation-check/<label>/{backup,step3-verify-red.log,step5-verify-green.log,report.txt}（target/ 为 gitignored；后续任一次 mvnw clean 会清空，复核需自行复跑重建）。契约：openapi.yaml 按离线路径 A 重导出（.\\mvnw.cmd test -DexportContract=true -Dtest=OpenApiContractTest#exportOpenApiContract，BUILD SUCCESS），git diff 仅 QuestionCreateRequest.type 与 RandomDrawRequest.Rule.type 两处 maximum 4→5，paths 计数 78 不变、无 U+FFFD、info.description 中文完整、servers.url 保持 http://localhost:8080。CI 基线：.github/ci/gate-baseline.json 同批上调 backendTests 423→429、frontendTests 630→636（openapiPaths 78 不变）。红线自查逐项：判分核心既有方法体（ExamGradingService/ObjectiveGradingService/SubjectiveGradingService）git diff --stat 为空；schema.sql 仅 4 行注释（无 DDL）；com.exam.clazz git diff --stat 为空；ScoreService.java 与 MakeupScoreService.java git diff --stat 为空；spec/specs git diff --stat 为空；pom.xml git diff --stat 为空。实施笔本地提交（feature/add-question-fill-blank，不合并/不 push/不收口），三件套随笔入库。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：复核后收口",
+      "status": "pending",
+      "description": "复核子agent 独立复跑双端门禁与变异复现、核对红线域 diff 与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线、三件套归档 spec/changes/archive/add-question-fill-blank/、README/spec README 登记行；收口笔零业务代码改动；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
+      "evidence": ""
+    }
+  ]
+}

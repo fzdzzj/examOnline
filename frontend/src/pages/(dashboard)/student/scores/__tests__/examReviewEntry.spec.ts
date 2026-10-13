@@ -142,4 +142,49 @@ describe('查分页逐题回顾入口与弹层 (student/scores)', () => {
     expect(document.body.textContent).toContain('单选题干测试');
     expect(document.body.textContent).toContain('单选详细解析内容');
   });
+
+  it('逐题回顾：填空题展示学生原文与可接受答案列表（与简答参考答案形态区分）', async () => {
+    vi.mocked(myExams).mockResolvedValueOnce([
+      { examId: 103, title: '填空考试', status: 3 },
+    ] as never);
+    vi.mocked(myScore).mockResolvedValueOnce({
+      examId: 103,
+      examTitle: '填空考试',
+      totalScore: 6,
+      reviewing: false,
+    } as never);
+    vi.mocked(myExamReview).mockResolvedValueOnce({
+      examId: 103,
+      examTitle: '填空考试',
+      studentName: '李四',
+      totalScore: 6,
+      questions: [
+        {
+          questionId: 21,
+          questionNumber: 1,
+          questionType: '填空',
+          questionContent: '中国的首都是 ____',
+          myAnswer: '北京',
+          correctAnswer: '北京|beijing',
+          myScore: 6,
+          fullScore: 6,
+          analysis: '首都是北京',
+        },
+      ],
+    } as never);
+
+    const wrapper = mount(StudentScoresPage);
+    (wrapper.vm as unknown as { selectedExamId?: number }).selectedExamId = 103;
+    await flushPromises();
+
+    const reviewBtn = wrapper.find('[data-test="review-exam-btn"]');
+    expect(reviewBtn.exists()).toBe(true);
+    await reviewBtn.trigger('click');
+    await flushPromises();
+
+    // 可接受答案列表形态（命中任一）——不是把归一化串原样 `北京|beijing` 展示
+    expect(document.body.textContent).toContain('可接受答案（命中任一即可）');
+    expect(document.body.textContent).toContain('北京 / beijing');
+    expect(document.body.textContent).toContain('中国的首都是 ____');
+  });
 });
