@@ -40,7 +40,17 @@
           批量删除（{{ selectedIds.length }}）
         </Button>
       </Popconfirm>
+      <Button :loading="importing" @click="onChooseFile">导入</Button>
+      <Button :loading="exporting" @click="onExport">导出</Button>
+      <Button :loading="templateLoading" @click="onDownloadTemplate">下载模板</Button>
       <Button type="primary" @click="onCreate">新建题目</Button>
+      <input
+        ref="fileInput"
+        type="file"
+        accept=".xlsx"
+        class="hidden-file"
+        @change="onFileChange"
+      />
     </div>
 
     <Table
@@ -82,6 +92,12 @@
     <!-- 软删除语义说明：列表数据完全来自后端分页接口；已删题目被后端逻辑删除过滤，
          不会出现在本列表（前端不自行发明过滤规则，也不做「已删假可用」展示）。 -->
     <QuestionForm v-model:open="formOpen" :question="editing" @saved="invalidateQuestions" />
+
+    <QuestionImportModal
+      :open="importResultOpen"
+      :result="importResult"
+      @close="importResultOpen = false"
+    />
   </div>
 </template>
 
@@ -101,16 +117,20 @@ import { computed, reactive, ref, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 
 import QuestionForm from '@/components/question/QuestionForm.vue';
+import QuestionImportModal from '@/components/question/QuestionImportModal.vue';
 import {
   batchDelete,
   delete_ as deleteQuestion,
+  importQuestions,
   list as listTags,
   page,
+  type QuestionImportResult,
   type QuestionResponse,
   type TagResponse,
 } from '@/api/axios';
-import { client, unwrap } from '@/api/apiClient';
+import { apiClient, client, unwrap } from '@/api/apiClient';
 import { queryClient } from '@/api/queryClient';
+import { browserSaveFile, downloadExport } from '@/utils/exportDownload';
 import { buildQuestionPageQuery } from '@/utils/questionFilters';
 import {
   DIFFICULTY_OPTIONS,
@@ -256,4 +276,85 @@ async function onBatchDelete(): Promise<void> {
 function formatTime(value?: string | null): string {
   return value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '—';
 }
+
+// ==================== 批量导入 / 导出 / 下载模板（add-question-import-export） ====================
+
+const fileInput = ref<HTMLInputElement | null>(null);
+const importing = ref(false);
+const exporting = ref(false);
+const templateLoading = ref(false);
+const importResultOpen = ref(false);
+const importResult = ref<QuestionImportResult | null>(null);
+
+function onChooseFile(): void {
+  fileInput.value?.click();
+}
+
+async function onFileChange(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  // 无论成败都清空 input，保证连续选择同一文件也能再次触发 change
+  input.value = '';
+  if (!file) return;
+  if (!/\.xlsx$/i.test(file.name)) {
+    message.error('仅支持 .xlsx 格式的题库文件');
+    return;
+  }
+  importing.value = true;
+  try {
+    // SDK importQuestions：multipart/form-data（formDataBodySerializer + Content-Type:null），对齐图片上传函数形态
+    const result = await unwrap<QuestionImportResult>(
+      importQuestions({ client, throwOnError: true, body: { file } })
+    );
+    importResult.value = result ?? { imported: 0, failed: 0, errors: [] };
+    importResultOpen.value = true;
+    if ((result?.imported ?? 0) > 0) {
+      invalidateQuestions();
+    }
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '导入失败，请稍后重试');
+  } finally {
+    importing.value = false;
+  }
+}
+
+/** 导出：后端 SXSSF 流式生成 xlsx，前端只触发下载（复用成绩导出同一工具）。 */
+async function onExport(): Promise<void> {
+  exporting.value = true;
+  try {
+    const fileName = await downloadExport(
+      { http: apiClient, saveFile: browserSaveFile },
+      '/api/questions/export',
+      '题库导出.xlsx'
+    );
+    message.success(`已导出：${fileName}`);
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '导出失败，请稍后重试');
+  } finally {
+    exporting.value = false;
+  }
+}
+
+/** 下载导入模板（复用成绩导出同一下载工具）。 */
+async function onDownloadTemplate(): Promise<void> {
+  templateLoading.value = true;
+  try {
+    const fileName = await downloadExport(
+      { http: apiClient, saveFile: browserSaveFile },
+      '/api/questions/import-template',
+      '题库导入模板.xlsx'
+    );
+    message.success(`已下载：${fileName}`);
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '模板下载失败，请稍后重试');
+  } finally {
+    templateLoading.value = false;
+  }
+}
 </script>
+
+<style scoped>
+.hidden-file {
+  display: none;
+}
+</style>

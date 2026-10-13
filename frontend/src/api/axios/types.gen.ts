@@ -219,6 +219,23 @@ export type ReviewHandleRequest = {
     reason?: string;
 };
 
+export type ApiResponseQuestionImportResult = {
+    code?: number;
+    message?: string;
+    data?: QuestionImportResult;
+};
+
+export type ErrorRow = {
+    row?: number;
+    reason?: string;
+};
+
+export type QuestionImportResult = {
+    imported?: number;
+    failed?: number;
+    errors?: Array<ErrorRow>;
+};
+
 export type BatchDeleteQuestionsRequest = {
     ids: Array<number>;
 };
@@ -1606,6 +1623,24 @@ export type Create1Responses = {
 
 export type Create1Response = Create1Responses[keyof Create1Responses];
 
+export type ImportQuestionsData = {
+    body?: {
+        file?: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/questions/import';
+};
+
+export type ImportQuestionsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseQuestionImportResult;
+};
+
+export type ImportQuestionsResponse = ImportQuestionsResponses[keyof ImportQuestionsResponses];
+
 export type BatchDeleteData = {
     body: BatchDeleteQuestionsRequest;
     path?: never;
@@ -2431,6 +2466,38 @@ export type MyMakeupFinalScoreResponses = {
 };
 
 export type MyMakeupFinalScoreResponse = MyMakeupFinalScoreResponses[keyof MyMakeupFinalScoreResponses];
+
+export type ImportTemplateData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/questions/import-template';
+};
+
+export type ImportTemplateResponses = {
+    /**
+     * OK
+     */
+    200: string;
+};
+
+export type ImportTemplateResponse = ImportTemplateResponses[keyof ImportTemplateResponses];
+
+export type ExportQuestionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/questions/export';
+};
+
+export type ExportQuestionsResponses = {
+    /**
+     * OK
+     */
+    200: string;
+};
+
+export type ExportQuestionsResponse = ExportQuestionsResponses[keyof ExportQuestionsResponses];
 
 export type List1Data = {
     body?: never;

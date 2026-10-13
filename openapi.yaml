@@ -548,6 +548,27 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseQuestionResponse"
+  /api/questions/import:
+    post:
+      tags:
+      - question-import-export-controller
+      operationId: importQuestions
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseQuestionImportResult"
   /api/questions/batch-delete:
     post:
       tags:
@@ -1531,6 +1552,32 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMakeupFinalScoreResponse"
+  /api/questions/import-template:
+    get:
+      tags:
+      - question-import-export-controller
+      operationId: importTemplate
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /api/questions/export:
+    get:
+      tags:
+      - question-import-export-controller
+      operationId: exportQuestions
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
   /api/messages:
     get:
       tags:
@@ -2624,6 +2671,37 @@ components:
           type: number
         reason:
           type: string
+    ApiResponseQuestionImportResult:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/QuestionImportResult"
+    ErrorRow:
+      type: object
+      properties:
+        row:
+          type: integer
+          format: int32
+        reason:
+          type: string
+    QuestionImportResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+          format: int32
+        failed:
+          type: integer
+          format: int32
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorRow"
     BatchDeleteQuestionsRequest:
       type: object
       properties:
