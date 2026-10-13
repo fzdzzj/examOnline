@@ -212,3 +212,44 @@ THEN 筛选操作仅对当前页展示或查询条件生效，题级进度「已
 > 合入注记（2026-10-02，`add-subjective-grading-pagination`）：批改工作台行端点由「单题 × 全部交卷学生全量行裸 List」就地扩参为分页信封——`SubjectiveGradePageResponse{rows, total, graded}` 恒定形状（不做裸 List/信封 oneOf 双形态），`page/size/onlyUngraded/name/submissionId` 全部可选：page/size 均缺省返回全量，`onlyUngraded`（score IS NULL）与 `name`（LIKE 包含）筛选下沉服务端、语义对齐面板既有客户端筛选，`submissionId` 单行取数（至多 1 行）专供 409/1012 冲突回填；`ORDER BY g.student_id` 稳定排序不动。`graded` 与题级进度 `SubjectiveQuestionItem.gradedStudents` 同口径（`score IS NOT NULL` 的该题全量计数，不受行筛选影响）。**两处 spec-delta 未明说的实现口径（如实登记）**：① page/size 只给其一另一参数取兜底（page=1 / size=100 上限），越界 400；② `total` 为「与 rows 同口径（筛选后、分页前）」的计数——前端据此算服务端分页页数，缺省无筛选时即总行数。**乐观锁链路零改动**：`casSaveScore`、`saveScore` 校验链、`readYourWriteMark.mark()` 主库回读（仍走未动的原 `selectWorkbenchRows`）与前端 `useGradingFlow` 协议/409/1012 语义原样。**前端协同改造**：批改页 `useQuery` queryKey 持有 page/size/onlyUngraded/nameFilter（切题目/筛选自动回第 1 页），面板移除客户端全量筛选链（filteredRows）与静态客户端分页、筛选输入与分页控件经 defineModel 上抛服务端驱动、已批计数改信封 graded/total，`refreshRow` 改 `submissionId` 单行拉取。**测试与证据**：新增集成测试 `SubjectiveRowsPaginationIntegrationTest` 8 例（分页稳定子集与 total/graded / 缺省全量 / onlyUngraded / name / submissionId 单行 / 非法参数 400 / 越权 403 / graded 与题级进度口径一致）先红（8 例中 7 红：响应非信封 NPE + 非法参数 200≠400，`evidence/red-backend.txt`）后绿（8/0/0/0，`evidence/green-backend.txt`）；前端 `gradingServerPaging.spec.ts` 9 例（词法护栏 4：无 filteredRows / 无静态客户端分页 pageSize:10 / refreshRow 含 submissionId 查询参数 / queryKey 含 page、size、筛选参数 + 行为 5：信封驱动计数 / 表格翻页与页大小上抛 / 筛选上抛 / 409 冲突后 refreshRow 单行取数并刷新 / queryFn 携带服务端分页与筛选参数且切筛选回第 1 页）先红（9/9 红）后绿（9/9，`evidence/red-frontend.txt`/`green-frontend.txt`）；`openapi.yaml` 路 A 离线重导出（响应改信封 + 5 个新查询参数）+ `gen:api` 再生成。**验收边界**＝实施笔 `c1c3ba0` 已提交状态双端全量门禁：仓库根 `mvnw.cmd clean test` → **368/0/0/1 BUILD SUCCESS 退出码 0**（基线 360/0/0/1@8db79d4 + 8 个新集成用例）；前端 lint:check / type-check:check / test 三项退出码 0，vitest 46 文件 394 例 → **47 文件 403 例**（+1 文件 +9 例）；零表变更、零迁移。**纯静态 + 集成/单测可证：未启 dev server、未跑前端构建、未碰 Docker/共享 dev。**
 
 > 合入注记（2026-10-10，`update-grading-subjective-paging`）：本案为既有能力「主观题批改行分页与筛选」之护栏补强案（零业务实现代码、零 API 契约改动），追加上述 4 个边界与端到端协同 Scenario 并落地自动化用例。后端 `SubjectiveRowsPaginationIntegrationTest` 净增 2 例（越界页返回空 rows 且统计维持全量、相邻页严格有序递增无重叠），全量测试总数由基线 382 净增至 384（384/0/0/1）；前端 `gradingServerPaging.spec.ts` 净增 2 例（越界页空态面板渲染且顶部信封统计全量维持、筛选作用域与题级进度口径一致），全量测试总数由基线 557 净增至 559（77 文件 559 例）。三项变异校验（撤 Service 分页参数透传 3 例红、撤信封 graded 口径 5 例红、撤前端 409 回填 1 例红）经独立复核实测闭环变红并复原归零，执行侧失真记录已在 tasks.json 纠偏登记。验收边界＝main 已提交状态双端全量门禁：后端 `mvnw.cmd clean test` 384/0/0/1 BUILD SUCCESS 退出码 0，前端三门禁全绿（77 文件 559 例）。纯测试+spec，零业务改动。
+
+---
+
+### Requirement: 填空题自动判分
+
+WHEN 系统判定填空题（`type=5`）,
+
+系统 SHALL 将学生答案 trim 后与 `correct_answer` 中以 `|` 分隔的各可接受答案逐一比对：中文精确全等、纯英文字母忽略大小写全等；命中任一 SHALL 判满分、全不中 SHALL 判零分；比对 SHALL NOT 改写学生答案原样存档；判分 SHALL 经策略注册表接入而不改动判分核心既有方法体，且填空题 SHALL NOT 进入主观批改工作台。
+
+#### Scenario: 精确命中
+
+GIVEN 学生答案（trim 后）与某一可接受答案全等（含中文）
+WHEN 判分
+THEN 该题满分
+
+#### Scenario: 忽略大小写命中
+
+GIVEN 学生答案为纯英文字母且与某一可接受答案忽略大小写后全等
+WHEN 判分
+THEN 该题满分
+AND 比对不改变学生答案原样存档（`student_answer` 快照保留原文）
+
+#### Scenario: 未命中
+
+GIVEN 学生答案与全部可接受答案逐一比对均不中
+WHEN 判分
+THEN 该题零分，进入成绩与错题本口径（错题判定与既有题型同构）
+
+#### Scenario: 策略经注册表接入
+
+GIVEN 填空题判分
+WHEN 系统判分
+THEN `FillBlankGradingStrategy` 注册于 `GradingStrategyRegistry`，判分核心既有方法体零改动
+AND 既有四题型判分结果逐字零回归
+
+#### Scenario: 不进主观批改
+
+GIVEN 一场含填空题与简答题的考试已交卷
+WHEN 教师进入主观批改工作台
+THEN 填空题不出现在主观批改工作台候选中
+AND 简答仍走主观链不变
