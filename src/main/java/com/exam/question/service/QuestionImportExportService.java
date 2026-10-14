@@ -89,6 +89,8 @@ public class QuestionImportExportService {
 
     private static final int IMAGE_URL_MAX = 512;
     private static final int CONTENT_MAX = 5000;
+    /** 答案长度上限：对齐 schema questions.correct_answer VARCHAR(512) 与单题建题 @Size 文案。 */
+    private static final int ANSWER_MAX = 512;
 
     private final QuestionMapper questionMapper;
     private final QuestionTagMapper questionTagMapper;
@@ -266,6 +268,10 @@ public class QuestionImportExportService {
             parsed.answer = AnswerNormalizer.normalize(type, rawAnswer, choices.size());
         } catch (BusinessException e) {
             parsed.errors.add(e.getMessage());
+        }
+        // 答案长度：应用层前置拦截，避免落到 DB 字段溢出被记成「入库失败，请检查数据」
+        if (parsed.answer != null && parsed.answer.length() > ANSWER_MAX) {
+            parsed.errors.add("答案最长 " + ANSWER_MAX + " 字");
         }
 
         // 标签：逗号/顿号分隔（仅接受已存在标签名，未知记行错误，不随手新建）
