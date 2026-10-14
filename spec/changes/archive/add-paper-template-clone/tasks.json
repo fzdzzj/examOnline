@@ -32,9 +32,9 @@
     {
       "id": 5,
       "title": "阶段 5：复核后收口",
-      "status": "pending",
+      "status": "completed",
       "description": "复核子agent 独立复跑双端门禁与变异复现（含模板考试卷守卫）、以分支起点为基线核对红线域 diff（重点：PaperService/PaperSnapshotService/ExamService 既有行零漂移——逐行区分追加守卫行、快照消费链路零改动、is_template 实体-表双向一致）与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线（question-bank 四个新 Requirement〔试卷克隆/另存为模板/模板守卫/试卷列表模板视图〕、frontend 一个新 Requirement〔试卷模板与克隆界面〕）、三件套归档 spec/changes/archive/add-paper-template-clone/、spec/README.md 登记行、docs/功能待办清单.md B 节「试卷模板 / 克隆复用」行移除并入 D 节交付注记（B 节中优先项至此清空）；收口笔零业务代码改动；W43 存量库应用由用户另行裁决（硬约定 4）；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
-      "evidence": ""
+      "evidence": "复核独立实测（后端 470 全绿 Skipped 1 / 前端 667 全绿 / 变异 m1 模板考试卷守卫与 m2 草稿态产物五步复现击红为行为级断言 / 基线 9e87d9b 红线域既有行零漂移、is_template 实体-表双向一致）+ 收口段 CI 终态：https://github.com/fzdzzj/examOnline/actions/runs/38570297414 三 job success"
     }
   ]
 }
