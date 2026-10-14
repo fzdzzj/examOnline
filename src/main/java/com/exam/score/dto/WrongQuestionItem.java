@@ -53,4 +53,11 @@ public class WrongQuestionItem {
 
     /** 判分依据或教师评语（可选附） */
     private String scoreDetail;
+
+    /** 重练当前连对次数（x/3） */
+    private Integer consecutiveCorrect;
+
+    /** 是否已消灭（连对 >= 3） */
+    private Boolean mastered;
 }
+

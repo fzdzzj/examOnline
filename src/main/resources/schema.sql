@@ -505,3 +505,18 @@ CREATE TABLE IF NOT EXISTS user_messages (
     PRIMARY KEY (id),
     KEY idx_user_messages_user (user_id, id)         -- 本人消息列表倒序
 );
+
+-- =============================================================
+-- 错题重练作答明细（add-wrong-question-practice）
+-- 存量库另需手工执行 docker/mysql/migrations/2026-W42-add-wrong-question-practice.sql
+-- =============================================================
+CREATE TABLE IF NOT EXISTS practice_attempt (
+    id           BIGINT   NOT NULL AUTO_INCREMENT,
+    student_id   BIGINT   NOT NULL,
+    question_id  BIGINT   NOT NULL,
+    is_correct   BOOLEAN  NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_practice_attempt_stu_q_id (student_id, question_id, id)
+);
+
