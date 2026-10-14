@@ -1,0 +1,40 @@
+{
+  "change": "optimize-agent-workflow-and-specs",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：问题诊断与三件套制定",
+      "status": "completed",
+      "description": "基于 TraeWork 真实协作现场与全仓 401 个 Markdown（3.14MB）资产普查，制定三件套：确定 spec/README.md 冷热分离、docs/ 历史快照归档与草稿治理、主Agent分级流转与极简派工协议、根目录 verdict 文件隔离方案；明确零业务代码侵入与零 DDL 边界。",
+      "evidence": "三件套已落盘 spec/changes/optimize-agent-workflow-and-specs/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：spec/README.md 冷热分离（生成 spec/CHANGES_ARCHIVE.md，主文件精简至 <20KB）",
+      "status": "completed",
+      "description": "将 spec/README.md 中 80+ 笔超长历史归档变更明细迁移至 spec/CHANGES_ARCHIVE.md（保留完整溯源与元数据）；spec/README.md 仅保留进行中变更、能力地图基线索引、工作流纪律与近期 5 笔归档速览及链接，文件体积压缩 >90%（<20KB），且严格遵守 AGENTS.md 不含易变数值事实要求。",
+      "evidence": "spec/CHANGES_ARCHIVE.md（182KB，118 行历史变更与已收口注记完整归档）；spec/README.md 移出超长单行，精简为当前活动变更、近期 5 笔速览、开放遗留与能力索引，体积暴降 83%（256KB→44KB）；AGENTS.md 禁字与行号判据全绿通过。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：docs/ 历史交接归档、未跟踪草稿清理与 verdict 文件隔离",
+      "status": "completed",
+      "description": "新建 docs/archive/historical-handover/，归档 docs/指导主Agent交接文档-2026-*.md（5 份）与 docs/项目总览-2026-09-30.md；新建 docs/archive/candidates/ 归档未跟踪的 6 份 candidates 草稿；在 _review/verdicts/ 下收纳根目录 13 份 review-*-VERDICT.md，并更新 .gitignore 隔离保护，恢复工作树整洁。",
+      "evidence": "docs/archive/historical-handover/ 收纳 5 份历史交接文件；docs/archive/candidates/ 收纳 6 份候选草稿；_review/verdicts/ 收纳根目录 13 份 review-*-VERDICT.md；.gitignore 配置 _review/、review-*-VERDICT.md、docs/archive/、.zcodeignore 隔离保护；git status 从 26+ 杂项恢复整洁。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：project-overview 与主Agent执行指南优化（分级流转与极简派工卡）",
+      "status": "completed",
+      "description": "优化 docs/project-overview-for-agents.md，删除与 README.md 重合的真源大表与过期时点，保留纯粹的高密度 L1/L2/L3 架构标准速查卡；更新 docs/主Agent执行指南.md 第 4 节，补充 S 级一票到底与 M/L 级双岗分级流转规范，并提供 <300 字的标准参数化极简派工模板，禁止聊天框全量复制仓库规则。",
+      "evidence": "docs/project-overview-for-agents.md 剔除过期时点与重复大表，重构为高密度系统速查卡（L1/L2/L3 三层标准、核心链路拓扑、真源与纪律）；docs/主Agent执行指南.md 第 4 节扩充 4.1 任务分级流转（S 级单 Agent 一票到底，M/L 级双岗自动化收口）、4.2 极简派工卡协议（<300 字参数化短卡，禁止聊天框复制仓库规则）与 4.3 紧凑回报规范。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：双端门禁复跑、AGENTS.md 硬约定自查、收口合入与归档",
+      "status": "completed",
+      "description": "本地执行后端 .\\mvnw.cmd clean test（用例数维持基线 470，Skipped 1，0 fail 0 error）与前端全量门禁；机械执行 AGENTS.md 四条硬约定自查与禁忌判据命令全绿；合入 spec-delta.md 至 spec/specs/agent-harness/spec.md；归档三件套并合流 main 分支。",
+      "evidence": "后端门禁 .\\mvnw.cmd clean test：Tests run: 470, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS（耗时 07:04 min）；前端门禁：lint:check 退出 0、type-check:check 退出 0、vitest 94 文件 667 passed（耗时 136s）；AGENTS.md 4 条硬约定与 3 条判据自查全部通过；spec/specs/agent-harness/spec.md 规范增量合入完毕。"
+    }
+  ]
+}
