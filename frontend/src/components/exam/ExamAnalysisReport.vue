@@ -78,6 +78,22 @@
             <template v-else-if="column.key === 'discrimination'">
               <span>{{ discrimLabel((record as QuestionStatItem).discrimination) }}</span>
             </template>
+            <template v-else-if="column.key === 'optionDistribution'">
+              <div
+                v-if="(record as QuestionStatItem).optionDistribution?.length"
+                class="flex flex-wrap gap-2"
+              >
+                <span
+                  v-for="opt in (record as QuestionStatItem).optionDistribution"
+                  :key="opt.option"
+                  class="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5"
+                >
+                  {{ formatOptionLabel(opt.option, (record as QuestionStatItem).type) }}:
+                  {{ opt.count ?? 0 }}人 ({{ toPercent(opt.rate) }}%)
+                </span>
+              </div>
+              <span v-else class="text-gray-400">-</span>
+            </template>
           </template>
         </Table>
 
@@ -221,7 +237,18 @@ const questionColumns: TableColumnsType = [
   { title: '答对率', key: 'correctRate', dataIndex: 'correctRate', width: 90 },
   { title: '区分度', key: 'discrimination', dataIndex: 'discrimination', width: 90 },
   { title: '作答人数', key: 'answeredCount', dataIndex: 'answeredCount', width: 90 },
+  { title: '选项分布', key: 'optionDistribution', dataIndex: 'optionDistribution', minWidth: 200 },
 ];
+
+/** 选项标签展示：判断题展示层映射为「正确/错误」，单选/多选保持原始字母。 */
+function formatOptionLabel(option: string | undefined, type: string | undefined): string {
+  if (!option) return '';
+  if (type === '判断' || type === 'JUDGE') {
+    if (option === 'T') return '正确';
+    if (option === 'F') return '错误';
+  }
+  return option;
+}
 
 /** 0~100 整数百分比；null/缺失（后端样本不足等）返回 0。 */
 function toPercent(rate: number | undefined | null): number {

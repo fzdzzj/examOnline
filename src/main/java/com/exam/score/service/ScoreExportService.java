@@ -13,6 +13,7 @@ import com.exam.grading.model.GradingPaper;
 import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.support.GradingPaperReader;
 import com.exam.question.entity.QuestionType;
+import com.exam.question.support.AnswerNormalizer;
 import com.exam.score.support.ExcelSheetWriter;
 import com.exam.score.support.QuestionScoreResolver;
 import com.exam.submission.entity.ExamSubmission;
@@ -179,7 +180,7 @@ public class ScoreExportService {
 
         return ExcelSheetWriter.withStreamingWorkbook(workbook -> {
             SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "题目统计");
-            ExcelSheetWriter.writeHeader(sheet, "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数");
+            ExcelSheetWriter.writeHeader(sheet, "题号", "题型", "题干", "满分", "平均分", "得分率", "答对率(满分率)", "区分度", "作答人数", "选项分布");
             int rowIndex = 1;
             for (QuestionStatMetric metric : metrics) {
                 Row row = sheet.createRow(rowIndex++);
@@ -195,9 +196,14 @@ public class ScoreExportService {
                 row.createCell(7).setCellValue(n == 0 ? "-" : (metric.discrimination() == null
                         ? "样本不足" : round2(metric.discrimination())));
                 row.createCell(8).setCellValue(n);
+                row.createCell(9).setCellValue(formatOptionDistribution(metric.optionDistribution()));
             }
-            ExcelSheetWriter.autoSize(sheet, 9);
+            ExcelSheetWriter.autoSize(sheet, 10);
         });
+    }
+
+    /** 选项分布快照项。 */
+    public record OptionStat(String option, int count, double rate) {
     }
 
     /**
@@ -206,8 +212,9 @@ public class ScoreExportService {
      * 平均分/得分率/答对率按 all answered 的「每生一行×逐题得分」路径，区分度为前后 27%
      * 高低分组法（与 {@link #discriminationValue} 同公式）。返回按试卷题目顺序排列的指标快照。
      */
-    record QuestionStatMetric(GradingQuestion question, int answeredCount, double averageScore,
-                              double scoreRate, double correctRate, Double discrimination) {
+    public record QuestionStatMetric(GradingQuestion question, int answeredCount, double averageScore,
+                                     double scoreRate, double correctRate, Double discrimination,
+                                     List<OptionStat> optionDistribution) {
     }
 
     List<QuestionStatMetric> aggregateQuestionStats(Long examId, GradingPaper paper,
@@ -217,6 +224,7 @@ public class ScoreExportService {
         Map<Long, double[]> sums = new HashMap<>();
         Map<Long, int[]> counts = new HashMap<>();
         Map<Long, List<double[]>> pairs = new HashMap<>();
+        Map<Long, Map<String, int[]>> optionCounts = new HashMap<>();
 
         forEachSubmissionPage(examId, page -> {
             Map<Long, Map<Long, QuestionScoreResolver.ResolvedQuestionScore>> resolved =
@@ -226,6 +234,11 @@ public class ScoreExportService {
                         resolved.get(submission.getId());
                 if (perQuestion == null) {
                     continue;
+                }
+                Map<Long, String> studentAnswers = null;
+                try {
+                    studentAnswers = paperReader.parseAnswers(submission.getAnswers());
+                } catch (Exception ignored) {
                 }
                 double total = submission.getTotalScore() == null
                         ? 0 : submission.getTotalScore().doubleValue();
@@ -242,6 +255,14 @@ public class ScoreExportService {
                     }
                     pairs.computeIfAbsent(question.questionId(), k -> new ArrayList<>())
                             .add(new double[]{total, score.score().doubleValue()});
+
+                    if (studentAnswers != null && isChoiceQuestion(question.type())) {
+                        String rawAnswer = studentAnswers.get(question.questionId());
+                        if (rawAnswer != null && !rawAnswer.isBlank()) {
+                            accumulateOptionCount(question, rawAnswer,
+                                    optionCounts.computeIfAbsent(question.questionId(), k -> new LinkedHashMap<>()));
+                        }
+                    }
                 }
             }
         });
@@ -258,10 +279,83 @@ public class ScoreExportService {
             double correctRate = n == 0 ? 0 : (double) full / n;
             Double discrimination = n == 0 ? null : discriminationValue(
                     pairs.getOrDefault(question.questionId(), List.of()), max);
+            List<OptionStat> optionDistribution = buildOptionDistribution(question, n,
+                    optionCounts.get(question.questionId()));
             result.add(new QuestionStatMetric(question, n, averageScore, scoreRate, correctRate,
-                    discrimination));
+                    discrimination, optionDistribution));
         }
         return result;
+    }
+
+    private boolean isChoiceQuestion(QuestionType type) {
+        return type == QuestionType.SINGLE || type == QuestionType.MULTIPLE || type == QuestionType.JUDGE;
+    }
+
+    private void accumulateOptionCount(GradingQuestion question, String rawAnswer, Map<String, int[]> map) {
+        if (question.type() == QuestionType.SINGLE) {
+            try {
+                String opt = AnswerNormalizer.normalize(QuestionType.SINGLE, rawAnswer, question.choiceCount());
+                map.computeIfAbsent(opt, k -> new int[1])[0]++;
+            } catch (Exception ignored) {
+            }
+        } else if (question.type() == QuestionType.MULTIPLE) {
+            try {
+                String norm = AnswerNormalizer.normalize(QuestionType.MULTIPLE, rawAnswer, question.choiceCount());
+                for (String opt : norm.split(",")) {
+                    String trimmed = opt.trim();
+                    if (!trimmed.isEmpty()) {
+                        map.computeIfAbsent(trimmed, k -> new int[1])[0]++;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        } else if (question.type() == QuestionType.JUDGE) {
+            try {
+                String opt = AnswerNormalizer.normalize(QuestionType.JUDGE, rawAnswer, 0);
+                map.computeIfAbsent(opt, k -> new int[1])[0]++;
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private List<OptionStat> buildOptionDistribution(GradingQuestion question, int answeredCount,
+                                                     Map<String, int[]> countMap) {
+        if (!isChoiceQuestion(question.type())) {
+            return List.of();
+        }
+        List<String> options = new ArrayList<>();
+        if (question.type() == QuestionType.JUDGE) {
+            options.add("T");
+            options.add("F");
+        } else {
+            int choices = question.choiceCount();
+            for (int i = 0; i < choices; i++) {
+                options.add(String.valueOf((char) ('A' + i)));
+            }
+        }
+        List<OptionStat> list = new ArrayList<>(options.size());
+        for (String opt : options) {
+            int count = (countMap == null || countMap.get(opt) == null) ? 0 : countMap.get(opt)[0];
+            double rate = answeredCount == 0 ? 0.0
+                    : BigDecimal.valueOf((double) count / answeredCount).setScale(4, RoundingMode.HALF_UP).doubleValue();
+            list.add(new OptionStat(opt, count, rate));
+        }
+        return list;
+    }
+
+    private String formatOptionDistribution(List<OptionStat> distribution) {
+        if (distribution == null || distribution.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (OptionStat item : distribution) {
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append(item.option()).append(':').append(item.count()).append('(')
+                    .append(Math.round(item.rate() * 100)).append("%)");
+        }
+        return sb.toString();
     }
 
     /**

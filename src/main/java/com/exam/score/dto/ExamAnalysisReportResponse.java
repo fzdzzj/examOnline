@@ -1,6 +1,7 @@
 package com.exam.score.dto;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -182,12 +183,21 @@ public class ExamAnalysisReportResponse {
         private Double discrimination;
         private int answeredCount;
 
+        private List<OptionDistributionItem> optionDistribution = new ArrayList<>();
+
         public QuestionStatItem() {
         }
 
         public QuestionStatItem(int order, String type, BigDecimal fullScore, BigDecimal averageScore,
                                 Double scoreRate, Double correctRate, Double discrimination,
                                 int answeredCount) {
+            this(order, type, fullScore, averageScore, scoreRate, correctRate, discrimination, answeredCount,
+                    new ArrayList<>());
+        }
+
+        public QuestionStatItem(int order, String type, BigDecimal fullScore, BigDecimal averageScore,
+                                Double scoreRate, Double correctRate, Double discrimination,
+                                int answeredCount, List<OptionDistributionItem> optionDistribution) {
             this.order = order;
             this.type = type;
             this.fullScore = fullScore;
@@ -196,6 +206,7 @@ public class ExamAnalysisReportResponse {
             this.correctRate = correctRate;
             this.discrimination = discrimination;
             this.answeredCount = answeredCount;
+            this.optionDistribution = optionDistribution == null ? new ArrayList<>() : optionDistribution;
         }
 
         public int getOrder() {
@@ -260,6 +271,54 @@ public class ExamAnalysisReportResponse {
 
         public void setAnsweredCount(int answeredCount) {
             this.answeredCount = answeredCount;
+        }
+
+        public List<OptionDistributionItem> getOptionDistribution() {
+            return optionDistribution;
+        }
+
+        public void setOptionDistribution(List<OptionDistributionItem> optionDistribution) {
+            this.optionDistribution = optionDistribution == null ? new ArrayList<>() : optionDistribution;
+        }
+    }
+
+    /** 选项分布项（单选/多选/判断题选项人数与占比统计）。 */
+    public static class OptionDistributionItem {
+        private String option;
+        private int count;
+        private Double rate;
+
+        public OptionDistributionItem() {
+        }
+
+        public OptionDistributionItem(String option, int count, Double rate) {
+            this.option = option;
+            this.count = count;
+            this.rate = rate;
+        }
+
+        public String getOption() {
+            return option;
+        }
+
+        public void setOption(String option) {
+            this.option = option;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+        }
+
+        public Double getRate() {
+            return rate;
+        }
+
+        public void setRate(Double rate) {
+            this.rate = rate;
         }
     }
 

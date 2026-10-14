@@ -4233,6 +4233,17 @@ components:
           type: string
         totalScore:
           type: number
+    OptionDistributionItem:
+      type: object
+      properties:
+        option:
+          type: string
+        count:
+          type: integer
+          format: int32
+        rate:
+          type: number
+          format: double
     QuestionStatItem:
       type: object
       properties:
@@ -4257,6 +4268,10 @@ components:
         answeredCount:
           type: integer
           format: int32
+        optionDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionDistributionItem"
     ScoreBandItem:
       type: object
       properties:

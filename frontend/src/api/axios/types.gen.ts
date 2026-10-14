@@ -961,6 +961,12 @@ export type FocusStudentItem = {
     totalScore?: number;
 };
 
+export type OptionDistributionItem = {
+    option?: string;
+    count?: number;
+    rate?: number;
+};
+
 export type QuestionStatItem = {
     order?: number;
     type?: string;
@@ -970,6 +976,7 @@ export type QuestionStatItem = {
     correctRate?: number;
     discrimination?: number;
     answeredCount?: number;
+    optionDistribution?: Array<OptionDistributionItem>;
 };
 
 export type ScoreBandItem = {
