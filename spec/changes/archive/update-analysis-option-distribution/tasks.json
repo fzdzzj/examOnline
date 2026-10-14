@@ -32,9 +32,9 @@
     {
       "id": 5,
       "title": "阶段 5：复核后收口",
-      "status": "pending",
+      "status": "completed",
       "description": "复核子agent 独立复跑双端门禁与变异复现、核对红线域 diff（重点：既有指标零漂移）与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线（score-management「考试数据分析报告」「成绩导出」+ frontend「教师端考试数据分析报告界面」）、三件套归档 spec/changes/archive/update-analysis-option-distribution/、spec/README.md 登记行、docs/功能待办清单.md B 节「题目选项分布统计」行状态更新（创新点 4 残差至此清零，D 节注记同步）；收口笔零业务代码改动；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
-      "evidence": ""
+      "evidence": "①收口执行摘要：--no-ff 合并笔 fa9a16e（main@cb2fe59 上无冲突，feature/update-analysis-option-distribution 直系三笔合入）；spec-delta 两域合入基线（score-management「考试数据分析报告」追加 1 Scenario：逐题选项分布；score-management「成绩导出」追加 1 Scenario：题目统计导出选项分布列；frontend「教师端考试数据分析报告界面」追加 1 Scenario：逐题选项分布呈现），既有约束引用节不重复正文、契约节作合入注记；三件套归档 spec/changes/archive/update-analysis-option-distribution/（proposal.md/spec-delta.md/tasks.json 纯 rename 零内容改动）；spec/README.md 能力域表 score-management/frontend 两行各追加登记项 + 归档表新增本卡行；docs/功能待办清单.md 工作树既有勘误改动与本案状态一并入库，B 节「题目选项分布统计」行移除并入 D 节注记（对齐 D 节「已覆盖项」定位），D 节「考试数据分析报告」条目更新为「选项分布已于 2026-10-14 随 update-analysis-option-distribution 补全（创新点 4 至此完整交付）」，创新点 4 残差至此清零。②复核独立实测引用（数值均来自复核独立复跑，未自造/改动）：后端 .\\\\mvnw.cmd clean test → Tests run: 448, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS（既有 ExamAnalysisReportIntegrationTest 8 例全绿）；前端 lint/type-check 零 error + 91 文件 657 例全绿（零超时）；变异 withdraw-choice-filter / withdraw-multiple-split / withdraw-xlsx-option-distribution 独立重建五步原子全 PASS（击红 oracle 逐字复现：expected <4> but was <0> / <2> but was <1> / <A:2(50%) B:1(25%) C:0(0%) D:0(0%)> but was <>）；VERDICT 六项 PASS 零阻断、证据链九项零失真；低风险观察：选项字母超 Z（>26 选项）为理论边界，与既有 AnswerNormalizer 口径一致，不做防护；gate-baseline.json 终值 448/657/82（backend 447→448，frontend 656→657，openapiPaths 82 维持不变，零新端点仅向后兼容扩展）；零 DDL、零新依赖、零新端点。③收口段 CI 终态 run id：合并笔 38492019241（push 触发，Frontend gate / Backend gate / Dependency scan 三 job 均 success）、收口笔 38492818021（同三 job 均 success）。收口笔 d1a099f 与回填笔均为零业务代码（git diff 仅 spec/README.md、spec/specs/{score-management,frontend}/spec.md、三件套 rename/tasks.json 回填与 docs/功能待办清单.md）。"
     }
   ]
 }
