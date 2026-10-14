@@ -42,6 +42,9 @@ public class Paper {
     /** 0=草稿 1=已锁定 */
     private Integer status;
 
+    /** 0=普通试卷 1=模板卷（add-paper-template-clone：模板=打标的试卷，仅用于复制复用） */
+    private Integer isTemplate;
+
     /** 当前生效快照 ID（生成快照后回填） */
     private Long snapshotId;
 

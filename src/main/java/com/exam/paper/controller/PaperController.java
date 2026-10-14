@@ -61,11 +61,12 @@ public class PaperController {
         return ApiResponse.success(toResponse(paperService.create(request)));
     }
 
-    /** 试卷分页（教师仅见自己的试卷） */
+    /** 试卷分页（教师仅见自己的试卷；isTemplate=true 走模板库视图，默认 false=普通试卷视图） */
     @GetMapping
     public ApiResponse<List<PaperResponse>> page(@RequestParam(defaultValue = "1") long page,
-                                                 @RequestParam(defaultValue = "10") long size) {
-        Page<Paper> result = paperService.page(page, size);
+                                                 @RequestParam(defaultValue = "10") long size,
+                                                 @RequestParam(defaultValue = "false") boolean isTemplate) {
+        Page<Paper> result = paperService.page(page, size, isTemplate);
         return ApiResponse.success(result.getRecords().stream().map(this::toResponse).toList());
     }
 
@@ -156,6 +157,20 @@ public class PaperController {
     @GetMapping("/{id}/snapshot")
     public ApiResponse<PaperSnapshotResponse> getSnapshot(@PathVariable Long id) {
         return ApiResponse.success(paperSnapshotService.getCurrent(id));
+    }
+
+    // ==================== 模板与克隆（add-paper-template-clone） ====================
+
+    /** 克隆试卷为新的草稿卷：复制元信息与全部题目（题目/顺序/分值覆盖）；对模板卷调用即为「从模板建卷」 */
+    @PostMapping("/{id}/clone")
+    public ApiResponse<PaperResponse> clone(@PathVariable Long id) {
+        return ApiResponse.success(toResponse(paperService.clone(id)));
+    }
+
+    /** 另存为模板：复制该卷为新的模板卷（is_template=1、草稿态），原卷保留；模板卷调用被拒 */
+    @PostMapping("/{id}/save-as-template")
+    public ApiResponse<PaperResponse> saveAsTemplate(@PathVariable Long id) {
+        return ApiResponse.success(toResponse(paperService.saveAsTemplate(id)));
     }
 
     private PaperResponse toResponse(Paper paper) {

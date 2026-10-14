@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS papers (
     question_count INT           NOT NULL DEFAULT 0, -- 题目数量（随组卷操作维护）
     status         TINYINT       NOT NULL DEFAULT 0, -- 0=草稿 1=已锁定（快照已生成）
     snapshot_id    BIGINT                 DEFAULT NULL, -- 当前生效快照 ID
+    is_template    TINYINT       NOT NULL DEFAULT 0, -- 0=普通试卷 1=模板卷（add-paper-template-clone：模板=打标的试卷，非模板卷全链路行为零变化）
     created_by     BIGINT        NOT NULL,
     created_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,

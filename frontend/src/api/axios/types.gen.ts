@@ -1752,6 +1752,7 @@ export type Page1Data = {
     query?: {
         page?: number;
         size?: number;
+        isTemplate?: boolean;
     };
     url: '/api/papers';
 };
@@ -1817,6 +1818,24 @@ export type GenerateSnapshotResponses = {
 
 export type GenerateSnapshotResponse = GenerateSnapshotResponses[keyof GenerateSnapshotResponses];
 
+export type SaveAsTemplateData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/api/papers/{id}/save-as-template';
+};
+
+export type SaveAsTemplateResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponsePaperResponse;
+};
+
+export type SaveAsTemplateResponse = SaveAsTemplateResponses[keyof SaveAsTemplateResponses];
+
 export type AddQuestionData = {
     body: AddPaperQuestionRequest;
     path: {
@@ -1870,6 +1889,24 @@ export type AddQuestionsResponses = {
 };
 
 export type AddQuestionsResponse = AddQuestionsResponses[keyof AddQuestionsResponses];
+
+export type CloneData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/api/papers/{id}/clone';
+};
+
+export type CloneResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponsePaperResponse;
+};
+
+export type CloneResponse = CloneResponses[keyof CloneResponses];
 
 export type PreviewDrawData = {
     body: RandomDrawRequest;

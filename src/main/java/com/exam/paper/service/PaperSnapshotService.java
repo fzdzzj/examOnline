@@ -84,6 +84,10 @@ public class PaperSnapshotService {
     @Transactional(rollbackFor = Exception.class)
     public PaperSnapshotResponse generate(Long paperId) {
         Paper paper = paperService.getOwnedPaper(paperId);
+        // add-paper-template-clone 守卫（追加校验行）：模板卷不得生成快照（模板仅用于复制复用）；此时尚未写入，status/snapshotId 零变化
+        if (paper.getIsTemplate() != null && paper.getIsTemplate() == 1) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "模板卷不能生成快照（模板仅用于复用建卷）");
+        }
         if (paper.getStatus() == Paper.STATUS_LOCKED) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "试卷已锁定，快照已存在，不允许重复生成");
         }
