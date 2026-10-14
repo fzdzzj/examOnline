@@ -96,13 +96,29 @@ public class PaperService {
         return paper;
     }
 
-    /** 试卷分页：教师仅见自己的试卷，ADMIN 可见全部。 */
+    /** 试卷分页：教师仅见自己的试卷，ADMIN 可见全部（默认普通试卷视图，模板卷不出现）。 */
     public Page<Paper> page(long page, long size) {
         LoginUser operator = requireLogin();
         return paperMapper.selectPage(new Page<>(page, Math.min(size, 100)),
                 Wrappers.<Paper>lambdaQuery()
                         .eq(operator.getRoleLevel() < RoleHierarchy.levelOf(RoleHierarchy.ADMIN),
                                 Paper::getCreatedBy, operator.getId())
+                        // 默认视图零漂移（add-paper-template-clone）：仅普通试卷；既有调用方不传参行为不变
+                        .eq(Paper::getIsTemplate, 0)
+                        .orderByDesc(Paper::getId));
+    }
+
+    /** 试卷分页（模板库视图）：isTemplate=true 时仅返回模板卷，false 走默认普通视图。 */
+    public Page<Paper> page(long page, long size, boolean isTemplate) {
+        if (!isTemplate) {
+            return page(page, size);
+        }
+        LoginUser operator = requireLogin();
+        return paperMapper.selectPage(new Page<>(page, Math.min(size, 100)),
+                Wrappers.<Paper>lambdaQuery()
+                        .eq(operator.getRoleLevel() < RoleHierarchy.levelOf(RoleHierarchy.ADMIN),
+                                Paper::getCreatedBy, operator.getId())
+                        .eq(Paper::getIsTemplate, 1)
                         .orderByDesc(Paper::getId));
     }
 
@@ -347,6 +363,68 @@ public class PaperService {
         return questionMapper.selectList(wrapper).stream()
                 .map(Question::getId)
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    // ==================== 模板与克隆（add-paper-template-clone） ====================
+
+    /** 复制卷标题后缀（clone 与 save-as-template 共用口径，防与原卷混淆）。 */
+    private static final String COPY_TITLE_SUFFIX = "（副本）";
+
+    /**
+     * 克隆试卷：复制元信息与全部题目关联（题目/顺序/分值覆盖逐项一致）为新的草稿卷。
+     *
+     * <p>产物恒为草稿态——无论源卷是否已锁定（status=已锁定/snapshotId 非空），
+     * 新卷 status=草稿、snapshotId 空、is_template=0，owner=操作者；源卷及其快照零影响。
+     * 对模板卷调用本端点即为「从模板一键建卷」（新卷为普通草稿卷）。
+     * 非归属教师由 {@link #getOwnedPaper} 的 owner 校验拒绝（403）。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Paper clone(Long id) {
+        LoginUser operator = requireLogin();
+        Paper source = getOwnedPaper(id);
+        Paper copy = duplicate(source, operator.getId(), false);
+        log.info("教师 {} 克隆试卷 {} -> {}（{} 题）", operator.getId(), source.getId(),
+                copy.getId(), copy.getQuestionCount());
+        return copy;
+    }
+
+    /**
+     * 另存为模板：复制该卷为新的模板卷（is_template=1、草稿态语义、副本后缀同 clone）。
+     * 原卷及其状态保留不变；对模板卷再调用被拒（模板嵌套无意义）。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Paper saveAsTemplate(Long id) {
+        LoginUser operator = requireLogin();
+        Paper source = getOwnedPaper(id);
+        if (source.getIsTemplate() != null && source.getIsTemplate() == 1) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "该试卷已是模板卷，不能再另存为模板");
+        }
+        Paper copy = duplicate(source, operator.getId(), true);
+        log.info("教师 {} 将试卷 {} 另存为模板 {}", operator.getId(), source.getId(), copy.getId());
+        return copy;
+    }
+
+    /** 复制试卷：元信息 + 全部 paper_questions（题号与分值覆盖逐项保留）；产物恒为草稿态。 */
+    private Paper duplicate(Paper source, Long ownerId, boolean template) {
+        Paper copy = new Paper();
+        copy.setTitle(source.getTitle() + COPY_TITLE_SUFFIX);
+        copy.setDescription(source.getDescription() == null ? "" : source.getDescription());
+        copy.setTotalScore(source.getTotalScore());
+        copy.setQuestionCount(source.getQuestionCount());
+        copy.setStatus(Paper.STATUS_DRAFT);
+        copy.setSnapshotId(null);
+        copy.setIsTemplate(template ? 1 : 0);
+        copy.setCreatedBy(ownerId);
+        paperMapper.insert(copy);
+        for (PaperQuestion row : listRows(source.getId())) {
+            PaperQuestion cloned = new PaperQuestion();
+            cloned.setPaperId(copy.getId());
+            cloned.setQuestionId(row.getQuestionId());
+            cloned.setNumber(row.getNumber());
+            cloned.setScore(row.getScore());
+            paperQuestionMapper.insert(cloned);
+        }
+        return copy;
     }
 
     // ==================== 共用 ====================

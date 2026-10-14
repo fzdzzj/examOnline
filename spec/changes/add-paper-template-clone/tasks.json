@@ -1,0 +1,40 @@
+{
+  "change": "add-paper-template-clone",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：调研核实与三件套制定",
+      "status": "completed",
+      "description": "Explore 核证（2026-10-15）：无模板表无克隆端点（PaperController 13 端点全覆盖 CRUD/组卷/抽题/快照）；考试发放消费快照而非 papers（克隆零影响已发放考试）；愿景 3.5「试卷模板库（保存/复用/版本管理）」。设计裁决：papers 加 is_template 列（默认 0）不建独立模板表；clone（任意卷→草稿卷，模板卷调用=从模板建卷）+ save-as-template 两端点（paths 87→89）；克隆产物永远草稿态（不复制锁定/snapshotId）、副本后缀、owner=操作者；模板守卫三处追加校验（不可选为考试卷/不可生成快照/不可再另存）；列表 isTemplate 过滤参数默认 false 向后兼容；版本管理与共享模板库不做；schema.sql is_template 列 + 实体同批 + W43 迁移脚本（硬约定 1/3/4）。",
+      "evidence": "三件套已落盘 spec/changes/add-paper-template-clone/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端——is_template 列、克隆/另存端点、守卫三处与列表视图（先红后绿）",
+      "status": "completed",
+      "description": "schema.sql papers 加 is_template（TINYINT DEFAULT 0，H2/MySQL 双兼容）+ 实体 Paper 同批字段（硬约定 1/3 自查）+ docker/mysql/migrations/2026-W43-add-paper-template-clone.sql 存量脚本；PaperService.clone（元信息+paper_questions 全量复制、（副本）后缀、草稿态产物、owner=操作者、非 owner 403、模板卷调用=从模板建卷）与 saveAsTemplate（模板卷源被拒）；守卫三处追加校验行（ExamService.create 模板拒绝不产生 exam、PaperSnapshotService 模板拒绝、save-as-template 对模板拒绝）——既有行零改动；既有分页端点加 isTemplate 参数（默认 false，不传参行为零变化）。红线：PaperService/PaperSnapshotService/ExamService 既有行零改动（守卫为追加）；快照消费链路零改动；题库域零改动。集成测试覆盖 spec-delta question-bank 全部 Scenario（全量复制与草稿产物、克隆锁定卷、非归属 403、另存原卷保留、模板嵌套拒、模板选考试拒、模板快照拒、非模板零漂移护栏、默认视图/模板视图），先红后绿（红态原始输出留存 evidence）。",
+      "evidence": "红（未实现后端时基线跑本测试类）：Tests run: 9, Failures: 9, Errors: 0, Skipped: 0（端点缺失，期望 200 实得 404）；绿（实现后）：Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, BUILD SUCCESS。schema.sql L135 加 is_template TINYINT NOT NULL DEFAULT 0（对照既有 TINYINT 列形态，H2/MySQL 双兼容）；实体 Paper.java 加 isTemplate 字段（硬约定 3 表级 comm 自查输出 ENTITY-TABLE-DIFF-EMPTY-OK）；docker/mysql/migrations/2026-W43-add-paper-template-clone.sql 入库（硬约定 4：脚本入库≠迁移已应用，不代做应用）。守卫三处均系追加校验行：ExamService.java（getOwnedPaper 之后 +4 行）、PaperSnapshotService.java（getOwnedPaper 之后 +4 行），既有行零改动；save-as-template 对模板卷拒绝在 saveAsTemplate 内。分页端点加 isTemplate 参数（默认 false），默认视图追加 .eq(isTemplate,0) 过滤行，既有调用方零变化。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：前端——模板库 Tab 与克隆/另存入口（先红后绿）",
+      "status": "completed",
+      "description": "SDK 再生成（paths 87→89）；试卷列表操作列加「克隆」「另存为模板」按钮（成功反馈）；「模板库」Tab（isTemplate=true 视图：使用〔clone 从模板建卷〕/编辑/删除）；零新依赖对齐既有风格。Vitest 覆盖 spec-delta frontend 两 Scenario，断言有效性纪律，先红后绿（红态原始输出留存）。",
+      "evidence": "红（先写 spec 后跑）：Tests 2 failed (2)（[data-test=paper-clone]/模板库 Tab 未实现）；绿：papers 目录 5 文件 21 passed (21)，全量 Test Files 94 passed (94) / Tests 667 passed (667)。SDK 再生成（gen:api）：sdk.gen.ts 新增 clone(L323)/saveAsTemplate(L287)，types.gen.ts Page1Data query 加 isTemplate?: boolean，index.ts 导出同步。页面加 Tabs「试卷/模板库」+ 操作列「克隆」「另存为模板」（普通视图）与「使用/编辑/删除」（模板库视图）；默认 Tab 不传 isTemplate（既有 paperListServerPaging 用例 servedPages()===[{page:1,size:10}] 零漂移），模板库 Tab 传 {isTemplate:true}。lint:check 与 type-check:check 全绿；零新依赖。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：全量门禁、变异校验、契约同步与实施笔提交",
+      "status": "completed",
+      "description": "后端 .\\mvnw.cmd clean test 全绿净增（基线 461，Skipped 存量照记）；前端 lint:check / type-check:check / test 全绿净增（基线 665）；变异自证 ≥3 项（撤模板考试卷守卫→模板可被选为考试卷→红；撤草稿态产物→克隆带出锁定态→红；撤全量复制→题目丢失→红——scripts/mutation-check.sh 五步原子留证）；openapi.yaml 离线重导出（paths 87→89）；.github/ci/gate-baseline.json 三值同批上调；AGENTS.md 硬约定自查全绿（表级双向一致命令含 is_template 实体-表同步）；受控白名单核对（schema.sql/实体/PaperService/ExamService 与 PaperSnapshotService 追加行/前端页面与 SDK/三件套/W43 脚本，白名单外零触碰）；红线域 git diff（基线=分支起点）逐行核对（ExamService/PaperSnapshotService 逐行区分追加行与既有行）；feature/add-paper-template-clone 分支实施笔本地提交（先复核后收口形态：不合并/不 push/不收口，三件套随笔入库），八段回报。",
+      "evidence": "后端门禁（仓库根 .\\mvnw.cmd clean test，JAVA_HOME=JDK21）：Tests run: 470, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS（基线 461→净增 9；本测试类 Tests run: 9, Failures: 0, Errors: 0, Skipped: 0）。前端：lint:check 全绿、type-check:check 全绿、test Test Files 94 passed (94) / Tests 667 passed (667)（基线 665→净增 2）。变异自证 3 项全部 PASS（留证 target/mutation-check/）：m1-exam-guard 撤 ExamService 模板守卫→templateCannotBeExamPaper 期望 400 实得 200 红；m2-draft-product 撤草稿态产物→4 用例 expected 0 but 1 红；m3-question-copy 撤全量复制→cloneCopiesAllAndProducesDraft 题目集 expected [1:2:10.0, 2:1:5.0] 实得 [] 红；每项含 report.txt + step3-verify-red.log + step5-verify-green.log。契约：openapi.yaml 离线重导出（-DexportContract=true）paths 87→89（新增 /api/papers/{id}/clone、/api/papers/{id}/save-as-template）。gate-baseline.json 三值 461/665/87→470/667/89（同批上调）。AGENTS.md 硬约定自查：pom 无 flyway、src/main/resources/db 不存在、@Sql 仅 4 处 javadoc 复述行（过滤后为空）、实体-表 comm diff 空、docker-compose 仅 master/init 与 slave/init、AGENTS/README 禁字判据全绿。红线域 diff（基线 9e87d9b）：改动仅 12 文件，pom.xml/application*.yml/spec/specs/题库域/ExamPaperLockService 零 diff；ExamService/PaperSnapshotService 各 +4 追加行（既有行零改动）、schema.sql 仅 +1 列。实施笔本地提交、不合并/不 push/不收口。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：复核后收口",
+      "status": "pending",
+      "description": "复核子agent 独立复跑双端门禁与变异复现（含模板考试卷守卫）、以分支起点为基线核对红线域 diff（重点：PaperService/PaperSnapshotService/ExamService 既有行零漂移——逐行区分追加守卫行、快照消费链路零改动、is_template 实体-表双向一致）与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线（question-bank 四个新 Requirement〔试卷克隆/另存为模板/模板守卫/试卷列表模板视图〕、frontend 一个新 Requirement〔试卷模板与克隆界面〕）、三件套归档 spec/changes/archive/add-paper-template-clone/、spec/README.md 登记行、docs/功能待办清单.md B 节「试卷模板 / 克隆复用」行移除并入 D 节交付注记（B 节中优先项至此清空）；收口笔零业务代码改动；W43 存量库应用由用户另行裁决（硬约定 4）；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
+      "evidence": ""
+    }
+  ]
+}

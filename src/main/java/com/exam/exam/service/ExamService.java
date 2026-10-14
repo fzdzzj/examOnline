@@ -74,6 +74,10 @@ public class ExamService {
         LoginUser operator = requireLogin();
         // 绑定试卷须存在且属于当前教师（教师不能拿别人的卷子开考；ADMIN 越级放行）
         Paper paper = paperService.getOwnedPaper(request.getPaperId());
+        // add-paper-template-clone 守卫（追加校验行）：模板卷仅用于复制复用，不得作为考试试卷——拒绝且不产生 exam 行
+        if (paper.getIsTemplate() != null && paper.getIsTemplate() == 1) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "模板卷不能作为考试试卷，请先克隆为正式试卷");
+        }
         validateWindowAndDuration(request.getStartTime(), request.getEndTime(),
                 request.getDurationMinutes(), request.getAllowLateMinutes());
 
