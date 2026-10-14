@@ -19,9 +19,8 @@ spec/
 - 进行中变更（`spec/changes/`，**条数以 `find spec/changes -mindepth 1 -maxdepth 1 -type d -not -name archive | wc -l` 为准，本文件不写死计数**；**历史业务阶段 19–23 按阶段顺序串行；其他独立变更按下表「前置」列判断依赖**；**同一工作树不得并行跑两个子 agent**）：
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
-|---|---|---|---|
-| `optimize-agent-workflow-and-specs` | Agent 协作流轻量化与规范文档冷热分离（治理与降耗，**GO**） | 覆盖：spec/README.md 冷热分离（历史变更全量迁移 spec/CHANGES_ARCHIVE.md）、docs/ 历史交接归档与 verdict 隔离、project-overview 架构速查重构、主Agent执行指南分级流转（S 级一票到底）与极简派工卡协议；双端门禁 470/667 全绿、paths 89 不变；AGENTS.md 硬约定全绿。 | 2026-10-14 |---|
-| optimize-agent-workflow-and-specs | 实施中 | Agent 协作流轻量化与规范文档冷热分离 | gent-harness | 零前置 |
+|---|---|---|---|---|
+| `validate-question-import-answer-length` | S 级轻量任务（实施中，**GO**） | 题库导入答案长度应用层前置校验（ANSWER_MAX=512，对齐单题建题文案，零 DDL 零契约漂移） | `question-bank` | 零前置 |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。

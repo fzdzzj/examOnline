@@ -1,0 +1,26 @@
+{
+  "change": "validate-question-import-answer-length",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与三件套制定",
+      "status": "completed",
+      "description": "确立 S 级任务边界：QuestionImportExportService 增加 ANSWER_MAX=512 应用层前置校验；测试用例新增超长答案容错测试；零 DDL 零契约漂移。",
+      "evidence": "三件套已落盘 spec/changes/validate-question-import-answer-length/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：服务层实现与集成测试红绿验证",
+      "status": "pending",
+      "description": "在 QuestionImportExportService 中声明 ANSWER_MAX=512 并对 parsed.answer 进行长度校验，错误原因对齐「答案最长 512 字」；在 QuestionImportExportIntegrationTest 中增加超长答案行测试，验证错误提示与同批正确行入库。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：门禁验证、基线更新、规范合入与收口归档",
+      "status": "pending",
+      "description": "执行 mvnw clean test 与前端门禁；更新 .github/ci/gate-baseline.json（若用例数增加）；合入 spec-delta 至 spec/specs/question-bank/spec.md；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md。",
+      "evidence": ""
+    }
+  ]
+}
