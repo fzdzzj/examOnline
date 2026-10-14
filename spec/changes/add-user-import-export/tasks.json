@@ -1,0 +1,40 @@
+{
+  "change": "add-user-import-export",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：调研核实与三件套制定",
+      "status": "completed",
+      "description": "Explore 核证（2026-10-15）：用户/学生导入导出未建成立（AdminController 仅 kick 等单账号端点，无批量/导出）；决策记录 L163-165「管理员 Excel 导入 + 初始密码」为直接依据；③ 已交付同构形态可整体迁移（QuestionImportExport 三端点+逐行独立事务容错+QuestionImportColumn 列枚举+SXSSF 流式）；班级挂接复用 classes/user_class 表与 joinStudent 语义。设计裁决：学生导入+模板+参数化导出（scope=student|teacher|all，classId 过滤）三端点（paths 84→87）；ADMIN+user:manage；重复学号跳过不覆盖；班级名称解析、不存在/歧义跳过不自动建班；初始密码模板必填 BCrypt 入库无默认常量；导入角色固定 STUDENT；无新表（schema.sql 预期零改动）；教务同步预留不做；教师班名单导出不建（listStudents 已覆盖查看）。",
+      "evidence": "三件套已落盘 spec/changes/add-user-import-export/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端——导入/模板/导出三端点与逐行容错（先红后绿）",
+      "status": "completed",
+      "description": "UserImportColumn 列定义枚举（学号/姓名/邮箱可选/初始密码/班级名称，表头与导出列严格一致）；UserImportExportService：导入（表头校验、行数上限 1000、existsByUsername 查重跳过不覆盖、班级名称解析 classes 表挂接 user_class〔语义等价 joinStudent，不改其实现行〕、必填/格式校验、正确行独立事务入库、角色固定 STUDENT、初始密码复用既有 BCrypt 行）、模板下载、导出（scope=student|teacher|all + classId 过滤、SXSSF 流式、软删/状态口径对齐管理侧列表口径——列集核验后留证 tasks.json）；端点挂 /api/admin/users/*（AdminController 域形态，类级 ADMIN + 方法级 user:manage）。红线：③ 既有 QuestionImportExport* 只参照零修改；UserService/ClassController 既有行只调用零修改；schema.sql 预期零 diff（需变更即停）；pom 零新依赖。集成测试覆盖 spec-delta authentication/class-management 全部 Scenario（合法入库+登录、重复跳过、班级跳过、角色固定、行数上限、权限 403、三向一致护栏、scope 三态与过滤、流式、口径一致），先红后绿。",
+      "evidence": "先红后绿实施完成。红态测试：.\\mvnw.cmd test -Dtest=UserImportExportIntegrationTest，真实原始输出：Tests run: 7, Failures: 7, Errors: 0, Skipped: 0；BUILD FAILURE。绿态测试：生产代码实现后执行 .\\mvnw.cmd test -Dtest=UserImportExportIntegrationTest，真实原始输出：Tests run: 9, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS。覆盖全部 spec 场景：合法入库+初始密码登录、重复学号跳过不覆盖、班级不存在/歧义跳过不建班、角色固定 STUDENT、行数上限与坏格式 400、权限 403/401、模板与导出表头严格一致护栏、scope 三态与班级过滤、流式写入。导出口径核验留证：经普查全仓管理侧无通用用户列表查询接口；软删口径对齐 @TableLogic (is_deleted=0)；正常状态口径对齐 users 表定义。红线核对：既有 Question/UserService/ClassController/AdminController 零行修改；schema.sql 零 diff；pom.xml 零新增依赖。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：前端——用户管理页导入导出界面与 SDK（先红后绿）",
+      "status": "completed",
+      "description": "SDK 按既有方式再生成（paths 84→87）；用户管理页：导入上传+结果反馈（成功/失败计数与逐行错误）、模板下载入口、导出入口（scope 选择与班级过滤）触发下载；零新依赖对齐既有管理页风格。Vitest 覆盖 spec-delta frontend 三 Scenario，断言有效性纪律（无 exists 守卫/无 || 双通兜底），先红后绿。",
+      "evidence": "先红后绿实施完成。SDK 生成：npm.cmd --prefix frontend run gen:api，paths 84→87，生成 importUsers、importTemplate1、exportUsers。红态测试：npm.cmd --prefix frontend run test -- userImportExport，真实原始输出：Test Files 1 failed (1), Tests no tests，Error: Failed to resolve import \"@/pages/(dashboard)/admin/users/index.page.vue\"。绿态测试：完成页面与 (dashboard).page.vue 导航菜单挂接后，真实原始输出：Test Files 1 passed (1), Tests 5 passed (5)，Duration 4.64s。规范检查：npm.cmd --prefix frontend run lint:check 零 error；npm.cmd --prefix frontend run type-check:check（app 与 config 两段）零 error。覆盖场景：导入结果反馈（成功/失败计数、逐行错误列表）、导出入口与过滤（scope 三态与 classId 过滤）、模板下载入口。遵守断言有效性纪律（无 exists 守卫、无 || 兜底）。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：全量门禁、变异校验、契约同步与实施笔提交",
+      "status": "completed",
+      "description": "后端 .\\mvnw.cmd clean test 全绿净增（基线 452，Skipped 存量照记）；前端 lint:check / type-check:check / test 全绿净增（基线 660）；变异自证 ≥3 项（撤查重→重复覆盖既有账号→红；撤班级解析容错→不存在班自动建班→红；撤权限门控→教师可导入→红；撤角色固定→可建管理员→红——优先 scripts/mutation-check.sh 五步原子留证）；openapi.yaml 离线重导出（paths 84→87）；.github/ci/gate-baseline.json 三值同批上调；AGENTS.md 硬约定自查全绿（schema.sql 零 diff 复核确认）；受控白名单核对（UserImportColumn/ImportExportService/相关 DTO/AdminController 或新 Controller/前端页面与 SDK 生成物/三件套，白名单外零触碰）；红线域 git diff（基线=分支起点）为空；feature/add-user-import-export 分支实施笔本地提交（先复核后收口形态：不合并/不 push/不收口，三件套随笔入库），八段回报。",
+      "evidence": "全量门禁与变异自证完成。全量后端门禁：.\\mvnw.cmd clean test，当次实测真实原始输出：Tests run: 461, Failures: 0, Errors: 0, Skipped: 1（基线 452→461，净增 9，存量 Skipped 1 保持不变）；BUILD SUCCESS。全量前端门禁：npm.cmd --prefix frontend run lint:check（零 error）；npm.cmd --prefix frontend run type-check:check（零 error）；npm.cmd --prefix frontend run test（实测输出：Test Files 93 passed (93), Tests 665 passed (665)，基线 660→665，净增 5，通过率 100%）。变异自证 3 项（全部经 scripts/mutation-check.sh 五步原子全 PASS，留证 target/mutation-check/）：1. m1-duplicate-check：撤学号查重（userService.existsByUsername(username) -> false），击红 exit=1，复原 cmp 字节一致并回绿 exit=0；2. m2-permission：撤 ADMIN 权限门控（@RequireRole(RoleHierarchy.ADMIN) -> /* MUTATION_M2 */），击红 exit=1，复原并回绿 exit=0；3. m3-role-student：撤固定学生角色（RoleHierarchy.STUDENT -> RoleHierarchy.ADMIN），击红 exit=1，复原并回绿 exit=0。契约与基线同步：-DexportContract=true 导出 openapi.yaml（paths 84→87，无乱码，servers.url 保持完整）；.github/ci/gate-baseline.json 同步上调为 backendTests: 461, frontendTests: 665, openapiPaths: 87。AGENTS.md 硬约定自查命令逐条全绿；schema.sql 零 diff；红线域基于起点 b244ffc 核对全空。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：复核后收口",
+      "status": "pending",
+      "description": "复核子agent 独立复跑双端门禁与变异复现（含查重不覆盖与权限门控）、以分支起点为基线核对红线域 diff（重点：③ 题目导入导出零漂移、UserService/ClassController/BCrypt 既有行零修改、schema.sql 零 diff）与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线（authentication 三个新 Requirement、class-management 新 Requirement、frontend 新 Requirement）、三件套归档 spec/changes/archive/add-user-import-export/、spec/README.md 登记行、docs/功能待办清单.md B 节「用户 / 学生 Excel 批量导入」行移除并入 D 节交付注记；收口笔零业务代码改动；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
+      "evidence": ""
+    }
+  ]
+}
