@@ -213,6 +213,25 @@ export type ScoreActionItem = {
     message?: string;
 };
 
+export type PracticeSubmitRequest = {
+    questionId: number;
+    answer?: string;
+};
+
+export type ApiResponsePracticeSubmitResponse = {
+    code?: number;
+    message?: string;
+    data?: PracticeSubmitResponse;
+};
+
+export type PracticeSubmitResponse = {
+    correct?: boolean;
+    correctAnswer?: string;
+    analysis?: string;
+    consecutiveCorrect?: number;
+    mastered?: boolean;
+};
+
 export type ReviewHandleRequest = {
     action?: string;
     adjustedTotalScore?: number;
@@ -735,6 +754,8 @@ export type WrongQuestionItem = {
     fullScore?: number;
     analysis?: string;
     scoreDetail?: string;
+    consecutiveCorrect?: number;
+    mastered?: boolean;
 };
 
 export type WrongQuestionPageResponse = {
@@ -742,6 +763,21 @@ export type WrongQuestionPageResponse = {
     page?: number;
     size?: number;
     groups?: Array<ExamWrongQuestionsGroup>;
+};
+
+export type ApiResponseListPracticePoolItem = {
+    code?: number;
+    message?: string;
+    data?: Array<PracticePoolItem>;
+};
+
+export type PracticePoolItem = {
+    questionId?: number;
+    questionType?: string;
+    questionContent?: string;
+    imageUrl?: string;
+    choices?: Array<string>;
+    consecutiveCorrect?: number;
 };
 
 export type ApiResponseExamReviewResponse = {
@@ -1572,6 +1608,22 @@ export type PublishResponses = {
 };
 
 export type PublishResponse = PublishResponses[keyof PublishResponses];
+
+export type SubmitPracticeData = {
+    body: PracticeSubmitRequest;
+    path?: never;
+    query?: never;
+    url: '/api/scores/my/wrong-questions/practice/submit';
+};
+
+export type SubmitPracticeResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponsePracticeSubmitResponse;
+};
+
+export type SubmitPracticeResponse = SubmitPracticeResponses[keyof SubmitPracticeResponses];
 
 export type HandleData = {
     body: ReviewHandleRequest;
@@ -2425,6 +2477,7 @@ export type MyWrongQuestionsData = {
     query?: {
         page?: number;
         size?: number;
+        includeMastered?: boolean;
     };
     url: '/api/scores/my/wrong-questions';
 };
@@ -2437,6 +2490,22 @@ export type MyWrongQuestionsResponses = {
 };
 
 export type MyWrongQuestionsResponse = MyWrongQuestionsResponses[keyof MyWrongQuestionsResponses];
+
+export type MyPracticePoolData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/scores/my/wrong-questions/practice/pool';
+};
+
+export type MyPracticePoolResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseListPracticePoolItem;
+};
+
+export type MyPracticePoolResponse = MyPracticePoolResponses[keyof MyPracticePoolResponses];
 
 export type MyExamReviewData = {
     body?: never;
