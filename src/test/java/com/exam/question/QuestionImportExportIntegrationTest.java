@@ -178,6 +178,40 @@ class QuestionImportExportIntegrationTest extends IntegrationTestBase {
         assertTrue(found2, "正确行『好题二』入库");
     }
 
+    // ==================== 答案长度超限（应用层前置拦截） ====================
+
+    @Test
+    void importRejectsAnswerOver512CharsAndKeepsValidRowsInSameBatch() throws Exception {
+        String teacher = registerTeacher();
+        String overlongAnswer = "答".repeat(513);
+
+        byte[] xlsx = buildXlsx(List.of(
+                new String[]{"简答", "超长答案题", "", "", "", "", "", "", overlongAnswer, "", "易", ""},
+                new String[]{"简答", "同批合法简答题", "", "", "", "", "", "", "参考答案", "", "易", ""}
+        ));
+
+        JsonNode result = perform(multipart("/api/questions/import")
+                        .file(multipartFile(xlsx))
+                        .header("Authorization", bearer(teacher)), 200)
+                .get("data");
+        assertEquals(1, result.get("imported").asInt(), "超长答案行被拦截，同批合法行照常入库");
+        assertEquals(1, result.get("failed").asInt());
+        assertEquals(1, result.get("errors").size());
+
+        // 应用层前置校验：错误原因对齐单题建题文案，而非底层数据库溢出的「入库失败，请检查数据」
+        assertError(result.get("errors"), 2, "答案最长 512 字");
+
+        JsonNode page = perform(jsonGet("/api/questions?size=100", teacher), 200).get("data");
+        boolean foundValid = false;
+        for (JsonNode q : page.get("list")) {
+            assertTrue(!"超长答案题".equals(q.get("content").asText()), "超长答案行不得入库");
+            if ("同批合法简答题".equals(q.get("content").asText())) {
+                foundValid = true;
+            }
+        }
+        assertTrue(foundValid, "同批次合法题目行正常入库");
+    }
+
     private void assertError(JsonNode errors, int row, String reason) {
         for (JsonNode e : errors) {
             if (e.get("row").asInt() == row) {

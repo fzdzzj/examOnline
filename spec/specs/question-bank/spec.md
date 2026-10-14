@@ -110,6 +110,19 @@ POST /api/questions/import（multipart xlsx）逐行校验：错误行（坏题�
 
 GET /api/questions/export 全量导出未软删题目，列口径与导入模板逐字一致（导出→修改→再导入可用）；SXSSF 流式写出（复用既有 ExcelSheetWriter，防 OOM）；响应为 xlsx 附件下载（对齐既有成绩导出 attachment 形态）。
 
+#### Scenario: 答案长度超限应用层前置拦截
+
+GIVEN 导入 xlsx 中某行答案（归一化后）长度超过 512 字
+WHEN 教师调用 POST /api/questions/import
+THEN 该行被跳过并记入错误报告，原因明确为「答案最长 512 字」（对齐单题建题 @Size 文案），不触发底层数据库字段溢出
+AND 同批次其他合法题目正常入库
+
+> 合入注记（2026-10-14，`validate-question-import-answer-length` 归档）：上方 Scenario 为追加校验分支——
+> 立项依据是 `add-question-import-export` 收口注记登记的低风险观察（导入答案长度仅由 DB `VARCHAR(512)` 兜底，
+> 溢出被记成模糊的「入库失败，请检查数据」，与单题建题「答案最长 512 字」文案不对称）。实现为
+> `QuestionImportExportService.parseRow` 归一化后新增 `ANSWER_MAX = 512` 应用层前置长度校验；既有校验分支
+> 与写入链路零改动，零 DDL、零契约漂移。证据：`spec/changes/archive/validate-question-import-answer-length/tasks.json`。
+
 ---
 
 ### Requirement: 批量删除题目
