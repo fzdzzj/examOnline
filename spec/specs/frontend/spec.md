@@ -2567,3 +2567,35 @@ THEN 以 message.error 显性反馈失败原因，不静默
 > backend `mvnw.cmd clean test` → 423/0/0/1 + BUILD SUCCESS（与基线 `5750fff` 持平，
 > `git diff --name-only 5750fff 71a9067 -- src pom.xml schema.sql openapi.yaml` 为空，零后端改动）。
 > 纯静态 + 单测可证：未启 dev server、未跑前端构建、未跑真实 Chromium、未碰 Docker/共享 dev。
+
+---
+
+### Requirement: 错题重练界面
+
+WHEN 学生在错题本发起重练,
+
+系统 SHALL 在错题本页提供重练入口与逐题连对进度（x/3）展示；重练模式 SHALL 逐题呈现题干/选项（或填空输入）、提交后即时反馈对错、正确答案与解析、连对进度与消灭态提示；SHALL 以可选参数翻回已消灭条目查看。零新依赖，对齐既有 UI 风格。
+
+#### Scenario: 重练入口与进度展示
+
+GIVEN 错题本页存在未消灭错题
+
+WHEN 学生查看列表
+
+THEN 每条错题显示当前连对进度（x/3）且提供重练入口
+
+#### Scenario: 逐题作答即时反馈
+
+GIVEN 学生进入重练模式并提交一题答案
+
+THEN 即时显示对错、正确答案、题目解析与连对进度
+
+AND 连对第 3 次时显示消灭提示且该题退出后续重练
+
+#### Scenario: 已消灭条目翻回
+
+GIVEN 存在已消灭错题
+
+WHEN 学生选择查看已消灭条目
+
+THEN 列表以 includeMastered 翻回显示且带消灭标识

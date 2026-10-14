@@ -1,0 +1,40 @@
+{
+  "change": "add-wrong-question-practice",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：调研核实与三件套制定",
+      "status": "completed",
+      "description": "指导主 agent 两轮 Explore 核证：错题查询已建（ScoreController 两端点 + StudentWrongQuestionService listWrongQuestions/reviewExam，PersonalReport 现场重算 score<max），重练与移出机制零代码（后端无 practice 端点、前端纯展示）；spec 基线锁死判分同源纪律（绝不另造第二套判分口径）；可机判题型 SINGLE/MULTIPLE/JUDGE/FILL_BLANK（填空随 add-question-fill-blank 交付），SHORT_ANSWER 无机器判分。设计裁决：逐题刷题流（不做卷、不复用 exam-taking 状态机）；practice_attempt 明细表推导连对（不采纳愿景草案冗余状态列）；纯练习序列移出口径（考试再错不自动重置，列为边界）；答对=满分（多选部分对不算）；池 question 维度全量构建；既有列表向后兼容扩展（consecutiveCorrect/mastered 字段 + includeMastered 参数默认隐藏）；两新端点 pool/submit 仅限本人；schema.sql 唯一建表入口（硬约定 1/3/4）。",
+      "evidence": "三件套已落盘 spec/changes/add-wrong-question-practice/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端重练域——建表、判分复用、两端点与列表扩展（先红后绿）",
+      "status": "completed",
+      "description": "schema.sql 新增 practice_attempt（id AUTO_INCREMENT+PRIMARY KEY(id), student_id, question_id, is_correct, created_time；索引 (student_id, question_id, id)；H2/MySQL 双兼容）+ 同批实体 PracticeAttempt 与 Mapper（AGENTS.md 硬约定 1/3，表级自查命令全绿）；单题判分复用既有客观判分核心（候选 ObjectiveGradingService/归一化判分路径，执行侧核验入口，需改既有判分行才能复用则触发停止条件）；StudentPracticeService：pool 构建（复用错题本逐场重算逻辑，question 维度去重、题型过滤、排除已消灭）、submit（判分→持久化 attempt→推导连对与消灭）、连对推导（该 (student_id,question_id) 最近 3 条全对）；ScoreController 两端点（GET pool / POST submit，token 学生仅本人）；既有列表端点增 consecutiveCorrect/mastered 字段与 includeMastered 参数（默认隐藏已消灭）。红线：判分核心既有行只调用零修改、错题本既有装配行零漂移、交卷判分链路零挂钩。集成测试覆盖 spec-delta score-management 全部 Scenario（池构建去重与题型过滤、即时判分反馈、连三消灭、答错重置、多选部分对不判答对、仅本人、列表默认隐藏与翻回、既有口径零漂移护栏），先红后绿。",
+      "evidence": "schema.sql 新表 practice_attempt + 实体/Mapper；StudentPracticeService 实现重练池与单题判分提交（复用 GradingStrategyRegistry 判分核心，答对口径=满分）；ScoreController pool/submit 两端点 + list 端点 includeMastered 参数与连对/消灭字段；StudentWrongQuestionPracticeIntegrationTest 4 个用例覆盖 spec-delta 全部场景，先红（Tests run: 4, Failures: 4）后绿（Tests run: 4, Failures: 0）。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：前端重练界面与 SDK（先红后绿）",
+      "status": "completed",
+      "description": "SDK 按既有方式再生成（paths 82→84，新端点 types + 列表扩展字段）；错题本页增重练入口与逐条连对进度（x/3）、已消灭条目默认隐藏并可翻回（带消灭标识）；重练模式逐题作答卡片（题干/选项/填空输入）、提交即时反馈（对错/正确答案/解析/连对进度/消灭提示）；零新依赖对齐既有 UI 风格。Vitest 覆盖 spec-delta frontend 三 Scenario，遵守断言有效性纪律（无 exists 守卫/无 || 双通兜底）。",
+      "evidence": "openapi-ts 重新生成 SDK（paths 82->84）；index.page.vue 新增重练模式卡片、连对进度 tag、显示已消灭错题 Checkbox 与即时反馈区；wrongQuestionPractice.spec.ts 覆盖三大前端场景，先红（Tests run: 3, Failures: 3）后绿（Tests run: 3, Failures: 0），断言有效无 || 兜底。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：全量门禁、变异校验、契约同步与实施笔提交",
+      "status": "completed",
+      "description": "后端 .\\mvnw.cmd clean test 全绿净增（基线 448，Skipped 存量照记）；前端 lint:check / type-check:check / test 全绿净增（基线 657）；变异自证 ≥3 项（撤连对计数→答错不归零→红；撤满分口径→多选部分对判答对→红；撤池题型过滤→简答入池→红；撤本人门控→可练他人题→红——优先 scripts/mutation-check.sh 五步原子，留证）；openapi.yaml 离线重导出（paths 82→84）；.github/ci/gate-baseline.json 三值同批上调（backendTests/frontendTests 净增值、openapiPaths=84）；AGENTS.md 硬约定自查（表级双向一致命令、@Sql 为空）全绿；受控白名单核对（schema.sql/实体/Mapper/PracticeService/ScoreController/前端页面与 SDK 生成物/三件套，白名单外零触碰）；红线域 git diff 为空；feature/add-wrong-question-practice 分支实施笔本地提交（先复核后收口形态：不合并/不 push/不收口，三件套随笔入库），八段回报。",
+      "evidence": "后端 mvnw clean test 实测 Tests run: 452, Failures: 0, Errors: 0, Skipped: 1；前端 lint:check/type-check:check/test 全绿（660 passed）；3 项变异通过 scripts/mutation-check.sh 验证并留证 target/mutation-check/；.github/ci/gate-baseline.json 上调为 452/660/84；AGENTS.md 硬约定自查全绿。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：复核后收口",
+      "status": "pending",
+      "description": "复核子agent 独立复跑双端门禁与变异复现、核对红线域 diff（重点：判分核心零修改、错题本既有口径零漂移）与 spec 场景映射后，另行派发收口：spec-delta 合入对应域基线（score-management「错题本分页查询」MODIFIED + 新增「错题重练与消灭计划」、frontend 新增「错题重练界面」）、三件套归档 spec/changes/archive/add-wrong-question-practice/、spec/README.md 登记行、docs/功能待办清单.md B 节「错题本重练」行移除并入 D 节（创新点 3 交付注记）；收口笔零业务代码改动；存量 dev 库补表脚本的应用由用户另行裁决（硬约定 4，提交≠已应用）；收口任务勾选与 evidence 在收口笔回填（引用复核独立实测，不自造数值）。",
+      "evidence": ""
+    }
+  ]
+}

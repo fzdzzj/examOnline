@@ -456,6 +456,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListScoreActionItem"
+  /api/scores/my/wrong-questions/practice/submit:
+    post:
+      tags:
+      - score-controller
+      operationId: submitPractice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PracticeSubmitRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePracticeSubmitResponse"
   /api/score-reviews/{reviewId}/handle:
     post:
       tags:
@@ -1507,6 +1525,12 @@ paths:
           type: integer
           format: int32
           default: 10
+      - name: includeMastered
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
       responses:
         "200":
           description: OK
@@ -1514,6 +1538,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseWrongQuestionPageResponse"
+  /api/scores/my/wrong-questions/practice/pool:
+    get:
+      tags:
+      - score-controller
+      operationId: myPracticePool
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPracticePoolItem"
   /api/scores/my/exams/{examId}/review:
     get:
       tags:
@@ -2662,6 +2698,40 @@ components:
           type: boolean
         message:
           type: string
+    PracticeSubmitRequest:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        answer:
+          type: string
+      required:
+      - questionId
+    ApiResponsePracticeSubmitResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PracticeSubmitResponse"
+    PracticeSubmitResponse:
+      type: object
+      properties:
+        correct:
+          type: boolean
+        correctAnswer:
+          type: string
+        analysis:
+          type: string
+        consecutiveCorrect:
+          type: integer
+          format: int32
+        mastered:
+          type: boolean
     ReviewHandleRequest:
       type: object
       properties:
@@ -3790,6 +3860,11 @@ components:
           type: string
         scoreDetail:
           type: string
+        consecutiveCorrect:
+          type: integer
+          format: int32
+        mastered:
+          type: boolean
     WrongQuestionPageResponse:
       type: object
       properties:
@@ -3806,6 +3881,37 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExamWrongQuestionsGroup"
+    ApiResponseListPracticePoolItem:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PracticePoolItem"
+    PracticePoolItem:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        questionType:
+          type: string
+        questionContent:
+          type: string
+        imageUrl:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+        consecutiveCorrect:
+          type: integer
+          format: int32
     ApiResponseExamReviewResponse:
       type: object
       properties:

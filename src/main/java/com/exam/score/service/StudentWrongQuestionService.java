@@ -54,21 +54,32 @@ public class StudentWrongQuestionService {
     private final GradingSubmissionMapper gradingSubmissionMapper;
     private final QuestionMapper questionMapper;
     private final ScoreExportService scoreExportService;
+    private final StudentPracticeService studentPracticeService;
 
     public StudentWrongQuestionService(ExamMapper examMapper,
                                        GradingSubmissionMapper gradingSubmissionMapper,
                                        QuestionMapper questionMapper,
-                                       ScoreExportService scoreExportService) {
+                                       ScoreExportService scoreExportService,
+                                       StudentPracticeService studentPracticeService) {
         this.examMapper = examMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
         this.questionMapper = questionMapper;
         this.scoreExportService = scoreExportService;
+        this.studentPracticeService = studentPracticeService;
     }
 
     /**
-     * 查询学生错题本列表（按已发布考试粒度分页，每页最多 10 场考试组）。
+     * 查询学生错题本列表（向后兼容重载，默认隐藏已消灭错题）。
      */
     public WrongQuestionPageResponse listWrongQuestions(Long studentId, int page, int size) {
+        return listWrongQuestions(studentId, page, size, false);
+    }
+
+    /**
+     * 查询学生错题本列表（按已发布考试粒度分页，每页最多 10 场考试组，可翻回已消灭）。
+     */
+    public WrongQuestionPageResponse listWrongQuestions(Long studentId, int page, int size, boolean includeMastered) {
+
         if (size <= 0 || size > 10) {
             size = 10;
         }
@@ -136,9 +147,11 @@ public class StudentWrongQuestionService {
                 continue;
             }
 
-            // 批量查询当前考试题目的 analysis 字段
+            // 批量查询当前考试题目的 analysis 字段与重练连对进度
             List<Long> qIds = report.questions().stream().map(GradingQuestion::questionId).toList();
             Map<Long, Question> questionMap = loadQuestionMap(qIds);
+            Map<Long, StudentPracticeService.PracticeProgress> progressMap =
+                    studentPracticeService.calculateProgressMap(studentId, qIds);
 
             List<WrongQuestionItem> wrongItems = new ArrayList<>();
             for (GradingQuestion q : report.questions()) {
@@ -149,6 +162,13 @@ public class StudentWrongQuestionService {
 
                 // 错题判定：得分严格小于满分（包括 0 分以及部分对的情况）
                 if (rs.score().compareTo(rs.max()) < 0) {
+                    StudentPracticeService.PracticeProgress progress =
+                            progressMap.getOrDefault(q.questionId(), StudentPracticeService.PracticeProgress.ZERO);
+                    // 默认隐藏已消灭题目（除非显式指定 includeMastered=true）
+                    if (!includeMastered && progress.mastered()) {
+                        continue;
+                    }
+
                     WrongQuestionItem item = new WrongQuestionItem();
                     item.setExamId(exam.getId());
                     item.setExamTitle(exam.getTitle());
@@ -174,6 +194,10 @@ public class StudentWrongQuestionService {
 
                     // 判分依据独立映射
                     item.setScoreDetail(rs.comment() != null ? rs.comment() : rs.detail());
+
+                    // 连对进度与消灭标记
+                    item.setConsecutiveCorrect(progress.consecutiveCorrect());
+                    item.setMastered(progress.mastered());
 
                     wrongItems.add(item);
                 }

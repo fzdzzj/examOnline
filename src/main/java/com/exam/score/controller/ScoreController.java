@@ -16,6 +16,9 @@ import com.exam.score.dto.ExamAnalysisReportResponse;
 import com.exam.score.dto.ExamReviewResponse;
 import com.exam.score.dto.MakeupFinalScoreResponse;
 import com.exam.score.dto.MyScoreResponse;
+import com.exam.score.dto.PracticePoolItem;
+import com.exam.score.dto.PracticeSubmitRequest;
+import com.exam.score.dto.PracticeSubmitResponse;
 import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.dto.ScoreLeaderboardResponse;
 import com.exam.score.dto.ScorePreviewResponse;
@@ -26,6 +29,7 @@ import com.exam.score.service.ScoreLeaderboardService;
 import com.exam.score.service.ScoreQueryService;
 import com.exam.score.service.ScoreReviewService;
 import com.exam.score.service.ScoreService;
+import com.exam.score.service.StudentPracticeService;
 import com.exam.score.service.StudentWrongQuestionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -71,6 +75,7 @@ public class ScoreController {
     private final ExamMapper examMapper;
     private final ScoreReviewService scoreReviewService;
     private final StudentWrongQuestionService studentWrongQuestionService;
+    private final StudentPracticeService studentPracticeService;
     private final ScoreLeaderboardService scoreLeaderboardService;
 
     public ScoreController(ScoreService scoreService, ScoreQueryService scoreQueryService,
@@ -79,6 +84,7 @@ public class ScoreController {
                            MakeupScoreService makeupScoreService, ExamMapper examMapper,
                            ScoreReviewService scoreReviewService,
                            StudentWrongQuestionService studentWrongQuestionService,
+                           StudentPracticeService studentPracticeService,
                            ScoreLeaderboardService scoreLeaderboardService) {
         this.scoreService = scoreService;
         this.scoreQueryService = scoreQueryService;
@@ -88,6 +94,7 @@ public class ScoreController {
         this.examMapper = examMapper;
         this.scoreReviewService = scoreReviewService;
         this.studentWrongQuestionService = studentWrongQuestionService;
+        this.studentPracticeService = studentPracticeService;
         this.scoreLeaderboardService = scoreLeaderboardService;
     }
 
@@ -140,17 +147,43 @@ public class ScoreController {
     }
 
     /**
-     * 学生查错题本列表（以已发布考试为粒度分页，每页最多 10 场考试组）。
+     * 学生查错题本列表（以已发布考试为粒度分页，每页最多 10 场考试组，可翻回已消灭）。
      */
     @GetMapping("/api/scores/my/wrong-questions")
     public ApiResponse<WrongQuestionPageResponse> myWrongQuestions(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "false") boolean includeMastered) {
         Long studentId = SecurityUtil.getUserId();
         if (studentId == null) {
             throw new BusinessException(ResponseCode.TOKEN_INVALID);
         }
-        return ApiResponse.success(studentWrongQuestionService.listWrongQuestions(studentId, page, size));
+        return ApiResponse.success(studentWrongQuestionService.listWrongQuestions(studentId, page, size, includeMastered));
+    }
+
+    /**
+     * 学生获取错题重练池（去重、仅客观题、排除已消灭）。
+     */
+    @GetMapping("/api/scores/my/wrong-questions/practice/pool")
+    public ApiResponse<List<PracticePoolItem>> myPracticePool() {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        return ApiResponse.success(studentPracticeService.getPracticePool(studentId));
+    }
+
+    /**
+     * 学生提交单题重练作答并即时判分反馈。
+     */
+    @PostMapping("/api/scores/my/wrong-questions/practice/submit")
+    public ApiResponse<PracticeSubmitResponse> submitPractice(
+            @Valid @RequestBody PracticeSubmitRequest request) {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        return ApiResponse.success(studentPracticeService.submitPractice(studentId, request));
     }
 
     /**
