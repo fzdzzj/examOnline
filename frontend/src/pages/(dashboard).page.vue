@@ -126,6 +126,7 @@ const menuItems = computed<MenuProps['items']>(() => {
       key: 'admin-section',
       label: '管理端',
       children: [
+        { key: '/admin/users', label: '用户管理' },
         { key: '/admin/invite-codes', label: '邀请码管理' },
         { key: '/admin/audit-logs', label: '审计日志' },
       ],
@@ -153,6 +154,7 @@ const NAVIGABLE_PATHS: readonly string[] = [
   '/student/exams',
   '/student/scores',
   '/student/wrong-questions',
+  '/admin/users',
   '/admin/invite-codes',
   '/admin/audit-logs',
 ];

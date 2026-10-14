@@ -670,6 +670,18 @@ export type LoginRequest = {
     password: string;
 };
 
+export type ApiResponseUserImportResult = {
+    code?: number;
+    message?: string;
+    data?: UserImportResult;
+};
+
+export type UserImportResult = {
+    imported?: number;
+    failed?: number;
+    errors?: Array<ErrorRow>;
+};
+
 export type ApiResponseReplayReport = {
     code?: number;
     message?: string;
@@ -2385,6 +2397,24 @@ export type KickUserResponses = {
 
 export type KickUserResponse = KickUserResponses[keyof KickUserResponses];
 
+export type ImportUsersData = {
+    body?: {
+        file?: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/admin/users/import';
+};
+
+export type ImportUsersResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseUserImportResult;
+};
+
+export type ImportUsersResponse = ImportUsersResponses[keyof ImportUsersResponses];
+
 export type ReplayData = {
     body?: never;
     path?: never;
@@ -2985,6 +3015,41 @@ export type MeResponses = {
 };
 
 export type MeResponse = MeResponses[keyof MeResponses];
+
+export type ImportTemplate1Data = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/admin/users/import-template';
+};
+
+export type ImportTemplate1Responses = {
+    /**
+     * OK
+     */
+    200: string;
+};
+
+export type ImportTemplate1Response = ImportTemplate1Responses[keyof ImportTemplate1Responses];
+
+export type ExportUsersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        scope?: string;
+        classId?: number;
+    };
+    url: '/api/admin/users/export';
+};
+
+export type ExportUsersResponses = {
+    /**
+     * OK
+     */
+    200: string;
+};
+
+export type ExportUsersResponse = ExportUsersResponses[keyof ExportUsersResponses];
 
 export type AuditLogsData = {
     body?: never;
