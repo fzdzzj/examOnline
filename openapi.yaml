@@ -646,6 +646,12 @@ paths:
           type: integer
           format: int64
           default: 10
+      - name: isTemplate
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
       responses:
         "200":
           description: OK
@@ -707,6 +713,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePaperSnapshotResponse"
+  /api/papers/{id}/save-as-template:
+    post:
+      tags:
+      - paper-controller
+      operationId: saveAsTemplate
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperResponse"
   /api/papers/{id}/questions:
     post:
       tags:
@@ -782,6 +807,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePaperDetailResponse"
+  /api/papers/{id}/clone:
+    post:
+      tags:
+      - paper-controller
+      operationId: clone
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePaperResponse"
   /api/papers/random-draw/preview:
     post:
       tags:
