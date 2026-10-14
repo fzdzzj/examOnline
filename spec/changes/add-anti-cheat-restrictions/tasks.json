@@ -1,0 +1,33 @@
+{
+  "change": "add-anti-cheat-restrictions",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与三件套制定",
+      "status": "completed",
+      "description": "确立 M 级变更边界：IP 白名单准入校验、EnterExamResponse 防作弊契约下发、COPY_PASTE 与 FULLSCREEN_EXIT 行为事件扩展、前端禁复制粘贴与全屏作答守卫、建考表单防作弊面板；零 DDL、零迁移脚本、绝不自动交卷。",
+      "evidence": "三件套已落盘 spec/changes/add-anti-cheat-restrictions/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端 IP 准入、事件收集器扩展与契约下发（先红后绿）",
+      "status": "pending",
+      "description": "实现 IpMatcher 工具支持精准 IP/通配符/CIDR；在 ExamTakingService.enter 增加 IP 白名单准入守卫；在 EnterExamResponse 中下发 antiCheatConfig；实现 CopyPasteEventCollector 与 FullScreenExitEventCollector 注册入 BehaviorEventRegistry；完成先红后绿单测与集成测试。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：前端作答安全守卫与建考表单扩展（先红后绿）",
+      "status": "pending",
+      "description": "前端 TakingBoard 与 useBehaviorReport 接入 antiCheatConfig：实现复制/剪切/粘贴/右键拦截并上报 COPY_PASTE；实现全屏作答引导与 fullscreenchange 退出监听上报 FULLSCREEN_EXIT；在教师创建/编辑考试页面增加防作弊设置卡片；完成组件与状态机单测。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：双端门禁全量验证、基线上调、变异验证与收口归档",
+      "status": "pending",
+      "description": "执行 mvnw clean test 与前端三门禁；更新 .github/ci/gate-baseline.json（上调新增用例数）；执行变异自证；合入 spec-delta 至 spec/specs/anti-cheat/spec.md；三件套归档并合并入 main 分支。",
+      "evidence": ""
+    }
+  ]
+}
