@@ -253,6 +253,10 @@ AND 不因内存不足失败
 > 数字与依据见 `spec/changes/archive/update-question-stats-export-memory/tasks.json` 阶段 2 evidence；
 > 隔离 H2 + 进程内直调不代表真实 MySQL/Tomcat 生产性能，不构成生产 P99 结论。
 
+#### Scenario: 题目统计导出选项分布列
+
+question-stats xlsx 在既有列（题号/题型/满分/平均分/得分率/答对率/区分度/作答人数）之后新增「选项分布」单列文本（形如 A:12(30%) B:8(20%)…，判断题 T/F），与 analysis-report JSON 的 optionDistribution 同源一致；既有列零删改；无选项题型该列为空。
+
 ---
 
 ### Requirement: 考试数据分析报告
@@ -356,6 +360,10 @@ WHEN 教师生成考试数据分析报告
 THEN 班级概览中的应考与缺席维度按该考试的有效预约名单计（与缺考域 `exam_absence` 口径同源，不得出现两套缺席数）
 
 AND 报告其余维度（及格线/优秀线派生、分数段、逐题指标、知识点薄弱、关注名单）口径零变化；未开启预约的考试报告与既有输出逐字零回归
+
+#### Scenario: 逐题选项分布
+
+analysis-report 逐题指标 QuestionStatItem 新增 optionDistribution 数组 [{option, count, rate}]（选项字母或 T/F、选择人数、占比）；仅 SINGLE/MULTIPLE/JUDGE 输出分布，FILL_BLANK/SHORT_ANSWER 为空数组不报错；占比分母为该题作答人数，MULTIPLE 每人可贡献多个选项、占比和可超 100%，未作答学生不计入任何选项桶；选项计数与题目统计导出复用同一聚合核心，既有指标（平均分/得分率/答对率/区分度/作答人数）数值不得因本扩展漂移。
 
 ---
 
