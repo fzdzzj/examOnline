@@ -64,3 +64,19 @@ GIVEN 一个班级含多名学生
 WHEN 查询班级学生列表
 
 THEN 返回该班级当前全部学生
+
+---
+
+### Requirement: 导入班级挂接语义
+
+WHEN 批量导入学生行携带班级名称,
+
+系统 SHALL 以 classes 表按名称解析班级并写入 user_class（语义等价既有 joinStudent，不改其实现行）；班级名称不存在或同名歧义时 SHALL 行级跳过，SHALL NOT 自动创建班级。
+
+#### Scenario: 挂接语义等价单建路径
+
+GIVEN 导入行班级名称唯一存在
+
+WHEN 导入完成
+
+THEN user_class 记录与既有一对一入班路径产生的记录语义一致（转班/成绩随人语义不变）

@@ -1419,6 +1419,27 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseVoid"
+  /api/admin/users/import:
+    post:
+      tags:
+      - user-import-export-controller
+      operationId: importUsers
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserImportResult"
   /api/admin/mq/dlq/replay:
     post:
       tags:
@@ -2110,6 +2131,45 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseCurrentUserResponse"
+  /api/admin/users/import-template:
+    get:
+      tags:
+      - user-import-export-controller
+      operationId: importTemplate_1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /api/admin/users/export:
+    get:
+      tags:
+      - user-import-export-controller
+      operationId: exportUsers
+      parameters:
+      - name: scope
+        in: query
+        required: false
+        schema:
+          type: string
+          default: student
+      - name: classId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
   /api/admin/audit-logs:
     get:
       tags:
@@ -3691,6 +3751,29 @@ components:
       required:
       - password
       - username
+    ApiResponseUserImportResult:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/UserImportResult"
+    UserImportResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+          format: int32
+        failed:
+          type: integer
+          format: int32
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorRow"
     ApiResponseReplayReport:
       type: object
       properties:
