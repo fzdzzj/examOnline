@@ -18,9 +18,9 @@
     {
       "id": 3,
       "title": "阶段 3：全量门禁实测、规范合入与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json；将 spec-delta 分别合入 class-management、score-review、frontend、exam-management 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
-      "evidence": ""
+      "evidence": "①后端门禁实测：仓库根 mvnw.cmd clean test → Tests run: 502, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS, 退出码 0。②前端门禁实测：pnpm run lint:check（0 错误）、type-check:check（0 错误）、pnpm run test -- --testTimeout=60000 → 97 文件 754 例全部 PASS。③gate-baseline.json：backendTests 499→502 同笔上调（净增 3 例），frontendTests 752→754 同笔上调（净增 2 例），openapiPaths 89 不变。④spec 基线合入：class-management、score-review、frontend、exam-management 各能力域 spec.md 追加对应 Scenario 与合入注记。⑤三件套归档至 spec/changes/archive/harden-core-security-and-state-boundaries/，spec/README.md 进行中清空并在已归档速览表登记。⑥feature/harden-core-security-and-state-boundaries 分支 --no-ff 合并入 main。"
     }
   ]
 }

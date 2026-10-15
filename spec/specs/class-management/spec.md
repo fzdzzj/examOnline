@@ -49,6 +49,13 @@ THEN 历史成绩仍跟随学生个人
 
 AND 不受班级变更影响
 
+#### Scenario: 学生转班目标班级所有权水平越权拦截 (harden-core-security-and-state-boundaries)
+
+GIVEN 教师调用学生转班接口（`PUT /api/classes/{id}/students/{userId}/transfer`）
+WHEN 传入的源班级属于该教师，但目标班级（`targetClassId`）属于其他教师且操作人非管理员
+THEN 系统 SHALL 拒绝该操作，返回 HTTP 403 Forbidden，禁止跨教师将学生强行转移至他人班级
+AND 若源班级与目标班级相同（`classId.equals(targetClassId)`），系统 SHALL 拒绝该操作，返回 HTTP 400 Bad Request
+
 ---
 
 ### Requirement: 班级学生列表
