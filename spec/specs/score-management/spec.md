@@ -503,6 +503,14 @@ WHEN 学生 B（或未登录态）请求 pool 或提交 A 的 questionId
 
 THEN 仅能访问本人数据，不泄露他人错题与练习状态
 
+#### Scenario: 原题被软删除后从考试快照平滑回退判分
+
+WHEN 学生提交重练题目作答（`POST /api/scores/my/wrong-questions/practice/submit`），且该题目在题库中已被教师逻辑软删除（`is_deleted=1`）
+
+THEN 系统 SHALL 自动从该学生所属且包含该题的已发布考试快照（`ExamSnapshot`）中装配该题目完整的类型、选项与标准答案，并基于既有客观题判分策略执行同源判分
+
+AND 判分结果正常记录 `practice_attempt` 明细、连对次数与消灭状态正常更新，响应返回该题的正确答案与解析，保证历史错题练习链路不中断（由 harden-exam-paper-and-practice-boundaries 合入）
+
 ---
 
 ### Requirement: 读侧装配不得携带消费路径未使用的重计算

@@ -62,6 +62,48 @@ THEN 服务端拒绝修改（开关仅未开始状态可改），开考后预约
 
 AND 考试其余字段的编辑语义维持既有约束零变化
 
+#### Scenario: 作答时长不能大于考试时间窗跨度
+
+WHEN 教师创建或更新考试时传入的 `durationMinutes` 大于由 `startTime` 与 `endTime` 计算的时间窗总分钟数
+
+THEN 系统 SHALL 拒绝该操作，返回 HTTP 400，错误信息明确说明作答时长不能大于考试时间窗跨度（由 harden-exam-paper-and-practice-boundaries 合入）
+
+#### Scenario: 迟到容忍时长不能大于或等于作答时长
+
+WHEN 教师创建或更新考试时传入的 `allowLateMinutes` 大于或等于 `durationMinutes`
+
+THEN 系统 SHALL 拒绝该操作，返回 HTTP 400，错误信息明确说明迟到容忍分钟数不能大于或等于个人作答时长（由 harden-exam-paper-and-practice-boundaries 合入）
+
+---
+
+### Requirement: 防作弊配置语法校验
+
+WHEN 教师创建或更新考试时提交 `antiCheatConfig`,
+系统 SHALL 对其中的 IP 白名单配置进行合法性前置校验。
+
+#### Scenario: 建考与改考防作弊 IP 白名单格式校验
+
+WHEN 教师创建或更新考试时提交的 `antiCheatConfig` 中包含 `ipWhitelist`
+
+THEN 系统 SHALL 逐项校验白名单中的字符串是否符合合法 IP（单 IPv4/IPv6、合法通配符、有效 CIDR）
+
+AND 若开启了 `enableIpWhitelist=true` 但 `ipWhitelist` 为空，系统 SHALL 返回 HTTP 400 提示白名单不能为空
+
+AND 若存在任一项非法 IP，系统 SHALL 拒绝该请求，返回 HTTP 400 并明确指出非法项（由 harden-exam-paper-and-practice-boundaries 合入）
+
+---
+
+### Requirement: 考试预约前置门禁
+
+WHEN 学生调用考试预约相关端点,
+系统 SHALL 校验目标考试是否为预约制考试。
+
+#### Scenario: 非预约制考试拒绝预约与取消预约
+
+WHEN 学生对 `reservationRequired != 1` 的普通考试调用预约端点 `POST /api/exam-reservations/{id}` 或取消端点 `DELETE /api/exam-reservations/{id}`
+
+THEN 系统 SHALL 拒绝该操作，返回 HTTP 400，错误提示明确说明该考试非预约制考试（由 harden-exam-paper-and-practice-boundaries 合入）
+
 ---
 
 ### Requirement: 考试发布

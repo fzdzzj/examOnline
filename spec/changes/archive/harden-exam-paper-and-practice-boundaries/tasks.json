@@ -1,0 +1,26 @@
+{
+  "change": "harden-exam-paper-and-practice-boundaries",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与三件套制定",
+      "status": "completed",
+      "description": "制定 M 级加固方案，梳理 5 处边界与合理性加固：①试卷克隆/另存模板标题超长截断防溢出；②建考时间窗与作答时长/迟到容忍合理性校验；③建考防作弊 IP 白名单格式校验；④非预约制考试预约接口前置门禁；⑤错题重练原题软删除平滑降级快照判分。登记 spec/README.md。",
+      "evidence": "三件套已落盘 spec/changes/harden-exam-paper-and-practice-boundaries/，并在 spec/README.md 登记为进行中变更，立项提交 c2d27a6。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：服务层实现与先红后绿验证",
+      "status": "completed",
+      "description": "实现 PaperService（克隆标题截断防溢出）、ExamService（时间窗与时长合理性校验、IP 白名单格式校验）、ExamReservationService（非预约制预约门禁）、StudentPracticeService（原题软删后回退快照判分）。编写针对性单元与集成测试，验证先红后绿与变异测试。",
+      "evidence": "受控白名单 8 个文件修改（4 个 Service + 4 个对应测试类）。先红 6/6 失败（cloneTruncatesTitleSafelyWhenExceeding128Chars 报 DataIntegrityViolationException、createExamRejectsDurationGreaterThanWindow 期望 400 得 200、reserveAndCancelRejectNonReservationExam 期望 400 得 200 等）。先绿 33 例全绿。变异验证 3 处击红（抽掉时间窗拦截得 200、抽掉预约门禁得 200、抽掉标题截断报 132 字超长异常），还原后 SHA256 严格一致。零 DDL、零新增迁移脚本、零使用 @Sql。提交笔 7f78da6。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：门禁验证、基线更新、规范合入与收口归档",
+      "status": "completed",
+      "description": "执行 mvnw.cmd clean test 与前端门禁；更新 .github/ci/gate-baseline.json（若后端用例数增加）；将 spec-delta 分别合入 question-bank、exam-management、score-management 的规范基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
+      "evidence": "①后端门禁实测：仓库根 mvnw.cmd clean test → Tests run: 499, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS, 退出码 0。②前端门禁实测：pnpm run lint:check（0 错误）、type-check:check（0 错误）、pnpm run test -- --testTimeout=60000 → 97 文件 752 例全部 PASS。③gate-baseline.json：backendTests 493→499 同笔上调（净增 6 例），frontendTests 752 与 openapiPaths 89 不变。④spec 基线合入：question-bank、exam-management、score-management 各能力域 spec.md 追加对应 Scenario 与合入注记。⑤三件套归档至 spec/changes/archive/harden-exam-paper-and-practice-boundaries/，spec/README.md 进行中清空并在已归档速览表登记。⑥feature/harden-exam-paper-and-practice-boundaries 分支 --no-ff 合并入 main。"
+    }
+  ]
+}

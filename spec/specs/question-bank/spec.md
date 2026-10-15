@@ -365,6 +365,12 @@ GIVEN 教师 B 对教师 A 的试卷调用 clone 或 save-as-template
 
 THEN 返回 403，不产生任何复制
 
+#### Scenario: 试卷克隆产物标题超长安全截断
+
+WHEN 教师克隆本人一张试卷，其原标题长度使得追加「（副本）」后总长度超过 128 字符（`papers.title VARCHAR(128)`）
+
+THEN 系统 SHALL 自动截断原标题，使得「截断后的原标题 + （副本）」的总长度严格等于 128 字符，绝不因字段长度溢出而抛出数据库异常或截断失败（由 harden-exam-paper-and-practice-boundaries 合入）
+
 ---
 
 ### Requirement: 另存为模板
