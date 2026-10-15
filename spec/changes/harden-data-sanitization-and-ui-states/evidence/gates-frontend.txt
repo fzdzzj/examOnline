@@ -1,0 +1,22 @@
+# 全量门禁实测：前端三门禁（harden-data-sanitization-and-ui-states 阶段 2）
+
+执行目录：frontend/
+
+## 1. lint:check（pnpm lint:check）→ exit 0
+eslint src e2e *.config.ts 无错误（新增/修改文件经 eslint --fix 格式对齐后复跑通过）
+
+## 2. type-check:check（pnpm type-check:check）→ exit 0
+vue-tsc（app）+ tsc（config）双 banner 均零错误
+
+## 3. test（pnpm test / vitest run）→ exit 0
+Test Files  101 passed (101)
+     Tests  767 passed (767)
+
+基线 754 → 767（净增 13：classes 3 + questions 查询失败 3 + papers 2 + tags 3 +
+questionBatchDelete 防抖锁 2），只增不减。
+（首次全量运行期间后端 maven 并发占载曾出现 2 条负载性瞬时抖动——questionImportExport 弹层
+teleport 时序与 makeups 词法守卫；隔离复跑 7/7、全量复跑两次 767/767 全绿，非本变更引入。）
+
+## 基线对照
+backendTests 502→506、frontendTests 754→767、openapiPaths 89 不动；
+.gate-baseline.json 本轮不触碰（留待阶段 3 收口笔上调）。

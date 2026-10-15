@@ -1,0 +1,29 @@
+# red-green: 前端 M-03/M-04 定向测试（harden-data-sanitization-and-ui-states 阶段 2）
+
+执行目录：frontend/（pnpm vitest run，5 个 spec 文件）
+命令：pnpm vitest run "src/pages/(dashboard)/teacher/classes/__tests__/classesQueryFailureStates.spec.ts" "src/pages/(dashboard)/teacher/questions/__tests__/questionsQueryFailure.spec.ts" "src/pages/(dashboard)/teacher/papers/__tests__/paperDetailQueryFailure.spec.ts" "src/pages/(dashboard)/teacher/tags/__tests__/tagsQueryFailureStates.spec.ts" "src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts"
+
+## 先红（实施前，页面尚无三态/锁，退出码 1）
+Test Files  5 failed (5)
+     Tests  5 failed | 14 passed (19)
+5 条红灯恰为新增断言：
+1. classesQueryFailureStates.spec.ts > 查询失败：错误 Alert 显性呈现后端 message，主数据 Table 不渲染
+   —— [data-test="classes-error"] 不存在（页面未消费 useQuery error）
+2. paperDetailQueryFailure.spec.ts > 查询失败：…「试卷不存在或加载失败」空态与详情均不出现
+   —— [data-test="paper-error"] 不存在
+3. questionBatchDelete.spec.ts > M-04 > 在途期间重复触发被入口锁拦截
+   —— batchDelete 被调用 2 次（无 batchDeleting 锁，expected 1）
+4. questionsQueryFailure.spec.ts > 查询失败：…主数据 Table 不渲染
+   —— [data-test="questions-error"] 不存在
+5. tagsQueryFailureStates.spec.ts > 查询失败：…主数据 Table 不渲染
+   —— [data-test="tags-error"] 不存在
+其余 14 条（成功态/空态回归 + 既有批量删除行为）在未实施时已绿，符合「红灯恰为新增断言」性质。
+
+## 后绿（实施后，退出码 0）
+Test Files  5 passed (5)
+     Tests  19 passed (19)
+✓ classesQueryFailureStates.spec.ts（3 例）
+✓ paperDetailQueryFailure.spec.ts（2 例）
+✓ questionBatchDelete.spec.ts（8 例，含 M-04 防抖锁 2 例）
+✓ questionsQueryFailure.spec.ts（3 例）
+✓ tagsQueryFailureStates.spec.ts（3 例）

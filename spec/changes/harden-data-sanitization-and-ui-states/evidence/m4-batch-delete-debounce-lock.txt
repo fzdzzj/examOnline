@@ -1,0 +1,26 @@
+# m4 变异击红-复原留证：题库批量删除并发防抖锁（onBatchDelete 入口锁被抽掉）
+
+目标文件：frontend/src/pages/(dashboard)/teacher/questions/index.page.vue
+变异注入：把 onBatchDelete 入口的 `if (batchDeleting.value) return;` 防抖守卫整行抽掉——
+        请求在途未决期间连击确认将发出重复并发批量请求。
+验证命令（frontend/）：pnpm vitest run "src/pages/(dashboard)/teacher/questions/__tests__/questionBatchDelete.spec.ts"
+
+## SHA256
+注入前（原实现，含守卫）：DF9D0CD1E01C57C3713D70228AA9A2F1A969050BFF31C9F7A3B4DD5ABEE2EE29
+注入后（变异，守卫缺失）：476DBF51C69AB26EFF6BE6C6DD6CB20031395DA313B21F98F4932FBEE3CB49CF
+
+## ③ 击红（退出码 1）
+Test Files  1 failed (1)
+     Tests  1 failed | 7 passed (8)
+FAIL 批量删除并发防抖锁（M-04）> 请求在途未决期间重复触发 onBatchDelete 被入口锁拦截，只发一次批量请求
+AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times
+（在途期间第二次确认未被拦截 → batchDelete 被调用 2 次，断言变红；其余 7 条既有行为用例仍绿）
+
+## ④ 复原 + 归零
+复原后 SHA256：DF9D0CD1E01C57C3713D70228AA9A2F1A969050BFF31C9F7A3B4DD5ABEE2EE29
+与注入前一致：HASH MATCH: OK（字节级一致）
+
+## ⑤ 回绿
+复原后重跑同一条验证命令：exit 0
+Test Files  1 passed (1)
+     Tests  8 passed (8)

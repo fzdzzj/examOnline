@@ -1,0 +1,29 @@
+# m2 变异击红-复原留证：Excel 导入 Unicode 全角空格清洗（stripWhitespace 退回标准 trim()）
+
+规范：M-02 要求 cellText 用 `^[\s\u3000\u00A0]+|[\s\u3000\u00A0]+$` 剥除首尾全部 Unicode 空白；
+Java 原生 trim() 仅处理 ASCII ≤ 0x20，不清除 \u3000 全角空格与 \u00A0 NBSP。
+变异注入：stripWhitespace 的 replaceAll 改回标准 `text.trim()`，恢复「全角空格导致整行报错」的旧缺陷。
+
+## m2-question（QuestionImportExportService.stripWhitespace）
+目标文件：src/main/java/com/exam/question/service/QuestionImportExportService.java
+验证命令：.\mvnw.cmd test "-Dtest=QuestionImportExportIntegrationTest#importStripsUnicodeWhitespaceFromCellTexts" -DfailIfNoTests=false
+
+注入前 SHA256：FF76E4620ECA36AEF64177A8D9FFC4191B996D18539CD3001E29EBCF858D5672
+注入后 SHA256：447AF27BF7C1F4F5460073893123E8C0F2F0D988D30167A30F9A981E2F75C651
+击红（BUILD FAILURE）：
+  importStripsUnicodeWhitespaceFromCellTexts —— 全角空格包裹的合法行应剥除空白后成功导入
+  ==> expected: <1> but was: <0>（「　单选　」无法匹配题型，整行被拒）
+复原后 SHA256：FF76E4620ECA36AEF64177A8D9FFC4191B996D18539CD3001E29EBCF858D5672（与注入前一致）
+回绿：重跑同命令 Tests run: 1, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS
+
+## m2-user（UserImportExportService.stripWhitespace）
+目标文件：src/main/java/com/exam/user/service/UserImportExportService.java
+验证命令：.\mvnw.cmd test "-Dtest=UserImportExportIntegrationTest#importStripsUnicodeWhitespaceAroundUserNameAndClassName" -DfailIfNoTests=false
+
+注入前 SHA256：2CF80D5E008DA2F7643D53A5E81F09AAE291C29DF07E2DA5A2DA17AA9C0ACF04
+注入后 SHA256：CD8F892A2676FBD6B4F019A5E869CB3945826C2B4784021DC429E5B6E8844AB1
+击红（BUILD FAILURE）：
+  importStripsUnicodeWhitespaceAroundUserNameAndClassName —— 首尾全角空格应剥除后成功导入
+  ==> expected: <1> but was: <0>（全角空格学号/班级名无法匹配，整行被拒）
+复原后 SHA256：2CF80D5E008DA2F7643D53A5E81F09AAE291C29DF07E2DA5A2DA17AA9C0ACF04（与注入前一致，HASH MATCH: OK）
+回绿：重跑同命令 Tests run: 1, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS

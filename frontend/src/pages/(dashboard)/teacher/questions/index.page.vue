@@ -36,7 +36,11 @@
         :disabled="selectedIds.length === 0"
         @confirm="onBatchDelete"
       >
-        <Button danger :disabled="selectedIds.length === 0">
+        <Button
+          danger
+          :loading="batchDeleting"
+          :disabled="batchDeleting || selectedIds.length === 0"
+        >
           批量删除（{{ selectedIds.length }}）
         </Button>
       </Popconfirm>
@@ -53,7 +57,19 @@
       />
     </div>
 
+    <!-- U-1 三态分离（harden-data-sanitization-and-ui-states M-03）：查询失败显性呈现，
+         主数据表格隐藏——系统故障不得伪装成「题库为空」的业务空态 -->
+    <Alert
+      v-if="questionsErrorText"
+      type="error"
+      show-icon
+      :message="questionsErrorText"
+      data-test="questions-error"
+      class="mb-3"
+    />
+
     <Table
+      v-else
       :columns="columns"
       :data-source="rows"
       :loading="isFetching"
@@ -103,6 +119,7 @@
 
 <script setup lang="ts">
 import {
+  Alert,
   Button,
   Input,
   Popconfirm,
@@ -171,9 +188,16 @@ const query = computed(() =>
   })
 );
 
-const { data, isFetching } = useQuery({
+const { data, isFetching, error } = useQuery({
   queryKey: computed(() => ['questions', query.value]),
   queryFn: () => unwrap(page({ client, throwOnError: true, query: query.value })),
+});
+
+// U-1 三态分离（harden M-03）：查询失败以 Alert 显性呈现后端 message，主表格隐藏
+const questionsErrorText = computed<string | null>(() => {
+  const caught = error?.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : String(caught);
 });
 
 const rows = computed(() => data.value?.list ?? []);
@@ -209,6 +233,10 @@ const tagOptions = computed(() =>
 );
 
 const selectedIds = ref<number[]>([]);
+
+/** 批量删除在途状态（harden-data-sanitization-and-ui-states M-04）：
+ *  绑定按钮 loading/disabled，兼作 onBatchDelete 入口防抖锁——在途期间拦截并发重复触发。 */
+const batchDeleting = ref(false);
 
 const rowSelection = computed(() => ({
   selectedRowKeys: selectedIds.value,
@@ -251,8 +279,11 @@ async function onDelete(record: QuestionResponse): Promise<void> {
 }
 
 async function onBatchDelete(): Promise<void> {
+  // M-04 入口防抖锁：请求在途未决期间，所有并发/重复触发一律拦截（finally 复位）
+  if (batchDeleting.value) return;
   const ids = [...selectedIds.value];
   if (ids.length === 0) return;
+  batchDeleting.value = true;
   try {
     // 单次批量调用 + 逐题结果信封：部分成功不伪装成全部成功（失败项逐条 reason 透出）
     const result = await unwrap(batchDelete({ client, throwOnError: true, body: { ids } }));
@@ -270,6 +301,8 @@ async function onBatchDelete(): Promise<void> {
     invalidateQuestions();
   } catch (error) {
     message.error(error instanceof Error ? error.message : '删除失败，请稍后重试');
+  } finally {
+    batchDeleting.value = false;
   }
 }
 

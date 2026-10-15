@@ -87,6 +87,19 @@ public class QuestionImportExportService {
     /** 图片URL 契约（同 add-question-image 建题口径，外链记行错误）。 */
     private static final String IMAGE_URL_PATTERN = "^/images/.*$";
 
+    /**
+     * Unicode 空白剥离（harden-data-sanitization-and-ui-states M-02）：剥除首尾全部 Unicode 空白。
+     * 覆盖半角空格、\u3000 中文全角空格、\u00A0 不换行空格（NBSP）等——
+     * Java 原生 {@code String.trim()} 仅处理 ASCII ≤ 0x20，用户从中文文档复制
+     * 「　单选　」「　易　」时会导致题型/难度匹配失败整行报错。
+     */
+    private static String stripWhitespace(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replaceAll("^[\\s\\u3000\\u00A0]+|[\\s\\u3000\\u00A0]+$", "");
+    }
+
     private static final int IMAGE_URL_MAX = 512;
     private static final int CONTENT_MAX = 5000;
     /** 答案长度上限：对齐 schema questions.correct_answer VARCHAR(512) 与单题建题 @Size 文案。 */
@@ -189,7 +202,7 @@ public class QuestionImportExportService {
         }
     }
 
-    /** 表头逐字对齐列定义（列定义共用防漂移的核心落地）。 */
+    /** 表头逐字对齐列定义（列定义共用防漂移的核心落地；表头同样剥除首尾 Unicode 空白，M-02）。 */
     private void verifyHeader(Sheet sheet) {
         Row header = sheet.getRow(0);
         if (header == null) {
@@ -198,7 +211,7 @@ public class QuestionImportExportService {
         String[] expected = QuestionImportColumn.headers();
         for (int c = 0; c < expected.length; c++) {
             Cell cell = header.getCell(c);
-            String actual = cell == null ? "" : cell.getStringCellValue().trim();
+            String actual = cell == null ? "" : stripWhitespace(cell.getStringCellValue());
             if (!actual.equals(expected[c])) {
                 throw new BusinessException(ResponseCode.BAD_REQUEST,
                         "模板表头与当前模板不一致，请下载最新模板（第 " + (c + 1) + " 列应为「" + expected[c] + "」）");
@@ -329,7 +342,8 @@ public class QuestionImportExportService {
         if (cell == null) {
             return "";
         }
-        return formatter.formatCellValue(cell);
+        // 统一剥除首尾 Unicode 空白（M-02）：题型/难度/题干/选项/标签/图片URL 的全角空格与 NBSP 不再干扰匹配
+        return stripWhitespace(formatter.formatCellValue(cell));
     }
 
     /** 单行入库（独立事务）：插题 + 标签关联。 */

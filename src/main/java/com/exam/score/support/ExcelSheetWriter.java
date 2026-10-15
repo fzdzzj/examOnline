@@ -79,6 +79,24 @@ public final class ExcelSheetWriter {
         return sheet;
     }
 
+    /**
+     * Excel 公式/DDE 防注入清洗（harden-data-sanitization-and-ui-states M-01）：
+     * 以 {@code = + - @ \t \r} 开头的文本会被 Excel/LibreOffice 解析为公式或 DDE 命令
+     * （CSV/Formula Injection，可导致恶意代码执行与数据外发），
+     * 前置单引号 {@code '} 强制电子表格软件作为纯文本渲染。
+     * 不以敏感字符开头的正常文本、空串与 null 原样返回，零冗余字符。
+     */
+    public static String sanitizeFormula(String val) {
+        if (val == null || val.isEmpty()) {
+            return val;
+        }
+        char first = val.charAt(0);
+        if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t' || first == '\r') {
+            return "'" + val;
+        }
+        return val;
+    }
+
     /** 在首行写表头。 */
     public static void writeHeader(Sheet sheet, Object... headers) {
         writeHeaderAt(sheet, 0, headers);

@@ -112,8 +112,11 @@ public class ScoreExportService {
                 for (GradingSubmission submission : page) {
                     Row row = sheet.createRow(rowIndex[0]++);
                     User user = users.get(submission.getStudentId());
-                    row.createCell(0).setCellValue(user == null ? "" : user.getUsername());
-                    row.createCell(1).setCellValue(user == null ? "未知学生" : user.getName());
+                    // 学号/姓名是用户可控文本：以 = + - @ 等开头会被 Excel 解析为公式（M-01 防注入）
+                    row.createCell(0).setCellValue(user == null ? ""
+                            : ExcelSheetWriter.sanitizeFormula(user.getUsername()));
+                    row.createCell(1).setCellValue(user == null ? "未知学生"
+                            : ExcelSheetWriter.sanitizeFormula(user.getName()));
                     row.createCell(2).setCellValue(decimal(submission.getObjectiveScore()));
                     row.createCell(3).setCellValue(decimal(submission.getSubjectiveScore()));
                     row.createCell(4).setCellValue(decimal(submission.getTotalScore()));
@@ -156,8 +159,11 @@ public class ScoreExportService {
                     }
                     Row row = sheet.createRow(rowIndex[0]++);
                     User user = users.get(submission.getStudentId());
-                    row.createCell(0).setCellValue(user == null ? "" : user.getUsername());
-                    row.createCell(1).setCellValue(user == null ? "未知学生" : user.getName());
+                    // 学号/姓名是用户可控文本：公式注入清洗（M-01）
+                    row.createCell(0).setCellValue(user == null ? ""
+                            : ExcelSheetWriter.sanitizeFormula(user.getUsername()));
+                    row.createCell(1).setCellValue(user == null ? "未知学生"
+                            : ExcelSheetWriter.sanitizeFormula(user.getName()));
                     int col = 2;
                     for (GradingQuestion question : questions) {
                         QuestionScoreResolver.ResolvedQuestionScore score = perQuestion.get(question.questionId());
@@ -188,7 +194,7 @@ public class ScoreExportService {
                 double max = metric.question().score().doubleValue();
                 row.createCell(0).setCellValue(metric.question().number());
                 row.createCell(1).setCellValue(labelOf(metric.question().type()));
-                row.createCell(2).setCellValue(metric.question().content());
+                row.createCell(2).setCellValue(ExcelSheetWriter.sanitizeFormula(metric.question().content()));
                 row.createCell(3).setCellValue(decimal(metric.question().score()));
                 row.createCell(4).setCellValue(n == 0 ? "-" : round2(metric.averageScore()));
                 row.createCell(5).setCellValue(n == 0 || max == 0 ? "-" : percent(metric.scoreRate()));
@@ -390,7 +396,7 @@ public class ScoreExportService {
 
             Row title = sheet.createRow(0);
             Cell titleCell = title.createCell(0);
-            titleCell.setCellValue(exam.getTitle() + " 个人成绩单");
+            titleCell.setCellValue(ExcelSheetWriter.sanitizeFormula(exam.getTitle() + " 个人成绩单"));
             titleCell.setCellStyle(bold);
 
             Row info = sheet.createRow(1);
@@ -410,12 +416,14 @@ public class ScoreExportService {
                 Row row = sheet.createRow(rowIndex++);
                 row.createCell(0).setCellValue(question.number());
                 row.createCell(1).setCellValue(labelOf(question.type()));
-                row.createCell(2).setCellValue(question.content());
+                row.createCell(2).setCellValue(ExcelSheetWriter.sanitizeFormula(question.content()));
                 row.createCell(3).setCellValue(decimal(question.score()));
                 row.createCell(4).setCellValue(score.graded() ? decimal(score.score()) : "未批");
                 row.createCell(5).setCellValue(score.graded() ? "已批" : "未批");
                 String note = score.comment() != null ? score.comment() : score.detail();
-                row.createCell(6).setCellValue(note == null ? "" : note);
+                // 评语/判分依据是教师/系统可控文本：公式注入清洗（M-01）
+                row.createCell(6).setCellValue(note == null ? ""
+                        : ExcelSheetWriter.sanitizeFormula(note));
             }
             ExcelSheetWriter.autoSize(sheet, 7);
         });

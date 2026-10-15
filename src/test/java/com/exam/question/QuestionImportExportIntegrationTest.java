@@ -130,6 +130,45 @@ class QuestionImportExportIntegrationTest extends IntegrationTestBase {
         assertTrue(inPaper, "导入题目可组卷");
     }
 
+    // ==================== Unicode 全角空格清洗（harden-data-sanitization-and-ui-states M-02） ====================
+
+    @Test
+    void importStripsUnicodeWhitespaceFromCellTexts() throws Exception {
+        String teacher = registerTeacher();
+        String tagName = unique("数学");
+        createTag(teacher, tagName, "SUBJECT");
+
+        // 题型/难度/题干/选项/标签/图片URL 首尾包裹全角空格 \u3000 与不换行空格 \u00A0：
+        // 标准 String.trim() 不清除 \u3000，会导致题型匹配失败（「题型必须为：…」）整行报错；
+        // M-02 stripWhitespace 剥除首尾全部 Unicode 空白后应正常解析入库。
+        byte[] xlsx = buildXlsx(List.<String[]>of(
+                new String[]{"\u3000单选\u3000", "\u3000全角空格题干\u3000", "\u00A0甲\u00A0", "\u00A0乙\u3000",
+                        "", "", "", "", "A", "\u3000" + tagName + "\u3000", "\u3000易\u3000",
+                        "\u3000" + IMAGE_URL + "\u3000"}
+        ));
+
+        JsonNode result = perform(multipart("/api/questions/import")
+                        .file(multipartFile(xlsx))
+                        .header("Authorization", bearer(teacher)), 200)
+                .get("data");
+        assertEquals(1, result.get("imported").asInt(), "全角空格包裹的合法行应剥除空白后成功导入");
+        assertEquals(0, result.get("failed").asInt());
+        assertEquals(0, result.get("errors").size());
+
+        // 入库内容为剥除后的纯净文本：题干/难度/标签/图片URL 均可匹配
+        JsonNode page = perform(jsonGet("/api/questions?size=100", teacher), 200).get("data");
+        boolean found = false;
+        for (JsonNode q : page.get("list")) {
+            if ("全角空格题干".equals(q.get("content").asText())) {
+                found = true;
+                assertEquals(1, q.get("difficulty").asInt(), "『　易　』剥除全角空格后应匹配难度 1");
+                assertTrue(q.get("tags").size() >= 1, "全角空格包裹的标签名应匹配既有标签");
+                assertEquals(IMAGE_URL, q.get("imageUrl").asText(), "全角空格包裹的图片URL应剥除后入库");
+            }
+        }
+        assertTrue(found, "剥除全角空格后的题干应入库可见");
+    }
+
     // ==================== 混合错误行 ====================
 
     @Test

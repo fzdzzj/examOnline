@@ -1,7 +1,18 @@
 <template>
   <Spin :spinning="isFetching">
+    <!-- U-1 三态分离（harden-data-sanitization-and-ui-states M-03）：详情查询失败显性呈现，
+         错误 Alert 优先于锁定提示与「试卷不存在」空态——系统故障不得伪装成业务结论 -->
     <Alert
-      v-if="detail && isLocked"
+      v-if="detailErrorText"
+      type="error"
+      show-icon
+      :message="detailErrorText"
+      data-test="paper-error"
+      class="mb-3"
+    />
+
+    <Alert
+      v-else-if="detail && isLocked"
       type="info"
       show-icon
       class="mb-3"
@@ -471,12 +482,24 @@ import {
 const route = useRoute('/(dashboard)/teacher/papers/[id]');
 const paperId = computed(() => Number(route.params.id));
 
-const { data: detail, isFetching } = useQuery({
+const {
+  data: detail,
+  isFetching,
+  error: detailError,
+} = useQuery({
   queryKey: computed(() => ['paper', paperId.value]),
   queryFn: () =>
     unwrap<PaperDetailResponse>(
       detail1({ client, throwOnError: true, path: { id: paperId.value } })
     ),
+});
+
+// U-1 三态分离（harden M-03）：详情查询失败以 Alert 显性呈现后端 message，
+// 不落入「试卷不存在或加载失败」空态（与确实不存在不可区分）
+const detailErrorText = computed<string | null>(() => {
+  const caught = detailError?.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : String(caught);
 });
 
 const items = computed<PaperQuestionItemResponse[]>(() => detail.value?.questions ?? []);

@@ -1,0 +1,15 @@
+# 全量门禁实测：后端（harden-data-sanitization-and-ui-states 阶段 2）
+
+命令（仓库根）：.\mvnw.cmd clean test
+结果：
+[WARNING] Tests run: 506, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+
+基线 502 → 506（净增 4：QuestionImportExport +1、UserImportExport +2、GradingScore +1），只增不减。
+Skipped=1 为既有固定跳过（与本变更无关）。
+
+## 红线自检（ev 阶段 2 提交前）
+- openapi.yaml：paths 仍为 89（Select-String '^  /' 计数=89），零契约变更；
+- schema.sql / docker/mysql/migrations / .github/ci/gate-baseline.json / .github：git diff 为空；
+- 新增/修改测试不含 @Sql 注解；
+- 修改文件清单严格限于白名单（后端 4 主文件 + 3 测试文件，前端 4 页面 + 4 spec + 1 既有 spec 增补，evidence/）。

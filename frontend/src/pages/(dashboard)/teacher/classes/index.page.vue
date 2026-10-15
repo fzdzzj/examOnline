@@ -5,7 +5,19 @@
         <Button type="primary" @click="openClassModal()">+ 新建班级</Button>
       </template>
 
+      <!-- U-1 三态分离（harden-data-sanitization-and-ui-states M-03）：查询失败显性呈现，
+           主数据表格隐藏——系统故障不得伪装成「没有班级」的业务空态 -->
+      <Alert
+        v-if="classesErrorText"
+        type="error"
+        show-icon
+        :message="classesErrorText"
+        data-test="classes-error"
+        class="mb-3"
+      />
+
       <Table
+        v-else
         :columns="columns"
         :data-source="rows"
         :loading="isFetching"
@@ -251,7 +263,7 @@ function formatTime(value: string | undefined | null): string {
 const pageNum = ref(1);
 const pageSize = ref(10);
 
-const { data, isFetching, refetch } = useQuery({
+const { data, isFetching, refetch, error } = useQuery({
   queryKey: computed(() => ['classes', pageNum.value, pageSize.value] as const),
   queryFn: () =>
     unwrap<ClassPageResponse>(
@@ -261,6 +273,13 @@ const { data, isFetching, refetch } = useQuery({
         query: { page: pageNum.value, size: pageSize.value },
       })
     ),
+});
+
+// U-1 三态分离（harden M-03）：查询失败以 Alert 显性呈现后端 message，主表格隐藏
+const classesErrorText = computed<string | null>(() => {
+  const caught = error?.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : String(caught);
 });
 
 const rows = computed<ClassResponse[]>(() => data.value?.list ?? []);
