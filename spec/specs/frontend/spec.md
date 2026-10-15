@@ -2717,5 +2717,18 @@ THEN 以该模板为源创建新草稿卷并跳转/提示，模板本身不动
 - **AND**: 若检测到库内存在相似度 $\ge 60\%$ 的题目，界面 SHALL 显性展示 warning 提示及相似题目预览
 - **AND**: 提示为知情确认，教师仍可继续确认保存，不强制阻断录入
 
+---
+
+### Requirement: 消息中心界面
+
+> 合入注记（2026-10-15，变更 `add-exam-lifecycle-notifications` 收口）：
+> 消息中心弹层头部增加「全部已读」操作按钮（当 unread > 0 时显性展示），点击调用 PUT /api/messages/read-all 批量更新并联动本地角标与列表。
+
+#### Scenario: 消息中心一键全部标为已读 (ADDED)
+- **WHEN**: 用户在消息中心下拉弹窗（`MessageCenter.vue`）中且当前未读消息数大于 0
+- **THEN**: 弹窗头部 SHALL 呈现「全部已读」操作按钮
+- **AND**: 点击「全部已读」后 SHALL 调用 `PUT /api/messages/read-all` 端点
+- **AND**: 响应成功后系统 SHALL 联动将本地未读数角标更新为 0，并刷新消息列表中所有消息展示为已读态
+
 
 

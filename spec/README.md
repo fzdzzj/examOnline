@@ -20,7 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| `add-exam-lifecycle-notifications` | 考务生命周期消息通知闭环与全量标已读 | ExamLifecycleNotificationService 旁路推送（考试发布/成绩发布/复核结果）、PUT /api/messages/read-all 端点、MessageCenter「全部已读」 | `exam-management`, `score-management`, `frontend` | 无 |
+| （无进行中变更） | — | — | — | — |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。
@@ -56,6 +56,7 @@ spec/
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
+| `add-exam-lifecycle-notifications` | 考务生命周期消息通知闭环与全量标已读（成熟产品差距串行案⑥，**GO**） | 覆盖：后端——ExamLifecycleNotificationService 统一 try-catch 旁路降级推送（考试发布通知/成绩发布通知/复核结果通知）、MessageService.markAllRead 与 UserMessageMapper.markAllByOwner 批量置位已读、PUT /api/messages/read-all 端点、ExamService/ScoreService/ScoreReviewService 主链路接线；前端——MessageCenter.vue 弹层头部新增「全部已读」操作（unread>0 显性展示、联动清角标刷列表）；契约——openapi paths 91→92 与 SDK 同步；门禁数字链 534→540、806→810、91→92（gate-baseline 三项同笔上调）；变异验证 m1（发布通知接线）/m2（markAllRead 用户隔离）击红-复原-回绿留证；零 DDL 零迁移脚本；实施笔 feef082，feature/add-exam-lifecycle-notifications 分支 `--no-ff` 合并入 main。 | 2026-10-15 |
 | `add-question-duplicate-detection` | 题库查重与相似度预检（成熟产品差距串行案⑤，**GO**） | 覆盖：后端——QuestionDuplicateService 纯 Java Bigram Jaccard + 编辑距离混合相似度（0.6*J + 0.4*E，标点/全半角/大小写归一）、GET /api/questions/check-duplicate（stem 必填≥2字符否则400，excludeId 排除自身，教师查个人/ADMIN查全量，threshold默认0.6、limit默认5上限10，权限继承 question:manage）；前端——QuestionForm.vue 题干失焦/防抖500ms预检+知情 warning Alert 与可展开相似题预览、questions/index.page.vue 工具栏「题目查重」快捷入口；契约——openapi paths 90→91 与 SDK 同步；门禁数字链 520→534、800→806、90→91（gate-baseline 三项同笔上调）；变异验证 m1（空白门禁）/m2（excludeId排除自身）击红-复原-回绿留证；零 DDL 零迁移脚本零新依赖；实施笔 2573595，feature/add-question-duplicate-detection 分支 `--no-ff` 合并入 main。 | 2026-10-15 |
 | `add-paper-pdf-export` | 试卷标准纸质版 PDF 导出（支持学生作答版与教师参考答案版，M 级，**GO**） | 覆盖：后端 PaperExportService 基于 iText 5 流式导出 A4 规范试卷 PDF（卷头、考生填空区、大题得分汇总表、题型分组、作答留白、教师参考答案与评分标准），自包含 sanitizePdfText 字符清洗；PaperController 暴露 GET /api/papers/{id}/export-pdf?withAnswer=false 端点；前端试卷详情与列表增加「导出试卷 PDF」下拉与交互处理；openapi paths 89→90；门禁数字链 515→520、794→800、89→90（gate-baseline 三项同笔上调）；变异验证 m1 越权与 m2 字符清洗双击红-复原-回绿；实施笔 a024831，feature/add-paper-pdf-export 分支 `--no-ff` 合并入 main。 | 2026-10-15 |
 | `harden-review-flow-and-resource-limits` | 成绩复核终局防呆、导出批量分片防 OOM 与交互细节打磨治理（S/M 级，**GO**） | 覆盖：五处加固——①ReviewHandleModal 调分不可逆 warning Alert 与 Modal.confirm 二次防呆确认；②UserImportExportService 用户导出大批量按 500 分片查询防 MySQL 报文溢出与 OOM；③useTeacherExams 及 5 个消费页下拉失败反馈增强（data-test="exams-error" 错误 Alert）；④ScoreExportService 个人成绩单 PDF 导出生僻特殊字符（Emoji/增补平面/控制符）清洗容错；⑤classes/index.page.vue 移出学生补齐 :loading 动效；零 DDL、零迁移脚本、schema.sql 零 diff；openapi paths 89 不变；门禁数字链 506→515、767→794、89 不变（gate-baseline 同步上调）；变异验证 m1–m4 全部击红-复原-回绿；实施笔 2f3cdff，feature/harden-review-flow-and-resource-limits 分支 `--no-ff` 合并入 main。 | 2026-10-15 |
