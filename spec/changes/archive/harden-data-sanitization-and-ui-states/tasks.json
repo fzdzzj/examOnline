@@ -1,0 +1,26 @@
+{
+  "change": "harden-data-sanitization-and-ui-states",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与三件套制定",
+      "status": "completed",
+      "description": "制定 M 级加固方案，梳理 4 处数据清洗与交互防呆加固：①ExcelSheetWriter.sanitizeFormula Excel 导出公式防注入；②QuestionImportExportService 与 UserImportExportService 导入 Unicode 全角空格/脏空白清洗；③班级/题库/试卷详情/标签 4 页面 useQuery error 三态分离与显性 Alert 呈现；④题库批量删除 loading 与防抖并发锁。编制三件套并登记 spec/README.md。",
+      "evidence": "三件套已落盘 spec/changes/harden-data-sanitization-and-ui-states/，并在 spec/README.md 登记为进行中变更。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：数据清洗与前端三态/防抖实现及先红后绿验证",
+      "status": "completed",
+      "description": "实施后端 ExcelSheetWriter（公式防注入）、QuestionImportExportService 与 UserImportExportService（全角空白清洗），前端 4 页面（错误三态分离）及题库批量删除（loading与并发防抖锁）。编写先红后绿与变异测试，验证 m1–m4 变异击红留证。",
+      "evidence": "白名单实现：①ExcelSheetWriter.sanitizeFormula 统一对敏感字符（= + - @ \\t \\r）前置单引号强制纯文本，并在 ScoreExportService 与 UserImportExportService 导出写单元格接入；②QuestionImportExportService 与 UserImportExportService 在 cellText 统一采用 stripWhitespace(text) 正则剥离全角空格（\\u3000）、不换行空格（\\u00A0）等全部 Unicode 空白；③前端 classes/questions/papers/tags 4 页面 useQuery 解构 error，声明 errorText 并渲染 <Alert type=\"error\"> 错误提示，主表格在失败时隐藏（U-1 三态分离）；④questions/index.page.vue 批量删除引入 batchDeleting 状态（Button :loading 与 :disabled），并在 onBatchDelete 入口增加并发防抖拦截锁。先红后绿：后端定向（3 测试类）红 4 例（全角题型/全角学号/班级/公式导出各 1）→ 绿 24/24 BUILD SUCCESS；前端定向（5 个 spec）红 5 例（4 页错误 Alert 缺失 + 批量删除在途重复调用）→ 绿 19/19 全 PASS。变异验证 m1–m4 全部击红留证并复原回绿（evidence/m1..m4，m1 导出未转义断言红、m2-q/m2-u 全角导入 imported=0、m3 错误 Alert 缺失断言红、m4 批量删除在途连击调用 2 次期望 1；复原 SHA256 逐一 MATCH）。零 DDL、零 openapi 变更（89 paths 不变）、零 @Sql。实施笔 9c01391。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量门禁实测、规范合入与收口归档",
+      "status": "completed",
+      "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json；将 spec-delta 分别合入 score-management、question-bank、authentication、frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
+      "evidence": "①后端门禁实测：仓库根 mvnw.cmd clean test → Tests run: 506, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS, 退出码 0。②前端门禁实测：pnpm run lint:check（0 错误）、type-check:check（0 错误）、pnpm run test -- --testTimeout=60000 → 101 文件 767 例全部 PASS。③gate-baseline.json：backendTests 502→506 同笔上调（净增 4 例），frontendTests 754→767 同笔上调（净增 13 例），openapiPaths 89 不变。④spec 基线合入：score-management、question-bank、authentication、frontend 各能力域 spec.md 追加对应 Scenario 与合入注记。⑤三件套归档至 spec/changes/archive/harden-data-sanitization-and-ui-states/，spec/README.md 进行中清空并在已归档速览表登记，docs/功能待办清单.md 标记为已闭环。⑥feature/harden-data-sanitization-and-ui-states 分支 --no-ff 合并入 main。"
+    }
+  ]
+}
