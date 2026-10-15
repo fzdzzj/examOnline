@@ -1,0 +1,27 @@
+{
+  "changeId": "polish-authoring-monitoring-and-grading-flow",
+  "title": "考务监考大屏与主观题批改效率流（题目快速复制另存、监考多维筛选与手动倒计时刷新、Enter 流水线打分与快捷评语模板）",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、规范增量制定与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、frontend 的 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md。纯前端变更定性：零 DDL、零后端改动、零契约变更，门禁基线预期仅上调 frontendTests。",
+      "evidence": "完成提案与前端规范增量制定（3 个 Requirement：题目复制另存/监考多维筛选与刷新/Enter 流水线打分），基于对 questions/index.page.vue、QuestionForm.vue、ExamMonitorPanel.vue、exams/[id].page.vue、SubjectiveGradingPanel.vue、useExamMonitor.ts、constants/monitor.ts 的只读侦察；检出 feature/polish-authoring-monitoring-and-grading-flow 分支，更新 spec/README.md 在途登记与 docs/功能待办清单.md 状态。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施三特性前端交互与单测、先红后绿与变异击红验证",
+      "status": "completed",
+      "description": "①QuestionForm 增加复制另存模式（copyFrom prop，draftFromResponse 深拷贝回填 + 「（副本）」前缀，提交走 create1 不走 update），questions/index.page.vue 操作列加「复制」；②ExamMonitorPanel.vue 加姓名/学生 ID 本地搜索、指标卡（在线/离线/异常）点击过滤 Tag 联动、立即刷新按钮与下次轮询倒计时（间隔引用 MONITOR_POLLING_INTERVAL_MS），exams/[id].page.vue 接线 refetch；③SubjectiveGradingPanel.vue 加分数框 Enter 提交（复用 createGradingFlow）并自动聚焦下一行（失败/冲突不移动焦点）、满分/及格/零分快捷给分 Tag、常用评语模板气泡；编写前端单测先红后绿；变异验证至少 3 项（m1 复制模式误走 update 端点击红、m2 轮询倒计时/间隔写字面量击红词法护栏、m3 Enter 提交绕过 flow 或冲突时移动焦点击红）。",
+      "evidence": "单笔实施提交 703c8ae（13 文件 +903/−15，全部限 frontend/src/** 与本案 evidence/）。三特性实施与红线落地；新增单测 26 条（QuestionFormCopy 4 + ExamMonitorPanel +6 + SubjectiveGradingPanel 7，其中 9 条为 ExamMonitorPanel 既有用例，净增 17）；自测 npx vitest run → Test Files 113 passed / Tests 848 passed、type-check:check exit 0、lint:check exit 0（见 evidence/phase2-frontend-gates.md）；变异 m1/m2/m3 击红-复原-回绿留证（evidence/m1|m2|m3-mutation-red.md 与 mutation-evidence.md，复原后三文件 26/26 绿）。独立复核 PASS：红线抽查三项源码直读通过、全量双端复跑（mvnw.cmd clean test → Tests run: 559, Failures: 0, Errors: 0, Skipped: 1 / BUILD SUCCESS；前端三门禁 848 全绿）、m1 独立重注入击红-复原-回绿、口径差 9 对账为 ExamMonitorPanel 既有用例数，证据链自洽。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test 与前端三门禁（lint:check / type-check:check / test）；按实测上调 .github/ci/gate-baseline.json 的 frontendTests（backendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 合入 specs/frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
+      "evidence": "全量双端门禁实测（独立复核于 revision 703c8ae 复跑，收口笔仅改 spec 文档与 gate-baseline.json、不改测试面）：后端 mvnw.cmd clean test → Tests run: 559, Failures: 0, Errors: 0, Skipped: 1 / BUILD SUCCESS（backendTests 559 不变）；前端 type-check:check exit 0、lint:check exit 0、npx vitest run → Test Files 113 passed / Tests 848 passed（frontendTests 831→848 同笔上调，openapiPaths 97 不变——零契约变更）；spec-delta 3 个 Requirement（题目快速复制另存/监考大屏多维筛选与手动倒计时刷新/主观题 Enter 流水线打分与快捷评语模板）合入 specs/frontend/spec.md；变更目录归档至 spec/changes/archive/ 并更新 spec/README.md 与 docs/功能待办清单.md；feature/polish-authoring-monitoring-and-grading-flow 分支 --no-ff 合并入 main。"
+    }
+  ]
+}

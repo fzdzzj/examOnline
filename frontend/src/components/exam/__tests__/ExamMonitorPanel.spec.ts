@@ -7,11 +7,19 @@
  */
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Table, Tag } from 'ant-design-vue';
 
 import type { MonitorOverviewResponse } from '@/api/axios';
 import ExamMonitorPanel from '@/components/exam/ExamMonitorPanel.vue';
-import { MONITOR_POLLING_HINT } from '@/constants/monitor';
+import { MONITOR_POLLING_HINT, MONITOR_POLLING_INTERVAL_MS } from '@/constants/monitor';
+
+const PANEL_PATH = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../ExamMonitorPanel.vue'
+);
 
 const OVERVIEW: MonitorOverviewResponse = {
   examId: 9,
@@ -141,5 +149,78 @@ describe('ExamMonitorPanel', () => {
     const emitted = wrapper.emitted('view-log');
     expect(emitted).toBeTruthy();
     expect((emitted?.[0]?.[0] as { studentId: number }).studentId).toBe(21);
+  });
+});
+
+describe('ExamMonitorPanel 本地过滤与手动刷新（polish 特性 2）', () => {
+  const FILTER_OVERVIEW: MonitorOverviewResponse = {
+    ...OVERVIEW,
+    students: [
+      { studentId: 21, studentName: '张三', status: 'ONLINE', abnormal: true },
+      { studentId: 22, studentName: '李四', status: 'OFFLINE', abnormal: false },
+      { studentId: 23, studentName: '王五', status: 'ONLINE', abnormal: false },
+    ],
+  };
+
+  function mountFiltered(overview: MonitorOverviewResponse = FILTER_OVERVIEW) {
+    return mount(ExamMonitorPanel, { props: { examIdLabel: 9, overview } });
+  }
+
+  it('姓名 / 学生 ID 搜索框本地过滤学生行（不发起后端请求）', async () => {
+    const wrapper = mountFiltered();
+    const search = wrapper
+      .findAll('input')
+      .find((i) => (i.attributes('placeholder') ?? '').includes('姓名 / 学生 ID'));
+
+    await search!.setValue('李四');
+    expect(dataSource(wrapper).map((r) => r.studentId)).toEqual([22]);
+
+    await search!.setValue('21'); // 按学生 ID
+    expect(dataSource(wrapper).map((r) => r.studentId)).toEqual([21]);
+
+    await search!.setValue('不存在');
+    expect(dataSource(wrapper)).toEqual([]);
+  });
+
+  it('点「在线」卡过滤 status=ONLINE，再次点击取消过滤（计数仍原样来自 overview）', async () => {
+    const wrapper = mountFiltered();
+    await wrapper.find('[data-test="stat-card-online"]').trigger('click');
+    expect(dataSource(wrapper).map((r) => r.studentId)).toEqual([21, 23]);
+
+    await wrapper.find('[data-test="stat-card-online"]').trigger('click');
+    expect(dataSource(wrapper).map((r) => r.studentId)).toEqual([21, 22, 23]);
+    // 计数来自 overview，不受过滤影响（前端不推算不变式）
+    expect(wrapper.text()).toContain('在线3');
+  });
+
+  it('点「异常」卡过滤 abnormal=true 的学生行', async () => {
+    const wrapper = mountFiltered();
+    await wrapper.find('[data-test="stat-card-abnormal"]').trigger('click');
+    expect(dataSource(wrapper).map((r) => r.studentId)).toEqual([21]);
+    expect(wrapper.text()).toContain('异常（严重度≥中）2');
+  });
+
+  it('点「立即刷新」上抛 refresh 事件（页面据此触发 useQuery refetch）', async () => {
+    const wrapper = mountFiltered();
+    await wrapper.find('[data-test="refresh-now"]').trigger('click');
+    expect(wrapper.emitted('refresh')).toHaveLength(1);
+  });
+
+  it('倒计时初始为 MONITOR_POLLING_INTERVAL_MS/1000 秒，显示「下次刷新 Ns」', async () => {
+    const wrapper = mountFiltered();
+    expect(wrapper.find('[data-test="poll-countdown"]').text()).toContain(
+      `${MONITOR_POLLING_INTERVAL_MS / 1000}s`
+    );
+  });
+});
+
+describe('ExamMonitorPanel 词法护栏（m2 红线：间隔不许写字面量）', () => {
+  it('倒计时间隔取自 constants/monitor.ts 的 MONITOR_POLLING_INTERVAL_MS，页面不写字面量', () => {
+    const source = readFileSync(PANEL_PATH, 'utf-8');
+    const clean = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+    expect(clean).toMatch(/MONITOR_POLLING_INTERVAL_MS/);
+    // 不得出现 10000 之类的裸字面量秒间隔（m2 变异：若被替换成字面量即红线击红）
+    expect(clean).not.toMatch(/refetchInterval\s*[:=]\s*10000\b/);
+    expect(clean).not.toMatch(/(\/\/\s*)?10000\s*[};]/);
   });
 });
