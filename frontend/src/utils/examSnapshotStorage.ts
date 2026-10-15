@@ -9,7 +9,7 @@
  * 5. 损坏容忍：结构损坏按无记录处理（null），不抛错阻断作答；
  * 6. remove 幂等：交卷后删除快照行，多次调用不报错。
  */
-import type { EnterExamResponse, QuestionView } from '@/api/axios';
+import type { EnterExamResponse, JsonNode, QuestionView } from '@/api/axios';
 
 export interface ExamSnapshotPayload {
   examId?: number;
@@ -23,6 +23,12 @@ export interface ExamSnapshotPayload {
   questions?: QuestionView[];
   version?: number | null;
   draftVersion?: number;
+  /**
+   * 本场考试的防作弊配置（add-anti-cheat-restrictions 阶段 3）。
+   * 它是**规则**不是答案，脱敏纪律照样允许它落盘；不带上它，断线重入后
+   * forbidCopy / fullScreen 守卫会静默失效（学生断网重进即绕过全屏与禁复制）。
+   */
+  antiCheatConfig?: JsonNode;
 }
 
 export interface StoredExamSnapshotRow {
@@ -71,6 +77,11 @@ export function sanitizeSnapshotPayload(
       : undefined,
     version,
     draftVersion: typeof version === 'number' ? version : undefined,
+    // 防作弊配置随快照留底（规则而非答案）：断线重入的守卫不因此降级
+    antiCheatConfig:
+      typeof source.antiCheatConfig === 'object' && source.antiCheatConfig !== null
+        ? (JSON.parse(JSON.stringify(source.antiCheatConfig)) as JsonNode)
+        : undefined,
   };
 }
 

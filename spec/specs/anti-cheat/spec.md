@@ -246,3 +246,56 @@ AND 在线/离线/已交卷计数、草稿进度口径、异常高亮与排序�
 > 裁决书、容器日志与 sha256 清单见 `spec/changes/archive/reattribute-monitor-overview-projection/evidence/`。
 >
 > 观察项（2026-09-30，F-F）：`MonitorService.resolveTotalQuestions` 的窄读 `paper_json IS NOT NULL AND <> '' LIMIT 1` 无显式 `ORDER BY`，若命中行的快照为纯空白字符串（`isBlank() == true`），当前实现直接返回题数 0 而不再找下一行；因生产答卷创建与交卷链路中 `paper_json` 恒为完整 JSON 结构串、不会写入纯空白字符串，该分支在构造上不可达，此处仅作语义边界登记，不修改代码。
+
+---
+
+### Requirement: 考试 IP 范围准入校验
+
+WHEN 学生进入某场考试,
+系统 SHALL 校验客户端真实 IP 是否在考试配置的 IP 白名单范围内；若未配置白名单则放行；若配置了白名单且学生 IP 不在其中，系统 SHALL 返回 403 明确拒绝。
+
+#### Scenario: 白名单内 IP 允许进入考试
+
+GIVEN 考试配置了 IP 白名单（如 CIDR 192.168.1.0/24 或通配符 192.168.1.*）
+WHEN 学生从符合该网段的客户端发起进入考试请求
+THEN 准入校验通过，正常生成或回读答卷
+
+#### Scenario: 白名单外 IP 拦截并返回 403
+
+GIVEN 考试配置了 IP 白名单
+WHEN 学生从非白名单范围的 IP 发起进入考试请求
+THEN 系统返回 403 拒绝，响应包含明确原因「当前 IP ({ip}) 不在本次考试允许的网段范围内」
+AND 不创建新答卷
+
+#### Scenario: 未配置 IP 白名单全网放行
+
+GIVEN 考试未配置 IP 白名单或配置为空列表
+WHEN 学生发起进入考试请求
+THEN 保持既有普通准入校验（班级/补考名单），IP 不作限制
+
+---
+
+### Requirement: 作答安全模式与事件扩展
+
+WHEN 考试开启了防作弊安全模式,
+作答端 SHALL 依据配置限制复制粘贴及监控全屏状态，违规操作 SHALL 触发行为事件旁路上报，但 SHALL NOT 强制交卷。
+
+#### Scenario: 采集复制粘贴违规事件
+
+GIVEN 考试开启了禁止复制粘贴选项（orbidCopy: true）
+WHEN 学生在作答区域尝试复制、剪切或粘贴
+THEN 前端拦截该操作并弹出友好提示
+AND 旁路上报 COPY_PASTE 行为事件，记录事件类型与时间
+
+#### Scenario: 采集全屏退出事件
+
+GIVEN 考试开启了全屏作答模式（ullScreen: true）
+WHEN 学生退出全屏窗口
+THEN 前端提示全屏退出警告
+AND 旁路上报 FULLSCREEN_EXIT 行为事件
+
+> 合入注记（2026-10-15，dd-anti-cheat-restrictions 归档，GO）：
+> 1. 准入守卫：ExamTakingService.enter 准入方法引入 ssertIpAllowed 校验真实来源 IP（X-Forwarded-For 首项优先回退 remoteAddr），白名单支持单 IP、通配符、CIDR 网段及 IPv6/回环，未命中 403 且拒绝在建卷之前；
+> 2. 事件扩展：BehaviorEventTypes 新增 COPY_PASTE 与 FULLSCREEN_EXIT 收集器，默认 MEDIUM 严重度且显式带 warn，自动注册入 BehaviorEventRegistry；
+> 3. 前端守卫：作答端 useBehaviorReport 承接复制粘贴拦截与全屏退出监听，进入全屏引导弹层（手势触发），建考表单扩展防作弊卡片；
+> 4. 零 DDL、零迁移脚本，严格遵守只警告不交卷决策；门禁数字链后端 471→493、前端 667→752、契约 paths 89 不变。

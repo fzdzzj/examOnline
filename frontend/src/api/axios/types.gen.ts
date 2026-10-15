@@ -582,6 +582,7 @@ export type EnterExamResponse = {
     answers?: JsonNode;
     marked?: Array<number>;
     draftVersion?: number;
+    antiCheatConfig?: JsonNode;
 };
 
 export type QuestionView = {

@@ -1,5 +1,6 @@
 package com.exam.taking.controller;
 
+import com.exam.anticheat.ip.ClientIpResolver;
 import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
 import com.exam.common.ratelimit.RateLimit;
@@ -13,6 +14,7 @@ import com.exam.taking.dto.SubmitRequest;
 import com.exam.taking.dto.SubmitResponse;
 import com.exam.taking.service.ExamSubmitService;
 import com.exam.taking.service.ExamTakingService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -58,11 +60,13 @@ public class ExamTakingController {
 
     /** 进入考试并开始：首次创建答卷（个人快照 + 开始计时），重复进入幂等返回同一快照。
      *  拉卷限流（capacity=5000, qps=2000）——5000 人开考瞬间尖峰拉卷，容量等于最大同时拉卷人数，
-     *  一秒内可全部放行；此后按 2000/s 平滑整流（快照/考试详情已走缓存三防兜底，此处限流再加一层入口保护）。 */
+     *  一秒内可全部放行；此后按 2000/s 平滑整流（快照/考试详情已走缓存三防兜底，此处限流再加一层入口保护）。
+     *  客户端真实 IP 在此提取（X-Forwarded-For 首项优先，回退 remoteAddr）后交给准入校验：
+     *  配置了 IP 白名单的考试，网段外来源返回 403（add-anti-cheat-restrictions）。 */
     @RateLimit(qps = 2000, capacity = 5000, key = "pull-paper")
     @PostMapping("/exams/{examId}/enter")
-    public ApiResponse<EnterExamResponse> enter(@PathVariable Long examId) {
-        return ApiResponse.success(takingService.enter(examId));
+    public ApiResponse<EnterExamResponse> enter(@PathVariable Long examId, HttpServletRequest request) {
+        return ApiResponse.success(takingService.enter(examId, ClientIpResolver.resolve(request)));
     }
 
     /** 答题数据：个人快照题目（不含答案）+ 草稿 + 服务端剩余时间（断线恢复入口） */

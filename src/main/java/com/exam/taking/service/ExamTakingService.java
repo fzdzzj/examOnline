@@ -2,6 +2,8 @@ package com.exam.taking.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.exam.anticheat.config.AntiCheatConfigs;
+import com.exam.anticheat.ip.IpMatcher;
 import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.monitoring.service.OnlinePresenceService;
@@ -104,16 +106,19 @@ public class ExamTakingService {
      * 进入考试（学生点击"进入并开始"，也服务于刷新/断线重进）：
      * 首次进入创建答卷行（个人快照 + 开始时间 + 个人截止），重复进入幂等返回同一快照。
      * 进入即刷新监考在线心跳（阶段 7 监考大屏的实时数据源）。
+     *
+     * @param clientIp 客户端真实 IP（由 {@code ClientIpResolver} 从 X-Forwarded-For/remoteAddr 提取），
+     *                 用于 IP 白名单准入；无法确认时为 null
      */
-    public EnterExamResponse enter(Long examId) {
+    public EnterExamResponse enter(Long examId, String clientIp) {
         Long studentId = requireStudent();
         Exam exam = requireEnterableExam(examId);
 
         ExamSubmission submission = submissionMapper.selectByExamStudent(examId, studentId);
         if (submission == null) {
             // 首次进入才做准入校验：已有答卷说明本人早已进入本场（在考中或已交卷），
-            // 断线重连/刷新恢复必须放行——事后转班不得把在考学生挡在门外。
-            assertAdmission(exam, studentId);
+            // 断线重连/刷新恢复必须放行——事后转班、换网络（机房 NAT 变化）都不得把在考学生挡在门外。
+            assertAdmission(exam, studentId, clientIp);
             submission = createSubmission(exam, studentId);
         }
         presenceService.touch(examId, studentId);
@@ -121,15 +126,19 @@ public class ExamTakingService {
     }
 
     /**
-     * 首次进入考试的准入校验（F-B/F-C 安全收口）：
-     * <ul>
+     * 首次进入考试的准入校验（F-B/F-C 安全收口 + add-anti-cheat-restrictions IP 白名单）：
+     * <ol>
+     *   <li><b>IP 白名单</b>：配置了非空 ipWhitelist 的考试，客户端真实 IP 必须在名单内（单 IP/通配符/CIDR），
+     *       否则 403 明确拒绝——防异地代考；未配置白名单则不作 IP 限制；</li>
      *   <li><b>补考</b>（parent_exam_id != null）：维持名单限制，名单外拒绝（§12.5）；</li>
      *   <li><b>普通考试</b>（parent_exam_id == null）：强制班级归属——
      *       未指派班级的考试一律拒绝；绑定了班级则学生当前必须属于该班级，
      *       否则即便拿到 examId 也进不去（"列表看不见但接口进得去"的越权口子）。</li>
-     * </ul>
+     * </ol>
+     * 校验全部发生在创建答卷之前：任何一层拒绝都不会留下半进入状态的答卷行。
      */
-    private void assertAdmission(Exam exam, Long studentId) {
+    private void assertAdmission(Exam exam, Long studentId, String clientIp) {
+        assertIpAllowed(exam, clientIp);
         if (exam.getParentExamId() != null) {
             makeupService.assertCanEnter(exam, studentId);
             return;
@@ -153,6 +162,27 @@ public class ExamTakingService {
                 throw new BusinessException(ResponseCode.FORBIDDEN, "该考试需预约后才能参加，您尚未预约");
             }
         }
+    }
+
+    /**
+     * IP 白名单准入（add-anti-cheat-restrictions，零 DDL：复用 {@code exams.anti_cheat_config}）：
+     * 配置了非空 {@code ipWhitelist} 时，客户端真实 IP 必须命中其中任一条（单 IP / 通配符 / CIDR）；
+     * 未配置或配置为空则不作 IP 限制（不影响既有班级/补考/预约三层准入）。
+     *
+     * <p>无法确认来源 IP（请求头与 remoteAddr 都取不到）时按未命中处理——白名单一旦配置，
+     * 默认拒绝比默认放行更符合"防御异地代考"的意图；错误文案回显当前 IP 便于学生自查。
+     */
+    private void assertIpAllowed(Exam exam, String clientIp) {
+        List<String> whitelist = AntiCheatConfigs.ipWhitelist(AntiCheatConfigs.parse(exam.getAntiCheatConfig()));
+        if (whitelist.isEmpty()) {
+            return;
+        }
+        if (IpMatcher.matchesAny(clientIp, whitelist)) {
+            return;
+        }
+        String display = (clientIp == null || clientIp.isBlank()) ? "未知" : clientIp;
+        throw new BusinessException(ResponseCode.FORBIDDEN,
+                "当前 IP (" + display + ") 不在本次考试允许的网段范围内");
     }
 
     /**
@@ -342,7 +372,9 @@ public class ExamTakingService {
                 questions,
                 draft == null ? null : draft.answers(),
                 draft == null ? List.of() : draft.marked(),
-                draft == null ? null : draft.version());
+                draft == null ? null : draft.version(),
+                // 防作弊配置原样下发（前端据此启用禁复制粘贴/全屏守卫）；未配置为 null
+                AntiCheatConfigs.parse(exam.getAntiCheatConfig()));
     }
 
     /** 首次进入：生成个人快照并创建答卷行；并发进入撞唯一索引时回读幂等。 */

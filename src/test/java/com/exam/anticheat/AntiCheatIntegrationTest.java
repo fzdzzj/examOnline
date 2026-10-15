@@ -16,12 +16,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.AmqpException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -97,6 +99,12 @@ class AntiCheatIntegrationTest extends IntegrationTestBase {
 
     private long createExam(String token, long paperId, Long classId, LocalDateTime start,
                             LocalDateTime end, int duration) throws Exception {
+        return createExam(token, paperId, classId, start, end, duration, null);
+    }
+
+    /** 造考试（可带 anti_cheat_config）：配置由 /api/exams 创建接口原样落库（零 DDL，复用既有列）。 */
+    private long createExam(String token, long paperId, Long classId, LocalDateTime start,
+                            LocalDateTime end, int duration, JsonNode antiCheatConfig) throws Exception {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("title", unique("考试"));
         body.put("paperId", paperId);
@@ -106,6 +114,9 @@ class AntiCheatIntegrationTest extends IntegrationTestBase {
         body.put("startTime", start.toString());
         body.put("endTime", end.toString());
         body.put("durationMinutes", duration);
+        if (antiCheatConfig != null) {
+            body.set("antiCheatConfig", antiCheatConfig);
+        }
         JsonNode data = perform(jsonPost("/api/exams", token,
                 objectMapper.writeValueAsString(body)), 200).get("data");
         return data.get("id").asLong();
@@ -114,12 +125,33 @@ class AntiCheatIntegrationTest extends IntegrationTestBase {
     /** 造一场"进行中"考试：开始时间拨到过去 → 发布 → 手动触发状态机推进。
      *  绑定测试班级以满足进入考试的班级准入（学生入班由 enter 夹具按需补入）。 */
     private long preparedInProgressExam(String teacher, long paperId) throws Exception {
+        return preparedInProgressExam(teacher, paperId, null);
+    }
+
+    /** 同上，并附带防作弊配置（如 ipWhitelist / forbidCopy / fullScreen）。 */
+    private long preparedInProgressExam(String teacher, long paperId, JsonNode antiCheatConfig)
+            throws Exception {
         long classId = createClassForExam(teacher);
         long examId = createExam(teacher, paperId, classId,
-                LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30);
+                LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2), 30,
+                antiCheatConfig);
         perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
         return examId;
+    }
+
+    /** 防作弊配置 JSON 造数（ipWhitelist 与作答安全开关，形态与前端建考表单一致）。 */
+    private JsonNode antiCheatConfig(String... ipWhitelist) throws Exception {
+        ObjectNode config = objectMapper.createObjectNode();
+        if (ipWhitelist.length > 0) {
+            var arr = config.putArray("ipWhitelist");
+            for (String ip : ipWhitelist) {
+                arr.add(ip);
+            }
+        }
+        config.put("forbidCopy", true);
+        config.put("fullScreen", true);
+        return config;
     }
 
     private JsonNode enter(String student, long examId, int expectedStatus) throws Exception {
@@ -129,6 +161,38 @@ class AntiCheatIntegrationTest extends IntegrationTestBase {
         }
         return perform(jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null),
                 expectedStatus).get("data");
+    }
+
+    /**
+     * 从指定客户端 IP 进入考试（MockMvc 默认 remoteAddr=127.0.0.1，用 X-Forwarded-For 模拟真实来源）：
+     * 返回完整响应体，便于断言 403 文案。
+     */
+    private JsonNode enterFromIp(String student, long examId, String clientIp, int expectedStatus)
+            throws Exception {
+        if (expectedStatus == 200) {
+            ensureExamClassMembership(student, examId);
+        }
+        MockHttpServletRequestBuilder builder =
+                jsonPost("/api/exam-taking/exams/" + examId + "/enter", student, null);
+        if (clientIp != null) {
+            builder = builder.header("X-Forwarded-For", clientIp);
+        }
+        return perform(builder, expectedStatus);
+    }
+
+    /**
+     * 断言"网段外来源被拒"且拒绝原因<b>确为 IP 白名单层</b>：
+     * 先补齐班级归属（否则 403 可能来自班级准入层，测不出 IP 拦截），再比对拒绝文案与"未创建答卷"。
+     * 变异验证：抽掉 assertIpAllowed 里的 403，本方法必须变红。
+     */
+    private void assertIpDenied(String student, long examId, String clientIp) throws Exception {
+        ensureExamClassMembership(student, examId);
+        JsonNode body = enterFromIp(student, examId, clientIp, 403);
+        String message = body.get("message").asText();
+        assertTrue(message.contains("不在本次考试允许的网段范围内"),
+                "403 须来自 IP 白名单拦截而非其他准入层，实际=" + message);
+        assertNull(submissionMapper.selectByExamStudent(examId, studentIdOf(student)),
+                "IP 拦截不得创建答卷");
     }
 
     private long studentIdOf(String studentToken) {
@@ -220,6 +284,147 @@ class AntiCheatIntegrationTest extends IntegrationTestBase {
         assertEquals(1, data.get("severity").asInt());
         assertNull(data.get("count"), "兜底策略无次数补充");
         assertEquals(1, behaviorCount(examId));
+    }
+
+    // ==================== IP 白名单准入（add-anti-cheat-restrictions） ====================
+
+    @Test
+    void ipWhitelistBlocksForeignIpWithExplicitReasonAndCreatesNoSubmission() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        long examId = preparedInProgressExam(teacher, preparePaper(teacher),
+                antiCheatConfig("192.168.1.*"));
+        ensureExamClassMembership(student, examId);
+
+        // 白名单外 IP：403 拒绝，文案明确给出当前 IP 与网段范围
+        JsonNode blocked = enterFromIp(student, examId, "10.20.30.40", 403);
+        assertTrue(blocked.get("message").asText().contains("不在本次考试允许的网段范围内"),
+                "403 文案须明确原因，实际=" + blocked.get("message").asText());
+        assertTrue(blocked.get("message").asText().contains("10.20.30.40"),
+                "403 文案须回显当前 IP");
+        assertEquals(403, blocked.get("code").asInt());
+        // 拦截发生在创建答卷之前：不得留下半进入状态的答卷行
+        assertNull(submissionMapper.selectByExamStudent(examId, studentIdOf(student)),
+                "IP 拦截不得创建答卷");
+
+        // 白名单内 IP：通配符命中，正常进入并回读答卷
+        JsonNode allowed = enterFromIp(student, examId, "192.168.1.77", 200).get("data");
+        assertEquals(examId, allowed.get("examId").asLong());
+        assertNotNull(submissionMapper.selectByExamStudent(examId, studentIdOf(student)));
+
+        // 已进入后换网络（异地/断线重连）不再拦截：准入只在首次进入判定，
+        // 避免把已在考的答卷人因网络抖动挡在门外（个人答卷即准入凭据）
+        JsonNode reenter = enterFromIp(student, examId, "10.20.30.40", 200).get("data");
+        assertEquals(allowed.get("submissionId").asLong(), reenter.get("submissionId").asLong(),
+                "重进返回同一答卷，不换题");
+    }
+
+    @Test
+    void ipWhitelistSupportsCidrAndSingleIpAndLoopback() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        long examId = preparedInProgressExam(teacher, preparePaper(teacher),
+                antiCheatConfig("10.10.0.0/16", "203.0.113.7", "0:0:0:0:0:0:0:1"));
+
+        // CIDR 内 / 单 IP / IPv6 回环三种形态均可命中（每次换学生避免答卷复用干扰）
+        enterFromIp(student, examId, "10.10.200.8", 200);
+        String student2 = registerStudent();
+        enterFromIp(student2, examId, "203.0.113.7", 200);
+        String student3 = registerStudent();
+        enterFromIp(student3, examId, "::1", 200);
+
+        // CIDR 外的相邻地址仍被拒（/16 边界：10.11 段不在名单内）——拒绝原因须为 IP 白名单层
+        String student4 = registerStudent();
+        assertIpDenied(student4, examId, "10.11.0.1");
+        // 未配置 XFF 时回落 remoteAddr=127.0.0.1，同样不在名单内
+        String student5 = registerStudent();
+        assertIpDenied(student5, examId, null);
+    }
+
+    @Test
+    void noIpWhitelistAllowsAnyClientIp() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        // 仅开启作答安全开关、未配 ipWhitelist：IP 不作限制（全网放行）
+        long examId = preparedInProgressExam(teacher, preparePaper(teacher),
+                antiCheatConfig());
+        enterFromIp(student, examId, "198.51.100.23", 200);
+    }
+
+    // ==================== 防作弊配置契约下发 ====================
+
+    @Test
+    void enterResponseCarriesAntiCheatConfigWithoutDroppingExistingFields() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        long examId = preparedInProgressExam(teacher, preparePaper(teacher),
+                antiCheatConfig("192.168.1.*"));
+
+        JsonNode data = enterFromIp(student, examId, "192.168.1.60", 200).get("data");
+
+        // 契约只增不减：新增 antiCheatConfig 下发，既有字段一个不少
+        JsonNode config = data.get("antiCheatConfig");
+        assertNotNull(config, "EnterExamResponse 须下发 antiCheatConfig");
+        assertEquals("192.168.1.*", config.get("ipWhitelist").get(0).asText());
+        assertTrue(config.get("forbidCopy").asBoolean());
+        assertTrue(config.get("fullScreen").asBoolean());
+        assertNotNull(data.get("examId"));
+        assertNotNull(data.get("examTitle"));
+        assertNotNull(data.get("submissionId"));
+        assertNotNull(data.get("status"));
+        assertNotNull(data.get("startTime"));
+        assertNotNull(data.get("deadlineTime"));
+        assertNotNull(data.get("serverTime"));
+        assertNotNull(data.get("remainingSeconds"));
+        assertNotNull(data.get("questions"));
+        assertNotNull(data.get("marked"));
+
+        // 断线恢复入口（GET /paper）同样下发（同一组装路径）
+        JsonNode paper = perform(jsonGet("/api/exam-taking/exams/" + examId + "/paper", student), 200)
+                .get("data");
+        assertEquals("192.168.1.*", paper.get("antiCheatConfig").get("ipWhitelist").get(0).asText());
+
+        // 未配防作弊的考试：字段存在但为空，且不影响既有进入语义
+        long plainExam = preparedInProgressExam(teacher, preparePaper(teacher));
+        String student2 = registerStudent();
+        JsonNode plain = enter(student2, plainExam, 200);
+        assertTrue(plain.get("antiCheatConfig") == null || plain.get("antiCheatConfig").isNull(),
+                "未配置防作弊时不下发规则，前端按未开启处理");
+    }
+
+    // ==================== 作答安全模式事件（复制粘贴 / 全屏退出） ====================
+
+    @Test
+    void copyPasteAndFullScreenExitCollectedAsMediumAndNeverForceSubmit() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        long examId = preparedInProgressExam(teacher, preparePaper(teacher),
+                antiCheatConfig("192.168.1.*"));
+        enterFromIp(student, examId, "192.168.1.50", 200);
+
+        // 复制/粘贴违规：默认"中"级 + 前端提示，事件照常落库
+        JsonNode copy = report(student, examId, "COPY_PASTE");
+        assertTrue(copy.get("warned").asBoolean(), "复制粘贴违规须提示");
+        assertEquals(2, copy.get("severity").asInt());
+        assertEquals("中", copy.get("severityName").asText());
+
+        JsonNode fullscreen = report(student, examId, "FULLSCREEN_EXIT");
+        assertTrue(fullscreen.get("warned").asBoolean(), "退出全屏须提示");
+        assertEquals(2, fullscreen.get("severity").asInt());
+
+        // 落库口径：两条事件分别落 exam_behavior_logs，严重度均为 2
+        assertEquals(1, behaviorLogMapper.selectCount(Wrappers.<ExamBehaviorLog>lambdaQuery()
+                .eq(ExamBehaviorLog::getExamId, examId)
+                .eq(ExamBehaviorLog::getEventType, "COPY_PASTE")
+                .eq(ExamBehaviorLog::getSeverity, 2)));
+        assertEquals(1, behaviorLogMapper.selectCount(Wrappers.<ExamBehaviorLog>lambdaQuery()
+                .eq(ExamBehaviorLog::getExamId, examId)
+                .eq(ExamBehaviorLog::getEventType, "FULLSCREEN_EXIT")
+                .eq(ExamBehaviorLog::getSeverity, 2)));
+
+        // 绝不自动强制交卷：行为违规只记录，答卷仍在进行中（决策记录 §3.1）
+        assertEquals(ExamSubmission.STATUS_IN_PROGRESS,
+                submissionMapper.selectByExamStudent(examId, studentIdOf(student)).getStatus());
     }
 
     // ==================== 行为日志查询与权限 ====================

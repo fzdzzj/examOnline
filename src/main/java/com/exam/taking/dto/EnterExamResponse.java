@@ -50,4 +50,13 @@ public class EnterExamResponse {
 
     /** 草稿版本号：客户端下次自动保存原样携带（多端冲突合并依据）；无草稿为 null */
     private Integer draftVersion;
+
+    /**
+     * 本场考试的防作弊配置（add-anti-cheat-restrictions）：来源 {@code exams.anti_cheat_config} 原样下发，
+     * 前端据此启用禁复制粘贴（forbidCopy）与全屏作答（fullScreen）守卫；未配置为 null。
+     *
+     * <p>契约只增不减：新增字段追加在末尾，既有字段语义与顺序不变——
+     * 旧前端忽略本字段即可继续工作，新前端在进入考试与断线恢复两条链路上都能拿到同一配置。
+     */
+    private JsonNode antiCheatConfig;
 }

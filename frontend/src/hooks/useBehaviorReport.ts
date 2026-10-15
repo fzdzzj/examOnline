@@ -23,11 +23,23 @@
  * 4. **上报是尽力而为**：断线时上报失败只静默恢复暂存（下次回归 / flush 还会再报），
  *    绝不阻塞作答、绝不因上报失败弹错误打断学生——行为采集是旁路，
  *    这个取舍与后端 `BehaviorEventCollectService`「旁路不改变主链路」同构。
+ * 5. **作答安全守卫（add-anti-cheat-restrictions 阶段 3）**：同一套上报管线承接
+ *    两个新事件——`forbidCopy` 开启时拦截 `copy/cut/paste/contextmenu` 并上报
+ *    `COPY_PASTE`（eventData.action = DOM 事件原名），`fullScreen` 开启时监听
+ *    `fullscreenchange`、退出全屏上报 `FULLSCREEN_EXIT`。两条守卫同样**只警告 + 记录**：
+ *    拦截不阻断作答（提示可关）、退出全屏不锁屏不交卷，是否处置由教师依行为日志判定。
  */
-import { getCurrentScope, onScopeDispose, ref, toValue, watch } from 'vue';
-import type { MaybeRefOrGetter } from 'vue';
+import { computed, getCurrentScope, onScopeDispose, ref, toValue, watch } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 
 import type { BehaviorReportResponse, JsonNode } from '@/api/axios';
+import {
+  ANTI_CHEAT_HINT,
+  CLIPBOARD_EVENTS,
+  asClipboardAction,
+  readAntiCheatPolicy,
+} from '@/utils/antiCheat';
+import type { AntiCheatPolicy } from '@/utils/antiCheat';
 import {
   INITIAL_BEHAVIOR_STATE,
   flushPendingEpisode,
@@ -44,11 +56,23 @@ export interface BehaviorWarning {
   message?: string | null;
 }
 
+/**
+ * 全屏端口：把「浏览器是否处于全屏」「请求进入全屏」两条副作用收在可注入的口子里。
+ * 生产默认读 `document.fullscreenElement` 并调 `documentElement.requestFullscreen()`；
+ * jsdom 不实现 Fullscreen API，故单测注入假体（真机行为由页面级测试用铺层验证）。
+ */
+export interface FullScreenPort {
+  active(): boolean;
+  request(): Promise<void>;
+}
+
 export interface UseBehaviorReportOptions {
   /** 考试 ID；非正整数时不上报（与作答引擎同一挂空挡判据）。 */
   examId: MaybeRefOrGetter<number>;
   /** 后端已封闭（已交卷/已收卷）后不再上报；置真瞬间 flush 未上报的暂存离开。 */
   suspended: MaybeRefOrGetter<boolean>;
+  /** 本场考试的 `antiCheatConfig`（未知形状，只读两个布尔键）；未提供 = 两个守卫都关。 */
+  antiCheat?: MaybeRefOrGetter<unknown>;
   deps: {
     /** 生产绑生成的 `reportBehavior`；单测绑 mock。返回后端警告载荷（或 undefined）。 */
     report: (
@@ -58,10 +82,12 @@ export interface UseBehaviorReportOptions {
     /** 离线队列存储（生产默认 IndexedDB，单测注入内存队列）。 */
     queue?: BehaviorQueue;
     /** 信号源接线（生产 = window/document；单测注入自定义 EventTarget）。 */
-    addListener?: (type: string, handler: () => void) => void;
-    removeListener?: (type: string, handler: () => void) => void;
+    addListener?: (type: string, handler: (event: Event) => void) => void;
+    removeListener?: (type: string, handler: (event: Event) => void) => void;
     /** 单调时钟（测离开时长）；默认 `performance.now()`，单测注入固定序列。 */
     now?: () => number;
+    /** 全屏端口（默认读真实 document；单测注入假体）。 */
+    fullscreen?: FullScreenPort;
   };
 }
 
@@ -74,12 +100,38 @@ export interface BehaviorReportView {
   flush(): Promise<void>;
   /** 离线队列补报：把断网期间暂存的切屏事件重新上报。网络恢复与交卷前触发。 */
   flushQueue(): Promise<void>;
+  /** 本场考试的作答安全策略（组件据此渲染禁用说明 / 全屏引导）。 */
+  policy: ComputedRef<AntiCheatPolicy>;
+  /** 当前是否处于浏览器全屏（fullscreenchange 与初始化时同步）。 */
+  fullScreenActive: ReturnType<typeof ref<boolean>>;
+  /** 作答安全守卫的友好提示（被拦截 / 退出全屏时亮起）；无提示为 null。 */
+  guardNotice: ReturnType<typeof ref<string | null>>;
+  /** 学生确认后清掉提示（提示只是提醒，不是阻断）。 */
+  dismissGuardNotice(): void;
+  /** 请求进入全屏；策略未开启或浏览器拒绝时静默返回（绝不打断作答）。 */
+  enterFullScreen(): Promise<void>;
+}
+
+/** 生产全屏端口：jsdom / 老浏览器没有 Fullscreen API 时 isActive 恒 false、request 空转。 */
+function defaultFullScreenPort(): FullScreenPort {
+  return {
+    active: () => typeof document !== 'undefined' && Boolean(document.fullscreenElement),
+    request: async () => {
+      const element =
+        typeof document !== 'undefined' ? (document.documentElement as unknown) : undefined;
+      const request = (element as { requestFullscreen?: () => Promise<void> } | undefined)
+        ?.requestFullscreen;
+      if (typeof request === 'function') {
+        await request.call(element);
+      }
+    },
+  };
 }
 
 /** 事件类型 → DOM 监听目标的接线表（显式，避免隐式全局）。 */
 interface ListenerPair {
   type: string;
-  handler: () => void;
+  handler: (event: Event) => void;
   target: 'window' | 'document';
 }
 
@@ -89,6 +141,8 @@ function listenerPairs(handlers: {
   onFocus: () => void;
   onBeforeUnload: () => void;
   onOnline: () => void;
+  onClipboard: (event: Event) => void;
+  onFullScreenChange: () => void;
 }): ListenerPair[] {
   return [
     { type: 'visibilitychange', handler: handlers.onVisibility, target: 'document' },
@@ -96,6 +150,13 @@ function listenerPairs(handlers: {
     { type: 'focus', handler: handlers.onFocus, target: 'window' },
     { type: 'beforeunload', handler: handlers.onBeforeUnload, target: 'window' },
     { type: 'online', handler: handlers.onOnline, target: 'window' },
+    // 作答安全守卫（阶段 3）：监听常驻，是否动作由 antiCheatConfig 当场判定
+    ...CLIPBOARD_EVENTS.map((type): ListenerPair => ({
+      type,
+      handler: handlers.onClipboard,
+      target: 'document',
+    })),
+    { type: 'fullscreenchange', handler: handlers.onFullScreenChange, target: 'document' },
   ];
 }
 
@@ -111,6 +172,81 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
 
   const warning = ref<BehaviorWarning | null>(null);
   const reportedCount = ref(0);
+
+  // ==================== 作答安全守卫（阶段 3） ====================
+
+  /** 本场考试策略：antiCheatConfig 未给 / 形状不对 → 两个守卫都关（绝不误伤）。 */
+  const policy = computed<AntiCheatPolicy>(() =>
+    readAntiCheatPolicy(options.antiCheat === undefined ? undefined : toValue(options.antiCheat))
+  );
+
+  const fullscreen = deps.fullscreen ?? defaultFullScreenPort();
+  const fullScreenActive = ref<boolean>(fullscreen.active());
+  const guardNotice = ref<string | null>(null);
+
+  /** 守卫只在「作答中」生效：考试 ID 合法且答卷未被后端封闭（与切屏上报同一挂空挡判据）。 */
+  function guardActive(): boolean {
+    const id = toValue(examId);
+    return Number.isInteger(id) && id > 0 && !toValue(suspended);
+  }
+
+  function dismissGuardNotice(): void {
+    guardNotice.value = null;
+  }
+
+  /**
+   * 守卫事件上报：成功即返回，失败进离线队列（与切屏同款尽力而为），
+   * 但**不回退拦截动作**——本次复制已经拦下了，网络不该让学生"复制成功"。
+   */
+  async function reportGuardEvent(
+    eventType: BehaviorEventType,
+    eventData: JsonNode
+  ): Promise<void> {
+    const id = toValue(examId);
+    const ok = await send(id, eventType, eventData);
+    if (!ok && queue) {
+      await queue.enqueue({ examId: id, eventType, durationMs: null, eventData });
+    }
+  }
+
+  /** 剪贴板守卫：forbidCopy 开启时拦下默认行为并旁路上报 COPY_PASTE。 */
+  function onClipboard(event: Event): void {
+    if (!policy.value.forbidCopy || !guardActive()) return;
+    const action = asClipboardAction(event.type);
+    if (action === null) return;
+    event.preventDefault();
+    guardNotice.value = ANTI_CHEAT_HINT.COPY_BLOCKED;
+    void reportGuardEvent('COPY_PASTE', { action });
+  }
+
+  /**
+   * 全屏守卫：只在「进入全屏」时清提示、「从全屏退出」时上报一条。
+   * 初始化时就不在全屏（引导弹层场景）不算违规——**不谎报一次退出**。
+   */
+  function onFullScreenChange(): void {
+    const activeNow = fullscreen.active();
+    const wasActive = fullScreenActive.value;
+    fullScreenActive.value = activeNow;
+    if (activeNow) {
+      // 回到全屏：提示过期即清，学生不用手动关
+      if (guardNotice.value === ANTI_CHEAT_HINT.FULLSCREEN_EXIT) guardNotice.value = null;
+      return;
+    }
+    if (!wasActive) return;
+    if (!policy.value.fullScreen || !guardActive()) return;
+    guardNotice.value = ANTI_CHEAT_HINT.FULLSCREEN_EXIT;
+    void reportGuardEvent('FULLSCREEN_EXIT', { action: 'exit' });
+  }
+
+  async function enterFullScreen(): Promise<void> {
+    if (!policy.value.fullScreen || !guardActive()) return;
+    try {
+      await fullscreen.request();
+      fullScreenActive.value = fullscreen.active();
+    } catch {
+      // 浏览器拒绝（非用户手势 / 被策略禁用）：静默降级——引导仍在，作答绝不被打断
+    }
+  }
 
   /** 归并状态机（可变内部态；纯函数负责所有迁移决策）。 */
   let episode: BehaviorEpisodeState = INITIAL_BEHAVIOR_STATE;
@@ -190,7 +326,9 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
           await queue.dequeue(id, item);
           continue;
         }
-        const eventData = item.incomplete ? { incomplete: true } : { durationMs: item.durationMs };
+        const eventData =
+          item.eventData ??
+          (item.incomplete ? { incomplete: true } : { durationMs: item.durationMs });
         const ok = await send(id, item.eventType, eventData);
         if (ok) {
           await queue.dequeue(id, item);
@@ -241,6 +379,8 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
     onFocus: () => void onSignal('window-focus'),
     onBeforeUnload: () => void flush(true),
     onOnline: () => void flushQueue(),
+    onClipboard,
+    onFullScreenChange,
   };
 
   // 生产默认绑 window/document；单测注入 add/removeListener 打自定义 EventTarget
@@ -282,5 +422,15 @@ export function useBehaviorReport(options: UseBehaviorReportOptions): BehaviorRe
     );
   }
 
-  return { warning, reportedCount, flush, flushQueue };
+  return {
+    warning,
+    reportedCount,
+    flush,
+    flushQueue,
+    policy,
+    fullScreenActive,
+    guardNotice,
+    dismissGuardNotice,
+    enterFullScreen,
+  };
 }

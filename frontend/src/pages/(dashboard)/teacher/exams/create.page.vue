@@ -104,17 +104,66 @@
 
         <FormItem label="启用切屏检测">
           <Space>
-            <Switch v-model:checked="enableSwitchScreen" />
+            <Switch v-model:checked="enableSwitchScreen" data-test="switch-screen-switch" />
             <span class="text-sm text-gray-500">检测学生切换浏览器标签或窗口</span>
           </Space>
         </FormItem>
 
         <FormItem label="禁用复制粘贴">
           <Space>
-            <Switch v-model:checked="enableForbidCopy" />
-            <span class="text-sm text-gray-500">禁止学生复制题目或答案内容</span>
+            <Switch v-model:checked="enableForbidCopy" data-test="forbid-copy-switch" />
+            <span class="text-sm text-gray-500">
+              拦截复制/剪切/粘贴/右键并旁路上报（只警告，不交卷）
+            </span>
           </Space>
         </FormItem>
+
+        <FormItem label="要求全屏作答">
+          <Space>
+            <Switch v-model:checked="enableFullScreen" data-test="full-screen-switch" />
+            <span class="text-sm text-gray-500">
+              进入作答时引导全屏，退出全屏即记录（只警告，不交卷）
+            </span>
+          </Space>
+        </FormItem>
+
+        <!--
+          切屏严重度阈值是**服务端全局属性**（exam.anticheat.switch-screen.medium/high-threshold），
+          后端 SwitchScreenEventCollector 只读该配置、不读 exams.anti_cheat_config，
+          因此这里如实说明口径而**不**写一个后端不认的键（写了就是死配置，会误导教师以为按场生效）。
+        -->
+        <p class="text-sm text-gray-500 mb-4" data-test="switch-threshold-note">
+          切屏严重度升档阈值由服务端统一判定（升「中」3 次、升「高」5 次，服务端配置项
+          exam.anticheat.switch-screen.*-threshold），不随单场考试覆盖；此处只决定是否采集切屏。
+        </p>
+
+        <FormItem label="IP 白名单（可选）">
+          <Input.TextArea
+            v-model:value="ipWhitelistText"
+            :rows="3"
+            data-test="ip-whitelist-input"
+            placeholder="每行一条：192.168.1.100 / 192.168.1.* / 10.0.0.0/8；留空表示不限制 IP"
+          />
+          <p class="text-sm text-gray-500">
+            仅名单内的 IP 可进入本场考试（服务端按单 IP / 整段通配符 / CIDR 匹配）；留空 =
+            全网放行。
+          </p>
+        </FormItem>
+
+        <!--
+          白名单格式预检（只提示、不阻断提交）：条目写错等于把整场考生挡在 403 门外，
+          所以保存前显性列出；但权威匹配器是服务端 IpMatcher，前端的判定是超集容忍的，
+          不能让前端预检对合法配置拥有一票否决权。
+        -->
+        <Alert
+          v-if="ipWhitelistIssues.length"
+          type="warning"
+          show-icon
+          data-test="ip-whitelist-issues"
+          class="mb-4"
+          message="以下 IP 白名单条目按服务端匹配规则无法解析，保存后这些条目不会放行任何请求"
+          :description="`请核对（支持单 IP、整段通配符如 192.168.1.*、CIDR 如 10.0.0.0/8）：${ipWhitelistIssues.join('、')}`"
+        />
 
         <div class="mt-4 flex justify-end gap-3">
           <Button @click="router.back()">取消</Button>
@@ -166,6 +215,12 @@ import {
 import { client, unwrap } from '@/api/apiClient';
 import { queryClient } from '@/api/queryClient';
 import { fetchAllPages } from '@/hooks/fetchAllPages';
+import {
+  formatIpWhitelistText,
+  invalidIpWhitelistEntries,
+  parseIpWhitelistText,
+  readAntiCheatPolicy,
+} from '@/utils/antiCheat';
 
 /**
  * 考试创建/编辑页面（阶段 21 考务，修复版）。
@@ -206,6 +261,14 @@ const form = ref({
 
 const enableSwitchScreen = ref(true);
 const enableForbidCopy = ref(false);
+const enableFullScreen = ref(false);
+/** IP 白名单多行文本（每行一条）；空文本 = 提交空数组 = 不限制 IP。 */
+const ipWhitelistText = ref('');
+
+/** 白名单格式预检结果：只列"确定解析不出来"的条目（零误报优先），仅提示不阻断提交。 */
+const ipWhitelistIssues = computed(() =>
+  invalidIpWhitelistEntries(parseIpWhitelistText(ipWhitelistText.value))
+);
 
 const { data: editDetail, error: editBackfillError } = useQuery({
   queryKey: computed(() => ['exam-edit-detail', editExamId.value] as const),
@@ -229,12 +292,30 @@ const backfillErrorText = computed<string | null>(() => {
   return caught instanceof Error ? caught.message : '考试信息加载失败';
 });
 
-/** antiCheatConfig 契约类型是 JsonNode（unknown）：按创建写入的键读取，缺失时回落新建默认值 */
-function readAntiCheatConfig(raw: unknown): { switchScreen: boolean; forbidCopy: boolean } {
-  const cfg = (raw ?? {}) as { switchScreen?: unknown; forbidCopy?: unknown };
+/**
+ * antiCheatConfig 契约类型是 JsonNode（unknown）：按建考表单写入的键防御性读取。
+ * 两个布尔键走 `readAntiCheatPolicy`（只认严格 true，与作答端守卫同一口径）；
+ * `switchScreen` 保留既有语义（缺省视为开启）；`ipWhitelist` 只收字符串条目。
+ */
+function readAntiCheatConfig(raw: unknown): {
+  switchScreen: boolean;
+  forbidCopy: boolean;
+  fullScreen: boolean;
+  ipWhitelistText: string;
+} {
+  const record = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
+  const policy = readAntiCheatPolicy(raw);
+  const entries = Array.isArray(record.ipWhitelist)
+    ? record.ipWhitelist
+        .filter((entry): entry is string => typeof entry === 'string')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry !== '')
+    : [];
   return {
-    switchScreen: cfg.switchScreen !== false,
-    forbidCopy: cfg.forbidCopy === true,
+    switchScreen: record.switchScreen !== false,
+    forbidCopy: policy.forbidCopy,
+    fullScreen: policy.fullScreen,
+    ipWhitelistText: formatIpWhitelistText(entries),
   };
 }
 
@@ -257,6 +338,8 @@ watch(
       const antiCheat = readAntiCheatConfig(detail.antiCheatConfig);
       enableSwitchScreen.value = antiCheat.switchScreen;
       enableForbidCopy.value = antiCheat.forbidCopy;
+      enableFullScreen.value = antiCheat.fullScreen;
+      ipWhitelistText.value = antiCheat.ipWhitelistText;
     }
   },
   { immediate: true }
@@ -348,6 +431,9 @@ async function handleSubmit(): Promise<void> {
       antiCheatConfig: {
         switchScreen: enableSwitchScreen.value,
         forbidCopy: enableForbidCopy.value,
+        fullScreen: enableFullScreen.value,
+        // 空清单 = 不限 IP（服务端 AntiCheatConfigs 对空数组即"未配置白名单"）
+        ipWhitelist: parseIpWhitelistText(ipWhitelistText.value),
       },
     };
     if (isEditMode.value && editExamId.value !== undefined) {

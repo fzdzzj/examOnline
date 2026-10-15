@@ -18,6 +18,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -45,7 +46,8 @@ class BehaviorEventCollectorTest {
         return new BehaviorEventRegistry(
                 List.of(new SwitchScreenEventCollector(mockCounter()), new WindowBlurEventCollector(),
                         new PageRefreshEventCollector(), new SubmitAnomalyEventCollector(),
-                        new DraftConflictEventCollector()),
+                        new DraftConflictEventCollector(), new CopyPasteEventCollector(),
+                        new FullScreenExitEventCollector()),
                 fallback);
     }
 
@@ -60,6 +62,11 @@ class BehaviorEventCollectorTest {
         assertInstanceOf(PageRefreshEventCollector.class, registry.dispatch("PAGE_REFRESH"));
         assertInstanceOf(SubmitAnomalyEventCollector.class, registry.dispatch("SUBMIT_ANOMALY"));
         assertInstanceOf(DraftConflictEventCollector.class, registry.dispatch("DRAFT_CONFLICT"));
+        // add-anti-cheat-restrictions：作答安全模式事件（禁复制粘贴 / 退出全屏）
+        assertInstanceOf(CopyPasteEventCollector.class,
+                registry.dispatch(BehaviorEventTypes.COPY_PASTE));
+        assertInstanceOf(FullScreenExitEventCollector.class,
+                registry.dispatch(BehaviorEventTypes.FULLSCREEN_EXIT));
     }
 
     @Test
@@ -117,7 +124,7 @@ class BehaviorEventCollectorTest {
     // ==================== 各事件基础严重度 ====================
 
     @Test
-    @DisplayName("各事件基础严重度：切屏/失焦/草稿冲突低、刷新中、交卷异常高")
+    @DisplayName("各事件基础严重度：切屏/失焦/草稿冲突低、刷新/复制粘贴/全屏退出中、交卷异常高")
     void baseSeverities() {
         BehaviorEventRegistry registry = registry();
         LocalDateTime now = LocalDateTime.now();
@@ -133,6 +140,21 @@ class BehaviorEventCollectorTest {
                 .judge(new BehaviorEventContext(1L, 2L, null, now)).severity());
         assertEquals(SeverityLevel.HIGH, registry.dispatch("SUBMIT_ANOMALY")
                 .judge(new BehaviorEventContext(1L, 2L, null, now)).severity());
+
+        // add-anti-cheat-restrictions：两种作答安全事件默认"中"，且都只警告不交卷
+        BehaviorEventCollector copyPaste = registry.dispatch(BehaviorEventTypes.COPY_PASTE);
+        assertEquals(SeverityLevel.MEDIUM, copyPaste.baseSeverity());
+        assertTrue(copyPaste.shouldWarn(), "复制粘贴违规需前端提示，但仍不强制交卷");
+        BehaviorEventContext ctx = new BehaviorEventContext(1L, 2L,
+                mapper.createObjectNode().put("action", "paste"), now);
+        assertEquals(SeverityLevel.MEDIUM, copyPaste.judge(ctx).severity());
+        assertTrue(copyPaste.judge(ctx).warn(), "判定结果须带上警告标记（接口默认 judge 不带）");
+
+        BehaviorEventCollector fullScreenExit = registry.dispatch(BehaviorEventTypes.FULLSCREEN_EXIT);
+        assertEquals(SeverityLevel.MEDIUM, fullScreenExit.baseSeverity());
+        assertTrue(fullScreenExit.shouldWarn(), "退出全屏需提示，但仍不强制交卷");
+        assertEquals(SeverityLevel.MEDIUM, fullScreenExit.judge(ctx).severity());
+        assertTrue(fullScreenExit.judge(ctx).warn());
     }
 
     // ==================== 采集核心旁路原则 ====================

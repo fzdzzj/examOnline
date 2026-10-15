@@ -7,6 +7,7 @@
  * 3. 原生实现：生产使用原生 IndexedDB 薄封装，零第三方依赖（硬约定 14）；
  * 4. 去重防重：入队时若相同 durationMs 已在队列中，自动去重，不重复入队。
  */
+import type { JsonNode } from '@/api/axios';
 import type { BehaviorEventType } from '@/utils/behaviorEvents';
 
 export interface QueuedBehaviorEvent {
@@ -15,6 +16,11 @@ export interface QueuedBehaviorEvent {
   eventType: BehaviorEventType;
   durationMs: number | null;
   incomplete?: boolean;
+  /**
+   * 原样重放的事件明细（阶段 3：COPY_PASTE 的 `{action}` / FULLSCREEN_EXIT 的 `{action:'exit'}`）。
+   * 切屏系列不带本字段，仍按 durationMs / incomplete 现算（保持既有口径与兼容存量行）。
+   */
+  eventData?: JsonNode;
 }
 
 export interface BehaviorQueue {
