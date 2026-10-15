@@ -49,4 +49,10 @@ public class MessageController {
         messageService.markRead(id);
         return ApiResponse.success();
     }
+
+    /** 全部标为已读（仅本人：user_id 隔离；幂等，无未读也返回成功）。 */
+    @PutMapping("/read-all")
+    public ApiResponse<Integer> markAllRead() {
+        return ApiResponse.success(messageService.markAllRead());
+    }
 }

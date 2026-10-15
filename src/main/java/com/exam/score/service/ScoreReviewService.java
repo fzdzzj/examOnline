@@ -9,6 +9,7 @@ import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.grading.entity.GradingSubmission;
 import com.exam.grading.mapper.GradingSubmissionMapper;
+import com.exam.message.service.ExamLifecycleNotificationService;
 import com.exam.score.dto.ReviewHandleRequest;
 import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.entity.ScoreReview;
@@ -43,15 +44,18 @@ public class ScoreReviewService {
     private final ExamMapper examMapper;
     private final GradingSubmissionMapper gradingMapper;
     private final ScoreAuditLogMapper auditLogMapper;
+    private final ExamLifecycleNotificationService lifecycleNotificationService;
 
     public ScoreReviewService(ScoreReviewMapper reviewMapper,
                               ExamMapper examMapper,
                               GradingSubmissionMapper gradingMapper,
-                              ScoreAuditLogMapper auditLogMapper) {
+                              ScoreAuditLogMapper auditLogMapper,
+                              ExamLifecycleNotificationService lifecycleNotificationService) {
         this.reviewMapper = reviewMapper;
         this.examMapper = examMapper;
         this.gradingMapper = gradingMapper;
         this.auditLogMapper = auditLogMapper;
+        this.lifecycleNotificationService = lifecycleNotificationService;
     }
 
     /**
@@ -189,6 +193,10 @@ public class ScoreReviewService {
         reviewMapper.updateById(review);
         log.info("成绩复核处理: review={} status={} exam={} student={}",
                 reviewId, review.getStatus(), review.getExamId(), review.getStudentId());
+        // 旁路通知（add-exam-lifecycle-notifications）：处理完成后向申诉学生投递复核结果通知；
+        // 服务内部统一 try-catch 降级，任何异常绝不回滚/阻断本次复核处理事务。
+        lifecycleNotificationService.notifyScoreReviewHandled(review, exam, action,
+                request.getAdjustedTotalScore());
     }
 
     /** 教师按考试查复核清单（含状态与处理结果，支撑处理动作的定位）。 */

@@ -17,6 +17,7 @@ import com.exam.grading.mapper.SubjectiveGradeMapper;
 import com.exam.grading.model.GradingPaper;
 import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.support.GradingPaperReader;
+import com.exam.message.service.ExamLifecycleNotificationService;
 import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.mapper.ScoreAuditLogMapper;
@@ -59,6 +60,7 @@ public class ScoreService {
     private final GradingPaperReader paperReader;
     private final ScoreAuditLogMapper auditLogMapper;
     private final ReadYourWriteMark readYourWriteMark;
+    private final ExamLifecycleNotificationService lifecycleNotificationService;
     
     // 指标收集
     private io.micrometer.core.instrument.MeterRegistry meterRegistry;
@@ -68,13 +70,15 @@ public class ScoreService {
                         SubjectiveGradeMapper subjectiveGradeMapper,
                         GradingPaperReader paperReader,
                         ScoreAuditLogMapper auditLogMapper,
-                        ReadYourWriteMark readYourWriteMark) {
+                        ReadYourWriteMark readYourWriteMark,
+                        ExamLifecycleNotificationService lifecycleNotificationService) {
         this.examMapper = examMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
         this.subjectiveGradeMapper = subjectiveGradeMapper;
         this.paperReader = paperReader;
         this.auditLogMapper = auditLogMapper;
         this.readYourWriteMark = readYourWriteMark;
+        this.lifecycleNotificationService = lifecycleNotificationService;
     }
 
     /** 初始化指标收集器（@PostConstruct 确保在发布前完成初始化）。 */
@@ -287,6 +291,15 @@ public class ScoreService {
                         .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_GRADED));
         writeAudit(examId, ScoreAuditLog.ACTION_PUBLISH, null, "发布成绩 " + summarized + " 人");
         log.info("成绩发布：exam={} 操作人={}", examId, SecurityUtil.getUserId());
+        // 旁路通知（add-exam-lifecycle-notifications）：发布成功后向实考考生投递成绩发布通知；
+        // 服务内部统一 try-catch 降级，任何异常绝不回滚/阻断本次发布事务。
+        List<GradingSubmission> gradedRows = gradingSubmissionMapper.selectList(
+                        Wrappers.<GradingSubmission>lambdaQuery()
+                                .eq(GradingSubmission::getExamId, examId)
+                                .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_GRADED));
+        List<Long> gradedStudentIds = gradedRows == null
+                ? List.of() : gradedRows.stream().map(GradingSubmission::getStudentId).toList();
+        lifecycleNotificationService.notifyScorePublished(exam, gradedStudentIds);
         // 读己之写（add-performance-deepening task4）：发布成绩是写操作，成功打点——
         // 学生/教师随即查成绩是强一致读（本就走主库），此处标记同时兜底同线程其他非强一致读
         readYourWriteMark.mark();

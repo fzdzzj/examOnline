@@ -4,7 +4,18 @@
       <div class="message-center" data-test="message-center">
         <div class="mc-header">
           <span class="mc-title">消息中心</span>
-          <Button size="small" type="link" @click="refresh">刷新</Button>
+          <div class="mc-header-actions">
+            <Button
+              v-if="unread > 0"
+              size="small"
+              type="link"
+              data-test="mark-all-read-button"
+              @click="openMarkAllRead"
+            >
+              全部已读
+            </Button>
+            <Button size="small" type="link" @click="refresh">刷新</Button>
+          </div>
         </div>
         <!-- 查询失败显性化：失败不得伪装成「暂无消息」空态（对齐列表页 error Alert 范式） -->
         <Alert
@@ -58,7 +69,8 @@
  *
  * 数据一律以服务端为准，**不本地持久化**未读状态（spec-delta「消息状态不在前端本地持久化」）。
  * 未读角标 = `GET /api/messages/unread-count`，列表 = `GET /api/messages`，
- * 标已读 = `PUT /api/messages/{id}/read`（成功后失效 unread-count 查询联动减少）。
+ * 标已读 = `PUT /api/messages/{id}/read`（成功后失效 unread-count 查询联动减少），
+ * 全部已读 = `PUT /api/messages/read-all`（成功后失效两查询联动清空未读并刷新列表为已读态）。
  *
  * 仅登录鉴权（后端不特判角色），教师天然可拥有空消息箱。
  */
@@ -67,7 +79,13 @@ import { computed, onMounted } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 
 import { client, unwrap } from '@/api/apiClient';
-import { list1 as listMessages, markRead, unreadCount, type UserMessage } from '@/api/axios';
+import {
+  list1 as listMessages,
+  markAllRead,
+  markRead,
+  unreadCount,
+  type UserMessage,
+} from '@/api/axios';
 
 const queryClient = useQueryClient();
 
@@ -119,6 +137,20 @@ async function openMarkRead(messageId: number): Promise<void> {
   ]);
 }
 
+/** 全部标为已读：成功后联动清空未读数角标并刷新列表为已读态（失败显性反馈，不静默）。 */
+async function openMarkAllRead(): Promise<void> {
+  try {
+    await unwrap(markAllRead({ client, throwOnError: true }));
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '全部已读失败，请稍后重试');
+    return;
+  }
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['messages', 'list'] }),
+    queryClient.invalidateQueries({ queryKey: ['messages', 'unread-count'] }),
+  ]);
+}
+
 /** 列表行的真实消息 id 必然存在（来自后端）；契约类型为可选，此处收敛为非空 number。 */
 function requiredId(m: UserMessage): number {
   return m.id as number;
@@ -141,6 +173,11 @@ function requiredId(m: UserMessage): number {
 }
 .mc-title {
   font-weight: 600;
+}
+.mc-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 .mc-empty {
   padding: 16px 0;

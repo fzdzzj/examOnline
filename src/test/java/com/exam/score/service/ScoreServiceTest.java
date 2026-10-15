@@ -15,6 +15,7 @@ import com.exam.grading.mapper.SubjectiveGradeMapper;
 import com.exam.grading.model.GradingPaper;
 import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.support.GradingPaperReader;
+import com.exam.message.service.ExamLifecycleNotificationService;
 import com.exam.question.entity.QuestionType;
 import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.dto.ScorePreviewResponse;
@@ -78,6 +79,8 @@ class ScoreServiceTest {
     private ScoreAuditLogMapper auditLogMapper;
     @Mock
     private ReadYourWriteMark readYourWriteMark;
+    @Mock
+    private ExamLifecycleNotificationService lifecycleNotificationService;
 
     @InjectMocks
     private ScoreService scoreService;

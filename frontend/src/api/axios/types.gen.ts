@@ -98,6 +98,12 @@ export type PaperOrderRequest = {
     questionIds: Array<number>;
 };
 
+export type ApiResponseInteger = {
+    code?: number;
+    message?: string;
+    data?: number;
+};
+
 export type ExamUpdateRequest = {
     title?: string;
     description?: string;
@@ -1426,6 +1432,22 @@ export type MarkReadResponses = {
 };
 
 export type MarkReadResponse = MarkReadResponses[keyof MarkReadResponses];
+
+export type MarkAllReadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/messages/read-all';
+};
+
+export type MarkAllReadResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseInteger;
+};
+
+export type MarkAllReadResponse = MarkAllReadResponses[keyof MarkAllReadResponses];
 
 export type Delete2Data = {
     body?: never;

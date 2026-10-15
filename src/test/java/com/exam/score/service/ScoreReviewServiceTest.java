@@ -8,6 +8,7 @@ import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.grading.entity.GradingSubmission;
 import com.exam.grading.mapper.GradingSubmissionMapper;
+import com.exam.message.service.ExamLifecycleNotificationService;
 import com.exam.score.dto.ReviewHandleRequest;
 import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.entity.ScoreReview;
@@ -53,6 +54,8 @@ class ScoreReviewServiceTest {
     private GradingSubmissionMapper gradingMapper;
     @Mock
     private ScoreAuditLogMapper auditLogMapper;
+    @Mock
+    private ExamLifecycleNotificationService lifecycleNotificationService;
 
     @InjectMocks
     private ScoreReviewService service;
