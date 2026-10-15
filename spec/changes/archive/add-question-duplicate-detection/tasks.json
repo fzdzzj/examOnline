@@ -11,16 +11,16 @@
     {
       "id": 2,
       "title": "阶段 2：服务层与前端实现及先红后绿验证",
-      "status": "pending",
+      "status": "completed",
       "description": "实施后端 QuestionDuplicateService 与 QuestionController check-duplicate 端点；前端 QuestionFormModal.vue 与 questions/index.page.vue 增加查重预检交互与警告反馈；更新 openapi.yaml（paths 90→91）与 SDK；编写单元测试与集成测试，进行变异击红验证留证。",
-      "evidence": ""
+      "evidence": "后端 QuestionDuplicateService 纯 Java Bigram Jaccard + 编辑距离混合算法与 QuestionController check-duplicate 端点；前端 QuestionForm.vue 题干失焦/防抖 500ms 查重防呆与 questions/index.page.vue 快捷查重入口；openapi paths 90→91；双端单测与集成测试通过，m1/m2 变异留证完备。"
     },
     {
       "id": 3,
       "title": "阶段 3：全量门禁实测、规范合入与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json（含 openapiPaths 90→91）；将 spec-delta 合入 question-bank 与 frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
-      "evidence": ""
+      "evidence": "后端唯一门禁 mvnw.cmd clean test: 534 run, 0 failures, 0 errors, 1 skipped; 前端三门禁 lint:check / type-check:check / test (806 passed) 全绿; gate-baseline.json 上调为 534/806/91; 规范合入 question-bank 与 frontend 基线; spec/README.md 与 docs/功能待办清单.md 闭环登记。"
     }
   ]
 }
