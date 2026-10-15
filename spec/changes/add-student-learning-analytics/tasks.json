@@ -12,9 +12,9 @@
     {
       "id": 2,
       "title": "阶段 2：后端学情分析/推荐服务与端点、前端交互组件与先红后绿及变异击红验证",
-      "status": "pending",
+      "status": "completed",
       "description": "实施 StudentLearningAnalyticsService（学情聚合、知识点掌握度、薄弱点靶向推荐、班级跨考试学情）；新增控制器端点并继承角色权限；前端成绩中心增加学情画像 Tab 与推荐卡片；重新导出 openapi.yaml（paths 92→95）并更新前端 SDK；编写集成测试与前端单元测试，完成先红后绿与变异击红留证。",
-      "evidence": ""
+      "evidence": "后端：新增 StudentLearningAnalyticsService 三类端点（GET /api/scores/my/analytics、/my/recommendations、/classes/{classId}/analytics），位于 ScoreController 继承 score:view，教师端点再叠 exam:manage + 服务层 getOwnedClass 强校验；openapi paths 92→95 重新导出、前端 gen:api 同步 SDK；前端学生成绩页新增「学情画像与靶向练习」Tab（StudentLearningAnalytics.vue）与教师班级列表「学情分析」弹层。门禁：后端 mvnw.cmd clean test Tests run: 546, Failures: 0, Errors: 0, Skipped: 1（OpenApiContract 导出 Skip 为设计使然）；前端 vitest —testTimeout=60000 Tests 817 passed（先前 810）；lint:check / type-check:check 全绿。变异验证 m1（薄弱点过滤逻辑）/m2（教师班级越权校验）击红-复原-回绿，证据见 evidence/（mutation-evidence.md + m1/m2 red/green 日志）；零 DDL、schema.sql 与 migrations 零 diff、测试无 @Sql。"
     },
     {
       "id": 3,

@@ -35,6 +35,9 @@
               <Button type="link" size="small" @click="viewClassStudents(record as ClassResponse)">
                 查看学生
               </Button>
+              <Button type="link" size="small" @click="openClassAnalytics(record as ClassResponse)">
+                学情分析
+              </Button>
               <Button type="link" size="small" @click="openClassModal(record as ClassResponse)">
                 编辑
               </Button>
@@ -196,6 +199,79 @@
         option-filter-prop="label"
       />
     </Modal>
+
+    <!-- 班级学情分析 Modal：教师查本班跨考试综合学情（水平越权由后端 getOwnedClass 裁决） -->
+    <Modal v-model:open="analyticsModalOpen" :title="analyticsTitle" width="760px" :footer="null">
+      <!-- 三态分离：查询失败显性 Alert，数据区隐藏 -->
+      <Alert
+        v-if="analyticsErrorText"
+        type="error"
+        show-icon
+        class="mb-3"
+        :message="analyticsErrorText"
+        data-test="class-analytics-error"
+      />
+      <Spin v-else-if="analyticsFetching" />
+      <template v-else-if="classAnalyticsData">
+        <p class="mb-2 text-sm text-gray-600">
+          学生 {{ classAnalyticsData.studentCount ?? 0 }} 人 · 已统计考试
+          {{ classAnalyticsData.examCount ?? 0 }} 场
+        </p>
+
+        <template v-if="(classAnalyticsData.trend?.length ?? 0) > 0">
+          <p class="mb-2 text-sm font-semibold">班级均分走势</p>
+          <div class="mb-4">
+            <div
+              v-for="t in classAnalyticsData.trend"
+              :key="t.examId"
+              class="mb-1 flex items-center gap-2"
+            >
+              <span class="text-sm w-40 truncate" :title="t.examTitle">{{ t.examTitle }}</span>
+              <span class="text-xs text-gray-500 w-24 text-right">
+                {{ t.averageScore ?? '—' }} 分
+              </span>
+            </div>
+          </div>
+        </template>
+
+        <template v-if="(classAnalyticsData.tagMastery?.length ?? 0) > 0">
+          <p class="mb-2 text-sm font-semibold">知识点掌握度</p>
+          <div class="mb-4">
+            <div
+              v-for="tag in classAnalyticsData.tagMastery"
+              :key="tag.tagId"
+              class="mb-1 flex items-center gap-2"
+            >
+              <span class="text-sm w-32 truncate" :title="tag.tagName">{{ tag.tagName }}</span>
+              <Progress
+                class="flex-1"
+                :percent="toPercent(tag.masteryRate)"
+                size="small"
+                :status="masteryStatus(tag.masteryRate)"
+                :format="() => `${toPercent(tag.masteryRate)}%`"
+              />
+            </div>
+          </div>
+        </template>
+        <p v-else class="mb-4 text-gray-500">
+          该班级暂无知识点掌握度数据（题目未挂标签或暂无答卷）。
+        </p>
+
+        <template v-if="(classAnalyticsData.weakTags?.length ?? 0) > 0">
+          <p class="mb-2 text-sm font-semibold">全班 Top 5 薄弱知识点</p>
+          <div class="mb-2 flex flex-wrap gap-2">
+            <Tag
+              v-for="tag in classAnalyticsData.weakTags"
+              :key="`${tag.tagId}-${tag.tagName}`"
+              color="red"
+            >
+              {{ tag.tagName }}（{{ toPercent(tag.masteryRate) }}%）
+            </Tag>
+          </div>
+        </template>
+        <p v-else class="mb-0 text-gray-500">暂无明显薄弱知识点（掌握度均不低于 75%）。</p>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -210,9 +286,12 @@ import {
   InputNumber,
   Modal,
   Popconfirm,
+  Progress,
   Select,
   Space,
+  Spin,
   Table,
+  Tag,
   message,
   type TableColumnsType,
 } from 'ant-design-vue';
@@ -221,6 +300,7 @@ import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 
 import {
+  classAnalytics,
   create4 as createClass,
   delete3 as deleteClass,
   joinStudent as joinStudentContract,
@@ -229,6 +309,7 @@ import {
   removeStudent as removeStudentContract,
   transfer as transferContract,
   update3 as updateClass,
+  type ClassLearningAnalyticsResponse,
   type ClassPageResponse,
   type ClassResponse,
   type ClassStudentItem,
@@ -539,6 +620,57 @@ async function onConfirmTransfer(): Promise<void> {
     transferModalOpen.value = false;
     message.success('学生已转班，两个班级的名单均已刷新');
   }
+}
+
+// ===== 班级学情分析（add-student-learning-analytics） =====
+const analyticsModalOpen = ref(false);
+const analyticsClassKey = ref<number | undefined>(undefined);
+const analyticsClassName = ref('');
+
+const {
+  data: classAnalyticsData,
+  isFetching: analyticsFetching,
+  refetch: refetchAnalytics,
+  error: analyticsErrorRef,
+} = useQuery({
+  queryKey: computed(() => ['classes', analyticsClassKey.value, 'analytics'] as const),
+  queryFn: () =>
+    unwrap<ClassLearningAnalyticsResponse>(
+      classAnalytics({
+        client,
+        throwOnError: true,
+        path: { classId: analyticsClassKey.value as number },
+      })
+    ),
+  enabled: computed(() => analyticsModalOpen.value && analyticsClassKey.value !== undefined),
+  retry: 0,
+});
+
+const analyticsErrorText = computed(() =>
+  analyticsErrorRef.value instanceof Error ? analyticsErrorRef.value.message : null
+);
+const analyticsTitle = computed(() => `班级学情分析 — ${analyticsClassName.value || '当前班级'}`);
+
+/** 0~100 整数百分比；null/缺失返回 0。 */
+function toPercent(rate: number | undefined | null): number {
+  if (rate === undefined || rate === null) return 0;
+  return Math.round(rate * 100);
+}
+
+/** 知识点进度条颜色：≥90% 绿 / ≥75% 黄 / 其余红（薄弱）。 */
+function masteryStatus(rate: number | undefined | null): 'success' | 'active' | 'exception' {
+  const value = rate ?? 0;
+  if (value >= 0.9) return 'success';
+  if (value >= 0.75) return 'active';
+  return 'exception';
+}
+
+function openClassAnalytics(clazz: ClassResponse): void {
+  if (clazz.id === undefined) return;
+  analyticsClassKey.value = clazz.id;
+  analyticsClassName.value = clazz.name ?? `#${clazz.id}`;
+  analyticsModalOpen.value = true;
+  void refetchAnalytics();
 }
 </script>
 

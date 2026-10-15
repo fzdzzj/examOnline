@@ -1,100 +1,107 @@
 <template>
   <div>
-    <Card title="我的成绩与复核" class="mb-4">
-      <template #extra>
-        <span class="hint">成绩可见性与复核资格一律以后端返回为准，前端不做本地判定。</span>
-      </template>
+    <Tabs v-model:activeKey="activeTab" class="mb-4">
+      <TabPane key="scores" tab="我的考试成绩">
+        <Card title="我的成绩与复核" class="mb-4">
+          <template #extra>
+            <span class="hint">成绩可见性与复核资格一律以后端返回为准，前端不做本地判定。</span>
+          </template>
 
-      <div class="mb-3 flex flex-wrap items-center gap-3">
-        <Select
-          v-model:value="selectedExamId"
-          :options="examOptions"
-          placeholder="选择考试"
-          class="w-96"
-          show-search
-          :filter-option="examFilterOption"
-          :loading="examsFetching"
-        />
-        <RadioGroup v-model:value="scoreMode">
-          <Radio value="regular">常规成绩</Radio>
-          <Radio value="makeup">补考最终成绩</Radio>
-        </RadioGroup>
-        <span v-if="scoreMode === 'makeup'" class="hint">
-          后端沿主考家族按考试配置规则合并，历史成绩保留不覆盖；前端只渲染返回值。
-        </span>
-      </div>
+          <div class="mb-3 flex flex-wrap items-center gap-3">
+            <Select
+              v-model:value="selectedExamId"
+              :options="examOptions"
+              placeholder="选择考试"
+              class="w-96"
+              show-search
+              :filter-option="examFilterOption"
+              :loading="examsFetching"
+            />
+            <RadioGroup v-model:value="scoreMode">
+              <Radio value="regular">常规成绩</Radio>
+              <Radio value="makeup">补考最终成绩</Radio>
+            </RadioGroup>
+            <span v-if="scoreMode === 'makeup'" class="hint">
+              后端沿主考家族按考试配置规则合并，历史成绩保留不覆盖；前端只渲染返回值。
+            </span>
+          </div>
 
-      <!-- 接口缺口如实告知：学生端没有「查询自己复核申请」的端点 -->
-      <Alert type="info" show-icon class="mb-3">
-        <template #description>
-          复核资格（剩余次数 / 时间窗）由后端在提交时校验拒绝，后端
-          <b>没有单独的资格查询端点</b>
-          ，因此本页不展示「剩余次数」——前端不本地计数（两端规则漂移会导致资格判定失真）。
-          同理，学生查询本人复核申请列表的端点目前也不存在，申请结果以成绩卡片状态与后端返回为准。
-        </template>
-      </Alert>
+          <!-- 接口缺口如实告知：学生端没有「查询自己复核申请」的端点 -->
+          <Alert type="info" show-icon class="mb-3">
+            <template #description>
+              复核资格（剩余次数 / 时间窗）由后端在提交时校验拒绝，后端
+              <b>没有单独的资格查询端点</b>
+              ，因此本页不展示「剩余次数」——前端不本地计数（两端规则漂移会导致资格判定失真）。
+              同理，学生查询本人复核申请列表的端点目前也不存在，申请结果以成绩卡片状态与后端返回为准。
+            </template>
+          </Alert>
 
-      <!-- U-1 三态分离：查询失败（非「成绩待发布」）显性呈现，不伪装成「成绩未发布」业务态
+          <!-- U-1 三态分离：查询失败（非「成绩待发布」）显性呈现，不伪装成「成绩未发布」业务态
            （形态先例：StudentExamList「空态与错误态分开……真相是系统坏了」） -->
-      <Alert
-        v-if="queryError"
-        type="error"
-        show-icon
-        class="mb-3"
-        :message="queryError"
-        data-test="scores-error"
-      />
+          <Alert
+            v-if="queryError"
+            type="error"
+            show-icon
+            class="mb-3"
+            :message="queryError"
+            data-test="scores-error"
+          />
 
-      <Spin :spinning="scoreFetching">
-        <ScoreVisibilityCard
-          v-if="!queryError"
-          :view="view"
-          :variant="scoreMode === 'makeup' ? 'final' : 'detail'"
-        />
-      </Spin>
+          <Spin :spinning="scoreFetching">
+            <ScoreVisibilityCard
+              v-if="!queryError"
+              :view="view"
+              :variant="scoreMode === 'makeup' ? 'final' : 'detail'"
+            />
+          </Spin>
 
-      <div v-if="view.kind === 'reviewing'" class="mt-3">
-        <!-- 复核中不再重复申请：后端会对重复申请返回 1001，此处按钮由后端 reviewing 字段驱动 -->
-        <span class="pending-hint">复核进行中，处理完成后成绩恢复显示</span>
-      </div>
-      <div
-        v-else-if="view.kind === 'published' && scoreMode === 'regular'"
-        class="mt-3 flex items-center gap-3"
-      >
-        <Button type="primary" data-test="review-exam-btn" @click="openReviewModal">
-          逐题回顾
-        </Button>
-        <Button
-          :disabled="appliedExamIds.includes(selectedExamId as number)"
-          @click="applyModalOpen = true"
-        >
-          申请成绩复核
-        </Button>
-      </div>
+          <div v-if="view.kind === 'reviewing'" class="mt-3">
+            <!-- 复核中不再重复申请：后端会对重复申请返回 1001，此处按钮由后端 reviewing 字段驱动 -->
+            <span class="pending-hint">复核进行中，处理完成后成绩恢复显示</span>
+          </div>
+          <div
+            v-else-if="view.kind === 'published' && scoreMode === 'regular'"
+            class="mt-3 flex items-center gap-3"
+          >
+            <Button type="primary" data-test="review-exam-btn" @click="openReviewModal">
+              逐题回顾
+            </Button>
+            <Button
+              :disabled="appliedExamIds.includes(selectedExamId as number)"
+              @click="applyModalOpen = true"
+            >
+              申请成绩复核
+            </Button>
+          </div>
 
-      <Alert
-        v-if="applyError"
-        type="error"
-        show-icon
-        class="mt-3"
-        :message="applyError"
-        closable
-        @close="applyError = null"
-      />
+          <Alert
+            v-if="applyError"
+            type="error"
+            show-icon
+            class="mt-3"
+            :message="applyError"
+            closable
+            @close="applyError = null"
+          />
 
-      <Alert
-        v-if="appliedReview"
-        type="success"
-        show-icon
-        class="mt-3"
-        message="复核申请已提交（待教师处理）"
-      >
-        <template #description>
-          申请理由：{{ appliedReview.reason || '（未填写）' }} · 后端返回状态：
-          {{ getReviewStatusConfig(appliedReview.status ?? -1).label }}
-        </template>
-      </Alert>
-    </Card>
+          <Alert
+            v-if="appliedReview"
+            type="success"
+            show-icon
+            class="mt-3"
+            message="复核申请已提交（待教师处理）"
+          >
+            <template #description>
+              申请理由：{{ appliedReview.reason || '（未填写）' }} · 后端返回状态：
+              {{ getReviewStatusConfig(appliedReview.status ?? -1).label }}
+            </template>
+          </Alert>
+        </Card>
+      </TabPane>
+      <TabPane key="analytics" tab="学情画像与靶向练习">
+        <StudentLearningAnalytics />
+      </TabPane>
+    </Tabs>
 
     <!-- 单场考试逐题回顾 Modal -->
     <Modal
@@ -245,6 +252,8 @@ import {
   RadioGroup,
   Select,
   Spin,
+  Tabs,
+  TabPane,
   Tag,
   Textarea,
   message,
@@ -274,6 +283,7 @@ import {
 import ScoreVisibilityCard from '@/components/postexam/ScoreVisibilityCard.vue';
 import LeaderboardPanel from '@/components/postexam/LeaderboardPanel.vue';
 import QuestionImage from '@/components/question/QuestionImage.vue';
+import StudentLearningAnalytics from '@/components/student/StudentLearningAnalytics.vue';
 import { acceptedAnswersOf, isFillBlankType } from '@/utils/questionTypes';
 
 /**
@@ -293,6 +303,9 @@ const { data: examsData, isFetching: examsFetching } = useQuery({
   queryKey: ['my-exams'] as const,
   queryFn: () => unwrap<ExamListItem[]>(myExams({ client, throwOnError: true })),
 });
+
+/** 学情页签：scores=我的考试成绩（默认），analytics=学情画像与靶向练习。 */
+const activeTab = ref<'scores' | 'analytics'>('scores');
 const exams = computed<ExamListItem[]>(() => examsData.value ?? []);
 const examOptions = computed(() =>
   exams.value.map((e) => ({ value: e.examId as number, label: `${e.title}（#${e.examId}）` }))
