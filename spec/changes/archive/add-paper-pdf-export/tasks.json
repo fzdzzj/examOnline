@@ -18,9 +18,9 @@
     {
       "id": 3,
       "title": "阶段 3：全量门禁实测、规范合入与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json（含 openapiPaths 89→90）；将 spec-delta 合入 question-bank 与 frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
-      "evidence": ""
+      "evidence": "后端门禁 mvnw.cmd clean test 实测：Tests run: 520, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS；前端三门禁实测：pnpm run lint:check（0 错误）、pnpm run type-check:check（0 错误）、pnpm run test -- --testTimeout=60000（105 文件 800 用例全绿）；契约 90 paths（89→90）；.github/ci/gate-baseline.json 同步上调为 backendTests: 520, frontendTests: 800, openapiPaths: 90；规范差异合入 question-bank、frontend 基线；变更目录归档并合流 main。"
     }
   ]
 }
