@@ -87,6 +87,38 @@ describe('TakingBoard 导航', () => {
   });
 });
 
+describe('TakingBoard 疑难标记（Mark for Review 🚩）', () => {
+  it('marked 集合传入 navStatesOf：导航格带 marked 标志（独立于 answered）', () => {
+    const wrapper = mountBoard({ answers: { 11: 'A' }, marked: new Set([11, 13]) });
+    const states = wrapper.findComponent(QuestionNavPanel).props('states');
+    expect(states.map((s) => s.marked)).toEqual([true, false, true]);
+    expect(states.map((s) => s.answered)).toEqual([true, false, false]);
+  });
+
+  it('当前题标记按钮：给「标记此题 🚩」，点击后回抛 toggle-mark 与题号', async () => {
+    const wrapper = mountBoard();
+    const btn = wrapper.find('[data-test="mark-toggle"]');
+    expect(btn.exists()).toBe(true);
+    expect(btn.text()).toContain('标记此题');
+    await btn.trigger('click');
+    expect(wrapper.emitted('toggle-mark')?.[0]).toEqual([11]);
+  });
+
+  it('已标记的当前题按钮呈「取消标记」态并回抛同键 toggle-mark', async () => {
+    const wrapper = mountBoard({ marked: new Set([11]) });
+    const btn = wrapper.find('[data-test="mark-toggle"]');
+    expect(btn.text()).toContain('取消标记');
+    await btn.trigger('click');
+    // 同一键回抛：由父级用 toggleMarked 纯函数切换
+    expect(wrapper.emitted('toggle-mark')?.[0]).toEqual([11]);
+  });
+
+  it('无当前题（空卷）时不渲染标记按钮', () => {
+    const wrapper = mountBoard({ questions: [] });
+    expect(wrapper.find('[data-test="mark-toggle"]').exists()).toBe(false);
+  });
+});
+
 describe('TakingBoard 归零锁定', () => {
   it('locked 传到作答控件：所有作答入口 disabled', () => {
     const wrapper = mountBoard({ locked: true });

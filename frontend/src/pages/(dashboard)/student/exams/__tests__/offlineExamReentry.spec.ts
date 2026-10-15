@@ -229,6 +229,7 @@ describe('作答页离线重入与降级链路 ([id].page.vue)', () => {
       version: 5,
       savedAt: '2026-10-10T09:30:00Z',
       answers: { '1001': 'A' },
+      marked: [],
     });
 
     queryData.value = undefined;

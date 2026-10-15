@@ -45,8 +45,6 @@
       v-model:open="confirmOpen"
       title="确认交卷"
       :confirm-loading="submitting"
-      ok-text="确认交卷"
-      cancel-text="再检查一下"
       :ok-button-props="{ danger: true, disabled: submitting }"
       data-test="submit-confirm"
       @ok="onConfirm"
@@ -62,6 +60,29 @@
       <p class="text-xs text-gray-500">
         交卷以服务器结果为准：成功后不能再修改；若网络失败答案会保留，可重试。
       </p>
+      <template #footer>
+        <Button
+          v-if="unansweredCount > 0"
+          data-test="jump-unanswered"
+          :disabled="submitting"
+          @click="onJumpToUnanswered"
+        >
+          跳转首道未答题
+        </Button>
+        <Button data-test="submit-cancel" :disabled="submitting" @click="confirmOpen = false">
+          再检查一下
+        </Button>
+        <Button
+          type="primary"
+          danger
+          data-test="submit-confirm-ok"
+          :loading="submitting"
+          :disabled="submitting"
+          @click="onConfirm"
+        >
+          确认交卷
+        </Button>
+      </template>
     </Modal>
   </div>
 </template>
@@ -90,7 +111,12 @@ const props = defineProps<{
   error: SubmitError | null;
 }>();
 
-const emit = defineEmits<{ submit: []; retry: [] }>();
+const emit = defineEmits<{
+  submit: [];
+  retry: [];
+  /** 学生选择先补答：关闭弹窗并交回定位权（跳转口径由页面用 `navStatesOf` 首个未答题算出）。 */
+  'jump-to-unanswered': [];
+}>();
 
 const confirmOpen = ref(false);
 
@@ -113,6 +139,13 @@ function onConfirm(): void {
   if (props.submitting) return;
   confirmOpen.value = false;
   emit('submit');
+}
+
+/** 先补答：关闭弹窗并交回定位权——不代表已交卷（不触发 submit）。 */
+function onJumpToUnanswered(): void {
+  if (props.submitting) return;
+  confirmOpen.value = false;
+  emit('jump-to-unanswered');
 }
 </script>
 

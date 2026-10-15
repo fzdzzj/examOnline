@@ -7,14 +7,17 @@
         :data-test="`nav-${state.index}`"
         :data-answered="state.answered ? 'yes' : 'no'"
         :data-current="state.current ? 'yes' : 'no'"
+        :data-marked="state.marked ? 'yes' : 'no'"
         :class="[
           'nav-cell',
           state.answered ? 'nav-answered' : 'nav-unanswered',
           state.current ? 'nav-current' : '',
+          state.marked ? 'nav-marked' : '',
         ]"
         size="small"
         @click="emit('select', state.index)"
       >
+        <span class="mark-badge" v-if="state.marked" data-test="mark-badge">🚩</span>
         {{ state.number }}
       </Button>
     </Space>
@@ -22,19 +25,17 @@
       <span class="legend-cell nav-answered">已答</span>
       <span class="legend-cell nav-unanswered">未答</span>
       <span class="legend-cell nav-current">当前</span>
+      <span class="legend-cell nav-marked">已标记</span>
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
 /**
- * 逐题导航（阶段 22 第 1 片：极简版——只有已答/未答/当前三态）。
+ * 逐题导航：已答/未答/当前三态 + 疑难标记（Mark for Review 🚩）四态叠加。
  *
- * `states` 由页面用纯函数 `navStatesOf(questions, answers, index)` 算出来后传入，
- * 本组件不参与"答没答"的判定，所以它可以被第 3 片的交卷确认（未答题数）直接复用。
- *
- * 注意：spec 的导航面板还有"标记题"一色，那依赖后端 `marked` 字段与草稿保存，
- * 属第 2 片范围（v3 明确**不做**标记备注的编辑能力，只可能显示后端已存的标记）。
+ * `states` 由页面用纯函数 `navStatesOf(questions, answers, index, marked)` 算出来后传入，
+ * 本组件不参与"答没答 / 标没标"的判定，所以它可以被第 3 片的交卷确认（未答题数）直接复用。
  */
 import { Button, Space } from 'ant-design-vue';
 
@@ -59,6 +60,18 @@ const emit = defineEmits<{ select: [index: number] }>();
 .nav-current {
   font-weight: 700;
   box-shadow: 0 0 0 2px #91caff;
+}
+/* 已标记题：橙色描边 + 右上角 🚩 角标，与已答/未答底色叠加不冲突 */
+.nav-marked {
+  border-color: #faad14;
+}
+.nav-marked.nav-answered {
+  background-color: #fffbe6;
+}
+.mark-badge {
+  position: relative;
+  font-size: 11px;
+  margin-right: 2px;
 }
 .legend {
   margin-top: 8px;

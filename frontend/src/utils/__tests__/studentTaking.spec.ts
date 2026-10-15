@@ -24,6 +24,7 @@ import {
   lettersOfAnswer,
   navStatesOf,
   serverRemainingOf,
+  toggleMarked,
 } from '@/utils/studentTaking';
 
 const QUESTIONS: QuestionView[] = [
@@ -142,6 +143,48 @@ describe('navStatesOf —— 逐题导航三态', () => {
 
   it('返回的是逐题数组而不是计数——第 3 片的"未答题数"必须从同一份数组算', () => {
     expect(navStatesOf(QUESTIONS, {}, 0)).toHaveLength(4);
+  });
+});
+
+describe('navStatesOf —— 标记题四态（加 marked 参数）', () => {
+  it('marked 是独立于 answer 的维度：已答未标记/已答已标记/未答已标记三者都可区分', () => {
+    const states = navStatesOf(QUESTIONS, { 11: 'A' }, 0, new Set([11, 13]));
+    expect(states.map((s) => s.answered)).toEqual([true, false, false, false]);
+    // 11 已答且已标记；12 未答未标记；13 未答已标记
+    expect(states.map((s) => s.marked)).toEqual([true, false, true, false]);
+    // marked 不影响 answered 判定
+    expect(states.find((s) => s.number === 1)?.answered).toBe(true);
+  });
+
+  it('缺省 marked 时一律视为未标记（向后兼容，不改变既有调用语义）', () => {
+    const states = navStatesOf(QUESTIONS, {}, 0);
+    expect(states.every((s) => s.marked === false)).toBe(true);
+  });
+
+  it('未答已标记与已答已标记在图例上应能视觉区分（marked 字段进入数组）', () => {
+    const states = navStatesOf(QUESTIONS, { 12: 'T' }, 0, new Set([14]));
+    // 第 4 题（简答，questionId 14）未答但已标记 —— 三态呈现的边界用例
+    expect(states[3].answered).toBe(false);
+    expect(states[3].marked).toBe(true);
+  });
+});
+
+describe('toggleMarked —— 标记切换纯函数', () => {
+  it('标记/取消标记都返回新 Set，不改原集合（不可变更新）', () => {
+    const base = new Set<number>([11]);
+    const after = toggleMarked(base, 12);
+    expect(after.has(12)).toBe(true);
+    expect(after.has(11)).toBe(true);
+    expect(base.has(12)).toBe(false); // 原集合不被改写
+    const removed = toggleMarked(after, 12);
+    expect(removed.has(12)).toBe(false);
+    expect(removed.has(11)).toBe(true);
+  });
+
+  it('questionId 缺失（无法稳定持久化的题）不产生标记', () => {
+    const base = new Set<number>();
+    expect(toggleMarked(base, undefined).size).toBe(0);
+    expect(toggleMarked(base, undefined)).toEqual(base);
   });
 });
 

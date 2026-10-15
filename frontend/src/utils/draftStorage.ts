@@ -37,7 +37,12 @@ export function createMemoryDraftStorage(): DraftStorage & {
       return store.get(examId) ?? null;
     },
     async save(examId: number, record: DraftRecord) {
-      store.set(examId, { ...record, answers: { ...record.answers } });
+      store.set(examId, {
+        ...record,
+        answers: { ...record.answers },
+        // 旧格式/存量调用方可能未带 marked：缺省空集，不抛错（内存与 IndexedDB 同容忍度）
+        marked: [...(record.marked ?? [])],
+      });
     },
     snapshot() {
       return store;
@@ -56,6 +61,8 @@ interface StoredDraftRow {
   version: number | null;
   savedAt: string | null;
   answers: AnswerMap;
+  /** 疑难标记的 questionId 集合（独立于答案，Mark for Review 🚩）；旧格式缺失按空集。 */
+  marked: number[];
 }
 
 /** 读出的行 → `DraftRecord`；结构损坏（旧格式/手改库）按无记录处理，不抛错阻断作答。 */
@@ -67,10 +74,18 @@ function toRecord(row: unknown): DraftRecord | null {
   for (const [key, value] of Object.entries(candidate.answers)) {
     if (typeof value === 'string') answers[key] = value;
   }
+  // marked 窄化：只收有限数字（旧格式/手改库里可能是 null/缺字段 → 空集，不阻断作答）
+  const marked: number[] = [];
+  if (Array.isArray(candidate.marked)) {
+    for (const id of candidate.marked) {
+      if (typeof id === 'number' && Number.isFinite(id)) marked.push(id);
+    }
+  }
   return {
     version: typeof candidate.version === 'number' ? candidate.version : null,
     savedAt: typeof candidate.savedAt === 'string' ? candidate.savedAt : null,
     answers,
+    marked,
   };
 }
 
@@ -140,6 +155,7 @@ export function createStudentDraftStorage(): DraftStorage {
         version: record.version,
         savedAt: record.savedAt,
         answers: { ...record.answers },
+        marked: Array.isArray(record.marked) ? [...record.marked] : [],
       };
       return withStore('readwrite', (store) => store.put(row)).then(
         () => undefined,

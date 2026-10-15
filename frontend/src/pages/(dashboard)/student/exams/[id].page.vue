@@ -127,12 +127,15 @@
 
         <template v-else>
           <TakingBoard
+            ref="takingBoardRef"
             v-if="questions.length"
             :questions="questions"
             :answers="answers"
+            :marked="markedIds"
             :locked="locked"
             :forbid-copy="antiCheatPolicy.forbidCopy"
             @update:answer="onAnswer"
+            @toggle-mark="onToggleMark"
           />
 
           <!--
@@ -151,6 +154,7 @@
             data-test="submit-panel-host"
             @submit="onManualSubmit"
             @retry="submitHook.retry"
+            @jump-to-unanswered="onJumpToUnanswered"
           />
         </template>
       </Spin>
@@ -220,6 +224,7 @@ import {
   answerMapOf,
   computeOfflineRemainingSeconds,
   navStatesOf,
+  toggleMarked,
   type AnswerMap,
 } from '@/utils/studentTaking';
 import { mergeDrafts, resolveSeed, serverDraftOf, type DraftRecord } from '@/utils/draftMerge';
@@ -254,6 +259,16 @@ const { data, isFetching, error, refetch } = useQuery(
 );
 
 const answers = ref<AnswerMap>({});
+
+/**
+ * 疑难标记集合（questionId 主键，Mark for Review 🚩，polish 变更）。
+ * 独立于答案的维度：随草稿本地持久化、经 `markedSource` 上送后端既有 `marked` 字段；
+ * 交卷请求（useSubmitExam）不携带标记——answers 语义零改动。
+ */
+const markedIds = ref<Set<number>>(new Set());
+
+/** 写字板实例：交卷弹窗「跳转首道未答题」通过它把焦点移到目标题。 */
+const takingBoardRef = ref<{ goTo: (index: number) => void } | null>(null);
 
 /** 本地草稿与快照缓存：生产是 IndexedDB 薄封装；jsdom 下自动降级内存。 */
 const draftStorage = createStudentDraftStorage();
@@ -431,6 +446,7 @@ const behaviorDescription = computed<string | undefined>(() => {
 const autoSave = useAutoSaveDraft({
   examId: () => examId.value,
   answersSource: () => answers.value,
+  markedSource: () => markedIds.value,
   locked: () => countdown.isExpired.value,
   // 后端已封闭（已交卷/已收卷）、交卷已成功、或 ID 非法 → 一切保存动作挂空挡
   //（交卷成功后后端不再受理草稿，继续保存只会制造无意义的拒绝）
@@ -495,8 +511,15 @@ watch(
     const local = await draftStorage.load(examId.value);
     const seed = resolveSeed(mergeDrafts(server, local));
     answers.value = seed.answers;
+    // 标记随采用方一起恢复（与答案同策略），独立维度缺省为空集
+    markedIds.value = new Set(seed.marked);
     seedConflict.value = seed.conflict;
-    autoSave.seed({ version: seed.version, savedAt: null, answers: seed.answers });
+    autoSave.seed({
+      version: seed.version,
+      savedAt: null,
+      answers: seed.answers,
+      marked: seed.marked,
+    });
   },
   { immediate: true }
 );
@@ -508,10 +531,27 @@ function onAnswer(key: string, value: string): void {
   autoSave.notifyAnswered();
 }
 
+/** 疑难标记切换：纯函数更新集合 + 通知自动保存（标记独立于答案，不触碰 answers）。 */
+function onToggleMark(questionId: number): void {
+  markedIds.value = toggleMarked(markedIds.value, questionId);
+  autoSave.notifyMarked();
+}
+
+/** 交卷弹窗「跳转首道未答题」：复用 `navStatesOf` 的第一个未答项，不另算口径。 */
+function onJumpToUnanswered(): void {
+  if (!takingBoardRef.value) return;
+  const firstUnanswered = navStatesOf(questions.value, answers.value, -1, markedIds.value).find(
+    (s) => !s.answered
+  );
+  if (firstUnanswered) takingBoardRef.value.goTo(firstUnanswered.index);
+}
+
 /** 学生显式选择本地那份未同步答案：换内容 + 标脏，30s 防抖内自动保存推上服务器。 */
 function useLocalDraft(): void {
   if (!seedConflict.value) return;
   answers.value = { ...seedConflict.value.answers };
+  // 标记与答案同策略：换本地那份时连同它的标记集一起恢复，避免「改了答案但标记还是服务端的」
+  if (seedConflict.value.marked) markedIds.value = new Set(seedConflict.value.marked);
   seedConflict.value = null;
   autoSave.notifyAnswered();
 }

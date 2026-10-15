@@ -25,6 +25,48 @@ export function groupLabelOf(group: string | null | undefined): string {
 export type AnswerMap = Record<string, string>;
 
 /**
+ * 疑难标记集合（Mark for Review 🚩，阶段 polish 变更）。
+ *
+ * 用 **questionId** 作为标记主键：它与答案 `answerKeyOf` 同源，是作答与判分的真实
+ * 主键（`QuestionView` 注释）。内部状态用 `Set<number>` 表达（去重、快速判含），
+ * 而 `DraftRecord.marked` / `SaveDraftRequest.marked` 的持久化形态是 `number[]`，
+ * 由 `markedIdsOf` / `markedOf` 负责双向转换——状态与持久化分离，纯函数可测。
+ */
+export type MarkedIds = ReadonlySet<number>;
+
+/**
+ * 标记集合（Set 或持久化数组任一形态）→ 升序数字数组（稳定可比较；与后端 `marked`
+ * 契约的数组形态一致）。接受 `number[]` 是为了让 `DraftRecord.marked` 与内部 Set 都能直接过。
+ */
+export function markedOf(ids: MarkedIds | readonly number[] | null | undefined): number[] {
+  return Array.from(ids ?? []).sort((a, b) => a - b);
+}
+
+/** 持久化数组（如后端 `EnterExamResponse.marked` / 恢复的 `DraftRecord.marked`）→ 内部集合。 */
+export function markedIdsOf(
+  list: Array<number | null | undefined> | null | undefined
+): Set<number> {
+  const ids = new Set<number>();
+  for (const item of list ?? []) {
+    if (typeof item === 'number' && Number.isFinite(item)) ids.add(item);
+  }
+  return ids;
+}
+
+/**
+ * 切换某题标记：返回**新** Set（不可变更新，供组件触发状态变更）。
+ * questionId 缺失（无法稳定持久化的题）时不产生标记——不能拿可能漂移的题号当主键。
+ */
+export function toggleMarked(ids: MarkedIds, questionId: number | undefined): Set<number> {
+  const next = new Set<number>(ids);
+  if (questionId !== undefined) {
+    if (next.has(questionId)) next.delete(questionId);
+    else next.add(questionId);
+  }
+  return next;
+}
+
+/**
  * 草稿 `answers`（JsonNode）→ `AnswerMap`。
  * 只认「对象 + 值为字符串/数字」两种标量；结构不符就当没有草稿，
  * **不**把非法值塞进答案区（那会让下一片的合并纯函数拿到脏数据）。
@@ -91,29 +133,35 @@ export function isAnswered(type: number | undefined, answer: string | undefined)
   return true;
 }
 
-/** 导航单元：`number` 用于显示，`answered` 驱动「已答/未答」两色，`current` 高亮当前题。 */
+/** 导航单元：`number` 用于显示，`answered` 驱动「已答/未答」两色，`current` 高亮当前题，`marked` 呈 🚩 角标。 */
 export interface NavItemState {
   index: number;
   number: number;
   answered: boolean;
   current: boolean;
+  marked: boolean;
 }
 
 /**
- * 逐题导航状态（已答 / 未答 / 当前）。
- * 第 3 片「二次确认提示未答题数」直接复用它的长度差，所以这里不返回计数字段——
- * 计数由调用方从同一份数组算出来，避免两处数字各说各话。
+ * 逐题导航状态（已答 / 未答 / 当前 / 标记）。
+ * 第 3 片「二次确认提示未答题数」「跳转首道未答题」直接复用它的数组——
+ * 所以这里不返回计数字段，计数与跳转均由调用方从同一份数组算，避免口径各说各话。
+ *
+ * `markedIds` 是可选的标记集合（questionId 主键）；缺省按空集处理（向后兼容
+ * 既有第 1/3 片调用方，它们不传也要能正常工作）。
  */
 export function navStatesOf(
   questions: readonly QuestionView[],
   answers: AnswerMap,
-  currentIndex: number
+  currentIndex: number,
+  markedIds: MarkedIds = new Set<number>()
 ): NavItemState[] {
   return questions.map((question, index) => ({
     index,
     number: question.number ?? index + 1,
     answered: isAnswered(question.type, answers[answerKeyOf(question)]),
     current: index === currentIndex,
+    marked: question.questionId !== undefined && markedIds.has(question.questionId),
   }));
 }
 

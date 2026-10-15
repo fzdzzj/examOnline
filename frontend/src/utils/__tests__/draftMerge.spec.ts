@@ -16,8 +16,12 @@ import {
 } from '@/utils/draftMerge';
 import { answerMapOf } from '@/utils/studentTaking';
 
-function draft(version: number | null, answers: Record<string, string>): DraftRecord {
-  return { version, savedAt: null, answers };
+function draft(
+  version: number | null,
+  answers: Record<string, string>,
+  marked: number[] = []
+): DraftRecord {
+  return { version, savedAt: null, answers, marked };
 }
 
 describe('mergeDrafts 三分支 + 冲突', () => {
@@ -106,8 +110,8 @@ describe('mergeDrafts 三分支 + 冲突', () => {
     const server = draft(5, { '1': 'A' });
     const local = draft(3, { '1': 'B' });
     mergeDrafts(server, local);
-    expect(server).toEqual({ version: 5, savedAt: null, answers: { '1': 'A' } });
-    expect(local).toEqual({ version: 3, savedAt: null, answers: { '1': 'B' } });
+    expect(server).toEqual({ version: 5, savedAt: null, answers: { '1': 'A' }, marked: [] });
+    expect(local).toEqual({ version: 3, savedAt: null, answers: { '1': 'B' }, marked: [] });
   });
 });
 
@@ -153,5 +157,52 @@ describe('sameAnswers / hasDraftContent 辅助', () => {
     expect(hasDraftContent(null)).toBe(false);
     expect(hasDraftContent(draft(1, {}))).toBe(false);
     expect(hasDraftContent(draft(1, { '1': 'A' }))).toBe(true);
+  });
+});
+
+describe('draftMerge —— 标记集合并入保守合并（独立维度，同策略不静默覆盖）', () => {
+  it('mark 随采用方一起走：后端较新时带后端 marked，本地不覆盖', () => {
+    const outcome = mergeDrafts(draft(5, { '1': 'A' }, [11, 13]), draft(3, { '1': 'B' }, [22]));
+    expect(outcome.kind).toBe('server');
+    if (outcome.kind === 'server') {
+      expect(outcome.marked).toEqual([11, 13]);
+    }
+  });
+
+  it('本地较新时带本地 marked', () => {
+    const outcome = mergeDrafts(draft(3, { '1': 'A' }, []), draft(6, { '1': 'B' }, [7]));
+    expect(outcome.kind).toBe('local');
+    if (outcome.kind === 'local') {
+      expect(outcome.marked).toEqual([7]);
+    }
+  });
+
+  it('version 相同、answers 相同但 marked 不同 → conflict（标记与答案同策略，不静默覆盖）', () => {
+    const outcome = mergeDrafts(draft(4, { '1': 'A' }, [11]), draft(4, { '1': 'A' }, [22]));
+    expect(outcome.kind).toBe('conflict');
+    if (outcome.kind === 'conflict') {
+      expect(outcome.reason).toBe('version-tied-content-differs');
+      expect(outcome.server.marked).toEqual([11]);
+      expect(outcome.local.marked).toEqual([22]);
+    }
+  });
+
+  it('resolveSeed 带出选用方的 marked（conflict 默认播种后端那份的 marked）', () => {
+    const seed = resolveSeed(
+      mergeDrafts(draft(1, { '1': 'A' }, [11]), draft(6, { '1': 'B' }, [22]))
+    );
+    expect(seed.marked).toEqual([22]);
+  });
+
+  it('serverDraftOf 窄化契约里的 marked 数组', () => {
+    const record = serverDraftOf(
+      { answers: { '1': 'A' }, draftVersion: 5, marked: [3, 9] },
+      answerMapOf
+    );
+    expect(record.marked).toEqual([3, 9]);
+  });
+
+  it('marked 缺失/非数组视为空集合（旧格式草稿兼容）', () => {
+    expect(serverDraftOf({ answers: null, draftVersion: null }, answerMapOf).marked).toEqual([]);
   });
 });

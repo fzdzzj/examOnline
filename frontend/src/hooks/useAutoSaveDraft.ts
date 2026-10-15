@@ -29,7 +29,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_INTERVAL_MS } from '@/constants/studentTaking';
 import type { DraftRecord } from '@/utils/draftMerge';
 import type { DraftStorage } from '@/utils/draftStorage';
-import type { AnswerMap } from '@/utils/studentTaking';
+import type { AnswerMap, MarkedIds } from '@/utils/studentTaking';
 
 /** 同步状态：`unsynced` = 上次保存尝试失败（网络或后端拒绝），答案只在本机。 */
 export type DraftSyncStatus = 'idle' | 'pending' | 'saving' | 'synced' | 'unsynced' | 'conflict';
@@ -41,7 +41,7 @@ export interface AutoSaveResult {
   savedTime?: string | null;
 }
 
-/** 发往后端的保存请求体（`AutoSaveRequest`：version 必填，marked 恒空——标记备注不做）。 */
+/** 发往后端的保存请求体（`AutoSaveRequest`：version 必填；marked 为真实标记集合）。 */
 export interface AutoSavePayload {
   version: number;
   answers: AnswerMap;
@@ -53,6 +53,8 @@ export interface UseAutoSaveDraftOptions {
   examId: MaybeRefOrGetter<number>;
   /** 答案只读来源：保存时取当前值，作答通知走 `notifyAnswered()`（显式、可测）。 */
   answersSource: MaybeRefOrGetter<AnswerMap>;
+  /** 疑难标记（questionId 集合，独立于答案）：保存时取当前值，切换走 `notifyMarked()`。 */
+  markedSource?: MaybeRefOrGetter<MarkedIds>;
   /** 归零锁定（倒计时归零）。只影响 `pendingSync` 展示，不改变保存行为。 */
   locked: MaybeRefOrGetter<boolean>;
   /** 后端已封闭（已交卷/已收卷）或考试 ID 非法 → 停止一切保存动作。 */
@@ -79,12 +81,14 @@ export interface AutoSaveDraftView {
   seed(record: DraftRecord): void;
   /** 学生作答（页面 onAnswer 时调）：标脏 + 写 IndexedDB + 重置防抖。 */
   notifyAnswered(): void;
+  /** 学生切换疑难标记（页面 onToggleMark 时调）：标脏 + 写 IndexedDB + 重置防抖（与作答同轨道，独立持久化）。 */
+  notifyMarked(): void;
   /** 立即保存（若脏且未挂起）；网络恢复/组件卸载前由内部或页面触发。 */
   flush(): Promise<void>;
 }
 
 export function useAutoSaveDraft(options: UseAutoSaveDraftOptions): AutoSaveDraftView {
-  const { examId, answersSource, locked, suspended, deps } = options;
+  const { examId, answersSource, markedSource, locked, suspended, deps } = options;
   const intervalMs = deps.intervalMs ?? AUTOSAVE_INTERVAL_MS;
   const debounceMs = deps.debounceMs ?? AUTOSAVE_DEBOUNCE_MS;
   // 只测「距上次保存过了多久」这个时长，不测「现在是几点」（useServerCountdown 同款纪律）。
@@ -107,6 +111,10 @@ export function useAutoSaveDraft(options: UseAutoSaveDraftOptions): AutoSaveDraf
     return Number.isInteger(id) && id > 0 && !toValue(suspended);
   };
 
+  /** 标记集合快照：书写索引可复用（默认空集，未接入标记源时维持既有行为）。 */
+  const currentMarked = (): number[] =>
+    Array.from(toValue(markedSource ?? (() => new Set<number>())));
+
   async function persistLocal(): Promise<void> {
     if (!active()) return;
     const id = toValue(examId);
@@ -114,6 +122,7 @@ export function useAutoSaveDraft(options: UseAutoSaveDraftOptions): AutoSaveDraf
       version: knownVersion,
       savedAt: lastSavedAt.value,
       answers: { ...toValue(answersSource) },
+      marked: currentMarked(),
     };
     await deps.storage.save(id, record);
   }
@@ -124,12 +133,13 @@ export function useAutoSaveDraft(options: UseAutoSaveDraftOptions): AutoSaveDraf
     status.value = 'saving';
     const id = toValue(examId);
     const snapshot = toValue(answersSource);
+    const markedSnapshot = toValue(markedSource ?? (() => new Set<number>()));
     const nextVersion = (knownVersion ?? 0) + 1;
     try {
       const result = await deps.saveDraft(id, {
         version: nextVersion,
         answers: { ...snapshot },
-        marked: [],
+        marked: currentMarked(),
       });
       if (result === undefined || result === null) {
         // 契约里 data 缺失属于异常路径：按未同步处理，答案与 dirty 都保留
@@ -144,8 +154,11 @@ export function useAutoSaveDraft(options: UseAutoSaveDraftOptions): AutoSaveDraf
       }
       knownVersion = typeof result.version === 'number' ? result.version : nextVersion;
       lastSavedAt.value = typeof result.savedTime === 'string' ? result.savedTime : null;
-      // 保存期间学生又作答过（answers 引用已换）→ dirty 保持，交给下一拍
-      if (toValue(answersSource) === snapshot) {
+      // 保存期间学生又作答/切标记（引用已换）→ dirty 保持，交给下一拍
+      const stillClean =
+        toValue(answersSource) === snapshot &&
+        toValue(markedSource ?? (() => new Set<number>())) === markedSnapshot;
+      if (stillClean) {
         dirty.value = false;
         status.value = 'synced';
       } else {
@@ -156,6 +169,7 @@ export function useAutoSaveDraft(options: UseAutoSaveDraftOptions): AutoSaveDraf
         version: knownVersion,
         savedAt: lastSavedAt.value,
         answers: { ...snapshot },
+        marked: currentMarked(),
       });
     } catch {
       // 断线 / 后端拒绝（如「答卷已提交，草稿不再受理」）：如实标未同步，绝不静默丢弃
@@ -188,6 +202,20 @@ export function useAutoSaveDraft(options: UseAutoSaveDraftOptions): AutoSaveDraf
     dirty.value = true;
     // 「每次作答同步写 IndexedDB」：本地写入不受 30s 节流（无网络负载），
     // 后端请求频率只由防抖 + 定时器控制
+    void persistLocal();
+    armDebounce();
+  }
+
+  /**
+   * 标记切换（Mark for Review）：与作答同一条标脏/持久化/防抖路径，只是来源是标记集合。
+   * 标记独立于答案——切换标记不触碰 answers，交卷请求里也不会带上（answers 语义不变）。
+   */
+  function notifyMarked(): void {
+    if (!active()) return;
+    if (status.value !== 'unsynced' && status.value !== 'conflict') {
+      status.value = 'pending';
+    }
+    dirty.value = true;
     void persistLocal();
     armDebounce();
   }
@@ -225,5 +253,5 @@ export function useAutoSaveDraft(options: UseAutoSaveDraftOptions): AutoSaveDraf
     () => toValue(locked) && active() && dirty.value && status.value !== 'synced'
   );
 
-  return { status, lastSavedAt, pendingSync, seed, notifyAnswered, flush };
+  return { status, lastSavedAt, pendingSync, seed, notifyAnswered, notifyMarked, flush };
 }
