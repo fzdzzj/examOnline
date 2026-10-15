@@ -799,6 +799,24 @@ export type PracticePoolItem = {
     consecutiveCorrect?: number;
 };
 
+export type ApiResponseListRecommendedPracticeItem = {
+    code?: number;
+    message?: string;
+    data?: Array<RecommendedPracticeItem>;
+};
+
+export type RecommendedPracticeItem = {
+    questionId?: number;
+    stem?: string;
+    type?: string;
+    score?: number;
+    difficulty?: number;
+    tagId?: number;
+    tagName?: string;
+    tagMasteryRate?: number;
+    recommendReason?: string;
+};
+
 export type ApiResponseExamReviewResponse = {
     code?: number;
     message?: string;
@@ -835,6 +853,46 @@ export type ExamReviewResponse = {
     questions?: Array<ExamReviewQuestionItem>;
 };
 
+export type ApiResponseStudentLearningAnalyticsResponse = {
+    code?: number;
+    message?: string;
+    data?: StudentLearningAnalyticsResponse;
+};
+
+export type Overview = {
+    totalExams?: number;
+    averageScore?: number;
+    highestScore?: number;
+    lowestScore?: number;
+    passRate?: number;
+};
+
+export type StudentLearningAnalyticsResponse = {
+    overview?: Overview;
+    trend?: Array<TrendItem>;
+    tagMastery?: Array<TagMasteryItem>;
+    weakTags?: Array<TagMasteryItem>;
+};
+
+export type TagMasteryItem = {
+    tagId?: number;
+    tagName?: string;
+    questionCount?: number;
+    totalAvailableScore?: number;
+    studentAchievedScore?: number;
+    masteryRate?: number;
+    weak?: boolean;
+};
+
+export type TrendItem = {
+    examId?: number;
+    examTitle?: string;
+    examTime?: string;
+    studentScore?: number;
+    totalScore?: number;
+    scoreRate?: number;
+};
+
 export type ApiResponseMakeupFinalScoreResponse = {
     code?: number;
     message?: string;
@@ -846,6 +904,35 @@ export type MakeupFinalScoreResponse = {
     studentId?: number;
     finalScore?: number;
     reviewing?: boolean;
+};
+
+export type ApiResponseClassLearningAnalyticsResponse = {
+    code?: number;
+    message?: string;
+    data?: ClassLearningAnalyticsResponse;
+};
+
+export type ClassLearningAnalyticsResponse = {
+    classId?: number;
+    className?: string;
+    studentCount?: number;
+    examCount?: number;
+    trend?: Array<ClassTrendItem>;
+    tagMastery?: Array<ClassTagMasteryItem>;
+    weakTags?: Array<ClassTagMasteryItem>;
+};
+
+export type ClassTagMasteryItem = {
+    tagId?: number;
+    tagName?: string;
+    masteryRate?: number;
+};
+
+export type ClassTrendItem = {
+    examId?: number;
+    examTitle?: string;
+    examTime?: string;
+    averageScore?: number;
 };
 
 export type ApiResponseQuestionPageResponse = {
@@ -2613,6 +2700,24 @@ export type MyPracticePoolResponses = {
 
 export type MyPracticePoolResponse = MyPracticePoolResponses[keyof MyPracticePoolResponses];
 
+export type MyRecommendationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/api/scores/my/recommendations';
+};
+
+export type MyRecommendationsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseListRecommendedPracticeItem;
+};
+
+export type MyRecommendationsResponse = MyRecommendationsResponses[keyof MyRecommendationsResponses];
+
 export type MyExamReviewData = {
     body?: never;
     path: {
@@ -2631,6 +2736,22 @@ export type MyExamReviewResponses = {
 
 export type MyExamReviewResponse = MyExamReviewResponses[keyof MyExamReviewResponses];
 
+export type MyLearningAnalyticsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/scores/my/analytics';
+};
+
+export type MyLearningAnalyticsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseStudentLearningAnalyticsResponse;
+};
+
+export type MyLearningAnalyticsResponse = MyLearningAnalyticsResponses[keyof MyLearningAnalyticsResponses];
+
 export type MyMakeupFinalScoreData = {
     body?: never;
     path?: never;
@@ -2648,6 +2769,24 @@ export type MyMakeupFinalScoreResponses = {
 };
 
 export type MyMakeupFinalScoreResponse = MyMakeupFinalScoreResponses[keyof MyMakeupFinalScoreResponses];
+
+export type ClassAnalyticsData = {
+    body?: never;
+    path: {
+        classId: number;
+    };
+    query?: never;
+    url: '/api/scores/classes/{classId}/analytics';
+};
+
+export type ClassAnalyticsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseClassLearningAnalyticsResponse;
+};
+
+export type ClassAnalyticsResponse = ClassAnalyticsResponses[keyof ClassAnalyticsResponses];
 
 export type ImportTemplateData = {
     body?: never;

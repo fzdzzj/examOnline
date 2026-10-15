@@ -21,7 +21,10 @@ import com.exam.score.dto.PracticeSubmitRequest;
 import com.exam.score.dto.PracticeSubmitResponse;
 import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.dto.ScoreLeaderboardResponse;
+import com.exam.score.dto.ClassLearningAnalyticsResponse;
+import com.exam.score.dto.RecommendedPracticeItem;
 import com.exam.score.dto.ScorePreviewResponse;
+import com.exam.score.dto.StudentLearningAnalyticsResponse;
 import com.exam.score.dto.WrongQuestionPageResponse;
 import com.exam.score.service.ExamAnalysisReportService;
 import com.exam.score.service.ScoreExportService;
@@ -29,6 +32,7 @@ import com.exam.score.service.ScoreLeaderboardService;
 import com.exam.score.service.ScoreQueryService;
 import com.exam.score.service.ScoreReviewService;
 import com.exam.score.service.ScoreService;
+import com.exam.score.service.StudentLearningAnalyticsService;
 import com.exam.score.service.StudentPracticeService;
 import com.exam.score.service.StudentWrongQuestionService;
 import jakarta.validation.Valid;
@@ -77,6 +81,7 @@ public class ScoreController {
     private final StudentWrongQuestionService studentWrongQuestionService;
     private final StudentPracticeService studentPracticeService;
     private final ScoreLeaderboardService scoreLeaderboardService;
+    private final StudentLearningAnalyticsService studentLearningAnalyticsService;
 
     public ScoreController(ScoreService scoreService, ScoreQueryService scoreQueryService,
                            ScoreExportService scoreExportService,
@@ -85,7 +90,8 @@ public class ScoreController {
                            ScoreReviewService scoreReviewService,
                            StudentWrongQuestionService studentWrongQuestionService,
                            StudentPracticeService studentPracticeService,
-                           ScoreLeaderboardService scoreLeaderboardService) {
+                           ScoreLeaderboardService scoreLeaderboardService,
+                           StudentLearningAnalyticsService studentLearningAnalyticsService) {
         this.scoreService = scoreService;
         this.scoreQueryService = scoreQueryService;
         this.scoreExportService = scoreExportService;
@@ -96,6 +102,7 @@ public class ScoreController {
         this.studentWrongQuestionService = studentWrongQuestionService;
         this.studentPracticeService = studentPracticeService;
         this.scoreLeaderboardService = scoreLeaderboardService;
+        this.studentLearningAnalyticsService = studentLearningAnalyticsService;
     }
 
     /** 成绩汇总（幂等：重判/补批后可重复执行刷新总分与部分批改标记）。 */
@@ -300,6 +307,46 @@ public class ScoreController {
     public ApiResponse<ExamAnalysisReportResponse> analysisReport(@PathVariable Long examId) {
         requireOwnedExam(examId);
         return ApiResponse.success(examAnalysisReportService.buildReport(examId));
+    }
+
+    // ==================== 学情分析与靶向练习（add-student-learning-analytics） ====================
+
+    /**
+     * 学生查个人跨考试学情画像（总览/趋势/知识点掌握度/薄弱点）。
+     * 学生零答卷/零已发布考试时后端优雅返回参测 0 空态对象，不抛 500/404。
+     */
+    @GetMapping("/api/scores/my/analytics")
+    public ApiResponse<StudentLearningAnalyticsResponse> myLearningAnalytics() {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        return ApiResponse.success(studentLearningAnalyticsService.getStudentAnalytics(studentId));
+    }
+
+    /**
+     * 学生查薄弱知识点靶向练习推荐（limit 默认 5、上限 10）。
+     * 无可推荐题目时优雅返回空列表。
+     */
+    @GetMapping("/api/scores/my/recommendations")
+    public ApiResponse<List<RecommendedPracticeItem>> myRecommendations(
+            @RequestParam(required = false) Integer limit) {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        return ApiResponse.success(studentLearningAnalyticsService.getRecommendedPractice(studentId, limit));
+    }
+
+    /**
+     * 教师查班级跨考试综合学情。班级所有权强校验在服务层（getOwnedClass）：
+     * 不存在 404，非归属且非 ADMIN 403（水平越权防护）。
+     */
+    @GetMapping("/api/scores/classes/{classId}/analytics")
+    @RequirePermission("exam:manage")
+    public ApiResponse<ClassLearningAnalyticsResponse> classAnalytics(@PathVariable Long classId) {
+        return ApiResponse.success(studentLearningAnalyticsService.getClassAnalytics(
+                SecurityUtil.getUserId(), classId));
     }
 
     // ==================== 私有工具 ====================

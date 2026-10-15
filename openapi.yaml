@@ -1627,6 +1627,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListPracticePoolItem"
+  /api/scores/my/recommendations:
+    get:
+      tags:
+      - score-controller
+      operationId: myRecommendations
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListRecommendedPracticeItem"
   /api/scores/my/exams/{examId}/review:
     get:
       tags:
@@ -1646,6 +1665,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseExamReviewResponse"
+  /api/scores/my/analytics:
+    get:
+      tags:
+      - score-controller
+      operationId: myLearningAnalytics
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseStudentLearningAnalyticsResponse"
   /api/scores/makeup-final:
     get:
       tags:
@@ -1665,6 +1696,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMakeupFinalScoreResponse"
+  /api/scores/classes/{classId}/analytics:
+    get:
+      tags:
+      - score-controller
+      operationId: classAnalytics
+      parameters:
+      - name: classId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseClassLearningAnalyticsResponse"
   /api/questions/import-template:
     get:
       tags:
@@ -4132,6 +4182,43 @@ components:
         consecutiveCorrect:
           type: integer
           format: int32
+    ApiResponseListRecommendedPracticeItem:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendedPracticeItem"
+    RecommendedPracticeItem:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        stem:
+          type: string
+        type:
+          type: string
+        score:
+          type: number
+        difficulty:
+          type: integer
+          format: int32
+        tagId:
+          type: integer
+          format: int64
+        tagName:
+          type: string
+        tagMasteryRate:
+          type: number
+          format: double
+        recommendReason:
+          type: string
     ApiResponseExamReviewResponse:
       type: object
       properties:
@@ -4205,6 +4292,86 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExamReviewQuestionItem"
+    ApiResponseStudentLearningAnalyticsResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/StudentLearningAnalyticsResponse"
+    Overview:
+      type: object
+      properties:
+        totalExams:
+          type: integer
+          format: int32
+        averageScore:
+          type: number
+        highestScore:
+          type: number
+        lowestScore:
+          type: number
+        passRate:
+          type: number
+          format: double
+    StudentLearningAnalyticsResponse:
+      type: object
+      properties:
+        overview:
+          $ref: "#/components/schemas/Overview"
+        trend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendItem"
+        tagMastery:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagMasteryItem"
+        weakTags:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagMasteryItem"
+    TagMasteryItem:
+      type: object
+      properties:
+        tagId:
+          type: integer
+          format: int64
+        tagName:
+          type: string
+        questionCount:
+          type: integer
+          format: int32
+        totalAvailableScore:
+          type: number
+        studentAchievedScore:
+          type: number
+        masteryRate:
+          type: number
+          format: double
+        weak:
+          type: boolean
+    TrendItem:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        examTime:
+          type: string
+          format: date-time
+        studentScore:
+          type: number
+        totalScore:
+          type: number
+        scoreRate:
+          type: number
+          format: double
     ApiResponseMakeupFinalScoreResponse:
       type: object
       properties:
@@ -4228,6 +4395,67 @@ components:
           type: number
         reviewing:
           type: boolean
+    ApiResponseClassLearningAnalyticsResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ClassLearningAnalyticsResponse"
+    ClassLearningAnalyticsResponse:
+      type: object
+      properties:
+        classId:
+          type: integer
+          format: int64
+        className:
+          type: string
+        studentCount:
+          type: integer
+          format: int32
+        examCount:
+          type: integer
+          format: int32
+        trend:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClassTrendItem"
+        tagMastery:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClassTagMasteryItem"
+        weakTags:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClassTagMasteryItem"
+    ClassTagMasteryItem:
+      type: object
+      properties:
+        tagId:
+          type: integer
+          format: int64
+        tagName:
+          type: string
+        masteryRate:
+          type: number
+          format: double
+    ClassTrendItem:
+      type: object
+      properties:
+        examId:
+          type: integer
+          format: int64
+        examTitle:
+          type: string
+        examTime:
+          type: string
+          format: date-time
+        averageScore:
+          type: number
+          format: double
     ApiResponseQuestionPageResponse:
       type: object
       properties:
