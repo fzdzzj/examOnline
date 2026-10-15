@@ -1,0 +1,25 @@
+# red-green：前端 M-05/L-03/L-01 定向测试（harden-review-flow-and-resource-limits 阶段 2）
+
+验证命令（frontend/ 执行）：
+npm test -- src/components/postexam/__tests__/ReviewHandleModal.spec.ts
+             src/pages/(dashboard)/teacher/classes/__tests__/classesLoadingRemove.spec.ts
+             src/hooks/__tests__/useTeacherExams.spec.ts
+             src/pages/(dashboard)/teacher/reviews/__tests__/examsDropdownFailure.spec.ts
+
+## 先红（实现前，8 个前端源码文件 revert 至 HEAD；退出码 1）
+Test Files  4 failed (4)
+     Tests  15 failed | 31 passed (46)
+
+useTeacherExams.spec.ts       9 failed：fetchAllTeacherExamsStrict is not a function ×4、
+     promise resolved "[]" instead of rejecting（严格形态缺失 → 失败仍被吞掉）、
+     5 个页面词法护栏（examsErrorText / data-test="exams-error" 缺失）
+examsDropdownFailure.spec.ts  1 failed：考试列表拉取失败时 [data-test="exams-error"] Alert 不存在
+ReviewHandleModal.spec.ts     3 failed：AGREE+调分时不可逆 Alert 缺失（expected null not to be null）、
+     提交未弹二次确认（confirm 未调用）
+classesLoadingRemove.spec.ts  2 failed：词法护栏 :loading="removing(record)" 缺失、
+     在途状态下按钮无 ant-btn-loading（expected false to be true）
+
+## 后绿（实现后；退出码 0）
+Test Files  4 passed (4)
+     Tests  46 passed (46)
+（4 个新 spec 全绿；红 15 条恰为新增长尾断言——M-05 警示/确认、L-03 loading、L-01 失败透出与占位。）

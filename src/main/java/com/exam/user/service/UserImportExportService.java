@@ -38,11 +38,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -63,6 +65,14 @@ import java.util.stream.Collectors;
 public class UserImportExportService {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
+
+    /**
+     * 分批查询批大小（harden-review-flow-and-resource-limits M-06）：单次
+     * {@code WHERE id IN (...)} 最多携带 {@value #BATCH_SIZE} 个参数，
+     * 防止用户数达数千/上万时构造超长 IN 列表触发 MySQL {@code max_allowed_packet}
+     * 报文溢出与大对象瞬时堆积。与 {@link ScoreExportService} 的答卷分批同量级。
+     */
+    static final int BATCH_SIZE = 500;
 
     /**
      * Unicode 空白剥离（harden-data-sanitization-and-ui-states M-02）：剥除首尾全部 Unicode 空白。
@@ -280,9 +290,8 @@ public class UserImportExportService {
                 students = Collections.emptyList();
             } else {
                 List<Long> userIds = links.stream().map(UserClass::getUserId).toList();
-                students = userMapper.selectBatchIds(userIds).stream()
-                        .sorted((a, b) -> Long.compare(a.getId(), b.getId()))
-                        .toList();
+                // M-06：>500 用户时分片 selectBatchIds，杜绝单条巨型 IN 查询
+                students = batchSelectUsers(userIds);
                 for (Long uid : userIds) {
                     userClassNameMap.put(uid, className);
                 }
@@ -298,13 +307,15 @@ public class UserImportExportService {
                     students = Collections.emptyList();
                 } else {
                     List<Long> userIds = urs.stream().map(UserRole::getUserId).toList();
-                    students = userMapper.selectBatchIds(userIds).stream()
-                            .sorted((a, b) -> Long.compare(a.getId(), b.getId()))
-                            .toList();
+                    // M-06：>500 用户时分片 selectBatchIds，杜绝单条巨型 IN 查询
+                    students = batchSelectUsers(userIds);
 
                     // 加载班级名称
-                    List<UserClass> allLinks = userClassMapper.selectList(Wrappers.<UserClass>lambdaQuery()
-                            .in(!userIds.isEmpty(), UserClass::getUserId, userIds));
+                    List<UserClass> allLinks = new ArrayList<>();
+                    // M-06：user_class 归属查询同样按 500 一片，避免巨型 IN
+                    forEachIdSlice(userIds, slice -> allLinks.addAll(
+                            userClassMapper.selectList(Wrappers.<UserClass>lambdaQuery()
+                                    .in(UserClass::getUserId, slice))));
                     if (!allLinks.isEmpty()) {
                         Set<Long> cids = allLinks.stream().map(UserClass::getClassId).collect(Collectors.toSet());
                         Map<Long, String> cNameMap = classMapper.selectBatchIds(cids).stream()
@@ -357,9 +368,8 @@ public class UserImportExportService {
                 teachers = Collections.emptyList();
             } else {
                 List<Long> userIds = urs.stream().map(UserRole::getUserId).toList();
-                teachers = userMapper.selectBatchIds(userIds).stream()
-                        .sorted((a, b) -> Long.compare(a.getId(), b.getId()))
-                        .toList();
+                // M-06：>500 用户时分片 selectBatchIds，杜绝单条巨型 IN 查询
+                teachers = batchSelectUsers(userIds);
             }
         }
 
@@ -380,12 +390,19 @@ public class UserImportExportService {
     }
 
     private byte[] exportAllUsers() {
-        List<User> users = userMapper.selectList(Wrappers.<User>lambdaQuery().orderByAsc(User::getId));
+        // M-06：先投影全部用户 ID（轻量列），再按 500 一片有界回表加载实体，
+        // 与「orderByAsc(id) 全量 selectList」口径一致（batchSelectUsers 按 ID 升序返回），
+        // 同时杜绝 user_role 归属查询的单条巨型 IN 列表。
+        List<Long> uids = userMapper.selectList(Wrappers.<User>lambdaQuery()
+                        .select(User::getId)
+                        .orderByAsc(User::getId))
+                .stream().map(User::getId).toList();
+        List<User> users = batchSelectUsers(uids);
         Map<Long, String> roleMap = new LinkedHashMap<>();
         if (!users.isEmpty()) {
-            List<Long> uids = users.stream().map(User::getId).toList();
-            List<UserRole> userRoles = userRoleMapper.selectList(Wrappers.<UserRole>lambdaQuery()
-                    .in(UserRole::getUserId, uids));
+            List<UserRole> userRoles = new ArrayList<>();
+            forEachIdSlice(uids, slice -> userRoles.addAll(userRoleMapper.selectList(
+                    Wrappers.<UserRole>lambdaQuery().in(UserRole::getUserId, slice))));
             if (!userRoles.isEmpty()) {
                 Set<Long> rids = userRoles.stream().map(UserRole::getRoleId).collect(Collectors.toSet());
                 Map<Long, Role> roles = roleMapper.selectBatchIds(rids).stream()
@@ -431,6 +448,36 @@ public class UserImportExportService {
     }
 
     // ==================== 内部工具 ====================
+
+    /**
+     * 分批切片工具（M-06）：对 id 列表按 {@link #BATCH_SIZE} 一片循环切片并逐个消费。
+     * 供 {@link #batchSelectUsers} 与 exportAllUsers 的 user_role 归属 IN 查询共用，
+     * 杜绝单次超长 IN 列表（MySQL 报文上限 + 大对象堆积）。
+     */
+    private void forEachIdSlice(List<Long> ids, Consumer<List<Long>> sliceConsumer) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        for (int from = 0; from < ids.size(); from += BATCH_SIZE) {
+            int to = Math.min(from + BATCH_SIZE, ids.size());
+            sliceConsumer.accept(ids.subList(from, to));
+        }
+    }
+
+    /**
+     * 有界分批按 ID 查询用户（M-06）：对传入 userIds 按 {@link #BATCH_SIZE} 一片循环调用
+     * {@code userMapper.selectBatchIds(slice)} 并累加，最终按 ID 升序返回——
+     * 与既有「一次 selectBatchIds + 按 ID 排序」口径完全一致，仅把巨型 IN 切成有界分片。
+     */
+    List<User> batchSelectUsers(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<User> users = new ArrayList<>(userIds.size());
+        forEachIdSlice(userIds, slice -> users.addAll(userMapper.selectBatchIds(slice)));
+        users.sort(Comparator.comparing(User::getId));
+        return users;
+    }
 
     private Sheet parseSheet(byte[] bytes) {
         try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {

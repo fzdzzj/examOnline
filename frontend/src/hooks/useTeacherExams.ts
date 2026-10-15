@@ -54,7 +54,31 @@ export async function fetchAllTeacherExams(
 }
 
 /**
+ * 严格形态（harden-review-flow-and-resource-limits L-01）：逐页累加逻辑与
+ * {@link fetchAllTeacherExams} 一致，但取数失败**直接抛出**（不吞错）——
+ * 供考试下拉查询选项使用，让失败透出到 `useQuery.error`，页面据此渲染
+ * 友好错误占位，而不是静默显示为空下拉。
+ */
+export async function fetchAllTeacherExamsStrict(
+  fetchPage: TeacherExamsPageFetcher,
+  options: TeacherExamsFetchOptions = {}
+): Promise<ExamResponse[]> {
+  const pageSize = options.pageSize ?? TEACHER_EXAMS_PAGE_SIZE;
+  const maxPages = options.maxPages ?? TEACHER_EXAMS_MAX_PAGES;
+  const all: ExamResponse[] = [];
+  for (let page = 1; page <= maxPages; page += 1) {
+    const batch = await fetchPage(page, pageSize); // 失败即抛，useQuery error 承载
+    if (!batch || batch.length === 0) break;
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+  return all;
+}
+
+/**
  * Vue Query 选项封装：`queryKey` 首元素固定为 `'exams'`，与既有页面/测试的缓存口径一致。
+ * `queryFn` 走严格形态 {@link fetchAllTeacherExamsStrict}：取数失败透出到
+ * `useQuery.error`，消费页面以「考试列表加载失败」占位提示替代静默空下拉（L-01）。
  */
 export function createTeacherExamsQueryOptions(
   fetchPage: TeacherExamsPageFetcher,
@@ -62,7 +86,7 @@ export function createTeacherExamsQueryOptions(
 ): TeacherExamsQueryOptions {
   return {
     queryKey: ['exams', 'teacher-dropdown'] as const,
-    queryFn: () => fetchAllTeacherExams(fetchPage, options),
+    queryFn: () => fetchAllTeacherExamsStrict(fetchPage, options),
     staleTime: 30_000,
   };
 }

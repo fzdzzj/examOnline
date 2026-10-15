@@ -1,0 +1,25 @@
+# m1 变异击红-复原留证：成绩复核调分不可逆警示（ReviewHandleModal.vue）
+
+目标文件：frontend/src/components/postexam/ReviewHandleModal.vue
+变异注入：抽掉「AGREE 且已填调分」时的 warning Alert 渲染块（data-test="review-adjust-warning"）
+验证命令（frontend/ 执行）：npm test -- src/components/postexam/__tests__/ReviewHandleModal.spec.ts
+
+## 注入前（原实现）SHA256
+2E26B9D1F3EED1E57375C6FCA276253B9CF83CE21A3625F1F7FAD28DD4CCC0BA
+## 注入后（变异）SHA256
+2D78F26A9B20F03A14142DDE2B521C17594A512A81854D4B93015F79F1C354DD
+
+## ① 击红（退出码 1）
+Test Files  1 failed (1)
+     Tests  1 failed | 6 passed (7)
+× AGREE + 已填调分：显性呈现 warning Alert，文案强调不可逆
+  AssertionError: expected null not to be null
+  （调分场景下断言 Alert 缺失而变红——恰为变异点）
+
+## ② 复原 + 归零
+复原后 SHA256：2E26B9D1F3EED1E57375C6FCA276253B9CF83CE21A3625F1F7FAD28DD4CCC0BA
+与注入前一致：是（字节级一致，cmp 等价）
+
+## ③ 回绿
+复原后重跑同一验证命令：exit 0，Test Files 1 passed，Tests 7 passed (7)
+（结论：不可逆警示防呆被真实捕获，非装饰性护栏。）

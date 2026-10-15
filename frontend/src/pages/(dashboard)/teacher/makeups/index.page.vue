@@ -37,6 +37,16 @@
           查询补考候选人
         </Button>
       </div>
+
+      <!-- L-01：考试下拉候选拉取失败显性提示，替代静默空下拉 -->
+      <Alert
+        v-if="examsErrorText"
+        type="error"
+        show-icon
+        :message="examsErrorText"
+        data-test="exams-error"
+        class="mb-3"
+      />
     </Card>
 
     <Card title="补考候选人（后端按及格线判定）" class="mb-4">
@@ -240,12 +250,23 @@ const candidateColumns: TableColumnsType = [
 ];
 
 // ===== 主考考试选择 =====
-const { data: examsData, isFetching: examsFetching } = useQuery(
+const {
+  data: examsData,
+  isFetching: examsFetching,
+  error: examsError,
+} = useQuery(
   createTeacherExamsQueryOptions((page, size) =>
     unwrap<ExamResponse[]>(pageExams({ client, throwOnError: true, query: { page, size } }))
   )
 );
 const exams = computed<ExamResponse[]>(() => examsData.value ?? []);
+
+// L-01：考试下拉候选拉取失败 → 显性错误占位（useTeacherExams 严格形态透出 error）
+const examsErrorText = computed<string | null>(() => {
+  const caught = examsError?.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '考试列表加载失败';
+});
 const examOptions = computed(() =>
   exams.value.map((e) => ({ value: e.id as number, label: `#${e.id} ${e.title}` }))
 );

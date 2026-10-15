@@ -1,0 +1,13 @@
+# 后端全量门禁实测（harden-review-flow-and-resource-limits 阶段 2）
+
+命令（仓库根执行）：.\mvnw.cmd clean test
+
+[WARNING] Tests run: 515, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+[INFO] Total time:  09:26 min
+
+- 全量用例数 515（基线 506，+9 = 本次新增 4 个 BatchQuery + 1 个 ExportPath + 1 个 PdfSanitize
+  + 2 个 SanitizePdfTextUnit + 1 个集成用例 exportOver500StudentsKeepsCompletenessAndIdOrder），只增不减；
+- 0 Failures / 0 Errors / 1 Skipped（Skipped=1 为存量 OpenApiContractTest 既有跳过，非本次引入）；
+- 红线复核：schema.sql / docker/mysql/migrations / openapi.yaml（89 paths）/ .github/ci/gate-baseline.json 零触碰；
+  测试零 @Sql。

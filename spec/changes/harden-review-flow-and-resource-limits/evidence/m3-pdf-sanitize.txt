@@ -1,0 +1,29 @@
+# m3 变异击红-复原留证：个人成绩单 PDF 导出生僻/特殊字符容错（ScoreExportService）
+
+目标文件：src/main/java/com/exam/score/service/ScoreExportService.java
+变异注入：抽掉 exportPersonalPdf 内全部 sanitizePdfText 调用点（标题/学生信息/表头/题干/得分/签名
+          全部恢复为直写原文；sanitizePdfText 方法本体保留，保证直接单测可编译）
+验证命令（仓库根执行）：.\mvnw.cmd test "-Dtest=ScoreExportServicePdfSanitizeTest" -DfailIfNoTests=false
+
+## 注入前（原实现）SHA256
+79B3EA923E28BB7A846004322AF3117ED7EFF58CD024265B27860ABAD352F01D
+## 注入后（变异）SHA256
+F5A78C06C7964637E08E8D4AD3F2CD1716FCF0C404C6E22FDFB3261C63F089B8
+
+## ① 击红（退出码 1）
+14:46:24.071 [main] ERROR com.exam.score.service.ScoreExportService -- 个人成绩单 PDF 生成失败: exam=100 student=7
+  com.lowagie.text.DocumentException: java.lang.ArrayIndexOutOfBoundsException: Index 128515 out of bounds for length 65536
+  Caused by: java.lang.ArrayIndexOutOfBoundsException: Index 128515 out of bounds for length 65536
+[ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0 -- ScoreExportServicePdfSanitizeTest
+[ERROR] com.exam.score.service.ScoreExportServicePdfSanitizeTest.exportPersonalPdf_withUnsupportedChars_stillGeneratesPdf:126
+  com.exam.common.BusinessException: PDF 生成失败
+[INFO] BUILD FAILURE
+（含有特殊符号（Emoji）时 PDF 导出用例抛异常变红——恰为清洗要防的 iText 编码越界）
+
+## ② 复原 + 归零
+复原后 SHA256：79B3EA923E28BB7A846004322AF3117ED7EFF58CD024265B27860ABAD352F01D
+与注入前一致：是（字节级一致，cmp 等价）
+
+## ③ 回绿
+复原后重跑同一验证命令：exit 0，Tests run: 1, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS
+（结论：PDF 特殊字符容错被真实捕获——抽掉清洗即抛异常中断导出。）
