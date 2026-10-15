@@ -196,3 +196,62 @@ describe('题库页批量删除行为', () => {
     expect(invalidateQueries).not.toHaveBeenCalled();
   });
 });
+
+describe('批量删除并发防抖锁（harden-data-sanitization-and-ui-states M-04）', () => {
+  it('请求在途未决期间重复触发 onBatchDelete 被入口锁拦截，只发一次批量请求', async () => {
+    const wrapper = mountPage();
+    await flushPromises();
+
+    // 批量请求挂起（在途未决），模拟连击确认
+    let resolveBatch!: (value: unknown) => void;
+    vi.mocked(api.batchDelete).mockReturnValue(
+      new Promise((resolve) => {
+        resolveBatch = resolve;
+      }) as never
+    );
+
+    selectRows(wrapper, [101, 102]);
+    confirmBatchDelete(wrapper);
+    confirmBatchDelete(wrapper); // 在途期间第二次确认触发
+    await flushPromises();
+
+    // 入口防抖锁：第二次触发被拦截，仅一次批量 API 调用
+    expect(api.batchDelete).toHaveBeenCalledTimes(1);
+    expect(api.batchDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ body: { ids: [101, 102] } })
+    );
+    expect(api.delete_).not.toHaveBeenCalled();
+
+    // 请求落定后正常收尾：成功提示 + 列表失效 + 选中态清空
+    resolveBatch({ succeeded: [101, 102], failed: [] });
+    await flushPromises();
+
+    expect(message.success).toHaveBeenCalledWith('已删除 2 道题目');
+    expect(invalidateQueries).toHaveBeenCalled();
+    const selection = wrapper.findComponent(Table).props('rowSelection') as {
+      selectedRowKeys: number[];
+    };
+    expect(selection.selectedRowKeys).toEqual([]);
+  });
+
+  it('上一次批量删除结束后锁复位，后续删除可再次发起（锁不是一次性闸门）', async () => {
+    const wrapper = mountPage();
+    await flushPromises();
+
+    vi.mocked(api.batchDelete).mockResolvedValue({
+      succeeded: [101],
+      failed: [{ id: 102, reason: '题目不存在' }],
+    } as never);
+
+    selectRows(wrapper, [101, 102]);
+    confirmBatchDelete(wrapper);
+    await flushPromises();
+    expect(api.batchDelete).toHaveBeenCalledTimes(1);
+
+    // 再选一组并发起第二次删除：锁已复位，应再次调用
+    selectRows(wrapper, [101]);
+    confirmBatchDelete(wrapper);
+    await flushPromises();
+    expect(api.batchDelete).toHaveBeenCalledTimes(2);
+  });
+});

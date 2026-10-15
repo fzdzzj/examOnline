@@ -33,7 +33,19 @@
           />
         </div>
       </template>
+      <!-- U-1 三态分离（harden-data-sanitization-and-ui-states M-03）：查询失败显性呈现，
+           主数据表格隐藏——系统故障不得伪装成「没有标签」的业务空态 -->
+      <Alert
+        v-if="tagsErrorText"
+        type="error"
+        show-icon
+        :message="tagsErrorText"
+        data-test="tags-error"
+        class="mb-3"
+      />
+
       <Table
+        v-else
         :columns="columns"
         :data-source="rows"
         :loading="isFetching"
@@ -60,6 +72,7 @@
 
 <script setup lang="ts">
 import {
+  Alert,
   Button,
   Card,
   Input,
@@ -93,7 +106,7 @@ const typeFilter = ref<string>('');
 
 const tagFilterOptions = [{ value: '', label: '全部类型' }, ...TAG_TYPE_OPTIONS];
 
-const { data, isFetching } = useQuery({
+const { data, isFetching, error } = useQuery({
   queryKey: computed(() => ['tags', typeFilter.value] as const),
   queryFn: () =>
     unwrap<TagResponse[]>(
@@ -104,6 +117,13 @@ const { data, isFetching } = useQuery({
         ...(typeFilter.value ? { query: { type: typeFilter.value } } : {}),
       })
     ),
+});
+
+// U-1 三态分离（harden M-03）：查询失败以 Alert 显性呈现后端 message，主表格隐藏
+const tagsErrorText = computed<string | null>(() => {
+  const caught = error?.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : String(caught);
 });
 
 const rows = computed(() => data.value ?? []);

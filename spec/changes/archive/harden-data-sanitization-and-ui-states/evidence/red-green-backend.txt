@@ -1,0 +1,20 @@
+# red-green: 后端 M-01/M-02 定向测试（harden-data-sanitization-and-ui-states 阶段 2）
+
+命令（仓库根）：
+.\mvnw.cmd test "-Dtest=QuestionImportExportIntegrationTest,UserImportExportIntegrationTest,GradingScoreIntegrationTest" -DfailIfNoTests=false
+
+## 先红（实施前，退出码 1；surefire 汇总）
+com.exam.question.QuestionImportExportIntegrationTest : run=9  failures=1（importStripsUnicodeWhitespaceFromCellTexts —— 全角空格题型未剥除，整行报错未入库）
+com.exam.user.UserImportExportIntegrationTest      : run=11 failures=2（importStripsUnicodeWhitespaceAroundUserNameAndClassName、exportSanitizesFormulaInjectionCells）
+com.exam.grading.GradingScoreIntegrationTest       : run=4  failures=1（classSheetExportSanitizesFormulaInjectionCells）
+    org.opentest4j.AssertionFailedError: 姓名以 = 开头应前置单引号强制纯文本（Excel 公式防注入）
+    ==> expected: <'=1+1> but was: <=1+1>
+4 条红灯 = 新增的 4 条断言（M-01 导出防注入 ×2、M-02 导入全角空格清洗 ×2），既有用例零回归。
+
+## 后绿（实施后）
+[INFO] Tests run: 4,  Failures: 0, Errors: 0, Skipped: 0 -- GradingScoreIntegrationTest
+[INFO] Tests run: 9,  Failures: 0, Errors: 0, Skipped: 0 -- QuestionImportExportIntegrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- UserImportExportIntegrationTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+（surefire 报告时间戳 12:25:36–12:26:15，非残留；全量门禁另见 gates-backend.txt）

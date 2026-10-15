@@ -23,6 +23,8 @@ import com.exam.submission.mq.ExamSubmitConsumer;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.support.IntegrationTestBase;
 import com.exam.support.RabbitTemplateInvokeStubs;
+import com.exam.user.entity.User;
+import com.exam.user.mapper.UserMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -102,6 +104,8 @@ class GradingScoreIntegrationTest extends IntegrationTestBase {
     private ExamSubmitConsumer submitConsumer;
     @Autowired
     private SubjectiveGradingService subjectiveGradingService;
+    @Autowired
+    private UserMapper userMapper;
 
     // ==================== 造数 ====================
 
@@ -366,6 +370,40 @@ class GradingScoreIntegrationTest extends IntegrationTestBase {
 
         // 学生无导出权限（exam:manage 缺失）
         exportGet(student1, "/api/exams/" + examId + "/scores/export/class-sheet", 403);
+    }
+
+    // ==================== 导出公式防注入（harden-data-sanitization-and-ui-states M-01） ====================
+
+    @Test
+    void classSheetExportSanitizesFormulaInjectionCells() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        long examId = preparedInProgressExam(teacher);
+
+        Map<Integer, Long> questions = enterAndMapQuestions(student, examId);
+        submit(student, examId, questions, "A", "A,C", "T", "HTTP 是无状态的协议");
+
+        // 学生姓名改为公式注入形态（= 开头）：全班成绩单导出时应前置单引号强制纯文本
+        User user = userMapper.selectById(studentIdOf(student));
+        user.setName("=1+1");
+        userMapper.updateById(user);
+
+        perform(jsonPost("/api/exams/" + examId + "/force-end", teacher, null), 200);
+        JsonNode run = perform(jsonPost("/api/exams/" + examId + "/grading/run", teacher, null), 200)
+                .get("data");
+        assertEquals(1, run.get("success").asInt());
+        Long shortQuestionId = questions.get(4);
+        saveSubjective(teacher, examId, studentIdOf(student), shortQuestionId, "6.0", 0, "表述完整");
+        perform(jsonPost("/api/exams/" + examId + "/scores/summarize", teacher, null), 200);
+
+        byte[] classSheet = exportGet(teacher, "/api/exams/" + examId + "/scores/export/class-sheet", 200);
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(classSheet))) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertEquals("学号", sheet.getRow(0).getCell(0).getStringCellValue());
+            assertEquals(1, sheet.getLastRowNum(), "表头 + 1 名学生");
+            assertEquals("'=1+1", sheet.getRow(1).getCell(1).getStringCellValue(),
+                    "姓名以 = 开头应前置单引号强制纯文本（Excel 公式防注入）");
+        }
     }
 
     // ==================== 判分失败隔离与恢复 ====================

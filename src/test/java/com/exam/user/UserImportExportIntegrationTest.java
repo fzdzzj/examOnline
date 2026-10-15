@@ -289,6 +289,70 @@ class UserImportExportIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isBadRequest());
     }
 
+    // ==================== 6.5 Unicode 全角空格清洗与导出公式防注入（harden M-01/M-02） ====================
+
+    @Test
+    void importStripsUnicodeWhitespaceAroundUserNameAndClassName() throws Exception {
+        String adminToken = loginToken("admin", "admin123");
+        String teacherToken = registerTeacher();
+        String className = unique("高一(1)班");
+        long classId = createClass(teacherToken, className);
+
+        // 学号/姓名/邮箱/班级名称首尾用全角空格 \u3000 与不换行空格 \u00A0：
+        // 标准 String.trim() 不清除 \u3000，会导致学号匹配与班级匹配失败整行报错；
+        // M-02 stripWhitespace 剥除首尾全部 Unicode 空白后应精确入库并挂接班级。
+        String username = "stu_" + unique("full");
+        byte[] xlsx = buildXlsx(List.<String[]>of(
+                new String[]{"\u3000" + username + "\u3000", "\u3000李四\u3000",
+                        "\u00A0" + username + "@exam.com\u00A0", "Pass1234",
+                        "\u3000" + className + "\u3000"}
+        ));
+
+        JsonNode result = perform(multipart("/api/admin/users/import")
+                        .file(multipartFile(xlsx))
+                        .header("Authorization", bearer(adminToken)), 200)
+                .get("data");
+        assertEquals(1, result.get("imported").asInt(), "首尾全角空格应剥除后成功导入");
+        assertEquals(0, result.get("failed").asInt());
+        assertEquals(0, result.get("errors").size());
+
+        User user = userMapper.selectOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, username));
+        assertNotNull(user, "学号剥除全角空格后应精确入库");
+        assertEquals("李四", user.getName(), "姓名剥除全角空格");
+        UserClass uc = userClassMapper.selectOne(Wrappers.<UserClass>lambdaQuery()
+                .eq(UserClass::getUserId, user.getId())
+                .eq(UserClass::getClassId, classId));
+        assertNotNull(uc, "班级名称剥除全角空格后应匹配成功挂接班级");
+    }
+
+    @Test
+    void exportSanitizesFormulaInjectionCells() throws Exception {
+        String adminToken = loginToken("admin", "admin123");
+        String teacherToken = registerTeacher();
+        String className = unique("高一(1)班");
+        long classId = createClass(teacherToken, className);
+
+        // 直接入库一名用户，姓名/邮箱为公式注入形态（= 与 @ 前缀）：
+        // 导出写出单元格时应前置单引号强制纯文本（M-01 sanitizeFormula，防 Formula/DDE 注入）。
+        String username = "stu_" + unique("inj");
+        registerStudentInClass(username, "正常姓名", classId);
+        User user = userMapper.selectOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, username));
+        user.setName("=1+1");
+        user.setEmail("@SUM(A1:A9)");
+        userMapper.updateById(user);
+
+        byte[] exportBytes = mockMvc.perform(get("/api/admin/users/export?scope=student&classId=" + classId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        List<List<String>> rows = readExcel(exportBytes);
+        List<String> row = rows.stream()
+                .filter(r -> !r.isEmpty() && username.equals(r.get(0)))
+                .findFirst().orElseThrow(() -> new AssertionError("导出缺少用户 " + username));
+        assertEquals("'=1+1", row.get(1), "姓名以 = 开头应前置单引号强制纯文本（公式防注入）");
+        assertEquals("'@SUM(A1:A9)", row.get(2), "邮箱以 @ 开头应前置单引号（DDE 防注入）");
+    }
+
     // ==================== 7. 导出 scope 三态与班级过滤、软删过滤 ====================
 
     @Test

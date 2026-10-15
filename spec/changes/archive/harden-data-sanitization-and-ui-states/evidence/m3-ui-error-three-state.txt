@@ -1,0 +1,32 @@
+# m3 变异击红-复原留证：4 页面 U-1 失败三态分离（error Alert 渲染被抽掉）
+
+变异注入：把 4 个受控页面（classes / questions / papers-[id] / tags）新加的查询错误
+Alert 渲染条件 `v-if="XErrorText"` 全部改为 `v-if="false"`（Alert 永不渲染）——
+「查询失败被伪装成业务空态」的旧缺陷复现。
+验证命令（frontend/）：pnpm vitest run 四个页面的查询失败 spec
+
+## 各页面 SHA256（注入前 = 原实现 / 注入后 = 变异）
+| 页面 | 注入前 | 注入后 |
+|---|---|---|
+| classes/index.page.vue        | 97D33DC9CD12201076284718BEE596FC09CF93BFD4B70B659333B3DB37D3EF8A | 80928EC2F321477125810F1B7D0F50CCB7FB79E145969A86ABC143556B58AF1B |
+| questions/index.page.vue      | DF9D0CD1E01C57C3713D70228AA9A2F1A969050BFF31C9F7A3B4DD5ABEE2EE29 | 4409824A347A186E559F79EC7F2317E2E6C8EF282519AA8CB9E882F96944BFCD |
+| papers/[id].page.vue          | D5995A50F4FEA99B1FF50DCCC2A97E4C50ED21B77380ADA44436C9F586BEC1E2 | B26246FEB15F89D84A8AEF1A0B6181304A587D4EB1865DDE1DCCD19FB0686A2D |
+| tags/index.page.vue           | 78409D5AFE8C5C639D1455305DAD837DFCC8B12331B5D5965E8650AF6247AA4A | 05B4A858559698BAFE08F243BE58D69C7B53A52F7F37894EB75ABE204A4A42B5 |
+
+## ③ 击红（退出码 1）
+Test Files  4 failed (4)
+     Tests  4 failed | 7 passed (11)
+4 条红灯恰为四个页面的「查询失败：错误 Alert 显性呈现后端 message，主数据 Table/详情不渲染」
+——Alert 不渲染（[data-test] 找不到），断言变红；其余成功态/空态回归用例仍绿
+（成功路径本就断言 Alert 不存在，故不受影响）。
+
+## ④ 复原 + 归零
+4 个文件逐一复原 v-if="false" → 原 errorText 条件：
+classes   MATCH 97D33DC9…（与注入前一致）
+questions MATCH DF9D0CD1…（与注入前一致）
+papers    MATCH D5995A50…（与注入前一致）
+tags      MATCH 78409D5A…（与注入前一致）
+
+## ⑤ 回绿
+复原后重跑同一条验证命令：exit 0，4 个 spec 全部通过
+（Test Files 4 passed，Tests 11 passed）

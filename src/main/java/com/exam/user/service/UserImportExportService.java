@@ -64,6 +64,19 @@ public class UserImportExportService {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
 
+    /**
+     * Unicode 空白剥离（harden-data-sanitization-and-ui-states M-02）：剥除首尾全部 Unicode 空白。
+     * 覆盖半角空格、\u3000 中文全角空格、\u00A0 不换行空格（NBSP）等——
+     * Java 原生 {@code String.trim()} 仅处理 ASCII ≤ 0x20，用户从中文文档复制
+     * 「　学号　」「　班级名　」时会导致校验与匹配失败整行报错。
+     */
+    private static String stripWhitespace(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replaceAll("^[\\s\\u3000\\u00A0]+|[\\s\\u3000\\u00A0]+$", "");
+    }
+
     private final UserService userService;
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
@@ -317,12 +330,16 @@ public class UserImportExportService {
             int idx = 1;
             for (User u : students) {
                 Row row = sheet.createRow(idx++);
-                row.createCell(UserImportColumn.USERNAME.cellIndex()).setCellValue(u.getUsername());
-                row.createCell(UserImportColumn.NAME.cellIndex()).setCellValue(u.getName() != null ? u.getName() : "");
-                row.createCell(UserImportColumn.EMAIL.cellIndex()).setCellValue(u.getEmail() != null ? u.getEmail() : "");
+                // 学号/姓名/邮箱/班级名称是用户可控文本：公式注入清洗（M-01）
+                row.createCell(UserImportColumn.USERNAME.cellIndex())
+                        .setCellValue(ExcelSheetWriter.sanitizeFormula(u.getUsername()));
+                row.createCell(UserImportColumn.NAME.cellIndex())
+                        .setCellValue(u.getName() != null ? ExcelSheetWriter.sanitizeFormula(u.getName()) : "");
+                row.createCell(UserImportColumn.EMAIL.cellIndex())
+                        .setCellValue(u.getEmail() != null ? ExcelSheetWriter.sanitizeFormula(u.getEmail()) : "");
                 row.createCell(UserImportColumn.PASSWORD.cellIndex()).setCellValue("");
-                row.createCell(UserImportColumn.CLASS_NAME.cellIndex()).setCellValue(
-                        userClassNameMap.getOrDefault(u.getId(), ""));
+                row.createCell(UserImportColumn.CLASS_NAME.cellIndex())
+                        .setCellValue(ExcelSheetWriter.sanitizeFormula(userClassNameMap.getOrDefault(u.getId(), "")));
             }
             ExcelSheetWriter.autoSize(sheet, UserImportColumn.columnCount());
         });
@@ -352,9 +369,10 @@ public class UserImportExportService {
             int idx = 1;
             for (User u : teachers) {
                 Row row = sheet.createRow(idx++);
-                row.createCell(0).setCellValue(u.getUsername());
-                row.createCell(1).setCellValue(u.getName() != null ? u.getName() : "");
-                row.createCell(2).setCellValue(u.getEmail() != null ? u.getEmail() : "");
+                // 用户名/姓名/邮箱是用户可控文本：公式注入清洗（M-01）
+                row.createCell(0).setCellValue(ExcelSheetWriter.sanitizeFormula(u.getUsername()));
+                row.createCell(1).setCellValue(u.getName() != null ? ExcelSheetWriter.sanitizeFormula(u.getName()) : "");
+                row.createCell(2).setCellValue(u.getEmail() != null ? ExcelSheetWriter.sanitizeFormula(u.getEmail()) : "");
                 row.createCell(3).setCellValue("教师");
             }
             ExcelSheetWriter.autoSize(sheet, 4);
@@ -392,9 +410,10 @@ public class UserImportExportService {
             int idx = 1;
             for (User u : users) {
                 Row row = sheet.createRow(idx++);
-                row.createCell(0).setCellValue(u.getUsername());
-                row.createCell(1).setCellValue(u.getName() != null ? u.getName() : "");
-                row.createCell(2).setCellValue(u.getEmail() != null ? u.getEmail() : "");
+                // 用户名/姓名/邮箱是用户可控文本：公式注入清洗（M-01）
+                row.createCell(0).setCellValue(ExcelSheetWriter.sanitizeFormula(u.getUsername()));
+                row.createCell(1).setCellValue(u.getName() != null ? ExcelSheetWriter.sanitizeFormula(u.getName()) : "");
+                row.createCell(2).setCellValue(u.getEmail() != null ? ExcelSheetWriter.sanitizeFormula(u.getEmail()) : "");
                 row.createCell(3).setCellValue(roleMap.getOrDefault(u.getId(), "无角色"));
             }
             ExcelSheetWriter.autoSize(sheet, 4);
@@ -429,7 +448,8 @@ public class UserImportExportService {
         String[] expected = UserImportColumn.headers();
         for (int c = 0; c < expected.length; c++) {
             Cell cell = header.getCell(c);
-            String actual = cell == null ? "" : cell.getStringCellValue().trim();
+            // 表头同样剥除首尾 Unicode 空白（M-02），全角空格版本的表头不误判为模板不符
+            String actual = cell == null ? "" : stripWhitespace(cell.getStringCellValue());
             if (!actual.equals(expected[c])) {
                 throw new BusinessException(ResponseCode.BAD_REQUEST,
                         "模板表头与当前模板不一致，请下载最新模板（第 " + (c + 1) + " 列应为「" + expected[c] + "」）");
@@ -458,7 +478,8 @@ public class UserImportExportService {
 
     private String cellText(Row row, UserImportColumn col, DataFormatter formatter) {
         Cell cell = row.getCell(col.cellIndex());
-        return cell == null ? "" : formatter.formatCellValue(cell);
+        // 统一剥除首尾 Unicode 空白（M-02）：学号/姓名/邮箱/班级名称的全角空格与 NBSP 不再干扰匹配
+        return cell == null ? "" : stripWhitespace(formatter.formatCellValue(cell));
     }
 
     private static String extensionOf(String filename) {

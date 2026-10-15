@@ -1,0 +1,30 @@
+# m1 变异击红-复原留证：Excel 导出公式防注入（ExcelSheetWriter.sanitizeFormula 前置单引号）
+
+目标文件：src/main/java/com/exam/score/support/ExcelSheetWriter.java
+变异注入：把 sanitizeFormula 的敏感首字符判断整段抽掉，方法直接 `return val;`
+         （前置单引号逻辑缺失 → 以 = / @ 开头的文本不再强制纯文本）
+验证命令：.\mvnw.cmd test "-Dtest=UserImportExportIntegrationTest#exportSanitizesFormulaInjectionCells,GradingScoreIntegrationTest#classSheetExportSanitizesFormulaInjectionCells" -DfailIfNoTests=false
+
+## 注入前（原实现）SHA256
+C39F340284FDB8A05E419583A84D15840AC299D680B3BC32A4A726D9D741EB68
+
+## 注入后（变异）SHA256
+A8542F6AED574C3B130FA71C8E88DB39A02BD8636A39FAD76326F4154BB9D404
+
+## ③ 击红（退出码 1，BUILD FAILURE）
+[ERROR] GradingScoreIntegrationTest.classSheetExportSanitizesFormulaInjectionCells
+   org.opentest4j.AssertionFailedError: 姓名以 = 开头应前置单引号强制纯文本（Excel 公式防注入）
+   ==> expected: <'=1+1> but was: <=1+1>
+[ERROR] UserImportExportIntegrationTest.exportSanitizesFormulaInjectionCells
+   org.opentest4j.AssertionFailedError: 姓名以 = 开头应前置单引号强制纯文本（公式防注入）
+   ==> expected: <'=1+1> but was: <=1+1>
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
+（成绩导出与用户导出两处断言同时击红：score 导出姓名列 + user 导出姓名/邮箱列）
+
+## ④ 复原 + 归零
+复原后 SHA256：C39F340284FDB8A05E419583A84D15840AC299D680B3BC32A4A726D9D741EB68
+与注入前一致：是（字节级一致，cmp 等价）
+
+## ⑤ 回绿
+复原后重跑同一条验证命令：exit 0，Tests run: 2, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS
