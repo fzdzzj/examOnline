@@ -158,35 +158,58 @@ public class StudentPracticeService {
         }
 
         Question question = questionMapper.selectById(questionId);
-        if (question == null) {
-            throw new BusinessException(ResponseCode.NOT_FOUND, "题目不存在");
-        }
-
-        QuestionType type = QuestionType.of(question.getType());
-        if (type == null || type == QuestionType.SHORT_ANSWER) {
-            throw new BusinessException(ResponseCode.BAD_REQUEST, "简答题不支持自动重练判分");
-        }
-
-        List<String> choices = null;
-        if (question.getChoices() != null && !question.getChoices().isBlank()) {
-            try {
-                choices = objectMapper.readValue(question.getChoices(), new TypeReference<List<String>>() {});
-            } catch (Exception e) {
-                log.warn("解析题目选项失败: questionId={}", questionId, e);
+        String analysis;
+        GradingQuestion gradingQuestion;
+        if (question != null) {
+            QuestionType type = QuestionType.of(question.getType());
+            if (type == null || type == QuestionType.SHORT_ANSWER) {
+                throw new BusinessException(ResponseCode.BAD_REQUEST, "简答题不支持自动重练判分");
             }
-        }
 
-        BigDecimal score = question.getScore() != null ? question.getScore() : BigDecimal.ONE;
-        GradingQuestion gradingQuestion = new GradingQuestion(
-                1,
-                question.getId(),
-                type,
-                question.getContent(),
-                question.getImageUrl(),
-                choices,
-                question.getCorrectAnswer(),
-                score
-        );
+            List<String> choices = null;
+            if (question.getChoices() != null && !question.getChoices().isBlank()) {
+                try {
+                    choices = objectMapper.readValue(question.getChoices(), new TypeReference<List<String>>() {});
+                } catch (Exception e) {
+                    log.warn("解析题目选项失败: questionId={}", questionId, e);
+                }
+            }
+
+            BigDecimal score = question.getScore() != null ? question.getScore() : BigDecimal.ONE;
+            gradingQuestion = new GradingQuestion(
+                    1,
+                    question.getId(),
+                    type,
+                    question.getContent(),
+                    question.getImageUrl(),
+                    choices,
+                    question.getCorrectAnswer(),
+                    score
+            );
+            analysis = question.getAnalysis();
+        } else {
+            // 原题已在题库中逻辑删除：回退到该生已发布考试快照装配同源题目判分，
+            // 保证历史错题重练、连对进度与消灭计划不受题库变动影响（harden 点 5）。
+            GradingQuestion snapshotQuestion = findSnapshotGradingQuestion(studentId, questionId);
+            if (snapshotQuestion == null) {
+                throw new BusinessException(ResponseCode.NOT_FOUND, "题目不存在");
+            }
+            if (snapshotQuestion.type() == QuestionType.SHORT_ANSWER) {
+                throw new BusinessException(ResponseCode.BAD_REQUEST, "简答题不支持自动重练判分");
+            }
+            gradingQuestion = new GradingQuestion(
+                    snapshotQuestion.number(),
+                    snapshotQuestion.questionId(),
+                    snapshotQuestion.type(),
+                    snapshotQuestion.content(),
+                    snapshotQuestion.imageUrl(),
+                    snapshotQuestion.choices(),
+                    snapshotQuestion.correctAnswer(),
+                    snapshotQuestion.score()
+            );
+            // 快照不存解析字段，回退路径解析留空（标准答案随快照原样返回）
+            analysis = null;
+        }
 
         // 复用既有客观判分核心
         GradeResult gradeResult = strategyRegistry.dispatch(gradingQuestion)
@@ -220,11 +243,38 @@ public class StudentPracticeService {
 
         PracticeSubmitResponse response = new PracticeSubmitResponse();
         response.setCorrect(isCorrect);
-        response.setCorrectAnswer(question.getCorrectAnswer() != null ? question.getCorrectAnswer() : "");
-        response.setAnalysis(question.getAnalysis() != null ? question.getAnalysis() : "");
+        response.setCorrectAnswer(gradingQuestion.correctAnswer() != null ? gradingQuestion.correctAnswer() : "");
+        response.setAnalysis(analysis != null ? analysis : "");
         response.setConsecutiveCorrect(consecutiveCorrect);
         response.setMastered(mastered);
         return response;
+    }
+
+    /**
+     * 在本人已发布考试快照中检索包含指定 questionId 的判分题目（原题被软删后的平滑回退数据源）。
+     * 复用 {@link #loadPublishedExams} 与 {@link ScoreExportService#getPersonalReportWithoutRank}：
+     * 快照锁定题目内容与标准答案，题库变动不影响历史错题链路。查不到返回 null。
+     */
+    private GradingQuestion findSnapshotGradingQuestion(Long studentId, Long questionId) {
+        List<Exam> publishedExams = loadPublishedExams(studentId);
+        for (Exam exam : publishedExams) {
+            ScoreExportService.PersonalReport report;
+            try {
+                report = scoreExportService.getPersonalReportWithoutRank(exam, studentId);
+            } catch (Exception e) {
+                log.warn("重练快照回退读取成绩单异常，跳过考试 {}: {}", exam.getId(), e.getMessage());
+                continue;
+            }
+            if (report == null || report.questions() == null) {
+                continue;
+            }
+            for (GradingQuestion q : report.questions()) {
+                if (questionId.equals(q.questionId())) {
+                    return q;
+                }
+            }
+        }
+        return null;
     }
 
     /**

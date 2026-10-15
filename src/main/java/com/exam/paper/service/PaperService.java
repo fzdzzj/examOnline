@@ -370,6 +370,9 @@ public class PaperService {
     /** 复制卷标题后缀（clone 与 save-as-template 共用口径，防与原卷混淆）。 */
     private static final String COPY_TITLE_SUFFIX = "（副本）";
 
+    /** papers.title 最大长度（papers.title VARCHAR(128)）。 */
+    private static final int TITLE_MAX = 128;
+
     /**
      * 克隆试卷：复制元信息与全部题目关联（题目/顺序/分值覆盖逐项一致）为新的草稿卷。
      *
@@ -407,7 +410,16 @@ public class PaperService {
     /** 复制试卷：元信息 + 全部 paper_questions（题号与分值覆盖逐项保留）；产物恒为草稿态。 */
     private Paper duplicate(Paper source, Long ownerId, boolean template) {
         Paper copy = new Paper();
-        copy.setTitle(source.getTitle() + COPY_TITLE_SUFFIX);
+        // 标题超长安全截断（titles 加"（副本）"后不得突破 papers.title=128，杜绝 SQL 截断/数据完整性异常）
+        String sourceTitle = source.getTitle() == null ? "" : source.getTitle();
+        String titleWithSuffix;
+        if (sourceTitle.length() + COPY_TITLE_SUFFIX.length() > TITLE_MAX) {
+            titleWithSuffix = sourceTitle.substring(0, TITLE_MAX - COPY_TITLE_SUFFIX.length())
+                    + COPY_TITLE_SUFFIX;
+        } else {
+            titleWithSuffix = sourceTitle + COPY_TITLE_SUFFIX;
+        }
+        copy.setTitle(titleWithSuffix);
         copy.setDescription(source.getDescription() == null ? "" : source.getDescription());
         copy.setTotalScore(source.getTotalScore());
         copy.setQuestionCount(source.getQuestionCount());

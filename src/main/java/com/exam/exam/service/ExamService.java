@@ -80,6 +80,7 @@ public class ExamService {
         }
         validateWindowAndDuration(request.getStartTime(), request.getEndTime(),
                 request.getDurationMinutes(), request.getAllowLateMinutes());
+        validateAntiCheatConfig(request.getAntiCheatConfig());
 
         Exam exam = new Exam();
         exam.setTitle(request.getTitle().trim());
@@ -202,6 +203,9 @@ public class ExamService {
         Integer duration = request.getDurationMinutes() != null ? request.getDurationMinutes() : exam.getDurationMinutes();
         Integer allowLate = request.getAllowLateMinutes() != null ? request.getAllowLateMinutes() : exam.getAllowLateMinutes();
         validateWindowAndDuration(start, end, duration, allowLate);
+        if (request.getAntiCheatConfig() != null) {
+            validateAntiCheatConfig(request.getAntiCheatConfig());
+        }
         exam.setStartTime(start);
         exam.setEndTime(end);
         exam.setDurationMinutes(duration);
@@ -307,7 +311,9 @@ public class ExamService {
 
     /**
      * 时间窗与时长合法性校验（spec「时间窗非法/时长非法」场景）：
-     * 结束时间必须晚于开始时间（相等也拒绝）、个人时长必须大于 0、迟到容忍不能为负。
+     * 结束时间必须晚于开始时间（相等也拒绝）、个人时长必须大于 0、迟到容忍不能为负；
+     * 合理性加固（harden-exam-paper-and-practice-boundaries）：作答时长不得大于时间窗跨度、
+     * 迟到容忍不得大于或等于个人作答时长。
      */
     private void validateWindowAndDuration(LocalDateTime start, LocalDateTime end,
                                            Integer durationMinutes, Integer allowLateMinutes) {
@@ -320,6 +326,81 @@ public class ExamService {
         if (allowLateMinutes != null && allowLateMinutes < 0) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "迟到容忍分钟数不能为负");
         }
+        long windowMinutes = java.time.Duration.between(start, end).toMinutes();
+        if (durationMinutes > windowMinutes) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "作答时长(" + durationMinutes + "分钟)不能大于考试时间窗跨度(" + windowMinutes + "分钟)");
+        }
+        if (allowLateMinutes != null && allowLateMinutes >= durationMinutes) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "迟到容忍分钟数(" + allowLateMinutes + "分钟)不能大于或等于个人作答时长(" + durationMinutes + "分钟)");
+        }
+    }
+
+    /**
+     * 防作弊配置语法校验（harden-exam-paper-and-practice-boundaries）：
+     * 开启 IP 白名单时列表不得为空；无论是否开启，白名单内任意一项必须是合法 IP/CIDR/通配符，
+     * 否则返回 400 并明确指出非法项。
+     */
+    private void validateAntiCheatConfig(JsonNode config) {
+        if (config == null) {
+            return;
+        }
+        JsonNode enable = config.get("enableIpWhitelist");
+        JsonNode whitelist = config.get("ipWhitelist");
+        boolean enabled = enable != null && enable.isBoolean() && enable.asBoolean();
+        if (enabled && (whitelist == null || !whitelist.isArray() || whitelist.isEmpty())) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "启用 IP 白名单时，白名单列表不能为空");
+        }
+        if (whitelist == null || !whitelist.isArray()) {
+            return;
+        }
+        for (JsonNode item : whitelist) {
+            if (!item.isTextual()) {
+                throw new BusinessException(ResponseCode.BAD_REQUEST, "IP 白名单包含非法项");
+            }
+            String text = item.asText();
+            if (isInvalidIpEntry(text)) {
+                throw new BusinessException(ResponseCode.BAD_REQUEST, "IP 白名单包含非法项: " + text);
+            }
+        }
+    }
+
+    /**
+     * 判定单个白名单条目是否非法：仅接受合法单 IP / 整段通配符 / 有效 CIDR。
+     * {@link com.exam.anticheat.ip.IpMatcher#matches} 对空值/非法形态一律返回 false，
+     * 这里以"任一已知合法入口能命中自身"为判据，把解析语义收敛到 IpMatcher 单点。
+     */
+    private boolean isInvalidIpEntry(String text) {
+        if (text == null || text.isBlank()) {
+            return true;
+        }
+        String entry = text.trim();
+        int slash = entry.indexOf('/');
+        if (slash >= 0) {
+            // CIDR：网络段必须是合法 IP，前缀长度 0..128 且与网络段族匹配
+            String network = entry.substring(0, slash).trim();
+            if (!com.exam.anticheat.ip.IpMatcher.isValidIp(network)) {
+                return true;
+            }
+            String prefixRaw = entry.substring(slash + 1).trim();
+            if (prefixRaw.isEmpty() || !prefixRaw.matches("\\d{1,3}")) {
+                return true;
+            }
+            int prefix = Integer.parseInt(prefixRaw);
+            if (prefix < 0 || prefix > 128) {
+                return true;
+            }
+            return false;
+        }
+        if (entry.contains("*")) {
+            // 仅接受整段通配符形态（*、192.168.1.*、10.*.*.*）；半段通配（192.168.1.1*）按非法处理
+            if ("*".equals(entry)) {
+                return false;
+            }
+            return !entry.matches("\\d{1,3}(\\.\\d{1,3}){0,2}\\.\\*");
+        }
+        return !com.exam.anticheat.ip.IpMatcher.isValidIp(entry);
     }
 
     private ExamDetailResponse toDetail(Exam exam) {
