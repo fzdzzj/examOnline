@@ -132,6 +132,7 @@
           :loading="monitorFetching"
           :error="monitorError"
           @view-log="openStudentLog"
+          @refresh="refetchMonitor()"
         />
         <Divider />
         <GrafanaEntry />

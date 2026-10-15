@@ -1,7 +1,7 @@
 <template>
   <Modal
     :open="open"
-    :title="isEdit ? '编辑题目' : '新建题目'"
+    :title="modalTitle"
     width="720px"
     :footer="null"
     :mask-closable="false"
@@ -281,6 +281,12 @@ const props = defineProps<{
   open: boolean;
   /** 传 null/undefined 表示新建；否则为编辑（用列表项全量字段回填） */
   question: QuestionResponse | null;
+  /**
+   * 复制另存模式（add-polish 题目快速复制）：传一个源题（列表项全量字段）时，
+   * 以「复制为新题」打开表单、全部字段深拷贝回填、题干前缀「（副本）」，
+   * 提交走新建端点（create1）；与 `question`（编辑模式）互斥，不能同传。
+   */
+  copyFrom?: QuestionResponse | null;
 }>();
 
 const emit = defineEmits<{
@@ -294,7 +300,19 @@ const JUDGE_ANSWER_OPTIONS = [
   { label: '错误（F）', value: 'F' },
 ];
 
+/**
+ * 编辑模式语义保持不变（`question?.id !== undefined`）：复制另存不视为编辑——
+ * 即使 `copyFrom` 指向同一道题，保存仍走新建端点，源题零影响。
+ */
 const isEdit = computed(() => props.question?.id !== undefined);
+/** 复制另存模式：传了 copyFrom 即进入；与编辑模式互斥（父级按需二选一传入）。 */
+const isCopy = computed(() => props.copyFrom?.id !== undefined);
+/** 表单标题：编辑 / 复制另存 / 新建 三种模式分区（spec「复制为新题」）。 */
+const modalTitle = computed(() => {
+  if (isEdit.value) return '编辑题目';
+  if (isCopy.value) return '复制为新题';
+  return '新建题目';
+});
 /** 渲染骨架跟随「当前草稿题型」：编辑中切换题型即时换字段，这正是配置驱动的意义。 */
 const config = computed(() => QUESTION_TYPE_CONFIGS[draft.value.type]);
 
@@ -426,10 +444,16 @@ function removeImage(): void {
 }
 
 watch(
-  () => [props.open, props.question] as const,
+  () => [props.open, props.question, props.copyFrom] as const,
   ([open]) => {
     if (open) {
-      draft.value = props.question ? draftFromResponse(props.question) : createEmptyDraft(1);
+      if (isCopy.value && props.copyFrom) {
+        // 复制另存：源题全字段深拷贝回填，题干前缀「（副本）」，教师可继续编辑
+        draft.value = draftFromResponse(props.copyFrom);
+        draft.value.content = `（副本）${draft.value.content}`;
+      } else {
+        draft.value = props.question ? draftFromResponse(props.question) : createEmptyDraft(1);
+      }
       errors.value = [];
       // 打开弹层即清空查重提示（新题目/新编辑不残留上一次的命中）
       duplicateHits.value = [];
@@ -538,6 +562,7 @@ async function onSubmit(): Promise<void> {
     if (isEdit.value && props.question?.id !== undefined) {
       await unwrap(update({ client, throwOnError: true, path: { id: props.question.id }, body }));
     } else {
+      // 新建与「复制另存」都走新建端点（复制不得走 update，源题零影响）
       await unwrap(create1({ client, throwOnError: true, body }));
     }
     message.success(isEdit.value ? '题目已更新' : '题目已创建');

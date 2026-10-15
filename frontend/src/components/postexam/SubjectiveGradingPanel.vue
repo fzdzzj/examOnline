@@ -94,6 +94,7 @@
         <template v-else-if="column.key === 'grading'">
           <div class="grading-cell">
             <InputNumber
+              :ref="(el) => setScoreInputRef(record as SubjectiveGradeRow, el)"
               :value="editingOf(record as SubjectiveGradeRow).score ?? undefined"
               class="score-input"
               :min="0"
@@ -102,8 +103,10 @@
               placeholder="分数"
               :status="rowErrorOf(record as SubjectiveGradeRow) ? 'error' : undefined"
               @update:value="(v) => setEditing(record as SubjectiveGradeRow, 'score', v)"
+              @keydown.enter="onScoreEnter(record as SubjectiveGradeRow)"
             />
             <Input
+              :ref="(el) => setCommentInputRef(record as SubjectiveGradeRow, el)"
               :value="editingOf(record as SubjectiveGradeRow).comment"
               placeholder="评语（可空）"
               class="comment-input"
@@ -120,6 +123,32 @@
             >
               提交
             </Button>
+          </div>
+          <div class="quick-row">
+            <div class="quick-tags">
+              <span class="quick-label">快捷给分：</span>
+              <Tag
+                v-for="tag in quickScoreTags"
+                :key="tag.label"
+                :data-test="`quick-score-${tag.label}`"
+                class="quick-tag"
+                @click="setEditing(record as SubjectiveGradeRow, 'score', tag.value)"
+              >
+                {{ tag.label }}
+              </Tag>
+            </div>
+            <div class="quick-comments">
+              <span class="quick-label">评语模板：</span>
+              <Tag
+                v-for="template in commentTemplates"
+                :key="template.value"
+                :data-test="`comment-template-${template.key}`"
+                class="quick-tag"
+                @click="setEditing(record as SubjectiveGradeRow, 'comment', template.value)"
+              >
+                {{ template.label }}
+              </Tag>
+            </div>
           </div>
           <div v-if="rowErrorOf(record as SubjectiveGradeRow)" class="row-error">
             {{ rowErrorOf(record as SubjectiveGradeRow) }}
@@ -263,7 +292,7 @@ const lastSuccess = computed<SubjectiveGradeRow | undefined>(() =>
   props.rows.find((r) => r.submissionId === lastSuccessId.value)
 );
 
-async function onSubmit(row: SubjectiveGradeRow): Promise<void> {
+async function onSubmit(row: SubjectiveGradeRow): Promise<boolean> {
   const draft = editingOf(row);
   const ok = await flow.submit(row, draft.score, draft.comment, props.question.score ?? 0);
   if (ok) {
@@ -274,7 +303,86 @@ async function onSubmit(row: SubjectiveGradeRow): Promise<void> {
     emit('refreshed');
   }
   // 失败/冲突：不提示成功、不清输入，界面由 flow.state 驱动展示原因
+  return ok;
 }
+
+// ==== Enter 键盘流水线打分：提交复用 createGradingFlow，成功后焦点移下一行 ====
+/** 分数 / 评语输入的 DOM 引用（按 submissionId），供 Enter 流水线的焦点跳转。 */
+const scoreInputRefs = ref<Record<number, HTMLElement | null>>({});
+const commentInputRefs = ref<Record<number, HTMLElement | null>>({});
+
+function setScoreInputRef(row: SubjectiveGradeRow, el: unknown): void {
+  const id = row.submissionId;
+  if (id === undefined) return;
+  const node = (el as { $el?: HTMLElement } | null)?.$el ?? (el as HTMLElement | null);
+  scoreInputRefs.value[id] = (node as HTMLElement | null)?.querySelector?.(
+    '.ant-input-number-input'
+  ) as HTMLElement | null;
+}
+function setCommentInputRef(row: SubjectiveGradeRow, el: unknown): void {
+  const id = row.submissionId;
+  if (id === undefined) return;
+  const node = (el as { $el?: HTMLElement } | null)?.$el ?? (el as HTMLElement | null);
+  commentInputRefs.value[id] = (node as HTMLElement | null)?.querySelector?.(
+    'input'
+  ) as HTMLElement | null;
+}
+
+function focusScoreInput(submissionId: number | undefined): void {
+  if (submissionId === undefined) return;
+  scoreInputRefs.value[submissionId]?.focus();
+}
+
+/** 当前页内按行序找下一行的 submissionId（rows 即「当前筛选与分页」的行序）。 */
+function nextRowSubmissionId(current: SubjectiveGradeRow): number | undefined {
+  const index = props.rows.findIndex((r) => r.submissionId === current.submissionId);
+  if (index === -1) return undefined;
+  const next = props.rows[index + 1];
+  return next?.submissionId;
+}
+
+/**
+ * 分数框按 Enter 提交当前行。成功 → 焦点移下一行分数框；
+ * 失败/冲突 → 焦点停留当前行（教师必须处理当前行错误后方可继续）。
+ * 复用 onSubmit → createGradingFlow，不绕过 flow 直调端点。返回是否成功。
+ */
+async function onScoreEnter(row: SubjectiveGradeRow): Promise<boolean> {
+  const ok = await onSubmit(row);
+  if (ok) {
+    focusScoreInput(nextRowSubmissionId(row));
+  } else {
+    focusScoreInput(row.submissionId);
+  }
+  return ok;
+}
+
+// ==== 快捷给分 Tag（按本题满分派生；仅填入，不自动提交） ====
+interface QuickScoreTag {
+  label: string;
+  value: string;
+}
+
+/** 及格 = 满分 60% 四舍五入到 0.5 步长；满分 = question.score；零分 = 0。 */
+function roundToHalfStep(value: number): number {
+  return Math.round(value * 2) / 2;
+}
+
+const quickScoreTags = computed<QuickScoreTag[]>(() => {
+  const full = props.question.score ?? 0;
+  const pass = roundToHalfStep(full * 0.6);
+  return [
+    { label: '满分', value: full === 0 ? '0' : String(full) },
+    { label: '及格', value: String(pass) },
+    { label: '零分', value: '0' },
+  ];
+});
+
+// ==== 常用评语模板（气泡；点击填入评语框，教师可继续编辑，不自动提交） ====
+const commentTemplates = [
+  { key: 'praise', label: '肯定', value: '回答完整，要点齐全' },
+  { key: 'partial', label: '部分正确', value: '思路正确，表述欠完整' },
+  { key: 'missing', label: '未达要点', value: '未答到关键要点' },
+];
 
 // 冲突发生后：把后端最新行回填到展示（教师重看的对象），并清掉旧输入防误提交
 watch(
@@ -347,5 +455,25 @@ function rowErrorOf(row: SubjectiveGradeRow): string | null {
   color: #cf1322;
   font-size: 12px;
   margin-top: 4px;
+}
+.quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.quick-tags,
+.quick-comments {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.quick-label {
+  color: #999;
+  font-size: 12px;
+}
+.quick-tag {
+  cursor: pointer;
 }
 </style>

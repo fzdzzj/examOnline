@@ -106,6 +106,9 @@
         </template>
         <template v-else-if="column.key === 'actions'">
           <Button type="link" size="small" @click="onEdit(record)">编辑</Button>
+          <Button type="link" size="small" data-test="copy-question" @click="onCopy(record)">
+            复制
+          </Button>
           <Popconfirm title="确认删除该题目？" @confirm="onDelete(record)">
             <Button type="link" size="small" danger>删除</Button>
           </Popconfirm>
@@ -115,7 +118,12 @@
 
     <!-- 软删除语义说明：列表数据完全来自后端分页接口；已删题目被后端逻辑删除过滤，
          不会出现在本列表（前端不自行发明过滤规则，也不做「已删假可用」展示）。 -->
-    <QuestionForm v-model:open="formOpen" :question="editing" @saved="invalidateQuestions" />
+    <QuestionForm
+      v-model:open="formOpen"
+      :question="editing"
+      :copy-from="copySource"
+      @saved="invalidateQuestions"
+    />
 
     <!-- 批量打标/解绑弹窗（add-batch-tagging-and-score-balancing） -->
     <BatchTagModal
@@ -337,14 +345,25 @@ function invalidateQuestions(): void {
 
 const formOpen = ref(false);
 const editing = ref<QuestionResponse | null>(null);
+/** 复制另存源题（存递给 QuestionForm 的 copyFrom）；与 editing 互斥二选一 */
+const copySource = ref<QuestionResponse | null>(null);
 
 function onCreate(): void {
   editing.value = null;
+  copySource.value = null;
   formOpen.value = true;
 }
 
 function onEdit(record: QuestionResponse): void {
   editing.value = record;
+  copySource.value = null;
+  formOpen.value = true;
+}
+
+/** 题目快速复制另存：以源题开「复制为新题」表单（深拷贝回填由 QuestionForm 完成）。 */
+function onCopy(record: QuestionResponse): void {
+  editing.value = null;
+  copySource.value = record;
   formOpen.value = true;
 }
 
