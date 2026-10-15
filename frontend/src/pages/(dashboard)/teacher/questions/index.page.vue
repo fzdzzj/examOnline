@@ -47,6 +47,7 @@
       <Button :loading="importing" @click="onChooseFile">导入</Button>
       <Button :loading="exporting" @click="onExport">导出</Button>
       <Button :loading="templateLoading" @click="onDownloadTemplate">下载模板</Button>
+      <Button @click="onCheckDuplicate">题目查重</Button>
       <Button type="primary" @click="onCreate">新建题目</Button>
       <input
         ref="fileInput"
@@ -114,6 +115,63 @@
       :result="importResult"
       @close="importResultOpen = false"
     />
+
+    <!-- 题目查重快捷入口（add-question-duplicate-detection）：粘贴题干主动排查重复 -->
+    <Modal
+      v-model:open="duplicateModalOpen"
+      :title="'题目查重'"
+      :mask-closable="false"
+      :footer="null"
+      width="640px"
+    >
+      <div class="flex items-start gap-2">
+        <Textarea
+          v-model:value="duplicateStem"
+          :rows="3"
+          :maxlength="5000"
+          placeholder="粘贴一段题干文本进行查重（至少 2 个有效字符）"
+          class="flex-1"
+        />
+        <Button
+          type="primary"
+          :loading="duplicateChecking"
+          :disabled="(duplicateStem ?? '').trim().length < 2"
+          @click="onCheckDuplicateSubmit"
+        >
+          查重
+        </Button>
+      </div>
+      <Alert
+        v-if="duplicateQuickHits.length > 0"
+        type="warning"
+        show-icon
+        data-test="quick-duplicate-warning"
+        class="mt-3"
+        :message="`命中 ${duplicateQuickHits.length} 道相似题目（最高相似度 ${Math.round(duplicateQuickMax * 100)}%）`"
+      />
+      <div class="mt-3">
+        <div
+          v-for="item in duplicateQuickHits"
+          :key="item.questionId"
+          data-test="quick-duplicate-item"
+          class="mb-1 rounded border border-amber-200 bg-amber-50 px-2 py-1"
+        >
+          <div class="flex items-center gap-2">
+            <span class="text-xs">[{{ typeLabelOf(item.type) }}]</span>
+            <span class="truncate flex-1 text-xs text-gray-700">{{ item.content }}</span>
+            <Tag color="warning">{{ Math.round((item.similarity ?? 0) * 100) }}%</Tag>
+          </div>
+          <div class="text-xs text-gray-400">默认分：{{ item.score ?? '—' }}</div>
+        </div>
+        <div
+          v-if="duplicateChecked && duplicateQuickHits.length === 0"
+          data-test="quick-duplicate-empty"
+          class="text-gray-400"
+        >
+          未检测到相似题目
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -122,10 +180,12 @@ import {
   Alert,
   Button,
   Input,
+  Modal,
   Popconfirm,
   Select,
   Table,
   Tag,
+  Textarea,
   message,
   type TableColumnsType,
 } from 'ant-design-vue';
@@ -137,10 +197,12 @@ import QuestionForm from '@/components/question/QuestionForm.vue';
 import QuestionImportModal from '@/components/question/QuestionImportModal.vue';
 import {
   batchDelete,
+  checkDuplicate,
   delete_ as deleteQuestion,
   importQuestions,
   list as listTags,
   page,
+  type QuestionDuplicateItemResponse,
   type QuestionImportResult,
   type QuestionResponse,
   type TagResponse,
@@ -382,6 +444,48 @@ async function onDownloadTemplate(): Promise<void> {
     message.error(error instanceof Error ? error.message : '模板下载失败，请稍后重试');
   } finally {
     templateLoading.value = false;
+  }
+}
+
+// ==================== 题目查重快捷入口（add-question-duplicate-detection） ====================
+
+const duplicateModalOpen = ref(false);
+const duplicateStem = ref('');
+const duplicateQuickHits = ref<QuestionDuplicateItemResponse[]>([]);
+const duplicateChecking = ref(false);
+const duplicateChecked = ref(false);
+
+const duplicateQuickMax = computed(() => {
+  let max = 0;
+  for (const item of duplicateQuickHits.value) {
+    const sim = item.similarity ?? 0;
+    if (sim > max) max = sim;
+  }
+  return max;
+});
+
+function onCheckDuplicate(): void {
+  duplicateModalOpen.value = true;
+  duplicateQuickHits.value = [];
+  duplicateChecked.value = false;
+  duplicateStem.value = '';
+}
+
+async function onCheckDuplicateSubmit(): Promise<void> {
+  const stem = duplicateStem.value.trim();
+  if (stem.length < 2) return;
+  duplicateChecking.value = true;
+  try {
+    const hits = await unwrap<QuestionDuplicateItemResponse[]>(
+      checkDuplicate({ client, throwOnError: true, query: { stem } })
+    );
+    duplicateQuickHits.value = hits ?? [];
+    duplicateChecked.value = true;
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '查重失败，请稍后重试');
+    duplicateChecked.value = true;
+  } finally {
+    duplicateChecking.value = false;
   }
 }
 </script>

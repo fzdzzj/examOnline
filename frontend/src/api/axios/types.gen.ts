@@ -855,6 +855,22 @@ export type QuestionPageResponse = {
     size?: number;
 };
 
+export type ApiResponseListQuestionDuplicateItemResponse = {
+    code?: number;
+    message?: string;
+    data?: Array<QuestionDuplicateItemResponse>;
+};
+
+export type QuestionDuplicateItemResponse = {
+    questionId?: number;
+    type?: number;
+    content?: string;
+    score?: number;
+    similarity?: number;
+    createdBy?: number;
+    createdTime?: string;
+};
+
 export type ApiResponseListPaperResponse = {
     code?: number;
     message?: string;
@@ -2642,6 +2658,28 @@ export type ExportQuestionsResponses = {
 };
 
 export type ExportQuestionsResponse = ExportQuestionsResponses[keyof ExportQuestionsResponses];
+
+export type CheckDuplicateData = {
+    body?: never;
+    path?: never;
+    query?: {
+        stem?: string;
+        excludeId?: number;
+        type?: number;
+        threshold?: number;
+        limit?: number;
+    };
+    url: '/api/questions/check-duplicate';
+};
+
+export type CheckDuplicateResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseListQuestionDuplicateItemResponse;
+};
+
+export type CheckDuplicateResponse = CheckDuplicateResponses[keyof CheckDuplicateResponses];
 
 export type ExportPdfData = {
     body?: never;
