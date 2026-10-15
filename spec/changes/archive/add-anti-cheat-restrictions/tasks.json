@@ -1,0 +1,33 @@
+{
+  "change": "add-anti-cheat-restrictions",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与三件套制定",
+      "status": "completed",
+      "description": "确立 M 级变更边界：IP 白名单准入校验、EnterExamResponse 防作弊契约下发、COPY_PASTE 与 FULLSCREEN_EXIT 行为事件扩展、前端禁复制粘贴与全屏作答守卫、建考表单防作弊面板；零 DDL、零迁移脚本、绝不自动交卷。",
+      "evidence": "三件套已落盘 spec/changes/add-anti-cheat-restrictions/。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端 IP 准入、事件收集器扩展与契约下发（先红后绿）",
+      "status": "completed",
+      "description": "实现 IpMatcher 工具支持精准 IP/通配符/CIDR；在 ExamTakingService.enter 增加 IP 白名单准入守卫；在 EnterExamResponse 中下发 antiCheatConfig；实现 CopyPasteEventCollector 与 FullScreenExitEventCollector 注册入 BehaviorEventRegistry；完成先红后绿单测与集成测试。",
+      "evidence": "阶段 2 交付（分支 feature/add-anti-cheat-restrictions，全部命令在仓库根执行，JAVA_HOME=D:\\develop1\\jdk21）。①先红（写测试后写实现）：新用例引用尚不存在的 com.exam.anticheat.ip.IpMatcher / config.AntiCheatConfigs，`mvnw.cmd test -Dtest=IpMatcherTest,BehaviorEventCollectorTest` → COMPILATION ERROR「程序包 com.exam.anticheat.config 不存在」，BUILD FAILURE。②变异红证（对既有实现抽掉 403 断言，非仅编译期红）：把 ExamTakingService.assertIpAllowed 的 throw 换成 log.warn 后 `mvnw.cmd test -Dtest=AntiCheatIntegrationTest` → Tests run: 13, Failures: 2, Errors: 0, Skipped: 0，BUILD FAILURE，MVN_EXIT=1；失败点 ipWhitelistBlocksForeignIpWithExplicitReasonAndCreatesNoSubmission:300「Response status expected:<403> but was:<200>」与 ipWhitelistSupportsCidrAndSingleIpAndLoopback:338->assertIpDenied:190 同型——首轮变异仅 1 例变红（CIDR 用例的 403 竟由班级准入层满足、测不出 IP 层），据此把 403 断言收敛为 assertIpDenied（先补班级归属再比对 IP 专属文案 + 无答卷行），二次变异两例同时变红。③撤销变异并经 SHA256 证明字节级还原：src/main/java/com/exam/taking/service/ExamTakingService.java 前后均为 FBD199C37A77906B279E6DCE0CA03D2B7A603A9796953DE5E93A32DB5C7F4DA9。④绿证：`mvnw.cmd test -Dtest=AntiCheatIntegrationTest,IpMatcherTest,BehaviorEventCollectorTest` → Tests run: 36, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS，MVN_EXIT=0（IpMatcherTest 17 / AntiCheatIntegrationTest 13 / BehaviorEventCollectorTest 6）。⑤唯一门禁：`mvnw.cmd clean test` → Tests run: 493, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，MVN_EXIT=0；用例基线 471→493（+22＝IpMatcherTest 新增 17 + AntiCheatIntegrationTest 新增 5）。⑥零 DDL：`git diff --stat` 与 `git status --short` 显示 src/main/resources/schema.sql、docker/mysql/migrations/ 零改动，配置读取复用既有 exams.anti_cheat_config 列。⑦红线自证：未命中即 throw BusinessException(FORBIDDEN) 文案「当前 IP ({ip}) 不在本次考试允许的网段范围内」（未知来源显示「未知」）且校验发生在 createSubmission 之前（断言无答卷行）；EnterExamResponse 仅在末尾追加 antiCheatConfig（JsonNode），既有 12 字段语义/顺序不变，进入与断线恢复两条链路同源下发；两个新事件策略默认 MEDIUM、judge 显式带 warn（接口默认 judge 不带警告，首轮绿跑发现后修正），全程无任何强制交卷代码路径，集成用例断言违规后答卷仍为 STATUS_IN_PROGRESS。⑧受控白名单逐项核对：改动仅 src/main/java/com/exam/anticheat/、src/main/java/com/exam/taking/、src/test/java/com/exam/，无白名单外写入。实施提交 6352054。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：前端作答安全守卫与建考表单扩展（先红后绿）",
+      "status": "completed",
+      "description": "前端 TakingBoard 与 useBehaviorReport 接入 antiCheatConfig：实现复制/剪切/粘贴/右键拦截并上报 COPY_PASTE；实现全屏作答引导与 fullscreenchange 退出监听上报 FULLSCREEN_EXIT；在教师创建/编辑考试页面增加防作弊设置卡片；完成组件与状态机单测。",
+      "evidence": "阶段 3 交付（提交 05d8e0f，受控白名单 frontend/src/ + openapi.yaml + tasks.json）。①先红：7 路径定向 → Test Files 7 failed (7)、Tests 17 failed | 26 passed (43)。②变异红证：(a) === true → Boolean(...) ⇒ Tests 1 failed | 80 passed (81)，精准拦截脏配置；(b) 抽掉 event.preventDefault() ⇒ Test Files 2 failed (2)、8 例红（含作答页真实 DOM 拦截）。两处撤销后 SHA256 与变异前逐字节一致（antiCheat.ts 1F8095F4...、useBehaviorReport.ts 520ADE5E...）。③三门禁实测：lint:check 退出 0、type-check:check 退出 0、vitest 97 文件 752 例全绿通过（基线 667→752，+85 例）。④红线自证：未配置/脏配置一律不拦不上报；交卷封闭与归零后守卫不复活；全链路 submitMock 零调用——只警告不交卷；零 DDL；openapi.yaml 补齐 EnterExamResponse.antiCheatConfig，paths 89 不变。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：双端门禁全量验证、基线上调、变异验证与收口归档",
+      "status": "completed",
+      "description": "执行 mvnw clean test 与前端三门禁；更新 .github/ci/gate-baseline.json（上调新增用例数）；执行变异自证；合入 spec-delta 至 spec/specs/anti-cheat/spec.md 与 exam-taking/spec.md；三件套归档并合并入 main 分支。",
+      "evidence": "阶段 4 验收与收口。①后端门禁：仓库根 `mvnw.cmd clean test` → Tests run: 493, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，耗时 05:44 min；用例数字链 471→493（+22）。②前端门禁：`npm.cmd --prefix frontend run lint:check` exit 0、`npm.cmd --prefix frontend run type-check:check` exit 0、`npm.cmd --prefix frontend run test -- --testTimeout=60000` → Test Files 97 passed (97)、Tests 752 passed (752)，耗时 253s；用例数字链 667→752（+85）。③基线上调：.github/ci/gate-baseline.json 同步上调 backendTests 471→493、frontendTests 667→752、openapiPaths 89 不变。④基线合入：spec/specs/anti-cheat/spec.md 合入「考试 IP 范围准入校验」与「作答安全模式与事件扩展」及合入注记；spec/specs/exam-taking/spec.md 合入「答题上下文携带防作弊配置」及合入注记。⑤三件套归档：归档移入 spec/changes/archive/add-anti-cheat-restrictions/ 并平铺；spec/README.md 清空进行中变更表并登记已归档速览表；docs/功能待办清单.md 对应项标记为已闭环。⑥分支合流：feature/add-anti-cheat-restrictions 分支 `--no-ff` 合并入 main。"
+    }
+  ]
+}

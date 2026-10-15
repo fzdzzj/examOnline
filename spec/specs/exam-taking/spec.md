@@ -439,3 +439,18 @@ WHEN 学生查询本人考试列表
 THEN 列表项下发 `reservationRequired` 与 `reserved` 两字段（本人在该场考试的有效预约状态）
 
 AND 「需预约」考试未预约时即便处于进行中 `canEnter` 亦为 false；非预约制考试列表行为与既有契约零变化（新字段默认值除外）
+
+---
+
+### Requirement: 答题上下文携带防作弊配置
+
+WHEN 学生进入考试或拉取答题数据,
+响应体 SHALL 包含 ntiCheatConfig，供作答端动态启用相应防作弊安全守卫。
+
+#### Scenario: 响应携带防作弊配置
+
+GIVEN 考试配置了防作弊规则
+WHEN 学生调用 POST /api/exam-taking/exams/{examId}/enter 或 GET /api/exam-taking/exams/{examId}/paper
+THEN 响应的 EnterExamResponse 携带 ntiCheatConfig 字段
+
+> 合入注记（2026-10-15，dd-anti-cheat-restrictions 归档）：EnterExamResponse 追加 ntiCheatConfig（JsonNode），进入考试与断线恢复两条链路同源下发，契约字段只增不减。
