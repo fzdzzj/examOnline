@@ -1,0 +1,27 @@
+{
+  "changeId": "polish-student-taking-and-review-markers",
+  "title": "学生作答全景体验与防漏答增强（答题卡疑难标记 Mark for Review 🚩、交卷一键跳转首道未答题）",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、规范增量制定与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、frontend 的 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md。纯前端变更定性：零 DDL、零后端改动、零契约变更（SaveDraftRequest.marked 字段既有），门禁基线预期仅上调 frontendTests。",
+      "evidence": "完成提案与前端规范增量制定（2 个 Requirement：疑难标记双层持久化/交卷跳转首道未答题），基于对 TakingBoard.vue、QuestionNavPanel.vue、studentTaking.ts、SubmitExamPanel.vue、useAutoSaveDraft.ts、useSubmitExam.ts 的只读侦察；关键事实核实：草稿保存契约 payload 已含 marked 字段（useAutoSaveDraft.flush 恒传 []，L132），端到端通道已预留；检出 feature/polish-student-taking-and-review-markers 分支，更新 spec/README.md 在途登记与 docs/功能待办清单.md 状态。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施两特性前端交互与单测、先红后绿与变异击红验证",
+      "status": "pending",
+      "description": "①TakingBoard 标记切换按钮与标记集合状态、NavItemState 扩展 marked 字段（navStatesOf 纯函数加参）、QuestionNavPanel 🚩角标橙色三态渲染；②DraftRecord 扩展 marked 随 persistLocal 本地持久化、flush() 上送真实标记集合（集成用例核实后端非空 marked 语义，拒绝则回退仅本地并在 evidence 注记）、draftMerge 恢复链路同步恢复标记；③SubmitExamPanel unansweredCount>0 时「跳转首道未答题」按钮（复用 navStatesOf 首个未答项，关闭弹窗并 goTo）；编写前端单测先红后绿；变异验证至少 3 项（m1 标记状态丢失/不持久化击红、m2 跳转口径另算或跳错题击红、m3 标记混入交卷 answers 或破坏确认语义击红）。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "pending",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test 与前端三门禁（lint:check / type-check:check / test）；按实测上调 .github/ci/gate-baseline.json 的 frontendTests（backendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 合入 specs/frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
