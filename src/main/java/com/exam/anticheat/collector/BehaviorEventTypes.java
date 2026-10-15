@@ -24,6 +24,12 @@ public final class BehaviorEventTypes {
     /** 草稿冲突：多端自动保存版本冲突（以最新版本为准，旧端写入被拒），阶段 5 已有采集点 */
     public static final String DRAFT_CONFLICT = "DRAFT_CONFLICT";
 
+    /** 复制粘贴：考试开启 forbidCopy 时，作答端拦截 copy/cut/paste/contextmenu 后的违规上报 */
+    public static final String COPY_PASTE = "COPY_PASTE";
+
+    /** 退出全屏：考试开启 fullScreen 时，作答端 fullscreenchange 监听到的模式解除事件 */
+    public static final String FULLSCREEN_EXIT = "FULLSCREEN_EXIT";
+
     private BehaviorEventTypes() {
     }
 }
