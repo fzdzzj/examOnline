@@ -6,6 +6,9 @@ import * as api from '@/api/axios';
 import TeacherGradingPage from '@/pages/(dashboard)/teacher/grading/index.page.vue';
 
 const queryStore = vi.hoisted(() => ({ data: {} as Record<string, unknown> }));
+const queryErrors = vi.hoisted(
+  () => ({ exams: null, questions: null, rows: null }) as Record<string, unknown>
+);
 const refetches = vi.hoisted(() => ({ questions: vi.fn(), rows: vi.fn() }));
 
 vi.mock('@/api/apiClient', () => ({
@@ -25,9 +28,12 @@ vi.mock('@tanstack/vue-query', async () => {
   return {
     useQuery: (options: { queryKey: unknown }) => {
       const key = unref(options.queryKey) as unknown[];
+      const kind = key[1] === 'questions' ? 'questions' : key[1] === 'rows' ? 'rows' : 'exams';
       const refetch = key[1] === 'questions' ? refetches.questions : refetches.rows;
       return {
         data: ref(queryStore.data[String(key[0])]),
+        // H-03：主观题查询失败三态分离——mock 按查询类别提供 error 槽（exams/questions/rows 独立）
+        error: ref(queryErrors[kind] ?? null),
         isFetching: ref(false),
         refetch,
       };
@@ -59,6 +65,9 @@ beforeEach(() => {
     exams: [ENDED_EXAM, GRADED_EXAM, PUBLISHED_EXAM],
     grading: [],
   };
+  queryErrors.exams = null;
+  queryErrors.questions = null;
+  queryErrors.rows = null;
   refetches.questions.mockClear();
   refetches.rows.mockClear();
   vi.mocked(api.run).mockReset();
@@ -232,5 +241,26 @@ describe('教师批改工作台显式运行判分', () => {
     expect(wrapper.findAll('[data-test="question-image"]').length).toBe(1);
     expect(wrapper.text()).toContain('带图简答题');
     expect(wrapper.text()).toContain('无图简答题');
+  });
+
+  it('主观题查询失败（H-03）：错误 Alert 显性呈现，不伪装为「没有主观题」', async () => {
+    queryErrors.questions = new Error('主观题列表加载失败：服务端内部错误');
+    const wrapper = mount(TeacherGradingPage, { attachTo: document.body });
+    await selectExam(wrapper, ENDED_EXAM.id);
+
+    const errorAlert = wrapper.find('[data-test="questions-error"]');
+    expect(errorAlert.exists()).toBe(true);
+    expect(errorAlert.text()).toContain('主观题列表加载失败：服务端内部错误');
+    // 失败不得伪装成业务空态：info 文案与主观题表格（去批改入口）都不出现
+    expect(bodyText()).not.toContain('该试卷没有主观题');
+    expect(bodyText()).not.toContain('去批改');
+  });
+
+  it('成功且无主观题（H-03 零回归）：info 空态照常、不弹错误 Alert', async () => {
+    const wrapper = mount(TeacherGradingPage, { attachTo: document.body });
+    await selectExam(wrapper, ENDED_EXAM.id);
+
+    expect(bodyText()).toContain('该试卷没有主观题');
+    expect(wrapper.find('[data-test="questions-error"]').exists()).toBe(false);
   });
 });

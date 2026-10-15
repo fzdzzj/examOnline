@@ -1,0 +1,24 @@
+全量前端门禁首跑发现与修复记录（H-03 页面接入 error 槽的测试基建适配）
+
+首跑（2026-10-15 11:13）：npm.cmd run test -- --testTimeout=60000 --reporter=dot
+  Test Files  3 failed | 94 passed (97)
+      Tests  17 failed | 737 passed (754)
+     Errors  48 errors
+  失败文件（均为 grading/__tests__ 同目录、mount TeacherGradingPage 的既有 spec）：
+    gradingServerPaging.spec.ts / manualScore.spec.ts / submissionRejudge.spec.ts
+  根因：页面按 H-03 解构 useQuery 的 error 槽；这三个既有 spec 的 @tanstack/vue-query mock
+    仅返回 { data, isFetching, refetch }，error 为 undefined → questionsErrorText computed 的
+    questionsError.value 抛错（index.page.vue:127），48 errors 全部源于此。
+
+修复（测试基建适配，断言零改动，与归档 change fix-frontend-query-failure-states 同口径——
+其证据原文「既有 3 个页面 spec 的 vue-query mock 补 error 字段（测试基建适配，断言零改动）」）：
+    三处 mock 各补一行 error: ref(null)：
+      manualScore.spec.ts:32 / submissionRejudge.spec.ts:31 / gradingServerPaging.spec.ts:64
+  三个文件既有断言逐字未动；仅补齐页面新消费的 error 槽。
+
+复跑（2026-10-15 11:19）：npm.cmd run test -- --testTimeout=60000 --reporter=dot
+  Test Files  97 passed (97)
+      Tests  754 passed (754)
+
+红线对照：前端全量 752 → 754（+2 例即 gradingRunFlow.spec.ts 新增 H-03 两例），
+未删改任何既有用例与断言。

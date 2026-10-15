@@ -1,0 +1,26 @@
+{
+  "change": "harden-core-security-and-state-boundaries",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与三件套制定",
+      "status": "completed",
+      "description": "制定 M 级加固方案，梳理 4 处高危边界防御与数据一致性加固：①ClassService.transfer 目标班级教师归属校验（防跨教师水平越权）；②ScoreReviewService.apply 答卷与有效成绩门禁（防未参考学生任意复核）；③grading/index.page.vue 主观题查询失败三态分离（防系统报错伪装为无主观题）；④ExamStateMachineService 与 ScoreService 考试状态流转与发布撤回主动失效 CACHE_EXAM_DETAIL。登记 spec/README.md。",
+      "evidence": "三件套已落盘 spec/changes/harden-core-security-and-state-boundaries/，并在 spec/README.md 登记为进行中变更。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：服务层与前端实现及先红后绿验证",
+      "status": "completed",
+      "description": "实施后端 ClassService（目标班级校验）、ScoreReviewService（答卷门禁）、ExamStateMachineService（流转清缓存）、ScoreService（发布撤回清缓存），前端 grading/index.page.vue（错误三态分离）。编写先红后绿与变异测试，验证 m1–m4 变异击红留证。",
+      "evidence": "白名单实现：①ClassService.transfer 以 getOwnedClass(targetClassId) 强校验目标班级所有权（不存在 404/非归属 403）+ 源目标相同 400 防呆；②ScoreReviewService.apply 在 7 天窗口后增加答卷门禁（STATUS_GRADED 且 totalScore 非空，否则 400「未参加本场考试或成绩尚未批改完成，无法申请复核」）；③ExamStateMachineService 注入 CacheManager，autoAdvance 在 moved>0 时 clearExamDetailCache()（防御空值）；④ScoreService.publish/revoke 加 @CacheEvict(cacheNames=CACHE_EXAM_DETAIL, allEntries=true)（grep 实证 line 217/303）；⑤grading/index.page.vue 解构 error:questionsError、questionsErrorText computed（U-1 口径）、错误 Alert data-test=questions-error 与 Table/info 空态构成 v-if/v-else-if 三态分离。先红后绿：后端定向（3 测试类）红 4 例（跨教师转班期望 403 得 200、cacheManager.getCache 零交互、答卷门禁两例）→ 绿 22/22 BUILD SUCCESS；ScoreReview 定稿重跑红 2 例（Expected BusinessException to be thrown, but nothing was thrown）→ 绿；前端定向 gradingRunFlow 红 1 例（questions-error Alert 不存在）→ 绿 7/7。变异验证 m1–m4 全部击红后复原（留证 evidence/m1..m4/，每例 report.txt + step3 红 + step5 绿；m1 expected 403 but was 200、m2 门禁失效 400 未发生、m3 错误 Alert 断言红、m4 Wanted but not invoked；复原均 hash 严格一致）。全量门禁：mvnw.cmd clean test → Tests run: 502, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（基线 499，净增 3 例）；前端 97 文件 754 例全过（基线 752，净增 2 例），lint:check/type-check:check 退出码 0。测试基建适配（如实登记，同 fix-frontend-query-failure-states 口径）：H-03 页面接入 error 槽后，同目录 manualScore/submissionRejudge/gradingServerPaging 三个既有 spec 的 vue-query mock 各补 error:ref(null) 一行，断言零改动（evidence/frontend-infra-adaptation.txt）。零 DDL、零 openapi 变更（89 paths 不变）、零 @Sql。提交笔见 git log。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量门禁实测、规范合入与收口归档",
+      "status": "completed",
+      "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json；将 spec-delta 分别合入 class-management、score-review、frontend、exam-management 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
+      "evidence": "①后端门禁实测：仓库根 mvnw.cmd clean test → Tests run: 502, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS, 退出码 0。②前端门禁实测：pnpm run lint:check（0 错误）、type-check:check（0 错误）、pnpm run test -- --testTimeout=60000 → 97 文件 754 例全部 PASS。③gate-baseline.json：backendTests 499→502 同笔上调（净增 3 例），frontendTests 752→754 同笔上调（净增 2 例），openapiPaths 89 不变。④spec 基线合入：class-management、score-review、frontend、exam-management 各能力域 spec.md 追加对应 Scenario 与合入注记。⑤三件套归档至 spec/changes/archive/harden-core-security-and-state-boundaries/，spec/README.md 进行中清空并在已归档速览表登记。⑥feature/harden-core-security-and-state-boundaries 分支 --no-ff 合并入 main。"
+    }
+  ]
+}

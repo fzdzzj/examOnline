@@ -14,6 +14,7 @@ import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.entity.ScoreReview;
 import com.exam.score.mapper.ScoreAuditLogMapper;
 import com.exam.score.mapper.ScoreReviewMapper;
+import com.exam.submission.entity.ExamSubmission;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -86,6 +87,17 @@ public class ScoreReviewService {
             // 超期拒绝（§10.7）：成绩发布已超过 7 天，不再受理复核
             throw new BusinessException(ResponseCode.BAD_REQUEST,
                     "已超过成绩发布后 " + ScoreReview.WINDOW_DAYS + " 天，无法申请复核");
+        }
+        // 答卷与有效成绩门禁（H-02，harden-core-security-and-state-boundaries）：仅"参加过本场考试、
+        // 答卷已批改（STATUS_GRADED）且有总分"的学生可申请复核——外班/未参考/成绩未出学生一律 400，
+        // 防止仅凭 examId 就把复核请求灌入教师复核工作台。
+        GradingSubmission submission = gradingMapper.selectOne(Wrappers.<GradingSubmission>lambdaQuery()
+                .eq(GradingSubmission::getExamId, examId)
+                .eq(GradingSubmission::getStudentId, studentId)
+                .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_GRADED));
+        if (submission == null || submission.getTotalScore() == null) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "未参加本场考试或成绩尚未批改完成，无法申请复核");
         }
         // 限 1 次：先查一次（正常路径即友好提示，不依赖 DB 异常）；唯一索引兜底并发竞态
         Long exists = reviewMapper.selectCount(Wrappers.<ScoreReview>lambdaQuery()

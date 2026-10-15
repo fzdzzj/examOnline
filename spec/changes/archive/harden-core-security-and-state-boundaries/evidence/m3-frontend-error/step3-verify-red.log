@@ -1,0 +1,45 @@
+
+> examonline-front@0.0.0 test
+> vitest run gradingRunFlow.spec.ts --testTimeout=30000 --reporter=dot
+
+
+ RUN  v4.1.11 D:/code/examOnline/frontend
+
+npm.cmd : Not implemented: Window's getComputedStyle() method: with pseudo-elements
+At line:1 char:129
++ ... ew($false); npm.cmd run test -- gradingRunFlow.spec.ts --testTimeout= ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Not implemented...pseudo-elements:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+·····x·
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts > 教师批改工作台显式运行判分 > 主观题查询失败（H-03）：错误 Alert 
+显性呈现，不伪装为「没有主观题」
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts:250:33
+    248|
+    249|     const errorAlert = wrapper.find('[data-test="questions-error"]');
+    250|     expect(errorAlert.exists()).toBe(true);
+       |                                 ^
+    251|     expect(errorAlert.text()).toContain('主观题列表加载失败：服务端内部错误');
+    252|     // 失败不得伪装成业务空态：info 文案与主观题表格（去批改入口）都不出现
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  11:06:57
+   Duration  36.36s (transform 721ms, setup 103ms, import 30.80s, tests 2.57s, environment 2.39s)
+

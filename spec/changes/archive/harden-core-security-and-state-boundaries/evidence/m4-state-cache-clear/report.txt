@@ -1,0 +1,9 @@
+﻿mutation-check 五步汇总 —— label: m4-state-cache-clear
+target: src/main/java/com/exam/exam/service/ExamStateMachineService.java
+verify: .\mvnw.cmd test "-Dtest=ExamStateMachineServiceTest" "-DfailIfNoTests=false"
+PASS  ① 备份：目标字节级复制到 D:\code\examOnline\spec\changes\harden-core-security-and-state-boundaries\evidence\m4-state-cache-clear/backup/original
+PASS  ② 注入+命中：'clearExamDetailCache();' -> '/*MUT cache-evict-removed*/'（缓存清除调用被抽掉，标志在场、字节有变）
+PASS  ③ 击红：--verify 非零退出（exit=1），step3-verify-red.log 关键行 'Wanted but not invoked'（autoAdvanceMovesPublishedToStartAndOngoingToEnd 的 cache.clear() 验证未命中）
+PASS  ④ 复原+归零：hash 与备份严格一致（BE83E3FDBEC3D71846E9AE74532C0CA17CEEDE175C9AB9F2A20460079464B726），注入标志不在场；touch 强制重编译
+PASS  ⑤ 回绿：--verify 零退出（exit=0），step5-verify-green.log 关键行 'BUILD SUCCESS' 'Tests run: 7, Failures: 0'
+PASS  留证目录：D:\code\examOnline\spec\changes\harden-core-security-and-state-boundaries\evidence\m4-state-cache-clear

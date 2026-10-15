@@ -121,8 +121,18 @@
         <template #extra>
           <Button size="small" @click="() => void refetchQuestions()">刷新进度</Button>
         </template>
+        <!-- H-03（harden-core-security-and-state-boundaries）：主观题列表查询失败三态分离（U-1 口径）——
+             失败显性呈现，绝不伪装为「该试卷没有主观题」；仅接口成功且真正无主观题才显示 info 空态 -->
+        <Alert
+          v-if="questionsErrorText"
+          type="error"
+          show-icon
+          :message="questionsErrorText"
+          data-test="questions-error"
+          class="mb-3"
+        />
         <Table
-          v-if="questions.length > 0"
+          v-else-if="questions.length > 0"
           :columns="questionColumns"
           :data-source="questions"
           :pagination="false"
@@ -464,6 +474,7 @@ function removeResolvedFailure(submissionId: number): void {
 const {
   data: questionsData,
   isFetching: questionsFetching,
+  error: questionsError,
   refetch: refetchQuestions,
 } = useQuery({
   queryKey: computed(() => ['grading', 'questions', selectedExamId.value] as const),
@@ -476,6 +487,14 @@ const {
       })
     ),
   enabled: computed(() => selectedExamId.value !== undefined && canGradeSelected.value),
+});
+
+// H-03（harden-core-security-and-state-boundaries）：主观题列表查询失败三态分离（U-1 口径）——
+// 失败时 error 槽承载后端 message 显性呈现，data 回退空数组不得再被解读为「没有主观题」
+const questionsErrorText = computed<string | null>(() => {
+  const caught = questionsError.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '主观题列表加载失败';
 });
 
 const questions = computed<SubjectiveQuestionItem[]>(() => questionsData.value ?? []);

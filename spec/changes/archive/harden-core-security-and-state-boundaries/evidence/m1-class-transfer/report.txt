@@ -1,0 +1,11 @@
+﻿mutation-check 五步汇总 —— label: m1-class-transfer
+target: src/main/java/com/exam/clazz/service/ClassService.java
+verify: .\mvnw.cmd test "-Dtest=ClassManagementIntegrationTest" "-DfailIfNoTests=false"
+PASS  ① 备份：目标字节级复制到 spec/changes/harden-core-security-and-state-boundaries/evidence/m1-class-transfer/backup/original
+PASS  ② 注入+命中：getOwnedClass(targetClassId); -> classMapper.selectById(targetClassId);（标志在场、字节有变）
+PASS  ③ 击红：--verify 非零退出（exit=1），step3-verify-red.log 关键行 'Response status expected:<403> but was:<200>'（越权转班未拦截）
+PASS  ④ 复原+归零：hash 与备份严格一致（1901D846629BA50B018CB50E137FD575B1A8FD5F876B783C12EC0C9075EDC048），注入标志不在场；
+       注记：PowerShell Copy-Item 保留源文件 LastWriteTime（10:50:24 早于变异期编译产物 10:55:56），
+       首次回绿未重编译、误跑变异产物（1 failed）；touch 强制重编译后回绿（留证已覆盖为通过轮）。
+PASS  ⑤ 回绿：--verify 零退出（exit=0），step5-verify-green.log 关键行 'BUILD SUCCESS' 'Tests run: 3, Failures: 0'
+PASS  留证目录：spec/changes/harden-core-security-and-state-boundaries/evidence/m1-class-transfer
