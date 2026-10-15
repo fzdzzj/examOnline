@@ -26,8 +26,54 @@
           :rows="3"
           :maxlength="5000"
           placeholder="请输入题干"
+          @blur="onStemBlur"
         />
       </FormItem>
+
+      <!-- 题干查重预检（add-question-duplicate-detection，知情防呆不阻断保存） -->
+      <Alert
+        v-if="duplicateHits.length > 0"
+        type="warning"
+        show-icon
+        :data-test="'duplicate-warning'"
+        class="mb-4"
+      >
+        <template #message>
+          <div>
+            <div class="flex items-center gap-2">
+              <span>
+                检测到题库中存在 {{ duplicateHits.length }} 道相似题目（最高相似度
+                {{ Math.round(maxSimilarity * 100) }}%）
+              </span>
+              <Button
+                v-if="duplicateHits.length > 0"
+                type="link"
+                size="small"
+                class="px-0"
+                data-test="duplicate-toggle-preview"
+                @click="duplicateShowPreview = !duplicateShowPreview"
+              >
+                {{ duplicateShowPreview ? '收起相似题目' : '查看相似题目' }}
+              </Button>
+            </div>
+            <div v-if="duplicateShowPreview" class="mt-2">
+              <div
+                v-for="item in duplicateHits"
+                :key="item.questionId"
+                data-test="duplicate-preview-item"
+                class="mb-1 rounded border border-amber-200 bg-amber-50 px-2 py-1"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="text-xs">[{{ typeLabelOf(item.type) }}]</span>
+                  <span class="truncate flex-1 text-xs text-gray-700">{{ item.content }}</span>
+                  <Tag color="warning">{{ Math.round((item.similarity ?? 0) * 100) }}%</Tag>
+                </div>
+                <div class="text-xs text-gray-400">默认分：{{ item.score ?? '—' }}</div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </Alert>
 
       <FormItem label="题干图片">
         <div class="flex items-start gap-3">
@@ -200,6 +246,7 @@ import {
   Modal,
   RadioGroup,
   Select,
+  Tag,
   Textarea,
   Upload,
   message,
@@ -209,14 +256,17 @@ import { useQuery } from '@tanstack/vue-query';
 
 import {
   create1,
+  checkDuplicate,
   list,
   update,
   upload,
+  type QuestionDuplicateItemResponse,
   type QuestionResponse,
   type TagResponse,
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { DIFFICULTY_OPTIONS, QUESTION_TYPE_OPTIONS } from '@/utils/questionTypes';
+import { typeLabelOf } from '@/utils/questionTypes';
 import {
   createEmptyDraft,
   draftFromResponse,
@@ -251,6 +301,85 @@ const config = computed(() => QUESTION_TYPE_CONFIGS[draft.value.type]);
 const draft = ref<QuestionFormDraft>(createEmptyDraft(1));
 const errors = ref<string[]>([]);
 const saving = ref(false);
+
+// ===== 题干查重预检（add-question-duplicate-detection，知情防呆，不阻断保存） =====
+const duplicateHits = ref<QuestionDuplicateItemResponse[]>([]);
+const duplicateLoading = ref(false);
+const duplicateShowPreview = ref(false);
+/** 已发起查重待检测的题干文本（避免重复/陈旧结果误报） */
+const duplicateCheckedStem = ref('');
+let duplicateTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** 读字数 ≥4 的「有效题干」时才算触发条件（与后端 ≥2 字符口径取更保守的上限）。 */
+function effectiveStemLength(stem: string): number {
+  return stem.trim().length;
+}
+
+/** 发起查重：失焦与防抖共用的真正请求。空/过短题干清空提示；命中即渲染 warning。 */
+async function runDuplicateCheck(stem: string): Promise<void> {
+  const trimmed = stem.trim();
+  if (effectiveStemLength(trimmed) < 4) {
+    duplicateHits.value = [];
+    duplicateCheckedStem.value = '';
+    duplicateShowPreview.value = false;
+    return;
+  }
+  if (duplicateCheckedStem.value === trimmed && duplicateHits.value.length > 0) {
+    // 同一题干已检过且有结果：不复检（避免连锁防抖重复请求）
+    return;
+  }
+  duplicateLoading.value = true;
+  try {
+    // SDK 查重端点：query 传题干/排除自身/题型与默认阈值
+    const hits = await unwrap<QuestionDuplicateItemResponse[]>(
+      checkDuplicate({
+        client,
+        throwOnError: true,
+        query: {
+          stem: trimmed,
+          excludeId: isEdit.value ? props.question?.id : undefined,
+        },
+      })
+    );
+    duplicateHits.value = hits ?? [];
+    duplicateCheckedStem.value = trimmed;
+    duplicateShowPreview.value = false;
+  } catch {
+    // 查重失败不阻断录入：静默清空，避免把网络失败渲染成业务告警
+    duplicateHits.value = [];
+    duplicateCheckedStem.value = '';
+  } finally {
+    duplicateLoading.value = false;
+  }
+}
+
+/** 防抖触发（读字数上升过程中不频繁请求；停顿 500ms 后检一次）。 */
+function scheduleDuplicateCheck(stem: string): void {
+  if (effectiveStemLength(stem) < 4) {
+    if (duplicateTimer) {
+      clearTimeout(duplicateTimer);
+      duplicateTimer = undefined;
+    }
+    duplicateHits.value = [];
+    duplicateCheckedStem.value = '';
+    return;
+  }
+  if (duplicateTimer) {
+    clearTimeout(duplicateTimer);
+  }
+  duplicateTimer = setTimeout(() => {
+    void runDuplicateCheck(stem);
+  }, 500);
+}
+
+/** 失焦立即校验：清掉未决防抖锁并即时请求（让用户停顿离开时立刻看到提示）。 */
+function onStemBlur(): void {
+  if (duplicateTimer) {
+    clearTimeout(duplicateTimer);
+    duplicateTimer = undefined;
+  }
+  void runDuplicateCheck(draft.value.content);
+}
 
 // ===== 题干图片上传（add-question-image）：本地预校验与后端口径一致（扩展名白名单 + ≤5MB）=====
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
@@ -302,9 +431,25 @@ watch(
     if (open) {
       draft.value = props.question ? draftFromResponse(props.question) : createEmptyDraft(1);
       errors.value = [];
+      // 打开弹层即清空查重提示（新题目/新编辑不残留上一次的命中）
+      duplicateHits.value = [];
+      duplicateCheckedStem.value = '';
+      duplicateShowPreview.value = false;
+      if (duplicateTimer) {
+        clearTimeout(duplicateTimer);
+        duplicateTimer = undefined;
+      }
     }
   },
   { immediate: true }
+);
+
+// 读字数防抖查重：停顿 500ms 触发（失焦路径见 onStemBlur）
+watch(
+  () => draft.value.content,
+  (content) => {
+    scheduleDuplicateCheck(content);
+  }
 );
 
 const { data: tags } = useQuery({
@@ -370,6 +515,16 @@ function removeAcceptedAnswer(index: number): void {
 function onCancel(): void {
   emit('update:open', false);
 }
+
+/** 命中集中的最高相似度（用于提示「最高相似度 XX%」）。 */
+const maxSimilarity = computed<number>(() => {
+  let max = 0;
+  for (const item of duplicateHits.value) {
+    const sim = item.similarity ?? 0;
+    if (sim > max) max = sim;
+  }
+  return max;
+});
 
 async function onSubmit(): Promise<void> {
   const found = validateQuestionDraft(draft.value);

@@ -3,15 +3,19 @@ package com.exam.question.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
+import com.exam.common.BusinessException;
+import com.exam.common.ResponseCode;
 import com.exam.question.dto.BatchDeleteQuestionsRequest;
 import com.exam.question.dto.BatchDeleteQuestionsResponse;
 import com.exam.question.dto.QuestionCreateRequest;
+import com.exam.question.dto.QuestionDuplicateItemResponse;
 import com.exam.question.dto.QuestionPageResponse;
 import com.exam.question.dto.QuestionResponse;
 import com.exam.question.dto.TagResponse;
 import com.exam.question.entity.Question;
 import com.exam.question.entity.QuestionType;
 import com.exam.question.entity.Tag;
+import com.exam.question.service.QuestionDuplicateService;
 import com.exam.question.service.QuestionService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,9 +42,12 @@ import java.util.Map;
 public class QuestionController {
 
     private final QuestionService questionService;
+    private final QuestionDuplicateService questionDuplicateService;
 
-    public QuestionController(QuestionService questionService) {
+    public QuestionController(QuestionService questionService,
+                              QuestionDuplicateService questionDuplicateService) {
         this.questionService = questionService;
+        this.questionDuplicateService = questionDuplicateService;
     }
 
     /** 创建题目（答案入库前归一化） */
@@ -103,6 +110,33 @@ public class QuestionController {
     public ApiResponse<BatchDeleteQuestionsResponse> batchDelete(
             @Valid @RequestBody BatchDeleteQuestionsRequest request) {
         return ApiResponse.success(questionService.batchDelete(request.getIds()));
+    }
+
+    /**
+     * 题目查重预检（add-question-duplicate-detection，知情防呆）：
+     * 检索归属当前教师题库（ADMIN 查全量）中与题干相似度 ≥ threshold 的前 limit 条相似题目，
+     * 按相似度降序。stem 必填且去除空白后不少于 2 个字符，否则 400；
+     * excludeId 排除编辑场景下的题目自身。
+     *
+     * @param stem      待检测题干
+     * @param excludeId 编辑题目时排除自身 id（可选）
+     * @param type      题型过滤（可选）
+     * @param threshold 相似度阈值，默认 0.6
+     * @param limit     返回条数，默认 5、上限 10
+     */
+    @GetMapping("/check-duplicate")
+    public ApiResponse<List<QuestionDuplicateItemResponse>> checkDuplicate(
+            @RequestParam(required = false) String stem,
+            @RequestParam(required = false) Long excludeId,
+            @RequestParam(required = false) Integer type,
+            @RequestParam(required = false) Double threshold,
+            @RequestParam(required = false) Integer limit) {
+        if (stem == null || stem.trim().length() < 2) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "题干不能为空且有效字符不少于 2 个");
+        }
+        return ApiResponse.success(questionDuplicateService.checkDuplicate(
+                stem, excludeId, type, threshold, limit));
     }
 
     private QuestionResponse toResponse(Question question, List<Tag> tags) {

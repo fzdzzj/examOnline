@@ -1679,6 +1679,48 @@ paths:
               schema:
                 type: string
                 format: byte
+  /api/questions/check-duplicate:
+    get:
+      tags:
+      - question-controller
+      operationId: checkDuplicate
+      parameters:
+      - name: stem
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: excludeId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: threshold
+        in: query
+        required: false
+        schema:
+          type: number
+          format: double
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListQuestionDuplicateItemResponse"
   /api/papers/{id}/export-pdf:
     get:
       tags:
@@ -4189,6 +4231,40 @@ components:
         size:
           type: integer
           format: int64
+    ApiResponseListQuestionDuplicateItemResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionDuplicateItemResponse"
+    QuestionDuplicateItemResponse:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        type:
+          type: integer
+          format: int32
+        content:
+          type: string
+        score:
+          type: number
+        similarity:
+          type: number
+          format: double
+        createdBy:
+          type: integer
+          format: int64
+        createdTime:
+          type: string
+          format: date-time
     ApiResponseListPaperResponse:
       type: object
       properties:
