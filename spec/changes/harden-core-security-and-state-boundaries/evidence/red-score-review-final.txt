@@ -1,0 +1,11 @@
+ScoreReviewServiceTest 定稿红证（补 auditLogMapper stub 后重跑；实现未动）
+命令：.\mvnw.cmd test "-Dtest=ScoreReviewServiceTest" -DfailIfNoTests=false
+（2026-10-15 10:50）
+
+结果：Tests run: 12, Failures: 2, Errors: 0, Skipped: 0 —— BUILD FAILURE（预期红）
+
+[ERROR] Failures:
+[ERROR]   ScoreReviewServiceTest.applyRejectedWhenStudentHasNoGradedSubmission:173 Expected com.exam.common.BusinessException to be thrown, but nothing was thrown.
+[ERROR]   ScoreReviewServiceTest.applyRejectedWhenSubmissionHasNoTotalScore:190 Expected com.exam.common.BusinessException to be thrown, but nothing was thrown.
+
+红线对照：答卷资格门禁缺失时申请正常走完（插入成功），新用例断言 400 拒绝未发生 → 红（更纯粹的红因：门禁被抽掉即漏）。

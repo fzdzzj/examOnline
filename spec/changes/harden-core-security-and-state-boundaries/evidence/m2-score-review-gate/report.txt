@@ -1,0 +1,11 @@
+﻿mutation-check 五步汇总 —— label: m2-score-review-gate
+target: src/main/java/com/exam/score/service/ScoreReviewService.java
+verify: .\mvnw.cmd test "-Dtest=ScoreReviewServiceTest" "-DfailIfNoTests=false"
+PASS  ① 备份：目标字节级复制到 spec/changes/harden-core-security-and-state-boundaries/evidence/m2-score-review-gate/backup/original
+PASS  ② 注入+命中：'if (submission == null || submission.getTotalScore() == null) {' -> 'if (false) {'（标志在场、字节有变）
+PASS  ③ 击红：--verify 非零退出（exit=1），step3-verify-red.log 关键行 'applyRejectedWhenStudentHasNoGradedSubmission' 与
+       'applyRejectedWhenSubmissionHasNoTotalScore' 均 FAILURE（答卷门禁失效，400 拒绝未发生）
+PASS  ④ 复原+归零：hash 与备份严格一致（F4FF1994B8F201491F46C65684A94BBD4669E4E10E71B5B6E3E4AC8F447D8927），注入标志不在场；
+       按 m1 教训 touch 强制重编译后回绿
+PASS  ⑤ 回绿：--verify 零退出（exit=0），step5-verify-green.log 关键行 'BUILD SUCCESS' 'Tests run: 12, Failures: 0'
+PASS  留证目录：spec/changes/harden-core-security-and-state-boundaries/evidence/m2-score-review-gate

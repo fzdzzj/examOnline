@@ -1,0 +1,13 @@
+阶段 2 后端定向测试「后绿」证据（实现落地后重跑同命令）
+命令：.\mvnw.cmd test "-Dtest=ClassManagementIntegrationTest,ScoreReviewServiceTest,ExamStateMachineServiceTest" -DfailIfNoTests=false
+（2026-10-15 10:54）
+
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in com.exam.clazz.ClassManagementIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in com.exam.exam.service.ExamStateMachineServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 -- in com.exam.score.service.ScoreReviewServiceTest
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+关键日志佐证（实现行为在真实链路/单测中触发）：
+- ExamStateMachineService - 考试状态机流转后已清除 examDetail 缓存（moved>0 清缓存路径）
+- 成绩复核申请: exam=10 student=1（答卷门禁放行后的正常申请）

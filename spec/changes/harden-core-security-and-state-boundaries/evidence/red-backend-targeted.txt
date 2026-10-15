@@ -1,0 +1,24 @@
+阶段 2 后端定向测试「先红」证据（实施前：测试落盘、实现未动）
+命令：.\mvnw.cmd test "-Dtest=ClassManagementIntegrationTest,ScoreReviewServiceTest,ExamStateMachineServiceTest" -DfailIfNoTests=false
+（执行环境：D:\code\examOnline，JAVA_HOME=D:\develop1\jdk21；2026-10-15 10:48）
+
+结果：Tests run: 22, Failures: 4, Errors: 0, Skipped: 0 —— BUILD FAILURE（预期红）
+
+[ERROR] Failures:
+[ERROR]   ClassManagementIntegrationTest.transferRejectsCrossTeacherTargetAndSameClass:143->IntegrationTestBase.perform:287 Response status expected:<403> but was:<200>
+[ERROR]   ExamStateMachineServiceTest.autoAdvanceMovesPublishedToStartAndOngoingToEnd:126
+Wanted but not invoked:
+cacheManager.getCache("examDetail");
+-> at ...ExamStateMachineServiceTest.autoAdvanceMovesPublishedToStartAndOngoingToEnd:126
+Actually, there were zero interactions with this mock.
+[ERROR]   ScoreReviewServiceTest.applyRejectedWhenStudentHasNoGradedSubmission:173 expected: <400> but was: <500>
+[ERROR]   ScoreReviewServiceTest.applyRejectedWhenSubmissionHasNoTotalScore:189 expected: <400> but was: <500>
+
+红线对照：
+- H-01 跨教师转班未拦截（期望 403 得 200）→ 红
+- H-04 autoAdvance 未清缓存（cacheManager.getCache 零交互）→ 红
+- H-02 答卷门禁缺失 → 红（两例；其中 500 系当时新用例未 stub 发布审计路径所致，
+  测试定稿后单类重跑见 red-score-review-final.txt：期望 BusinessException 未抛出，红因更纯粹）
+
+注：ScoreReview 两例在测试定稿（补 auditLogMapper stub）后重跑红证见 red-score-review-final.txt；
+ClassManagement 与 ExamStateMachine 两例测试文件未再改动，本日志即其定稿红证。

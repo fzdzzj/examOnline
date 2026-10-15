@@ -3,11 +3,14 @@ package com.exam.exam.service;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.config.CacheConfig;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.monitoring.metrics.BusinessMetrics;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -55,12 +58,14 @@ public class ExamStateMachineService {
     private final ExamMapper examMapper;
     private final AbsenceService absenceService;
     private final BusinessMetrics metrics;
+    private final CacheManager cacheManager;
 
     public ExamStateMachineService(ExamMapper examMapper, AbsenceService absenceService,
-                                   BusinessMetrics metrics) {
+                                   BusinessMetrics metrics, CacheManager cacheManager) {
         this.examMapper = examMapper;
         this.absenceService = absenceService;
         this.metrics = metrics;
+        this.cacheManager = cacheManager;
     }
 
     /**
@@ -129,7 +134,24 @@ public class ExamStateMachineService {
             }
             moved += rows;
         }
+        if (moved > 0) {
+            // H-04（harden-core-security-and-state-boundaries）：本轮确有状态流转时主动清空考试详情缓存，
+            // 否则定时扫表写库推进的状态要等最多 5 分钟短 TTL 过期后详情接口才读到最新值（脏读）
+            clearExamDetailCache();
+        }
         return moved;
+    }
+
+    /**
+     * H-04：主动清空 examDetail 缓存（定时流转直接写库，绕过 {@code ExamService} 的 @CacheEvict 写路径）。
+     * cacheManager.getCache 理论不可达 null（缓存已在 {@link CacheConfig} 显式登记），空值兜底防御。
+     */
+    private void clearExamDetailCache() {
+        Cache cache = cacheManager.getCache(CacheConfig.CACHE_EXAM_DETAIL);
+        if (cache != null) {
+            cache.clear();
+            log.info("考试状态机流转后已清除 examDetail 缓存");
+        }
     }
 
     /** 批量推进的单场 CAS：0 行（并发已迁移）静默跳过，不打断同批其他考试。 */

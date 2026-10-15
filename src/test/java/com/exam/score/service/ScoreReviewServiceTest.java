@@ -13,6 +13,7 @@ import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.entity.ScoreReview;
 import com.exam.score.mapper.ScoreAuditLogMapper;
 import com.exam.score.mapper.ScoreReviewMapper;
+import com.exam.submission.entity.ExamSubmission;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -85,6 +86,17 @@ class ScoreReviewServiceTest {
         return audit;
     }
 
+    /** 已批改且有总分的答卷（H-02 答卷门禁的放行态）。 */
+    private GradingSubmission gradedSubmission() {
+        GradingSubmission submission = new GradingSubmission();
+        submission.setId(100L);
+        submission.setExamId(10L);
+        submission.setStudentId(1L);
+        submission.setStatus(ExamSubmission.STATUS_GRADED);
+        submission.setTotalScore(new BigDecimal("85.0"));
+        return submission;
+    }
+
     // ==================== 复核申请：限次 + 限时（§10.7） ====================
 
     @Test
@@ -92,6 +104,8 @@ class ScoreReviewServiceTest {
         setUser(1L, 1);
         when(examMapper.selectById(10L)).thenReturn(publishedExam());
         when(auditLogMapper.selectList(any())).thenReturn(List.of(publishAudit(LocalDateTime.now().minusDays(1))));
+        // H-02 答卷门禁放行：已批改且有总分的答卷
+        when(gradingMapper.selectOne(any())).thenReturn(gradedSubmission());
         when(reviewMapper.selectCount(any())).thenReturn(0L);
         when(reviewMapper.insert(any(ScoreReview.class))).thenReturn(1);
 
@@ -110,6 +124,8 @@ class ScoreReviewServiceTest {
         setUser(1L, 1);
         when(examMapper.selectById(10L)).thenReturn(publishedExam());
         when(auditLogMapper.selectList(any())).thenReturn(List.of(publishAudit(LocalDateTime.now().minusDays(1))));
+        // H-02 答卷门禁放行：已批改且有总分的答卷
+        when(gradingMapper.selectOne(any())).thenReturn(gradedSubmission());
         // 已有 1 条复核记录 → 限 1 次（§10.7），走预查友好提示直接拒绝
         when(reviewMapper.selectCount(any())).thenReturn(1L);
 
@@ -124,6 +140,8 @@ class ScoreReviewServiceTest {
         setUser(1L, 1);
         when(examMapper.selectById(10L)).thenReturn(publishedExam());
         when(auditLogMapper.selectList(any())).thenReturn(List.of(publishAudit(LocalDateTime.now().minusDays(1))));
+        // H-02 答卷门禁放行：已批改且有总分的答卷
+        when(gradingMapper.selectOne(any())).thenReturn(gradedSubmission());
         // 预查返回 0，但并发下另一个线程恰好已插入 → 唯一索引冲突 → 转友好提示（幂等兜底）
         when(reviewMapper.selectCount(any())).thenReturn(0L);
         when(reviewMapper.insert(any(ScoreReview.class))).thenThrow(new DataIntegrityViolationException("Duplicate uk_review_exam_student"));
@@ -156,6 +174,39 @@ class ScoreReviewServiceTest {
         BusinessException e = assertThrows(BusinessException.class, () -> service.apply(10L, "未发布"));
         assertEquals(ResponseCode.BAD_REQUEST.getCode(), e.getCode());
         assertTrue(e.getMessage().contains("待发布"));
+        verify(reviewMapper, never()).insert(any(ScoreReview.class));
+    }
+
+    // ==================== 答卷资格门禁（H-02，harden-core-security-and-state-boundaries） ====================
+
+    @Test
+    void applyRejectedWhenStudentHasNoGradedSubmission() {
+        setUser(1L, 1);
+        when(examMapper.selectById(10L)).thenReturn(publishedExam());
+        when(auditLogMapper.selectList(any())).thenReturn(List.of(publishAudit(LocalDateTime.now().minusDays(1))));
+        // 未参加考试/无答卷：gradingMapper.selectOne 返回 null → 400 拒绝
+        when(gradingMapper.selectOne(any())).thenReturn(null);
+
+        BusinessException e = assertThrows(BusinessException.class, () -> service.apply(10L, "申请复核"));
+        assertEquals(ResponseCode.BAD_REQUEST.getCode(), e.getCode());
+        assertTrue(e.getMessage().contains("未参加本场考试或成绩尚未批改完成"));
+        verify(reviewMapper, never()).insert(any(ScoreReview.class));
+    }
+
+    @Test
+    void applyRejectedWhenSubmissionHasNoTotalScore() {
+        setUser(1L, 1);
+        when(examMapper.selectById(10L)).thenReturn(publishedExam());
+        when(auditLogMapper.selectList(any())).thenReturn(List.of(publishAudit(LocalDateTime.now().minusDays(1))));
+        // 答卷存在但总分未写入（成绩尚未批改完成）：同样 400 拒绝
+        GradingSubmission unSummarized = new GradingSubmission();
+        unSummarized.setStatus(ExamSubmission.STATUS_GRADED);
+        unSummarized.setTotalScore(null);
+        when(gradingMapper.selectOne(any())).thenReturn(unSummarized);
+
+        BusinessException e = assertThrows(BusinessException.class, () -> service.apply(10L, "申请复核"));
+        assertEquals(ResponseCode.BAD_REQUEST.getCode(), e.getCode());
+        assertTrue(e.getMessage().contains("未参加本场考试或成绩尚未批改完成"));
         verify(reviewMapper, never()).insert(any(ScoreReview.class));
     }
 

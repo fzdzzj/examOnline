@@ -165,14 +165,22 @@ public class ClassService {
      * 答卷已绑 student_id，成绩不依赖班级，无需迁移任何历史成绩；
      * joined_time 同步刷新为转班时间（对 B 班而言是新归属起点）。
      * 操作归属源班级（路径 classId）的教师执行。
+     *
+     * <p>H-01（harden-core-security-and-state-boundaries）：目标班级同样经
+     * {@link #getOwnedClass} 强校验所有权——仅校验存在性时，教师 A 可把学生强行
+     * 转入教师 B 的班级，破坏班级数据隔离；非归属教师且非 ADMIN 直接 403。
+     * 源班级与目标班级相同属防呆拒绝（400）。
      */
     @Transactional(rollbackFor = Exception.class)
     public void transfer(Long classId, Long userId, Long targetClassId) {
         getOwnedClass(classId);
         requireStudentExists(userId);
-        if (classMapper.selectById(targetClassId) == null) {
-            throw new BusinessException(ResponseCode.NOT_FOUND, "目标班级不存在");
+        // 防呆：源班级与目标班级不能相同（H-01）
+        if (classId.equals(targetClassId)) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "源班级与目标班级不能相同");
         }
+        // 目标班级所有权强校验（H-01）：不存在 404 / 非归属且非 ADMIN 403
+        getOwnedClass(targetClassId);
         // 预检：uk_user_class(user_id, class_id) 唯一索引兜底，先给清晰业务提示
         Long inTarget = userClassMapper.selectCount(Wrappers.<UserClass>lambdaQuery()
                 .eq(UserClass::getUserId, userId)

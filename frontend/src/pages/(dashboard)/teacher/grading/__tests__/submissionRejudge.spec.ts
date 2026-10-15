@@ -28,6 +28,8 @@ vi.mock('@tanstack/vue-query', async () => {
       const key = unref(options.queryKey) as unknown[];
       return {
         data: ref(queryStore.data[String(key[0])]),
+        // 测试基建适配（H-03 页面接入 error 槽后补齐；断言零改动）
+        error: ref(null),
         isFetching: ref(false),
         refetch: vi.fn(),
       };

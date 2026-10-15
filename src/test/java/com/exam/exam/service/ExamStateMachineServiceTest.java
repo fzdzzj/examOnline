@@ -2,6 +2,7 @@ package com.exam.exam.service;
 
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.config.CacheConfig;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.monitoring.metrics.BusinessMetrics;
@@ -10,6 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,6 +41,12 @@ class ExamStateMachineServiceTest {
 
     @Mock
     private BusinessMetrics metrics;
+
+    @Mock
+    private CacheManager cacheManager;
+
+    @Mock
+    private Cache cache;
 
     @InjectMocks
     private ExamStateMachineService service;
@@ -108,10 +117,14 @@ class ExamStateMachineServiceTest {
                 .thenReturn(1);
         when(examMapper.casUpdateStatus(20L, Exam.STATUS_IN_PROGRESS, Exam.STATUS_ENDED, 2))
                 .thenReturn(1);
+        when(cacheManager.getCache(CacheConfig.CACHE_EXAM_DETAIL)).thenReturn(cache);
 
         assertEquals(2, service.autoAdvance());
         // 进行中→已结束 迁移成功即触发缺考标记（缺考锚定"时间窗彻底关闭"这一刻，§8.10）
         verify(absenceService).markAbsence(20L);
+        // H-04（harden-core-security-and-state-boundaries）：moved > 0 → 主动清空 examDetail 缓存
+        verify(cacheManager).getCache(CacheConfig.CACHE_EXAM_DETAIL);
+        verify(cache).clear();
     }
 
     @Test
@@ -125,6 +138,8 @@ class ExamStateMachineServiceTest {
                 .thenReturn(0);
 
         assertEquals(0, service.autoAdvance());
+        // H-04：本轮无迁移（moved == 0）→ 不触碰缓存
+        verify(cacheManager, never()).getCache(any());
     }
 
     @Test

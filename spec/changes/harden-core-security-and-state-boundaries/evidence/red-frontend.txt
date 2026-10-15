@@ -1,0 +1,15 @@
+阶段 2 前端定向测试「先红」证据（实施前：测试落盘、页面未动）
+命令：npm.cmd run test -- gradingRunFlow.spec.ts --testTimeout=30000 --reporter=dot
+（workdir：frontend；2026-10-15 10:47）
+
+Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+
+FAIL  src/pages/(dashboard)/teacher/grading/__tests__/gradingRunFlow.spec.ts > 教师批改工作台显式运行判分 > 主观题查询失败（H-03）：错误 Alert 显性呈现，不伪装为「没有主观题」
+AssertionError: expected false to be true
+  ❯ ...gradingRunFlow.spec.ts:250:33
+    249|     const errorAlert = wrapper.find('[data-test="questions-error"]');
+    250|     expect(errorAlert.exists()).toBe(true);   <- 红：页面未渲染 questions-error Alert
+
+红线对照：主观题列表查询失败未被显性呈现（error 槽未解构），新用例断言 data-test="questions-error" Alert 存在 → 红；
+同文件零回归用例「成功且无主观题：info 空态照常、不弹错误 Alert」绿灯（6 passed 中）。

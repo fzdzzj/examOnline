@@ -122,6 +122,35 @@ class ClassManagementIntegrationTest extends IntegrationTestBase {
         assertFalse(classService.listStudentIds(classB).contains(stu1Id));
     }
 
+    /**
+     * H-01（harden-core-security-and-state-boundaries）：学生转班目标班级所有权水平越权拦截。
+     * 目标班级仅校验存在性时，教师 A 可把学生强行转入教师 B 的班级（越权漏洞）——
+     * 实施前（期望 403 得 200）即红；源班级与目标班级相同须 400 防呆。
+     */
+    @Test
+    void transferRejectsCrossTeacherTargetAndSameClass() throws Exception {
+        String teacherA = registerTeacher();
+        String teacherB = registerTeacher();
+        String student = registerStudent();
+        long studentId = userIdOf(student);
+        long classA = createClass(teacherA, "甲班", null);
+        long classB = createClass(teacherB, "乙班", null);
+
+        // 学生先在 A 班（教师 A 入班）
+        perform(jsonPost("/api/classes/" + classA + "/students", teacherA, "{\"userId\":" + studentId + "}"), 200);
+
+        // 水平越权：目标班级属于教师 B，教师 A 转班 → 403（目标班级所有权校验缺失即得 200）
+        perform(jsonPut("/api/classes/" + classA + "/students/" + studentId + "/transfer", teacherA,
+                "{\"targetClassId\":" + classB + "}"), 403);
+
+        // 越权请求不得生效：学生仍在 A 班
+        assertTrue(classService.listStudentIds(classA).contains(studentId));
+
+        // 防呆：源班级与目标班级相同 → 400
+        perform(jsonPut("/api/classes/" + classA + "/students/" + studentId + "/transfer", teacherA,
+                "{\"targetClassId\":" + classA + "}"), 400);
+    }
+
     // ==================== 工具 ====================
 
     private long createClass(String token, String name, Long courseId) throws Exception {

@@ -61,7 +61,13 @@ vi.mock('@tanstack/vue-query', async () => {
       capturedQueries.options.push(options);
       const key = unref(options.queryKey) as unknown[];
       const bucket = key[1] === 'questions' ? 'questions' : key[1] === 'rows' ? 'rows' : 'exams';
-      return { data: ref(queryStore.data[bucket]), isFetching: ref(false), refetch: vi.fn() };
+      return {
+        data: ref(queryStore.data[bucket]),
+        // 测试基建适配（H-03 页面接入 error 槽后补齐；断言零改动）
+        error: ref(null),
+        isFetching: ref(false),
+        refetch: vi.fn(),
+      };
     },
     // 页面接入逐卷重判后需要 query client；本文件的既有用例不断言它，属测试基建适配
     useQueryClient: () => ({ invalidateQueries: vi.fn() }),

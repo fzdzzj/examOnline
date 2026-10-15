@@ -1,0 +1,10 @@
+﻿mutation-check 五步汇总 —— label: m3-frontend-error
+target: frontend/src/pages/(dashboard)/teacher/grading/index.page.vue
+verify: npm.cmd run test -- gradingRunFlow.spec.ts --testTimeout=30000 --reporter=dot
+PASS  ① 备份：目标字节级复制到 D:\code\examOnline\spec\changes\harden-core-security-and-state-boundaries\evidence\m3-frontend-error/backup/original
+PASS  ② 注入+命中：'v-if="questionsErrorText"' -> 'v-if="false"'（错误 Alert 渲染分支禁用，标志在场、字节有变）
+PASS  ③ 击红：--verify 非零退出（exit=1），step3-verify-red.log 关键行 'Tests 1 failed | 6 passed (7)'，
+       H-03 用例 '主观题查询失败（H-03）：错误 Alert 显性呈现' 断言 data-test=questions-error 存在失败（expected false to be true）
+PASS  ④ 复原+归零：hash 与备份严格一致（A5D8B8D9BDC6AEAE4BB7E57E0E37A3CB70ABECD359006D2E6A5B887013472CAF），注入标志不在场
+PASS  ⑤ 回绿：--verify 零退出（exit=0），step5-verify-green.log 关键行 'Test Files 1 passed' 'Tests 7 passed (7)'
+PASS  留证目录：D:\code\examOnline\spec\changes\harden-core-security-and-state-boundaries\evidence\m3-frontend-error

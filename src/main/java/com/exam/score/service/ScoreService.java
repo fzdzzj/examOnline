@@ -6,6 +6,7 @@ import com.exam.auth.security.RoleHierarchy;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.config.CacheConfig;
 import com.exam.config.ReadYourWriteMark;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
@@ -24,6 +25,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -202,12 +204,17 @@ public class ScoreService {
      * 批量发布（spec「批量发布」场景）：已批改→已发布，学生端立即可见。
      * 单场业务性失败不影响其余（部分成功语义），逐场返回结果；每场成功均落 PUBLISH 审计。
      *
+     * <p>H-04（harden-core-security-and-state-boundaries）：发布直接改库推进考试状态
+     * （已批改→已发布），主动 @CacheEvict(allEntries=true) 清空 examDetail 缓存，
+     * 避免学生/教师详情接口命中最长 5 分钟的旧状态脏读（key 带请求者，写少读多，清全量代价可忽略）。
+     *
      * <p><b>整批共用本方法这一个事务</b>，这是有意的：基础设施故障（非 BusinessException）
      * 会一路抛出、触发整体回滚，不会出现"一半考试已发布、一半没发"的静默不一致；
      * 而业务性失败在 {@link #publishOne} 内被转成逐场结果。之所以能这么合并，是因为
      * publishOne 里的 BusinessException 只可能在**尚未产生任何写操作**时抛出
      * （状态前置校验、CAS 抢输即 0 行），所以"捕获后不回滚"不会留下该场的半截写入。
      */
+    @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
     @Transactional(rollbackFor = Exception.class)
     public List<ScoreActionItem> publish(List<Long> examIds) {
         List<ScoreActionItem> results = new ArrayList<>(examIds.size());
@@ -289,7 +296,11 @@ public class ScoreService {
     /**
      * 批量撤回（spec「成绩撤回」场景）：仅管理员；已发布→已批改，
      * 学生端立即不可见（显示"成绩待发布"）；原因必填，逐场落 REVOKE 审计。
+     *
+     * <p>H-04（harden-core-security-and-state-boundaries）：撤回同样直接改库（已发布→已批改），
+     * 主动 @CacheEvict(allEntries=true) 清空 examDetail 缓存，学生端详情立即不再显示已撤回成绩。
      */
+    @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
     @Transactional(rollbackFor = Exception.class)
     public List<ScoreActionItem> revoke(List<Long> examIds, String reason) {
         // 双重校验：注解 @RequireRole 拦截层 + Service 内断言（防绕过直调）
