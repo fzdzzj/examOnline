@@ -11,6 +11,8 @@ import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.exam.service.ExamPaperLockService;
 import com.exam.question.dto.BatchDeleteQuestionsResponse;
+import com.exam.question.dto.BatchTagsRequest;
+import com.exam.question.dto.BatchTagsResponse;
 import com.exam.question.dto.QuestionCreateRequest;
 import com.exam.question.entity.Question;
 import com.exam.question.entity.QuestionTag;
@@ -172,6 +174,97 @@ public class QuestionService {
         }
         log.info("题目批量删除: 请求 {} 题，成功 {} 题，失败 {} 题", ids.size(), deletable.size(), failed.size());
         return new BatchDeleteQuestionsResponse(deletable, failed);
+    }
+
+    /**
+     * 批量打标/解绑（add-batch-tagging，逐题结果信封）：对多道题目批量追加（BIND）或
+     * 解绑（UNBIND）标签。
+     *
+     * <p>所有权校验逐题执行（越权/不存在题目计入 {@code failed}，ADMIN 自动放行）；
+     * BIND 用「已有关联差集」仅插入缺失的 (questionId, tagId) 对，天然幂等且保留原题
+     * 其余标签；UNBIND 物理删除合法的 (questionId, tagId) 关联行，非选标签不受影响。
+     * 标签本体要求全部存在且未删除（否则 400），与单题打标 {@link #replaceTags} 口径一致。
+     *
+     * @param questionIds 目标题目 ID 列表
+     * @param tagIds      目标标签 ID 列表
+     * @param action      BIND（追加）或 UNBIND（解绑）
+     * @return 信封：succeeded（被处理的题目 id）与 failed（逐题失败原因）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public BatchTagsResponse batchTags(List<Long> questionIds, List<Long> tagIds, String action) {
+        LoginUser operator = requireLogin();
+        // 请求内重复题目前置显式校验（口径与 batchDelete/addQuestions 一致，靠去重后长度变化暴露）
+        List<Long> distinctQuestions = questionIds.stream().distinct().toList();
+        if (distinctQuestions.size() != questionIds.size()) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "请求内存在重复题目");
+        }
+        if (!BatchTagsRequest.ACTION_BIND.equals(action)
+                && !BatchTagsRequest.ACTION_UNBIND.equals(action)) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "非法操作类型: " + action);
+        }
+        List<Long> distinctTags = tagIds.stream().distinct().toList();
+        List<Tag> existingTags = tagMapper.selectBatchIds(distinctTags);
+        if (existingTags.size() < distinctTags.size()) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "部分标签不存在或已删除");
+        }
+        if (distinctTags.isEmpty()) {
+            return new BatchTagsResponse(List.of(), List.of());
+        }
+
+        Map<Long, Question> found = questionMapper.selectBatchIds(distinctQuestions).stream()
+                .collect(Collectors.toMap(Question::getId, question -> question));
+
+        List<Long> allowed = new ArrayList<>();
+        List<BatchTagsResponse.FailedItem> failed = new ArrayList<>();
+        for (Long id : distinctQuestions) {
+            Question question = found.get(id);
+            if (question == null) {
+                // selectBatchIds 已过滤软删：查不到 = 不存在或已软删，与单题 404 同文案
+                failed.add(new BatchTagsResponse.FailedItem(id, "题目不存在"));
+                continue;
+            }
+            try {
+                OwnershipGuard.assertOwner(question.getCreatedBy(), operator, "题目");
+                allowed.add(id);
+            } catch (BusinessException e) {
+                failed.add(new BatchTagsResponse.FailedItem(id, e.getMessage()));
+            }
+        }
+        if (allowed.isEmpty()) {
+            return new BatchTagsResponse(List.of(), failed);
+        }
+
+        // 批量取回合法题目的既有关联（questionId, tagId 对）
+        List<QuestionTag> existingLinks = questionTagMapper.selectList(Wrappers.<QuestionTag>lambdaQuery()
+                .in(QuestionTag::getQuestionId, allowed));
+        Set<String> existingPairs = existingLinks.stream()
+                .map(l -> l.getQuestionId() + ":" + l.getTagId())
+                .collect(Collectors.toSet());
+
+        for (Long questionId : allowed) {
+            for (Long tagId : distinctTags) {
+                String pair = questionId + ":" + tagId;
+                if (BatchTagsRequest.ACTION_BIND.equals(action)) {
+                    // BIND：仅插入差集中缺失的 (questionId, tagId) 对，天然幂等
+                    if (!existingPairs.contains(pair)) {
+                        QuestionTag link = new QuestionTag();
+                        link.setQuestionId(questionId);
+                        link.setTagId(tagId);
+                        questionTagMapper.insert(link);
+                    }
+                } else {
+                    // UNBIND：物理删除指定关联行，非指定标签原样保留
+                    questionTagMapper.delete(Wrappers.<QuestionTag>lambdaQuery()
+                            .eq(QuestionTag::getQuestionId, questionId)
+                            .eq(QuestionTag::getTagId, tagId));
+                }
+            }
+        }
+
+        log.info("题目批量{}: 请求 {} 题 × {} 标签，成功 {} 题，失败 {} 题",
+                BatchTagsRequest.ACTION_BIND.equals(action) ? "打标" : "解绑",
+                distinctQuestions.size(), distinctTags.size(), allowed.size(), failed.size());
+        return new BatchTagsResponse(allowed, failed);
     }
 
     /**

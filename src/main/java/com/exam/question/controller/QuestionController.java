@@ -7,6 +7,8 @@ import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.question.dto.BatchDeleteQuestionsRequest;
 import com.exam.question.dto.BatchDeleteQuestionsResponse;
+import com.exam.question.dto.BatchTagsRequest;
+import com.exam.question.dto.BatchTagsResponse;
 import com.exam.question.dto.QuestionCreateRequest;
 import com.exam.question.dto.QuestionDuplicateItemResponse;
 import com.exam.question.dto.QuestionPageResponse;
@@ -110,6 +112,17 @@ public class QuestionController {
     public ApiResponse<BatchDeleteQuestionsResponse> batchDelete(
             @Valid @RequestBody BatchDeleteQuestionsRequest request) {
         return ApiResponse.success(questionService.batchDelete(request.getIds()));
+    }
+
+    /**
+     * 批量打标/解绑标签（add-batch-tagging，逐题结果信封）：
+     * 对多道题目批量追加（BIND）或解绑（UNBIND）标签，所有权逐题强校验，
+     * 越权题目计入 failed。请求参数校验失败（空/超限/重复/非法 action）为 400。
+     */
+    @PostMapping("/batch-tags")
+    public ApiResponse<BatchTagsResponse> batchTags(@Valid @RequestBody BatchTagsRequest request) {
+        return ApiResponse.success(questionService.batchTags(
+                request.getQuestionIds(), request.getTagIds(), request.getAction()));
     }
 
     /**

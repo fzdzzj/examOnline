@@ -53,6 +53,22 @@
               <Button @click="openMetaEdit">编辑信息</Button>
               <Button type="primary" @click="pickerOpen = true">+ 从题库选题</Button>
             </template>
+            <template v-if="!isLocked">
+              <Button
+                data-test="rebalance-open"
+                :disabled="items.length === 0"
+                @click="rebalanceOpen = true"
+              >
+                ⚡ 分值智能配平
+              </Button>
+              <Button
+                data-test="reorder-standard"
+                :disabled="items.length === 0"
+                @click="onStandardReorder"
+              >
+                按标准题序重排
+              </Button>
+            </template>
           </div>
         </div>
 
@@ -395,6 +411,31 @@
         @picked="onPick"
       />
 
+      <!-- 分值智能配平（add-batch-tagging-and-score-balancing） -->
+      <ScoreRebalanceModal
+        :open="rebalanceOpen"
+        :items="items"
+        :declared-total="detail?.totalScore ?? 0"
+        :submitting="rebalanceSubmitting"
+        @close="rebalanceOpen = false"
+        @submit="onRebalance"
+      />
+
+      <!-- 按标准题序重排确认 -->
+      <Modal
+        v-model:open="reorderConfirmOpen"
+        title="按标准题序重排"
+        :ok-text="'确认重排'"
+        destroy-on-close
+        @ok="doStandardReorder"
+      >
+        <p class="mb-0 text-gray-600">
+          将试卷题目按
+          <b>单选 → 多选 → 判断 → 填空 → 简答</b>
+          的标准题型顺序重排， 已锁定试卷不可重排。确认后一次性持久化。
+        </p>
+      </Modal>
+
       <Modal v-model:open="metaOpen" title="编辑试卷信息" :footer="null" :mask-closable="false">
         <Form layout="vertical">
           <FormItem label="试卷标题" required>
@@ -459,12 +500,14 @@ import { useQuery } from '@tanstack/vue-query';
 
 import QuestionPickerModal from '@/components/question/QuestionPickerModal.vue';
 import QuestionImage from '@/components/question/QuestionImage.vue';
+import ScoreRebalanceModal from '@/components/question/ScoreRebalanceModal.vue';
 import {
   addQuestions,
   commitRandomDraw,
   detail1,
   list as listTags,
   previewDraw as previewDrawContract,
+  rebalanceScores,
   removeQuestion,
   update1,
   updateOrder,
@@ -700,6 +743,83 @@ async function onRemove(record: PaperQuestionItemResponse): Promise<void> {
     invalidatePaper();
   } catch (error) {
     message.error(error instanceof Error ? error.message : '移出失败');
+  }
+}
+
+// ==================== 分值智能配平（add-batch-tagging-and-score-balancing） ====================
+
+const rebalanceOpen = ref(false);
+const rebalanceSubmitting = ref(false);
+
+async function onRebalance(payload: {
+  mode: string;
+  targetScore: number;
+  step: number;
+  fixedScores: Record<string, number>;
+}): Promise<void> {
+  rebalanceSubmitting.value = true;
+  try {
+    await unwrap(
+      rebalanceScores({
+        client,
+        throwOnError: true,
+        path: { id: paperId.value },
+        body: {
+          mode: payload.mode,
+          targetScore: payload.targetScore,
+          step: payload.step,
+          ...(payload.mode === 'BY_TYPE' ? { fixedScores: payload.fixedScores } : {}),
+        },
+      })
+    );
+    message.success('分值已智能配平，保和校验通过');
+    rebalanceOpen.value = false;
+    invalidatePaper();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '配平失败，请稍后重试');
+  } finally {
+    rebalanceSubmitting.value = false;
+  }
+}
+
+// ==================== 按标准题型一键重排（1单选→2多选→3判断→5填空→4简答） ====================
+
+const STANDARD_TYPE_ORDER = [1, 2, 3, 5, 4];
+
+const reorderConfirmOpen = ref(false);
+
+function onStandardReorder(): void {
+  reorderConfirmOpen.value = true;
+}
+
+async function doStandardReorder(): Promise<void> {
+  const current = items.value;
+  if (current.length === 0) return;
+  const ordered = [...current].sort((a, b) => {
+    const ta = a.questionType ?? -1;
+    const tb = b.questionType ?? -1;
+    const ia = STANDARD_TYPE_ORDER.indexOf(ta);
+    const ib = STANDARD_TYPE_ORDER.indexOf(tb);
+    const ra = ia === -1 ? Number.MAX_SAFE_INTEGER : ia;
+    const rb = ib === -1 ? Number.MAX_SAFE_INTEGER : ib;
+    return ra !== rb ? ra - rb : (a.number ?? 0) - (b.number ?? 0);
+  });
+  const orderedIds = ordered.map((item) => item.questionId as number);
+  try {
+    // 复用现有 PUT /api/papers/{id}/questions/order 端点一次性完成重排持久化
+    await unwrap(
+      updateOrder({
+        client,
+        throwOnError: true,
+        path: { id: paperId.value },
+        body: { questionIds: orderedIds },
+      })
+    );
+    reorderConfirmOpen.value = false;
+    message.success('已按标准题型顺序重排');
+    invalidatePaper();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '重排失败，请稍后重试');
   }
 }
 

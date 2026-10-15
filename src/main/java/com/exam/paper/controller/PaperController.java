@@ -15,6 +15,7 @@ import com.exam.paper.dto.PaperSnapshotResponse;
 import com.exam.paper.dto.PaperUpdateRequest;
 import com.exam.paper.dto.RandomDrawPreviewResponse;
 import com.exam.paper.dto.RandomDrawRequest;
+import com.exam.paper.dto.RebalanceScoresRequest;
 import com.exam.paper.dto.UpdatePaperQuestionScoreRequest;
 import com.exam.paper.entity.Paper;
 import com.exam.paper.service.PaperExportService;
@@ -154,6 +155,17 @@ public class PaperController {
     public ApiResponse<PaperDetailResponse> updateOrder(@PathVariable Long id,
                                                         @Valid @RequestBody PaperOrderRequest request) {
         return ApiResponse.success(paperService.updateOrder(id, request.getQuestionIds()));
+    }
+
+    /**
+     * 试卷分值智能配平（add-batch-tagging-and-score-balancing）：离散最大余数保和算法
+     * 一键均分（EVEN）或按题型配比（BY_TYPE）重排试卷内题目分值，严格保证各题分值之和
+     * === 目标总分。锁定试卷/进行中考试拒绝修改（400），批量更新在单一事务内持久化。
+     */
+    @PostMapping("/{id}/questions/scores/rebalance")
+    public ApiResponse<PaperDetailResponse> rebalanceScores(
+            @PathVariable Long id, @Valid @RequestBody RebalanceScoresRequest request) {
+        return ApiResponse.success(paperService.rebalanceScores(id, request));
     }
 
     // ==================== 标签随机抽题 ====================

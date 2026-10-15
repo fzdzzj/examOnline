@@ -31,6 +31,13 @@
       />
       <Button type="primary" @click="onSearch">查询</Button>
       <div class="flex-1" />
+      <Button
+        :disabled="selectedIds.length === 0"
+        data-test="batch-tags-button"
+        @click="batchTagsOpen = true"
+      >
+        批量标签（{{ selectedIds.length }}）
+      </Button>
       <Popconfirm
         title="确认删除选中的题目？"
         :disabled="selectedIds.length === 0"
@@ -109,6 +116,16 @@
     <!-- 软删除语义说明：列表数据完全来自后端分页接口；已删题目被后端逻辑删除过滤，
          不会出现在本列表（前端不自行发明过滤规则，也不做「已删假可用」展示）。 -->
     <QuestionForm v-model:open="formOpen" :question="editing" @saved="invalidateQuestions" />
+
+    <!-- 批量打标/解绑弹窗（add-batch-tagging-and-score-balancing） -->
+    <BatchTagModal
+      :open="batchTagsOpen"
+      :question-ids="selectedIds"
+      :tags="tags ?? []"
+      :submitting="batchTagsSubmitting"
+      @close="batchTagsOpen = false"
+      @submit="onBatchTags"
+    />
 
     <QuestionImportModal
       :open="importResultOpen"
@@ -195,8 +212,10 @@ import { useQuery } from '@tanstack/vue-query';
 
 import QuestionForm from '@/components/question/QuestionForm.vue';
 import QuestionImportModal from '@/components/question/QuestionImportModal.vue';
+import BatchTagModal from '@/components/question/BatchTagModal.vue';
 import {
   batchDelete,
+  batchTags,
   checkDuplicate,
   delete_ as deleteQuestion,
   importQuestions,
@@ -365,6 +384,53 @@ async function onBatchDelete(): Promise<void> {
     message.error(error instanceof Error ? error.message : '删除失败，请稍后重试');
   } finally {
     batchDeleting.value = false;
+  }
+}
+
+// ==================== 批量打标/解绑（add-batch-tagging-and-score-balancing） ====================
+
+const batchTagsOpen = ref(false);
+const batchTagsSubmitting = ref(false);
+
+async function onBatchTags(payload: {
+  questionIds: number[];
+  tagIds: number[];
+  action: string;
+}): Promise<void> {
+  batchTagsSubmitting.value = true;
+  try {
+    const result = await unwrap(
+      batchTags({
+        client,
+        throwOnError: true,
+        body: {
+          questionIds: payload.questionIds,
+          tagIds: payload.tagIds,
+          action: payload.action,
+        },
+      })
+    );
+    const okCount = result?.succeeded?.length ?? 0;
+    const failedItems = result?.failed ?? [];
+    if (failedItems.length === 0) {
+      message.success(
+        payload.action === 'BIND'
+          ? `已为 ${okCount} 题打上所选标签`
+          : `已从 ${okCount} 题移除所选标签`
+      );
+    } else {
+      message.warning(`批量标签完成：成功 ${okCount} 题，失败 ${failedItems.length} 题`);
+      for (const item of failedItems) {
+        message.error(`题目 ${item.id}：${item.reason ?? '操作失败，请稍后重试'}`);
+      }
+    }
+    batchTagsOpen.value = false;
+    selectedIds.value = [];
+    invalidateQuestions();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '批量标签失败，请稍后重试');
+  } finally {
+    batchTagsSubmitting.value = false;
   }
 }
 

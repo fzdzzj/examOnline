@@ -17,6 +17,7 @@ import com.exam.paper.dto.PaperQuestionItemResponse;
 import com.exam.paper.dto.PaperUpdateRequest;
 import com.exam.paper.dto.RandomDrawPreviewResponse;
 import com.exam.paper.dto.RandomDrawRequest;
+import com.exam.paper.dto.RebalanceScoresRequest;
 import com.exam.paper.entity.Paper;
 import com.exam.paper.entity.PaperQuestion;
 import com.exam.paper.mapper.PaperMapper;
@@ -268,6 +269,142 @@ public class PaperService {
                 .collect(Collectors.toList());
         renumber(reordered);
         return detail(paperId);
+    }
+
+    /**
+     * 试卷分值智能配平（add-batch-tagging-and-score-balancing）：
+     * 以 0.5 分为步长整数化后用<b>离散最大余数保和算法</b>重新分配试卷内题目分值，
+     * 数学上严格保证各题分值之和 === 目标总分。
+     *
+     * <p>{@code EVEN}：对全部题目一键均分；{@code BY_TYPE}：对 declared 固定单题分值的题型
+     * 赋固定分，其余题型自动均分补齐剩余目标。目标总分缺省用试卷申报总分；
+     * 目标须为步长的整数倍（否则无法精确保和，400），并校验锁定态/进行中考试锁定。
+     * 均分结果任意单题分值低于 0.5，或待配平题目数为 0 时，400 拒绝且不做任何数据更改。
+     *
+     * @return 配平后的试卷详情
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public PaperDetailResponse rebalanceScores(Long paperId, RebalanceScoresRequest request) {
+        Paper paper = getOwnedPaper(paperId);
+        assertNotLocked(paper);
+        examPaperLockService.assertPaperEditable(paper.getId());
+
+        BigDecimal target = request.getTargetScore() != null
+                ? request.getTargetScore()
+                : paper.getTotalScore();
+        if (target == null) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "目标总分不能为空");
+        }
+        BigDecimal step = request.getStep() == null ? new BigDecimal("0.5") : request.getStep();
+        if (step.signum() <= 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "分值步长须大于 0");
+        }
+        // 目标须为步长整数倍，否则无法精确保和（严格成立 sum === target 的前提）
+        if (target.remainder(step).compareTo(BigDecimal.ZERO) != 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "目标总分须为步长（" + step.stripTrailingZeros().toPlainString() + "）的整数倍");
+        }
+
+        List<PaperQuestion> rows = listRows(paperId);
+        if (rows.isEmpty()) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "待配平题目数为 0");
+        }
+
+        if (RebalanceScoresRequest.MODE_EVEN.equals(request.getMode())) {
+            applyLargestRemainder(rows, target, step);
+        } else if (RebalanceScoresRequest.MODE_BY_TYPE.equals(request.getMode())) {
+            rebalanceByType(rows, target, step, request.getFixedScores());
+        } else {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "非法配平模式: " + request.getMode());
+        }
+        log.info("试卷 {} 分值配平完成: mode={} target={} 题数 {}", paperId, request.getMode(),
+                target.stripTrailingZeros().toPlainString(), rows.size());
+        return detail(paperId);
+    }
+
+    /**
+     * 离散最大余数保和算法（EVEN）核心：
+     * T = target/step（已校验为整数步长数）、Q = floor(T/N)、R = T mod N，
+     * 前 R 题分配 (Q+1)×step、后 N-R 题分配 Q×step ⇒ sum = step×(NQ+R) = target 严格成立。
+     * 最小单题分值 = Q×step，须 ≥ 0.5（Q ≥ ceil(0.5/step)）。
+     */
+    private void applyLargestRemainder(List<PaperQuestion> rows, BigDecimal target, BigDecimal step) {
+        long t = target.divide(step).longValueExact();
+        int n = rows.size();
+        long q = t / n;
+        long r = t % n;
+        if (BigDecimal.valueOf(q).multiply(step).compareTo(new BigDecimal("0.5")) < 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "目标总分不足以分配给 " + n + " 道题目（单题分值低于 0.5 分）");
+        }
+        for (int i = 0; i < n; i++) {
+            long count = (i < r) ? (q + 1) : q;
+            BigDecimal score = BigDecimal.valueOf(count).multiply(step);
+            PaperQuestion row = rows.get(i);
+            row.setScore(score);
+            paperQuestionMapper.updateById(row);
+        }
+    }
+
+    /**
+     * 按题型智能配比（BY_TYPE）：fixedScores 中列出的题型按该单题固定分值赋予，
+     * 其余题型题目划入自动配平池，用离散最大余数算法分配剩余目标分值。
+     * 已软删题目无法确定题型，故配比模式拒绝此类试卷（400）。
+     */
+    private void rebalanceByType(List<PaperQuestion> rows, BigDecimal target, BigDecimal step,
+                                 Map<Integer, BigDecimal> fixedScores) {
+        Map<Integer, BigDecimal> fixed = fixedScores == null ? Map.of() : fixedScores;
+        List<Long> questionIds = rows.stream().map(PaperQuestion::getQuestionId).toList();
+        Map<Long, Question> questionMap = loadQuestionMap(questionIds);
+        if (questionMap.size() < questionIds.size()) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "试卷含已删除题目，无法按题型配比");
+        }
+
+        BigDecimal fixedSum = BigDecimal.ZERO;
+        List<Integer> autoIndexes = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) {
+            Question question = questionMap.get(rows.get(i).getQuestionId());
+            BigDecimal fixedScore = fixed.get(question.getType());
+            if (fixedScore != null) {
+                if (fixedScore.remainder(step).compareTo(BigDecimal.ZERO) != 0) {
+                    throw new BusinessException(ResponseCode.BAD_REQUEST,
+                            "固定分值须为步长（" + step.stripTrailingZeros().toPlainString() + "）的整数倍");
+                }
+                if (fixedScore.compareTo(new BigDecimal("0.5")) < 0) {
+                    throw new BusinessException(ResponseCode.BAD_REQUEST, "固定单题分值不得低于 0.5 分");
+                }
+                rows.get(i).setScore(fixedScore);
+                paperQuestionMapper.updateById(rows.get(i));
+                fixedSum = fixedSum.add(fixedScore);
+            } else {
+                autoIndexes.add(i);
+            }
+        }
+
+        BigDecimal remaining = target.subtract(fixedSum);
+        if (remaining.signum() < 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "固定题型分值之和已超过目标总分");
+        }
+        if (autoIndexes.isEmpty()) {
+            if (remaining.compareTo(BigDecimal.ZERO) != 0) {
+                throw new BusinessException(ResponseCode.BAD_REQUEST, "待配平题目数为 0");
+            }
+            return;
+        }
+        long t = remaining.divide(step).longValueExact();
+        int m = autoIndexes.size();
+        long q = t / m;
+        long r = t % m;
+        if (BigDecimal.valueOf(q).multiply(step).compareTo(new BigDecimal("0.5")) < 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "目标总分不足以分配给自动配平题目（单题分值低于 0.5 分）");
+        }
+        for (int k = 0; k < m; k++) {
+            long count = (k < r) ? (q + 1) : q;
+            PaperQuestion row = rows.get(autoIndexes.get(k));
+            row.setScore(BigDecimal.valueOf(count).multiply(step));
+            paperQuestionMapper.updateById(row);
+        }
     }
 
     // ==================== 标签随机抽题 ====================
