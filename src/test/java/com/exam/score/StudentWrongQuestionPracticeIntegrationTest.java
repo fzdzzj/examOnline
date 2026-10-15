@@ -339,6 +339,46 @@ class StudentWrongQuestionPracticeIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("原题软删除后重练提交从考试快照平滑回退判分")
+    void practiceSubmitFallsBackToExamSnapshotWhenOriginalQuestionSoftDeleted() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        long classId = createClassForExam(teacher, student);
+
+        long q1 = createQuestion(teacher, 1, "快照回退单选", "A", List.of("A", "B"), 5.0, "快照解析A");
+        long paper = createPaper(teacher, unique("卷"), 5.0);
+        addPaperQuestion(teacher, paper, q1, 5.0);
+        long examId = createAndPublishExam(teacher, paper, classId);
+
+        // 学生做错该题（q1 作答 B 判错）
+        enterExam(student, examId);
+        submitAnswers(student, examId, Map.of(q1, "B"));
+        summarizeAndPublishScores(teacher, examId);
+
+        // 教师在题库中软删除原题（快照不受影响）
+        questionMapper.deleteById(q1);
+        assertNull(questionMapper.selectById(q1), "原题应已逻辑删除");
+
+        // 学生仍能提交重练：回退到考试快照判分，正确答案 A 来自快照，连对进度正常累计
+        ObjectNode sub = objectMapper.createObjectNode();
+        sub.put("questionId", q1);
+        sub.put("answer", "A");
+        JsonNode res = perform(jsonPost("/api/scores/my/wrong-questions/practice/submit", student,
+                objectMapper.writeValueAsString(sub)), 200).get("data");
+        assertTrue(res.get("correct").asBoolean(), "快照回退判分应判为答对");
+        assertEquals("A", res.get("correctAnswer").asText(), "标准答案应取自快照");
+        assertEquals(1, res.get("consecutiveCorrect").asInt(), "连对进度应正常累计");
+        assertFalse(res.get("mastered").asBoolean());
+
+        // 再次答对连续两次后连对=3 消灭，链路不因题库变动中断
+        perform(jsonPost("/api/scores/my/wrong-questions/practice/submit", student,
+                objectMapper.writeValueAsString(sub)), 200);
+        JsonNode third = perform(jsonPost("/api/scores/my/wrong-questions/practice/submit", student,
+                objectMapper.writeValueAsString(sub)), 200).get("data");
+        assertTrue(third.get("mastered").asBoolean(), "快照回退下连续三次答对应自动消灭");
+    }
+
+    @Test
     @DisplayName("仅本人数据：学生 B 无法访问或提交学生 A 的错题池")
     void practice_onlySelfData() throws Exception {
         String teacher = registerTeacher();

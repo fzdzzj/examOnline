@@ -312,6 +312,30 @@ class ExamReservationIntegrationTest extends IntegrationTestBase {
         assertEquals(1, updated.get("reservationRequired").asInt());
     }
 
+    // ==================== 非预约制考试前置门禁（harden-exam-paper-and-practice-boundaries） ====================
+
+    @Test
+    void reserveAndCancelRejectNonReservationExam() throws Exception {
+        String teacher = registerTeacher();
+        String student = registerStudent();
+        long classId = createClassForExam(teacher, student);
+        long paperId = preparePaper(teacher);
+        // reservationRequired=false 的普通考试
+        long normalExam = createExam(teacher, paperId, classId,
+                LocalDateTime.now().plusHours(1), LocalDateTime.now().plusHours(3), 30, false);
+        perform(jsonPost("/api/exams/" + normalExam + "/publish", teacher, null), 200);
+
+        // 预约被 400 拦截，文案明确"非预约制"
+        JsonNode reserveRejected = perform(jsonPost("/api/exam-reservations/" + normalExam, student, null), 400);
+        assertTrue(reserveRejected.get("message").asText().contains("非预约制"),
+                "非预约制考试预约应被拒，实际: " + reserveRejected.get("message").asText());
+
+        // 取消预约同样被 400 拦截，文案明确"非预约制"
+        JsonNode cancelRejected = perform(jsonDelete("/api/exam-reservations/" + normalExam, student), 400);
+        assertTrue(cancelRejected.get("message").asText().contains("非预约制"),
+                "非预约制考试取消预约应被拒，实际: " + cancelRejected.get("message").asText());
+    }
+
     // ==================== 辅助 ====================
 
     private JsonNode itemOf(JsonNode list, long examId) {

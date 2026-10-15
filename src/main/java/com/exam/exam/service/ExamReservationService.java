@@ -80,6 +80,9 @@ public class ExamReservationService {
         if (exam == null) {
             throw new BusinessException(ResponseCode.NOT_FOUND, "考试不存在");
         }
+        if (exam.getReservationRequired() == null || exam.getReservationRequired() != 1) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "该考试非预约制考试，无需取消预约");
+        }
         if (exam.getStatus() != null && exam.getStatus() != Exam.STATUS_NOT_STARTED) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "开考后不可取消预约（名单已锁定）");
         }
@@ -115,6 +118,9 @@ public class ExamReservationService {
         Exam exam = examMapper.selectById(examId);
         if (exam == null) {
             throw new BusinessException(ResponseCode.NOT_FOUND, "考试不存在");
+        }
+        if (exam.getReservationRequired() == null || exam.getReservationRequired() != 1) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "该考试非预约制考试，无需预约");
         }
         if (exam.getPublished() == null || exam.getPublished() != 1) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "考试未发布，不可预约");

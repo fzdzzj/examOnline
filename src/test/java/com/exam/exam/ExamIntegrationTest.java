@@ -168,6 +168,108 @@ class ExamIntegrationTest extends IntegrationTestBase {
         perform(jsonGet("/api/exams/" + examId, otherTeacher), 403);
     }
 
+    // ==================== 合理性/防作弊边界加固（harden-exam-paper-and-practice-boundaries） ====================
+
+    /** 单独构造带 allowLateMinutes 的创建请求体。 */
+    private String examJsonWithAllowLate(long paperId, LocalDateTime start, LocalDateTime end,
+                                         int duration, Integer allowLate) throws Exception {
+        ObjectNode body = objectMapper.createObjectNode();
+        body.put("title", unique("考试"));
+        body.put("paperId", paperId);
+        body.put("startTime", start.toString());
+        body.put("endTime", end.toString());
+        body.put("durationMinutes", duration);
+        if (allowLate != null) {
+            body.put("allowLateMinutes", allowLate);
+        }
+        return objectMapper.writeValueAsString(body);
+    }
+
+    /** 单独构造带 antiCheatConfig 的创建请求体。 */
+    private String examJsonWithAntiCheat(long paperId, LocalDateTime start, LocalDateTime end,
+                                         int duration, String antiCheatJson) throws Exception {
+        ObjectNode body = objectMapper.createObjectNode();
+        body.put("title", unique("防作弊考试"));
+        body.put("paperId", paperId);
+        body.put("startTime", start.toString());
+        body.put("endTime", end.toString());
+        body.put("durationMinutes", duration);
+        if (antiCheatJson != null) {
+            body.set("antiCheatConfig", objectMapper.readTree(antiCheatJson));
+        }
+        return objectMapper.writeValueAsString(body);
+    }
+
+    @Test
+    void createExamRejectsDurationGreaterThanWindow() throws Exception {
+        String teacher = registerTeacher();
+        long paperId = createPaper(teacher, unique("试卷"), 10);
+
+        // 时长 90 > 窗口 60 分钟 → 400，断言明确文案
+        LocalDateTime start = LocalDateTime.now().plusHours(1);
+        JsonNode rejected = perform(jsonPost("/api/exams", teacher,
+                examJson(paperId, start, start.plusMinutes(60), 90)), 400);
+        assertTrue(rejected.get("message").asText().contains("作答时长"),
+                "应明确说明作答时长不能大于时间窗跨度，实际: " + rejected.get("message").asText());
+
+        // 时长 60 == 窗口 60（恰好相等）应合法
+        perform(jsonPost("/api/exams", teacher,
+                examJson(paperId, start, start.plusMinutes(60), 60)), 200);
+    }
+
+    @Test
+    void createExamRejectsAllowLateGreaterThanOrEqualToDuration() throws Exception {
+        String teacher = registerTeacher();
+        long paperId = createPaper(teacher, unique("试卷"), 10);
+        LocalDateTime start = LocalDateTime.now().plusHours(1);
+
+        // 迟到容忍 >= 作答时长 → 400
+        JsonNode equal = perform(jsonPost("/api/exams", teacher,
+                examJsonWithAllowLate(paperId, start, start.plusHours(1), 60, 60)), 400);
+        assertTrue(equal.get("message").asText().contains("迟到容忍"),
+                "迟到容忍等于时长应被拒，实际: " + equal.get("message").asText());
+
+        JsonNode greater = perform(jsonPost("/api/exams", teacher,
+                examJsonWithAllowLate(paperId, start, start.plusHours(1), 60, 90)), 400);
+        assertTrue(greater.get("message").asText().contains("迟到容忍"),
+                "迟到容忍大于时长应被拒，实际: " + greater.get("message").asText());
+
+        // 迟到容忍 < 时长合法
+        perform(jsonPost("/api/exams", teacher,
+                examJsonWithAllowLate(paperId, start, start.plusHours(1), 60, 30)), 200);
+    }
+
+    @Test
+    void createExamValidatesAntiCheatIpWhitelist() throws Exception {
+        String teacher = registerTeacher();
+        long paperId = createPaper(teacher, unique("试卷"), 10);
+        LocalDateTime start = LocalDateTime.now().plusHours(1);
+
+        // 开启 IP 白名单但列表为空 → 400
+        JsonNode empty = perform(jsonPost("/api/exams", teacher,
+                examJsonWithAntiCheat(paperId, start, start.plusHours(1), 60,
+                        "{\"enableIpWhitelist\":true,\"ipWhitelist\":[]}")), 400);
+        assertTrue(empty.get("message").asText().contains("IP 白名单"),
+                "开启白名单但列表为空应被拒，实际: " + empty.get("message").asText());
+
+        // 非法单 IP（超出 255） → 400 且报出非法项
+        JsonNode badIp = perform(jsonPost("/api/exams", teacher,
+                examJsonWithAntiCheat(paperId, start, start.plusHours(1), 60,
+                        "{\"enableIpWhitelist\":false,\"ipWhitelist\":[\"999.0.0.1\"]}")), 400);
+        assertTrue(badIp.get("message").asText().contains("非法项"),
+                "非法单 IP 应被拒并报出非法项，实际: " + badIp.get("message").asText());
+
+        // 非法 CIDR（网络段非法） → 400
+        perform(jsonPost("/api/exams", teacher,
+                examJsonWithAntiCheat(paperId, start, start.plusHours(1), 60,
+                        "{\"enableIpWhitelist\":false,\"ipWhitelist\":[\"192.168.1.999/24\"]}")), 400);
+
+        // 合法配置通过：单 IP / 通配符 / CIDR
+        perform(jsonPost("/api/exams", teacher,
+                examJsonWithAntiCheat(paperId, start, start.plusHours(1), 60,
+                        "{\"enableIpWhitelist\":true,\"ipWhitelist\":[\"192.168.1.100\",\"10.0.0.*\",\"172.16.0.0/12\"]}")), 200);
+    }
+
     // ==================== 发布/快照/锁定/状态流转（端到端） ====================
 
     @Test
@@ -270,8 +372,9 @@ class ExamIntegrationTest extends IntegrationTestBase {
         long paperId = preparePaperWithTwoQuestions(teacher);
 
         // 时间窗整体已过：发布后一轮扫表连续推进 未开始→进行中→已结束（自然结束）
+        // （窗口跨度=30 分钟=作答时长，既满足"时长不得大于时间窗"的加固校验，又保持整窗已过）
         long passedExam = createExam(teacher, paperId,
-                LocalDateTime.now().minusMinutes(2), LocalDateTime.now().minusMinutes(1), 30);
+                LocalDateTime.now().minusMinutes(40), LocalDateTime.now().minusMinutes(10), 30);
         perform(jsonPost("/api/exams/" + passedExam + "/publish", teacher, null), 200);
         stateMachineService.autoAdvance();
         assertEquals(2, examDetail(teacher, passedExam).get("status").asInt());

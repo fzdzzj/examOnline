@@ -232,6 +232,24 @@ class PaperTemplateCloneIntegrationTest extends IntegrationTestBase {
         assertEquals(tplBefore, detail(tplId, teacher));
     }
 
+    /** Scenario: 克隆产物标题超长安全截断（papers.title VARCHAR(128)，禁溢出）。 */
+    @Test
+    void cloneTruncatesTitleSafelyWhenExceeding128Chars() throws Exception {
+        String teacher = registerTeacher();
+        // 128 字标题：克隆附加"（副本）"后远超 128，必须安全截断为严格 128 字
+        String longTitle = "超".repeat(128);
+        long source = createPaper(teacher, longTitle, 0);
+
+        JsonNode copy = perform(jsonPost("/api/papers/" + source + "/clone", teacher, null), 200)
+                .get("data");
+        String newTitle = copy.get("title").asText();
+
+        assertEquals(128, newTitle.length(), "克隆标题长度必须严格等于 128");
+        assertTrue(newTitle.endsWith(SUFFIX), "克隆标题必须以（副本）结尾");
+        // 截断前缀 = 原 128 字标题的前 124 字
+        assertEquals("超".repeat(124) + SUFFIX, newTitle, "截断前缀应为原标题前 124 字");
+    }
+
     // ==================== 辅助 ====================
 
     private long makeTemplate(long sourcePaperId, String token) throws Exception {
