@@ -261,6 +261,28 @@ export type QuestionImportResult = {
     errors?: Array<ErrorRow>;
 };
 
+export type BatchTagsRequest = {
+    questionIds: Array<number>;
+    tagIds: Array<number>;
+    action: string;
+};
+
+export type ApiResponseBatchTagsResponse = {
+    code?: number;
+    message?: string;
+    data?: BatchTagsResponse;
+};
+
+export type BatchTagsResponse = {
+    succeeded?: Array<number>;
+    failed?: Array<FailedItem>;
+};
+
+export type FailedItem = {
+    id?: number;
+    reason?: string;
+};
+
 export type BatchDeleteQuestionsRequest = {
     ids: Array<number>;
 };
@@ -274,11 +296,6 @@ export type ApiResponseBatchDeleteQuestionsResponse = {
 export type BatchDeleteQuestionsResponse = {
     succeeded?: Array<number>;
     failed?: Array<FailedItem>;
-};
-
-export type FailedItem = {
-    id?: number;
-    reason?: string;
 };
 
 export type ApiResponseQuestionImageUploadResponse = {
@@ -340,6 +357,15 @@ export type ApiResponsePaperQuestionItemResponse = {
     code?: number;
     message?: string;
     data?: PaperQuestionItemResponse;
+};
+
+export type RebalanceScoresRequest = {
+    mode: string;
+    targetScore?: number;
+    step: number;
+    fixedScores?: {
+        [key: string]: number;
+    };
 };
 
 export type RandomDrawRequest = {
@@ -1838,6 +1864,22 @@ export type ImportQuestionsResponses = {
 
 export type ImportQuestionsResponse = ImportQuestionsResponses[keyof ImportQuestionsResponses];
 
+export type BatchTagsData = {
+    body: BatchTagsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/questions/batch-tags';
+};
+
+export type BatchTagsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseBatchTagsResponse;
+};
+
+export type BatchTagsResponse2 = BatchTagsResponses[keyof BatchTagsResponses];
+
 export type BatchDeleteData = {
     body: BatchDeleteQuestionsRequest;
     path?: never;
@@ -1979,6 +2021,24 @@ export type AddQuestionResponses = {
 };
 
 export type AddQuestionResponse = AddQuestionResponses[keyof AddQuestionResponses];
+
+export type RebalanceScoresData = {
+    body: RebalanceScoresRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/api/papers/{id}/questions/scores/rebalance';
+};
+
+export type RebalanceScoresResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponsePaperDetailResponse;
+};
+
+export type RebalanceScoresResponse = RebalanceScoresResponses[keyof RebalanceScoresResponses];
 
 export type CommitRandomDrawData = {
     body: RandomDrawRequest;
