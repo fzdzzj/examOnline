@@ -756,3 +756,16 @@ AND 双端用例总数只增不减且 gate-baseline 同笔上调
 - **THEN**: 系统 SHALL 在生成单元格值时自动前置单引号 `'`，强制电子表格软件将其作为纯文本解析，防止触发公式解析或 DDE 命令执行（Formula / CSV Injection）
 - **AND**: 对于不以敏感字符开头的正常文本、数值或空字符串，系统 SHALL 保持原样输出，不产生冗余字符
 
+---
+
+### Requirement: 成绩单 PDF 导出
+
+> 合入注记（2026-10-15，变更 `harden-review-flow-and-resource-limits`，L-02 收口）：
+> 个人成绩单 PDF 导出时针对考试标题、试卷题干等文本执行 Unicode 增补平面、游离代理项及不可见控制字符清洗，避免 iText 编码异常。
+
+#### Scenario: 个人成绩单 PDF 导出生僻特殊字符容错 (ADDED)
+- **WHEN**: 导出个人成绩单 PDF 且考试标题或试题题干中含有超出基础中文字符集（`UniGB-UCS2-H`）编码范围的生僻字符或特殊数学符号
+- **THEN**: 系统 SHALL 在写入 PDF 段落与表格单元格前进行字符安全过滤与替代，避免抛出 iText 内部不支持字符异常中断导出
+- **AND**: PDF 文件 SHALL 依然能够正常生成并成功下载
+
+
