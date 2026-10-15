@@ -1,0 +1,26 @@
+{
+  "change": "harden-review-flow-and-resource-limits",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与三件套制定",
+      "status": "completed",
+      "description": "制定 S/M 级收官加固方案，梳理 5 处终局防呆与资源保护加固：①ReviewHandleModal 成绩复核调分不可逆 Alert 与二次确认防呆；②UserImportExportService 导出大批量 ID 按 500 分片查询防 MySQL 报文溢出与 OOM；③useTeacherExams 及消费页下拉失败反馈增强；④ScoreExportService PDF 导出生僻/特殊字符安全容错；⑤classes/index.page.vue 移出学生补齐 :loading 动效。编制三件套并登记 spec/README.md。",
+      "evidence": "三件套已落盘 spec/changes/harden-review-flow-and-resource-limits/，并在 spec/README.md 登记为进行中变更。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：服务层与前端实现及先红后绿验证",
+      "status": "pending",
+      "description": "实施后端 UserImportExportService（分批查询）、ScoreExportService（PDF 字符容错），前端 ReviewHandleModal（不可逆警示防呆）、classes/index.page.vue（loading 动效）及相关下拉反馈。编写先红后绿与变异测试，验证 m1–m4 变异击红留证。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量门禁实测、规范合入与收口归档",
+      "status": "pending",
+      "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json；将 spec-delta 分别合入 score-review、authentication、score-management、frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
