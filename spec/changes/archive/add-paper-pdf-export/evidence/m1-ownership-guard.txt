@@ -1,0 +1,26 @@
+# m1 变异击红-复原留证：导出端点越权守卫（PaperService.getOwnedPaper 的 OwnershipGuard）
+
+目标链路：GET /api/papers/{id}/export-pdf → PaperExportService → paperService.detail → getOwnedPaper → OwnershipGuard
+变异注入：临时抽掉 PaperService.getOwnedPaper 内 OwnershipGuard.assertOwner 调用（注释保留调用点，复原即回）——
+          导出端点的水平越权防护完全依赖该守卫，变异后非归属教师应能导出成功。
+目标文件：src/main/java/com/exam/paper/service/PaperService.java（临时改动，提交前复原为零 diff）
+验证命令（仓库根执行）：.\mvnw.cmd test "-Dtest=PaperExportIntegrationTest#exportPdfEnforcesPermissionOwnershipAndExistence" -DfailIfNoTests=false
+
+## 注入前（原实现）SHA256
+6B4570B782F4BEBD548F0969A9970F02761D2087B3119F22339D3E8C895602DE
+## 注入后（变异）SHA256
+282D521C0B3513B19A1A356D658C7B9517DA8E41AE0718487F3AA2EBBF8F2080
+
+## ① 击红（退出码 1 / BUILD FAILURE）
+java.lang.AssertionError: Response status expected:<403> but was:<200>
+  PaperExportIntegrationTest.exportPdfEnforcesPermissionOwnershipAndExistence:82
+  (越权守卫被抽掉后，非归属教师导出返回 200——门禁用例真实捕获)
+
+## ② 复原 + 归零
+复原后 SHA256：6B4570B782F4BEBD548F0969A9970F02761D2087B3119F22339D3E8C895602DE
+与注入前一致：是（字节级一致）
+
+## ③ 回绿
+复原后重跑同一验证命令：Tests run: 1, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS
+
+结论：导出端点的 403 越权门禁被真实捕获——守卫缺失即非归属教师可下载试卷 PDF，非装饰性护栏。

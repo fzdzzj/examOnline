@@ -1,0 +1,34 @@
+# m2 变异击红-复原留证：PDF 字符清洗（PaperExportService.sanitizePdfText 增补平面分支）
+
+目标方法：PaperExportService.sanitizePdfText（与个人成绩单 PDF 同一清洗口径，自包含实现）
+变异注入：临时抽掉「增补平面码点/游离代理项 → '?'」分支，Emoji 与 CJK 扩展 B 生僻字直接放行。
+目标文件：src/main/java/com/exam/paper/service/PaperExportService.java（临时改动，提交前复原为零 diff）
+验证命令（仓库根执行）：.\mvnw.cmd test "-Dtest=PaperExportIntegrationTest#sanitizePdfTextReplacesSupplementaryAndControlChars" -DfailIfNoTests=false
+
+## 注入前（原实现）SHA256
+9F9F8338F07A2F92C61D7E2DC59714964B3461D3001F98D183CFE7A5886D63AC
+## 注入后（变异）SHA256
+C50F5B1008BCC589E277AB2375C81D0992A8A118301128CF8155D2737F7D76D7
+
+## ① 击红（退出码 1 / BUILD FAILURE）
+org.opentest4j.AssertionFailedError: 增补平面码点（Emoji/扩展B）应替换为 ? ==> expected: <含??> but was: <含😀𠀀>
+  PaperExportIntegrationTest.sanitizePdfTextReplacesSupplementaryAndControlChars:116
+  (清洗分支被抽掉后 Emoji/生僻字原样透传——清洗直测真实捕获)
+
+## ② 复原 + 归零
+复原后 SHA256：9F9F8338F07A2F92C61D7E2DC59714964B3461D3001F98D183CFE7A5886D63AC
+与注入前一致：是（字节级一致）
+
+## ③ 回绿
+复原后重跑同一验证命令：Tests run: 1, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS
+
+## 诚实载体说明（为什么用直测而不是端到端作 m2 击红）
+spike 实测（临时探针，已删除）：openpdf 1.3.43 + STSong-Light 对增补平面字符的越界异常
+（ArrayIndexOutOfBoundsException: Index 128512 out of bounds for length 65536）在不同排版路径行为不一致：
+- PdfPCell 内 Emoji → 异常直接抛出（个人成绩单 m3 崩溃同因）；
+- Paragraph/Chunk 内 Emoji → 异常被排版层静默吞掉，整段不渲染但不中断导出；
+- 因此仅靠端到端「生僻字符导出 200」在 Paragraph 排版下区分不了清洗是否存在（抽掉清洗仍能出 PDF，只是文本丢失）。
+本变更把题目文本放在 Paragraph/Chunk（A4 试卷排版形态），故以 sanitizePdfText 直测
+（含 Emoji/扩展B/代理项/控制字符/null 六断言）作为 m2 击红的诚实载体，端到端用例继续钉「不中断导出」。
+
+结论：PDF 字符清洗被真实捕获——分支缺失即 Emoji/生僻字原样进入 PDF 写出路径，非装饰性护栏。

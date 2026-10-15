@@ -1,0 +1,38 @@
+# red-green：前端试卷 PDF 导出交互（add-paper-pdf-export 阶段 2）
+
+## 先红（spec 先行，页面未实现导出入口；frontend 目录执行）
+命令：pnpm test paperPdfExport
+
+  ❯ src/pages/(dashboard)/teacher/papers/__tests__/paperPdfExport.spec.ts (6 tests | 6 failed)
+      × 草稿态点击「学生作答卷」触发下载（withAnswer=false）并提示成功
+      × 点击「含答案解析卷」触发 withAnswer=true 下载
+      × 下载失败透出原因且不误导成功
+      × 锁定态仍提供导出入口（只读不锁导出）
+      × 下载在途时按钮呈现 loading
+      × 点击「导出 PDF」→ 选学生作答卷触发下载
+  Test Files  1 failed (1) / Tests  6 failed (6)
+  ELIFECYCLE Test failed.
+
+（6 条新用例全部击红：详情页/列表页尚无导出按钮与下载逻辑。）
+
+## 后绿（实现 [id].page.vue 与 index.page.vue 导出交互后）
+命令：pnpm test paperPdfExport
+
+  ✓ src/pages/(dashboard)/teacher/papers/__tests__/paperPdfExport.spec.ts (6 tests)
+      ✓ 草稿态点击「学生作答卷」触发下载（withAnswer=false）并提示成功
+      ✓ 点击「含答案解析卷」触发 withAnswer=true 下载
+      ✓ 下载失败透出原因且不误导成功
+      ✓ 锁定态仍提供导出入口（只读不锁导出）
+      ✓ 下载在途时按钮呈现 loading
+      ✓ 点击「导出 PDF」→ 选学生作答卷触发下载
+  Test Files  1 passed (1) / Tests  6 passed (6)
+
+## 前端回归 + 类型 + 风格
+- 试卷页全量用例：pnpm test papers → Test Files 7 passed (7) / Tests 29 passed (29)（既有列表分页/详情表/模板克隆/批量加题等零漂移）
+- 类型检查：pnpm type-check:check → vue-tsc / tsc 均无错误
+- 风格：pnpm exec eslint 变更三文件 → 0 error
+
+## SDK 同步
+命令（frontend）：pnpm run gen:api
+@hey-api/openapi-ts v0.97.3 基于重新导出的 openapi.yaml 生成 ./src/api/axios
+（index.ts / sdk.gen.ts / types.gen.ts 三文件 diff；sdk.gen.ts 新增 url '/api/papers/{id}/export-pdf'）。

@@ -69,11 +69,21 @@
               <Button type="link" size="small" danger>删除</Button>
             </Popconfirm>
           </template>
-          <!-- 普通试卷视图：组卷/查看、克隆、另存为模板、删除（既有行为零漂移） -->
+          <!-- 普通试卷视图：导出 PDF、组卷/查看、克隆、另存为模板、删除（既有行为零漂移） -->
           <template v-else>
             <Button type="link" size="small" @click="openPaper(record)">
               {{ record.status === PAPER_STATUS_LOCKED ? '查看' : '组卷' }}
             </Button>
+            <!-- 试卷 PDF 导出（add-paper-pdf-export）：只读操作，草稿/锁定均可用 -->
+            <Dropdown :trigger="['click']">
+              <Button type="link" size="small" data-test="paper-export">导出 PDF</Button>
+              <template #overlay>
+                <Menu @click="(info: { key: string | number }) => onExportMenu(record, info)">
+                  <MenuItem key="student" data-test="paper-export-student">学生作答卷</MenuItem>
+                  <MenuItem key="answer" data-test="paper-export-answer">含答案解析卷</MenuItem>
+                </Menu>
+              </template>
+            </Dropdown>
             <Button type="link" size="small" data-test="paper-clone" @click="onClone(record)">
               克隆
             </Button>
@@ -103,6 +113,9 @@
 import {
   Alert,
   Button,
+  Dropdown,
+  Menu,
+  MenuItem,
   Popconfirm,
   TabPane,
   Table,
@@ -117,8 +130,9 @@ import { useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 
 import { clone, delete1, page1, saveAsTemplate, type PaperResponse } from '@/api/axios';
-import { client, unwrap } from '@/api/apiClient';
+import { apiClient, client, unwrap } from '@/api/apiClient';
 import { queryClient } from '@/api/queryClient';
+import { browserSaveFile, downloadExport } from '@/utils/exportDownload';
 import { PAPER_STATUS_LOCKED, paperStatusLabel } from '@/utils/questionTypes';
 
 const router = useRouter();
@@ -246,6 +260,33 @@ async function onDelete(record: PaperResponse): Promise<void> {
   } catch (error) {
     message.error(error instanceof Error ? error.message : '删除失败，请稍后重试');
   }
+}
+
+// ==================== 试卷 PDF 导出（add-paper-pdf-export） ====================
+
+const exportingId = ref<number | null>(null);
+
+/** 流式下载试卷 PDF：同详情页口径（downloadExport + blob 保存），在途 loading 防连点。 */
+async function runExport(record: PaperResponse, withAnswer: boolean): Promise<void> {
+  if (record.id === undefined || exportingId.value !== null) return;
+  exportingId.value = record.id;
+  try {
+    const mode = withAnswer ? '含答案解析' : '学生作答';
+    const fileName = await downloadExport(
+      { http: apiClient, saveFile: browserSaveFile },
+      `/api/papers/${record.id}/export-pdf?withAnswer=${withAnswer}`,
+      `${mode}-${record.title ?? '试卷'}.pdf`
+    );
+    message.success(`已下载：${fileName}`);
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '试卷 PDF 导出失败，请稍后重试');
+  } finally {
+    exportingId.value = null;
+  }
+}
+
+function onExportMenu(record: PaperResponse, info: { key: string | number }): void {
+  void runExport(record, info.key === 'answer');
 }
 
 function formatTime(value?: string | null): string {

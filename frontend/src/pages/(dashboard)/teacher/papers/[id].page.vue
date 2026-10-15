@@ -38,9 +38,21 @@
               分 / 申报总分 {{ detail.totalScore }} 分
             </p>
           </div>
-          <div v-if="!isLocked" class="flex gap-2">
-            <Button @click="openMetaEdit">编辑信息</Button>
-            <Button type="primary" @click="pickerOpen = true">+ 从题库选题</Button>
+          <div class="flex items-center gap-2">
+            <!-- 试卷 PDF 导出（add-paper-pdf-export）：锁定/草稿态均可用，只读操作不锁 -->
+            <Dropdown :trigger="['click']">
+              <Button :loading="exporting" data-test="paper-export">导出试卷 PDF</Button>
+              <template #overlay>
+                <Menu data-test="paper-export-menu" @click="onExportMenu">
+                  <MenuItem key="student" data-test="paper-export-student">学生作答卷</MenuItem>
+                  <MenuItem key="answer" data-test="paper-export-answer">含答案解析卷</MenuItem>
+                </Menu>
+              </template>
+            </Dropdown>
+            <template v-if="!isLocked">
+              <Button @click="openMetaEdit">编辑信息</Button>
+              <Button type="primary" @click="pickerOpen = true">+ 从题库选题</Button>
+            </template>
           </div>
         </div>
 
@@ -419,11 +431,14 @@ import {
   Alert,
   Button,
   Card,
+  Dropdown,
   Empty,
   Form,
   FormItem,
   Input,
   InputNumber,
+  Menu,
+  MenuItem,
   Modal,
   Popconfirm,
   RadioButton,
@@ -459,8 +474,9 @@ import {
   type QuestionResponse,
   type TagResponse,
 } from '@/api/axios';
-import { client, unwrap } from '@/api/apiClient';
+import { apiClient, client, unwrap } from '@/api/apiClient';
 import { queryClient } from '@/api/queryClient';
+import { browserSaveFile, downloadExport } from '@/utils/exportDownload';
 import { createDrawFlow } from '@/hooks/useRandomDraw';
 import { moveItem, scoreDistribution, sumPaperScores } from '@/utils/paperMath';
 import { drawRulesErrors, toDrawRules, type DrawRuleDraft } from '@/utils/drawRules';
@@ -520,6 +536,37 @@ function invalidatePaper(): void {
   void queryClient.invalidateQueries({ queryKey: ['paper', paperId.value] });
   // 列表页的题数/状态随试卷变化，一并失效
   void queryClient.invalidateQueries({ queryKey: ['papers'] });
+}
+
+// ==================== 试卷 PDF 导出（add-paper-pdf-export） ====================
+
+const exporting = ref(false);
+
+/**
+ * 流式下载试卷 PDF：前端只触发后端生成（GET /api/papers/{id}/export-pdf）并保存
+ * blob（复用成绩导出的 downloadExport 工具与 RFC 5987 文件名解析），在途按钮 loading，
+ * 失败透出后端原因（403 越权/404 不存在等由拦截器转 ApiError）。
+ */
+async function runExport(withAnswer: boolean): Promise<void> {
+  if (exporting.value) return;
+  exporting.value = true;
+  try {
+    const mode = withAnswer ? '含答案解析' : '学生作答';
+    const fileName = await downloadExport(
+      { http: apiClient, saveFile: browserSaveFile },
+      `/api/papers/${paperId.value}/export-pdf?withAnswer=${withAnswer}`,
+      `${mode}-${detail.value?.title ?? '试卷'}.pdf`
+    );
+    message.success(`已下载：${fileName}`);
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '试卷 PDF 导出失败，请稍后重试');
+  } finally {
+    exporting.value = false;
+  }
+}
+
+function onExportMenu(info: { key: string | number }): void {
+  void runExport(info.key === 'answer');
 }
 
 // ==================== 手动组卷与抽题 Tab ====================

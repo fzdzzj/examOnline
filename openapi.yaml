@@ -1679,6 +1679,32 @@ paths:
               schema:
                 type: string
                 format: byte
+  /api/papers/{id}/export-pdf:
+    get:
+      tags:
+      - paper-controller
+      operationId: exportPdf
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: withAnswer
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
   /api/messages:
     get:
       tags:

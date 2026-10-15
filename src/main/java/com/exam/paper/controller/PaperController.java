@@ -17,9 +17,13 @@ import com.exam.paper.dto.RandomDrawPreviewResponse;
 import com.exam.paper.dto.RandomDrawRequest;
 import com.exam.paper.dto.UpdatePaperQuestionScoreRequest;
 import com.exam.paper.entity.Paper;
+import com.exam.paper.service.PaperExportService;
 import com.exam.paper.service.PaperService;
 import com.exam.paper.service.PaperSnapshotService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -49,10 +55,13 @@ public class PaperController {
 
     private final PaperService paperService;
     private final PaperSnapshotService paperSnapshotService;
+    private final PaperExportService paperExportService;
 
-    public PaperController(PaperService paperService, PaperSnapshotService paperSnapshotService) {
+    public PaperController(PaperService paperService, PaperSnapshotService paperSnapshotService,
+                           PaperExportService paperExportService) {
         this.paperService = paperService;
         this.paperSnapshotService = paperSnapshotService;
+        this.paperExportService = paperExportService;
     }
 
     /** 创建试卷（草稿） */
@@ -88,6 +97,25 @@ public class PaperController {
     public ApiResponse<Void> delete(@PathVariable Long id) {
         paperService.delete(id);
         return ApiResponse.success();
+    }
+
+    /**
+     * 导出试卷标准纸质版 PDF（add-paper-pdf-export）：
+     * {@code withAnswer=false} 学生作答版（留白不展示答案），{@code withAnswer=true} 教师参考答案版。
+     * 归属校验由 {@link PaperExportService} 经 {@link PaperService#detail} 的 owner 校验完成
+     * （非归属教师 403，不存在/软删 404）；类级 {@code paper:manage} 权限兜底。
+     */
+    @GetMapping("/{id}/export-pdf")
+    public ResponseEntity<byte[]> exportPdf(@PathVariable Long id,
+                                            @RequestParam(defaultValue = "false") boolean withAnswer) {
+        byte[] pdf = paperExportService.exportPaperPdf(id, withAnswer);
+        String filename = URLEncoder.encode(
+                (withAnswer ? "含答案解析" : "学生作答") + "-试卷-" + id + "-"
+                        + System.currentTimeMillis() + ".pdf", StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + filename)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
     // ==================== 手动组卷 ====================

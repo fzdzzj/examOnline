@@ -2643,6 +2643,26 @@ export type ExportQuestionsResponses = {
 
 export type ExportQuestionsResponse = ExportQuestionsResponses[keyof ExportQuestionsResponses];
 
+export type ExportPdfData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: {
+        withAnswer?: boolean;
+    };
+    url: '/api/papers/{id}/export-pdf';
+};
+
+export type ExportPdfResponses = {
+    /**
+     * OK
+     */
+    200: string;
+};
+
+export type ExportPdfResponse = ExportPdfResponses[keyof ExportPdfResponses];
+
 export type List1Data = {
     body?: never;
     path?: never;

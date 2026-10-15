@@ -1,0 +1,41 @@
+# red-green：后端 PaperExportService / GET /api/papers/{id}/export-pdf（add-paper-pdf-export 阶段 2）
+
+## 先红（集成测试先行，端点未实现；仓库根执行）
+命令：.\mvnw.cmd test "-Dtest=PaperExportIntegrationTest" -DfailIfNoTests=false
+
+surefire 摘要（target/surefire-reports/com.exam.paper.PaperExportIntegrationTest.txt）：
+  Tests run: 4, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 42.62 s <<< FAILURE!
+  com.exam.paper.PaperExportIntegrationTest.answerVersionIsStrictlyLargerThanStudentVersion
+    java.lang.AssertionError: Status expected:<200> but was:<500>
+
+异常栈根因（MockMvc 请求 /api/papers/1/export-pdf 落到静态资源处理）：
+  org.springframework.web.servlet.resource.NoResourceFoundException: No static resource api/papers/1/export-pdf.
+  MockHttpServletResponse: Status = 500
+[INFO] BUILD FAILURE
+
+（4 条新用例全部击红：作答版/答案版/门禁/字符容错端点尚不存在 → 500。）
+
+## 后绿（实现 PaperExportService + PaperController 导出端点后）
+命令：.\mvnw.cmd test "-Dtest=PaperExportIntegrationTest" -DfailIfNoTests=false
+
+  [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- com.exam.paper.PaperExportIntegrationTest
+  [INFO] BUILD SUCCESS
+
+（作答版 A4 排版、答案版严格大于作答版、403/404 门禁、生僻字符容错 + 清洗直测共 5 条全绿。）
+
+## paper 域零漂移回归（既有接口行为不变）
+命令：.\mvnw.cmd test "-Dtest=PaperIntegrationTest,PaperBatchAddQuestionsIntegrationTest,PaperTemplateCloneIntegrationTest,PaperExportIntegrationTest,OpenApiContractTest" -DfailIfNoTests=false
+
+  [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- PaperBatchAddQuestionsIntegrationTest
+  [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- PaperExportIntegrationTest
+  [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- PaperIntegrationTest
+  [INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0 -- PaperTemplateCloneIntegrationTest
+  [WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 1 -- OpenApiContractTest（skip 为 @EnabledIfSystemProperty 契约导出方法，正常）
+  [INFO] Tests run: 29, Failures: 0, Errors: 0, Skipped: 1
+  [INFO] BUILD SUCCESS
+
+## 契约导出（paths 89 → 90）
+命令：.\mvnw.cmd test "-Dtest=OpenApiContractTest#exportOpenApiContract" -DexportContract=true -DfailIfNoTests=false
+  [INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 -- OpenApiContractTest
+  [INFO] BUILD SUCCESS
+openapi.yaml 新增：/api/papers/{id}/export-pdf（get，operationId=exportPdf，query withAnswer 默认 false）；paths 计数 89 → 90。

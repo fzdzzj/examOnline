@@ -1,0 +1,26 @@
+{
+  "change": "add-paper-pdf-export",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与三件套制定",
+      "status": "completed",
+      "description": "确立试卷标准纸质版 PDF 导出方案（学生考试版与教师参考答案版），设计 PaperExportService 与 GET /api/papers/{id}/export-pdf 端点。编制三件套并在 spec/README.md 与 docs/功能待办清单.md 登记为进行中变更。",
+      "evidence": "三件套已落盘 spec/changes/add-paper-pdf-export/，并在 spec/README.md 登记为进行中变更。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：服务层与前端实现及先红后绿验证",
+      "status": "completed",
+      "description": "实施后端 PaperExportService 与 PaperController 导出端点；前端 papers/[id].page.vue 与 index.page.vue 增加导出 PDF 交互与下载处理；更新 openapi.yaml 与 SDK；编写单元测试与集成测试，进行变异击红验证留证。",
+      "evidence": "PaperExportIntegrationTest 5 用例先红（端点未实现 4/4 失败）后绿；前端 paperPdfExport.spec.ts 6 用例先红后绿；m1 越权守卫与 m2 字符清洗变异击红-复原-回绿留证见 spec/changes/add-paper-pdf-export/evidence/；openapi.yaml paths 89→90 已重新导出，SDK 已 gen:api 同步；paper 域既有集成测试零漂移（29 用例 0 失败）。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量门禁实测、规范合入与收口归档",
+      "status": "completed",
+      "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json（含 openapiPaths 89→90）；将 spec-delta 合入 question-bank 与 frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
+      "evidence": "后端门禁 mvnw.cmd clean test 实测：Tests run: 520, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS；前端三门禁实测：pnpm run lint:check（0 错误）、pnpm run type-check:check（0 错误）、pnpm run test -- --testTimeout=60000（105 文件 800 用例全绿）；契约 90 paths（89→90）；.github/ci/gate-baseline.json 同步上调为 backendTests: 520, frontendTests: 800, openapiPaths: 90；规范差异合入 question-bank、frontend 基线；变更目录归档并合流 main。"
+    }
+  ]
+}
