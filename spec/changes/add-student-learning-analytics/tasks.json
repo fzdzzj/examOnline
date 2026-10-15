@@ -1,0 +1,27 @@
+{
+  "changeId": "add-student-learning-analytics",
+  "title": "学情分析与个性化推荐（学生跨考试学情画像、知识点掌握度与薄弱点靶向练习推荐）",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、规范增量制定与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、score-management 及 frontend 的 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md。",
+      "evidence": "完成提案与双端规范增量制定，检出 feature/add-student-learning-analytics 分支，更新 spec/README.md 在途登记。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端学情分析/推荐服务与端点、前端交互组件与先红后绿及变异击红验证",
+      "status": "pending",
+      "description": "实施 StudentLearningAnalyticsService（学情聚合、知识点掌握度、薄弱点靶向推荐、班级跨考试学情）；新增控制器端点并继承角色权限；前端成绩中心增加学情画像 Tab 与推荐卡片；重新导出 openapi.yaml（paths 92→95）并更新前端 SDK；编写集成测试与前端单元测试，完成先红后绿与变异击红留证。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量门禁实测、规范合入与收口归档",
+      "status": "pending",
+      "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json（含 openapiPaths 92→95）；将 spec-delta 合入规范基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
