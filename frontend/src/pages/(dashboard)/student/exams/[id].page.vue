@@ -60,6 +60,21 @@
           class="mt-2"
         />
 
+        <!--
+          作答安全守卫提示（add-anti-cheat-restrictions 阶段 3）：只在「本场禁复制 / 退出全屏」
+          被触发时亮起，文案来自 ANTI_CHEAT_HINT 常量（只警告、不交卷）。可关闭——提示是提醒不是阻断。
+        -->
+        <Alert
+          v-if="behavior.guardNotice.value"
+          type="warning"
+          show-icon
+          closable
+          :message="behavior.guardNotice.value"
+          data-test="guard-notice"
+          class="mt-2"
+          @close="behavior.dismissGuardNotice()"
+        />
+
         <Alert
           v-if="errorText"
           type="error"
@@ -116,6 +131,7 @@
             :questions="questions"
             :answers="answers"
             :locked="locked"
+            :forbid-copy="antiCheatPolicy.forbidCopy"
             @update:answer="onAnswer"
           />
 
@@ -140,6 +156,12 @@
       </Spin>
     </template>
   </div>
+
+  <!--
+    全屏作答引导（add-anti-cheat-restrictions 阶段 3）：策略要求全屏、作答中、且当前不在全屏时出现。
+    只引导 + 上报，不含任何锁定/交卷动作（硬约定：防作弊只警告不交卷）。
+  -->
+  <FullScreenGuardOverlay :visible="fullScreenGuardVisible" @enter="onEnterFullScreen" />
 </template>
 
 <script setup lang="ts">
@@ -181,6 +203,7 @@ import {
 import { client, unwrap } from '@/api/apiClient';
 import ExamCountdown from '@/components/student/ExamCountdown.vue';
 import TakingBoard from '@/components/student/TakingBoard.vue';
+import FullScreenGuardOverlay from '@/components/student/FullScreenGuardOverlay.vue';
 import DraftSyncBadge from '@/components/student/DraftSyncBadge.vue';
 import SubmitExamPanel from '@/components/student/SubmitExamPanel.vue';
 import SubmitResultCard from '@/components/student/SubmitResultCard.vue';
@@ -356,10 +379,15 @@ watch(
  * 切屏 / 失焦上报（第 3 片）：一次离开一条（归并在 `reduceBehaviorSignal` 纯函数里），
  * 事件类型只有后端注册过的 SWITCH_SCREEN / WINDOW_BLUR，severity 由后端策略判定。
  * 上报失败静默旁路——行为采集绝不打断作答（与后端采集核心同构的取舍）。
+ *
+ * add-anti-cheat-restrictions 阶段 3：同一个 hook 承接本题的两个作答安全守卫——
+ * `antiCheat` 传后端下发的 `antiCheatConfig` 原值，拦截/上报口径全在 hook 与
+ * `utils/antiCheat` 里（页面不自己判、不自己报）。
  */
 const behavior = useBehaviorReport({
   examId: () => examId.value,
   suspended: () => closedByBackend.value || !examIdValid.value,
+  antiCheat: () => snapshot.value?.antiCheatConfig,
   deps: {
     report: (id, body) =>
       unwrap<BehaviorReportResponse>(
@@ -369,6 +397,26 @@ const behavior = useBehaviorReport({
 });
 
 const behaviorWarning = behavior.warning;
+/** 作答安全策略（供作答区「已禁用复制粘贴」说明与全屏引导共用同一份判定）。 */
+const antiCheatPolicy = behavior.policy;
+
+/**
+ * 全屏引导可见性：要求全屏 + 作答上下文在手 + 答卷未封闭 + 未归零（交卷/收卷后不该再逼学生全屏）。
+ * 「是否已全屏」由 hook 的全屏端口裁决（不在此重复读 document）。
+ */
+const fullScreenGuardVisible = computed(
+  () =>
+    antiCheatPolicy.value.fullScreen &&
+    Boolean(snapshot.value) &&
+    !closedByBackend.value &&
+    !countdown.isExpired.value &&
+    !behavior.fullScreenActive.value
+);
+
+/** 进入全屏：浏览器只允许在用户手势里进入，故由点击事件直接触发 hook 的请求。 */
+function onEnterFullScreen(): void {
+  void behavior.enterFullScreen();
+}
 
 /** 警告描述：只复述后端给的字段，不加工不放大。 */
 const behaviorDescription = computed<string | undefined>(() => {

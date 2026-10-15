@@ -30,8 +30,13 @@
 export type DomSignal =
   'visibilitychange-hidden' | 'visibilitychange-visible' | 'window-blur' | 'window-focus';
 
-/** 上报的事件类型（只登记后端已注册采集策略的两个值）。 */
-export type BehaviorEventType = 'SWITCH_SCREEN' | 'WINDOW_BLUR';
+/** 上报的事件类型（只登记后端已注册采集策略的值）。 */
+export type BehaviorEventType =
+  | 'SWITCH_SCREEN'
+  | 'WINDOW_BLUR'
+  // add-anti-cheat-restrictions 阶段 3：作答安全守卫上报的两个事件（后端策略同批注册）
+  | 'COPY_PASTE'
+  | 'FULLSCREEN_EXIT';
 
 /** 暂存中的离开事件：类型 + 离开时刻（单调时钟读数，不是墙上时间）。 */
 export interface StashedLeave {

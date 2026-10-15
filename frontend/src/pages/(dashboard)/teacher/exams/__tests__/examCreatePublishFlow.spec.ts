@@ -97,6 +97,9 @@ function bodyText(): string {
 
 beforeEach(() => {
   queryStore.data = {};
+  // 调用历史随用例清零：本文件的建考用例各自断言「本次提交」的请求体，
+  // 残留历史会让 mock.calls[0] 指向上一例的 body（阶段 3 新增用例暴露）
+  vi.clearAllMocks();
   routerMock.push.mockClear();
   invalidateQueries.mockClear();
   vi.mocked(api.publish1).mockResolvedValue({} as never);
@@ -215,6 +218,8 @@ describe('考试创建表单（create.page）', () => {
       };
       enableSwitchScreen: boolean;
       enableForbidCopy: boolean;
+      enableFullScreen: boolean;
+      ipWhitelistText: string;
       handleSubmit: () => Promise<void>;
     };
     vm.form.title = '期中考试';
@@ -227,6 +232,8 @@ describe('考试创建表单（create.page）', () => {
     vm.form.allowLateMinutes = 5;
     vm.enableSwitchScreen = true;
     vm.enableForbidCopy = true;
+    vm.enableFullScreen = true;
+    vm.ipWhitelistText = ' 192.168.1.* \n10.0.0.0/8, 192.168.1.* ';
 
     await vm.handleSubmit();
     await flushPromises();
@@ -241,11 +248,106 @@ describe('考试创建表单（create.page）', () => {
       endTime: '2026-10-01T11:00:00',
       durationMinutes: 90,
       allowLateMinutes: 5,
-      antiCheatConfig: { switchScreen: true, forbidCopy: true },
+      // 四键契约：白名单去空白去重后为数组，空白清单 = 不限 IP（空数组）
+      antiCheatConfig: {
+        switchScreen: true,
+        forbidCopy: true,
+        fullScreen: true,
+        ipWhitelist: ['192.168.1.*', '10.0.0.0/8'],
+      },
     });
     // 空描述不携带（可选字段的展开式写法）
     expect(body).not.toHaveProperty('description');
     expect(routerMock.push).toHaveBeenCalledWith('/teacher/exams');
     expect(message.success).toHaveBeenCalledWith('考试已创建（未发布状态）');
+  });
+});
+
+describe('建考表单：可视化防作弊卡片（add-anti-cheat-restrictions 阶段 3）', () => {
+  function mountCreatePage() {
+    queryStore.data['papers'] = [{ id: 5, title: '期中卷' }];
+    queryStore.data['classes'] = [{ id: 1, name: '一班' }];
+    return mount(ExamCreatePage);
+  }
+
+  type CreateVm = {
+    ipWhitelistText: string;
+    enableFullScreen: boolean;
+    form: { title: string; paperId: number | undefined; startTime: string; endTime: string };
+    handleSubmit: () => Promise<void>;
+  };
+
+  function fillValidForm(vm: CreateVm): void {
+    vm.form.title = '防作弊配置考试';
+    vm.form.paperId = 5;
+    vm.form.startTime = '2026-10-01T09:00:00';
+    vm.form.endTime = '2026-10-01T11:00:00';
+  }
+
+  it('卡片呈现四个可控项（切屏/禁复制/全屏开关 + IP 白名单）与阈值说明', async () => {
+    const wrapper = mountCreatePage();
+    await flushPromises();
+
+    expect(wrapper.find('[data-test="switch-screen-switch"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="forbid-copy-switch"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="full-screen-switch"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="ip-whitelist-input"]').exists()).toBe(true);
+    // 切屏严重度阈值是服务端全局属性（exam.anticheat.switch-screen.*-threshold），
+    // 本表单不写死键，只说明口径——说明文案必须在场，不能悄悄消失
+    expect(wrapper.find('[data-test="switch-threshold-note"]').text()).toContain('服务端');
+  });
+
+  it('白名单留空：提交携带空数组 = 不限 IP，且不出现格式预检告警', async () => {
+    const wrapper = mountCreatePage();
+    await flushPromises();
+    const vm = wrapper.vm as unknown as CreateVm;
+    fillValidForm(vm);
+    vm.ipWhitelistText = '   \n  ';
+
+    expect(wrapper.find('[data-test="ip-whitelist-issues"]').exists()).toBe(false);
+
+    await vm.handleSubmit();
+    await flushPromises();
+
+    const body = vi.mocked(api.create3).mock.calls[0][0].body as {
+      antiCheatConfig: { ipWhitelist: string[] };
+    };
+    expect(body.antiCheatConfig.ipWhitelist).toEqual([]);
+  });
+
+  it('白名单有不可解析条目：保存前显性告警并逐条列出（防整场考生被 403 挡在门外）', async () => {
+    const wrapper = mountCreatePage();
+    await flushPromises();
+    const vm = wrapper.vm as unknown as CreateVm;
+    vm.ipWhitelistText = '192.168.1.*\n192.168.1.1*\nabc';
+
+    await flushPromises();
+
+    const issues = wrapper.find('[data-test="ip-whitelist-issues"]');
+    expect(issues.exists()).toBe(true);
+    expect(issues.text()).toContain('192.168.1.1*');
+    expect(issues.text()).toContain('abc');
+    expect(issues.text()).not.toContain('192.168.1.*,');
+  });
+
+  it('合法白名单：无告警，提交时按声明顺序去重写入契约', async () => {
+    const wrapper = mountCreatePage();
+    await flushPromises();
+    const vm = wrapper.vm as unknown as CreateVm;
+    fillValidForm(vm);
+    vm.ipWhitelistText = '10.0.0.0/8\n192.168.1.100\n10.0.0.0/8\n::1';
+    vm.enableFullScreen = true;
+
+    await flushPromises();
+    expect(wrapper.find('[data-test="ip-whitelist-issues"]').exists()).toBe(false);
+
+    await vm.handleSubmit();
+    await flushPromises();
+
+    const body = vi.mocked(api.create3).mock.calls[0][0].body as {
+      antiCheatConfig: { fullScreen: boolean; ipWhitelist: string[] };
+    };
+    expect(body.antiCheatConfig.fullScreen).toBe(true);
+    expect(body.antiCheatConfig.ipWhitelist).toEqual(['10.0.0.0/8', '192.168.1.100', '::1']);
   });
 });

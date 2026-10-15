@@ -15,7 +15,7 @@ import type { BehaviorReportResponse } from '@/api/axios';
 
 describe('useBehaviorReport 离线兜底队列与去重护栏', () => {
   function setupHarness(reportImpl: ReturnType<typeof vi.fn>, queue = createMemoryBehaviorQueue()) {
-    const listeners = new Map<string, Set<() => void>>();
+    const listeners = new Map<string, Set<(event: Event) => void>>();
     const suspended = ref(false);
     const scope = effectScope();
     let hook!: ReturnType<typeof useBehaviorReport>;
@@ -38,7 +38,7 @@ describe('useBehaviorReport 离线兜底队列与去重护栏', () => {
     });
 
     return {
-      fire: (type: string) => listeners.get(type)?.forEach((h) => h()),
+      fire: (type: string) => listeners.get(type)?.forEach((h) => h(new Event(type))),
       hook,
       queue,
       dispose: () => scope.stop(),

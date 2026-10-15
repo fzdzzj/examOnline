@@ -8,6 +8,20 @@
       </span>
     </div>
 
+    <!--
+      禁用复制粘贴说明（add-anti-cheat-restrictions 阶段 3）：拦截与上报在
+      useBehaviorReport（监听常驻、按 antiCheatConfig 当场判定），这里只把「本场不允许」
+      这件事明示给学生——文案取常量，不在此另起一套措辞。
+    -->
+    <Alert
+      v-if="forbidCopy"
+      type="info"
+      show-icon
+      :message="ANTI_CHEAT_HINT.COPY_BLOCKED"
+      data-test="board-forbid-copy-hint"
+      class="mb-3"
+    />
+
     <QuestionAnswerCard
       v-if="current"
       :question="current"
@@ -47,12 +61,13 @@
  *
  * 界面刻意保持极简：无计算器、无标记备注、无草稿画板（proposal 与硬约定 10/12）。
  */
-import { Button, Empty, Space } from 'ant-design-vue';
+import { Alert, Button, Empty, Space } from 'ant-design-vue';
 import { computed, ref, watch } from 'vue';
 
 import type { QuestionView } from '@/api/axios';
 import QuestionAnswerCard from '@/components/student/QuestionAnswerCard.vue';
 import QuestionNavPanel from '@/components/student/QuestionNavPanel.vue';
+import { ANTI_CHEAT_HINT } from '@/utils/antiCheat';
 import { answerKeyOf, navStatesOf, type AnswerMap } from '@/utils/studentTaking';
 
 const props = withDefaults(
@@ -61,8 +76,10 @@ const props = withDefaults(
     answers: AnswerMap;
     /** 倒计时归零：所有作答入口锁死（导航不锁，学生要能回看） */
     locked?: boolean;
+    /** 本场考试是否禁用了复制/剪切/粘贴/右键（antiCheatConfig.forbidCopy）：只影响说明文案 */
+    forbidCopy?: boolean;
   }>(),
-  { locked: false }
+  { locked: false, forbidCopy: false }
 );
 
 const emit = defineEmits<{ 'update:answer': [key: string, value: string] }>();

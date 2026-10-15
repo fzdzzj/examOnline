@@ -94,7 +94,7 @@ const ROW_ENDED_UNPUBLISHED = { ...ROW_EDITABLE, id: 23, title: '已结束未发
 const ROW_PUBLISHED = { ...ROW_EDITABLE, id: 24, title: '已发布考试', published: true };
 const LIST_ROWS = [ROW_EDITABLE, ROW_IN_PROGRESS_UNPUBLISHED, ROW_ENDED_UNPUBLISHED, ROW_PUBLISHED];
 
-/** 详情端点回填 fixture：antiCheatConfig 与创建请求同键（switchScreen/forbidCopy） */
+/** 详情端点回填 fixture：antiCheatConfig 与创建请求同键（switchScreen/forbidCopy/fullScreen/ipWhitelist） */
 const EXAM_DETAIL = {
   id: 21,
   title: '待编辑的考试',
@@ -107,7 +107,12 @@ const EXAM_DETAIL = {
   allowLateMinutes: 5,
   status: 0,
   published: 0,
-  antiCheatConfig: { switchScreen: true, forbidCopy: true },
+  antiCheatConfig: {
+    switchScreen: true,
+    forbidCopy: true,
+    fullScreen: true,
+    ipWhitelist: ['192.168.1.*', '10.0.0.0/8'],
+  },
 };
 
 function mountIndexPage() {
@@ -256,6 +261,8 @@ describe('考试编辑模式（create.page）', () => {
       };
       enableSwitchScreen: boolean;
       enableForbidCopy: boolean;
+      enableFullScreen: boolean;
+      ipWhitelistText: string;
     };
     await vi.waitFor(() => expect(vm.form.title).toBe('待编辑的考试'));
     expect(vm.form.description).toBe('期中测验');
@@ -267,6 +274,9 @@ describe('考试编辑模式（create.page）', () => {
     expect(vm.form.allowLateMinutes).toBe(5);
     expect(vm.enableSwitchScreen).toBe(true);
     expect(vm.enableForbidCopy).toBe(true);
+    expect(vm.enableFullScreen).toBe(true);
+    // 白名单数组回填成多行文本（与提交时 parseIpWhitelistText 互逆）
+    expect(vm.ipWhitelistText).toBe('192.168.1.*\n10.0.0.0/8');
   });
 
   it('编辑提交：调 update2（path 携带 examId、请求体对齐 ExamUpdateRequest），成功跳回列表并失效 exams 查询', async () => {
@@ -292,7 +302,12 @@ describe('考试编辑模式（create.page）', () => {
       endTime: '2026-10-01T11:00:00',
       durationMinutes: 90,
       allowLateMinutes: 5,
-      antiCheatConfig: { switchScreen: true, forbidCopy: true },
+      antiCheatConfig: {
+        switchScreen: true,
+        forbidCopy: true,
+        fullScreen: true,
+        ipWhitelist: ['192.168.1.*', '10.0.0.0/8'],
+      },
     });
     expect(message.success).toHaveBeenCalledWith('考试已保存');
     expect(routerMock.push).toHaveBeenCalledWith('/teacher/exams');

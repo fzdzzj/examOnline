@@ -12,6 +12,7 @@ import type { QuestionView } from '@/api/axios';
 import QuestionAnswerCard from '@/components/student/QuestionAnswerCard.vue';
 import QuestionNavPanel from '@/components/student/QuestionNavPanel.vue';
 import TakingBoard from '@/components/student/TakingBoard.vue';
+import { ANTI_CHEAT_HINT } from '@/utils/antiCheat';
 
 const QUESTIONS: QuestionView[] = [
   { number: 1, questionId: 11, type: 1, content: '第一题', choices: ['甲', '乙'], score: 5 },
@@ -106,5 +107,20 @@ describe('TakingBoard 归零锁定', () => {
     const wrapper = mountBoard();
     await wrapper.findComponent(QuestionAnswerCard).vm.$emit('update:answer', 'C');
     expect(wrapper.emitted('update:answer')?.[0]).toEqual(['11', 'C']);
+  });
+});
+
+describe('TakingBoard 禁用复制粘贴说明（add-anti-cheat-restrictions 阶段 3）', () => {
+  it('forbidCopy=true：作答区显示禁用说明（文案来自 ANTI_CHEAT_HINT 常量，只有一处真源）', () => {
+    const wrapper = mountBoard({ forbidCopy: true });
+    const hint = wrapper.find('[data-test="board-forbid-copy-hint"]');
+    expect(hint.exists()).toBe(true);
+    expect(hint.text()).toContain(ANTI_CHEAT_HINT.COPY_BLOCKED);
+  });
+
+  it('默认（未配置/未开启）：不显示说明，作答区照常可用', () => {
+    const wrapper = mountBoard();
+    expect(wrapper.find('[data-test="board-forbid-copy-hint"]').exists()).toBe(false);
+    expect(wrapper.findComponent(QuestionAnswerCard).exists()).toBe(true);
   });
 });
