@@ -1,0 +1,26 @@
+{
+  "change": "add-exam-lifecycle-notifications",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与三件套制定",
+      "status": "completed",
+      "description": "设计考务生命周期通知体系与全部标已读端点，制定三件套，并在 spec/README.md 与 docs/功能待办清单.md 登记为进行中变更。",
+      "evidence": "三件套已落盘 spec/changes/add-exam-lifecycle-notifications/，并在 spec/README.md 登记为进行中变更。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端通知服务/主链路接线/全部已读端点与前端交互及先红后绿验证",
+      "status": "pending",
+      "description": "实施 ExamLifecycleNotificationService；接线 ExamService.publish、ScoreService.publish、ScoreReviewService.handle；MessageService 与 MessageController 增加全部已读端点；前端 MessageCenter.vue 增加全部已读按钮；重新导出 openapi.yaml（paths 91→92）并更新 SDK；编写单元测试与集成测试，完成先红后绿与变异击红留证。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量门禁实测、规范合入与收口归档",
+      "status": "pending",
+      "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json（含 openapiPaths 91→92）；将 spec-delta 合入规范基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
