@@ -144,7 +144,15 @@
                 :ok-button-props="{ danger: true }"
                 @confirm="onRemoveStudent(record as ClassStudentItem)"
               >
-                <Button type="link" size="small" danger :disabled="removing(record)">移出</Button>
+                <Button
+                  type="link"
+                  size="small"
+                  danger
+                  :loading="removing(record)"
+                  :disabled="removing(record)"
+                >
+                  移出
+                </Button>
               </Popconfirm>
             </Space>
           </template>

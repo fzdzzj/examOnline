@@ -449,15 +449,18 @@ public class ScoreExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph(exam.getTitle() + " 个人成绩单", titleFont);
+            // L-02：考试标题是教师可控文本——写出前先做字体编码安全清洗（Emoji/扩展生僻字 → '?'）
+            Paragraph title = new Paragraph(sanitizePdfText(exam.getTitle() + " 个人成绩单"), titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             document.add(title);
 
+            // L-02：学生姓名/学号是用户可控文本——整串清洗后再写入
             Paragraph studentInfo = new Paragraph(
-                    "姓名：" + report.studentName() + "    学号：" + report.username()
-                            + "    总分：" + decimal(report.total())
-                            + "    排名：第 " + report.rank() + " 名"
-                            + (report.partial() ? "（部分批改，未批题目按 0 分计入）" : ""),
+                    sanitizePdfText(
+                            "姓名：" + report.studentName() + "    学号：" + report.username()
+                                    + "    总分：" + decimal(report.total())
+                                    + "    排名：第 " + report.rank() + " 名"
+                                    + (report.partial() ? "（部分批改，未批题目按 0 分计入）" : "")),
                     infoFont);
             studentInfo.setSpacingBefore(12);
             studentInfo.setSpacingAfter(12);
@@ -467,25 +470,26 @@ public class ScoreExportService {
             table.setWidthPercentage(100);
             table.setHeaderRows(1);
             for (String header : new String[]{"题号", "题型", "题干", "满分", "得分", "批改状态"}) {
-                PdfPCell cell = new PdfPCell(new Phrase(header, headerFont));
+                PdfPCell cell = new PdfPCell(new Phrase(sanitizePdfText(header), headerFont));
                 cell.setBackgroundColor(new java.awt.Color(238, 238, 238));
                 table.addCell(cell);
             }
             for (GradingQuestion question : report.questions()) {
                 QuestionScoreResolver.ResolvedQuestionScore score =
                         report.scores().get(question.questionId());
-                table.addCell(new PdfPCell(new Phrase(String.valueOf(question.number()), cellFont)));
-                table.addCell(new PdfPCell(new Phrase(labelOf(question.type()), cellFont)));
-                table.addCell(new PdfPCell(new Phrase(question.content(), cellFont)));
-                table.addCell(new PdfPCell(new Phrase(decimal(question.score()), cellFont)));
-                table.addCell(new PdfPCell(new Phrase(
-                        score.graded() ? decimal(score.score()) : "未批", cellFont)));
-                table.addCell(new PdfPCell(new Phrase(score.graded() ? "已批" : "未批", cellFont)));
+                // L-02：题干是用户可控文本，含 Emoji/扩展生僻字时不清洗会抛编码异常中断导出
+                table.addCell(new PdfPCell(new Phrase(sanitizePdfText(String.valueOf(question.number())), cellFont)));
+                table.addCell(new PdfPCell(new Phrase(sanitizePdfText(labelOf(question.type())), cellFont)));
+                table.addCell(new PdfPCell(new Phrase(sanitizePdfText(question.content()), cellFont)));
+                table.addCell(new PdfPCell(new Phrase(sanitizePdfText(decimal(question.score())), cellFont)));
+                table.addCell(new PdfPCell(new Phrase(sanitizePdfText(
+                        score.graded() ? decimal(score.score()) : "未批"), cellFont)));
+                table.addCell(new PdfPCell(new Phrase(sanitizePdfText(score.graded() ? "已批" : "未批"), cellFont)));
             }
             document.add(table);
 
             Paragraph signature = new Paragraph(
-                    "教师签名：________________    日期：________________", infoFont);
+                    sanitizePdfText("教师签名：________________    日期：________________"), infoFont);
             signature.setSpacingBefore(40);
             document.add(signature);
 
@@ -675,6 +679,39 @@ public class ScoreExportService {
     /** 分值格式：1 位小数（与 DECIMAL(5,1) 口径一致），null 显示 "-"。 */
     private String decimal(BigDecimal value) {
         return value == null ? "-" : value.setScale(1, RoundingMode.HALF_UP).toPlainString();
+    }
+
+    /**
+     * PDF 文本安全清洗（harden-review-flow-and-resource-limits L-02）：
+     * STSong-Light + UniGB-UCS2-H 是 GB2312 映射字体（CMap 表长 65536），
+     * 遇增补平面字符（Emoji、CJK 扩展 B 生僻字，码点 &gt; 0xFFFF）时 openpdf 直接
+     * {@code ArrayIndexOutOfBoundsException} 中断整个导出；不可见控制字符也会污染排版。
+     * 在写出 Paragraph / Cell 文本前统一替换：
+     * <ul>
+     *   <li>增补平面码点与代理项（Emoji/生僻扩展字）→ '?'（通用占位符）；</li>
+     *   <li>除换行/制表/回车外的 ISO 控制字符 → 空格。</li>
+     * </ul>
+     * 其余字符（含 GB2312 覆盖的数学符号、中文标点、全角字符）原样保留。
+     */
+    static String sanitizePdfText(String text) {
+        if (text == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(text.length());
+        int i = 0;
+        while (i < text.length()) {
+            int cp = text.codePointAt(i);
+            int charCount = Character.charCount(cp);
+            if (cp > 0xFFFF || (cp >= 0xD800 && cp <= 0xDFFF)) {
+                sb.append('?');   // 增补平面（Emoji/扩展生僻字）与游离代理项：CMap 表外必崩 → 通用占位符
+            } else if (Character.isISOControl(cp) && cp != '\n' && cp != '\t' && cp != '\r') {
+                sb.append(' ');   // 特殊不可见控制字符 → 空格
+            } else {
+                sb.appendCodePoint(cp);
+            }
+            i += charCount;
+        }
+        return sb.toString();
     }
 
     private String round2(double value) {

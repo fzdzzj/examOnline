@@ -20,7 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| `harden-review-flow-and-resource-limits` | 成绩复核终局防呆、导出批量分片防 OOM 与交互细节打磨治理（S/M 级） | M-05 复核调分不可逆警示防呆、M-06 用户导出分批防 IN 超限、L-01 考后下拉失败增强、L-02 PDF 生僻字符容错、L-03 移出学生 loading 动效 | `score-review`, `authentication`, `score-management`, `frontend` | 无 |
+| （无进行中变更） | — | — | — | — |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。
@@ -56,6 +56,7 @@ spec/
 
 | 变更 ID | 阶段 | 内容 | 周期 |
 |---|---|---|---|
+| `harden-review-flow-and-resource-limits` | 成绩复核终局防呆、导出批量分片防 OOM 与交互细节打磨治理（S/M 级，**GO**） | 覆盖：五处加固——①ReviewHandleModal 调分不可逆 warning Alert 与 Modal.confirm 二次防呆确认；②UserImportExportService 用户导出大批量按 500 分片查询防 MySQL 报文溢出与 OOM；③useTeacherExams 及 5 个消费页下拉失败反馈增强（data-test="exams-error" 错误 Alert）；④ScoreExportService 个人成绩单 PDF 导出生僻特殊字符（Emoji/增补平面/控制符）清洗容错；⑤classes/index.page.vue 移出学生补齐 :loading 动效；零 DDL、零迁移脚本、schema.sql 零 diff；openapi paths 89 不变；门禁数字链 506→515、767→794、89 不变（gate-baseline 同步上调）；变异验证 m1–m4 全部击红-复原-回绿；实施笔 2f3cdff，feature/harden-review-flow-and-resource-limits 分支 `--no-ff` 合并入 main。 | 2026-10-15 |
 | `harden-data-sanitization-and-ui-states` | 数据健壮性（Excel防注入与Unicode全角清洗）与交互防呆（三态分离与并发防抖锁）治理（M 级，**GO**） | 覆盖：四处数据与交互加固——①ExcelSheetWriter.sanitizeFormula 导出公式防注入（敏感字符前置单引号强制纯文本，成绩与用户导出全面接入）；②QuestionImportExportService 与 UserImportExportService 导入 cellText 剥除 Unicode 全角空格（\u3000）与不换行空格（\u00A0）；③classes/questions/papers/tags 4 页面 useQuery 解构 error 并渲染错误 Alert，主表格在失败时隐藏（U-1 三态分离）；④questions/index.page.vue 批量删除引入 batchDeleting loading 态与并发防抖锁；零 DDL、零迁移脚本、schema.sql 零 diff；openapi paths 89 不变；门禁数字链 502→506、754→767、89 不变（gate-baseline 同步上调）；变异验证 m1–m4 全部击红-复原-回绿；实施笔 9c01391，feature/harden-data-sanitization-and-ui-states 分支 `--no-ff` 合并入 main。 | 2026-10-15 |
 | `harden-core-security-and-state-boundaries` | 业务越权防御、考务门禁严密化与核心状态缓存一致性治理（M 级，**GO**） | 覆盖：四处高危加固——①ClassService.transfer 目标班级 getOwnedClass 强校验（不存在 404 / 跨教师越权 403 / 源目标相同 400 防呆）；②ScoreReviewService.apply 答卷与有效成绩门禁（STATUS_GRADED 且 totalScore 非空，否则 400 拦截）；③grading/index.page.vue 主观题查询失败三态分离（解构 error、错误 Alert data-test=questions-error 显性呈现，不伪装为无主观题）；④ExamStateMachineService.autoAdvance 自动流转在 moved>0 时清除 CACHE_EXAM_DETAIL 缓存，ScoreService.publish/revoke 增加 @CacheEvict(allEntries=true) 清除详情缓存；零 DDL、零迁移脚本、schema.sql 零 diff；openapi paths 89 不变；门禁数字链 499→502、752→754、89 不变（gate-baseline 同步上调）；变异验证 m1–m4 全部击红-复原-回绿；实施笔 051db19，feature/harden-core-security-and-state-boundaries 分支 `--no-ff` 合并入 main。 | 2026-10-15 |
 | `harden-exam-paper-and-practice-boundaries` | 核心业务合理性、边界溢出防御与快照韧性治理（M 级，**GO**） | 覆盖：五处业务加固——①试卷克隆产物标题超长安全截断（papers.title=128 严格上限截断前缀，杜绝溢出）；②建考/改考时间窗与时长合理性校验（作答时长不得大于时间窗跨度、迟到容忍不得大于等于个人作答时长，400 明确文案）；③建考/改考防作弊 IP 白名单格式校验（为空/非法 IP/非法 CIDR/通配符严格预检报错）；④非预约制考试预约/取消端点前置门禁（reservationRequired!=1 明确 400 拦截）；⑤错题重练原题软删除平滑回退考试快照判分（题库软删后从已发布考试快照检索题目同源客观判分，保证连对与消灭链路不中断）；零 DDL、零迁移脚本、schema.sql 零 diff；门禁数字链 493→499、752 不变、89 不变（gate-baseline 同步上调）；变异验证（抽掉时间窗/抽掉预约门禁/抽掉标题截断 3 处击红-复原-回绿）；实施笔 7f78da6，feature/harden-exam-paper-and-practice-boundaries 分支 `--no-ff` 合并入 main。 | 2026-10-15 |

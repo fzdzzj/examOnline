@@ -21,6 +21,15 @@
         />
         <span class="ml-2 hint">留空表示仅认可复核、不改分</span>
       </FormItem>
+      <!-- M-05 不可逆防呆：同意且填入调分时，显性 warning 警示「覆写最终得分且不可逆」 -->
+      <Alert
+        v-if="action === 'AGREE' && adjustedTotalScore !== null"
+        type="warning"
+        show-icon
+        message="调整总分将直接覆写该场考试的学生最终得分且不可逆，请核对准确"
+        data-test="review-adjust-warning"
+        class="mb-3"
+      />
       <FormItem label="处理说明" required>
         <Textarea
           v-model:value="reason"
@@ -34,6 +43,7 @@
 
 <script setup lang="ts">
 import {
+  Alert,
   Divider,
   Form,
   FormItem,
@@ -54,6 +64,9 @@ import ReviewTimeline from '@/components/postexam/ReviewTimeline.vue';
  * 教师处理复核申请：POST /api/score-reviews/{reviewId}/handle
  * body = ReviewHandleRequest{ action: AGREE|REJECT, adjustedTotalScore?, reason }
  * 处理说明由后端落 score_review.result 字段，供双方追溯。
+ *
+ * M-05 防呆：AGREE + 填入调分 → 后端将直接覆写答卷最终得分，不可撤销，
+ * 提交前必须经 Modal.confirm 二次知情确认，杜绝手误直接覆写成绩。
  */
 
 const props = defineProps<{ review: ScoreReview | null }>();
@@ -75,12 +88,31 @@ watch(
   }
 );
 
+/** M-05 二次知情确认：仅「同意且调分」路径需要，驳回/仅认可复核不改分直接提交。 */
 async function onSubmit(): Promise<void> {
   if (props.review?.id === undefined) return;
   if (!reason.value.trim()) {
     message.warning('处理说明必填（后端会写入 result 供学生查看）');
     return;
   }
+  const adjusting = action.value === 'AGREE' && adjustedTotalScore.value !== null;
+  if (adjusting) {
+    // ant-design-vue 4 的 Modal.confirm 返回 ModalFunc（onOk 回调式）：
+    // 确认按钮触发 onOk → doSubmit；取消/关闭则不发起任何请求
+    Modal.confirm({
+      title: '确认调整总分？',
+      content: '调整总分将直接覆写该场考试的学生最终得分且不可逆，请核对准确后确认。',
+      okText: '确认调整',
+      cancelText: '取消',
+      onOk: () => doSubmit(),
+    });
+    return;
+  }
+  await doSubmit();
+}
+
+async function doSubmit(): Promise<void> {
+  if (props.review?.id === undefined) return;
   submitting.value = true;
   try {
     await unwrap(

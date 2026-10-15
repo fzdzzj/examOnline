@@ -1,0 +1,11 @@
+# 前端三门禁实测（harden-review-flow-and-resource-limits 阶段 2）
+
+命令（frontend/ 依次执行）：npm run lint:check && npm run type-check:check && npm test
+
+1. lint:check   → exit 0（eslint src e2e *.config.ts 零 error）
+2. type-check:check → exit 0（vue-tsc app + tsc config 双项目零 error）
+3. vitest run   → Test Files 104 passed (104) / Tests 794 passed (794)，Duration 152.17s
+
+- 用例数 794（基线 767，+27 = ReviewHandleModal 7 + classesLoadingRemove 3 + examsDropdownFailure 2
+  + useTeacherExams 新增 15 例），只增不减；
+- 三门禁 exit 0；既有 101 个 spec 文件全部保持通过，零回归。

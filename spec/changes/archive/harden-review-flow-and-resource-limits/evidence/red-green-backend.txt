@@ -1,0 +1,33 @@
+# red-green：后端 M-06/L-02 定向测试（harden-review-flow-and-resource-limits 阶段 2）
+
+验证命令（仓库根执行）：
+.\mvnw.cmd test "-Dtest=UserImportExportServiceExportPathBatchTest,ScoreExportServicePdfSanitizeTest" -DfailIfNoTests=false
+
+（两个端到端用例仅引用公开 API，实现缺失时可编译、以断言/异常变红；
+ 直接引用新方法的用例类 UserImportExportServiceBatchQueryTest 与
+ ScoreExportServiceSanitizePdfTextUnitTest 在实现前为「找不到符号」编译红，未列入本条命令。）
+
+## 先红（实现前，revert 至 HEAD 源码；退出码 1 / BUILD FAILURE）
+[ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0 -- ScoreExportServicePdfSanitizeTest
+[ERROR] com.exam.score.service.ScoreExportServicePdfSanitizeTest.exportPersonalPdf_withUnsupportedChars_stillGeneratesPdf
+   com.exam.common.BusinessException: PDF 生成失败
+   14:30:08.916 [main] ERROR com.exam.score.service.ScoreExportService -- 个人成绩单 PDF 生成失败: exam=100 student=7
+     com.lowagie.text.DocumentException: java.lang.ArrayIndexOutOfBoundsException: Index 128515 out of bounds for length 65536
+   （L-02 击红：含 Emoji 题干/标题时 openpdf 越界中断导出——恰为清洗要防的故障）
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0 -- UserImportExportServiceExportPathBatchTest
+[ERROR] com.exam.user.service.UserImportExportServiceExportPathBatchTest.exportTeachers_withOver500Users_queriesInBoundedBatches
+   Wanted but not invoked 3 times: userMapper.selectBatchIds(...)
+   But was 1 time: -> at ...UserImportExportService.exportTeachers(UserImportExportService.java:360)
+   （M-06 击红：>500 教师一次性 selectBatchIds——分批调用次数断言 3 次实为 1 次）
+[ERROR] Tests run: 2, Failures: 1, Errors: 1, Skipped: 0
+[INFO] BUILD FAILURE
+
+## 后绿（实现后，恢复全部 4 个用例类；退出码 0 / BUILD SUCCESS）
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 -- ScoreExportServicePdfSanitizeTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- ScoreExportServiceSanitizePdfTextUnitTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- UserImportExportServiceBatchQueryTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 -- UserImportExportServiceExportPathBatchTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+（红 2 条恰为新增长尾断言：M-06 分批调用次数、L-02 PDF 导出成功；既有用例零回归。）

@@ -1,0 +1,27 @@
+# m4 变异击红-复原留证：班级移出学生按钮 loading 动效（classes/index.page.vue）
+
+目标文件：frontend/src/pages/(dashboard)/teacher/classes/index.page.vue
+变异注入：抽掉「移出」按钮的 :loading="removing(record)" 绑定（仅保留 :disabled）
+验证命令（frontend/ 执行）：npm test -- src/pages/(dashboard)/teacher/classes/__tests__/classesLoadingRemove.spec.ts
+
+## 注入前（原实现）SHA256
+24FD850FBA905715773E8922FACE36BBF7EF222F11637FFBB7ED39C6F8F8A661
+## 注入后（变异）SHA256
+97D33DC9CD12201076284718BEE596FC09CF93BFD4B70B659333B3DB37D3EF8A
+
+## ① 击红（退出码 1）
+Test Files  1 failed (1)
+     Tests  2 failed | 1 passed (3)
+× 词法护栏：按钮绑定 :loading="removing(record)"（m4 变异敏感）
+  AssertionError: expected '<template>...' to contain ':loading="removing(record)"'
+× 移出请求在途：对应行按钮呈加载态（ant-btn-loading）且保持禁用
+  AssertionError: expected false to be true // Object.is equality
+  （在途状态下按钮无 ant-btn-loading——loading 绑定缺失变红）
+
+## ② 复原 + 归零
+复原后 SHA256：24FD850FBA905715773E8922FACE36BBF7EF222F11637FFBB7ED39C6F8F8A661
+与注入前一致：是（字节级一致，cmp 等价）
+
+## ③ 回绿
+复原后重跑同一验证命令：exit 0，Test Files 1 passed，Tests 3 passed (3)
+（结论：移出 loading 动效被真实捕获——抽掉 :loading 绑定即红。）

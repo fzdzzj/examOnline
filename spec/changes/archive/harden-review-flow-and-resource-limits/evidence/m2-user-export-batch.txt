@@ -1,0 +1,28 @@
+# m2 变异击红-复原留证：用户导出有界分批查询（UserImportExportService）
+
+目标文件：src/main/java/com/exam/user/service/UserImportExportService.java
+变异注入：把 exportStudents（两个分支）/ exportTeachers / exportAllUsers 的 batchSelectUsers
+          调用点恢复为一次性 userMapper.selectBatchIds(userIds)（巨型 IN 回归；batchSelectUsers
+          方法本体保留，保证用例可编译、以分批调用次数断言变红）
+验证命令（仓库根执行）：.\mvnw.cmd test "-Dtest=UserImportExportServiceExportPathBatchTest" -DfailIfNoTests=false
+
+## 注入前（原实现）SHA256
+3809BD8C4F71EFEA6D64A4C26FC04E8257B4493D33F24FCF692A4184FC8BA82E
+## 注入后（变异）SHA256
+2C2D6682D80848E457C644069760B3A04286664E1E72F686A89566CE21EEDCA9
+
+## ① 击红（退出码 1）
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0 -- UserImportExportServiceExportPathBatchTest
+[ERROR] com.exam.user.service.UserImportExportServiceExportPathBatchTest.exportTeachers_withOver500Users_queriesInBoundedBatches
+  Wanted but not invoked 3 times: userMapper.selectBatchIds(...)
+  But was 1 time: -> at ...UserImportExportService.exportTeachers(UserImportExportService.java:360)
+[INFO] BUILD FAILURE
+（大于 500 个 ID 的用例断言分批调用次数 3 次（500/500/200）实为 1 次——分批分发失效变红）
+
+## ② 复原 + 归零
+复原后 SHA256：3809BD8C4F71EFEA6D64A4C26FC04E8257B4493D33F24FCF692A4184FC8BA82E
+与注入前一致：是（字节级一致，cmp 等价）
+
+## ③ 回绿
+复原后重跑同一验证命令：exit 0，Tests run: 1, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS
+（结论：分批查询资源保护被真实捕获——恢复巨型 IN 即红。）

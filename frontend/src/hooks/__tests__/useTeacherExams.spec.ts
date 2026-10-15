@@ -17,10 +17,14 @@ import {
   TEACHER_EXAMS_PAGE_SIZE,
   createTeacherExamsQueryOptions,
   fetchAllTeacherExams,
+  fetchAllTeacherExamsStrict,
   type TeacherExamsPageFetcher,
 } from '@/hooks/useTeacherExams';
 import scoresPageSource from '@/pages/(dashboard)/teacher/scores/index.page.vue?raw';
 import gradingPageSource from '@/pages/(dashboard)/teacher/grading/index.page.vue?raw';
+import reviewsPageSource from '@/pages/(dashboard)/teacher/reviews/index.page.vue?raw';
+import absencesPageSource from '@/pages/(dashboard)/teacher/absences/index.page.vue?raw';
+import makeupsPageSource from '@/pages/(dashboard)/teacher/makeups/index.page.vue?raw';
 
 function makeExams(count: number, offset = 0): ExamResponse[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -147,6 +151,66 @@ describe('createTeacherExamsQueryOptions', () => {
     const options = createTeacherExamsQueryOptions(fetchPage);
 
     await expect(options.queryFn()).resolves.toHaveLength(135);
+  });
+});
+
+describe('考试下拉失败透出（harden L-01，fetchAllTeacherExamsStrict）', () => {
+  it('首页取数即失败：严格形态直接抛出，不再静默返回空数组', async () => {
+    const fetchPage = vi.fn().mockRejectedValue(new Error('网络中断'));
+
+    await expect(fetchAllTeacherExamsStrict(fetchPage)).rejects.toThrow('网络中断');
+    expect(fetchPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('后续页失败：严格形态抛出，不静默返回部分累积列表', async () => {
+    const fetchPage = vi.fn(async (page: number) => {
+      if (page === 1) return makeExams(100);
+      throw new Error('网络中断');
+    });
+
+    await expect(fetchAllTeacherExamsStrict(fetchPage)).rejects.toThrow('网络中断');
+    expect(fetchPage).toHaveBeenCalledTimes(2);
+  });
+
+  it('成功路径：严格形态返回与宽松形态一致的完整候选', async () => {
+    const fetchPage = pagedFetcher([makeExams(100), makeExams(35, 100)]);
+
+    await expect(fetchAllTeacherExamsStrict(fetchPage)).resolves.toHaveLength(135);
+    await expect(fetchAllTeacherExams(fetchPage)).resolves.toHaveLength(135);
+  });
+
+  it('createTeacherExamsQueryOptions.queryFn 走严格形态：失败时 useQuery.error 可承载', async () => {
+    const options = createTeacherExamsQueryOptions(
+      vi.fn().mockRejectedValue(new Error('考试列表加载失败'))
+    );
+
+    await expect(options.queryFn()).rejects.toThrow('考试列表加载失败');
+  });
+
+  it('宽松形态 fetchAllTeacherExams 行为不变：仍吞错兜底（既有调用方零回归）', async () => {
+    const throwing = vi.fn().mockRejectedValue(new Error('网络中断'));
+
+    await expect(fetchAllTeacherExams(throwing)).resolves.toEqual([]);
+    expect(throwing).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('页面考试下拉失败占位接线（L-01 词法护栏）', () => {
+  const pages = [
+    { name: 'teacher/scores', source: scoresPageSource },
+    { name: 'teacher/grading', source: gradingPageSource },
+    { name: 'teacher/reviews', source: reviewsPageSource },
+    { name: 'teacher/absences', source: absencesPageSource },
+    { name: 'teacher/makeups', source: makeupsPageSource },
+  ];
+
+  it.each(pages)('$name 消费 useQuery error 并渲染 exams-error 占位 Alert', ({ source }) => {
+    expect(source).toContain('examsErrorText');
+    expect(source).toContain('data-test="exams-error"');
+  });
+
+  it.each(pages)('$name 的考试下拉仍走 createTeacherExamsQueryOptions 收口', ({ source }) => {
+    expect(source).toContain('createTeacherExamsQueryOptions');
   });
 });
 

@@ -493,6 +493,55 @@ class UserImportExportIntegrationTest extends IntegrationTestBase {
         assertTrue(rows.size() >= 201, "表头 + 至少 200 行学生数据");
     }
 
+    // ==================== 9.5 超过 500 人的有界分批导出（harden M-06） ====================
+
+    @Test
+    void exportOver500StudentsKeepsCompletenessAndIdOrder() throws Exception {
+        String adminToken = loginToken("admin", "admin123");
+        String teacherToken = registerTeacher();
+        String className = unique("M6大班");
+        long classId = createClass(teacherToken, className);
+
+        // 550 人（> BATCH_SIZE 500）：导出必须完整（不丢行）且按插入顺序（=ID 升序）一致
+        Role studentRole = roleMapper.selectOne(Wrappers.<Role>lambdaQuery().eq(Role::getCode, "STUDENT"));
+        List<String> usernames = new ArrayList<>();
+        for (int i = 0; i < 550; i++) {
+            String username = "m6_stu_" + unique("i" + i);
+            usernames.add(username);
+            User u = new User();
+            u.setUsername(username);
+            u.setName("M6学生" + i);
+            u.setPassword("Pass1234");
+            u.setStatus(0);
+            u.setMustChangePassword(0);
+            userMapper.insert(u);
+
+            com.exam.user.entity.UserRole ur = new com.exam.user.entity.UserRole();
+            ur.setUserId(u.getId());
+            ur.setRoleId(studentRole.getId());
+            userRoleMapper.insert(ur);
+
+            UserClass uc = new UserClass();
+            uc.setUserId(u.getId());
+            uc.setClassId(classId);
+            userClassMapper.insert(uc);
+        }
+
+        byte[] exportBytes = mockMvc.perform(get("/api/admin/users/export?scope=student&classId=" + classId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        List<List<String>> rows = readExcel(exportBytes);
+        assertEquals(551, rows.size(), "表头 + 550 行学生（分批查询不得丢行）");
+        // 首行 = 最早插入（ID 最小），末行 = 最晚插入——分批累加后按 ID 升序与既有口径一致
+        assertEquals(usernames.get(0), rows.get(1).get(0), "首数据行应为最早插入的学生（ID 升序）");
+        assertEquals(usernames.get(549), rows.get(550).get(0), "末数据行应为最晚插入的学生（ID 升序）");
+        for (int i = 0; i < 550; i++) {
+            assertEquals(usernames.get(i), rows.get(i + 1).get(0), "第 " + (i + 1) + " 行学号按插入顺序");
+        }
+    }
+
     // ==================== 辅助方法 ====================
 
     private MockMultipartFile multipartFile(byte[] xlsx) {

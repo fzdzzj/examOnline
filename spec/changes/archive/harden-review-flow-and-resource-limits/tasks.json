@@ -11,16 +11,16 @@
     {
       "id": 2,
       "title": "阶段 2：服务层与前端实现及先红后绿验证",
-      "status": "pending",
+      "status": "completed",
       "description": "实施后端 UserImportExportService（分批查询）、ScoreExportService（PDF 字符容错），前端 ReviewHandleModal（不可逆警示防呆）、classes/index.page.vue（loading 动效）及相关下拉反馈。编写先红后绿与变异测试，验证 m1–m4 变异击红留证。",
-      "evidence": ""
+      "evidence": "单笔提交 2f3cdff（28 文件，+856 -24，零 DDL）；定向测试先红后绿通过（后端 5 个测试类全绿，前端 4 个 spec 全绿）；变异 m1~m4 全部击红留证（m1 ReviewHandleModal 抽确认回调防呆击红；m2 UserImportExportService 抽 500 分片击红；m3 ScoreExportService 抽生僻字符过滤报 iText 内部异常击红；m4 classes/index.page.vue 抽 :loading 绑定击红）；留证资产归档于 evidence/。"
     },
     {
       "id": 3,
       "title": "阶段 3：全量门禁实测、规范合入与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json；将 spec-delta 分别合入 score-review、authentication、score-management、frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
-      "evidence": ""
+      "evidence": "后端门禁 mvnw.cmd clean test 实测：Tests run: 515, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS；前端三门禁实测：pnpm run lint:check（0 错误）、pnpm run type-check:check（0 错误）、pnpm run test -- --testTimeout=60000（104 文件 794 用例全绿）；契约 89 paths 维持；.github/ci/gate-baseline.json 同步上调为 backendTests: 515, frontendTests: 794, openapiPaths: 89；规范差异合入 score-review、authentication、score-management、frontend 基线；变更目录归档并合流 main。"
     }
   ]
 }

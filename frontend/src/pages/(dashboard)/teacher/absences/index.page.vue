@@ -18,6 +18,16 @@
         <Button @click="() => void refetch()">刷新名单</Button>
       </div>
 
+      <!-- L-01：考试下拉候选拉取失败显性提示，替代静默空下拉 -->
+      <Alert
+        v-if="examsErrorText"
+        type="error"
+        show-icon
+        :message="examsErrorText"
+        data-test="exams-error"
+        class="mb-3"
+      />
+
       <Alert type="info" show-icon class="mb-3">
         <template #description>
           <ul class="info-list">
@@ -111,12 +121,23 @@ function formatTime(value: string | undefined): string {
   return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '—';
 }
 
-const { data: examsData, isFetching: examsFetching } = useQuery(
+const {
+  data: examsData,
+  isFetching: examsFetching,
+  error: examsError,
+} = useQuery(
   createTeacherExamsQueryOptions((page, size) =>
     unwrap<ExamResponse[]>(pageExams({ client, throwOnError: true, query: { page, size } }))
   )
 );
 const exams = computed<ExamResponse[]>(() => examsData.value ?? []);
+
+// L-01：考试下拉候选拉取失败 → 显性错误占位（useTeacherExams 严格形态透出 error）
+const examsErrorText = computed<string | null>(() => {
+  const caught = examsError?.value;
+  if (!caught) return null;
+  return caught instanceof Error ? caught.message : '考试列表加载失败';
+});
 const examOptions = computed(() =>
   exams.value.map((e) => ({ value: e.id as number, label: `#${e.id} ${e.title}` }))
 );
