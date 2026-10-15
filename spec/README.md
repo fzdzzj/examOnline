@@ -20,7 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| （无进行中变更） | — | — | — | — |
+| `add-batch-tagging-and-score-balancing` | 题库批量标签管理与试卷分值智能配平 | 题库批量打标/解绑、试卷分值最大余数配平与标准题序重排 | question-bank, frontend | 无 |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。

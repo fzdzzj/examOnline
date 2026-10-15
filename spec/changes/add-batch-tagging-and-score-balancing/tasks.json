@@ -1,0 +1,27 @@
+{
+  "changeId": "add-batch-tagging-and-score-balancing",
+  "title": "题库批量标签管理、试卷分值智能配平与标准题序重排",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、规范增量制定与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、question-bank 及 frontend 的 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md。",
+      "evidence": "完成提案与双端规范增量制定，检出 feature/add-batch-tagging-and-score-balancing 分支，更新 spec/README.md 在途登记与 docs/功能待办清单.md 状态。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：后端批量打标/配平服务与端点、前端交互组件与先红后绿及变异击红验证",
+      "status": "pending",
+      "description": "实施 QuestionService.batchTags 与 POST /api/questions/batch-tags；实施 PaperService.rebalanceScores 离散最大余数保和算法与 POST /api/papers/{id}/questions/scores/rebalance；前端题库页增加批量打标弹窗，试卷页增加分值智能配平弹层与按标准题型重排；重新导出 openapi.yaml（paths 95→97）并更新前端 SDK；编写后端集成测试与前端单元测试，完成先红后绿与变异击红留证。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量门禁实测、规范合入与收口归档",
+      "status": "pending",
+      "description": "在 feature 分支执行 mvnw.cmd clean test 与前端三门禁；上调 .github/ci/gate-baseline.json（含 openapiPaths 95→97）；将 spec-delta 合入规范基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
