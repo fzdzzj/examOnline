@@ -61,6 +61,21 @@ public class MessageService {
         log.debug("用户 {} 标记消息 {} 已读", userId, messageId);
     }
 
+    /**
+     * 全部标为已读（add-exam-lifecycle-notifications）：将当前登录用户的所有未读消息
+     * （user_id 隔离，read_flag=0）批量置 1，返回标记行数（可为 0）。幂等：
+     * 全已读时返回 0 且不报错；绝不触碰他人消息。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public int markAllRead() {
+        Long userId = requireLogin();
+        int rows = messageMapper.markAllByOwner(userId);
+        if (rows > 0) {
+            log.info("用户 {} 全部标为已读 {} 条", userId, rows);
+        }
+        return rows;
+    }
+
     private Long requireLogin() {
         Long userId = SecurityUtil.getUserId();
         if (userId == null) {

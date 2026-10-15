@@ -207,6 +207,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseVoid"
+  /api/messages/read-all:
+    put:
+      tags:
+      - message-controller
+      operationId: markAllRead
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseInteger"
   /api/exams/{id}:
     get:
       tags:
@@ -2621,6 +2633,17 @@ components:
           minItems: 1
       required:
       - questionIds
+    ApiResponseInteger:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: integer
+          format: int32
     ExamUpdateRequest:
       type: object
       properties:

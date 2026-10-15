@@ -94,10 +94,16 @@ class ExamReservationRemindIntegrationTest extends IntegrationTestBase {
         return examId;
     }
 
+    /**
+     * 统计该用户对某考试的「开考提醒」消息数（add-exam-lifecycle-notifications 起，
+     * 考试发布也会向班内学生投递独立的「考试发布通知」，本夹具只统计预约提醒本体，
+     * 避免与独立的新通知类型混淆）。
+     */
     private long messageCountFor(long userId, Long examId) {
         return messageMapper.selectCount(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<UserMessage>()
                 .eq(UserMessage::getUserId, userId)
-                .eq(examId != null, UserMessage::getExamId, examId));
+                .eq(examId != null, UserMessage::getExamId, examId)
+                .eq(UserMessage::getTitle, "开考提醒"));
     }
 
     // ==================== 提前量与行级幂等 ====================
@@ -120,13 +126,12 @@ class ExamReservationRemindIntegrationTest extends IntegrationTestBase {
         remindService.remind();
         assertEquals(1, messageCountFor(studentId, examId), "重复扫描不得重复投递");
 
-        // 消息中心可见此条提醒
+        // 消息中心可见此条提醒（只数开考提醒本体，考试发布通知是独立的新通知，计入会混淆）
         JsonNode list = perform(jsonGet("/api/messages", student), 200).get("data");
         long found = 0;
         for (JsonNode m : list) {
-            if (m.get("examId").asLong() == examId) {
+            if (m.get("examId").asLong() == examId && "开考提醒".equals(m.get("title").asText())) {
                 found++;
-                assertEquals("开考提醒", m.get("title").asText());
                 assertEquals(0, m.get("readFlag").asInt());
             }
         }
@@ -163,24 +168,25 @@ class ExamReservationRemindIntegrationTest extends IntegrationTestBase {
         long examB = reserve(teacher, studentB, classId, soon, soon.plusHours(3));
         remindService.remind();
 
-        // A 只看到自己的 1 条（来自 examA），B 只看到自己的 1 条（来自 examB）
+        // 预约提醒按 user_id 隔离：A 只收到自己预约的 examA 提醒（1 条考试发布通知 + 1 条开考提醒），看不到 B 的 examB 提醒
+        // （考试发布通知是班内共享的新通知，A/B 都会收到两份；开考提醒才是按预约隔离的本体）
         JsonNode aList = perform(jsonGet("/api/messages", studentA), 200).get("data");
         JsonNode bList = perform(jsonGet("/api/messages", studentB), 200).get("data");
-        long aExamA = countExamInList(aList, examA);
-        long aExamB = countExamInList(aList, examB);
-        assertEquals(1, aExamA);
-        assertEquals(0, aExamB, "A 不得看到 B 的消息");
-        assertEquals(1, countExamInList(bList, examB));
+        // 开考提醒（预约本体）按用户隔离计数
+        assertEquals(1, countReminderInList(aList, examA), "A 有 examA 的开考提醒");
+        assertEquals(0, countReminderInList(aList, examB), "A 不得看到 B 的 examB 开考提醒");
+        assertEquals(1, countReminderInList(bList, examB), "B 有 examB 的开考提醒");
+        assertEquals(0, countReminderInList(bList, examA), "B 不得看到 A 的 examA 开考提醒");
 
-        // 未读数：双方各 1
-        assertEquals(1, perform(jsonGet("/api/messages/unread-count", studentA), 200).get("data").asLong());
-        assertEquals(1, perform(jsonGet("/api/messages/unread-count", studentB), 200).get("data").asLong());
+        // 未读数 = 开考提醒(各 1) + 考试发布通知(班内共享 2) = 3
+        assertEquals(3, perform(jsonGet("/api/messages/unread-count", studentA), 200).get("data").asLong());
+        assertEquals(3, perform(jsonGet("/api/messages/unread-count", studentB), 200).get("data").asLong());
 
-        // A 标记自己那条已读 → 未读数归 0；B 未读数不受影响
+        // A 标记自己任一条已读 → A 未读 -1；B 未读数不受影响
         Long aMsgId = aList.get(0).get("id").asLong();
         perform(jsonPut("/api/messages/" + aMsgId + "/read", studentA, null), 200);
-        assertEquals(0, perform(jsonGet("/api/messages/unread-count", studentA), 200).get("data").asLong());
-        assertEquals(1, perform(jsonGet("/api/messages/unread-count", studentB), 200).get("data").asLong());
+        assertEquals(2, perform(jsonGet("/api/messages/unread-count", studentA), 200).get("data").asLong());
+        assertEquals(3, perform(jsonGet("/api/messages/unread-count", studentB), 200).get("data").asLong());
 
         // 未登录访问消息端点 → 401
         perform(jsonGet("/api/messages", null), 401);
@@ -247,10 +253,12 @@ class ExamReservationRemindIntegrationTest extends IntegrationTestBase {
                 .eq(ExamAbsence::getStudentId, studentId));
     }
 
-    private long countExamInList(JsonNode list, long examId) {
+    /** 统计列表里某考试的「开考提醒」消息数（预约提醒本体，与独立的考试发布通知区分）。 */
+    private long countReminderInList(JsonNode list, long examId) {
         long count = 0;
         for (JsonNode m : list) {
-            if (m.has("examId") && !m.get("examId").isNull() && m.get("examId").asLong() == examId) {
+            if (m.has("examId") && !m.get("examId").isNull() && m.get("examId").asLong() == examId
+                    && "开考提醒".equals(m.get("title").asText())) {
                 count++;
             }
         }

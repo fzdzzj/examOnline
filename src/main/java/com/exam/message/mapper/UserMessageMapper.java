@@ -19,4 +19,12 @@ public interface UserMessageMapper extends BaseMapper<UserMessage> {
     @Update("UPDATE user_messages SET read_flag = 1 "
             + "WHERE id = #{id} AND user_id = #{userId} AND read_flag = 0")
     int markReadByOwner(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * 全部标记已读（add-exam-lifecycle-notifications）：仅本人（user_id 隔离），
+     * 未读行（read_flag=0）批量置 1；已读/不存在不受影响。返回受影响行数（可为 0）。
+     */
+    @Update("UPDATE user_messages SET read_flag = 1 "
+            + "WHERE user_id = #{userId} AND read_flag = 0")
+    int markAllByOwner(@Param("userId") Long userId);
 }

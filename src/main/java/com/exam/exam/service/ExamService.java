@@ -14,6 +14,7 @@ import com.exam.exam.dto.ExamDetailResponse;
 import com.exam.exam.dto.ExamUpdateRequest;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
+import com.exam.message.service.ExamLifecycleNotificationService;
 import com.exam.paper.entity.Paper;
 import com.exam.paper.mapper.PaperMapper;
 import com.exam.paper.service.PaperService;
@@ -53,11 +54,13 @@ public class ExamService {
     private final ExamStateMachineService stateMachineService;
     private final ExamSnapshotService snapshotService;
     private final AbsenceService absenceService;
+    private final ExamLifecycleNotificationService lifecycleNotificationService;
     private final ObjectMapper objectMapper;
 
     public ExamService(ExamMapper examMapper, PaperService paperService,
                        PaperMapper paperMapper, ExamStateMachineService stateMachineService,
                        ExamSnapshotService snapshotService, AbsenceService absenceService,
+                       ExamLifecycleNotificationService lifecycleNotificationService,
                        ObjectMapper objectMapper) {
         this.examMapper = examMapper;
         this.paperService = paperService;
@@ -65,6 +68,7 @@ public class ExamService {
         this.stateMachineService = stateMachineService;
         this.snapshotService = snapshotService;
         this.absenceService = absenceService;
+        this.lifecycleNotificationService = lifecycleNotificationService;
         this.objectMapper = objectMapper;
     }
 
@@ -253,6 +257,9 @@ public class ExamService {
         exam.setSnapshotId(snapshotId);
         examMapper.updateById(exam);
         log.info("考试 {} 发布（学生可见），等待定时开考", id);
+        // 旁路通知（add-exam-lifecycle-notifications）：发布成功后向班级学生投递考试发布通知；
+        // 服务内部统一 try-catch 降级，任何异常绝不回滚/阻断本次发布事务。
+        lifecycleNotificationService.notifyExamPublished(exam);
         return detail(id);
     }
 
