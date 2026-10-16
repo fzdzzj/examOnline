@@ -14,8 +14,9 @@ DefaultRedisScript Lua「INCR + 首置 PEXPIRE」原子化，先例 RedisTokenBu
 
 ## 二、方案
 
-- increment 改 Lua 单脚本原子化（INCR + 首次置 TTL），脚本常量**本地复制于 anticheat 包**
-  （不引用 auth 包内部常量，保持包独立、白名单干净）
+- increment 改 Lua 单脚本原子化（INCR + 首次置 EXPIRE，秒），脚本常量**本地复制于 anticheat 包**
+  （不引用 auth 包内部常量，保持包独立、白名单干净）；先例脚本文实为 EXPIRE（秒）非
+  PEXPIRE，台账早期表述有误，收口笔勘正（复核偏差 1 项）
 - 判定语义零变化：返回值口径（首次 1）、TTL 配置（counter-ttl-hours 默认 12h）、
   Redis 异常降级「按首次事件返回 1、不影响采集主链路」逐字保留
 - 不动：KEY_PREFIX、key 维度（examId/studentId/eventType）、调用方

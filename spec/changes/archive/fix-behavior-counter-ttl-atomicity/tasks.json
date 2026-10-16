@@ -9,7 +9,7 @@
       "title": "阶段 1：立案三件套 + 两总账登记 + 立项笔",
       "status": "completed",
       "description": "主 Agent 亲验 BehaviorCounterService.increment L46-48 缺陷形态（INCR 后 count==1 判 expire 两步非原子，间隙崩溃致键永不过期）→ 写 proposal/spec-delta（anti-cheat 域）/tasks 三件套 → 登记 spec/README.md 在途表 + docs/功能待办清单.md B.2 专项条目 → feature 分支立项笔提交。",
-      "evidence": "①三件套落位 spec/changes/fix-behavior-counter-ttl-atomicity/。②两总账：spec/README.md 在途表新增行 + docs/功能待办清单.md B.2 第四轮专项段补欠账条目。③侦察结论：缺陷与 auth 案 LoginGuard 修复前同型；修复模式照抄 incrementWithTtl（DefaultRedisScript Lua INCR+首置 PEXPIRE）；脚本常量本地复制于 anticheat 包不引用 auth 包（白名单干净）。④立项笔 hash 以 git log 为准（tasks.json 同笔入库不预写自指）。"
+      "evidence": "①三件套落位 spec/changes/fix-behavior-counter-ttl-atomicity/。②两总账：spec/README.md 在途表新增行 + docs/功能待办清单.md B.2 第四轮专项段补欠账条目。③侦察结论：缺陷与 auth 案 LoginGuard 修复前同型；修复模式照抄 incrementWithTtl（DefaultRedisScript Lua INCR+首置 EXPIRE）；脚本常量本地复制于 anticheat 包不引用 auth 包（白名单干净）。④立项笔 hash 以 git log 为准（tasks.json 同笔入库不预写自指）。"
     },
     {
       "id": 2,
@@ -21,9 +21,9 @@
     {
       "id": 3,
       "title": "阶段 3：门禁实测、基线上调与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "按实测上调 gate-baseline.json backendTests（frontendTests/openapiPaths 核对不变）；spec-delta Scenario 合入 anti-cheat 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md（B.2 条目改已闭环），--no-ff 合并入 main。",
-      "evidence": ""
+      "evidence": "①复核 PASS（2026-10-16，双岗隔离）：物理盘点 c4be1fa 恰 9 文件零杂入、auth 包零引用；门禁复跑 630/0/0/1 BUILD SUCCESS（复核留档 D:\\code\\examOnline-measure\\review-behavior-ttl-atomicity-2026-10-16\\gate-rerun.log），逐类 BehaviorCounterServiceTest 4 新增 + SwitchScreenEventCollectorTest 6 保持，630＝主张＝基线 626+4 三项收敛；语义零变化逐项核实（Lua 单脚本 EXPIRE 秒单位配对正确、KEY_PREFIX/key 维度/TTL 配置/返回口径/异常降级/切屏调用链逐字未动）；SwitchScreenEventCollectorTest 形状调整单列裁决通过（桩适配不弱化断言）。②收口笔：gate-baseline.json backendTests 626→630（frontendTests 908/openapiPaths 97 核对不变）；anti-cheat 基线合入「行为计数键 TTL 的原子性」Scenario；proposal/tasks PEXPIRE 表述勘正为 EXPIRE（秒）（复核偏差 1 项落档）；归档 spec/changes/archive/fix-behavior-counter-ttl-atomicity/；两总账更新。③--no-ff 合并入 main，收口以 git log 为准。"
     }
   ]
 }
