@@ -1,0 +1,29 @@
+{
+  "changeId": "optimize-practice-pool-hot-path",
+  "title": "错题重练池热路径与批改读路径优化（门控短路定位、静默吞对齐、attempt 回读 LIMIT、progress 窄投影、saveScore 单行回读）",
+  "level": "M",
+  "capabilityDomains": ["score-management", "grading"],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、规范增量制定与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、score-management 与 grading 两份 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md。定性：五落点纯后端（score/grading 两包），零 DDL、零契约变更（openapi paths 97 不变、响应形状不变）、零前端，仅 backendTests 预期增长；M 级双岗隔离。",
+      "evidence": "基于 2026-10-16 三轮后端巡查 score/grading 域发现（高危×1+中×3+低危顺带×1，发现台账 docs/功能待办清单.md B.2），主 Agent 立项侦察源码直读核实：①StudentPracticeService.submitPractice L155 门控调 getStudentWrongQuestionIds（L315-335）逐场 getPersonalReportWithoutRank 全量重建错题集合（O(场数×题数) 叠加提交热路径）；②同方法 L322-323 catch(Exception) continue 静默吞（同文件 L93/L265 同型循环均有 log.warn）；③GradingQueryService.progress L54-77 两处 selectList 无列投影（submissions 载 answers TEXT 仅为计数、subjectiveRows 载全列仅为统计 score 非空）；④SubjectiveGradingService.saveScore L202-205 selectWorkbenchRows(examId, questionId) 全量学生行内存 filter 单行（台账注 listRows 已有 submissionId 单行取数）；⑤submitPractice L229-233 提交后回读全部历史 attempt 推导连对而连对窗口仅 3（consecutiveCorrect>=3 即 mastered）。选型决策：门控改短路定位 isWrongQuestionOf（命中即止，正常路径止步命中场；错题池缓存落表需 DDL+失效语义超零 DDL 边界，getStudentWrongQuestionIds 保留供列表页消费）；attempt 回读 LIMIT 3 语义等价（窗口截断）。spec 基线落点核实：specs/score-management/spec.md「错题重练与消灭计划」L442、specs/grading/spec.md「判分进度部分批改计数」L116 与「简答批改」L60 为追加 Scenario 宿主。检出 feature/optimize-practice-pool-hot-path 分支。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：五项实施 + 单测先红后绿 + 变异击红验证",
+      "status": "pending",
+      "description": "①submitPractice 门控改短路定位 isWrongQuestionOf(studentId, questionId)——逐场装配命中即短路（判分严格小于满分即通过），getStudentWrongQuestionIds 保留不动（列表页消费）；②门控定位循环 catch 补 log.warn 对齐同文件口径，异常场跳过语义不变；③attempt 连对推导查询加 .last(\"LIMIT 3\")，消灭判定连对>=3 不变；④progress 两处统计查询加 .select 消费列投影（submissions：id+gradingStatus 等以方法尾部消费实际使用为准直读确定；subjectiveRows：submissionId+score），统计口径与 @DS(\"slave\") 零改动；⑤saveScore 回读改单行查询（优先复用既有 submissionId 单行取数，形态不匹配则新增 mapper 单行方法含 examId+questionId+submissionId 维度），响应形状与 INTERNAL_ERROR 回读失败语义不变，乐观锁 CAS 与读己之写标记零改动；⑥单测先红后绿（实现前各断言红即缺陷存在性证明）+ 变异 m1/m2/m3 击红-复原-回绿留证 evidence/（建议 m1 门控退回全量重建/移除短路击红、m2 投影移除或 attempt 去 LIMIT 击红、m3 单行回读退回全量 filter 击红；等价变异体如实登记不强杀）。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "pending",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 三 Scenario 合入 specs/score-management 与 specs/grading 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md（B.2 台账对应发现标记已修复），--no-ff 合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
