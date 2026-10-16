@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-auth-interceptor-redis-degradation",
+  "branch": "feature/harden-auth-interceptor-redis-degradation",
+  "level": "S",
+  "source": "docs/功能待办清单.md B.2 横切首扫 H2-S 卡（2026-10-16/17 只读侦察，基线 8e7f766）：鉴权拦截器黑名单/会话版本检查对 Redis 异常零容错，异常裸穿 500，Redis 挂即全 API 停摆，与限流 fail-open 降级哲学不一致；「Redis 依赖与草稿兜底」架构裁决页后置另案",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-auth-interceptor-redis-degradation（H1 合入 main 后开）→ 写 proposal/spec-delta（authentication 域）/tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "H1 案 --no-ff 合入 main（merge e592a4c）后开分支；立案笔 c2783b4（git diff --cached --stat 预检：恰 4 文件 159 行——三件套 3 文件 + spec/README.md 在途表 +1 行）。spec-delta 为 authentication 域 ADDED Requirement「鉴权拦截器对 Redis 异常的降级容错」五 Scenario（放行/半径自限/口径同源/变异击红/范围外不越界）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——拦截器两处容错 + 降级指标 + 告警联动 + 守护登记",
+      "status": "completed",
+      "description": "AuthenticationInterceptor 黑名单吊销检查、会话版本检查两处包 Redis 异常容错——降级放行 + ERROR 日志 + 降级计数；catch 口径、指标落点、日志格式对齐 RateLimitInterceptor / exam.ratelimit.degraded 先例（try 只包调用本身，业务判定在 try 外）；BusinessMetrics 新增 countAuthDegraded（exam.auth.degraded，tag check=blacklist/session_version 有界）；AuthDegraded 告警规则照抄 RateLimitDegraded；AlertAssetsTest 同笔守护登记（known 显式断言 + EXPECTED_ALERTS）。",
+      "evidence": "实施笔 5b1daef（恰 6 文件 251+/20-，全在白名单）：AuthenticationInterceptor 两处 try-catch（try 只包 Redis 调用，false/正常拒绝判定在 try 外，JWT 校验不降级仍 401）+ javadoc 降级半径论证（黑名单 TTL=Access Token 剩余寿命 <=30min 自限，与在案观察项同半径 by design）；WebMvcConfig 构造注入 BusinessMetrics（注册顺序/豁免清单/401 格式零改动）；BusinessMetrics.countAuthDegraded 与 countRateLimitDegraded 同构（tag check 代码常量有界）；AuthDegraded 告警规则 sum(increase(exam_auth_degraded_total[5m]))>0 for 1m warning 照抄先例；AlertAssetsTest EXPECTED_ALERTS 9→10 + known 显式断言。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：容错单测三断言 + 变异击红留证",
+      "status": "completed",
+      "description": "容错单测——mock Redis 异常：请求放行、ERROR 日志、计数递增三断言（黑名单/会话版本各一）+ 正常拒绝路径回归；变异验证——还原无容错旧形态（异常上抛）击红、修复后回绿，证据入库；等价变异如实登记不强杀。",
+      "evidence": "evidence/03–05：绿相 12/12（AuthenticationInterceptorTest 5 用例——黑名单/会话版本 Redis 异常各验放行+ERROR 日志+计数递增三断言，黑名单命中/版本不匹配/无头 401 回归 ×3；AlertAssetsTest 7）→ 变异红（摘除两处 try-catch 旧形态，2 降级用例 Errors=2 preHandle 直接抛 RuntimeException 确定性失败）→ 复原回绿 5/5。等价变异：无（摘除 try-catch 是放行 vs 上抛的行为可观测差异）。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "completed",
+      "description": "收口 diff 核对——RedisCacheManager（config/CacheConfig.java）、登录守卫（auth/service/LoginGuardService.java）、草稿存储（taking/service/ExamDraftService.java）、交卷 SETNX 锁（common/cache/RedisLockHelper.java、CacheMutexLoader.java）四处零改动。",
+      "evidence": "evidence/README.md §04：git diff main --stat 针对四处 + schema.sql + docker/mysql + openapi.yaml + pom.xml + frontend + db/migration 输出为空（OUT_OF_SCOPE_DIFF_LINES=0）；分支总 diff 恰 10 文件全在 proposal 白名单内。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 在 631 基数上同笔上调 → evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + authentication/reliability 域行追加 → docs/功能待办清单.md B.2 标注 H1/H2-S 卡闭环（含 M1 勘正行核对）→ --no-ff 合入 main → 两案合并后统一 push。",
+      "evidence": "全量门禁 evidence/06：仓库根 ./mvnw clean test → Tests run: 636, Failures: 0, Errors: 0, Skipped: 1（Skipped 为既有 OpenApiContractTest 基线跳过），BUILD SUCCESS，GATE_EXIT=0；636 = H1 收口后基线 631 + 容错单测 5。gate-baseline.json backendTests 631→636 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/harden-auth-interceptor-redis-degradation/；authentication 基线合入 ADDED Requirement（delta 五 Scenario 全量）+ reliability 基线实施注记一行；spec/README.md 在途表移除 + 归档速览 + authentication/reliability 域行追加；docs/功能待办清单.md B.2 标注 H1/H2-S 卡闭环（M1 勘正行核对在案）；--no-ff 合并入 main 后两案统一 push，以 git log 为准。"
+    }
+  ]
+}

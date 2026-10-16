@@ -54,6 +54,18 @@ groups:
           summary: "限流器降级（fail-open 放行）"
           description: "近 5 分钟存在限流器因 Redis 故障降级放行的请求，当前处于 fail-open 模式，需人工关注 Redis 与限流器状态。"
 
+      - alert: AuthDegraded
+        # 口径同源照抄 RateLimitDegraded（harden-auth-interceptor-redis-degradation）：
+        # 鉴权拦截器 Redis 故障期间降级放行（黑名单/会话版本检查不可读）必须被人知道，
+        # 已吊销 token 的复活半径受其剩余 TTL（≤30min）自限
+        expr: sum(increase(exam_auth_degraded_total[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "鉴权拦截器降级（Redis 异常放行）"
+          description: "近 5 分钟存在鉴权拦截器因 Redis 故障降级放行的请求（黑名单/会话版本检查不可读），吊销与全端下线延迟生效（半径受 Access Token 剩余 TTL 自限），需人工关注 Redis 状态。"
+
       - alert: Http5xxRatioHigh
         expr: sum(increase(http_server_requests_seconds_count{status=~"5.."}[5m])) / clamp_min(sum(increase(http_server_requests_seconds_count[5m])), 1) > 0.05
         for: 5m
