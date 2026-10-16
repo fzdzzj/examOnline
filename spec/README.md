@@ -20,6 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
+| `add-pre-exam-device-readiness-check` | 2 | 考前设备就绪自检（纯前端，零 DDL）：enter useQuery enabled 门控（自检完成前不起表）+ 就绪报告知情门控（跑自检为硬门控、检查结果仅知情层：警示不阻断、内核/localStorage 强警示二次确认、自检异常兜底放行）+ 离线重入豁免（navigator.onLine===false 直放行）+ sessionStorage 会话级留存；新增 useDeviceReadiness hook（RTT 丢弃首样本取中位数/内核白名单/特性检测）+ DeviceReadinessCheckModal 组件；检查项全部浏览器本地能力，零后端调用、零契约 | exam-taking, frontend | 无（main 干净，2026-10-16 立案；来源候选表 + B.1 备忘第 6 条） |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。

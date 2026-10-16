@@ -1,0 +1,32 @@
+{
+  "changeId": "add-pre-exam-device-readiness-check",
+  "title": "考前设备与运行环境就绪度自检（纯前端，零 DDL）",
+  "level": "M",
+  "branch": "feature/add-pre-exam-device-readiness-check",
+  "createdAt": "2026-10-16",
+  "capabilityDomains": ["exam-taking", "frontend"],
+  "proposal": "spec/changes/add-pre-exam-device-readiness-check/proposal.md",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 两总账登记 + 立项笔",
+      "status": "completed",
+      "description": "侦察前端进入考试流程（[id].page.vue enter useQuery 挂载即起表、离线重入降级路径、全屏守卫先例）→ 写 proposal/spec-delta（exam-taking + frontend 两域）/tasks 三件套 → 登记 spec/README.md 在途表 + docs/功能待办清单.md 候选→进行中 → feature 分支立项笔提交。",
+      "evidence": "①三件套落位 spec/changes/add-pre-exam-device-readiness-check/（proposal.md + specs/exam-taking、specs/frontend 两份 spec-delta + tasks.json）。②两总账：spec/README.md 在途表新增行 + docs/功能待办清单.md 候选表状态改「候选→进行中」。③侦察结论：enter 挂载即触发（[id].page.vue useQuery）、离线豁免必要性（offlineExamReentry）、全屏先例（FullScreenGuardOverlay）。④立项笔：tasks.json 与三件套同笔入库，自指 hash 不预写（提交后以 git log 为准，复核时现场核对）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：自检面板实施 + enabled 门控 + 单测先红后绿 + 变异击红",
+      "status": "pending",
+      "description": "新增 hooks/useDeviceReadiness.ts（RTT 中位数采样/内核白名单/特性检测/异常兜底）+ components/student/DeviceReadinessCheckModal.vue（进度/徽标/二次确认）+ [id].page.vue enter useQuery enabled 门控接线 + 离线豁免 + sessionStorage 会话级留存；vitest 新测试先红后绿（enabled 门控移除→红、离线豁免移除→红、二次确认跳过→红、留存移除→重跑红），变异击红-复原-回绿留证 evidence/，前端门禁 vitest 全量跑留证，分支上提交后停待复核。白名单：proposal 第三节所列路径。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：门禁实测、基线上调与收口归档",
+      "status": "pending",
+      "description": "前端 vitest 全量实测 + 后端白名单外零 diff 论证（离线门禁分级政策：纯前端变更收窄为前端门禁 + 零 diff 论证，复核确认）；按实测上调 gate-baseline.json frontendTests（backendTests/openapiPaths 核对不变）；spec-delta 三+一 Scenario 分别合入 exam-taking 与 frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md（候选行改已闭环），--no-ff 合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
