@@ -20,6 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
+| `fix-prod-container-tz` | 实施中（GO，一次性派发执行侧全程实施） | prod 容器无 TZ、JVM 走 UTC、考试定时链路整体漂 8 小时（B.2 横切首扫 H1，S 级）——Dockerfile 运行层 `ENV TZ=Asia/Shanghai`（build 层零改动、基础镜像自带 tzdata 不装包）+ 词法护栏单测（先例 `PublisherConfirmScopeGuardTest`）+ 修复前 UTC/修复后 CST docker 确证留证 | `deployment` | 无（push 前置随本 Spec Task 0 已清，与 harden-auth-interceptor-redis-degradation 串行） |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。

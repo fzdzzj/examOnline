@@ -1,0 +1,43 @@
+{
+  "changeId": "fix-prod-container-tz",
+  "branch": "feature/fix-prod-container-tz",
+  "level": "S",
+  "source": "docs/功能待办清单.md B.2 横切首扫 H1（2026-10-16/17 只读侦察，基线 8e7f766）：prod 容器无 TZ、JVM 走 UTC，考试时间按上海墙钟 DATETIME 存储比较（22 文件 LocalDateTime.now()），定时链路整体漂 8 小时",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记 + 台账随立项笔入库",
+      "status": "pending",
+      "description": "建分支 feature/fix-prod-container-tz → 写 proposal/spec-delta（deployment 域）/tasks 三件套 → spec/README.md 在途表登记 → docs/功能待办清单.md B.2 台账（+27 行）随本笔入库（项目惯例：台账随下一案立项笔入库）；staged 前必须 git diff --cached --stat 预检范围。",
+      "evidence": ""
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：修复前确证（UTC 现状留证）",
+      "status": "pending",
+      "description": "prod 容器在跑则直接 docker exec exam-online-prod-app date；未在跑则 docker compose -f docker-compose.prod.yml 起环境后确证；留证 UTC 现状（命令 + 输出 + revision）。docker 环境不可用时降级 docker run --rm eclipse-temurin:17-jre date 证基础镜像 UTC 并注明局限。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：实施笔——运行层 ENV TZ + 词法护栏单测 + 变异击红",
+      "status": "pending",
+      "description": "Dockerfile 运行层加 ENV TZ=Asia/Shanghai（build 层零改动、不装包）→ 新增词法护栏单测（先例 PublisherConfirmScopeGuardTest 模式，断言锚定运行层段落防 build 层同形行误判）→ 变异验证：删 TZ 行击红、恢复回绿，证据入库。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：修复后验证（CST 对齐 + 定时日志时间戳）",
+      "status": "pending",
+      "description": "重建镜像起容器，docker exec exam-online-prod-app date 验证 CST (+0800)；观察一轮 10s 级定时扫描日志时间戳与上海墙钟对齐，留证。",
+      "evidence": ""
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "pending",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → 按实测上调 gate-baseline.json backendTests（只增不减，frontendTests/openapiPaths 核对不变）→ evidence 入库 + tasks.json 回填 → 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + deployment 域行追加 → --no-ff 合入 main（push 统一在两案收口后）。",
+      "evidence": ""
+    }
+  ]
+}
