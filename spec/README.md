@@ -20,6 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
+| `harden-auth-interceptor-redis-degradation` | 实施中（GO，一次性派发执行侧全程实施） | 鉴权拦截器黑名单/会话版本检查对 Redis 异常零容错、异常裸穿 500 致全 API 停摆（B.2 横切首扫 H2-S 卡，S 级）——两处降级放行 + ERROR 日志 + 降级计数（口径对齐限流 `exam.ratelimit.degraded` fail-open 先例）+ 新指标 `exam.auth.degraded` 告警联动 + `AlertAssetsTest` 守护登记；「Redis 依赖与草稿兜底」裁决页后置（范围外四处零改动） | `authentication` | `fix-prod-container-tz`（H1 已合入 main 后本案开分支，两案严格串行） |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。

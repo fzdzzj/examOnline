@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-auth-interceptor-redis-degradation",
+  "branch": "feature/harden-auth-interceptor-redis-degradation",
+  "level": "S",
+  "source": "docs/功能待办清单.md B.2 横切首扫 H2-S 卡（2026-10-16/17 只读侦察，基线 8e7f766）：鉴权拦截器黑名单/会话版本检查对 Redis 异常零容错，异常裸穿 500，Redis 挂即全 API 停摆，与限流 fail-open 降级哲学不一致；「Redis 依赖与草稿兜底」架构裁决页后置另案",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "pending",
+      "description": "建分支 feature/harden-auth-interceptor-redis-degradation（H1 合入 main 后开）→ 写 proposal/spec-delta（authentication 域）/tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": ""
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——拦截器两处容错 + 降级指标 + 告警联动 + 守护登记",
+      "status": "pending",
+      "description": "AuthenticationInterceptor 黑名单吊销检查、会话版本检查两处包 Redis 异常容错——降级放行 + ERROR 日志 + 降级计数；catch 口径、指标落点、日志格式对齐 RateLimitInterceptor / exam.ratelimit.degraded 先例（try 只包调用本身，业务判定在 try 外）；BusinessMetrics 新增 countAuthDegraded（exam.auth.degraded，tag check=blacklist/session_version 有界）；AuthDegraded 告警规则照抄 RateLimitDegraded；AlertAssetsTest 同笔守护登记（known 显式断言 + EXPECTED_ALERTS）。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：容错单测三断言 + 变异击红留证",
+      "status": "pending",
+      "description": "容错单测——mock Redis 异常：请求放行、ERROR 日志、计数递增三断言（黑名单/会话版本各一）+ 正常拒绝路径回归；变异验证——还原无容错旧形态（异常上抛）击红、修复后回绿，证据入库；等价变异如实登记不强杀。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "pending",
+      "description": "收口 diff 核对——RedisCacheManager（config/CacheConfig.java）、登录守卫（auth/service/LoginGuardService.java）、草稿存储（taking/service/ExamDraftService.java）、交卷 SETNX 锁（common/cache/RedisLockHelper.java、CacheMutexLoader.java）四处零改动。",
+      "evidence": ""
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "pending",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 在 631 基数上同笔上调 → evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + authentication/reliability 域行追加 → docs/功能待办清单.md B.2 标注 H1/H2-S 卡闭环（含 M1 勘正行核对）→ --no-ff 合入 main → 两案合并后统一 push。",
+      "evidence": ""
+    }
+  ]
+}
