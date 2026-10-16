@@ -19,9 +19,9 @@
     {
       "id": 3,
       "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "在 feature 分支执行后端 mvnw.cmd clean test 与前端三门禁（lint:check / type-check:check / test）；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将两份 spec-delta 合入 specs/exam-management 与 specs/exam-taking 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
-      "evidence": ""
+      "evidence": "全量后端门禁实测（独立复核于 revision e79e614 复跑，收口笔仅改 spec 文档与 gate-baseline.json、不改测试面）：仓库根 mvnw.cmd clean test → Tests run: 565, Failures: 0, Errors: 0, Skipped: 1 / BUILD SUCCESS（backendTests 559→565 净增 6 同笔上调：新增通知 ServiceTest 5 例 + 预约提醒 1 例；frontendTests 874 与 openapiPaths 97 核对不变——frontend/ 与 openapi.yaml 零 diff，按离线门禁分级政策凭零 diff 论证免跑）；复核红线直读全过：insertBatch 六列与 schema.sql user_messages（L498-508 去自增 id）逐列一致、buildMessage 显式补 createdTime 单条路径不劣化、三处旁路降级 try-catch 结构保留、500 分批循环正确、remind() 空集短路 in() 永不空、deliverIfAbsent 与 @Transactional 逐字零改动；变异 m2 独立重注入击红（Wanted 3 times/But was 1 time）-复原-回绿复现；@Sql 注解形态命中为空；证据链口径对账：9 例 message 测试=通知 5+预约 4，+6=新增 5+1。如实注记一处非阻断证据引证瑕疵：evidence/README.md L108 引证「full-gate.log 含『考试发布通知投递 2 条』」在该裁剪日志中缺失（该行在原始输出与复核实跑中存在），引证定位不准、实质口径成立，留档不返工。两份 spec-delta 以 MODIFIED Scenario 形态合入 specs/exam-management/spec.md 与 specs/exam-taking/spec.md 基线（各追加批量写入/批查条款与合入注记）；变更目录归档至 spec/changes/archive/ 并更新 spec/README.md 与 docs/功能待办清单.md；feature/optimize-backend-batch-write-paths 分支 --no-ff 合并入 main。"
     }
   ]
 }
