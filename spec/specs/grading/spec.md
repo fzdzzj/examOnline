@@ -71,6 +71,14 @@ WHEN 教师提交分数与评语
 
 THEN 系统保存分数、评语、批改人与批改时间
 
+#### Scenario: 批改保存单行回读 (optimize-practice-pool-hot-path)
+
+- **WHEN**: 教师保存某道主观题的批改分数（成功路径）
+- **THEN**: 批改结果回读 SHALL 以单行查询取得（含 submission_id 维度），SHALL NOT 载入该题全量学生工作台行后内存过滤
+- **AND**: 回读结果字段与既有工作台行等价（响应形状不变），回读失败仍按既有错误语义处理（INTERNAL_ERROR「批改结果回读失败」）
+- **AND**: 乐观锁 CAS、读己之写标记、批改防重与越权校验语义 SHALL 零改动
+（由 optimize-practice-pool-hot-path 合入；背景：批改保存回读曾为「selectWorkbenchRows 全量学生行（含 student_answer TEXT）+ 内存 filter 单行」——每笔保存都白载全考场；实施时因既有分页方法签名含 offset/limit/筛选参数不匹配，按 fallback 新增专用单行方法 selectWorkbenchRow，列集与全量方法一致）
+
 #### Scenario: 并发批改防覆盖
 
 GIVEN 两教师同时批改同一答卷
@@ -132,6 +140,14 @@ AND 空答卷列表、空主观行列表、score 全非空、score 全为 NULL�
 AND 同一答卷多道简答中只要有一道未批即计 1 次（按答卷计，不按行计）
 
 AND 主观行 `submission_id` 为 NULL 属越界输入、不在保证域内（库内不可达：`schema.sql` 对 `subjective_grades.submission_id` 声明 `BIGINT NOT NULL`）；该输入下朴素判定抛 NPE、集合判定返回计数值，差异如实登记而非冒称等价
+
+#### Scenario: 进度统计窄投影 (optimize-practice-pool-hot-path)
+
+- **WHEN**: 教师批改期间前端轮询判分进度总览
+- **THEN**: 答卷统计查询 SHALL 仅选取计数所需列（grading_status 等消费列），SHALL NOT 载入 answers 等答案大列
+- **AND**: 主观批改行统计查询 SHALL 仅选取统计与未批答卷收集所需列（submission_id、score），SHALL NOT 载入 comment 等无关重列
+- **AND**: 进度计数口径（已判/失败/待判/部分批改）与读写分离语义 SHALL 零改动
+（由 optimize-practice-pool-hot-path 合入；背景：进度总览两处统计查询曾无列投影——答卷载 answers TEXT 大列、主观批改行载全列，仅为内存计数；批改期间前端高频轮询该端点，读放大持续发生）
 
 > 合入注记（2026-10-01，`optimize-grading-progress-partial-algorithm`，整卡 **GO**）：判分进度 `GradingQueryService.progress` 的「部分批改答卷数」由逐答卷嵌套扫描主观行的 O(n·m) 改为「先归集存在未批简答的 `submissionId` 集合、再单遍过滤已交卷答卷」的 O(n+m)，仅动该计数块与其 import（两条 `selectList` 语句、其余计数与其他业务类零改动）。等价性由新增常驻测试 `GradingProgressAlgorithmTest`（15 例：随机 400 组固定种子 + 卡面规模 n=3000/m=6000 + 空答卷/空行/全批/全未批/部分/同卷多题混合/行属他卷/答卷列表重复/答卷项 id 为 null 等边界，以改动前原文为 oracle 逐点比对，并驱动真实端点断言 `partialGradedCount` 等于 oracle）承担。**口径修正（如实登记）**：卡面「包含 null 键 100% 等价」不成立——主观行 `submission_id` 为 null 时旧写法抛 NPE、新写法返回值；该输入库内不可达（`subjective_grades.submission_id BIGINT NOT NULL`），故两者在可达域上逐点等价、在越界输入上不等价，用例 `nullRowKeyIsOutOfDomainDivergence` 已固化该差异。**验收边界**＝仓库根 `mvnw.cmd clean test`（`JAVA_HOME=D:\develop1\jdk21`）@ 实施笔 `5d089c9` → 345/0/0/1 BUILD SUCCESS 退出码 0（基线 330→345，Skipped 1 恒为 `com.exam.support.OpenApiContractTest`）；H2 测试上下文 + Mockito 隔离单测，**未做真机性能测量**，不构成 P99 结论。
 

@@ -1,0 +1,14 @@
+﻿# 命令输出摘要（完整控制台日志已裁剪，保留判定性行与结果汇总）
+# 命令：mvnw.cmd -o test -Dtest=SubjectiveGradingServiceSaveScoreReadBackTest#saveScoreReadsBackSingleRowInsteadOfFullWorkbenchRows（变异 m3：单行回读退回全量工作台行 + 内存 filter）
+# revision：f1583e3（工作树含阶段 2 实施，未提交）
+
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 4.566 s <<< FAILURE! -- in com.exam.grading.service.SubjectiveGradingServiceSaveScoreReadBackTest
+Wanted but not invoked:
+subjectiveGradeMapper.selectWorkbenchRow(
+subjectiveGradeMapper.selectWorkbenchRows(
+[ERROR]   SubjectiveGradingServiceSaveScoreReadBackTest.saveScoreReadsBackSingleRowInsteadOfFullWorkbenchRows:118 
+Wanted but not invoked:
+subjectiveGradeMapper.selectWorkbenchRow(
+subjectiveGradeMapper.selectWorkbenchRows(
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE

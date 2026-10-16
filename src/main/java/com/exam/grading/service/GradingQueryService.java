@@ -51,10 +51,13 @@ public class GradingQueryService {
         requireOwnedExam(examId);
         GradingProgressResponse response = new GradingProgressResponse();
 
+        // 窄投影：本查询尾部只消费 id（部分批改计数）与 grading_status（客观判分计数），
+        // 不载 answers 等答案大列（批改期间前端高频轮询该端点，读放大收敛）
         List<GradingSubmission> submissions = gradingSubmissionMapper.selectList(
                 Wrappers.<GradingSubmission>lambdaQuery()
                         .eq(GradingSubmission::getExamId, examId)
-                        .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_SUBMITTED));
+                        .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_SUBMITTED)
+                        .select(GradingSubmission::getId, GradingSubmission::getGradingStatus));
         response.setSubmittedCount(submissions.size());
         for (GradingSubmission submission : submissions) {
             int gradingStatus = submission.getGradingStatus() == null ? 0 : submission.getGradingStatus();
@@ -67,8 +70,12 @@ public class GradingQueryService {
             }
         }
 
+        // 窄投影：本查询尾部只消费 submission_id（未批答卷 ID 收集）与 score（已批计数），
+        // 不载 comment 等无关重列
         List<SubjectiveGrade> subjectiveRows = subjectiveGradeMapper.selectList(
-                Wrappers.<SubjectiveGrade>lambdaQuery().eq(SubjectiveGrade::getExamId, examId));
+                Wrappers.<SubjectiveGrade>lambdaQuery()
+                        .eq(SubjectiveGrade::getExamId, examId)
+                        .select(SubjectiveGrade::getSubmissionId, SubjectiveGrade::getScore));
         response.setSubjectiveTotal(subjectiveRows.size());
         subjectiveRows.forEach(row -> {
             if (row.getScore() != null) {

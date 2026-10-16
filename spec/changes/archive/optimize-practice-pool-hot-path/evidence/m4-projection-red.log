@@ -1,0 +1,11 @@
+﻿# 命令输出摘要（完整控制台日志已裁剪，保留判定性行与结果汇总）
+# 命令：mvnw.cmd -o test -Dtest=GradingQueryServiceProjectionTest#submissionsQueryProjectsOnlyConsumedColumns+subjectiveRowsQueryProjectsOnlySubmissionIdAndScore（变异 m4：progress 两处 .select 投影移除）
+# revision：f1583e3（工作树含阶段 2 实施，未提交）
+
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 4.373 s <<< FAILURE! -- in com.exam.grading.service.GradingQueryServiceProjectionTest
+org.opentest4j.AssertionFailedError: 答卷统计查询必须启用列投影（禁止载 answers 等答案大列） ==> expected: not <null>
+org.opentest4j.AssertionFailedError: 主观批改行统计查询必须启用列投影（禁止载 comment 等无关重列） ==> expected: not <null>
+[ERROR]   GradingQueryServiceProjectionTest.subjectiveRowsQueryProjectsOnlySubmissionIdAndScore:109 主观批改行统计查询必须启用列投影（禁止载 comment 等无关重列） ==> expected: not <null>
+[ERROR]   GradingQueryServiceProjectionTest.submissionsQueryProjectsOnlyConsumedColumns:92 答卷统计查询必须启用列投影（禁止载 answers 等答案大列） ==> expected: not <null>
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE

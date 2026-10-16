@@ -151,9 +151,8 @@ public class StudentPracticeService {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "题目 ID 不能为空");
         }
 
-        // 门控：题目必须属于学生本人已发布考试的错题池
-        Set<Long> myWrongQids = getStudentWrongQuestionIds(studentId);
-        if (!myWrongQids.contains(questionId)) {
+        // 门控：题目必须属于学生本人已发布考试的错题池（短路定位，见 {@link #isWrongQuestionOf}）
+        if (!isWrongQuestionOf(studentId, questionId)) {
             throw new BusinessException(ResponseCode.BAD_REQUEST, "该题目不属于您的错题重练池");
         }
 
@@ -225,12 +224,14 @@ public class StudentPracticeService {
         attempt.setCreatedTime(LocalDateTime.now());
         practiceAttemptMapper.insert(attempt);
 
-        // 推导连对进度
+        // 推导连对进度：连对窗口即 3（consecutiveCorrect >= 3 即消灭），回读只取最近 3 条——
+        // 第四条及以前必然已被窗口截断，语义与全量回读等价（mastered 判定不因历史更长而改变）
         List<PracticeAttempt> history = practiceAttemptMapper.selectList(
                 Wrappers.<PracticeAttempt>lambdaQuery()
                         .eq(PracticeAttempt::getStudentId, studentId)
                         .eq(PracticeAttempt::getQuestionId, questionId)
-                        .orderByDesc(PracticeAttempt::getId));
+                        .orderByDesc(PracticeAttempt::getId)
+                        .last("LIMIT 3"));
         int consecutiveCorrect = 0;
         for (PracticeAttempt a : history) {
             if (Boolean.TRUE.equals(a.getIsCorrect())) {
@@ -334,6 +335,39 @@ public class StudentPracticeService {
             }
         }
         return wrongQids;
+    }
+
+    /**
+     * 单题提交门控的短路定位：该题是否属于本人错题池（optimize-practice-pool-hot-path）。
+     *
+     * <p>逐场装配成绩单快照，命中即短路——找到该生某场已判分快照包含该题且判分严格小于满分
+     * 即通过；全部场扫描完不命中返回 false。判定口径与 {@link #getStudentWrongQuestionIds}
+     * 完全一致（得分严格小于满分），正常路径（题在池中）止步于命中场，不再全量重建错题集合
+     * （O(场数×题数) 叠加在提交热路径上）。门控定位循环中单场装配异常记录 warn 后跳过该场
+     * （对齐同文件 L93/L265 同型循环口径），不得静默吞。
+     */
+    public boolean isWrongQuestionOf(Long studentId, Long questionId) {
+        List<Exam> publishedExams = loadPublishedExams(studentId);
+        for (Exam exam : publishedExams) {
+            ScoreExportService.PersonalReport report;
+            try {
+                report = scoreExportService.getPersonalReportWithoutRank(exam, studentId);
+            } catch (Exception e) {
+                log.warn("错题池门控定位成绩单异常，跳过考试 {}: {}", exam.getId(), e.getMessage());
+                continue;
+            }
+            if (report == null || report.questions() == null) {
+                continue;
+            }
+            for (GradingQuestion q : report.questions()) {
+                QuestionScoreResolver.ResolvedQuestionScore rs = report.scores().get(q.questionId());
+                if (questionId.equals(q.questionId()) && rs != null && rs.score() != null && rs.max() != null
+                        && rs.score().compareTo(rs.max()) < 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private List<Exam> loadPublishedExams(Long studentId) {
