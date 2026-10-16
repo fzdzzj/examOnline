@@ -38,7 +38,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new AuthenticationInterceptor(jwtUtil, tokenStore, objectMapper))
+        registry.addInterceptor(new AuthenticationInterceptor(jwtUtil, tokenStore, objectMapper, businessMetrics))
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
                         // 公开端点：无需 Access Token
