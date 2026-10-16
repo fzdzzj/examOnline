@@ -1,0 +1,18 @@
+-------------------------------------------------------------------------------
+Test set: com.exam.anticheat.service.BehaviorCounterServiceTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 28.75 s <<< FAILURE! -- in com.exam.anticheat.service.BehaviorCounterServiceTest
+com.exam.anticheat.service.BehaviorCounterServiceTest.atomicSingleScriptCallNoTwoStepGap -- Time elapsed: 0.059 s <<< FAILURE!
+org.mockito.exceptions.verification.NeverWantedButInvoked: 
+
+stringRedisTemplate.opsForValue();
+Never wanted here:
+-> at com.exam.anticheat.service.BehaviorCounterServiceTest.atomicSingleScriptCallNoTwoStepGap(BehaviorCounterServiceTest.java:136)
+But invoked here:
+-> at com.exam.anticheat.service.BehaviorCounterService.increment(BehaviorCounterService.java:72) with arguments: []
+
+	at com.exam.anticheat.service.BehaviorCounterServiceTest.atomicSingleScriptCallNoTwoStepGap(BehaviorCounterServiceTest.java:136)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
