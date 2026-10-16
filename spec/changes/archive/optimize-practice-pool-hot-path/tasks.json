@@ -21,9 +21,9 @@
     {
       "id": 3,
       "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 三 Scenario 合入 specs/score-management 与 specs/grading 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md（B.2 台账对应发现标记已修复），--no-ff 合并入 main。",
-      "evidence": ""
+      "evidence": "①门禁实测：mvnw.cmd clean test（仓库根，revision 7423c7d）→ Tests run: 599, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS；复核侧以标准命令（无 -o）独立复跑同结果——执行侧曾用 -o 离线模式，复核实测确认结果一致。净增 +12（新测试 3 类 12 例：StudentPracticeServiceGateAndLimitTest / GradingQueryServiceProjectionTest / SubjectiveGradingServiceSaveScoreReadBackTest）。前端免跑论证：frontend/ 零 diff，按离线门禁分级政策收窄为仅后端。②基线上调：gate-baseline.json backendTests 587→599（frontendTests 874、openapiPaths 97 核对不变）。③spec-delta 合入：specs/score-management/spec.md「错题重练与消灭计划」追加 Scenario「单题提交门控短路定位与热路径读收敛」、specs/grading/spec.md「判分进度部分批改计数」追加「进度统计窄投影」、「简答批改」追加「批改保存单行回读」（合入时修正一处插入位置：窄投影 Scenario 初插在『部分批改计数与朴素判定等价』的 AND 子句之前割裂原 Scenario，已移至其全部 AND 子句之后）。④复核结论 PASS：红线五项源码直读全过（isWrongQuestionOf 判定口径与 getStudentWrongQuestionIds 逐字一致且短路、log.warn+continue、LIMIT 3、两处 .select 列集=方法尾部消费、selectWorkbenchRow 列集=全量方法且回读 null 仍 INTERNAL_ERROR）；m2 独立重注入击红-复原-回绿；m2/m4 击红机理真可观测（断言直查 SQL 形态）；无等价变异体声明经抽验成立；@Sql 注解形态命中 0。⑤变更目录归档至 spec/changes/archive/，总账更新 spec/README.md 与 docs/功能待办清单.md（含 B.2 台账本案五发现标记已修复）。"
     }
   ]
 }
