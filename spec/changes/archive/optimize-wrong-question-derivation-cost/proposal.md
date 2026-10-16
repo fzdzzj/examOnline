@@ -37,8 +37,10 @@ L573 与 `resolve` L62 **对同一答案 JSON 双重 parse**。判错消费段�
 ## 三、白名单
 
 - `src/main/java/com/exam/score/**` 与 `src/test/java/com/exam/score/**`
+- `src/main/java/com/exam/config/CacheProperties.java` 单条豁免（wrongQuestionJudgementTtl
+  缓存 TTL 配置默认值，行为中立；复核确认白名单外仅此一处，2026-10-16 勘正补录）
 - 仅当退化方案成立时：`src/main/java/com/exam/grading/service/**` 的失效钩子单点（批改
-  提交写路径）+ 对应测试——**须在实施前把退化依据写回本文件并同步派工卡**
+  提交写路径）+ 对应测试——**实施已走版本戳方案，本退化路径未启用**
 - 禁触：schema.sql、docker/mysql/migrations/、openapi.yaml（零契约变更）、pom.xml、frontend/
 
 ## 四、验收要点
