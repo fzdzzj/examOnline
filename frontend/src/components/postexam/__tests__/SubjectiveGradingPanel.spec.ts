@@ -97,9 +97,11 @@ describe('Enter 流水线打分', () => {
     const vm = vmOf(mountPanel());
     vm.setEditing(ROWS[0], 'score', '9');
 
-    await vm.onScoreEnter(ROWS[0]);
-
-    expect(saveSubjectiveScore).toHaveBeenCalledTimes(1);
+    // 等待条件外化（fix-subjective-grading-panel-flaky）：saveSubjectiveScore 在提交流
+    // 同步段即被调用，断言盯这个外部可观测点（waitFor 兜底确定性等待），不 await
+    // onScoreEnter 内部链——其完成墙钟在全量并行负载下不稳，曾挤爆 5s 窗口。
+    void vm.onScoreEnter(ROWS[0]);
+    await vi.waitFor(() => expect(saveSubjectiveScore).toHaveBeenCalledTimes(1));
     expect(saveSubjectiveScore).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({ submissionId: 1001, questionId: 55, expectedVersion: 0 }),
