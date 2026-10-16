@@ -30,6 +30,16 @@
       @update:answer="onAnswer"
     />
 
+    <Button
+      v-if="current"
+      :data-test="'mark-toggle'"
+      class="mt-3"
+      :type="currentMarked ? 'primary' : 'default'"
+      @click="onToggleMark"
+    >
+      {{ currentMarked ? '取消标记' : '标记此题 🚩' }}
+    </Button>
+
     <Empty v-else description="后端未返回题目（答卷已封闭或快照为空）" data-test="board-empty" />
 
     <Space class="mt-3">
@@ -68,21 +78,27 @@ import type { QuestionView } from '@/api/axios';
 import QuestionAnswerCard from '@/components/student/QuestionAnswerCard.vue';
 import QuestionNavPanel from '@/components/student/QuestionNavPanel.vue';
 import { ANTI_CHEAT_HINT } from '@/utils/antiCheat';
-import { answerKeyOf, navStatesOf, type AnswerMap } from '@/utils/studentTaking';
+import { answerKeyOf, navStatesOf, type AnswerMap, type MarkedIds } from '@/utils/studentTaking';
 
 const props = withDefaults(
   defineProps<{
     questions: QuestionView[];
     answers: AnswerMap;
+    /** 疑难标记集合（questionId 主键，独立于答案）；由父页面持久化与恢复。 */
+    marked?: MarkedIds;
     /** 倒计时归零：所有作答入口锁死（导航不锁，学生要能回看） */
     locked?: boolean;
     /** 本场考试是否禁用了复制/剪切/粘贴/右键（antiCheatConfig.forbidCopy）：只影响说明文案 */
     forbidCopy?: boolean;
   }>(),
-  { locked: false, forbidCopy: false }
+  { marked: undefined, locked: false, forbidCopy: false }
 );
 
-const emit = defineEmits<{ 'update:answer': [key: string, value: string] }>();
+const emit = defineEmits<{
+  'update:answer': [key: string, value: string];
+  /** 切换当前题标记：回抛该题 questionId，由父页面用 `toggleMarked` 纯函数更新集合。 */
+  'toggle-mark': [questionId: number];
+}>();
 
 const currentIndex = ref(0);
 
@@ -92,7 +108,16 @@ const currentAnswer = computed(() =>
   current.value ? (props.answers[answerKeyOf(current.value)] ?? '') : ''
 );
 
-const states = computed(() => navStatesOf(props.questions, props.answers, currentIndex.value));
+const currentMarked = computed(
+  () =>
+    props.marked !== undefined &&
+    current.value?.questionId !== undefined &&
+    props.marked.has(current.value.questionId)
+);
+
+const states = computed(() =>
+  navStatesOf(props.questions, props.answers, currentIndex.value, props.marked ?? new Set<number>())
+);
 
 const answeredCount = computed(() => states.value.filter((state) => state.answered).length);
 
@@ -110,11 +135,21 @@ function goTo(index: number): void {
   currentIndex.value = index;
 }
 
+/** 交卷弹窗「跳转首道未答题」等外部接线需要通过本方法定位焦点。 */
+defineExpose({ goTo });
+
 function onAnswer(value: string): void {
   if (props.locked) return;
   const question = current.value;
   if (!question) return;
   emit('update:answer', answerKeyOf(question), value);
+}
+
+function onToggleMark(): void {
+  const questionId = current.value?.questionId;
+  if (questionId === undefined) return;
+  // 只回抛键，标记集合并集更新由父页面以 `toggleMarked` 纯函数完成（可测、不可变）
+  emit('toggle-mark', questionId);
 }
 </script>
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 30s 自动保存 + IndexedDB 引擎单测（阶段 22 第 2 片）。
  *
  * 必须覆盖的行为（对应 `tasks.json` 任务 3 与任务 2 接缝 step）：
@@ -20,10 +20,12 @@ import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_INTERVAL_MS } from '@/constants/studentT
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import type { AutoSavePayload, AutoSaveResult } from '@/hooks/useAutoSaveDraft';
 import { createMemoryDraftStorage } from '@/utils/draftStorage';
+import type { DraftRecord } from '@/utils/draftMerge';
 import type { AnswerMap } from '@/utils/studentTaking';
 
 interface Harness {
   answers: Ref<AnswerMap>;
+  marked: Ref<Set<number>>;
   saveDraft: ReturnType<typeof vi.fn>;
   storageSave: ReturnType<typeof vi.spyOn>;
   locked: Ref<boolean>;
@@ -37,6 +39,7 @@ function setup(
   saveDraftImpl?: (examId: number, payload: AutoSavePayload) => Promise<AutoSaveResult | undefined>
 ): Harness {
   const answers = ref<AnswerMap>({});
+  const marked = ref<Set<number>>(new Set());
   const locked = ref(false);
   const suspended = ref(false);
   const saveDraft = vi.fn(
@@ -55,6 +58,7 @@ function setup(
     hook = useAutoSaveDraft({
       examId: () => 1,
       answersSource: () => answers.value,
+      markedSource: () => marked.value,
       locked: () => locked.value,
       suspended: () => suspended.value,
       deps: { saveDraft, storage },
@@ -62,6 +66,7 @@ function setup(
   });
   return {
     answers,
+    marked,
     saveDraft,
     storageSave,
     locked,
@@ -96,7 +101,7 @@ describe('常量护栏（防止退化成高频保存）', () => {
 describe('保存频率纪律（硬约定 6）', () => {
   it('作答后 30s 定时器触发保存一次，version = 播种版本 + 1', async () => {
     const h = setup();
-    h.hook.seed({ version: 3, savedAt: null, answers: {} });
+    h.hook.seed({ version: 3, savedAt: null, answers: {}, marked: [] });
     answer(h, '101', 'A');
 
     expect(h.saveDraft).not.toHaveBeenCalled();
@@ -109,7 +114,7 @@ describe('保存频率纪律（硬约定 6）', () => {
 
   it('防抖不产生高频请求：连续作答 5 次，30s 防抖到期只发一次保存', async () => {
     const h = setup();
-    h.hook.seed({ version: null, savedAt: null, answers: {} });
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
     for (let i = 0; i < 5; i++) {
       answer(h, `q${i}`, 'A');
       // 每秒作答一次，防抖计时器不断被重置
@@ -133,7 +138,7 @@ describe('保存频率纪律（硬约定 6）', () => {
 
   it('连续输入不断重置防抖时，30s 定时器兜底保存（12 次作答 85s 内只有 2 次请求）', async () => {
     const h = setup();
-    h.hook.seed({ version: null, savedAt: null, answers: {} });
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
     // 每 5s 作答一次共 12 次（t=0..55），防抖永远到不了期，只能靠定时器
     for (let i = 0; i < 12; i++) {
       answer(h, `q${i}`, 'A');
@@ -147,7 +152,7 @@ describe('保存频率纪律（硬约定 6）', () => {
 
   it('后端请求频率上限与输入次数无关：作答只写 IndexedDB，不发请求', async () => {
     const h = setup();
-    h.hook.seed({ version: 1, savedAt: null, answers: {} });
+    h.hook.seed({ version: 1, savedAt: null, answers: {}, marked: [] });
     answer(h, 'a', 'A');
     answer(h, 'b', 'B');
     answer(h, 'c', 'C');
@@ -166,7 +171,7 @@ describe('保存结果与 version 协议', () => {
       version: payload.version + 10,
       savedTime: '2026-09-21T11:22:33',
     }));
-    h.hook.seed({ version: 1, savedAt: null, answers: {} });
+    h.hook.seed({ version: 1, savedAt: null, answers: {}, marked: [] });
     answer(h, '101', 'A');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
 
@@ -191,7 +196,7 @@ describe('保存结果与 version 协议', () => {
       }
       return { accepted: true, version: payload.version, savedTime: 't' };
     });
-    h.hook.seed({ version: null, savedAt: null, answers: {} });
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
     answer(h, '101', 'A');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
 
@@ -213,7 +218,7 @@ describe('保存结果与 version 协议', () => {
       }
       return { accepted: true, version: payload.version, savedTime: '2026-09-21T12:00:30' };
     });
-    h.hook.seed({ version: 3, savedAt: null, answers: {} });
+    h.hook.seed({ version: 3, savedAt: null, answers: {}, marked: [] });
     answer(h, '101', 'A');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
 
@@ -235,7 +240,7 @@ describe('断线恢复与归零待同步（任务 2 接缝 step）', () => {
       if (offline) throw new Error('network down');
       return { accepted: true, version: payload.version, savedTime: 't' };
     });
-    h.hook.seed({ version: null, savedAt: null, answers: {} });
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
     answer(h, '101', 'A');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
     expect(h.hook.status.value).toBe('unsynced');
@@ -254,7 +259,7 @@ describe('断线恢复与归零待同步（任务 2 接缝 step）', () => {
       if (offline) throw new Error('network down');
       return { accepted: true, version: payload.version, savedTime: '2026-09-21T13:00:00' };
     });
-    h.hook.seed({ version: null, savedAt: null, answers: {} });
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
     answer(h, '101', 'A');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
     expect(h.hook.status.value).toBe('unsynced');
@@ -275,7 +280,7 @@ describe('断线恢复与归零待同步（任务 2 接缝 step）', () => {
 
   it('锁定且已同步 → 不亮「待同步」', async () => {
     const h = setup();
-    h.hook.seed({ version: null, savedAt: null, answers: {} });
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
     answer(h, '101', 'A');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
     h.locked.value = true;
@@ -284,10 +289,50 @@ describe('断线恢复与归零待同步（任务 2 接缝 step）', () => {
   });
 });
 
+describe('标记集合（Mark for Review）——独立于答案的持久化与上送', () => {
+  it('flush 上送真实标记集合（不再恒传空数组），且不进 answers', async () => {
+    const h = setup();
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
+    answer(h, '101', 'A');
+    h.marked.value = new Set([101, 103]);
+    h.hook.notifyMarked();
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
+
+    expect(h.saveDraft).toHaveBeenCalledTimes(1);
+    const payload = h.saveDraft.mock.calls[0][1];
+    expect(payload.marked).toEqual([101, 103]);
+    // 标记不混入答案语义：answers 仍是学生作答，只含键 101
+    expect(payload.answers).toEqual({ '101': 'A' });
+  });
+
+  it('标记切换（notifyMarked）后本地持久化写入 marked，答案与标记是两条独立轨道', async () => {
+    const h = setup();
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
+    h.marked.value = new Set([7]);
+    h.hook.notifyMarked();
+
+    // seed 对齐一次 + notifyMarked 一次
+    const lastLocal = h.storageSave.mock.calls.at(-1)?.[1] as DraftRecord;
+    expect(lastLocal.marked).toEqual([7]);
+  });
+
+  it('仅标记不换答案也触发保存：flush 带出最新标记集合', async () => {
+    const h = setup();
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
+    h.marked.value = new Set([42]);
+    h.hook.notifyMarked();
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
+
+    expect(h.saveDraft).toHaveBeenCalledTimes(1);
+    expect(h.saveDraft.mock.calls[0][1].marked).toEqual([42]);
+    expect(h.hook.status.value).toBe('synced');
+  });
+});
+
 describe('挂空挡与清理', () => {
   it('suspended（后端已封闭）：作答通知被忽略，不发请求不写存储', async () => {
     const h = setup();
-    h.hook.seed({ version: null, savedAt: null, answers: {} });
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
     h.suspended.value = true;
     const before = h.storageSave.mock.calls.length;
 
@@ -301,7 +346,7 @@ describe('挂空挡与清理', () => {
 
   it('作用域销毁后定时器不再触发保存', async () => {
     const h = setup();
-    h.hook.seed({ version: null, savedAt: null, answers: {} });
+    h.hook.seed({ version: null, savedAt: null, answers: {}, marked: [] });
     answer(h, '101', 'A');
     h.dispose();
     await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS * 3);

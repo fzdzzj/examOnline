@@ -2838,3 +2838,40 @@ THEN 以该模板为源创建新草稿卷并跳转/提示，模板本身不动
 - **THEN**: SHALL 提供「满分」「及格」「零分」快捷给分 Tag（按本题满分派生：满分 = question.score、及格 = 满分 60% 四舍五入到 0.5 步长、零分 = 0），点击即填入该行分数输入框
 - **AND**: SHALL 提供常用评语模板气泡（至少含肯定/部分正确/未达要点三类文案），点击即填入该行评语输入框，教师可继续编辑
 - **AND**: 快捷填入 SHALL 不自动触发提交（分数与评语确认权留给教师，Enter 或点击提交才落库）
+
+
+---
+
+### Requirement: 答题卡疑难标记（Mark for Review）
+
+> 合入注记（2026-10-16，变更 `polish-student-taking-and-review-markers` 收口）：
+> 作答界面提供逐题疑难标记 🚩，标记独立于答案、双层持久化（本地 DraftRecord 与草稿上送 marked 字段）。后端核实结论（读权威源码）：ExamDraftService.save 原样存储非空 marked、EnterExamResponse.marked 下发回放——端到端通道完整，无回退仅本地持久化。
+
+#### Scenario: 标记切换与导航格三态呈现
+- **WHEN**: 学生在作答区对当前题点击「标记此题 🚩」
+- **THEN**: 该题 SHALL 被加入标记集合，按钮切换为「取消标记」态，再次点击移除标记
+- **AND**: 导航格 SHALL 以 🚩 角标与橙色样式呈现已标记题，「已答未标记 / 已答已标记 / 未答已标记」三态可视区分
+- **AND**: 标记 SHALL 独立于答案存在——已标记不影响已答/未答判定（isAnswered 口径零漂移）与交卷请求的 answers 语义（标记不混入交卷请求）
+
+#### Scenario: 标记双层持久化与恢复
+- **WHEN**: 学生标记/取消标记后草稿保存触发
+- **THEN**: 本地草稿记录（DraftRecord）SHALL 扩展携带标记集合随 answers 一并持久化，刷新/断线重进后标记 SHALL 恢复（draftMerge 恢复链路同步回放）
+- **AND**: 上送后端的草稿保存请求 SHALL 以真实标记集合填充既有 `marked` 字段（不再恒传空数组），零契约变更
+- **AND**: 多端草稿版本冲突时标记与答案 SHALL 遵循同一冲突策略，不静默覆盖
+
+---
+
+### Requirement: 交卷一键跳转首道未答题
+
+> 合入注记（2026-10-16，变更 `polish-student-taking-and-review-markers` 收口）：
+> 交卷确认弹窗在存在未答题时提供快捷定位入口；useSubmitExam 防重/loading/失败保留答案语义零改动。
+
+#### Scenario: 未答题时呈现跳转入口
+- **WHEN**: 交卷确认弹窗呈现且 unansweredCount > 0
+- **THEN**: 弹窗 SHALL 在「确认交卷」旁提供「跳转首道未答题」按钮
+- **AND**: `unansweredCount === 0` 时该按钮 SHALL 不出现
+
+#### Scenario: 跳转定位与既有交卷语义零回归
+- **WHEN**: 学生点击「跳转首道未答题」
+- **THEN**: 弹窗 SHALL 关闭且当前题 SHALL 切换为 navStatesOf 状态数组中第一个未答题（复用同一份状态源，禁另算口径）
+- **AND**: 确认交卷的防重/loading/失败保留答案语义 SHALL 零改动（跳转不得误触发提交）

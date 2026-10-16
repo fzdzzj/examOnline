@@ -21,7 +21,8 @@
  * - `version` 的递增是**保存成功方**的责任：本模块的调用方（`useAutoSaveDraft`）
  *   每次成功保存后 `version+1`，IndexedDB 里存的是「最后一次与后端对齐的版本」。
  */
-import type { AnswerMap } from '@/utils/studentTaking';
+import type { AnswerMap, MarkedIds } from '@/utils/studentTaking';
+import { markedIdsOf, markedOf } from '@/utils/studentTaking';
 
 /** 一份草稿：version 为 null 表示「从未被后端确认过」（本地-only 内容）。 */
 export interface DraftRecord {
@@ -29,13 +30,18 @@ export interface DraftRecord {
   /** 展示/日志用（后端 savedTime 或本地写入的 ISO 时刻），不参与新旧比较。 */
   savedAt: string | null;
   answers: AnswerMap;
+  /**
+   * 疑难标记的 questionId 集合（独立于答案的维度，Mark for Review 🚩）。
+   * 持久化形态是数组（与 `SaveDraftRequest.marked` / `EnterExamResponse.marked` 契约一致）。
+   */
+  marked: number[];
 }
 
 /** 合并结果：`conflict` 时两份原样保留在 `server` / `local` 字段里，由界面提示学生裁决。 */
 export type DraftMergeOutcome =
-  | { kind: 'server'; answers: AnswerMap; version: number | null }
-  | { kind: 'local'; answers: AnswerMap; version: number | null }
-  | { kind: 'identical'; answers: AnswerMap; version: number | null }
+  | { kind: 'server'; answers: AnswerMap; marked: number[]; version: number | null }
+  | { kind: 'local'; answers: AnswerMap; marked: number[]; version: number | null }
+  | { kind: 'identical'; answers: AnswerMap; marked: number[]; version: number | null }
   | {
       kind: 'conflict';
       server: DraftRecord;
@@ -44,9 +50,13 @@ export type DraftMergeOutcome =
       reason: 'version-tied-content-differs' | 'version-not-comparable';
     };
 
-/** 判断一份草稿是否「有内容」（空 answers 视为没有草稿，不构成冲突方）。 */
+/**
+ * 判断一份草稿是否「有内容」（answers 与 marked 任一非空即算，型同 `hasDraftContent` 的扩展）。
+ * 判据：空 answers 且空 marked → 视为没有草稿，不构成冲突方。
+ */
 export function hasDraftContent(record: DraftRecord | null | undefined): boolean {
-  return record !== null && record !== undefined && Object.keys(record.answers).length > 0;
+  if (record === null || record === undefined) return false;
+  return Object.keys(record.answers).length > 0 || markedOf(record.marked).length > 0;
 }
 
 /** AnswerMap 浅比较：键集合一致且每个值全等（答案值一律是 string，无嵌套）。 */
@@ -55,6 +65,17 @@ export function sameAnswers(a: AnswerMap, b: AnswerMap): boolean {
   const keysB = Object.keys(b);
   if (keysA.length !== keysB.length) return false;
   return keysA.every((key) => a[key] === b[key]);
+}
+
+/** 标记集合浅比较：数组等价即同（marked 去重升序后比较）。 */
+export function sameMarked(
+  a: MarkedIds | readonly number[] | null | undefined,
+  b: MarkedIds | readonly number[] | null | undefined
+): boolean {
+  const ea = markedOf(a);
+  const eb = markedOf(b);
+  if (ea.length !== eb.length) return false;
+  return ea.every((id, i) => id === eb[i]);
 }
 
 /**
@@ -79,15 +100,25 @@ export function mergeDrafts(
   const localHas = hasDraftContent(local);
 
   if (!serverHas && !localHas) {
-    return { kind: 'identical', answers: {}, version: null };
+    return { kind: 'identical', answers: {}, marked: [], version: null };
   }
   if (!localHas) {
     const s = server as DraftRecord;
-    return { kind: 'server', answers: { ...s.answers }, version: s.version };
+    return {
+      kind: 'server',
+      answers: { ...s.answers },
+      marked: markedOf(s.marked),
+      version: s.version,
+    };
   }
   if (!serverHas) {
     const l = local as DraftRecord;
-    return { kind: 'local', answers: { ...l.answers }, version: l.version };
+    return {
+      kind: 'local',
+      answers: { ...l.answers },
+      marked: markedOf(l.marked),
+      version: l.version,
+    };
   }
 
   const s = server as DraftRecord;
@@ -95,20 +126,40 @@ export function mergeDrafts(
 
   if (s.version !== null && l.version !== null) {
     if (s.version > l.version)
-      return { kind: 'server', answers: { ...s.answers }, version: s.version };
+      return {
+        kind: 'server',
+        answers: { ...s.answers },
+        marked: markedOf(s.marked),
+        version: s.version,
+      };
     if (l.version > s.version)
-      return { kind: 'local', answers: { ...l.answers }, version: l.version };
-    // version 相同：内容一致 → 同一状态；不一致 → 无法判定谁新（保守：都不覆盖）
-    if (sameAnswers(s.answers, l.answers)) {
-      return { kind: 'identical', answers: { ...s.answers }, version: s.version };
+      return {
+        kind: 'local',
+        answers: { ...l.answers },
+        marked: markedOf(l.marked),
+        version: l.version,
+      };
+    // version 相同：内容（答案与标记）一致 → 同一状态；任一份不同 → 无法判定谁新（保守：都不覆盖）
+    if (sameAnswers(s.answers, l.answers) && sameMarked(s.marked, l.marked)) {
+      return {
+        kind: 'identical',
+        answers: { ...s.answers },
+        marked: markedOf(s.marked),
+        version: s.version,
+      };
     }
     return { kind: 'conflict', server: s, local: l, reason: 'version-tied-content-differs' };
   }
 
-  if (sameAnswers(s.answers, l.answers)) {
+  if (sameAnswers(s.answers, l.answers) && sameMarked(s.marked, l.marked)) {
     // 内容一致但 version 不可比（一方为 null）：取较大者，理由见 resolveSeed 注释
     const version = Math.max(s.version ?? 0, l.version ?? 0);
-    return { kind: 'identical', answers: { ...s.answers }, version: version > 0 ? version : null };
+    return {
+      kind: 'identical',
+      answers: { ...s.answers },
+      marked: markedOf(s.marked),
+      version: version > 0 ? version : null,
+    };
   }
   return { kind: 'conflict', server: s, local: l, reason: 'version-not-comparable' };
 }
@@ -117,11 +168,13 @@ export function mergeDrafts(
 export interface ServerDraftSource {
   answers?: unknown;
   draftVersion?: number | null;
+  marked?: Array<number | null | undefined> | null;
 }
 
 /**
  * 进入考试的响应 → 服务端草稿记录。
- * `answers` 经 `answerMapOf` 窄化（结构不符当无草稿，不把脏数据放进合并）。
+ * `answers` 经 `answerMapOf` 窄化（结构不符当无草稿，不把脏数据放进合并）；
+ * `marked` 经 `markedIdsOf` 窄化为 questionId 数组（旧草稿缺失按空集）。
  */
 export function serverDraftOf(
   source: ServerDraftSource | null | undefined,
@@ -131,6 +184,7 @@ export function serverDraftOf(
     version: typeof source?.draftVersion === 'number' ? source.draftVersion : null,
     savedAt: null,
     answers: answerMapOf(source?.answers ?? null),
+    marked: markedOf(markedIdsOf(source?.marked)),
   };
 }
 
@@ -147,15 +201,22 @@ export function serverDraftOf(
  */
 export function resolveSeed(outcome: DraftMergeOutcome): {
   answers: AnswerMap;
+  marked: number[];
   conflict: DraftRecord | null;
   version: number | null;
 } {
   if (outcome.kind === 'conflict') {
     return {
       answers: { ...outcome.server.answers },
+      marked: markedOf(outcome.server.marked),
       conflict: outcome.local,
       version: outcome.server.version,
     };
   }
-  return { answers: { ...outcome.answers }, conflict: null, version: outcome.version };
+  return {
+    answers: { ...outcome.answers },
+    marked: [...outcome.marked],
+    conflict: null,
+    version: outcome.version,
+  };
 }
