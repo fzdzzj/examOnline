@@ -166,6 +166,19 @@
     只引导 + 上报，不含任何锁定/交卷动作（硬约定：防作弊只警告不交卷）。
   -->
   <FullScreenGuardOverlay :visible="fullScreenGuardVisible" @enter="onEnterFullScreen" />
+
+  <!--
+    考前设备就绪自检门控（add-pre-exam-device-readiness-check 阶段 2）：在线且本场未完成自检、
+    未放行时呈现。检查完成前「进入考试」禁用；强警示需二次确认；离线重入整场豁免由页面
+    readinessModalOpen 裁决（该分支下面板根本不出现）。
+  -->
+  <DeviceReadinessCheckModal
+    :open="readinessModalOpen"
+    :running="readinessRunning"
+    :running-item="readinessRunningItem"
+    :report="readinessReport"
+    @enter="onEnterExamAfterReadiness"
+  />
 </template>
 
 <script setup lang="ts">
@@ -208,6 +221,7 @@ import { client, unwrap } from '@/api/apiClient';
 import ExamCountdown from '@/components/student/ExamCountdown.vue';
 import TakingBoard from '@/components/student/TakingBoard.vue';
 import FullScreenGuardOverlay from '@/components/student/FullScreenGuardOverlay.vue';
+import DeviceReadinessCheckModal from '@/components/student/DeviceReadinessCheckModal.vue';
 import DraftSyncBadge from '@/components/student/DraftSyncBadge.vue';
 import SubmitExamPanel from '@/components/student/SubmitExamPanel.vue';
 import SubmitResultCard from '@/components/student/SubmitResultCard.vue';
@@ -217,6 +231,13 @@ import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useSubmitExam } from '@/hooks/useSubmitExam';
 import { useBehaviorReport } from '@/hooks/useBehaviorReport';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
+import {
+  useDeviceReadiness,
+  loadReadinessReport,
+  saveReadinessReport,
+  type DeviceReadinessReport,
+  type ReadinessItemKey,
+} from '@/hooks/useDeviceReadiness';
 import { createEnterExamQueryOptions, examIdOf, isClosedByBackend } from '@/hooks/useStudentTaking';
 import { OFFLINE_REENTRY_NOTICE, SUBMIT_TYPE } from '@/constants/studentTaking';
 import { ApiError } from '@/api/types';
@@ -246,16 +267,124 @@ const examId = computed(() => examIdOf(route.params.id as string | string[] | un
 const examIdValid = computed(() => Number.isInteger(examId.value) && examId.value > 0);
 
 /**
+ * 设备就绪自检门控（add-pre-exam-device-readiness-check 阶段 2）。
+ * 三态：
+ * - 离线重入豁免：navigator.onLine === false → 整场跳过自检直放行（离线快照兜底是救场路径，
+ *   绝不能被自检阻断）；
+ * - 会话级留存：本场 sessionStorage 已有完成报告 → 刷新/返回再进不重复自检、不重复门控；
+ * - 默认：面板打开即自动开始检查，完成后学生点「进入考试」（强警示先二次确认）才起表。
+ * 路由复用切换 examId 视为新考试：重置门控状态并按新 examId 读留存。
+ */
+const readiness = useDeviceReadiness();
+const readinessReport = ref<DeviceReadinessReport | null>(null);
+const readinessRunning = ref(false);
+const readinessRunningItem = ref<ReadinessItemKey | null>(null);
+/** 学生已放行本场考试（点过「进入考试」且强警示二次确认通过）。 */
+const enterRequested = ref(false);
+
+function getReadinessStorage(): Pick<Storage, 'getItem' | 'setItem'> | null {
+  try {
+    if (typeof sessionStorage === 'undefined') return null;
+    return sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** 离线重入豁免：断网状态下整场自检跳过直放行。 */
+const readinessOfflineExempt = computed(() => {
+  if (typeof navigator === 'undefined') return false;
+  return navigator.onLine === false;
+});
+
+/** 自检已通过：离线豁免 OR 本场已有完成报告（会话留存或本次刚跑完）。 */
+const readinessGatePassed = computed(
+  () => readinessOfflineExempt.value || Boolean(readinessReport.value)
+);
+
+/** 门控面板呈现条件：在线、examId 合法、且本场尚未放行。 */
+const readinessModalOpen = computed(
+  () => examIdValid.value && !readinessOfflineExempt.value && !enterRequested.value
+);
+
+/** 自检自动执行：面板打开即跑一遍（RTT 采样等全部浏览器本地能力检测）。 */
+async function runDeviceReadiness(): Promise<void> {
+  if (readinessRunning.value) return;
+  readinessRunning.value = true;
+  try {
+    const report = await readiness.run((key) => {
+      readinessRunningItem.value = key;
+    });
+    if (report) {
+      readinessReport.value = report;
+      if (examIdValid.value) {
+        saveReadinessReport(getReadinessStorage(), examId.value, report);
+      }
+    }
+  } finally {
+    readinessRunning.value = false;
+    readinessRunningItem.value = null;
+  }
+}
+
+/** 学生放行：点「进入考试」（强警示已二次确认）后起表请求才被 enabled 放行。 */
+function onEnterExamAfterReadiness(): void {
+  enterRequested.value = true;
+}
+
+// examId 切换（路由复用组件）视为新考试：重置门控状态并按新 examId 读会话留存
+watch(
+  [examIdValid, examId],
+  () => {
+    readinessRunning.value = false;
+    readinessRunningItem.value = null;
+    if (!examIdValid.value) {
+      readinessReport.value = null;
+      enterRequested.value = false;
+      return;
+    }
+    if (readinessOfflineExempt.value) {
+      // 离线整场豁免：不再自检，enter 恢复既有「挂载即触发」语义
+      readinessReport.value = null;
+      enterRequested.value = true;
+      return;
+    }
+    const stored = loadReadinessReport(getReadinessStorage(), examId.value);
+    readinessReport.value = stored;
+    enterRequested.value = Boolean(stored);
+  },
+  { immediate: true }
+);
+
+// 门控面板打开（在线且本场未留存、未放行）即自动开始自检
+watch(
+  readinessModalOpen,
+  (open) => {
+    if (open) void runDeviceReadiness();
+  },
+  { immediate: true }
+);
+
+/**
  * 整个 options 走 computed：`/student/exams/:id` 在只改路由参数时会被 vue-router **复用组件**
  * （浏览器前进/后退在两场考试之间切换就是这条路径）。写成静态对象的话 key 会被冻结在
  * 挂载时那个 examId 上，URL 是 27 而卷是 9。`useQuery` 接受"返回 options 的 getter/computed"。
+ *
+ * 设备就绪门控（add-pre-exam-device-readiness-check 阶段 2）：enabled 叠加 readinessGatePassed
+ * 与 enterRequested——自检未通过前不起表（零起表副作用）；检查完成后学生点「进入考试」
+ * （强警示先二次确认）才放行。离线重入整场豁免：navigator.onLine === false 时 gate 直通，
+ * enter 恢复既有「挂载即触发」语义。
  */
 const { data, isFetching, error, refetch } = useQuery(
-  computed(() =>
-    createEnterExamQueryOptions(examId.value, (id) =>
+  computed(() => {
+    const base = createEnterExamQueryOptions(examId.value, (id) =>
       unwrap<EnterExamResponse>(enterContract({ client, throwOnError: true, path: { examId: id } }))
-    )
-  )
+    );
+    return {
+      ...base,
+      enabled: base.enabled && readinessGatePassed.value && enterRequested.value,
+    };
+  })
 );
 
 const answers = ref<AnswerMap>({});

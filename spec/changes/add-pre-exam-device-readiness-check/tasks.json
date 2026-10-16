@@ -17,9 +17,9 @@
     {
       "id": 2,
       "title": "阶段 2：自检面板实施 + enabled 门控 + 单测先红后绿 + 变异击红",
-      "status": "pending",
+      "status": "completed",
       "description": "新增 hooks/useDeviceReadiness.ts（RTT 中位数采样/内核白名单/特性检测/异常兜底）+ components/student/DeviceReadinessCheckModal.vue（进度/徽标/二次确认）+ [id].page.vue enter useQuery enabled 门控接线 + 离线豁免 + sessionStorage 会话级留存；vitest 新测试先红后绿（enabled 门控移除→红、离线豁免移除→红、二次确认跳过→红、留存移除→重跑红），变异击红-复原-回绿留证 evidence/，前端门禁 vitest 全量跑留证，分支上提交后停待复核。白名单：proposal 第三节所列路径。",
-      "evidence": ""
+      "evidence": "①实施：hooks/useDeviceReadiness.ts（RTT 同源 HEAD 采样丢首样本取中位数 measureRttMedian/medianOf、userAgent 内核白名单 detectKernel（Edge→Firefox→Chrome→Safari）、fullscreenEnabled/localStorage 特性检测、异常兜底「已完成+全部警示」run 永不 reject、loadReadinessReport/saveReadinessReport 会话留存助手）+ components/student/DeviceReadinessCheckModal.vue（逐项进度/结果徽标 通过/警示/强警示、检查完成前「进入考试」禁用、强警示「仍要进入」二次确认确认前不 emit enter）+ [id].page.vue enter useQuery enabled 叠加 readinessGatePassed&&enterRequested（自检未过不起表）、navigator.onLine===false 整场豁免、sessionStorage 会话级留存、examId 切换视为新考试重新门控。②先红后绿：evidence/red-first-new-tests.log（3 files failed，实现缺失）→ evidence/green-new-tests.log（6 files/48 tests：新 34 + 既有 exam 页 14 全绿）。③变异击红-复原-回绿 4 条留证 evidence/mutation-{1,2,3,4}-*-{red,green}.log（enabled 门控移除→红、离线豁免移除→红、二次确认跳过→红、留存移除→重跑红，均复原回绿）。④vitest 全量 evidence/vitest-full-final.log：基线 874 → 874+34=908 只增不减；基线 3 个无关超时（teacher 侧）为既有 flaky，收尾全量仅 1 个 SubjectiveGradingPanel 超时复现且孤立运行 7/7 通过。⑤白名单外零 diff：git status 变更清单全命中 proposal 第三节（后端 src/、pom.xml、openapi.yaml、schema.sql、docker/mysql/migrations/ 零触碰）。⑥type-check:check 双真实 banner 全绿、变更文件 eslint 收尾 --fix 后零错误。⑦实施笔 hash 不预写，提交后以 git log 为准，复核时现场核对。"
     },
     {
       "id": 3,
