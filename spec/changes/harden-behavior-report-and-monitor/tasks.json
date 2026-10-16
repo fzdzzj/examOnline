@@ -1,0 +1,29 @@
+{
+  "changeId": "harden-behavior-report-and-monitor",
+  "title": "行为上报与监考面加固（上报限流、明细体积上限、时间戳锚定、指标 tag 归并、时间线明细上限）",
+  "level": "M",
+  "capabilityDomains": ["anti-cheat"],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、规范增量制定与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、anti-cheat 的 spec-delta.md（行为事件采集 + 行为日志时间线两 Requirement 各追加 Scenario）与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md。定性：五落点纯后端（taking/anticheat/monitoring 三包），零 DDL、零契约变更（openapi paths 97 不变、timeline 响应形状不变）、零前端，仅 backendTests 预期增长；M 级双岗隔离。",
+      "evidence": "基于 2026-10-16 三轮后端巡查第二批 anti-cheat/taking/observability 域发现（高危×1+中×3，发现台账 docs/功能待办清单.md B.2），主 Agent 立项侦察源码直读核实：①ExamTakingController L90 行为上报为全控制器唯一无 @RateLimit 的写端点（enter L66 2000/5000、submit L103 500/2000 均有）；②BehaviorReportRequest.eventData 为 JsonNode 无体积校验，ExamBehaviorLogService L42 eventData.toString() 直存 TEXT 64KB 列；③BusinessMetrics.countAntiCheatEvent L170 客户端可控 eventType computeIfAbsent 直建 Counter tag（BehaviorEventTypes 七注册常量已核：SWITCH_SCREEN/WINDOW_BLUR/PAGE_REFRESH/SUBMIT_ANOMALY/DRAFT_CONFLICT/COPY_PASTE/FULLSCREEN_EXIT）；④BehaviorLogQueryService.timeline L87-95 无上限 selectList 全列载入（同文件 page L64 已有 size≤200 上限先例，且 timeline 的 total/严重度分布与 items 同源——上限截断会破坏统计口径，故设计拆两查保全）；⑤BehaviorEventCollectService.collect L63 occurredTime 全信客户端。修复参数定档：限流 200/1000（介于 enter 与 submit 之间，注释论证）、eventData ≤4096 字节（正常明细远小于此）、时钟偏差锚定阈值 10 分钟、时间线明细上限 1000 条。spec 基线落点核实：specs/anti-cheat/spec.md 七 Requirement 中「行为事件采集」L8 与「行为日志时间线」L74 为本案追加 Scenario 的宿主。检出 feature/harden-behavior-report-and-monitor 分支。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：五项实施 + 单测先红后绿 + 变异击红验证",
+      "status": "pending",
+      "description": "①reportBehavior 端点补 @RateLimit(qps=200, capacity=1000, key=\"behavior-report\")，注释按既有三端点风格论证量级；②BehaviorEventCollectService.collect 入口校验 eventData 序列化字节数 ≤4096（常量 MAX_EVENT_DATA_BYTES），超限抛 BusinessException 400「事件明细过大」（校验先于策略判定，不落库不打点）；③occurredTime 与服务端 now 偏差绝对值 >10 分钟（常量 MAX_CLOCK_SKEW）时按 now 落库；④BusinessMetrics.countAntiCheatEvent 以 BehaviorEventTypes 注册集判别，未注册类型归并 tag \"unknown\"（落库/判定语义不变）；⑤BehaviorLogQueryService.timeline 拆两查——统计窄投影（仅 severity 列，全量不载 event_data TEXT）算 total 与三档计数，明细查询 LIMIT 1000（event_time/id 升序），items 如实反映实际条数；⑥单测先红后绿（实现前各防刷断言红即缺陷存在性证明）+ 变异 m1/m2/m3 击红-复原-回绿留证 evidence/（建议 m1 去限流注解或 metrics 不归并击红、m2 eventData 上限移除击红、m3 时间戳锚定移除或统计口径与 items 同源截断击红；等价变异体如实登记不强杀）。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "pending",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 两 Scenario 合入 specs/anti-cheat 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md（B.2 台账对应发现标记已修复），--no-ff 合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
