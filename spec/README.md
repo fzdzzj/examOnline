@@ -20,6 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
+| `optimize-wrong-question-derivation-cost` | 2 | 错题派生链装配成本收敛（纯后端，零 DDL 零契约）：5 处逐场全量装配（全卷载入 + 判分重算 + 双重 parse）改 Redis 轻量判定缓存（键含版本戳自失效，零写路径侵入；无可用版本信号列则退化显式失效钩子并留痕扩白名单）+ 双 parse 收敛；判分同源不变量保持（缓存值即 resolve 现算产物，不引入第二套判分）；Redis 故障退化为现行现算 | score-management, performance | 无（main 干净，2026-10-16 立案；来源第四轮巡查发现 B.2 台账） |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。
