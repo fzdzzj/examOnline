@@ -86,7 +86,14 @@ public class ExamTakingController {
      * 切屏/失焦行为上报：经防作弊采集核心（策略模式）判定严重度并落行为日志。
      * 响应携带警告信息（是否弹提醒/严重度/切屏次数）——只警告不强制交卷，
      * 处置由教师事后依行为日志判定。
+     * 上报限流（qps=200, capacity=1000）——本端点此前是全控制器唯一的裸写端点，
+     * 学生可脚本无限刷写行为日志表（每请求策略判定 + 单行 insert + 指标打点）。
+     * 正常场景（千人大考，学生偶发切屏/失焦/粘贴）峰值远低于 200/s，全放行；
+     * 单次处理轻（判定 + 单行 insert + counter），故量级介于 enter（开考瞬时拉卷 2000/5000）
+     * 与 submit（单次重 500/2000）之间：桶容量 1000 吸收整场瞬时上报尖峰，200/s 平滑整流脚本刷写。
+     * 独立 key="behavior-report" 使令牌桶与其他端点隔离，刷写上报不会借走交卷的令牌。
      */
+    @RateLimit(qps = 200, capacity = 1000, key = "behavior-report")
     @PostMapping("/exams/{examId}/behavior")
     public ApiResponse<BehaviorReportResponse> reportBehavior(@PathVariable Long examId,
                                                               @Valid @RequestBody BehaviorReportRequest request) {

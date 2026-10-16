@@ -1,0 +1,18 @@
+﻿[ERROR] Tests run: 12, Failures: 7, Errors: 0, Skipped: 0, Time elapsed: 4.476 s <<< FAILURE! -- in com.exam.anticheat.service.BehaviorEventCollectServiceTest
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 25.08 s <<< FAILURE! -- in com.exam.anticheat.service.BehaviorLogQueryServiceTest
+[ERROR] Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.133 s <<< FAILURE! -- in com.exam.monitoring.metrics.BusinessMetricsTest
+[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 0.010 s <<< FAILURE! -- in com.exam.taking.controller.ExamTakingControllerRateLimitGuardTest
+[ERROR]   BehaviorEventCollectServiceTest.eventDataAtLimitIsAccepted:106 夹具前置：明细序列化须恰好等于上限 ==> expected: <4096> but was: <4094>
+[ERROR]   BehaviorEventCollectServiceTest.futureOccurredTimeAnchoredToServerNow:217->assertAnchoredToServerNow:230 偏差超阈值时落库时间必须锚定服务端 now，实际=2026-10-16T14:16:10.333710700（客户端声称=2026-10-16T14:16:10.333710700） ==> expected: <true> but was: <false>
+[ERROR]   BehaviorEventCollectServiceTest.occurredTimeJustBeyondThresholdAnchored:261 刚过阈值即锚定，实际=2026-10-16T13:36:09.418260800 ==> expected: <true> but was: <false>
+[ERROR]   BehaviorEventCollectServiceTest.oversizeCheckPrecedesDispatchSoUnknownTypeAlsoRejected:149 Expected com.exam.common.BusinessException to be thrown, but nothing was thrown.
+[ERROR]   BehaviorEventCollectServiceTest.oversizedEventDataRejectedWithoutPersistNorMetric:123 夹具前置：明细序列化须恰好超限 1 字节 ==> expected: <4097> but was: <4095>
+[ERROR]   BehaviorEventCollectServiceTest.sizeLimitCountsUtf8BytesNotCharacters:170 Expected com.exam.common.BusinessException to be thrown, but nothing was thrown.
+[ERROR]   BehaviorEventCollectServiceTest.staleOccurredTimeAnchoredToServerNow:210->assertAnchoredToServerNow:230 偏差超阈值时落库时间必须锚定服务端 now，实际=2026-10-16T13:16:10.443049400（客户端声称=2026-10-16T13:16:10.443049400） ==> expected: <true> but was: <false>
+[ERROR]   BehaviorLogQueryServiceTest.timelineBelowLimitReturnsEverything:165 expected: <1> but was: <0>
+[ERROR]   BehaviorLogQueryServiceTest.timelineCapsItemsButKeepsStatisticsFaithful:110 统计查询必须恰一次（拆两查而非逐行统计） ==> expected: <1> but was: <0>
+[ERROR]   BusinessMetricsTest.unregisteredEventTypesCollapseToUnknownTag:94 两个未注册类型必须归并到同一个 unknown tag（计数=2） ==> expected: <true> but was: <false>
+[ERROR]   ExamTakingControllerRateLimitGuardTest.behaviorReportIsRateLimited:53->rateLimitOf:34 写端点 reportBehavior 必须声明 @RateLimit（裸写端点＝可无限刷写） ==> expected: not <null>
+[ERROR]   ExamTakingControllerRateLimitGuardTest.behaviorReportQpsSitsBetweenPullPaperAndSubmit:67->rateLimitOf:34 写端点 reportBehavior 必须声明 @RateLimit（裸写端点＝可无限刷写） ==> expected: not <null>
+[ERROR]   ExamTakingControllerRateLimitGuardTest.noRemainingUnprotectedPostEndpoint:92 @PostMapping 写端点必须全部受限流保护，裸写端点=reportBehavior ==> expected: <true> but was: <false>
+[ERROR] Tests run: 29, Failures: 13, Errors: 0, Skipped: 0

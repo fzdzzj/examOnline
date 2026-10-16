@@ -1,5 +1,6 @@
 package com.exam.submission;
 
+import com.exam.anticheat.collector.BehaviorEventRegistry;
 import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.submission.service.ExamSubmissionService;
 import com.exam.submission.mq.ExamSubmitConsumer;
@@ -54,7 +55,8 @@ class DlqObservabilityTest {
             @Override public RabbitAdmin getObject() { return null; }
             @Override public RabbitAdmin getObject(Object... args) { return null; }
         };
-        metrics = new BusinessMetrics(registry, noAdmin);
+        // 本用例只验交卷/死信指标，事件类型白名单为空 mock 即可（countAntiCheatEvent 未被调用）
+        metrics = new BusinessMetrics(registry, noAdmin, mock(BehaviorEventRegistry.class));
         ObjectMapper om = new ObjectMapper()
                 .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
                 .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);

@@ -1,0 +1,5 @@
+﻿[ERROR] Tests run: 12, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 0.167 s <<< FAILURE! -- in com.exam.anticheat.service.BehaviorEventCollectServiceTest
+[ERROR]   BehaviorEventCollectServiceTest.futureOccurredTimeAnchoredToServerNow:230->assertAnchoredToServerNow:243 偏差超阈值时落库时间必须锚定服务端 now，实际=2026-10-16T15:11:53.235441200（客户端声称=2026-10-16T15:11:53.235441200） ==> expected: <true> but was: <false>
+[ERROR]   BehaviorEventCollectServiceTest.occurredTimeJustBeyondThresholdAnchored:277 刚过阈值即锚定，实际=2026-10-16T14:31:52.325504300 ==> expected: <true> but was: <false>
+[ERROR]   BehaviorEventCollectServiceTest.staleOccurredTimeAnchoredToServerNow:223->assertAnchoredToServerNow:243 偏差超阈值时落库时间必须锚定服务端 now，实际=2026-10-16T14:11:53.348837800（客户端声称=2026-10-16T14:11:53.348837800） ==> expected: <true> but was: <false>
+[INFO] BUILD FAILURE

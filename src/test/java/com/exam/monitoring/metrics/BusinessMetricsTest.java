@@ -2,14 +2,28 @@ package com.exam.monitoring.metrics;
 
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusConfig;
+import com.exam.anticheat.collector.BehaviorEventRegistry;
+import com.exam.anticheat.collector.BehaviorEventTypes;
+import com.exam.anticheat.collector.CopyPasteEventCollector;
+import com.exam.anticheat.collector.DraftConflictEventCollector;
+import com.exam.anticheat.collector.FullScreenExitEventCollector;
+import com.exam.anticheat.collector.PageRefreshEventCollector;
+import com.exam.anticheat.collector.SubmitAnomalyEventCollector;
+import com.exam.anticheat.collector.SwitchScreenEventCollector;
+import com.exam.anticheat.collector.UnknownEventCollector;
+import com.exam.anticheat.collector.WindowBlurEventCollector;
+import com.exam.anticheat.service.BehaviorCounterService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.ObjectProvider;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * 业务指标导出单元测试（add-performance-deepening 阶段8 可观测性 task5）：
@@ -39,12 +53,29 @@ class BusinessMetricsTest {
         };
     }
 
+    /**
+     * 真实事件注册表（七个策略 + 兜底）：指标侧的事件类型白名单就取自它，
+     * 故此处必须装配真实注册表——用 mock 会让"归并"断言失去意义（白名单为空则全落 unknown）。
+     */
+    private BehaviorEventRegistry behaviorRegistry() {
+        return new BehaviorEventRegistry(
+                List.of(new SwitchScreenEventCollector(mock(BehaviorCounterService.class)),
+                        new WindowBlurEventCollector(), new PageRefreshEventCollector(),
+                        new SubmitAnomalyEventCollector(), new DraftConflictEventCollector(),
+                        new CopyPasteEventCollector(), new FullScreenExitEventCollector()),
+                new UnknownEventCollector());
+    }
+
+    private BusinessMetrics newMetrics(PrometheusMeterRegistry registry) {
+        return new BusinessMetrics(registry, noRabbitAdmin(), behaviorRegistry());
+    }
+
     @Test
     @DisplayName("交卷指标：耗时 Timer + 成功/失败 Counter 正确导出")
     void submitMetricsExported() {
         PrometheusMeterRegistry registry = registry();
         // ObjectProvider 兜底：无 RabbitAdmin，Gauge 走 -1 降级分支，不影响本用例
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         metrics.recordSubmitSuccess(metrics.startSubmit());
         metrics.recordSubmitSuccess(metrics.startSubmit());
@@ -61,7 +92,7 @@ class BusinessMetricsTest {
     @DisplayName("防作弊事件计数：按事件类型打 tag 的 Counter 正确导出")
     void anticheatEventCounterExported() {
         PrometheusMeterRegistry registry = registry();
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         metrics.countAntiCheatEvent("SWITCH_SCREEN");
         metrics.countAntiCheatEvent("SWITCH_SCREEN");
@@ -74,11 +105,81 @@ class BusinessMetricsTest {
                 "刷新事件计数=1 应按 type tag 导出");
     }
 
+    // ==================== 指标 tag 归并（change harden-behavior-report-and-monitor） ====================
+
+    @Test
+    @DisplayName("tag 基数有界：未注册事件类型归并 tag \"unknown\"，原类型名不得出现在指标中")
+    void unregisteredEventTypesCollapseToUnknownTag() {
+        PrometheusMeterRegistry registry = registry();
+        BusinessMetrics metrics = newMetrics(registry);
+
+        // 客户端可控 eventType 曾直接建 Counter tag（DTO 仅 @Size(32) 不限取值）→ 基数无界
+        metrics.countAntiCheatEvent("SOME_FUTURE_EVENT");
+        metrics.countAntiCheatEvent("!!injected-type!!");
+        metrics.countAntiCheatEvent("SWITCH_SCREEN");
+
+        String text = registry.scrape();
+        assertTrue(text.contains("exam_anticheat_events_total{type=\"unknown\"} 2.0"),
+                "两个未注册类型必须归并到同一个 unknown tag（计数=2）");
+        assertFalse(text.contains("SOME_FUTURE_EVENT"), "未注册类型名不得成为 tag 值（基数无界来源）");
+        assertFalse(text.contains("!!injected-type!!"), "任意客户端字符串都不得进入指标维度");
+        assertEquals(2, occurrences(text, "exam_anticheat_events_total{"),
+                "全部指标只应有两条 series：注册类型一条 + unknown 一条");
+        assertTrue(text.contains("exam_anticheat_events_total{type=\"SWITCH_SCREEN\"} 1.0"),
+                "已注册类型仍按自身 tag 计数（归并不得吞掉已知类型）");
+    }
+
+    @Test
+    @DisplayName("注册集取自 BehaviorEventTypes 七常量：各占一个 tag，不落入 unknown")
+    void everyRegisteredEventTypeKeepsItsOwnTag() {
+        PrometheusMeterRegistry registry = registry();
+        BusinessMetrics metrics = newMetrics(registry);
+
+        for (String type : registeredEventTypes()) {
+            metrics.countAntiCheatEvent(type);
+        }
+
+        String text = registry.scrape();
+        for (String type : registeredEventTypes()) {
+            assertTrue(text.contains("exam_anticheat_events_total{type=\"" + type + "\"} 1.0"),
+                    "已注册类型 " + type + " 必须按自身 tag 计数");
+        }
+        assertFalse(text.contains("type=\"unknown\""),
+                "七个注册常量都不得被归并（注册集必须与 BehaviorEventTypes 对齐）");
+    }
+
+    /** 由 BehaviorEventTypes 的 public String 常量反射取得注册集（不硬编码七元组，避免与常量集漂移）。 */
+    private List<String> registeredEventTypes() {
+        List<String> types = new java.util.ArrayList<>();
+        for (java.lang.reflect.Field field : BehaviorEventTypes.class.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())
+                    && field.getType() == String.class) {
+                try {
+                    types.add((String) field.get(null));
+                } catch (IllegalAccessException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
+        assertEquals(7, types.size(), "BehaviorEventTypes 注册常量应为七个（新增常量须同批补本护栏口径）");
+        return types;
+    }
+
+    private int occurrences(String text, String needle) {
+        int count = 0;
+        int index = text.indexOf(needle);
+        while (index >= 0) {
+            count++;
+            index = text.indexOf(needle, index + needle.length());
+        }
+        return count;
+    }
+
     @Test
     @DisplayName("MQ 队列深度：无 RabbitAdmin 时导出 -1（不可用降级），不断言业务变扎实")
     void queueDepthExportedWhenRabbitAdminAbsent() {
         PrometheusMeterRegistry registry = registry();
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         String text = registry.scrape();
         assertTrue(text.contains("exam_mq_submit_queue_depth -1.0"),
@@ -89,7 +190,7 @@ class BusinessMetricsTest {
     @DisplayName("重复扫描计数：按 task tag 的 Counter 正确导出")
     void duplicateSweepCounterExported() {
         PrometheusMeterRegistry registry = registry();
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         metrics.countSweepDuplicateDetected("sweep");
         metrics.countSweepDuplicateDetected("sweep");
@@ -106,7 +207,7 @@ class BusinessMetricsTest {
     @DisplayName("死信指标：深度 Gauge(-1) + retry/entered Counter 正确导出")
     void dlqMetricsExported() {
         PrometheusMeterRegistry registry = registry();
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         metrics.recordMqRetry("retried");
         metrics.recordMqRetry("retried");
@@ -130,7 +231,7 @@ class BusinessMetricsTest {
     @DisplayName("数据保留行数：按 table+action tag 的 Counter 正确导出")
     void retentionRowsCounterExported() {
         PrometheusMeterRegistry registry = registry();
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         metrics.countRetentionRows("exam_behavior_logs", "candidate", 5);
         metrics.countRetentionRows("exam_behavior_logs", "candidate", 2);
@@ -157,7 +258,7 @@ class BusinessMetricsTest {
     @DisplayName("锁等待指标：亚秒等待不得被截成 0")
     void lockWaitRecordsSubSecondDuration() {
         PrometheusMeterRegistry registry = registry();
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         // SETNX 的正常等待本就是毫秒级
         metrics.recordLockWait(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(5));
@@ -175,7 +276,7 @@ class BusinessMetricsTest {
     @DisplayName("锁等待指标：必须有毫秒级分桶，否则 P95 是跨数量级插值")
     void lockWaitHasMillisecondBuckets() {
         PrometheusMeterRegistry registry = registry();
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         metrics.recordLockWait(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(5));
         String text = registry.scrape();
@@ -190,7 +291,7 @@ class BusinessMetricsTest {
     @DisplayName("锁获取/竞争计数：两个 Counter 正确导出")
     void lockAcquisitionAndContentionCountersExported() {
         PrometheusMeterRegistry registry = registry();
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         metrics.recordLockWait(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(2));
         metrics.recordLockContention();
@@ -208,7 +309,7 @@ class BusinessMetricsTest {
     @DisplayName("交卷耗时直方图：SLO 桶覆盖 0.5/1/2/5s 量级，服务端 P99 可算")
     void submitDurationHasSecondScaleBuckets() {
         PrometheusMeterRegistry registry = registry();
-        BusinessMetrics metrics = new BusinessMetrics(registry, noRabbitAdmin());
+        BusinessMetrics metrics = newMetrics(registry);
 
         metrics.recordSubmitSuccess(metrics.startSubmit());
 
