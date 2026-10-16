@@ -1,0 +1,24 @@
+﻿# 命令输出摘要（完整控制台日志已裁剪，保留判定性行与结果汇总）
+# 命令：mvnw.cmd -o clean test -Dtest=ExamLifecycleNotificationServiceTest,ReservationRemindServiceTest（实现前：两处 service 回退为原逐条/逐场实现）
+# revision：3b70e11
+
+[ERROR] Tests run: 5, Failures: 2, Errors: 1, Skipped: 0, Time elapsed: 5.182 s <<< FAILURE! -- in com.exam.message.service.ExamLifecycleNotificationServiceTest
+[ERROR] com.exam.message.service.ExamLifecycleNotificationServiceTest.batchFailureDegradesSilentlyAndDoesNotPropagate -- Time elapsed: 4.885 s <<< ERROR!
+org.mockito.exceptions.misusing.UnnecessaryStubbingException: 
+Please remove unnecessary stubbings or use 'lenient' strictness. More info: javadoc for UnnecessaryStubbingException class.
+[ERROR] com.exam.message.service.ExamLifecycleNotificationServiceTest.examPublishedBatchesInChunksOfAtMost500 -- Time elapsed: 0.132 s <<< FAILURE!
+Wanted but not invoked:
+[ERROR] com.exam.message.service.ExamLifecycleNotificationServiceTest.scorePublishedAlsoBathesAndKeepsRecipients -- Time elapsed: 0.013 s <<< FAILURE!
+Wanted but not invoked:
+[ERROR] Tests run: 4, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.275 s <<< FAILURE! -- in com.exam.message.service.ReservationRemindServiceTest
+[ERROR] com.exam.message.service.ReservationRemindServiceTest.pendingReservationsFetchedOnceAcrossExams -- Time elapsed: 0.260 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <3> but was: <9>
+[INFO] Results:
+Wanted but not invoked:
+Wanted but not invoked:
+[ERROR]   ReservationRemindServiceTest.pendingReservationsFetchedOnceAcrossExams:121 expected: <3> but was: <9>
+[ERROR]   ExamLifecycleNotificationServiceTest.batchFailureDegradesSilentlyAndDoesNotPropagate 禄 UnnecessaryStubbing 
+Please remove unnecessary stubbings or use 'lenient' strictness. More info: javadoc for UnnecessaryStubbingException class.
+[ERROR] Tests run: 9, Failures: 3, Errors: 1, Skipped: 0
+[INFO] BUILD FAILURE
+[INFO] Total time:  49.946 s

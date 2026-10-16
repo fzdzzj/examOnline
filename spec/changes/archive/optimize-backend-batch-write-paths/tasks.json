@@ -1,0 +1,27 @@
+{
+  "changeId": "optimize-backend-batch-write-paths",
+  "title": "后端批量写入路径优化（考务通知批量插入、开考提醒候选批查去 N+1）",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、规范增量制定与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、exam-management 与 exam-taking 两份 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md。定性：零 DDL、零契约变更、零前端，仅 backendTests 预期增长；M 级双岗隔离。",
+      "evidence": "基于 2026-10-16 后端全局只读巡查（五维度：性能/事务/异常/并发/边界）与主 Agent 源码直读甄别：巡查子 Agent 报 8 处候选，甄别后 5 处为误报（ScoreService.summarize 事务/N+1 已治理、publish 部分成功语义为有意设计注释明证、ExamService 缓存 H-04 已修），真实候选 3 处中本案立案 2 处（候选 3 成绩导出低危砍掉）。两落点现状核实：ExamLifecycleNotificationService.notifyExamPublished/notifyScorePublished for 循环逐条 messageMapper.insert（L63-66、L86-89，运行于主考务事务内）；ReservationRemindService.remind 外层 for 逐场 reservationMapper.selectList（L74-77，N+1，10s 级定时扫描）。硬约束识别：通知旁路降级 try-catch 不阻断主事务（类注释硬约定）、提醒行级幂等 markRemindedIfNull 单行原子 claim（add-multi-instance-sweep-safety 先例）。技术选型核实：全仓无 saveBatch/insertBatch 先例，UserMessageMapper 惯例为显式注解 SQL（markReadByOwner/markAllByOwner），批量插入将走自定义 @Insert script foreach + 500 分批（对齐 harden-review-flow-and-resource-limits 分片先例）。spec 基线落点核实：通知 Scenario 在 specs/exam-management/spec.md「考试发布」Requirement（L277），提醒 Scenario 在 specs/exam-taking/spec.md「考试预约与开考提醒」（L415），spec-delta 按能力域分目录两份。检出 feature/optimize-backend-batch-write-paths 分支，登记 spec/README.md 在途表与 docs/功能待办清单.md。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施通知批量插入与提醒候选批查、单测先红后绿与变异击红验证",
+      "status": "completed",
+      "description": "①UserMessageMapper 新增 insertBatch（@Insert script foreach 显式全列，列清单以 schema.sql user_messages 建表定义为准）；②ExamLifecycleNotificationService.notifyExamPublished/notifyScorePublished 组装 List 后分批（≤500）调 insertBatch，旁路降级 try-catch 语义逐字不变，日志条数口径为学生数；notifyScoreReviewHandled 保持单条不动；③ReservationRemindService.remind 一次 IN(examIds)+reminded_time IS NULL 批查替代逐场 selectList，内存按 examId 分组，deliverIfAbsent 行级幂等链路逐字不动；编写后端单测先红后绿；变异验证至少 3 项（m1 批量写入破坏降级语义或阻断主事务击红、m2 分批上限失效或列清单与 schema.sql 不一致击红、m3 提醒批查改动波及 deliverIfAbsent 幂等链击红）。",
+      "evidence": "实现：UserMessageMapper.insertBatch(@Param(\"messages\") List<UserMessage>) 显式列 (user_id, exam_id, title, content, read_flag, created_time) 与 schema.sql user_messages 去自增 id 后逐列一致（零 DDL）；ExamLifecycleNotificationService 新增 INSERT_BATCH_SIZE=500 与 insertInBatches 分批辅助，notifyExamPublished/notifyScorePublished 改批量写入、buildMessage 补 createdTime（自定义 @Insert 不经字段填充），三处 try-catch 旁路降级结构与 log.info 学生数口径逐字不变，notifyScoreReviewHandled 单条 insert 不动；ReservationRemindService.remind 改单次 selectList(in(examId, examIds).isNull(remindedTime)) 后 Map<Long,List> 按 examId 分组，deliverIfAbsent 与 @Transactional 边界零改动。单测先红后绿：新增 ExamLifecycleNotificationServiceTest（5 例：1200 学生分 500/500/200 三批、成绩发布同口径、批失败 assertDoesNotThrow 降级、空收件人零写入、单收件人仍单条），ReservationRemindServiceTest 新增 pendingReservationsFetchedOnceAcrossExams（times(1) 去 N+1）；实现前回退两 service 跑 → Tests run: 9, Failures: 3, Errors: 1 BUILD FAILURE（pendingReservationsFetchedOnceAcrossExams expected:<3> but was:<9>），实现后 → 9/0/0/0 BUILD SUCCESS。变异三项均击红-复原-回绿：m1 catch(Exception)→catch(IllegalArgumentException)，ExamLifecycleNotificationIntegrationTest#notificationFailureDoesNotBreakExamPublish 由绿转红 expected:<200> but was:<500>；m2 INSERT_BATCH_SIZE 500→100000，examPublishedBatchesInChunksOfAtMost500 转红 Wanted 3 times/B was 1 time；m3 if(claimed!=1)→if(false)，deliverSkipsWhenMarkNotClaimed 转红 expected:<0> but was:<1>。全量门禁 mvnw.cmd clean test（仓库根）→ Tests run: 565, Failures: 0, Errors: 0, Skipped: 1 BUILD SUCCESS（基线 559，净 +6；gate-baseline 上调留待阶段 3）。红线核对：schema.sql/docker/openapi.yaml/pom.xml/frontend 零 diff；测试无 @Sql 注解形态命中；证据日志（含裁剪说明与命令）与核对表见 evidence/README.md 及同目录 *.log。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test 与前端三门禁（lint:check / type-check:check / test）；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将两份 spec-delta 合入 specs/exam-management 与 specs/exam-taking 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
+      "evidence": "全量后端门禁实测（独立复核于 revision e79e614 复跑，收口笔仅改 spec 文档与 gate-baseline.json、不改测试面）：仓库根 mvnw.cmd clean test → Tests run: 565, Failures: 0, Errors: 0, Skipped: 1 / BUILD SUCCESS（backendTests 559→565 净增 6 同笔上调：新增通知 ServiceTest 5 例 + 预约提醒 1 例；frontendTests 874 与 openapiPaths 97 核对不变——frontend/ 与 openapi.yaml 零 diff，按离线门禁分级政策凭零 diff 论证免跑）；复核红线直读全过：insertBatch 六列与 schema.sql user_messages（L498-508 去自增 id）逐列一致、buildMessage 显式补 createdTime 单条路径不劣化、三处旁路降级 try-catch 结构保留、500 分批循环正确、remind() 空集短路 in() 永不空、deliverIfAbsent 与 @Transactional 逐字零改动；变异 m2 独立重注入击红（Wanted 3 times/But was 1 time）-复原-回绿复现；@Sql 注解形态命中为空；证据链口径对账：9 例 message 测试=通知 5+预约 4，+6=新增 5+1。如实注记一处非阻断证据引证瑕疵：evidence/README.md L108 引证「full-gate.log 含『考试发布通知投递 2 条』」在该裁剪日志中缺失（该行在原始输出与复核实跑中存在），引证定位不准、实质口径成立，留档不返工。两份 spec-delta 以 MODIFIED Scenario 形态合入 specs/exam-management/spec.md 与 specs/exam-taking/spec.md 基线（各追加批量写入/批查条款与合入注记）；变更目录归档至 spec/changes/archive/ 并更新 spec/README.md 与 docs/功能待办清单.md；feature/optimize-backend-batch-write-paths 分支 --no-ff 合并入 main。"
+    }
+  ]
+}

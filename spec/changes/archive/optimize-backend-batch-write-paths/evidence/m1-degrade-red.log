@@ -1,0 +1,12 @@
+﻿# 命令输出摘要（完整控制台日志已裁剪，保留判定性行与结果汇总）
+# 命令：mvnw.cmd -o test -Dtest=ExamLifecycleNotificationIntegrationTest#notificationFailureDoesNotBreakExamPublish（m1 注入：catch(Exception) -> catch(IllegalArgumentException)）
+# revision：3b70e11
+
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 31.94 s <<< FAILURE! -- in com.exam.message.ExamLifecycleNotificationIntegrationTest
+[ERROR] com.exam.message.ExamLifecycleNotificationIntegrationTest.notificationFailureDoesNotBreakExamPublish -- Time elapsed: 4.469 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<200> but was:<500>
+[INFO] Results:
+[ERROR]   ExamLifecycleNotificationIntegrationTest.notificationFailureDoesNotBreakExamPublish:307->IntegrationTestBase.perform:287 Response status expected:<200> but was:<500>
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
+[INFO] Total time:  01:12 min

@@ -11,7 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,6 +34,13 @@ import java.util.List;
 @Slf4j
 @Service
 public class ExamLifecycleNotificationService {
+
+    /**
+     * 批量插入批大小（optimize-backend-batch-write-paths）：与
+     * harden-review-flow-and-resource-limits 的 500 分片先例同量级，
+     * 防单语句超 {@code max_allowed_packet}。
+     */
+    static final int INSERT_BATCH_SIZE = 500;
 
     private final UserMessageMapper messageMapper;
     private final ClassService classService;
@@ -60,10 +69,12 @@ public class ExamLifecycleNotificationService {
             }
             String content = "您所在班级的考试《" + paperTitle(exam) + "》已发布，开考时间为 "
                     + formatStart(exam) + "，请做好准备。考试ID：" + exam.getId();
+            List<UserMessage> messages = new ArrayList<>(studentIds.size());
             for (Long studentId : studentIds) {
-                messageMapper.insert(buildMessage(studentId, exam.getId(),
+                messages.add(buildMessage(studentId, exam.getId(),
                         "考试发布通知", content));
             }
+            insertInBatches(messages);
             log.info("考试发布通知投递 {} 条：exam={}", studentIds.size(), exam.getId());
         } catch (Exception e) {
             // 旁路降级：通知插入失败绝不阻断考试发布主事务
@@ -83,10 +94,12 @@ public class ExamLifecycleNotificationService {
             }
             String content = "您参加的考试《" + paperTitle(exam) + "》成绩已发布，请在成绩查询中查看。考试ID："
                     + exam.getId();
+            List<UserMessage> messages = new ArrayList<>(studentIds.size());
             for (Long studentId : studentIds) {
-                messageMapper.insert(buildMessage(studentId, exam.getId(),
+                messages.add(buildMessage(studentId, exam.getId(),
                         "成绩发布通知", content));
             }
+            insertInBatches(messages);
             log.info("成绩发布通知投递 {} 条：exam={}", studentIds.size(), exam.getId());
         } catch (Exception e) {
             // 旁路降级：通知插入失败绝不阻断成绩发布主事务
@@ -128,7 +141,19 @@ public class ExamLifecycleNotificationService {
         message.setTitle(title);
         message.setContent(content);
         message.setReadFlag(UserMessage.READ_FLAG_UNREAD);
+        message.setCreatedTime(LocalDateTime.now());
         return message;
+    }
+
+    /**
+     * 分批批量写入（每批 ≤{@link #INSERT_BATCH_SIZE} 行）：由外层 try-catch 统一兜底——
+     * 任一批失败即抛出，外层记录 warn 后静默返回，绝不阻断考试发布 / 成绩发布主事务。
+     */
+    private void insertInBatches(List<UserMessage> messages) {
+        for (int from = 0; from < messages.size(); from += INSERT_BATCH_SIZE) {
+            int to = Math.min(from + INSERT_BATCH_SIZE, messages.size());
+            messageMapper.insertBatch(messages.subList(from, to));
+        }
     }
 
     /** 试卷标题（考试快照前以 papers.title 为准；查询失败兜底不炸通知）。 */

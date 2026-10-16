@@ -23,7 +23,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doThrow;
 
 /**
@@ -298,10 +298,10 @@ class ExamLifecycleNotificationIntegrationTest extends IntegrationTestBase {
         long paperId = preparePaper(teacher);
         long examId = createBoundExam(teacher, paperId, classId);
 
-        // 注入：通知消息落库抛异常（模拟 DB 故障）。真实 inline-call 的异常被
+        // 注入：通知消息批量落库抛异常（模拟 DB 故障）。真实 inline-call 的异常被
         // ExamLifecycleNotificationService.notifyExamPublished 内部 try-catch 捕获降级。
         doThrow(new IllegalStateException("db down"))
-                .when(messageMapper).insert(any(UserMessage.class));
+                .when(messageMapper).insertBatch(anyList());
 
         // 发布必须照常成功——通知旁路降级，绝不影响/回滚考务主事务
         perform(jsonPost("/api/exams/" + examId + "/publish", teacher, null), 200);

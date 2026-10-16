@@ -16,7 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 开考提醒投递扫描（add-exam-reservation）：
@@ -68,14 +71,25 @@ public class ReservationRemindService {
             return 0;
         }
 
+        // 2. 一次 IN(examIds) + reminded_time IS NULL 批量取回未投递提醒的预约行（去 N+1），
+        //    再按 examId 内存分组走原有逐行投递循环（保持「每场只处理本场预约行」的语义）。
+        List<Long> examIds = new ArrayList<>(exams.size());
+        for (Exam exam : exams) {
+            examIds.add(exam.getId());
+        }
+        List<ExamReservation> pending = reservationMapper.selectList(
+                Wrappers.<ExamReservation>lambdaQuery()
+                        .in(ExamReservation::getExamId, examIds)
+                        .isNull(ExamReservation::getRemindedTime));
+        Map<Long, List<ExamReservation>> pendingByExam = new HashMap<>();
+        for (ExamReservation reservation : pending) {
+            pendingByExam.computeIfAbsent(reservation.getExamId(), k -> new ArrayList<>())
+                    .add(reservation);
+        }
+
         int delivered = 0;
         for (Exam exam : exams) {
-            // 2. 未投递提醒（reminded_time IS NULL）的预约行
-            List<ExamReservation> pending = reservationMapper.selectList(
-                    Wrappers.<ExamReservation>lambdaQuery()
-                            .eq(ExamReservation::getExamId, exam.getId())
-                            .isNull(ExamReservation::getRemindedTime));
-            for (ExamReservation reservation : pending) {
+            for (ExamReservation reservation : pendingByExam.getOrDefault(exam.getId(), List.of())) {
                 delivered += deliverIfAbsent(exam, reservation);
             }
         }

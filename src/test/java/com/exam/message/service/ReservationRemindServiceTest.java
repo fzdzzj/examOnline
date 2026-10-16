@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -101,5 +102,26 @@ class ReservationRemindServiceTest {
         when(examMapper.selectList(any())).thenReturn(List.of());
         assertEquals(0, service.remind());
         verifyNoInteractions(reservationMapper, messageMapper);
+    }
+
+    @Test
+    void pendingReservationsFetchedOnceAcrossExams() {
+        // 去 N+1（optimize-backend-batch-write-paths）：三场候选考试也只批查一次预约行
+        Exam e1 = exam(1L, LocalDateTime.now().plusMinutes(10), 0, 1, 1);
+        Exam e2 = exam(2L, LocalDateTime.now().plusMinutes(12), 0, 1, 1);
+        Exam e3 = exam(3L, LocalDateTime.now().plusMinutes(15), 0, 1, 1);
+        when(examMapper.selectList(any())).thenReturn(List.of(e1, e2, e3));
+        // 一次 IN(examIds) + reminded_time IS NULL 取回跨场预约行，内存按 examId 分组
+        when(reservationMapper.selectList(any())).thenReturn(List.of(
+                reservation(10L, 1L, 1001L),
+                reservation(20L, 2L, 1002L),
+                reservation(30L, 3L, 1003L)));
+        when(reservationMapper.markRemindedIfNull(any(), any())).thenReturn(1);
+
+        assertEquals(3, service.remind());
+
+        // 无论几场候选考试，候选预约行只批查一次（旧实现逐场 = 3 次）
+        verify(reservationMapper, times(1)).selectList(any());
+        verify(messageMapper, times(3)).insert(any(UserMessage.class));
     }
 }
