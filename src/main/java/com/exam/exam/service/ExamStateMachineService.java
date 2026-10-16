@@ -14,7 +14,9 @@ import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,6 +45,9 @@ import java.util.Set;
  * <b>禁止</b>加 fail-close 的锁把兜底能力锁死。
  *
  * <p>事务统一显式 rollbackFor=Exception.class（见 data-consistency 规范），防未来受检异常静默不回滚。
+ * 注意：{@link #casTransition} 由外部入口经代理调用，注解式声明有效；而 {@link #autoAdvance}
+ * 只被本类 {@code @Scheduled}/{@code @EventListener} 入口自调用，注解会静默失效，
+ * 故那里改用编程式事务（见 {@link #autoAdvance()} 的 javadoc）。
  */
 @Slf4j
 @Service
@@ -59,13 +64,16 @@ public class ExamStateMachineService {
     private final AbsenceService absenceService;
     private final BusinessMetrics metrics;
     private final CacheManager cacheManager;
+    private final TransactionTemplate transactionTemplate;
 
     public ExamStateMachineService(ExamMapper examMapper, AbsenceService absenceService,
-                                   BusinessMetrics metrics, CacheManager cacheManager) {
+                                   BusinessMetrics metrics, CacheManager cacheManager,
+                                   PlatformTransactionManager transactionManager) {
         this.examMapper = examMapper;
         this.absenceService = absenceService;
         this.metrics = metrics;
         this.cacheManager = cacheManager;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     /**
@@ -106,40 +114,65 @@ public class ExamStateMachineService {
      * 批量场景下 CAS 影响 0 行只记日志跳过（= 重试语义，下一轮扫表按新状态重算），
      * 与单笔接口抛 409 不同。
      *
+     * <p><b>为什么是编程式事务而不是 {@code @Transactional} 注解（勿改回注解）</b>：
+     * 本方法的调用者只有 {@link #scheduledAdvance()}（{@code @Scheduled}）与
+     * {@link #advanceOnStartup()}（{@code @EventListener}）——两者都在<b>本类内部</b>
+     * {@code this.autoAdvance()} 自调用。Spring 的注解式事务只在请求经过代理时生效，
+     * 自调用直接命中目标对象、<b>绕过代理</b>，注解在生产定时路径静默失效：当轮 CAS 与
+     * {@code markAbsence} 各自独立提交，{@code markAbsence} 瞬时失败即留下"考试已结束但缺考未标"，
+     * 而本方法只扫 IN_PROGRESS，ENDED 后无自愈路径（漏标不可自愈）→ 缺考名单永久失真。
+     * {@link TransactionTemplate} 直接调用事务基础设施，<b>不依赖调用路径</b>，故永久免疫该问题。
+     * 仓内既有先例：{@code QuestionImportExportService} / {@code RetentionService} 同款构造注入。
+     *
+     * <p><b>事务边界 = 整轮一个事务</b>（与原注解意图一致）：CAS 批量推进 + 全部
+     * {@code markAbsence} 同事务——任一 {@code markAbsence} 失败则当轮全部回滚，
+     * 受影响考试保持原状态，由下一轮扫表重试补偿（CAS 乐观锁幂等 + {@code exam_absence}
+     * 唯一索引 INSERT IGNORE 幂等，重试不产生重复数据）。
+     * {@link TransactionTemplate} 默认仅 RuntimeException/Error 回滚；本路径 CAS 影响 0 行只跳过
+     * 不抛异常，{@code markAbsence} 与缓存清除均为运行时异常，与原
+     * {@code rollbackFor = Exception.class} 语义等价。
+     *
+     * <p><b>缓存清除在事务提交之后</b>：{@link #clearExamDetailCache()} 移出 {@code execute}
+     * 回调——放在事务内会在提交前执行，clear 与 commit 之间存在并发读回填旧状态的窗口。
+     *
      * @return 本轮实际迁移的考试数
      */
-    @Transactional(rollbackFor = Exception.class)
     public int autoAdvance() {
-        LocalDateTime now = LocalDateTime.now();
-        int moved = 0;
+        Integer moved = transactionTemplate.execute(status -> {
+            LocalDateTime now = LocalDateTime.now();
+            int count = 0;
 
-        List<Exam> toStart = examMapper.selectList(Wrappers.<Exam>lambdaQuery()
-                .eq(Exam::getStatus, Exam.STATUS_NOT_STARTED)
-                .eq(Exam::getPublished, 1)
-                .le(Exam::getStartTime, now));
-        for (Exam exam : toStart) {
-            moved += casAdvanceQuietly(exam, Exam.STATUS_IN_PROGRESS);
-        }
-
-        List<Exam> toEnd = examMapper.selectList(Wrappers.<Exam>lambdaQuery()
-                .eq(Exam::getStatus, Exam.STATUS_IN_PROGRESS)
-                .le(Exam::getEndTime, now));
-        for (Exam exam : toEnd) {
-            int rows = casAdvanceQuietly(exam, Exam.STATUS_ENDED);
-            if (rows > 0) {
-                // 缺考标记锚定"进行中→已结束"这一刻（§8.10）：时间窗彻底关闭、迟到窗口结束，
-                // 此刻"应考 − 有答卷"才是终局缺考判定（迟到学生可能已赶在窗口内交卷，不当误判）。
-                // 幂等：markAbsence 内部 INSERT IGNORE + 唯一索引，多次扫表不重复写。
-                absenceService.markAbsence(exam.getId());
+            List<Exam> toStart = examMapper.selectList(Wrappers.<Exam>lambdaQuery()
+                    .eq(Exam::getStatus, Exam.STATUS_NOT_STARTED)
+                    .eq(Exam::getPublished, 1)
+                    .le(Exam::getStartTime, now));
+            for (Exam exam : toStart) {
+                count += casAdvanceQuietly(exam, Exam.STATUS_IN_PROGRESS);
             }
-            moved += rows;
-        }
-        if (moved > 0) {
+
+            List<Exam> toEnd = examMapper.selectList(Wrappers.<Exam>lambdaQuery()
+                    .eq(Exam::getStatus, Exam.STATUS_IN_PROGRESS)
+                    .le(Exam::getEndTime, now));
+            for (Exam exam : toEnd) {
+                int rows = casAdvanceQuietly(exam, Exam.STATUS_ENDED);
+                if (rows > 0) {
+                    // 缺考标记锚定"进行中→已结束"这一刻（§8.10）：时间窗彻底关闭、迟到窗口结束，
+                    // 此刻"应考 − 有答卷"才是终局缺考判定（迟到学生可能已赶在窗口内交卷，不当误判）。
+                    // 幂等：markAbsence 内部 INSERT IGNORE + 唯一索引，多次扫表不重复写。
+                    absenceService.markAbsence(exam.getId());
+                }
+                count += rows;
+            }
+            return count;
+        });
+        int advanced = moved == null ? 0 : moved;
+        if (advanced > 0) {
             // H-04（harden-core-security-and-state-boundaries）：本轮确有状态流转时主动清空考试详情缓存，
-            // 否则定时扫表写库推进的状态要等最多 5 分钟短 TTL 过期后详情接口才读到最新值（脏读）
+            // 否则定时扫表写库推进的状态要等最多 5 分钟短 TTL 过期后详情接口才读到最新值（脏读）。
+            // 必须在事务提交之后执行：提交前清除会被并发读在 clear→commit 之间回填旧状态。
             clearExamDetailCache();
         }
-        return moved;
+        return advanced;
     }
 
     /**

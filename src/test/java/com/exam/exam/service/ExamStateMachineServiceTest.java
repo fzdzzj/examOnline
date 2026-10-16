@@ -6,13 +6,16 @@ import com.exam.config.CacheConfig;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.monitoring.metrics.BusinessMetrics;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,6 +23,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -48,8 +52,23 @@ class ExamStateMachineServiceTest {
     @Mock
     private Cache cache;
 
-    @InjectMocks
+    /**
+     * 编程式事务用真实的 {@link TransactionTemplate} + 打桩的事务管理器：
+     * 事务边界的真库事实由 {@code ExamStateMachineTransactionTest}（H2）负责，
+     * 本纯单测只需让 {@code execute} 把回调跑起来。
+     */
+    @Mock
+    private PlatformTransactionManager transactionManager;
+
     private ExamStateMachineService service;
+
+    @BeforeEach
+    void setUp() {
+        // lenient：casTransition 各用例不经事务模板，严格模式会把这些用例判成多余打桩
+        lenient().when(transactionManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
+        service = new ExamStateMachineService(examMapper, absenceService, metrics, cacheManager,
+                transactionManager);
+    }
 
     private Exam exam(Long id, int status, int version) {
         Exam exam = new Exam();

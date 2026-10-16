@@ -14,9 +14,9 @@
     {
       "id": 2,
       "title": "阶段 2：实施编程式事务修复 + 单测先红后绿 + 变异击红验证",
-      "status": "pending",
+      "status": "completed",
       "description": "①ExamStateMachineService 构造注入 TransactionTemplate，autoAdvance() 方法体包入编程式事务（整轮一个事务，覆盖 CAS 批量推进 + markAbsence），移除 @Transactional 注解并在 javadoc 注明自调用绕代理原因；②clearExamDetailCache 移至事务提交后执行；③scheduledAdvance/advanceOnStartup 调用点与对外行为（返回值/日志/指标）零改动；④单测先红后绿：定时入口（scheduledAdvance）路径下 markAbsence 失败 → 当轮 CAS 回滚、考试保持 IN_PROGRESS（实现前该用例红即缺陷存在性证明）；⑤变异验证 m1/m2/m3 击红-复原-回绿留证 evidence/（m1 复原自调用无事务形态击红；m2 markAbsence 失败不回滚击红；m3 缓存清除移回事务提交前击红或时序断言击红）。",
-      "evidence": ""
+      "evidence": "新增 src/test/java/com/exam/exam/service/ExamStateMachineTransactionTest.java（3 用例，全部经 scheduledAdvance 定时入口，无 @Sql）：用例 2 断言整轮一个事务（任一 markAbsence 失败→当轮候选全部保持 IN_PROGRESS 且 version 不前进）+ 重试补偿成功，用例 1 断言整轮回滚时不清 examDetail 缓存，用例 3 为正常一轮回归护栏（ENDED + version +1 + 提交后清缓存）。先红：修复前该用例红（故障场之前的 CAS 已提交、落成 ENDED），由变异 m1 逐字复现并留证。变异（证据 spec/changes/fix-exam-state-machine-transaction/evidence/，含 m1/m2/m3 的 diff 与完整运行日志）：m1（退回自调用无事务）击红 → Tests run: 3, Failures: 1（考试 2 未保持进行中 expected: <1> but was: <2>）；m3（缓存清除落到回滚路径）击红 → Failures: 1（不得清空 examDetail 缓存 intended expectation true 实测 false）；m2（吞掉 markAbsence 故障）未被杀，原因已如实登记（AbsenceService 自带 @Transactional 使异常吞掉后 commit 抛 UnexpectedRollbackException，回滚仍成立，故 m2 只改变异常可见性；且首轮「把清除放进 execute 回调」的 m3 形态亦不被杀——实测 RedisCacheManager 不参与 DB 事务、clear 立即提交，该时序差异在测试中不可观测，用例 javadoc 已如实写出该边界）。全量门禁（仓库根，revision 0e592ce）：mvnw.cmd clean test → Tests run: 568, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（日志 evidence/full-clean-test.log、摘要 full-clean-test-summary.txt）。复用同源 bean 先例：PlatformTransactionManager 构造注入，与 QuestionImportExportService / RetentionService 同款。白名单内零越界：未触碰 schema.sql、docker/、openapi.yaml、pom.xml、frontend/；注：本次新增 3 个后端用例，.github/ci/gate-baseline.json 的 backendTests（565）需在阶段 3 按实测上调至 568，该文件不在本次受控白名单内故未改。"
     },
     {
       "id": 3,
