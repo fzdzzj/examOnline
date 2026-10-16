@@ -20,7 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| （无进行中变更） | — | — | — | — |
+| `optimize-backend-batch-write-paths` | 2 | 后端批量写入路径优化：考务生命周期通知批量插入（自定义 insertBatch ≤500 分批，旁路降级语义不变）、开考提醒候选批查去 N+1（行级幂等链逐字不动）（零 DDL 零契约零前端，M 级） | exam-management, exam-taking | 无（main 干净，巡查驱动：2026-10-16 后端全局只读巡查甄别） |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。
