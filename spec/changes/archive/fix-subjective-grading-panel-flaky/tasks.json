@@ -1,0 +1,29 @@
+{
+  "changeId": "fix-subjective-grading-panel-flaky",
+  "branch": "feature/fix-subjective-grading-panel-flaky",
+  "level": "S",
+  "source": "B.2 欠账登记（2026-10-16）：SubjectiveGradingPanel「Enter 提交复用 createGradingFlow」全量并行超时，device 案复核基线复现证实既有 flaky，push 前治理",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 两总账登记 + 立项笔",
+      "status": "completed",
+      "description": "主 Agent 亲验超时用例形态（L96 直接 await vm.onScoreEnter，挂起点在组件提交流内部异步链）→ 写 proposal/spec-delta（reliability 域）/tasks 三件套 → 登记 spec/README.md 在途表 + docs/功能待办清单.md B.2 欠账条目 → feature 分支立项笔提交。",
+      "evidence": "①三件套落位 spec/changes/fix-subjective-grading-panel-flaky/。②两总账：spec/README.md 在途表新增行 + docs/功能待办清单.md B.2 欠账条目改已立案。③侦察结论：超时用例为 await 内部链型；治理主方向等待条件外化（flushPromises/waitFor 断言），最后手段单用例 testTimeout（全局禁调）；组件源码零改动红线。④立项笔 hash 以 git log 为准（tasks.json 同笔入库不预写自指）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：异步链归因 + 治理实施 + 多轮全量稳定性验证",
+      "status": "completed",
+      "description": "读组件 onScoreEnter 实现归因异步链挂起点 → 按提案第二节优先级定案治理（等待条件外化优先，测试侧补 mock 次之，单用例 testTimeout 最后且须论证）→ 全量 vitest 连跑 N≥3 轮（并行负载同 CI 形态）零该用例超时 + 孤立运行 7/7 留证 evidence/ → 还原变异复现红形态留证（无法稳定复现则如实登记等价不强杀）→ frontendTests 908 只增不减 → 白名单外零 diff（组件源码/vitest 全局配置/其余测试零触碰）→ 分支提交后停待复核。",
+      "evidence": "阶段 2 证据：治理形态 void onScoreEnter + vi.waitFor 外化断言（仅动 SubjectiveGradingPanel.spec.ts，5+ 断言保留 / 3- 无删除），组件源码零改动；复核实测：治理版全量并行 3 轮各 119 文件/908 通过、零该用例超时（evidence/treated-full-round1/2/3.log），孤立运行 7/7（evidence/treated-isolated.log；baseline-isolated-original.log L96 1875ms -> 治理 1083ms 时序差），frontendTests 908 不增不减；等价登记：还原 await x3 全量 3 轮全绿，超时无法稳定复现，按提案 §4 如实登记等价不强杀（evidence/mutation-original-full-attempt1/2/3.log）；短 revision 846f258。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：门禁实测、基线核对与收口归档",
+      "status": "completed",
+      "description": "全量 vitest 实测核对 frontendTests 908 不变（治理不增删用例；gate-baseline 零上调）、backendTests 630/openapiPaths 97 核对不变；spec-delta Scenario 合入 reliability 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md（B.2 条目改已闭环），--no-ff 合并入 main。",
+      "evidence": "①复审 PASS（2026-10-16，双岗隔离，返工复验）：证据入库 10 文件逐一对应（37a2ba8 + 05587af）、treated-spec-backup.ts 未入库确认；tasks.json 任务 2 三要素回填核对（短 revision 846f258 在案）；复审独立复跑全量 vitest 119 files/908 passed exit 0 零该用例超时（留档 D:\\code\\examOnline-measure\\review-subjective-grading-flaky-rereview\\rereview-full-vitest-round1.log）；红线快查 b7bf816..HEAD 全部 12 文件零越界。②收口笔：frontendTests 908 核对不变（治理不增删用例，gate-baseline 零上调合法持平，backendTests 630/openapiPaths 97 核对不变）；reliability 基线合入「前端批改面板测试的负载稳定性」Scenario + 合入注记；归档 spec/changes/archive/fix-subjective-grading-panel-flaky/；两总账更新（B.2 欠账条目改已闭环——第一类欠账全部清零）。③--no-ff 合并入 main，收口以 git log 为准。"
+    }
+  ]
+}

@@ -460,6 +460,14 @@ WHEN 归档本可靠性变更
 THEN 历史遗留项仍标为开放观察，附命令与 revision
 AND 归档结论只声称护栏已修和观察方法收口，不声称历史失败被消除
 
+#### Scenario: 前端批改面板测试的负载稳定性 (fix-subjective-grading-panel-flaky)
+
+GIVEN 全量 vitest 并行执行（同 CI 负载形态）
+WHEN 运行 SubjectiveGradingPanel 测试套件（含「Enter 提交复用 createGradingFlow」用例）
+THEN 连续多轮全量执行 SHALL 零该用例超时（等待条件外化于测试侧——断言经 vi.waitFor 兜底等待真实 mock 被调用，不依赖组件内部异步链在 5s 默认窗口内返回）
+AND 孤立运行 SHALL 保持通过；治理 SHALL 仅落测试侧（组件源码、vitest 全局配置、其余测试用例零改动）
+AND 若还原治理形态后超时无法按需稳定复现，SHALL 按等价情形如实登记（留机制证据），SHALL NOT 强杀或虚称已稳定复现
+
 ---
 
 ### Requirement: 跨实例取号护栏必须为确定性反例
@@ -489,6 +497,12 @@ AND 护栏不依赖一千次构造恰好落在同一毫秒，也不重置共享�
 > 合入注记（2026-10-12，`add-backup-restore-drill`）：ADDED「数据库备份与恢复演练」Requirement（生产化 P5）。
 > 六 Scenario 名称与 `spec/changes/archive/add-backup-restore-drill/spec-delta.md` 逐字一致；纯脚本域（docker/mysql/backup/）零业务代码，
 > 用例数零变化、gate-baseline.json 零改动合法持平；既有 Requirement 零改动。
+
+> 合入注记（2026-10-16，`fix-subjective-grading-panel-flaky`）：合入「前端批改面板测试的负载稳定性」一条 Scenario（挂于「集成测试的偶发失败必须可复现或明确保持观察」Requirement 下）。
+> 治理仅落测试侧：SubjectiveGradingPanel.spec.ts 该用例 `await vm.onScoreEnter` 改 `void` + `vi.waitFor` 外化断言（5+/3−），组件源码与 vitest 全局配置零改动；
+> 孤立时序 1875ms→1083ms，全量并行连跑多轮 119 files/908 零该用例超时，frontendTests 908 不增不减（gate-baseline 零改动合法持平）。
+> 还原变异 ×3 轮全绿无法按需复现超时——按等价情形如实登记不强杀（机制证据与日志见归档 evidence/）；
+> 同批 paperBlueprintDraw / questionImportExport 曾超时后自行转绿，观察名单登记不冒领修复。
 
 ---
 

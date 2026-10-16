@@ -1,0 +1,14 @@
+ [32m✓[39m src/components/postexam/__tests__/SubjectiveGradingPanel.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 6067[2mms[22m[39m
+     [33m[2m✓[22m[39m Enter 提交复用 createGradingFlow：走 saveSubjectiveScore（带 expectedVersion），不绕过 flow [33m 1083[2mms[22m[39m
+     [33m[2m✓[22m[39m 提交成功后焦点自动移至下一行分数框（按当前行序 1001 → 1002） [33m 744[2mms[22m[39m
+     [33m[2m✓[22m[39m 提交失败（普通错误）时焦点停留当前行，不前进到下一行 [33m 1008[2mms[22m[39m
+     [33m[2m✓[22m[39m 乐观锁冲突时焦点停留当前行，且复用 flow 冲突语义（不自动重试、不算成功） [33m 858[2mms[22m[39m
+     [33m[2m✓[22m[39m 满分 / 及格 / 零分按本题满分派生（满分=10、及格=60%四舍五入到0.5、零分=0） [33m 921[2mms[22m[39m
+     [33m[2m✓[22m[39m 点击快捷给分只填入分数输入框，不自动触发提交 [33m 769[2mms[22m[39m
+     [33m[2m✓[22m[39m 评语模板至少含肯定/部分正确/未达要点三类，点击只填评语框不提交 [33m 682[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 22:08:58
+[2m   Duration [22m 11.44s[2m (transform 477ms, setup 51ms, import 3.94s, tests 6.07s, environment 1.02s)[22m
+
