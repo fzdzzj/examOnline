@@ -21,9 +21,9 @@
     {
       "id": 3,
       "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 合入 specs/exam-management 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
-      "evidence": ""
+      "evidence": "①门禁实测：mvnw.cmd clean test（仓库根，revision 0290b6d）→ Tests run: 568, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（裁剪版 evidence/full-clean-test-summary.txt；8.6MB 原始全量日志收口时移除不入库，判定行留存）；复核侧独立复跑同结果（568/0/0/1 + BUILD SUCCESS）。前端免跑论证：本变更 frontend/ 零 diff（git diff 0e592ce..0290b6d --name-only 无 frontend 路径），按离线门禁分级政策收窄为仅后端。②基线上调：gate-baseline.json backendTests 565→568（frontendTests 874、openapiPaths 97 核对不变）。③spec-delta 合入：specs/exam-management/spec.md「考试状态机」Requirement 追加 Scenario「定时流转与缺考标记同事务」（整轮一事务 + 代理无关事务生效 + 缓存清除提交后），合入注记含自调用绕代理缺陷机理。④复核结论 PASS（独立复跑 + m1 独立重注入击红-复原-回绿 + m2 等价变异机理核实 AbsenceService @Transactional REQUIRED 传播 → rollback-only → 外层 commit 抛 UnexpectedRollbackException）。⑤变更目录归档至 spec/changes/archive/，总账更新 spec/README.md 与 docs/功能待办清单.md。"
     }
   ]
 }

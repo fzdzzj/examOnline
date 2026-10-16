@@ -1,0 +1,14 @@
+全量门禁 mvnw.cmd clean test 输出裁剪版（判定行 + revision）
+
+- 命令（仓库根）：mvnw.cmd clean test
+- revision：0290b6d（feature/fix-exam-state-machine-transaction，实施笔；证据产出后提交，内容与产出态一致）
+- 原始全量日志 8.6MB 不入库，本文件为判定性行留存；完整逐模块行见当时执行输出。
+
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.51 s -- in com.exam.user.UserImportExportIntegrationTest
+[WARNING] Tests run: 568, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+
+- 口径：Tests run 568 = 既有 565 + 新增 3（ExamStateMachineTransactionTest）
+- Skipped 1 为既有恒定跳过项（多实例漂移守护用例，非本变更引入）
+
+复核侧独立复跑（仓库根）：Tests run: 568, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS，与上述一致。
