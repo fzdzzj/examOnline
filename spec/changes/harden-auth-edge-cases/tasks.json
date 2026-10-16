@@ -1,0 +1,29 @@
+{
+  "changeId": "harden-auth-edge-cases",
+  "title": "auth 域边界与并发加固（登录审计真实 IP、reset-code 按维度限流、邀请码并发定向 UPDATE、改密事务、计数原子化、注册竞态、邮件文案配置化 + 禁用踢会话设计约束勘正）",
+  "level": "M",
+  "capabilityDomains": ["authentication"],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、规范增量制定与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、authentication 的 spec-delta.md（六 Requirement 追加 8 Scenario + 1 勘正注记）与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md。定性：七项代码修复全落 com/exam/auth 单包，零 DDL、零契约变更（openapi paths 97 不变）、零前端，仅 backendTests 预期增长；M 级双岗隔离。",
+      "evidence": "基于 2026-10-16 三轮后端巡查 auth 域发现（中×4+低危顺带×4，发现台账 docs/功能待办清单.md B.2），主 Agent 立项侦察源码直读核实：①AuthController.login L53 用 http.getRemoteAddr()（反代下审计恒为代理地址），LoginGuardService.recordFailure L77 logAccountLock IP 硬编码 \"unknown\"，仓库已有 anticheat/ip/ClientIpResolver.resolve 未被 auth 使用（仅 import 不触碰该包）；②sendResetCode L80-84 无限流，既有 @RateLimit 为全端点令牌桶（RateLimitInterceptor key=接口标识无调用方维度）不满足按 email/IP 维度需求 → LoginGuardService 新增 checkCodeRateLimit(email, ip) 固定窗口（阈值复用 props.rateLimit.perMinute=10 既有配置，无需动 application.yml），入口先于邮箱存在性判断（防枚举不变）；③InviteCodeService.markUsed L68-71 整实体 updateById（并发 used_count 丢失更新 + 作废后旧值回写复活 status）→ Wrappers.lambdaUpdate setSql(\"used_count = used_count + 1\").eq(id).eq(status,0) 定向原子 UPDATE，0 行抛 INVITE_CODE_INVALID；④AuthService.changePassword L240-245 两 DB 写无 @Transactional（第二步失败则密码已改而强制改密流未解除）→ 加 @Transactional(rollbackFor)，Redis 操作在其后顺序天然安全；⑤LoginGuardService L43-45/L66-68 INCR/EXPIRE 两步非原子（键永不过期→永久限流/锁定）→ Lua 原子化（DefaultRedisScript 先例 RedisTokenBucket），三计数点共用（含新增 checkCodeRateLimit）；⑥register L91 existsByUsername 查后插竞态撞 uk_users_username 抛 500 → catch DuplicateKeyException 转 ACCOUNT_ALREADY_EXISTS（既有 ResponseCode）；⑦MailService L46 文案硬编码「5 分钟内有效」与 AuthProperties.ResetCode.ttlMinutes 可配漂移 → sendResetCode 签名加 ttlMinutes 参数由调用方传配置值。勘正：B.2 原中危条目「禁用账号只拦新登录不踢存量会话」前提不成立——user 包 controller 仅 UserImportExportController（@PostMapping import），User.setStatus(1) 无任何可达写入路径（UserImportExportService L213 恒 setStatus(0)），转为规范设计约束固化（「会话主动失效」追加 Scenario，待禁用功能立项时受约束）。范围如实声明：BehaviorCounterService.java:46 INCR/EXPIRE 同型在 anticheat 包不在本案白名单，台账保持未修注记。spec 基线落点核实：specs/authentication/spec.md「用户注册」L107、「用户登录」L153、「登录锁定」L299、「登录接口限流」L319、「密码找回」L234、「会话主动失效」L213。检出 feature/harden-auth-edge-cases 分支。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：七项实施 + 单测先红后绿 + 变异击红验证",
+      "status": "pending",
+      "description": "①AuthController.login 改用 ClientIpResolver.resolve(http)（import 不触碰 anticheat 包文件），LoginGuardService.recordFailure 签名扩展 (username, ip)、logAccountLock 传真实 IP，AuthService.login 调用点同步；②LoginGuardService 新增 checkCodeRateLimit(email, ip)（key auth:coderl:{email}:{ip}，窗口 1 分钟，阈值 props.rateLimit.perMinute），AuthService.sendResetCode 入口最先调用（先于邮箱存在性查询）；③InviteCodeService.markUsed 改 Wrappers.lambdaUpdate().setSql(\"used_count = used_count + 1\").eq(InviteCode::getId).eq(InviteCode::getStatus, 0) 定向原子 UPDATE，返回 0 行抛 INVITE_CODE_INVALID，invalidate() 不动；④AuthService.changePassword 加 @Transactional(rollbackFor = Exception.class)；⑤LoginGuardService 三计数点（checkRateLimit/recordFailure/checkCodeRateLimit）INCR+首置 EXPIRE 改 Lua 原子执行（DefaultRedisScript，参照 RedisTokenBucket 先例）；⑥AuthService.register 的 userService.insert 外 catch DuplicateKeyException 转 BusinessException(ACCOUNT_ALREADY_EXISTS)；⑦MailService.sendResetCode 签名改 (email, code, ttlMinutes) 文案动态生成，AuthService 调用点传 props.getResetCode().getTtlMinutes()；⑧单测先红后绿（实现前红=缺陷存在性证明）+ 变异 m1/m2/m3 击红-复原-回绿留证 evidence/（建议 m1 登录退回 remoteAddr 击红、m2 markUsed 退回整实体 updateById 击红、m3 退回两步 INCR/EXPIRE 或去 reset-code 限流击红；等价变异体如实登记不强杀）。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "pending",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test（标准命令，禁带 -o）；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 八 Scenario 合入 specs/authentication 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md（B.2 台账 auth 发现标记已修复 + 禁用条目勘正留痕），--no-ff 合并入 main。",
+      "evidence": ""
+    }
+  ]
+}

@@ -20,7 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| （无进行中变更） | — | — | — | — |
+| `harden-auth-edge-cases` | 2 | auth 域边界与并发加固（巡查驱动）：登录审计 ClientIpResolver 接线（真实 IP 替代 remoteAddr）+ reset-code 按 email+IP 维度固定窗口限流 + InviteCode 定向原子 UPDATE（防丢失更新与作废后旧值回写复活）+ changePassword 补 @Transactional + 三计数点 INCR/EXPIRE Lua 原子化 + 注册并发同号转友好提示 + 邮件验证码文案配置化；勘正：用户禁用入口不存在，「禁用踢存量会话」转规范设计约束固化。七落点纯后端（auth），零 DDL、零契约、零前端 | authentication | 无（main 干净；2026-10-16 三轮巡查中×4+低×4，发现台账 docs/功能待办清单.md B.2） |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。
