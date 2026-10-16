@@ -24,9 +24,9 @@
     {
       "id": 3,
       "title": "阶段 3：门禁实测、基线上调与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "前端 vitest 全量实测 + 后端白名单外零 diff 论证（离线门禁分级政策：纯前端变更收窄为前端门禁 + 零 diff 论证，复核确认）；按实测上调 gate-baseline.json frontendTests（backendTests/openapiPaths 核对不变）；spec-delta 三+一 Scenario 分别合入 exam-taking 与 frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md（候选行改已闭环），--no-ff 合并入 main。",
-      "evidence": ""
+      "evidence": "①门禁实测：执行侧 vitest-full-final.log（实施笔 cd5fd61 状态）→ 119 files / 908 tests（907 passed + 1 failed，新增 34 = hook 17 + component 9 + page 8）；复核独立复跑同值 908、逐文件收敛、既有 exam 页测试（offlineExamReentry/studentTakingJump/antiCheatGuard）零回归。②flaky 归因单列（复核实跑证实，非本变更引入）：唯一失败 SubjectiveGradingPanel「Enter 提交复用 createGradingFlow」5000ms 超时——基线 bc805cc（新增前）全量复现同文件同用例同样超时（vitest-baseline-phase2.log）、孤立运行 7/7 通过、本笔零触碰 teacher postexam 文件；同批 paperBlueprintDraw/questionImportExport 超时已自行转绿佐证并行负载既有 flaky。③基线上调：gate-baseline.json frontendTests 874→908（backendTests 618、openapiPaths 97 按当次实测核对不变）。④后端零 diff 论证（离线门禁分级政策收窄）：复核逐文件核对实施笔 diff 全命中 proposal 第三节白名单（3 新文件 + [id].page.vue 接线 + evidence/ + tasks.json，20 项零越界；后端 src/、pom.xml、openapi.yaml、schema.sql、docker/mysql/migrations/、.github/ 零命中），后端门禁免跑成立。⑤spec-delta 合入：specs/exam-taking/spec.md「进入考试」Requirement 追加三 Scenario（前置设备就绪门控/知情门控非绝对阻断/离线重入豁免与会话级留存）+ specs/frontend/spec.md「在线考试作答界面」Requirement 追加一 Scenario（DeviceReadinessCheckModal 组件）。⑥复核结论 PASS（双岗隔离，无实质偏差）：代码抽查 4 项全过（enabled 叠加 readinessGatePassed&&enterRequested、豁免、留存、examId 重门控；RTT slice(1) 中位数、内核白名单顺序、run 永不 reject；:disabled=!report||running、hasCritical 二次确认前不 emit；afterEach 统一卸载），证据链（红 3 files→绿 6 files/48 tests、mutation-1..4 击红-复原-回绿、type-check 双绿、eslint 零错误）实测核对。⑦归档与总账：变更目录归档 spec/changes/archive/；spec/README.md 在途表移除 + exam-taking/frontend 来源登记 + 归档速览；docs/功能待办清单.md 候选行改已闭环。⑧收口笔 hash 以 git log 为准（tasks.json 同笔入库不预写自指）。"
     }
   ]
 }
