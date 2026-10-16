@@ -1,5 +1,6 @@
 package com.exam.monitoring.metrics;
 
+import com.exam.anticheat.collector.BehaviorEventRegistry;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
@@ -51,6 +53,8 @@ public class BusinessMetrics {
     private static final String SUBMIT_QUEUE_DEPTH = "exam.mq.submit.queue.depth";
     /** 指标名：防作弊事件计数（Counter，按事件类型打 tag） */
     private static final String ANTICHEAT_EVENTS = "exam.anticheat.events";
+    /** 未注册事件类型的归并 tag：客户端可控类型不得直接成为 tag 值（基数有界） */
+    private static final String UNKNOWN_EVENT_TYPE_TAG = "unknown";
     /** 指标名：限流器降级计数（Counter，按接口打 tag endpoint；Redis 故障被 fail-open 放行时递增） */
     private static final String RATE_LIMIT_DEGRADED = "exam.ratelimit.degraded";
     /** 指标名：重复扫描检测到下游已处理（Counter，按 task tag 区分 sweep / state-advance） */
@@ -76,6 +80,11 @@ public class BusinessMetrics {
 
     private final MeterRegistry registry;
     private final ObjectProvider<RabbitAdmin> rabbitAdmin;
+    /**
+     * 已注册行为事件类型集（tag 白名单）：由 {@link BehaviorEventRegistry}（注册表即事实源）提供，
+     * 新增事件类型自动纳管，打点侧不再抄一份常量表（见 {@link #countAntiCheatEvent}）。
+     */
+    private final Set<String> registeredEventTypes;
 
     private final Timer submitTimer;
     private final Counter submitSuccessCounter;
@@ -96,10 +105,12 @@ public class BusinessMetrics {
     /** 保留策略行数计数：key = table|action */
     private final Map<String, Counter> retentionRowCounters = new ConcurrentHashMap<>();
 
-    public BusinessMetrics(MeterRegistry registry, ObjectProvider<RabbitAdmin> rabbitAdmin) {
+    public BusinessMetrics(MeterRegistry registry, ObjectProvider<RabbitAdmin> rabbitAdmin,
+                           BehaviorEventRegistry behaviorEventRegistry) {
         this.registry = registry;
         // 用 ObjectProvider 兜底：无 RabbitMQ 连接（如单元/集成测试环境无 RabbitAdmin 时）优雅降级，Gauge 返回 -1
         this.rabbitAdmin = rabbitAdmin;
+        this.registeredEventTypes = behaviorEventRegistry.registeredTypes();
 
         this.submitTimer = Timer.builder(SUBMIT_DURATION)
                 .description("交卷链路耗时（含 MQ confirm 等待），count 可推导 QPS，sum/count 可推导平均耗时")
@@ -166,11 +177,22 @@ public class BusinessMetrics {
         submitFailureCounter.increment();
     }
 
-    /** 防作弊事件计数：按事件类型各自的 Counter 加一（类型取自 BehaviorEventTypes 常量）。 */
+    /**
+     * 防作弊事件计数：按事件类型各自的 Counter 加一。
+     *
+     * <p><b>tag 基数有界（change harden-behavior-report-and-monitor）</b>：eventType 来自客户端上报
+     * （DTO 仅 {@code @Size(32)} 不限取值，且未注册类型走兜底策略照常落库），此前直接
+     * {@code computeIfAbsent} 建 Counter tag ⇒ 任意 32 字符串即可新建一个 tag，Micrometer 基数无界增长
+     * （内存 + Prometheus series 爆炸）。现以 {@link BehaviorEventRegistry#registeredTypes()}
+     * （即 {@code BehaviorEventTypes} 的注册常量集）为界：未注册类型统一归并到固定 tag
+     * {@value #UNKNOWN_EVENT_TYPE_TAG}——<b>落库与判定语义不受影响</b>（兜底策略照旧落库），
+     * 只把指标维度收敛到有界集合。
+     */
     public void countAntiCheatEvent(String eventType) {
-        anticheatEventCounters.computeIfAbsent(eventType, type -> Counter.builder(ANTICHEAT_EVENTS)
+        String tagValue = registeredEventTypes.contains(eventType) ? eventType : UNKNOWN_EVENT_TYPE_TAG;
+        anticheatEventCounters.computeIfAbsent(tagValue, type -> Counter.builder(ANTICHEAT_EVENTS)
                 .tag("type", type)
-                .description("防作弊事件计数，按事件类型")
+                .description("防作弊事件计数，按事件类型（未注册类型归并为 unknown，tag 基数有界）")
                 .register(registry))
                 .increment();
     }

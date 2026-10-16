@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 行为事件策略注册中心（spec「新增事件不动核心」场景的装配落地点，
@@ -49,5 +50,20 @@ public class BehaviorEventRegistry {
             return fallback;
         }
         return strategy;
+    }
+
+    /**
+     * 已注册事件类型集合（只读快照，元素即 {@code BehaviorEventTypes} 注册常量的分派键）。
+     *
+     * <p>供指标打点侧界定「有界 tag 维度」：客户端可控 eventType 必须先与此集合比对，
+     * 未注册者归并到固定 tag（{@link com.exam.monitoring.metrics.BusinessMetrics#countAntiCheatEvent}），
+     * 否则任意 32 字符串都会新建一个 Counter tag，Micrometer 基数无界增长。
+     *
+     * <p>此处以注册表为唯一事实源（而非在打点侧再抄一份常量表）：新增事件类型 = 新增一个
+     * @Component 策略 + 一个常量，本集合自动跟随，指标维度随之扩展——
+     * 与「新增事件不动采集核心」同一套扩展口径。
+     */
+    public Set<String> registeredTypes() {
+        return Set.copyOf(strategies.keySet());
     }
 }

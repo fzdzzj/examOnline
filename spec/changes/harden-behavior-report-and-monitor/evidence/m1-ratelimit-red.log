@@ -1,0 +1,5 @@
+﻿[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 0.027 s <<< FAILURE! -- in com.exam.taking.controller.ExamTakingControllerRateLimitGuardTest
+[ERROR]   ExamTakingControllerRateLimitGuardTest.behaviorReportIsRateLimited:53->rateLimitOf:34 写端点 reportBehavior 必须声明 @RateLimit（裸写端点＝可无限刷写） ==> expected: not <null>
+[ERROR]   ExamTakingControllerRateLimitGuardTest.behaviorReportQpsSitsBetweenPullPaperAndSubmit:67->rateLimitOf:34 写端点 reportBehavior 必须声明 @RateLimit（裸写端点＝可无限刷写） ==> expected: not <null>
+[ERROR]   ExamTakingControllerRateLimitGuardTest.noRemainingUnprotectedPostEndpoint:93 @PostMapping 写端点必须全部受限流保护，裸写端点=reportBehavior ==> expected: <true> but was: <false>
+[INFO] BUILD FAILURE

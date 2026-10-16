@@ -42,6 +42,13 @@ import java.util.List;
 @Service
 public class BehaviorLogQueryService {
 
+    /**
+     * 时间线明细条数上限（change harden-behavior-report-and-monitor）：1000 条。
+     * 覆盖正常考试场景任何单人事件量（偶发切屏/失焦/粘贴累计量级为几十），
+     * 超出即说明存在脚本刷写——此时只截明细，统计口径仍取自全量窄投影。
+     */
+    static final int TIMELINE_ITEM_LIMIT = 1000;
+
     private final ExamBehaviorLogMapper behaviorLogMapper;
     private final ExamMapper examMapper;
     private final ObjectMapper objectMapper;
@@ -83,30 +90,49 @@ public class BehaviorLogQueryService {
         return response;
     }
 
-    /** 单个学生的行为时间线：完整轨迹（event_time 升序）+ 严重度分布统计。 */
+    /**
+     * 单个学生的行为时间线：明细（event_time/id 升序，行数上限 {@value #TIMELINE_ITEM_LIMIT}）
+     * + 严重度分布统计（全量，不受明细截断影响）。
+     *
+     * <p><b>为什么拆两查（change harden-behavior-report-and-monitor）：</b>旧实现一条无上限
+     * {@code selectList} 同时产出 total/严重度分布/items，且逐行载 {@code event_data} TEXT——
+     * 与上报侧刷写叠加后单人时间线查询膨胀（同文件 {@link #page} 的 size≤200 上限也救不了统计口径）。
+     * 但<b>不能直接在原查询上加 LIMIT</b>：total 与三档计数取自同一份行集，截断会让统计口径失真
+     * （教师据 low/medium/highCount 判定是否作废答卷）。故：
+     * <ol>
+     *   <li><b>统计窄投影</b>（{@code selectSeverities}）：仅 severity 列、全量、不载 event_data
+     *       → total / lowCount / mediumCount / highCount；</li>
+     *   <li><b>明细查询</b>：带 {@code LIMIT}（{@value #TIMELINE_ITEM_LIMIT} 条，event_time/id 升序），
+     *       items 如实反映实际返回条数——上限覆盖正常考试场景任何单人事件量。</li>
+     * </ol>
+     * 权限与可见性校验保持不变（{@link #requireOwnedExam}）。
+     */
     public BehaviorTimelineResponse timeline(Long examId, Long studentId) {
         requireOwnedExam(examId);
 
-        List<ExamBehaviorLog> logs = behaviorLogMapper.selectList(
-                Wrappers.<ExamBehaviorLog>lambdaQuery()
-                        .eq(ExamBehaviorLog::getExamId, examId)
-                        .eq(ExamBehaviorLog::getStudentId, studentId)
-                        .orderByAsc(ExamBehaviorLog::getEventTime)
-                        .orderByAsc(ExamBehaviorLog::getId));
-
+        // 1) 统计窄投影：全量，只取 severity 列（不载 event_data TEXT）
+        List<Integer> severities = behaviorLogMapper.selectSeverities(examId, studentId);
         BehaviorTimelineResponse response = new BehaviorTimelineResponse();
         response.setExamId(examId);
         response.setStudentId(studentId);
-        response.setTotal(logs.size());
-        response.setItems(logs.stream().map(this::toItem).toList());
-        for (ExamBehaviorLog row : logs) {
-            SeverityLevel level = SeverityLevel.of(row.getSeverity());
-            switch (level) {
+        response.setTotal(severities.size());
+        for (Integer severity : severities) {
+            switch (SeverityLevel.of(severity)) {
                 case LOW -> response.setLowCount(response.getLowCount() + 1);
                 case MEDIUM -> response.setMediumCount(response.getMediumCount() + 1);
                 case HIGH -> response.setHighCount(response.getHighCount() + 1);
             }
         }
+
+        // 2) 明细：带行数上限，event_time/id 升序（覆盖正常场景单人事件量；触发上限时保住最早轨迹）
+        List<ExamBehaviorLog> logs = behaviorLogMapper.selectList(
+                Wrappers.<ExamBehaviorLog>lambdaQuery()
+                        .eq(ExamBehaviorLog::getExamId, examId)
+                        .eq(ExamBehaviorLog::getStudentId, studentId)
+                        .orderByAsc(ExamBehaviorLog::getEventTime)
+                        .orderByAsc(ExamBehaviorLog::getId)
+                        .last("LIMIT " + TIMELINE_ITEM_LIMIT));
+        response.setItems(logs.stream().map(this::toItem).toList());
         return response;
     }
 

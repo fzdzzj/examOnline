@@ -111,7 +111,7 @@ class BehaviorEventCollectorTest {
 
         // 采集核心对新事件照常完成"判定 → 落库"全流程
         ExamBehaviorLogService logService = mock(ExamBehaviorLogService.class);
-        BehaviorEventCollectService core = new BehaviorEventCollectService(registry, logService, mockMetrics());
+        BehaviorEventCollectService core = new BehaviorEventCollectService(registry, logService, mockMetrics(), new ObjectMapper());
         EventVerdict verdict = core.collect(1L, 2L, "CAMERA_COVER", null, LocalDateTime.now());
 
         assertEquals(SeverityLevel.MEDIUM, verdict.severity());
@@ -180,7 +180,7 @@ class BehaviorEventCollectorTest {
         };
         BehaviorEventRegistry registry = new BehaviorEventRegistry(List.of(exploding), fallback);
         ExamBehaviorLogService logService = mock(ExamBehaviorLogService.class);
-        BehaviorEventCollectService core = new BehaviorEventCollectService(registry, logService, mockMetrics());
+        BehaviorEventCollectService core = new BehaviorEventCollectService(registry, logService, mockMetrics(), new ObjectMapper());
 
         EventVerdict verdict = core.collect(1L, 2L, "EXPLODING_EVENT", null, null);
 

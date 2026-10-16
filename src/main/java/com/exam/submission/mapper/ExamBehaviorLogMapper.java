@@ -37,6 +37,20 @@ public interface ExamBehaviorLogMapper extends BaseMapper<ExamBehaviorLog> {
     long countByExamId(@Param("examId") Long examId);
 
     /**
+     * 单学生时间线的<b>统计窄投影</b>（change harden-behavior-report-and-monitor）：
+     * 只取 severity 列、全量不带行数上限——total 与严重度分布由它算出，
+     * 因此明细查询加 LIMIT 后统计口径不会失真（拆两查的动机见 BehaviorLogQueryService#timeline）。
+     *
+     * <p>不载 event_data 是关键：该列是 TEXT（单行可达 64KB），旧实现在一条 selectList 里
+     * 同时喂统计与明细，统计部分被迫把全部明细载进内存。此处只回一列 TINYINT。
+     * WHERE (exam_id, student_id) 命中 idx_behavior_exam_student 最左前缀。
+     * 不必 ORDER BY：调用方只做计数，省一次排序。
+     */
+    @Select("SELECT severity FROM exam_behavior_logs "
+            + "WHERE exam_id = #{examId} AND student_id = #{studentId}")
+    List<Integer> selectSeverities(@Param("examId") Long examId, @Param("studentId") Long studentId);
+
+    /**
      * 按考试分批删除行为日志（保留策略）。
      * <p>WHERE 只带 exam_id（命中 idx_behavior_exam_time (exam_id, event_time) 最左前缀），
      * 故意不用 created_time：该列无索引，WHERE created_time &lt; ? 会全表扫描。
