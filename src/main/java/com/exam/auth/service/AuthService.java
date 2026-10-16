@@ -22,6 +22,7 @@ import com.exam.user.service.UserService;
 import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,7 +103,13 @@ public class AuthService {
         user.setEmail(req.getEmail());
         user.setStatus(0);
         user.setMustChangePassword(0);
-        userService.insert(user);
+        try {
+            userService.insert(user);
+        } catch (DuplicateKeyException e) {
+            // 并发同号注册在库层撞 uk_users_username：转友好提示而非 500（事务整体回滚）
+            log.warn("注册并发同号撞唯一约束, username={}", req.getUsername());
+            throw new BusinessException(ResponseCode.ACCOUNT_ALREADY_EXISTS);
+        }
 
         if (roleType == RoleType.STUDENT) {
             bindRole(user, RoleHierarchy.STUDENT);
@@ -140,7 +147,7 @@ public class AuthService {
         User user = userService.getByUsername(username);
         // 统一失败提示：账号不存在与密码错误返回同一条消息，防账号枚举
         if (user == null || !BCrypt.checkpw(password, user.getPassword())) {
-            loginGuard.recordFailure(username);
+            loginGuard.recordFailure(username, ip);
             auditLogService.logLoginEvent(user == null ? null : user.getId(),
                     username, false, ip, "账号或密码错误");
             throw new BusinessException(ResponseCode.ACCOUNT_OR_PASSWORD_ERROR);
@@ -229,8 +236,13 @@ public class AuthService {
     /**
      * 修改密码：校验原密码 → 更新哈希 → 解除强制改密标记 → 全端下线（会话版本递增 + 当前 jti 入黑名单 + 删 Refresh 会话）。
      *
+     * <p>「更新哈希 + 解除强制改密标记」两处 DB 写同处一个事务（rollbackFor=Exception）：
+     * 第二步失败则整体回滚，绝不出「密码已改而强制改密流未解除」的中间态；Redis 会话失效操作
+     * 在事务内落库步骤之后执行——DB 回滚时尚未产生会话失效副作用，顺序天然安全。
+     *
      * @param accessToken 当前请求的 Access Token（用于把其 jti 写入黑名单）
      */
+    @Transactional(rollbackFor = Exception.class)
     public void changePassword(ChangePasswordRequest req, LoginUser operator, String accessToken) {
         User user = userService.getById(operator.getId());
         if (!BCrypt.checkpw(req.getOldPassword(), user.getPassword())) {
@@ -249,18 +261,21 @@ public class AuthService {
     }
 
     /**
-     * 发送找回密码验证码：邮箱未注册不暴露（统一返回成功），SMTP 未配置时日志兜底。
+     * 发送找回密码验证码：入口最先做 邮箱+IP 维度固定窗口限流（先于邮箱存在性查询，
+     * 防枚举语义不变：未注册邮箱同样计数且同样不暴露存在性）；SMTP 未配置时日志兜底。
+     * 邮件文案的有效期取自配置 ttlMinutes（随调用方传入，文案与配置不漂移）。
      */
-    public void sendResetCode(String email) {
+    public void sendResetCode(String email, String ip) {
+        loginGuard.checkCodeRateLimit(email, ip);
         User user = userService.getByEmail(email);
         if (user == null) {
             log.warn("找回密码：邮箱未注册（不向调用方暴露）, email={}", email);
             return;
         }
         String code = generateResetCode();
-        tokenStore.storeResetCode(email, code,
-                Duration.ofMinutes(props.getResetCode().getTtlMinutes()));
-        mailService.sendResetCode(email, code);
+        int ttlMinutes = props.getResetCode().getTtlMinutes();
+        tokenStore.storeResetCode(email, code, Duration.ofMinutes(ttlMinutes));
+        mailService.sendResetCode(email, code, ttlMinutes);
     }
 
     /**
