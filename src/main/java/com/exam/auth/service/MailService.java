@@ -30,8 +30,11 @@ public class MailService {
         this.mailProperties = mailProperties;
     }
 
-    /** 发送单次重置验证码；SMTP 未配置则日志兜底（不阻塞找回流程）。 */
-    public void sendResetCode(String email, String code) {
+    /**
+     * 发送单次重置验证码；SMTP 未配置则日志兜底（不阻塞找回流程）。
+     * 文案有效期用调用方传入的 {@code ttlMinutes} 动态生成，与配置不漂移。
+     */
+    public void sendResetCode(String email, String code, int ttlMinutes) {
         boolean smtpReady = mailSender != null && mailProperties != null
                 && StringUtils.hasText(mailProperties.getHost());
         if (!smtpReady) {
@@ -43,7 +46,7 @@ public class MailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
             helper.setTo(email);
             helper.setSubject("examOnline 密码重置验证码");
-            helper.setText("您的密码重置验证码是：" + code + "，5 分钟内有效，请勿泄露。", false);
+            helper.setText("您的密码重置验证码是：" + code + "，" + ttlMinutes + " 分钟内有效，请勿泄露。", false);
             mailSender.send(message);
             log.info("找回密码验证码已发送: email={}", email);
         } catch (MessagingException e) {

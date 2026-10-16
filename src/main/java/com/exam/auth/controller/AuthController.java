@@ -8,6 +8,7 @@ import com.exam.auth.dto.RegisterRequest;
 import com.exam.auth.dto.ResetPasswordRequest;
 import com.exam.auth.dto.SendResetCodeRequest;
 import com.exam.auth.dto.TokenResponse;
+import com.exam.anticheat.ip.ClientIpResolver;
 import com.exam.auth.security.LoginUser;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.auth.service.AuthService;
@@ -46,11 +47,11 @@ public class AuthController {
         return ApiResponse.success();
     }
 
-    /** 登录：签发双 Token */
+    /** 登录：签发双 Token；客户端 IP 经 ClientIpResolver 解析（反代下取 XFF 首项真实 IP） */
     @PostMapping("/login")
     public ApiResponse<TokenResponse> login(@Valid @RequestBody LoginRequest request,
                                             HttpServletRequest http) {
-        String ip = http.getRemoteAddr();
+        String ip = ClientIpResolver.resolve(http);
         return ApiResponse.success(authService.login(request.getUsername(), request.getPassword(), ip));
     }
 
@@ -76,10 +77,11 @@ public class AuthController {
         return ApiResponse.success();
     }
 
-    /** 发送找回密码验证码（防枚举：邮箱未注册也返回成功） */
+    /** 发送找回密码验证码（防枚举：邮箱未注册也返回成功；入口按 邮箱+IP 维度限流） */
     @PostMapping("/password/reset-code")
-    public ApiResponse<Void> sendResetCode(@Valid @RequestBody SendResetCodeRequest request) {
-        authService.sendResetCode(request.getEmail());
+    public ApiResponse<Void> sendResetCode(@Valid @RequestBody SendResetCodeRequest request,
+                                           HttpServletRequest http) {
+        authService.sendResetCode(request.getEmail(), ClientIpResolver.resolve(http));
         return ApiResponse.success();
     }
 

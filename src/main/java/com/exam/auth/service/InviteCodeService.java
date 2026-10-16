@@ -64,10 +64,23 @@ public class InviteCodeService {
                 .eq(InviteCode::getStatus, 0));
     }
 
-    /** 标记一次使用（注册成功后调用）。 */
+    /**
+     * 标记一次使用（注册成功后调用）：定向原子 UPDATE（used_count = used_count + 1 且限定
+     * status=0 有效状态），替代读-改-写整实体回写——
+     * <ul>
+     *   <li>并发注册同码时计数不丢失更新（SQL 侧自增）；</li>
+     *   <li>并发「作废 + 使用」时 UPDATE 影响 0 行 → 抛 {@link ResponseCode#INVITE_CODE_INVALID}，
+     *       不会把作废前读到的旧状态回写复活已作废邀请码。</li>
+     * </ul>
+     */
     public void markUsed(InviteCode ic) {
-        ic.setUsedCount((ic.getUsedCount() == null ? 0 : ic.getUsedCount()) + 1);
-        inviteCodeMapper.updateById(ic);
+        int rows = inviteCodeMapper.update(null, Wrappers.<InviteCode>lambdaUpdate()
+                .setSql("used_count = used_count + 1")
+                .eq(InviteCode::getId, ic.getId())
+                .eq(InviteCode::getStatus, 0));
+        if (rows == 0) {
+            throw new BusinessException(ResponseCode.INVITE_CODE_INVALID);
+        }
     }
 
     /** 全部邀请码（管理员列表，按创建时间倒序）。 */
