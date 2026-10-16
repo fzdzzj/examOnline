@@ -155,6 +155,13 @@ AND 另一个请求影响 0 行并重试或报错
 WHEN 考试状态机定时扫表推进考试状态（未开始→进行中、进行中→已结束），或教师/管理员执行成绩发布（`publish`）与撤回（`revoke`）使考试状态发生改变
 THEN 系统 SHALL 主动清空 `examDetail` 缓存（`CACHE_EXAM_DETAIL`），确保后续查询立即读取到最新数据库状态，杜绝长达 5 分钟的过期缓存脏读（由 harden-core-security-and-state-boundaries 合入）
 
+#### Scenario: 定时流转与缺考标记同事务 (fix-exam-state-machine-transaction)
+
+WHEN 定时扫表或启动补偿触发自动流转（未开始→进行中、进行中→已结束批量迁移）
+THEN 当轮全部状态迁移 CAS 与缺考标记（`markAbsence`）SHALL 在同一事务内——任一 `markAbsence` 失败时当轮 CAS 全部回滚，受影响考试保持原状态，由下一轮扫表重试补偿（CAS 幂等 + `exam_absence` 唯一索引 INSERT IGNORE 幂等，重试不产生重复数据）
+AND 事务 SHALL 以不依赖 Spring 代理调用路径的方式生效——定时/启动入口的同类自调用不得绕过事务边界（自调用绕过 `@Transactional` 代理曾是生产缺陷：单测经代理调用掩盖，缺考漏标不可自愈；修复采用 TransactionTemplate 编程式事务）
+AND 详情缓存清除（`CACHE_EXAM_DETAIL`）SHALL 在事务提交之后执行，杜绝 clear 与 commit 之间并发读回填旧状态的窗口（由 fix-exam-state-machine-transaction 合入）
+
 ---
 
 ### Requirement: 教师提前结束

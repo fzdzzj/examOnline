@@ -1,0 +1,29 @@
+{
+  "changeId": "fix-exam-state-machine-transaction",
+  "title": "考试状态机定时流转事务修复（autoAdvance 自调用绕过 @Transactional）",
+  "level": "S",
+  "capabilityDomains": ["exam-management"],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、规范增量制定与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、exam-management 的 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md。定性：单类修复 + 测试，零 DDL、零契约变更、零前端，仅 backendTests 预期增长；S 级双岗隔离。",
+      "evidence": "基于 2026-10-16 三轮后端巡查第三批高危发现（主 Agent 源码亲验）：ExamStateMachineService.scheduledAdvance L173-175 / advanceOnStartup L179-184 经 this.autoAdvance() 自调用绕过 Spring 代理，L111 @Transactional(rollbackFor=Exception.class) 生产定时路径不生效（单测经代理调用掩盖）；CAS 与 markAbsence 各自提交，markAbsence 瞬时失败即缺考永久漏标（ExamService L271-274 注释明载漏标不可自愈，autoAdvance 只扫 IN_PROGRESS）。autoAdvance 调用方核实仅两处自调用入口（grep 全仓），无外部调用方。修复选型：TransactionTemplate 编程式事务（Boot 自动装配 bean，QuestionImportExportService 既有注入先例），否决自注入代理/拆独立 bean。规范落点核实：考试状态机 Requirement 在 specs/exam-management/spec.md L126（标准流转/并发流转仅一次/缓存失效三 Scenario），缺考锚定语义在 specs/absence-makeup/spec.md 头部实施注记。巡查发现笔记先行沉淀（docs/功能待办清单.md B.2，提交 63ba171），检出 feature/fix-exam-state-machine-transaction 分支。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施编程式事务修复 + 单测先红后绿 + 变异击红验证",
+      "status": "completed",
+      "description": "①ExamStateMachineService 构造注入 TransactionTemplate，autoAdvance() 方法体包入编程式事务（整轮一个事务，覆盖 CAS 批量推进 + markAbsence），移除 @Transactional 注解并在 javadoc 注明自调用绕代理原因；②clearExamDetailCache 移至事务提交后执行；③scheduledAdvance/advanceOnStartup 调用点与对外行为（返回值/日志/指标）零改动；④单测先红后绿：定时入口（scheduledAdvance）路径下 markAbsence 失败 → 当轮 CAS 回滚、考试保持 IN_PROGRESS（实现前该用例红即缺陷存在性证明）；⑤变异验证 m1/m2/m3 击红-复原-回绿留证 evidence/（m1 复原自调用无事务形态击红；m2 markAbsence 失败不回滚击红；m3 缓存清除移回事务提交前击红或时序断言击红）。",
+      "evidence": "新增 src/test/java/com/exam/exam/service/ExamStateMachineTransactionTest.java（3 用例，全部经 scheduledAdvance 定时入口，无 @Sql）：用例 2 断言整轮一个事务（任一 markAbsence 失败→当轮候选全部保持 IN_PROGRESS 且 version 不前进）+ 重试补偿成功，用例 1 断言整轮回滚时不清 examDetail 缓存，用例 3 为正常一轮回归护栏（ENDED + version +1 + 提交后清缓存）。先红：修复前该用例红（故障场之前的 CAS 已提交、落成 ENDED），由变异 m1 逐字复现并留证。变异（证据 spec/changes/fix-exam-state-machine-transaction/evidence/，含 m1/m2/m3 的 diff 与完整运行日志）：m1（退回自调用无事务）击红 → Tests run: 3, Failures: 1（考试 2 未保持进行中 expected: <1> but was: <2>）；m3（缓存清除落到回滚路径）击红 → Failures: 1（不得清空 examDetail 缓存 intended expectation true 实测 false）；m2（吞掉 markAbsence 故障）未被杀，原因已如实登记（AbsenceService 自带 @Transactional 使异常吞掉后 commit 抛 UnexpectedRollbackException，回滚仍成立，故 m2 只改变异常可见性；且首轮「把清除放进 execute 回调」的 m3 形态亦不被杀——实测 RedisCacheManager 不参与 DB 事务、clear 立即提交，该时序差异在测试中不可观测，用例 javadoc 已如实写出该边界）。全量门禁（仓库根，revision 0e592ce）：mvnw.cmd clean test → Tests run: 568, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（日志 evidence/full-clean-test.log、摘要 full-clean-test-summary.txt）。复用同源 bean 先例：PlatformTransactionManager 构造注入，与 QuestionImportExportService / RetentionService 同款。白名单内零越界：未触碰 schema.sql、docker/、openapi.yaml、pom.xml、frontend/；注：本次新增 3 个后端用例，.github/ci/gate-baseline.json 的 backendTests（565）需在阶段 3 按实测上调至 568，该文件不在本次受控白名单内故未改。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 合入 specs/exam-management 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
+      "evidence": "①门禁实测：mvnw.cmd clean test（仓库根，revision 0290b6d）→ Tests run: 568, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（裁剪版 evidence/full-clean-test-summary.txt；8.6MB 原始全量日志收口时移除不入库，判定行留存）；复核侧独立复跑同结果（568/0/0/1 + BUILD SUCCESS）。前端免跑论证：本变更 frontend/ 零 diff（git diff 0e592ce..0290b6d --name-only 无 frontend 路径），按离线门禁分级政策收窄为仅后端。②基线上调：gate-baseline.json backendTests 565→568（frontendTests 874、openapiPaths 97 核对不变）。③spec-delta 合入：specs/exam-management/spec.md「考试状态机」Requirement 追加 Scenario「定时流转与缺考标记同事务」（整轮一事务 + 代理无关事务生效 + 缓存清除提交后），合入注记含自调用绕代理缺陷机理。④复核结论 PASS（独立复跑 + m1 独立重注入击红-复原-回绿 + m2 等价变异机理核实 AbsenceService @Transactional REQUIRED 传播 → rollback-only → 外层 commit 抛 UnexpectedRollbackException）。⑤变更目录归档至 spec/changes/archive/，总账更新 spec/README.md 与 docs/功能待办清单.md。"
+    }
+  ]
+}
