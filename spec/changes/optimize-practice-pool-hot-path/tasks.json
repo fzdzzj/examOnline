@@ -14,9 +14,9 @@
     {
       "id": 2,
       "title": "阶段 2：五项实施 + 单测先红后绿 + 变异击红验证",
-      "status": "pending",
+      "status": "completed",
       "description": "①submitPractice 门控改短路定位 isWrongQuestionOf(studentId, questionId)——逐场装配命中即短路（判分严格小于满分即通过），getStudentWrongQuestionIds 保留不动（列表页消费）；②门控定位循环 catch 补 log.warn 对齐同文件口径，异常场跳过语义不变；③attempt 连对推导查询加 .last(\"LIMIT 3\")，消灭判定连对>=3 不变；④progress 两处统计查询加 .select 消费列投影（submissions：id+gradingStatus 等以方法尾部消费实际使用为准直读确定；subjectiveRows：submissionId+score），统计口径与 @DS(\"slave\") 零改动；⑤saveScore 回读改单行查询（优先复用既有 submissionId 单行取数，形态不匹配则新增 mapper 单行方法含 examId+questionId+submissionId 维度），响应形状与 INTERNAL_ERROR 回读失败语义不变，乐观锁 CAS 与读己之写标记零改动；⑥单测先红后绿（实现前各断言红即缺陷存在性证明）+ 变异 m1/m2/m3 击红-复原-回绿留证 evidence/（建议 m1 门控退回全量重建/移除短路击红、m2 投影移除或 attempt 去 LIMIT 击红、m3 单行回读退回全量 filter 击红；等价变异体如实登记不强杀）。",
-      "evidence": ""
+      "evidence": "基于 2026-10-16 实施笔（基线 f1583e3）：新增三单测类共 12 例（StudentPracticeServiceGateAndLimitTest 5 / GradingQueryServiceProjectionTest 3 / SubjectiveGradingServiceSaveScoreReadBackTest 4，Mockito 隔离无 @Sql）；先红后绿——服务实现临时回退为改动前形态后 `mvnw.cmd -o clean test -Dtest=StudentPracticeServiceGateAndLimitTest,GradingQueryServiceProjectionTest,SubjectiveGradingServiceSaveScoreReadBackTest` → Tests run: 12, Failures: 7, Errors: 0（七断言逐点击红：门控装配 3 次应 1 次、无 warn、回读无 LIMIT 3、两处投影 null、saveScore 未走单行回读；另 5 例语义护栏改动前即绿证明不扩大红面），恢复实现后同命令 → Tests run: 12, Failures: 0, Errors: 0 绿。变异四项（m1 门控退回全量重建 / m2 attempt 去 LIMIT / m3 saveScore 退回全量 filter / m4 progress 投影移除，任务卡建议的 m2 二选一均覆盖）各击红-复原-回绿留证 evidence/（red-before-impl/green-after-impl/m1-m4 红绿对 + full-gate.log + README.md）。全量门禁 `mvnw.cmd -o clean test` → Tests run: 599, Failures: 0, Errors: 0, Skipped: 1 BUILD SUCCESS（基线 587 净 +12，gate-baseline 上调属阶段 3）。红线核对：isWrongQuestionOf 判定口径与 getStudentWrongQuestionIds 逐字一致（无题型过滤、与旧门控接受集等价）、getStudentWrongQuestionIds/getPracticePool/快照回退链路零改动、progress @DS(\"slave\") 零改动、saveScore 乐观锁 CAS/读己之写零改动、schema.sql/docker/openapi.yaml/pom.xml/frontend 零 diff。选型披露：saveScore 回读未复用 selectWorkbenchRowsPaged 的 submissionId 形态（分页方法签名含 offset/limit/筛选，与本处单行回读需求不匹配），按任务卡 fallback 新增专用 mapper 单行方法 selectWorkbenchRow（examId+questionId+submissionId 维度，列与 selectWorkbenchRows 一致）。"
     },
     {
       "id": 3,

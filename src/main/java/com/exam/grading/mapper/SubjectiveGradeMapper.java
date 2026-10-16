@@ -34,6 +34,21 @@ public interface SubjectiveGradeMapper extends BaseMapper<SubjectiveGrade> {
                      @Param("expectedVersion") Integer expectedVersion);
 
     /**
+     * 批改保存单行回读（optimize-practice-pool-hot-path）：列与 {@link #selectWorkbenchRows} 完全一致
+     * （响应形状不变），主键维度 examId + questionId + submissionId——每笔批改保存只回读本行，
+     * 替代「selectWorkbenchRows 全量学生工作台行 + 内存 filter 单行」。
+     */
+    @Select("SELECT g.id, g.submission_id, g.exam_id, g.student_id, g.question_id, "
+            + "g.question_number, g.student_answer, g.suggested_score, g.suggested_detail, "
+            + "g.score, g.comment, g.grader_id, g.graded_time, g.version, u.name AS student_name "
+            + "FROM subjective_grades g "
+            + "JOIN users u ON u.id = g.student_id "
+            + "WHERE g.exam_id = #{examId} AND g.question_id = #{questionId} AND g.submission_id = #{submissionId}")
+    SubjectiveGradeRow selectWorkbenchRow(@Param("examId") Long examId,
+                                          @Param("questionId") Long questionId,
+                                          @Param("submissionId") Long submissionId);
+
+    /**
      * 批改工作台联查：同题列出全部学生（含学生姓名），按学生 ID 排序保证列表稳定。
      * 学生姓名来自 users 表（批改展示需要，批改表不冗余姓名）；列名驼峰映射到 DTO。
      */

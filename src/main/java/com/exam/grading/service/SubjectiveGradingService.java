@@ -199,10 +199,14 @@ public class SubjectiveGradingService {
         // 读己之写（add-performance-deepening task4）：人工批改是写操作，成功打点，
         // 教师随即刷新工作台（返回结果本身即主库回读）与本线程其他读不因从库延迟失真
         readYourWriteMark.mark();
-        return subjectiveGradeMapper.selectWorkbenchRows(examId, request.getQuestionId()).stream()
-                .filter(candidate -> candidate.getSubmissionId().equals(request.getSubmissionId()))
-                .findFirst()
-                .orElseThrow(() -> new BusinessException(ResponseCode.INTERNAL_ERROR, "批改结果回读失败"));
+        // 单行回读（optimize-practice-pool-hot-path）：只取本 submissionId 一行（列与工作台行等价，
+        // 响应形状不变），替代「全量学生工作台行 + 内存 filter」；回读失败语义不变
+        SubjectiveGradeRow saved = subjectiveGradeMapper.selectWorkbenchRow(
+                examId, request.getQuestionId(), request.getSubmissionId());
+        if (saved == null) {
+            throw new BusinessException(ResponseCode.INTERNAL_ERROR, "批改结果回读失败");
+        }
+        return saved;
     }
 
     /**
