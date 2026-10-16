@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -101,12 +100,12 @@ class SwitchScreenEventCollectorTest {
     @Test
     @DisplayName("计数器 Redis 异常降级：按首次事件处理（低级），采集不中断")
     void counterFailureDegradesToFirstEvent() {
-        // 真实计数器 + Redis 桩抛异常，验证 increment 内部降级逻辑
+        // 真实计数器 + Redis 桩抛异常，验证 increment 内部降级逻辑（fix-behavior-counter-ttl-atomicity：
+        // 降级路径改经 Lua execute 单脚本，两步 opsForValue 桩不再命中）
         StringRedisTemplate redisTemplate = org.mockito.Mockito.mock(StringRedisTemplate.class);
-        @SuppressWarnings("unchecked")
-        ValueOperations<String, String> valueOperations = org.mockito.Mockito.mock(ValueOperations.class);
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.increment(anyString()))
+        org.mockito.Mockito.when(redisTemplate.execute(
+                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList(),
+                        any(Object[].class)))
                 .thenThrow(new IllegalStateException("redis down"));
 
         com.exam.anticheat.service.BehaviorCounterService realCounter =

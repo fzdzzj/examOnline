@@ -33,6 +33,18 @@ THEN 无需修改采集核心逻辑
 
 ---
 
+#### Scenario: 行为计数键 TTL 的原子性 (fix-behavior-counter-ttl-atomicity)
+
+GIVEN 行为事件计数自增（`exam:behavior:count:{examId}:{studentId}:{eventType}`）
+
+WHEN 计数键首次自增
+
+THEN 自增与首次 TTL 设置 SHALL 在同一 Lua 脚本内原子完成（INCR + 首增置 EXPIRE，秒，先例 LoginGuardService.incrementWithTtl）；SHALL NOT 存在「键已自增但无 TTL」的两步间隙形态（进程崩溃或 Redis 重启不得导致键永不过期、键空间无界累积）
+
+AND 计数判定语义 SHALL 逐字保留——返回值口径（首次返回 1）、TTL 配置（counter-ttl-hours 覆盖整场考试）、Redis 异常降级（log.error + 返回 1，不抛出、不影响采集主链路）均不变（由 fix-behavior-counter-ttl-atomicity 合入）
+
+---
+
 #### Scenario: 行为上报防刷与明细上限 (harden-behavior-report-and-monitor)
 
 GIVEN 学生向行为上报端点提交事件（正常考试场景：偶发切屏/失焦/粘贴事件）
