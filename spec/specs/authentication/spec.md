@@ -148,6 +148,18 @@ WHEN 用户提交注册表单
 THEN 系统拒绝注册
 AND 返回"密码至少 8 位"错误
 
+#### Scenario: 并发同号注册友好提示 (harden-auth-edge-cases)
+
+- **WHEN**: 两个同号注册请求并发到达，均通过存在性预检后在库层撞 `uk_users_username` 唯一约束
+- **THEN**: 后到写入 SHALL 捕获唯一键冲突并返回「账号已存在」业务错误（既有错误码），SHALL NOT 呈现为 500 内部错误
+- **AND**: 注册事务 SHALL 整体回滚（无半注册残留），既有「存在性预检 + 业务错误」主路径零改动
+
+#### Scenario: 邀请码并发使用计数不丢失 (harden-auth-edge-cases)
+
+- **WHEN**: 多名教师持同一邀请码并发注册
+- **THEN**: 使用计数 SHALL 以定向原子 UPDATE 递增（`used_count = used_count + 1` 且仍限定有效状态），SHALL NOT 读-改-写整实体
+- **AND**: 并发「作废 + 使用」时使用方 SHALL 因状态条件不满足而注册失败（邀请码无效），SHALL NOT 把作废前的旧状态回写复活已作废邀请码
+
 ---
 
 ### Requirement: 用户登录
@@ -177,6 +189,12 @@ GIVEN 账号状态为禁用
 WHEN 用户提交正确凭据
 THEN 系统拒绝登录
 AND 返回"账号已被禁用"错误
+
+#### Scenario: 登录审计记录真实客户端 IP (harden-auth-edge-cases)
+
+- **WHEN**: 部署形态含反向代理（Nginx TLS 终结），学生经代理发起登录
+- **THEN**: 登录审计与锁定审计记录的 IP SHALL 为解析自代理转发头的真实客户端 IP（复用既有 ClientIpResolver），SHALL NOT 恒为代理内网地址
+- **AND**: 账号锁定审计 SHALL 记录触发锁定场景的真实客户端 IP，SHALL NOT 硬编码占位值
 
 ---
 
@@ -229,6 +247,19 @@ WHEN 修改完成
 THEN 系统使该用户所有已签发令牌失效
 AND 用户需重新登录
 
+#### Scenario: 修改密码落库原子性 (harden-auth-edge-cases)
+
+- **WHEN**: 修改密码流程中「更新密码哈希」成功而「解除强制改密标记」落库失败
+- **THEN**: 两项数据库写 SHALL 同处一个事务整体回滚（旧密码仍有效、强制改密标记保持），SHALL NOT 出现「密码已改而强制改密流未解除」的中间态
+- **AND**: 会话失效（黑名单 + 全端下线）SHALL 在事务内的落库步骤之后执行，数据库回滚时 SHALL NOT 产生已执行的会话失效副作用
+
+#### Scenario: 账号不可用操作联动全端下线 (harden-auth-edge-cases)
+
+- **WHEN**: 未来补建任何使账号不可用的管理操作（禁用、删除等）
+- **THEN**: 该操作 SHALL 联动全端下线（会话版本递增 + 删除 Refresh 会话），使存量访问令牌立即失效
+- **AND**: 登录与刷新链路对不可用账号的拒绝语义保持不变
+（由 harden-auth-edge-cases 合入；背景勘正：巡查台账原条目称「禁用账号只拦新登录不踢存量会话」，立项侦察发现用户禁用操作入口在代码中不存在〔user 包仅导入导出端点，status=1 无可达写入路径〕，故本条以设计约束形态固化而非代码修复；待禁用功能立项时受此约束）
+
 ---
 
 ### Requirement: 密码找回
@@ -250,6 +281,17 @@ GIVEN 验证码错误或已超过有效期
 WHEN 用户提交重置请求
 THEN 系统拒绝重置
 AND 返回"验证码无效或已过期"
+
+#### Scenario: 验证码发送按维度限流 (harden-auth-edge-cases)
+
+- **WHEN**: 脚本对发送验证码端点高频重放（单一邮箱或单一来源 IP）
+- **THEN**: 系统 SHALL 按 邮箱+IP 维度执行固定窗口限流（复用登录限流阈值配置量级），超限返回 429
+- **AND**: 限流检查 SHALL 先于邮箱存在性判断（防枚举语义不变：未注册邮箱同样计数且同样不暴露存在性）
+
+#### Scenario: 邮件有效期文案与配置一致 (harden-auth-edge-cases)
+
+- **WHEN**: 管理员将验证码 TTL 配置调整为非默认值后用户请求找回密码
+- **THEN**: 邮件文案中的有效期 SHALL 取自该配置值，SHALL NOT 硬编码固定分钟数
 
 ---
 
@@ -327,6 +369,13 @@ GIVEN 同一账号或来源的登录请求在短时间内超过阈值
 WHEN 用户再次请求登录
 THEN 系统返回 429 Too Many Requests
 AND 提示稍后重试
+
+#### Scenario: 固定窗口计数原子化 (harden-auth-edge-cases)
+
+- **WHEN**: 限流/锁定失败计数执行 INCR 后、过期设置前发生进程或连接异常
+- **THEN**: 计数键的递增与过期设置 SHALL 以原子操作（Lua）完成，SHALL NOT 出现「已递增但永不过期」的键
+- **AND**: 该防护 SHALL 覆盖登录限流与失败锁定两处计数；阈值与窗口配置零改动
+（由 harden-auth-edge-cases 合入；「登录锁定」Requirement 的计数点同为本条覆盖对象，不单独追加 Scenario）
 
 ---
 
