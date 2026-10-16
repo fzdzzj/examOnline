@@ -1,0 +1,43 @@
+{
+  "changeId": "fix-prod-container-tz",
+  "branch": "feature/fix-prod-container-tz",
+  "level": "S",
+  "source": "docs/功能待办清单.md B.2 横切首扫 H1（2026-10-16/17 只读侦察，基线 8e7f766）：prod 容器无 TZ、JVM 走 UTC，考试时间按上海墙钟 DATETIME 存储比较（22 文件 LocalDateTime.now()），定时链路整体漂 8 小时",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记 + 台账随立项笔入库",
+      "status": "completed",
+      "description": "建分支 feature/fix-prod-container-tz → 写 proposal/spec-delta（deployment 域）/tasks 三件套 → spec/README.md 在途表登记 → docs/功能待办清单.md B.2 台账（+27 行）随本笔入库（项目惯例：台账随下一案立项笔入库）；staged 前必须 git diff --cached --stat 预检范围。",
+      "evidence": "立项笔 6161815（git diff --cached --stat 预检：恰 5 文件 156 行零杂入——台账 +27 行、三件套 3 文件、spec/README.md 在途表 +1 行）。三件套落位 spec/changes/fix-prod-container-tz/（proposal：背景/方案/白名单/验收；spec-delta：deployment 域 ADDED Requirement「生产容器时区与业务墙钟一致」四 Scenario；tasks 五阶段）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：修复前确证（UTC 现状留证）",
+      "status": "completed",
+      "description": "prod 容器在跑则直接 docker exec exam-online-prod-app date；未在跑则 docker compose -f docker-compose.prod.yml 起环境后确证；留证 UTC 现状（命令 + 输出 + revision）。docker 环境不可用时降级 docker run --rm eclipse-temurin:17-jre date 证基础镜像 UTC 并注明局限。",
+      "evidence": "evidence/README.md §01：本地旧镜像陈旧（建于 10-11 19:21，Dockerfile 最后改 19:50），先按立案笔 6161815 现场重建 pre-fix 镜像再确证；compose --env-file 一次性演练凭据起栈全 healthy；docker exec date 实测 Fri Oct 16 04:51:39 PM UTC 2026，与宿主上海墙钟 00:52:13 同秒对拍恰漂 8 小时，TZ 环境变量为空。原始日志在 D:\\code\\examOnline-measure\\prod-tz-drill\\。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：实施笔——运行层 ENV TZ + 词法护栏单测 + 变异击红",
+      "status": "completed",
+      "description": "Dockerfile 运行层加 ENV TZ=Asia/Shanghai（build 层零改动、不装包）→ 新增词法护栏单测（先例 PublisherConfirmScopeGuardTest 模式，断言锚定运行层段落防 build 层同形行误判）→ 变异验证：删 TZ 行击红、恢复回绿，证据入库。",
+      "evidence": "实施笔 b34b23e（恰 2 文件：Dockerfile +5 行含注释、ProdContainerTzGuardTest.java 新增 81 行）。四相日志 evidence/03–06：先红 03（pre-fix 上 Tests run 1 Failures 1 确定性失败）→ 后绿 04（加 TZ 后 0 失败）→ 变异击红 05（sed 删 ENV TZ 行 → Failures 1）→ 复原回绿 06（git checkout HEAD -- Dockerfile → 0 失败）。护栏断言锚定最后一个 FROM ... AS runtime 之后的运行层段落，注释行剔除（被注释的 TZ 不算合规），护栏失靶自保护（运行层头消失必须红）。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：修复后验证（CST 对齐 + 定时日志时间戳）",
+      "status": "completed",
+      "description": "重建镜像起容器，docker exec exam-online-prod-app date 验证 CST (+0800)；观察一轮 10s 级定时扫描日志时间戳与上海墙钟对齐，留证。",
+      "evidence": "evidence/README.md §02：重建镜像重建容器后 docker exec date → Sat Oct 17 01:01:34 AM CST 2026 与宿主同秒对拍；10s 级扫描实测——向主库插可迁移考试（published=1、start_time 已过 1min）后一轮扫描产出日志行 2026-10-17 01:04:29.698 [scheduling-1] INFO ExamStateMachineService - 考试 1 定时迁移 0 -> 1（CST，DB 复核 status 0→1），证明 LocalDateTime.now() 比较语义在正确时区下工作（修复前要晚 8 小时才成立）。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → 按实测上调 gate-baseline.json backendTests（只增不减，frontendTests/openapiPaths 核对不变）→ evidence 入库 + tasks.json 回填 → 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + deployment 域行追加 → --no-ff 合入 main（push 统一在两案收口后）。",
+      "evidence": "全量门禁 evidence/07（原始 13788 行裁剪判定行，先例 fix-exam-state-machine-transaction）：仓库根 ./mvnw clean test → Tests run: 631, Failures: 0, Errors: 0, Skipped: 1（Skipped 为既有 OpenApiContractTest 基线跳过），BUILD SUCCESS，GATE_EXIT=0；631 = 收口前基线 630 + 护栏 1。gate-baseline.json backendTests 630→631 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；tasks.json 本笔回填于原路径、先于 git mv 成笔（git mv 二踩先例纪律）；归档 spec/changes/archive/fix-prod-container-tz/；spec/README.md 在途表移除 + 归档速览新增 + deployment 域行追加；deployment 基线合入 ADDED Requirement（delta 四 Scenario 全量）；--no-ff 合并入 main 以 git log 为准。"
+    }
+  ]
+}

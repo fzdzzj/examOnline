@@ -34,6 +34,11 @@ FROM eclipse-temurin:17-jre AS runtime
 WORKDIR /app
 COPY --from=build /app/target/exam-online.jar exam-online.jar
 
+# TZ=Asia/Shanghai（fix-prod-container-tz）：基础镜像默认 UTC，而考试时间全按上海墙钟
+# DATETIME 存储并以 LocalDateTime.now() 直接比较——不声明 TZ 则 prod 定时链路整体漂 8 小时。
+# 基础镜像自带 tzdata，无需装包；build 层不声明（构建与时区无关）。
+ENV TZ=Asia/Shanghai
+
 # JAVA_OPTS：容器注入的 JVM 调优参数挂载点，默认空（不调优）
 ENV JAVA_OPTS=""
 
