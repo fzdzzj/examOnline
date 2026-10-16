@@ -1,0 +1,12 @@
+﻿# 命令输出摘要（完整控制台日志已裁剪，保留判定性行与结果汇总）
+# 命令：mvnw.cmd -o clean test -Dtest=ReservationRemindServiceTest#deliverSkipsWhenMarkNotClaimed（m3 注入：if (claimed != 1) -> if (false)）
+# revision：3b70e11
+
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 6.881 s <<< FAILURE! -- in com.exam.message.service.ReservationRemindServiceTest
+[ERROR] com.exam.message.service.ReservationRemindServiceTest.deliverSkipsWhenMarkNotClaimed -- Time elapsed: 6.791 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <0> but was: <1>
+[INFO] Results:
+[ERROR]   ReservationRemindServiceTest.deliverSkipsWhenMarkNotClaimed:95 expected: <0> but was: <1>
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
+[INFO] Total time:  01:00 min

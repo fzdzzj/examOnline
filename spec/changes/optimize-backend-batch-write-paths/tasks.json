@@ -12,9 +12,9 @@
     {
       "id": 2,
       "title": "阶段 2：实施通知批量插入与提醒候选批查、单测先红后绿与变异击红验证",
-      "status": "pending",
+      "status": "completed",
       "description": "①UserMessageMapper 新增 insertBatch（@Insert script foreach 显式全列，列清单以 schema.sql user_messages 建表定义为准）；②ExamLifecycleNotificationService.notifyExamPublished/notifyScorePublished 组装 List 后分批（≤500）调 insertBatch，旁路降级 try-catch 语义逐字不变，日志条数口径为学生数；notifyScoreReviewHandled 保持单条不动；③ReservationRemindService.remind 一次 IN(examIds)+reminded_time IS NULL 批查替代逐场 selectList，内存按 examId 分组，deliverIfAbsent 行级幂等链路逐字不动；编写后端单测先红后绿；变异验证至少 3 项（m1 批量写入破坏降级语义或阻断主事务击红、m2 分批上限失效或列清单与 schema.sql 不一致击红、m3 提醒批查改动波及 deliverIfAbsent 幂等链击红）。",
-      "evidence": ""
+      "evidence": "实现：UserMessageMapper.insertBatch(@Param(\"messages\") List<UserMessage>) 显式列 (user_id, exam_id, title, content, read_flag, created_time) 与 schema.sql user_messages 去自增 id 后逐列一致（零 DDL）；ExamLifecycleNotificationService 新增 INSERT_BATCH_SIZE=500 与 insertInBatches 分批辅助，notifyExamPublished/notifyScorePublished 改批量写入、buildMessage 补 createdTime（自定义 @Insert 不经字段填充），三处 try-catch 旁路降级结构与 log.info 学生数口径逐字不变，notifyScoreReviewHandled 单条 insert 不动；ReservationRemindService.remind 改单次 selectList(in(examId, examIds).isNull(remindedTime)) 后 Map<Long,List> 按 examId 分组，deliverIfAbsent 与 @Transactional 边界零改动。单测先红后绿：新增 ExamLifecycleNotificationServiceTest（5 例：1200 学生分 500/500/200 三批、成绩发布同口径、批失败 assertDoesNotThrow 降级、空收件人零写入、单收件人仍单条），ReservationRemindServiceTest 新增 pendingReservationsFetchedOnceAcrossExams（times(1) 去 N+1）；实现前回退两 service 跑 → Tests run: 9, Failures: 3, Errors: 1 BUILD FAILURE（pendingReservationsFetchedOnceAcrossExams expected:<3> but was:<9>），实现后 → 9/0/0/0 BUILD SUCCESS。变异三项均击红-复原-回绿：m1 catch(Exception)→catch(IllegalArgumentException)，ExamLifecycleNotificationIntegrationTest#notificationFailureDoesNotBreakExamPublish 由绿转红 expected:<200> but was:<500>；m2 INSERT_BATCH_SIZE 500→100000，examPublishedBatchesInChunksOfAtMost500 转红 Wanted 3 times/B was 1 time；m3 if(claimed!=1)→if(false)，deliverSkipsWhenMarkNotClaimed 转红 expected:<0> but was:<1>。全量门禁 mvnw.cmd clean test（仓库根）→ Tests run: 565, Failures: 0, Errors: 0, Skipped: 1 BUILD SUCCESS（基线 559，净 +6；gate-baseline 上调留待阶段 3）。红线核对：schema.sql/docker/openapi.yaml/pom.xml/frontend 零 diff；测试无 @Sql 注解形态命中；证据日志（含裁剪说明与命令）与核对表见 evidence/README.md 及同目录 *.log。"
     },
     {
       "id": 3,
