@@ -19,9 +19,9 @@
     {
       "id": 3,
       "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "在 feature 分支执行后端 mvnw.cmd clean test 与前端三门禁（lint:check / type-check:check / test）；按实测上调 .github/ci/gate-baseline.json 的 frontendTests（backendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 合入 specs/frontend 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
-      "evidence": ""
+      "evidence": "全量双端门禁实测（独立复核于 revision 6be911e 复跑，收口笔仅改 spec 文档与 gate-baseline.json、不改测试面）：后端 mvnw.cmd clean test → Tests run: 559, Failures: 0, Errors: 0, Skipped: 1 / BUILD SUCCESS（backendTests 559 不变）；前端 lint:check exit 0、type-check:check exit 0、npx vitest run → 116 文件 / 874 用例全绿（frontendTests 848→874 净增 26 同笔上调，openapiPaths 97 不变——零契约变更）；复核核查确认全量跑中的超时失败为负载型 flaky（失败集合随负载漂移、与本案 diff 零交集、13 文件隔离重跑绿、6 个本案新 spec 全绿），以完整绿排 874/874 为门禁判据；后端 marked 语义核实（读权威源码）：ExamDraftService.save L97-100 原样存储非空 marked、parseDraft L153-157 回读、EnterExamResponse.marked 下发回放 → 端到端完整，无需回退仅本地持久化；变异 m1 独立重注入击红-复原-回绿复现；spec-delta 2 个 Requirement（答题卡疑难标记 Mark for Review / 交卷一键跳转首道未答题）合入 specs/frontend/spec.md；变更目录归档至 spec/changes/archive/ 并更新 spec/README.md 与 docs/功能待办清单.md；feature/polish-student-taking-and-review-markers 分支 --no-ff 合并入 main。"
     }
   ]
 }
