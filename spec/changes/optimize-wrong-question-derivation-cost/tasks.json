@@ -14,9 +14,9 @@
     {
       "id": 2,
       "title": "阶段 2：版本戳侦察定案 + 缓存实施 + 单测先红后绿 + 变异击红",
-      "status": "pending",
+      "status": "in_progress",
       "description": "侦察判分事实源可用版本信号列（GradingSubmission/SubjectiveGrade 已存在列，零 DDL 禁加列；确认批改/复核写点是否 touch submission）→ 定版本戳方案或退化显式失效（退化则回写 proposal 白名单并留痕）→ 实施轻量判定缓存（Redis，键含版本信号；未命中回填；Redis 故障退化为现行现算）+ 双 parse 收敛 → 单测先红后绿（命中/失效/回填/故障退化/装配次数断言）→ 变异击红（去版本戳校验采信脏值→红；去回填→红）→ 全量门禁 mvnw.cmd clean test 留证 → 分支上提交后停待复核。白名单：proposal 第三节。",
-      "evidence": ""
+      "evidence": "侦察定案：GradingSubmission.updated_time 与 SubjectiveGrade.updated_time 两列已存在（零 DDL），批改/复核写点（SubjectiveGradingService.submitGrade → casSaveScore 自增 version 刷 updated_time → refreshSubmissionSubjectiveScore 显式刷答卷 updated_time）均 touch submission。定版本戳方案（key 含 concat(submission.updated_time, MAX(subjective.updated_time), MAX(subjective.version))），肥版本戳可行，未退化显式失效、未扩白名单。实施：WrongQuestionJudgementCache（score 包，Redis String，key 含版本戳，未命中回填，故障退化现算）；接入 getPracticePool（重练池，命中免 assembleGradingCore）与 getStudentWrongQuestionIds/isWrongQuestionOf（submitPractice 经其）；assembleGradingCore 双 parse 收敛为一次（resolve 增 3 参重载复用已 parse answers）。listWrongQuestions 保留完整装配（显示契约需答案/评语/判分依据，与缓存内容红线冲突，详见 evidence）。单测先红后绿（命中不装配/版本戳失效/未命中回填/故障退化/装配次数≤未命中场数）。变异击红两处留证 evidence/2026-10-16_wrong-question-cache-mutation-hit-red.md。全量门禁 mvnw.cmd clean test 实测留证见收口笔。"
     },
     {
       "id": 3,

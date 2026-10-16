@@ -19,7 +19,7 @@ import com.exam.score.dto.PracticeSubmitRequest;
 import com.exam.score.dto.PracticeSubmitResponse;
 import com.exam.score.entity.PracticeAttempt;
 import com.exam.score.mapper.PracticeAttemptMapper;
-import com.exam.score.support.QuestionScoreResolver;
+import com.exam.score.support.WrongQuestionJudgementCache;
 import com.exam.submission.entity.ExamSubmission;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,19 +86,20 @@ public class StudentPracticeService {
         // 收集所有已发布考试的错题（保持题目初次遇到顺序）
         Map<Long, GradingQuestion> wrongQuestions = new LinkedHashMap<>();
         for (Exam exam : publishedExams) {
-            ScoreExportService.PersonalReport report;
+            ScoreExportService.WrongQuestionView view;
             try {
-                report = scoreExportService.getPersonalReportWithoutRank(exam, studentId);
+                // 错题判定缓存：命中免逐场全卷判分重算（assembleGradingCore），未命中按现算口径回填
+                view = scoreExportService.wrongQuestionView(exam, studentId);
             } catch (Exception e) {
-                log.warn("重练池加载成绩单异常，跳过考试 {}: {}", exam.getId(), e.getMessage());
+                log.warn("重练池加载错题判定异常，跳过考试 {}: {}", exam.getId(), e.getMessage());
                 continue;
             }
-            if (report == null || report.questions() == null) {
+            if (view == null || view.questions() == null) {
                 continue;
             }
 
-            for (GradingQuestion q : report.questions()) {
-                QuestionScoreResolver.ResolvedQuestionScore rs = report.scores().get(q.questionId());
+            for (GradingQuestion q : view.questions()) {
+                WrongQuestionJudgementCache.ScoredQuestion rs = view.scores().get(q.questionId());
                 if (rs == null || rs.score() == null || rs.max() == null) {
                     continue;
                 }
@@ -317,20 +318,21 @@ public class StudentPracticeService {
         List<Exam> publishedExams = loadPublishedExams(studentId);
         Set<Long> wrongQids = new HashSet<>();
         for (Exam exam : publishedExams) {
-            ScoreExportService.PersonalReport report;
+            Map<Long, WrongQuestionJudgementCache.ScoredQuestion> scored;
             try {
-                report = scoreExportService.getPersonalReportWithoutRank(exam, studentId);
+                // 错题判定缓存（命中免逐场全卷判分重算，未命中按现算口径回填）
+                scored = scoreExportService.wrongQuestionScores(exam, studentId);
             } catch (Exception e) {
                 continue;
             }
-            if (report == null || report.questions() == null) {
+            if (scored == null) {
                 continue;
             }
-            for (GradingQuestion q : report.questions()) {
-                QuestionScoreResolver.ResolvedQuestionScore rs = report.scores().get(q.questionId());
+            for (Map.Entry<Long, WrongQuestionJudgementCache.ScoredQuestion> e : scored.entrySet()) {
+                WrongQuestionJudgementCache.ScoredQuestion rs = e.getValue();
                 if (rs != null && rs.score() != null && rs.max() != null
                         && rs.score().compareTo(rs.max()) < 0) {
-                    wrongQids.add(q.questionId());
+                    wrongQids.add(e.getKey());
                 }
             }
         }
@@ -349,22 +351,21 @@ public class StudentPracticeService {
     public boolean isWrongQuestionOf(Long studentId, Long questionId) {
         List<Exam> publishedExams = loadPublishedExams(studentId);
         for (Exam exam : publishedExams) {
-            ScoreExportService.PersonalReport report;
+            Map<Long, WrongQuestionJudgementCache.ScoredQuestion> scored;
             try {
-                report = scoreExportService.getPersonalReportWithoutRank(exam, studentId);
+                // 错题判定缓存（命中免逐场全卷判分重算，未命中按现算口径回填）
+                scored = scoreExportService.wrongQuestionScores(exam, studentId);
             } catch (Exception e) {
                 log.warn("错题池门控定位成绩单异常，跳过考试 {}: {}", exam.getId(), e.getMessage());
                 continue;
             }
-            if (report == null || report.questions() == null) {
+            if (scored == null) {
                 continue;
             }
-            for (GradingQuestion q : report.questions()) {
-                QuestionScoreResolver.ResolvedQuestionScore rs = report.scores().get(q.questionId());
-                if (questionId.equals(q.questionId()) && rs != null && rs.score() != null && rs.max() != null
-                        && rs.score().compareTo(rs.max()) < 0) {
-                    return true;
-                }
+            WrongQuestionJudgementCache.ScoredQuestion rs = scored.get(questionId);
+            if (rs != null && rs.score() != null && rs.max() != null
+                    && rs.score().compareTo(rs.max()) < 0) {
+                return true;
             }
         }
         return false;

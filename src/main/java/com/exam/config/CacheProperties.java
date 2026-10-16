@@ -46,4 +46,10 @@ public class CacheProperties {
 
     /** 空标记短 TTL（秒）：宁可短一些让穿透概率快速恢复，也不长期掩盖"数据已存在"的事实 */
     private long nullTtlSeconds = 30;
+
+    /**
+     * 错题判定轻量缓存 TTL（optimize-wrong-question-derivation-cost）：版本戳自失效为主，
+     * 短 TTL 仅兜底清理「版本信号变更后遗留的旧 key」与极端同秒多写残窗，过期即自愈重新现算。
+     */
+    private Duration wrongQuestionJudgementTtl = Duration.ofMinutes(10);
 }

@@ -16,6 +16,7 @@ import com.exam.question.entity.QuestionType;
 import com.exam.question.support.AnswerNormalizer;
 import com.exam.score.support.ExcelSheetWriter;
 import com.exam.score.support.QuestionScoreResolver;
+import com.exam.score.support.WrongQuestionJudgementCache;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
@@ -81,19 +82,22 @@ public class ScoreExportService {
     private final QuestionScoreResolver scoreResolver;
     private final UserMapper userMapper;
     private final RankCalculator rankCalculator;
+    private final WrongQuestionJudgementCache wrongQuestionJudgementCache;
 
     public ScoreExportService(ExamMapper examMapper,
                               GradingSubmissionMapper gradingSubmissionMapper,
                               GradingPaperReader paperReader,
                               QuestionScoreResolver scoreResolver,
                               UserMapper userMapper,
-                              RankCalculator rankCalculator) {
+                              RankCalculator rankCalculator,
+                              WrongQuestionJudgementCache wrongQuestionJudgementCache) {
         this.examMapper = examMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
         this.paperReader = paperReader;
         this.scoreResolver = scoreResolver;
         this.userMapper = userMapper;
         this.rankCalculator = rankCalculator;
+        this.wrongQuestionJudgementCache = wrongQuestionJudgementCache;
     }
 
     // ==================== 四种导出 ====================
@@ -547,6 +551,66 @@ public class ScoreExportService {
                 core.paper().questions(), core.scores(), core.answers());
     }
 
+    // ==================== 错题判定轻量缓存（optimize-wrong-question-derivation-cost） ====================
+
+    /**
+     * 错题判定轻量结果视图：逐题 {@code questionId → (score, max, type)}。
+     *
+     * <p>布尔型消费端（重练池 / 错题本 / 提交门控）只消费 {@code score < max} 判定，
+     * 通过 {@link WrongQuestionJudgementCache} 命中即可免除逐场全卷判分重算（assembleGradingCore）。
+     * 未命中（或 Redis 故障）按现行现算口径回填。返回 null 表示该场无判定数据或装配异常
+     * （与调用方「装配异常跳过该场」语义一致）。
+     */
+    public Map<Long, WrongQuestionJudgementCache.ScoredQuestion> wrongQuestionScores(Exam exam, Long studentId) {
+        return wrongQuestionJudgementCache.get(exam.getId(), studentId,
+                () -> buildScoredQuestions(exam, studentId));
+    }
+
+    /**
+     * 错题判定视图（重练池专用）：题目列表（判分快照）+ 逐题轻量判定。显示所需的题目列表直接读取
+     * 判分快照一份；未命中回填的 loader 内部经 assembleGradingCore 另读一份快照（冷访问一次性开销，
+     * 命中/热访问仅一次快照读取）。返回 null 表示无判定数据。
+     */
+    public WrongQuestionView wrongQuestionView(Exam exam, Long studentId) {
+        GradingPaper paper = paperReader.readByExamId(exam.getId());
+        Map<Long, WrongQuestionJudgementCache.ScoredQuestion> scored =
+                wrongQuestionJudgementCache.get(exam.getId(), studentId,
+                        () -> buildScoredQuestions(exam, studentId));
+        if (scored == null) {
+            return null;
+        }
+        return new WrongQuestionView(paper.questions(), scored);
+    }
+
+    /** 现算口径构建逐题轻量判定三元组（同引擎同快照同答案，判分同源，不引入第二套判分逻辑）。 */
+    private Map<Long, WrongQuestionJudgementCache.ScoredQuestion> buildScoredQuestions(Exam exam, Long studentId) {
+        PersonalReport report;
+        try {
+            report = getPersonalReportWithoutRank(exam, studentId);
+        } catch (Exception e) {
+            log.warn("错题判定现算成绩单异常，跳过考试 {}: {}", exam.getId(), e.getMessage());
+            return null;
+        }
+        if (report == null || report.questions() == null) {
+            return null;
+        }
+        Map<Long, WrongQuestionJudgementCache.ScoredQuestion> scored = new LinkedHashMap<>();
+        for (GradingQuestion q : report.questions()) {
+            QuestionScoreResolver.ResolvedQuestionScore rs = report.scores().get(q.questionId());
+            if (rs == null || rs.score() == null || rs.max() == null) {
+                continue;
+            }
+            scored.put(q.questionId(),
+                    new WrongQuestionJudgementCache.ScoredQuestion(rs.score(), rs.max(), q.type()));
+        }
+        return scored;
+    }
+
+    /** 错题判定视图：判分快照题目列表 + 逐题轻量判定三元组。 */
+    public record WrongQuestionView(List<GradingQuestion> questions,
+                                    Map<Long, WrongQuestionJudgementCache.ScoredQuestion> scores) {
+    }
+
     /** 判分核心装配快照：答卷 + 试卷 + 逐题得分 + 答案文本。 */
     private record GradingCore(GradingSubmission submission, GradingPaper paper,
                                Map<Long, QuestionScoreResolver.ResolvedQuestionScore> scores,
@@ -568,9 +632,11 @@ public class ScoreExportService {
         if (submission == null || submission.getTotalScore() == null) {
             throw new BusinessException(ResponseCode.NOT_FOUND, "该学生暂无已汇总成绩");
         }
-        Map<Long, QuestionScoreResolver.ResolvedQuestionScore> scores =
-                scoreResolver.resolve(submission, paper);
+        // 双 parse 收敛（optimize-wrong-question-derivation-cost）：先解析答案 JSON 一次，
+        // 复用进 resolve（重载不再二次 parse），消除 L573 与 resolve 内对同一 answers 的双重 parse。
         Map<Long, String> answers = paperReader.parseAnswers(submission.getAnswers());
+        Map<Long, QuestionScoreResolver.ResolvedQuestionScore> scores =
+                scoreResolver.resolve(submission, paper, answers);
         return new GradingCore(submission, paper, scores, answers);
     }
 

@@ -60,6 +60,19 @@ public class QuestionScoreResolver {
      */
     public Map<Long, ResolvedQuestionScore> resolve(GradingSubmission submission, GradingPaper paper) {
         Map<Long, String> answers = paperReader.parseAnswers(submission.getAnswers());
+        return resolve(submission, paper, answers);
+    }
+
+    /**
+     * 解析一份答卷的逐题得分（已由调用方解析好答案 Map，内部不再重复 parseAnswers）。
+     *
+     * <p>判分核心装配收发（optimize-wrong-question-derivation-cost 双 parse 收敛）：调用方
+     * assembleGradingCore 需要同时拿到逐题得分与答案文本，若走 {@link #resolve(GradingSubmission,
+     * GradingPaper)} 会在其内部 parse 一次、外层再 parse 一次同一 answers JSON。本重载让
+     * 调用方先 parse 一次、把答案 Map 传入，避免双重 parse 冗余。
+     */
+    public Map<Long, ResolvedQuestionScore> resolve(GradingSubmission submission, GradingPaper paper,
+                                                    Map<Long, String> answers) {
         Map<Long, SubjectiveGrade> subjectiveRows = subjectiveGradeMapper.selectList(
                         Wrappers.<SubjectiveGrade>lambdaQuery()
                                 .eq(SubjectiveGrade::getSubmissionId, submission.getId()))

@@ -11,6 +11,7 @@ import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.support.GradingPaperReader;
 import com.exam.question.entity.QuestionType;
 import com.exam.score.support.QuestionScoreResolver;
+import com.exam.score.support.WrongQuestionJudgementCache;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
@@ -58,6 +59,8 @@ class ScoreExportServiceSkipRankGuardTest {
     private UserMapper userMapper;
     @Mock
     private RankCalculator rankCalculator;
+    @Mock
+    private WrongQuestionJudgementCache wrongQuestionJudgementCache;
 
     private ScoreExportService service;
 
@@ -89,7 +92,7 @@ class ScoreExportServiceSkipRankGuardTest {
     @BeforeEach
     void setUp() {
         service = new ScoreExportService(examMapper, gradingSubmissionMapper, paperReader,
-                scoreResolver, userMapper, rankCalculator);
+                scoreResolver, userMapper, rankCalculator, wrongQuestionJudgementCache);
     }
 
     // ==================== 构造性实证：轻量入口零交互 ====================
@@ -143,8 +146,9 @@ class ScoreExportServiceSkipRankGuardTest {
     private void stubCoreAssembly() {
         when(paperReader.readByExamId(EXAM_ID)).thenReturn(paper);
         when(gradingSubmissionMapper.selectOne(any())).thenReturn(submission);
-        when(scoreResolver.resolve(submission, paper)).thenReturn(scores);
         when(paperReader.parseAnswers(any())).thenReturn(answers);
+        // 双 parse 收敛后装配走 resolve(submission, paper, answers) 重载（不二次 parse）
+        when(scoreResolver.resolve(submission, paper, answers)).thenReturn(scores);
     }
 
     private static Exam exam() {

@@ -21,7 +21,7 @@ import com.exam.score.dto.PracticeSubmitRequest;
 import com.exam.score.dto.PracticeSubmitResponse;
 import com.exam.score.entity.PracticeAttempt;
 import com.exam.score.mapper.PracticeAttemptMapper;
-import com.exam.score.support.QuestionScoreResolver;
+import com.exam.score.support.WrongQuestionJudgementCache;
 import com.exam.submission.entity.ExamSubmission;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -113,23 +113,23 @@ class StudentPracticeServiceGateAndLimitTest {
         GradingQuestion q1Wrong = question(QUESTION_1, "A");
         GradingQuestion q1Full = question(QUESTION_1, "A");
         GradingQuestion q2Full = question(QUESTION_2, "B");
-        when(scoreExportService.getPersonalReportWithoutRank(any(), any())).thenAnswer(inv -> {
+        when(scoreExportService.wrongQuestionScores(any(), any())).thenAnswer(inv -> {
             Exam exam = inv.getArgument(0);
             if (exam.getId().equals(EXAM_1)) {
-                return report(q1Wrong, new BigDecimal("3.0"));   // 命中：q1 判分严格小于满分
+                return scored(q1Wrong, new BigDecimal("3.0"));   // 命中：q1 判分严格小于满分
             }
             if (exam.getId().equals(EXAM_2)) {
-                return report(q1Full, FULL);                    // q1 满分不算错
+                return scored(q1Full, FULL);                    // q1 满分不算错
             }
-            return report(q2Full, FULL);                        // 不含 q1
+            return scored(q2Full, FULL);                        // 不含 q1
         });
         stubSubmitPath();
 
         PracticeSubmitResponse response = service.submitPractice(STUDENT_ID, request(QUESTION_1, "A"));
 
         assertTrue(response.getCorrect(), "命中场次判分应通过门控并正常判分");
-        // 关键：命中即短路——成绩单装配只发生 1 次（旧实现全量重建集合须装配全部 3 场）
-        verify(scoreExportService, times(1)).getPersonalReportWithoutRank(any(), any());
+        // 关键：命中即短路——错题判定读取只发生 1 次（旧实现全量重建集合须装配全部 3 场）
+        verify(scoreExportService, times(1)).wrongQuestionScores(any(), any());
     }
 
     @Test
@@ -138,9 +138,9 @@ class StudentPracticeServiceGateAndLimitTest {
         stubPublishedExams(EXAM_1, EXAM_2);
         GradingQuestion q1Full = question(QUESTION_1, "A");
         GradingQuestion q2Full = question(QUESTION_2, "B");
-        when(scoreExportService.getPersonalReportWithoutRank(any(), any())).thenAnswer(inv -> {
+        when(scoreExportService.wrongQuestionScores(any(), any())).thenAnswer(inv -> {
             Exam exam = inv.getArgument(0);
-            return exam.getId().equals(EXAM_1) ? report(q1Full, FULL) : report(q2Full, FULL);
+            return exam.getId().equals(EXAM_1) ? scored(q1Full, FULL) : scored(q2Full, FULL);
         });
 
         BusinessException ex = assertThrows(BusinessException.class,
@@ -148,7 +148,7 @@ class StudentPracticeServiceGateAndLimitTest {
 
         assertEquals(ResponseCode.BAD_REQUEST.getCode(), ex.getCode());
         assertEquals("该题目不属于您的错题重练池", ex.getMessage());
-        verify(scoreExportService, times(2)).getPersonalReportWithoutRank(any(), any());
+        verify(scoreExportService, times(2)).wrongQuestionScores(any(), any());
     }
 
     @Test
@@ -156,12 +156,12 @@ class StudentPracticeServiceGateAndLimitTest {
     void gateLogsWarnAndSkipsBrokenExamThenFindsQuestionInLaterExam() {
         stubPublishedExams(EXAM_1, EXAM_2);
         GradingQuestion q1Wrong = question(QUESTION_1, "A");
-        when(scoreExportService.getPersonalReportWithoutRank(any(), any())).thenAnswer(inv -> {
+        when(scoreExportService.wrongQuestionScores(any(), any())).thenAnswer(inv -> {
             Exam exam = inv.getArgument(0);
             if (exam.getId().equals(EXAM_1)) {
                 throw new IllegalStateException("成绩单快照损坏");
             }
-            return report(q1Wrong, new BigDecimal("3.0"));
+            return scored(q1Wrong, new BigDecimal("3.0"));
         });
         stubSubmitPath();
 
@@ -186,8 +186,8 @@ class StudentPracticeServiceGateAndLimitTest {
     @DisplayName("attempt 连对回读查询必须 LIMIT 3（连对窗口即 3）")
     void attemptHistoryReadCappedAtThree() {
         stubPublishedExams(EXAM_1);
-        when(scoreExportService.getPersonalReportWithoutRank(any(), any()))
-                .thenReturn(report(question(QUESTION_1, "A"), new BigDecimal("3.0")));
+        when(scoreExportService.wrongQuestionScores(any(), any()))
+                .thenReturn(scored(question(QUESTION_1, "A"), new BigDecimal("3.0")));
         stubSubmitPath();
         // 模拟：本次答对 + 历史已有多条连对记录（第四条及以前必须被窗口截断）
         when(practiceAttemptMapper.selectList(any())).thenReturn(List.of(
@@ -206,8 +206,8 @@ class StudentPracticeServiceGateAndLimitTest {
     @DisplayName("最近 3 条连对即消灭：消灭判定（连对 ≥3）语义不变")
     void masteryDecisionUnchangedWhenThreeRecentCorrect() {
         stubPublishedExams(EXAM_1);
-        when(scoreExportService.getPersonalReportWithoutRank(any(), any()))
-                .thenReturn(report(question(QUESTION_1, "A"), new BigDecimal("3.0")));
+        when(scoreExportService.wrongQuestionScores(any(), any()))
+                .thenReturn(scored(question(QUESTION_1, "A"), new BigDecimal("3.0")));
         stubSubmitPath();
         when(practiceAttemptMapper.selectList(any())).thenReturn(List.of(
                 attempt(true), attempt(true), attempt(true)));
@@ -271,12 +271,10 @@ class StudentPracticeServiceGateAndLimitTest {
                 "单选", null, List.of("A", "B"), answer, FULL);
     }
 
-    private ScoreExportService.PersonalReport report(GradingQuestion q, BigDecimal score) {
-        QuestionScoreResolver.ResolvedQuestionScore resolved =
-                new QuestionScoreResolver.ResolvedQuestionScore(score, q.score(),
-                        score.compareTo(q.score()) == 0, true, null, null);
-        return new ScoreExportService.PersonalReport(null, null, null, null, null, 0, false,
-                List.of(q), java.util.Map.of(q.questionId(), resolved), java.util.Map.of());
+    /** 构造错题判定轻量结果（命中缓存路径，免装配）。 */
+    private java.util.Map<Long, WrongQuestionJudgementCache.ScoredQuestion> scored(GradingQuestion q, BigDecimal score) {
+        return java.util.Map.of(q.questionId(),
+                new WrongQuestionJudgementCache.ScoredQuestion(score, q.score(), q.type()));
     }
 
     private PracticeAttempt attempt(boolean correct) {
