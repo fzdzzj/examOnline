@@ -26,7 +26,7 @@
 - 新增 `src/test/java/com/exam/taking/controller/ExamTakingControllerRateLimitGuardTest.java`（3 例）：
   reportBehavior 三参数定档（200/1000/"behavior-report"）、qps 量级介于 enter/submit 之间、
   @PostMapping 写端点无裸端点；
-- 改写 `src/test/java/com/exam/monitoring/metrics/BusinessMetricsTest.java`（+3 例）：
+- 改写 `src/test/java/com/exam/monitoring/metrics/BusinessMetricsTest.java`（+2 例）：
   未注册类型归并 unknown、七注册常量各占 tag 不落 unknown、注册集与 BehaviorEventTypes 反射对齐；
 - 适配构造签名变更：`BehaviorEventCollectorTest`、`DlqObservabilityTest`。
 
@@ -105,7 +105,7 @@ eq4（阈值 +1ns，断言口径 1 秒级无法区分）——如实登记，不
 - 命令：`mvnw.cmd clean test`（仓库根）
 - 结果（原始输出）：`Tests run: 587, Failures: 0, Errors: 0, Skipped: 1`（Skipped 为存量用例），`BUILD SUCCESS`。
 - 日志：`full-gate.log`
-- 本阶段按分工只实施 + 留证，`gate-baseline.json` 上调属阶段 3 收口笔（backendTests 预期 +29）。
+- 本阶段按分工只实施 + 留证，`gate-baseline.json` 上调属阶段 3 收口笔（backendTests 实测净增 +19：568→587；复核对账勘正，原文「+29」系红期用例数误植）。
 
 ---
 

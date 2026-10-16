@@ -33,6 +33,22 @@ THEN 无需修改采集核心逻辑
 
 ---
 
+#### Scenario: 行为上报防刷与明细上限 (harden-behavior-report-and-monitor)
+
+GIVEN 学生向行为上报端点提交事件（正常考试场景：偶发切屏/失焦/粘贴事件）
+
+WHEN 端点受理上报
+
+THEN 端点 SHALL 受令牌桶限流保护（qps 与容量以代码注释论证为准，正常千人大考峰值全放行，脚本刷写被整流）
+
+AND 事件明细（eventData）序列化后 SHALL 不超过服务端上限（4096 字节），超限时整笔拒绝（400「事件明细过大」），不落库不打点
+
+AND 事件发生时间与服务器时钟偏差绝对值超过阈值（10 分钟）时 SHALL 按服务器当前时间落库（不拒绝）
+
+AND 指标计数 SHALL 按已注册事件类型（BehaviorEventRegistry 注册表为事实源）分 tag，未注册类型 SHALL 归并至固定 tag "unknown"——落库与判定语义不受影响（兜底策略照常落库）（由 harden-behavior-report-and-monitor 合入）
+
+---
+
 ### Requirement: 事件严重度分级
 
 WHEN 行为事件被采集,
@@ -84,6 +100,20 @@ GIVEN 教师进入某考试行为日志
 WHEN 教师按学生筛选
 
 THEN 系统按时间顺序展示该学生行为轨迹
+
+---
+
+#### Scenario: 时间线明细行数上限与统计口径保全 (harden-behavior-report-and-monitor)
+
+GIVEN 教师查看单个学生的行为时间线
+
+WHEN 系统执行时间线查询
+
+THEN 明细条目查询 SHALL 设行数上限（1000 条，event_time/id 升序，覆盖正常考试场景任何单人事件量），响应 items 如实反映实际返回条数
+
+AND total 与严重度分布（low/medium/highCount）SHALL 由独立窄投影统计查询（仅 severity 列，不载 event_data）得出，SHALL NOT 因明细截断而失真
+
+AND 时间线可见性与权限校验（仅教师与管理员）SHALL 保持不变（由 harden-behavior-report-and-monitor 合入；背景：单学生时间线曾为无上限 selectList 且逐行载 event_data TEXT，与上报刷写叠加后查询膨胀，分页查询已有 size≤200 上限先例）
 
 ---
 

@@ -21,9 +21,9 @@
     {
       "id": 3,
       "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 两 Scenario 合入 specs/anti-cheat 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md（B.2 台账对应发现标记已修复），--no-ff 合并入 main。",
-      "evidence": ""
+      "evidence": "①门禁实测：mvnw.cmd clean test（仓库根，revision d5e6490）→ Tests run: 587, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（evidence/full-gate.log 裁剪版）；复核侧独立复跑同结果。数字对账终值（复核对账收敛）：基线 568→587 净增 +19＝新类 17（CollectService 12+RateLimitGuard 3+QueryService 2）+ BusinessMetricsTest 增 2；执行摘要「+29」系红期用例数误植、README「+3 例」实为 +2，收口笔已勘正 evidence/README.md 两处。前端免跑论证：frontend/ 零 diff（git diff 2c88cea..d5e6490 --name-only 无 frontend 路径），按离线门禁分级政策收窄为仅后端。②基线上调：gate-baseline.json backendTests 568→587（frontendTests 874、openapiPaths 97 核对不变）。③spec-delta 合入：specs/anti-cheat/spec.md「行为事件采集」追加 Scenario「行为上报防刷与明细上限」、「行为日志时间线」追加 Scenario「时间线明细行数上限与统计口径保全」（含背景注记）。④复核结论 PASS：红线五项源码直读全过（限流注释、4096 字节闸门先于分派、10min 锚定、registeredTypes() 七常量逐核一致、统计/明细解耦）；m1 独立重注入击红-复原-回绿；eq1/eq4 真等价、eq2/eq3 如实标注非假等价；DlqObservabilityTest 系 BusinessMetrics 构造签名扩展涟漪（仅 mock 适配+注释，无行为改动）；@Sql 注解形态命中 0。⑤变更目录归档至 spec/changes/archive/，总账更新 spec/README.md 与 docs/功能待办清单.md（含 B.2 台账本案四发现标记已修复）。"
     }
   ]
 }
