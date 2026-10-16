@@ -34,6 +34,15 @@ AND 回填缓存
 
 ---
 
+#### Scenario: 错题判定缓存的版本戳自失效 (optimize-wrong-question-derivation-cost)
+
+- **WHEN**: 教师批改主观题或其他判分事实源写入之后，学生随后读取重练池
+- **THEN**: 缓存读取 SHALL 先校验判分事实源版本信号（submission 更新时间与主观批改行更新时间/版本聚合）；信号与缓存键不一致时 SHALL 视为未命中并按现行口径重算回填，SHALL NOT 采信脏缓存导致错题集合错判（漏题/多题）
+- **AND**: 版本信号 SHALL 取自已存在的列（零 DDL 约束下不得新增列）；复核调分（ScoreReviewService.handle）仅改聚合 totalScore、不涉逐题评分事实源（resolve 不读 totalScore），不触发失效——缓存值语义仍有效（2026-10-16 复核勘正表述）
+- **AND**: 失效正确性验证 SHALL 以单测覆盖：改判分事实源 → 缓存失效 → 新值派生错题（变异验证注入「去校验采信脏值」须击红）
+
+---
+
 ### Requirement: 缓存穿透防护
 
 WHEN 查询不存在的键,

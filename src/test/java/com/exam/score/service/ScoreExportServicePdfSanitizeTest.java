@@ -13,6 +13,7 @@ import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.support.GradingPaperReader;
 import com.exam.question.entity.QuestionType;
 import com.exam.score.support.QuestionScoreResolver;
+import com.exam.score.support.WrongQuestionJudgementCache;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
@@ -66,6 +67,8 @@ class ScoreExportServicePdfSanitizeTest {
     private UserMapper userMapper;
     @Mock
     private RankCalculator rankCalculator;
+    @Mock
+    private WrongQuestionJudgementCache wrongQuestionJudgementCache;
 
     private ScoreExportService service;
 
@@ -74,7 +77,7 @@ class ScoreExportServicePdfSanitizeTest {
         MapperBuilderAssistant assistant = new MapperBuilderAssistant(new MybatisConfiguration(), "");
         TableInfoHelper.initTableInfo(assistant, GradingSubmission.class);
         service = new ScoreExportService(examMapper, gradingSubmissionMapper, paperReader,
-                scoreResolver, userMapper, rankCalculator);
+                scoreResolver, userMapper, rankCalculator, wrongQuestionJudgementCache);
         // assertExportable 走 OwnershipGuard：以 ADMIN（层级 3）身份放行
         LoginUser admin = new LoginUser();
         admin.setId(1L);
@@ -115,10 +118,11 @@ class ScoreExportServicePdfSanitizeTest {
         when(examMapper.selectById(EXAM_ID)).thenReturn(exam);
         when(paperReader.readByExamId(EXAM_ID)).thenReturn(paper);
         when(gradingSubmissionMapper.selectOne(any())).thenReturn(submission);
-        when(scoreResolver.resolve(submission, paper)).thenReturn(Map.of(11L,
+        Map<Long, String> answers = Map.of(11L, "A");
+        when(paperReader.parseAnswers(any())).thenReturn(answers);
+        when(scoreResolver.resolve(submission, paper, answers)).thenReturn(Map.of(11L,
                 new QuestionScoreResolver.ResolvedQuestionScore(new BigDecimal("4.0"),
                         new BigDecimal("4.0"), true, true, null, "评语\uD83D\uDE00正确")));
-        when(paperReader.parseAnswers(any())).thenReturn(Map.of(11L, "A"));
         when(gradingSubmissionMapper.selectList(any())).thenReturn(List.of(submission));
         when(rankCalculator.rank(any())).thenReturn(new int[]{1});
         when(userMapper.selectById(STUDENT_ID)).thenReturn(user());
