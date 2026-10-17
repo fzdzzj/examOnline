@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-spring-cache-resilience",
+  "branch": "feature/harden-spring-cache-resilience",
+  "level": "S",
+  "source": "docs/redis-dependency-runbook.md 矩阵「exam:cache:*（Spring Cache：快照/详情）」残留观察面 · Redis 依赖裁决 1② 卡（2026-10-17 用户派工六案串行第二案）：RedisCacheManager 无 CacheErrorHandler 异常裸穿 500，CacheMutexLoader 直连触点同族零容错",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-spring-cache-resilience（案 1 合入 main 后开）→ 写 proposal/spec-delta（performance 域）/tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "分支自 main（879fe40）拉出；立案笔见 git log（docs(spec): 立案 harden-spring-cache-resilience）；git diff --cached --stat 预检恰 4 文件（三件套 3 + spec/README.md 在途表 1）。spec-delta 为 performance 域 ADDED Requirement「Spring Cache 对 Redis 异常的降级容错」五 Scenario。evict 脏读窗口论证与互斥器同族范围口径注记落 proposal §二。派工为一次性实施，tasks.json 未走「全 false 待审批」中间态（先例如实登记）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——CacheErrorHandler 接线 + 互斥器六触点降级 + 新指标 + 告警守护 + 降级单测",
+      "status": "completed",
+      "description": "CacheConfig 实现 CachingConfigurer 供出 RedisCacheDegradedHandler（get 静默回源/put 放弃回填/evict/clear 延迟生效+脏读窗口论证）；CacheMutexLoader 六触点降级包装（业务 NOT_FOUND 原样传播）；BusinessMetrics 新增 exam.cache.degraded（tag action 六代码常量）；alerts.yml CacheDegraded 规则 + AlertAssetsTest EXPECTED_ALERTS/known 同笔；CacheResilienceTest 七用例 + CacheThreeDefensesTest 构造适配。",
+      "evidence": "实施笔 4eb513f（diff --stat 恰 8 文件：RedisCacheDegradedHandler/CacheConfig/CacheMutexLoader/BusinessMetrics/alerts.yml/AlertAssetsTest/CacheResilienceTest/CacheThreeDefensesTest，全在 proposal 白名单）。先红=编译红（01：CacheResilienceTest 找不到符号 RedisCacheDegradedHandler + 2 参 CacheConfig / 5 参 CacheMutexLoader 构造失配，revision 17ddaff 工作树），行为红由阶段 3 变异以同形补证。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证 + 等价变异登记",
+      "status": "completed",
+      "description": "变异验证——handler 读动作还原「异常上抛」旧形态击红、复原回绿（scripts/mutation-check.sh 驱动）；等价变异如实登记不强杀。",
+      "evidence": "evidence/03–04：mutation-check.sh m2-handler-rethrow（--inject-sed 's/countCacheDegraded(\"get\");/countCacheDegraded(\"get\"); throw e;/'，该文件唯一命中）五步全 PASS——注入后 handlerSwallowsGetErrorAndCounts 确定性失败（exit=1）、cmp 字节复原+注入标志归零后回绿（exit=0）；留证 D:\\code\\examOnline-measure\\harden-spring-cache-resilience\\mutation-check\\m2-handler-rethrow\\。等价变异：handler 其余三动作同构同形由 m2 代表族覆盖（同一断言逐一）；互斥器各触点改『失败重试一次』形态对全部触点持续故障的单测面观测等价，登记不强杀。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "completed",
+      "description": "收口 diff 核对——RedisLockHelper 锁原语、ExamDraftService（硬依赖面）、案 1 先例（AuthService/TokenStoreService/AuthenticationInterceptor/LoginGuardService）、WrongQuestionJudgementCache + schema.sql + docker/mysql + openapi.yaml + pom + frontend 零改动。",
+      "evidence": "evidence/README.md §05：git diff main --stat 针对范围外清单输出为空（OUT_OF_SCOPE_DIFF_LINES=0）；分支总 diff 文件清单全在 proposal 白名单内。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调、runbook 矩阵同笔改口径与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 在 658 基数上同笔上调 → evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ runbook 矩阵「exam:cache:*」行改降级口径 + §一 硬依赖族三改二 + §三 告警盘点 + §五 审计链 → 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + performance 域行追加 → docs/功能待办清单.md B.2 标注 → --no-ff 合入 main。",
+      "evidence": "全量门禁 evidence/06：`./mvnw clean test` → Tests run: 665, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，GATE_EXIT=0（revision 4eb513f）；gate-baseline.json backendTests 658→665 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；runbook 矩阵行终态=逐触点降级口径全量登记（计数指标 exam.cache.degraded tag action 六值、告警 CacheDegraded 同笔落位）+ §一 硬依赖族三改二 + §三 告警盘点第四条映射 + §五 审计链追加；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/harden-spring-cache-resilience/；--no-ff 合并入 main。"
+    }
+  ]
+}

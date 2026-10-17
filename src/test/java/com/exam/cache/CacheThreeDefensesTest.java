@@ -53,6 +53,9 @@ class CacheThreeDefensesTest extends IntegrationTestBase {
     @Autowired
     private CacheMutexLoader cacheMutexLoader;
 
+    @Autowired
+    private com.exam.monitoring.metrics.BusinessMetrics businessMetrics;
+
     // ==================== 防穿透：空值缓存 ====================
 
     @Test
@@ -146,7 +149,7 @@ class CacheThreeDefensesTest extends IntegrationTestBase {
         tinyBudget.setWaitIntervalMs(1);
         tinyBudget.setWaitMaxRounds(2);
         CacheMutexLoader loaderInstance = new CacheMutexLoader(redis, cacheManager, tinyBudget,
-                new RedisLockHelper(redis));
+                new RedisLockHelper(redis), businessMetrics);
 
         AtomicInteger dbCalls = new AtomicInteger();
         Supplier<ExamSnapshotResponse> loader = () -> {
