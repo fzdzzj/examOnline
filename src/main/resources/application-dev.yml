@@ -80,6 +80,10 @@ exam:
       #  缺失时报的是 "JWT secret 长度必须 >= 32 字节（当前 0）"，看起来像代码问题）。
       # 生产的 fail-fast 没有被削弱：application.yml 里仍是 ${JWT_SECRET:}，空值直接启动失败。
       secret: ${JWT_SECRET:examOnline-dev-only-hs256-secret-never-use-in-prod-0123456789abcdef}
+    reset-code:
+      # 本地未配 SMTP：验证码明文落日志的兜底保留（add-prod-profile-enforcements——
+      # base 缺省 false 安全缺省，dev 档显式开启本地便利；prod 继承 false 为功能不可用报错）
+      allow-log-fallback: true
 
 # OpenAPI 契约暴露（add-backend-openapi）：springdoc 配置（继承主配置，开发时启用 UI）
 springdoc:

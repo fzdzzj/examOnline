@@ -59,6 +59,9 @@ exam:
     reset-code:
       ttl-minutes: 5
       length: 6
+      # 测试档显式开启日志兜底（add-prod-profile-enforcements——base 缺省 false：
+      # AuthIntegrationTest 找回流程依赖 SMTP 未配置时的日志兜底路径保持可跑通）
+      allow-log-fallback: true
   taking:
     sweep:
       # 测试环境禁用定时兜底（间隔拉到 1h）：需要兜底的用例直接调用 sweepService.sweep()，

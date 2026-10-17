@@ -39,6 +39,9 @@ public class AuthProperties {
     public static class Admin {
         private String username = "admin";
         private String password = "admin123";
+        /** prod 启动时默认口令检查的显式豁免（add-prod-profile-enforcements）：
+         * 仅限存量库临时过渡（登录改密后移除并重启复核），新库一律用 ADMIN_PASSWORD 强口令；prod 专用 */
+        private boolean allowDefaultPassword = false;
     }
 
     /** 登录锁定 */
@@ -64,5 +67,9 @@ public class AuthProperties {
         private int ttlMinutes = 5;
         /** 验证码长度 */
         private int length = 6;
+        /** SMTP 未配置时验证码明文落日志的兜底开关（add-prod-profile-enforcements）：
+         * base 默认 false（安全缺省：日志读权限者可接管任意账号）；dev/test 显式 true 保留本地便利；
+         * prod 未覆盖即继承 false——验证码功能改为明确报错不可用，绝不明文落日志 */
+        private boolean allowLogFallback = false;
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
@@ -35,7 +36,8 @@ class MailServiceTest {
         mailSender = mock(JavaMailSender.class);
         MailProperties props = new MailProperties();
         props.setHost("smtp.test.local");
-        mailService = new MailService(mailSender, props);
+        // SMTP 已配置：allowLogFallback 与本类既有用例无关（走真实发送路径），取 true 保持旧构造语义
+        mailService = new MailService(mailSender, props, true);
         when(mailSender.createMimeMessage())
                 .thenAnswer(inv -> new MimeMessage(Session.getInstance(new Properties())));
     }
@@ -89,4 +91,36 @@ class MailServiceTest {
      * （编译器守护）；catch 体语义（码/文案）已由上一用例经 MailException 臂覆盖——两个臂共享
      * 同一 catch 子句体。
      */
+
+    // ==================== 日志兜底配置门禁（add-prod-profile-enforcements，安全发现 4） ====================
+
+    @Test
+    void fallbackDisabledThrowsInsteadOfLoggingCode() {
+        MailService prodLike = new MailService(null, new MailProperties(), false);
+        ch.qos.logback.classic.Logger mailLogger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(MailService.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+                new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        mailLogger.addAppender(appender);
+        try {
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> prodLike.sendResetCode("victim@test.com", "654321", 5),
+                    "SMTP 未配置且兜底关闭时必须明确报错（功能不可用），不得明文落日志");
+            assertTrue(ex.getMessage().contains("邮件服务未配置"), "报错须明确指出功能不可用的原因");
+            assertTrue(appender.list.stream().noneMatch(
+                            e -> e.getFormattedMessage().contains("654321")),
+                    "任何日志行都不得出现验证码明文（5 分钟 TTL 内可接管账号）");
+        } finally {
+            mailLogger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void fallbackEnabledKeepsLocalConvenience() {
+        MailService devLike = new MailService(null, new MailProperties(), true);
+
+        assertDoesNotThrow(() -> devLike.sendResetCode("dev@test.com", "123456", 5),
+                "显式开启兜底的档（dev/test）保持既有日志兜底便利");
+    }
 }
