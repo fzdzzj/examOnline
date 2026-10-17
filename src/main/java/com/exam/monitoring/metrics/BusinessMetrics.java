@@ -81,6 +81,10 @@ public class BusinessMetrics {
     /** 指标名：交卷锁降级计数（Counter；SETNX 因 Redis 连接异常失败、交卷降级放行时递增——
      * harden-submit-lock-redis-degradation，口径同源 exam.ratelimit.degraded / exam.auth.degraded） */
     private static final String SUBMIT_LOCK_DEGRADED = "exam.submit.lock.degraded";
+    /** 指标名：Spring Cache 降级计数（Counter，按动作打 tag action=get/put/evict/clear/lock/unlock；
+     * Redis 故障被 CacheErrorHandler/CacheMutexLoader 降级包吞掉静默走 DB 时递增——
+     * harden-spring-cache-resilience，口径同源 exam.ratelimit.degraded / exam.auth.degraded） */
+    private static final String CACHE_DEGRADED = "exam.cache.degraded";
     /** 交卷队列名：与 RabbitMqConfig.SUBMIT_QUEUE 保持一致（避免依赖具体实现类） */
     private static final String SUBMIT_QUEUE = "exam.submit.queue";
     /** 交卷死信队列名：与 RabbitMqConfig.SUBMIT_DLQ 保持一致 */
@@ -117,6 +121,9 @@ public class BusinessMetrics {
     private final Counter submitLockContentionsCounter;
     /** 交卷锁降级计数（无 tag 单 Counter：锁维度单一，无客户端可控输入） */
     private final Counter submitLockDegradedCounter;
+    /** Spring Cache 降级计数按动作缓存：get / put / evict / clear / lock / unlock 各自一个 Counter
+     * （tag=action，代码常量有界——CacheErrorHandler 四动作 + CacheMutexLoader 互斥锁两动作） */
+    private final Map<String, Counter> cacheDegradedCounters = new ConcurrentHashMap<>();
     /** 保留策略行数计数：key = table|action */
     private final Map<String, Counter> retentionRowCounters = new ConcurrentHashMap<>();
 
@@ -251,6 +258,24 @@ public class BusinessMetrics {
      */
     public void countSubmitLockDegraded() {
         submitLockDegradedCounter.increment();
+    }
+
+    /**
+     * Spring Cache 降级计数（harden-spring-cache-resilience，与 {@link #countRateLimitDegraded} /
+     * {@link #countAuthDegraded} / {@link #countSubmitLockDegraded} 同源同哲学——降级静默 + ERROR 日志
+     * + 计数，不新增第二套降级哲学）：缓存切面（CacheErrorHandler）或互斥回源器（CacheMutexLoader）
+     * 的 Redis 调用因连接异常失败、按降级口径静默继续时递增。
+     *
+     * <p>tag 基数有界：action 取值只有代码常量——get（读失败静默回源 DB）/ put（回填失败放弃本次）/
+     * evict（失效失败旧值存续至 TTL 自愈）/ clear（清空失败同 evict）/ lock（互斥锁不可用跳过单飞）/
+     * unlock（解锁失败交由锁 TTL 过期自愈），无客户端可控输入。
+     */
+    public void countCacheDegraded(String action) {
+        cacheDegradedCounters.computeIfAbsent(action, a -> Counter.builder(CACHE_DEGRADED)
+                .tag("action", a)
+                .description("Spring Cache 因 Redis 故障降级（静默走 DB/跳过失效与互斥）的计数，按动作维度")
+                .register(registry))
+                .increment();
     }
 
     /**

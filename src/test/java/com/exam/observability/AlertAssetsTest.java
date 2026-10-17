@@ -67,12 +67,12 @@ class AlertAssetsTest {
             "by", "le", "and", "or", "unless", "on", "ignoring", "offset", "bool",
             "label_values", "job", "status", "type", "endpoint", "area");
 
-    /** 期望的告警规则名（P3 七条 + DLQ 两条 + 鉴权降级 + 交卷锁降级，防止规则被误删/误改；
+    /** 期望的告警规则名（P3 七条 + DLQ 两条 + 鉴权降级 + 交卷锁降级 + 缓存降级，防止规则被误删/误改；
      * 降级计数器与告警规则的映射盘点见 docs/redis-dependency-runbook.md） */
     private static final Set<String> EXPECTED_ALERTS = Set.of(
             "ExamOnlineDown", "SubmitFailureRatioHigh", "SubmitLatencyP99High",
             "MqSubmitQueueBacklog", "RateLimitDegraded", "Http5xxRatioHigh", "AntiCheatEventSpike",
-            "MqDlqBacklog", "MqSubmitRetryExhausted", "AuthDegraded", "SubmitLockDegraded");
+            "MqDlqBacklog", "MqSubmitRetryExhausted", "AuthDegraded", "SubmitLockDegraded", "CacheDegraded");
 
     // ---------- 断言 1：资产文件存在且语法可解析 ----------
 
@@ -151,6 +151,7 @@ class AlertAssetsTest {
         assertTrue(known.contains("exam_ratelimit_degraded_total"));
         assertTrue(known.contains("exam_auth_degraded_total"));
         assertTrue(known.contains("exam_submit_lock_degraded_total"));
+        assertTrue(known.contains("exam_cache_degraded_total"));
         assertTrue(known.contains("exam_mq_dlq_depth"));
         assertTrue(known.contains("exam_mq_retry_total"));
         assertTrue(known.contains("exam_mq_dlq_entered_total"));

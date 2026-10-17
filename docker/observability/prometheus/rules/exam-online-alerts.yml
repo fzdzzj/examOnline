@@ -78,6 +78,18 @@ groups:
           summary: "交卷锁降级（Redis 异常放行）"
           description: "近 5 分钟存在交卷 SETNX 锁因 Redis 故障降级放行的交卷（走防重表+CAS 链路完成，正确性不受影响、单飞防抖暂缺），需人工关注 Redis 状态。"
 
+      - alert: CacheDegraded
+        # 口径同源照抄 AuthDegraded（harden-spring-cache-resilience）：
+        # Spring Cache（快照/详情缓存切面 + 互斥回源器）Redis 故障期间降级静默走 DB 必须被人知道，
+        # 失效延迟生效的脏读窗口受缓存 TTL 自愈（详情短 TTL；快照只读不可变无脏读语义）
+        expr: sum(increase(exam_cache_degraded_total[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Spring Cache 降级（Redis 异常静默走 DB）"
+          description: "近 5 分钟存在 Spring Cache 因 Redis 故障降级的读取/回填/失效（当前直接回源 DB，正确性不变、缓存加速暂缺；失效延迟生效半径受缓存 TTL 自愈），需人工关注 Redis 状态。"
+
       - alert: Http5xxRatioHigh
         expr: sum(increase(http_server_requests_seconds_count{status=~"5.."}[5m])) / clamp_min(sum(increase(http_server_requests_seconds_count[5m])), 1) > 0.05
         for: 5m

@@ -2,11 +2,14 @@ package com.exam.config;
 
 import com.exam.exam.dto.ExamDetailResponse;
 import com.exam.exam.dto.ExamSnapshotResponse;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.paper.dto.PaperSnapshotResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -40,10 +43,15 @@ import java.util.concurrent.ThreadLocalRandom;
  *   <li>防击穿 → CacheMutexLoader：热点 key 失效瞬间用 Redis SETNX 互斥锁保证仅一个线程回源重建，
  *       其余线程等待回填（开考 5000 人拉卷场景的 DB 保护伞）。</li>
  * </ul>
+ *
+ * <p><b>Redis 故障降级（harden-spring-cache-resilience）</b>：本类经 {@code CachingConfigurer} 接线
+ * {@link RedisCacheDegradedHandler}——切面读写失效异常静默走 DB + 降级计数；互斥回源器
+ * {@code CacheMutexLoader} 绕过切面的直连触点同口径包裹。Redis 故障期缓存退化为"直连 DB"，
+ * 正确性不变、加速暂缺；失效延迟生效的脏读窗口受 TTL 自愈（见 handler 类注释）。
  */
 @Configuration
 @EnableCaching
-public class CacheConfig {
+public class CacheConfig implements CachingConfigurer {
 
     /** 考试快照缓存：只读不可变（发布后不更新），长 TTL + 抖动 */
     public static final String CACHE_EXAM_SNAPSHOT = "examSnapshot";
@@ -58,9 +66,22 @@ public class CacheConfig {
     public static final String KEY_PREFIX = "exam:cache:";
 
     private final CacheProperties props;
+    private final BusinessMetrics businessMetrics;
 
-    public CacheConfig(CacheProperties props) {
+    public CacheConfig(CacheProperties props, BusinessMetrics businessMetrics) {
         this.props = props;
+        this.businessMetrics = businessMetrics;
+    }
+
+    /**
+     * Redis 故障降级处理器接线（harden-spring-cache-resilience）：缓存切面的读/写/失效遇 Redis 异常
+     * 静默走 DB + ERROR 日志 + 降级计数（exam.cache.degraded，告警 CacheDegraded），不再异常裸穿 500。
+     * 语义与半径论证见 {@link RedisCacheDegradedHandler} 类注释（evict 脏读窗口受 TTL 自愈）。
+     * （Spring 6.2 的 CachingConfigurer 供出点为 errorHandler()，即旧版的 cacheErrorHandler()。）
+     */
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new RedisCacheDegradedHandler(businessMetrics);
     }
 
     @Bean

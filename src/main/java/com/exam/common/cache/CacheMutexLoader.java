@@ -1,10 +1,13 @@
 package com.exam.common.cache;
 
 import com.exam.common.BusinessException;
+import com.exam.common.RequestIdFilter;
 import com.exam.common.ResponseCode;
 import com.exam.config.CacheConfig;
 import com.exam.config.CacheProperties;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -35,6 +38,13 @@ import java.util.function.Supplier;
  * <p><b>与 {@code @Cacheable} 的协作时序</b>：切面查缓存未命中 → 进入业务方法 → 本类抢锁回源；
  * 持锁线程回源成功后<b>主动回填缓存</b>再返回（切面随后会再写一次，幂等），
  * 等待线程即可从缓存读到值而无需回源。
+ *
+ * <p><b>Redis 故障降级（harden-spring-cache-resilience）</b>：本类绕过缓存切面直连 Cache/Redis 的
+ * 触点（快速路径读、空标记读写、互斥锁、回填写、解锁）逐点包降级口径——基础设施异常时
+ * ERROR 日志 + 降级计数（exam.cache.degraded，tag=action）后静默继续：读取失败视为未命中回源 DB、
+ * 空标记读写失败视为无标记、互斥锁不可用跳过单飞直接回源（与交卷锁降级同哲学：互斥只是防抖器，
+ * 回源本身幂等）、回填失败放弃本次（下次读取重新回源）、解锁失败交由锁 TTL 过期自愈。
+ * 业务语义异常（loader 抛出的 NOT_FOUND 等）不在降级范围、原样传播。
  */
 @Slf4j
 @Component
@@ -44,13 +54,15 @@ public class CacheMutexLoader {
     private final CacheManager cacheManager;
     private final CacheProperties props;
     private final RedisLockHelper lockHelper;
+    private final BusinessMetrics businessMetrics;
 
     public CacheMutexLoader(StringRedisTemplate redis, CacheManager cacheManager, CacheProperties props,
-                            RedisLockHelper lockHelper) {
+                            RedisLockHelper lockHelper, BusinessMetrics businessMetrics) {
         this.redis = redis;
         this.cacheManager = cacheManager;
         this.props = props;
         this.lockHelper = lockHelper;
+        this.businessMetrics = businessMetrics;
     }
 
     /**
@@ -65,28 +77,31 @@ public class CacheMutexLoader {
         Cache cache = cacheManager.getCache(cacheName);
 
         // 快速路径：其他实例/线程已回填时直接命中（@Cacheable 切面通常已先行检查，此处兜底使本方法自洽可独立复用）
-        if (cache != null) {
-            Cache.ValueWrapper wrapper = cache.get(key);
-            if (wrapper != null) {
-                return uncheckedValue(wrapper);
-            }
+        // 降级：Redis 故障时 cache.get 抛异常 → 视为未命中，回源 DB
+        Cache.ValueWrapper wrapper = cacheGetQuietly(cacheName, key, cache);
+        if (wrapper != null) {
+            return uncheckedValue(wrapper);
         }
 
         // ① 防穿透：空标记命中 → 复用原 404 语义直接抛出，不回源 DB
-        String markerMessage = redis.opsForValue().get(emptyMarkerKey(cacheName, key));
+        // 降级：标记读取失败视为无标记（穿透防护暂缺，直接回源 DB，正确性不变）
+        String markerMessage = getEmptyMarkerQuietly(cacheName, key);
         if (markerMessage != null) {
             throw new BusinessException(ResponseCode.NOT_FOUND, markerMessage);
         }
 
         // ② 防击穿：SETNX 互斥锁（带 TTL 防持锁线程崩溃后死锁），同一 key 全局仅一个线程回源
+        // 降级：锁不可用（Redis 异常）→ 跳过互斥与等待直接回源——互斥只是防抖器，回源幂等，
+        // 与交卷锁降级放行同哲学（正确性由 DB 幂等保证，Redis 降级保可用性）
         String lockKey = lockKey(cacheName, key);
         String token = UUID.randomUUID().toString();
-        if (lockHelper.tryLock(lockKey, token, Duration.ofSeconds(props.getLockTtlSeconds()))) {
+        if (tryLockQuietly(cacheName, key, lockKey, token)) {
             try {
                 return loadAndFill(cacheName, key, cache, loader);
             } finally {
                 // 必须按 token 解锁：TTL 到期后锁可能已易主，无条件 del 会删掉别人的锁
-                lockHelper.unlock(lockKey, token);
+                // 降级：解锁失败交由锁 TTL 过期自愈（防抖半径短暂损失，无正确性影响）
+                unlockQuietly(lockKey, token);
             }
         }
 
@@ -96,7 +111,15 @@ public class CacheMutexLoader {
 
     /** 清除空标记：数据真正生成后调用（如考试发布/试卷快照生成），避免短 TTL 内新数据被旧空标记掩盖 */
     public void clearEmptyMarker(String cacheName, Object key) {
-        redis.delete(emptyMarkerKey(cacheName, key));
+        try {
+            redis.delete(emptyMarkerKey(cacheName, key));
+        } catch (Exception e) {
+            // 降级：标记清除失败 → 旧空标记按其短 TTL（null-ttl-seconds，默认 30s）自然过期，
+            // 窗口内新数据查询仍被掩盖为 404——半径受空标记 TTL 自限，恢复后重试即可
+            log.error("缓存空标记清除降级：Redis 删除失败，旧标记按短 TTL 自然过期, cache={}, key={}, 异常={}, requestId={}",
+                    cacheName, key, e.getMessage(), MDC.get(RequestIdFilter.MDC_KEY), e);
+            businessMetrics.countCacheDegraded("evict");
+        }
     }
 
     /** 回源并回填：成功则主动写缓存（供等待线程立刻读到）；NOT_FOUND 则写短 TTL 空标记后原样抛出 */
@@ -105,15 +128,29 @@ public class CacheMutexLoader {
             T value = loader.get();
             if (cache != null) {
                 // 手动回填：不必等 @Cacheable 切面在本方法返回后再写，等待线程的下一轮轮询即可命中
-                cache.put(key, value);
+                // 降级：回填失败放弃本次（DB 结果不丢、照常返回调用方），下次读取重新回源
+                try {
+                    cache.put(key, value);
+                } catch (Exception e) {
+                    log.error("缓存回填降级：Redis 写入失败，放弃本次回填, cache={}, key={}, 异常={}, requestId={}",
+                            cacheName, key, e.getMessage(), MDC.get(RequestIdFilter.MDC_KEY), e);
+                    businessMetrics.countCacheDegraded("put");
+                }
             }
             return value;
         } catch (BusinessException e) {
             // 防穿透：空结果缓存（短 TTL）。值存原错误信息，空标记命中时抛出与直查 DB 完全一致的 404
             if (props.isNullCacheEnabled() && e.getCode() == ResponseCode.NOT_FOUND.getCode()) {
-                redis.opsForValue().set(emptyMarkerKey(cacheName, key), e.getMessage(),
-                        Duration.ofSeconds(props.getNullTtlSeconds()));
-                log.info("缓存空标记写入: cache={} key={} ttl={}s", cacheName, key, props.getNullTtlSeconds());
+                try {
+                    redis.opsForValue().set(emptyMarkerKey(cacheName, key), e.getMessage(),
+                            Duration.ofSeconds(props.getNullTtlSeconds()));
+                    log.info("缓存空标记写入: cache={} key={} ttl={}s", cacheName, key, props.getNullTtlSeconds());
+                } catch (Exception ex) {
+                    // 降级：空标记写失败 → 穿透防护暂缺（同 key 重复查询将直击 DB），正确性不受影响
+                    log.error("缓存空标记写入降级：Redis 写入失败, cache={}, key={}, 异常={}, requestId={}",
+                            cacheName, key, ex.getMessage(), MDC.get(RequestIdFilter.MDC_KEY), ex);
+                    businessMetrics.countCacheDegraded("put");
+                }
             }
             throw e;
         }
@@ -129,19 +166,70 @@ public class CacheMutexLoader {
                 Thread.currentThread().interrupt();
                 break;
             }
-            String markerMessage = redis.opsForValue().get(emptyMarkerKey(cacheName, key));
+            // 降级：轮询期 Redis/Cache 读取失败视为"本轮无回填"，轮询耗尽后走兜底直接回源
+            String markerMessage = getEmptyMarkerQuietly(cacheName, key);
             if (markerMessage != null) {
                 throw new BusinessException(ResponseCode.NOT_FOUND, markerMessage);
             }
-            if (cache != null) {
-                Cache.ValueWrapper wrapper = cache.get(key);
-                if (wrapper != null) {
-                    return uncheckedValue(wrapper);
-                }
+            Cache.ValueWrapper wrapper = cacheGetQuietly(cacheName, key, cache);
+            if (wrapper != null) {
+                return uncheckedValue(wrapper);
             }
         }
         log.warn("缓存互斥等待超时，兜底直接回源: cache={} key={}", cacheName, key);
         return loadAndFill(cacheName, key, cache, loader);
+    }
+
+    // ==================== Redis 降级包装（harden-spring-cache-resilience） ====================
+
+    /** 缓存读（快速路径/等待轮询共用）：Redis 故障时 ERROR + 计数后视为未命中（返回 null）。 */
+    private Cache.ValueWrapper cacheGetQuietly(String cacheName, Object key, Cache cache) {
+        if (cache == null) {
+            return null;
+        }
+        try {
+            return cache.get(key);
+        } catch (Exception e) {
+            log.error("缓存读取降级：Redis 查询失败，视为未命中回源 DB, cache={}, key={}, 异常={}, requestId={}",
+                    cacheName, key, e.getMessage(), MDC.get(RequestIdFilter.MDC_KEY), e);
+            businessMetrics.countCacheDegraded("get");
+            return null;
+        }
+    }
+
+    /** 空标记读：Redis 故障时视为无标记（穿透防护暂缺，回源 DB）。 */
+    private String getEmptyMarkerQuietly(String cacheName, Object key) {
+        try {
+            return redis.opsForValue().get(emptyMarkerKey(cacheName, key));
+        } catch (Exception e) {
+            log.error("缓存空标记读取降级：Redis 查询失败，视为无标记回源 DB, cache={}, key={}, 异常={}, requestId={}",
+                    cacheName, key, e.getMessage(), MDC.get(RequestIdFilter.MDC_KEY), e);
+            businessMetrics.countCacheDegraded("get");
+            return null;
+        }
+    }
+
+    /** 互斥锁获取：Redis 故障时返回 false（调用方跳过互斥与等待直接回源——防抖半径损失，正确性不变）。 */
+    private boolean tryLockQuietly(String cacheName, Object key, String lockKey, String token) {
+        try {
+            return lockHelper.tryLock(lockKey, token, Duration.ofSeconds(props.getLockTtlSeconds()));
+        } catch (Exception e) {
+            log.error("缓存互斥锁降级：Redis SETNX 失败，跳过互斥直接回源, cache={}, key={}, 异常={}, requestId={}",
+                    cacheName, key, e.getMessage(), MDC.get(RequestIdFilter.MDC_KEY), e);
+            businessMetrics.countCacheDegraded("lock");
+            return false;
+        }
+    }
+
+    /** 按 token 解锁：Redis 故障时交由锁 TTL 过期自愈（防抖半径短暂损失，无正确性影响）。 */
+    private void unlockQuietly(String lockKey, String token) {
+        try {
+            lockHelper.unlock(lockKey, token);
+        } catch (Exception e) {
+            log.error("缓存互斥锁解锁降级：Redis 脚本执行失败，交由锁 TTL 过期自愈, lockKey={}, 异常={}, requestId={}",
+                    lockKey, e.getMessage(), MDC.get(RequestIdFilter.MDC_KEY), e);
+            businessMetrics.countCacheDegraded("unlock");
+        }
     }
 
     @SuppressWarnings("unchecked")
