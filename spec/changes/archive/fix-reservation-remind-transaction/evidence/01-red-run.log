@@ -1,0 +1,12 @@
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 22.72 s <<< FAILURE! -- in com.exam.message.service.ReservationRemindTransactionTest
+[ERROR] com.exam.message.service.ReservationRemindTransactionTest.insertFailureRollsBackClaimThenRetryHeals -- Time elapsed: 2.125 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 事务边界：消息插入失败时认领回填必须随事务回滚——回填一旦残留，该预约将被后续扫描（reminded_time IS NULL 过滤）永久跳过且消息未写出，提醒永久丢失不可自愈 ==> expected: <null> but was: <2026-10-17T09:28:57.251172>
+[ERROR] Failures: 
+[ERROR]   ReservationRemindTransactionTest.insertFailureRollsBackClaimThenRetryHeals:86 事务边界：消息插入失败时认领回填必须随事务回滚——回填一旦残留，该预约将被后续扫描（reminded_time IS NULL 过滤）永久跳过且消息未写出，提醒永久丢失不可自愈 ==> expected: <null> but was: <2026-10-17T09:28:57.251172>
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] 
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 

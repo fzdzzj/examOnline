@@ -435,6 +435,9 @@ THEN 服务端拒绝预约（资格校验与进入准入同源，不另造第二
 
 > 合入注记（2026-10-16，变更 `optimize-backend-batch-write-paths` 收口）：
 > 候选查询方式升级为一次 `IN (examIds)` + `reminded_time IS NULL` 批量查询后内存按 examId 分组，消除逐场 N+1；行级幂等核心（单行原子 claim，影响行数=1 才写消息）、事务边界、扫描间隔、启动补偿全部不变。
+>
+> 合入注记（2026-10-17，变更 `fix-reservation-remind-transaction` 收口）：
+> `deliverIfAbsent` 的 `@Transactional` 曾是自调用死注解（唯一调用点为本类 `remind()` 的 `this.deliverIfAbsent`，`remind` 由 `@Scheduled`/`@EventListener` 无事务直入）——认领回填与消息插入各自 auto-commit，消息插入瞬时失败时认领已提交、`reminded_time` 非空使后续扫描永不再扫到该行，提醒永久丢失不可自愈。修复改 TransactionTemplate 编程式事务（不依赖调用路径），追加末条 AND；幂等口径经确认无重投风险（`user_messages` 无唯一键，幂等完全由认领闸承担——认领与消息同生共死，重试重新认领恰投一条）。
 
 GIVEN 「需预约」考试已发布且未开始，存在未投递提醒的有效预约，开考时间距当前时刻不超过提醒提前量（配置项，默认 30 分钟）
 
@@ -447,6 +450,8 @@ AND 多场候选考试的未投递预约行 SHALL 以一次 `IN (examIds)` + `re
 AND 逐行投递链路（claim + 写消息）SHALL 保持行级幂等语义不变
 
 AND 提醒消息经学生消息中心可读，未读状态正确
+
+AND 单条预约的投递（认领回填 + 消息插入）SHALL 在同一数据库事务内完成，且事务 SHALL 以不依赖 Spring 代理调用路径的方式生效（定时/启动入口的同类自调用不得绕过事务边界）——消息插入失败时认领回填一并回滚（`reminded_time` 回到 NULL），由下一轮扫描按行级幂等语义重试补偿，重试不产生重复投递 (fix-reservation-remind-transaction)
 
 #### Scenario: 学生消息中心
 
