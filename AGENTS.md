@@ -44,6 +44,7 @@
 - dev 库里那张历史遗留表 `rep_test` **不要删**：`docs/指导Agent交接文档.md` §6.2 的「宿主端口」表里 `rep_test` 那一行。
 - 发布确认调用（`waitForConfirmsOrDie` 一类）**必须留在 `RabbitTemplate.invoke()` 作用域内**；移出即在真 broker 下抛 `IllegalStateException`，启动期「答案补发对账」静默失效。词法护栏：`src/test/java/com/exam/submission/mq/PublisherConfirmScopeGuardTest.java`；收口记录：`spec/README.md`「原遗留 #10 关闭」。此项**已修**，不是待修遗留项；`docs/指导Agent交接文档.md` §6.2 的旧叙述已过期，登记处见 `docs/主Agent执行指南.md`「对旧指导方式的校正」小节。
 - 子 agent 的回报不是事实：每轮交付必须独立看 `git status`、`git diff`、关键代码、测试报告——判据出处 `spec/README.md`「验收记录三要素」，角色纪律出处 `docs/主Agent执行指南.md`「审阅与升级边界」。
+- **Redis 依赖口径与降级矩阵的 canonical 出处是 `docs/redis-dependency-runbook.md`**：任何触碰 Redis 调用点的改动（新增键族/降级/容错）先读它的口径声明与键族矩阵，新键族行为须同笔登记入矩阵；新降级计数指标（`exam.*.degraded`）必须有对应告警规则并过 `AlertAssetsTest` 守护；硬依赖面（草稿/令牌签发续期/Spring Cache/找回码）不得冒领为已降级。
 
 ## 唯一门禁命令
 
