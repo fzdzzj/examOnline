@@ -7,23 +7,23 @@
     {
       "id": 1,
       "title": "阶段 0 & 1：立项、幂等口径确认与在途总账登记",
-      "status": "false",
+      "status": "completed",
       "description": "确立 proposal.md、exam-taking 的 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md B.2 勘正行。定性：单类修复 + 测试，零 DDL、零契约变更、零前端，仅 backendTests 预期增长；S 级。",
-      "evidence": ""
+      "evidence": "基于 2026-10-16/17 后端横切首扫中危发现 M1（主 Agent 亲验，docs/功能待办清单.md B.2 L95 勘正行 + 中 4 列表）：ReservationRemindService.deliverIfAbsent 唯一调用点为 remind() 的 this 自调用（remind 由 @Scheduled/@EventListener 无事务直入），@Transactional 死注解生产路径静默失效——认领回填与消息插入各自 auto-commit，插入瞬时失败认领已提交、reminded_time 非空使后续扫描永不再扫到该行，提醒永久丢失不可自愈。幂等口径先行确认（proposal 专节）：user_messages 无唯一键（仅 PK + idx_user_messages_user 普通索引），投递幂等完全由 markRemindedIfNull 认领闸承担；事务化后认领与消息同生共死，重试重新认领恰投一条，无重投风险；多实例并发认领 UPDATE 行锁持有至事务提交，竞争方提交后重评估 WHERE 得 0 行照常跳过。事务边界裁决：单条投递两写一事务（刻意不取先例的整轮一事务——毒丸防护：单行永久性失败不阻塞同轮其余投递，重试补偿半径最小）。检出 feature/fix-reservation-remind-transaction 分支（自 main 68f697b），立案笔 7ec0013（三件套 + README 在途表 + B.2 L95 勘正「已立案」）。"
     },
     {
       "id": 2,
       "title": "阶段 2：实施编程式事务修复 + 单测先红后绿 + 变异击红验证",
-      "status": "false",
-      "description": "①ReservationRemindService 构造注入 PlatformTransactionManager（new TransactionTemplate 同款先例），deliverIfAbsent 方法体包入编程式事务（认领回填 + 消息插入两写一个事务），移除 @Transactional 死注解并在 javadoc 注明自调用绕代理原因；②行级幂等闸（markRemindedIfNull 影响行数=1 才写消息）与调用点/返回值/日志零改动；③单测先红：注入消息插入故障，修复前认领残留（reminded_time 已置位）即缺陷存在性证明；修复后回滚 + 下轮重试自愈 + 幂等不重发；④变异验证（还原死注解形态）击红-复原-回绿留证 evidence/。",
-      "evidence": ""
+      "status": "completed",
+      "description": "①ReservationRemindService 构造注入 PlatformTransactionManager（new TransactionTemplate，与 ExamStateMachineService/RetentionService/QuestionImportExportService/UserImportExportService 同款先例），deliverIfAbsent 方法体包入编程式事务（认领回填 + 消息插入两写一个事务），移除 @Transactional 死注解并在 javadoc 注明自调用绕代理原因与幂等口径论证；②行级幂等闸（markRemindedIfNull 影响行数=1 才写消息）与调用点/返回值/日志零改动；③单测先红：注入消息插入故障，修复前认领残留即缺陷存在性证明；修复后回滚 + 下轮重试自愈 + 幂等不重发；④变异验证（还原死注解形态）击红-复原-回绿留证 evidence/。",
+      "evidence": "新增 src/test/java/com/exam/message/service/ReservationRemindTransactionTest.java（2 用例，真实 H2 库 + @MockitoSpyBean UserMessageMapper 注入插入故障——mapper spy 先例 CacheWiringIntegrationTest，无 @Sql）：核心用例断言 插入失败→认领回填不残留（reminded_time 回 NULL）→ 撤除故障后下一轮扫表幂等重试自愈恰投一条 → 再扫描不重发；回归护栏用例断言正常一轮恰投一条且重复扫描不重发。先红：修复前 Tests run: 2, Failures: 1——核心用例 `expected: <null> but was: <2026-10-17T09:28:57.251172>`（认领残留、消息未写出，缺陷存在性证明；护栏用例按设计绿）；实施笔 c420319 转绿：Tests run: 6（集成 2 + 既有单测 4/4，单测经 @Mock PlatformTransactionManager 适配 4 参构造，execute 回调不依赖事务状态）。变异 m1（源文件整体还原死注解形态）击红：Tests run: 2, Failures: 1，失败与先红逐字同形（仅时间戳异）；复原回绿：2/0/0/0。证据：evidence/01-red-run.log、02-green-run.log、m1.diff（92 行与实施笔逐字互逆）、m1-run.log、mutation-verification.md。既有 ExamReservationRemindIntegrationTest/ReservationRemindServiceTest 语义零改动（仅后者 +1 @Mock 字段适配构造）。"
     },
     {
       "id": 3,
       "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
-      "status": "false",
-      "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests；将 spec-delta 合入 specs/exam-taking 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
-      "evidence": ""
+      "status": "completed",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests（frontendTests 与 openapiPaths 按当次实测核对不变）；将 spec-delta 合入 specs/exam-taking 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
+      "evidence": "①门禁实测：mvnw.cmd clean test（仓库根，revision c420319 工作树）→ Tests run: 638, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（evidence/full-clean-test-summary.txt；全量原始日志留存仓库外 D:\\code\\examOnline-measure\\fix-reservation-remind-transaction\\full-clean-test.log）。②基线上调：gate-baseline.json backendTests 636→638（+2：ReservationRemindTransactionTest 新增 2 用例；frontendTests 908、openapiPaths 97 核对不变）。③spec-delta 合入：specs/exam-taking/spec.md「开考提醒行级幂等投递」Scenario 追加一条 AND（认领+写消息同事务且不依赖代理调用路径、插入失败认领一并回滚、下轮扫表幂等重试补偿不重复投递），合入注记含自调用死注解缺陷机理与幂等口径确认结论，既有条款零改写。④白名单核对：未触碰 schema.sql、docker/、openapi.yaml、pom.xml、frontend/。⑤归档与总账：变更目录 git mv 至 spec/changes/archive/，spec/README.md 三处登记（在途表行移除、exam-taking 能力域行加注、归档表新行），docs/功能待办清单.md B.2 M1 行闭环标注。"
     }
   ]
 }

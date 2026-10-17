@@ -1,0 +1,92 @@
+diff --git a/src/main/java/com/exam/message/service/ReservationRemindService.java b/src/main/java/com/exam/message/service/ReservationRemindService.java
+index 78c4d5b..8de71f9 100644
+--- a/src/main/java/com/exam/message/service/ReservationRemindService.java
++++ b/src/main/java/com/exam/message/service/ReservationRemindService.java
+@@ -13,8 +13,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
+ import org.springframework.context.event.EventListener;
+ import org.springframework.scheduling.annotation.Scheduled;
+ import org.springframework.stereotype.Service;
+-import org.springframework.transaction.PlatformTransactionManager;
+-import org.springframework.transaction.support.TransactionTemplate;
++import org.springframework.transaction.annotation.Transactional;
+ 
+ import java.time.LocalDateTime;
+ import java.util.ArrayList;
+@@ -44,19 +43,16 @@ public class ReservationRemindService {
+     private final ExamMapper examMapper;
+     private final ExamReservationMapper reservationMapper;
+     private final UserMessageMapper messageMapper;
+-    private final TransactionTemplate transactionTemplate;
+ 
+     @Value("${exam.reservation.remind-ahead-minutes:30}")
+     private int remindAheadMinutes;
+ 
+     public ReservationRemindService(ExamMapper examMapper,
+                                     ExamReservationMapper reservationMapper,
+-                                    UserMessageMapper messageMapper,
+-                                    PlatformTransactionManager transactionManager) {
++                                    UserMessageMapper messageMapper) {
+         this.examMapper = examMapper;
+         this.reservationMapper = reservationMapper;
+         this.messageMapper = messageMapper;
+-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+     }
+ 
+     /** 执行一轮提醒投递：返回本轮实际投递消息数。 */
+@@ -106,42 +102,22 @@ public class ReservationRemindService {
+     /**
+      * 单条预约的行级幂等投递：markRemindedIfNull 影响行数=1（本行赢得投递权）才写消息。
+      * 影响行数=0（已被并发/其他实例投递，或非候选）→ 静默跳过，不写消息（幂等核心）。
+-     *
+-     * <p><b>为什么是编程式事务而不是 {@code @Transactional} 注解（勿改回注解）</b>：
+-     * 本方法唯一调用点是 {@link #remind()} 的 {@code this.deliverIfAbsent(...)} <b>同类自调用</b>
+-     * （remind 自身无事务，由 {@code @Scheduled}/{@code @EventListener} 无事务直入）。Spring 的
+-     * 注解式事务只在请求经过代理时生效，自调用直接命中目标对象、<b>绕过代理</b>，注解静默失效：
+-     * 认领回填与消息插入各自 auto-commit——消息插入瞬时失败时认领已提交，reminded_time 非空使
+-     * 后续扫描（{@code WHERE reminded_time IS NULL}）永不再扫到该行且消息未写出，提醒永久丢失
+-     * 不可自愈。{@link TransactionTemplate} 直接调用事务基础设施，<b>不依赖调用路径</b>，永久免疫
+-     * 该问题（仓内先例：ExamStateMachineService 同款修复）。
+-     *
+-     * <p><b>事务边界 = 单条投递的认领 + 写消息两写一个事务</b>（刻意不取"整轮一事务"）：
+-     * 消息插入失败仅回滚本行认领（reminded_time 回到 NULL），下一轮扫描按幂等语义重新认领、
+-     * 重投恰好一条；同轮其他行照常投递——某一行永久性失败不阻塞其余投递，重试补偿半径最小。
+-     * 认领与消息同生共死，重试路径不存在"认领在而消息不在"或重复投递窗口；多实例并发时认领
+-     * UPDATE 行锁持有至本事务提交，竞争实例在提交后重评估 WHERE 影响行数为 0 照常跳过，不重发。
+-     * {@link TransactionTemplate} 默认仅 RuntimeException/Error 回滚；本路径异常均为运行时异常
+-     * （MyBatis DataAccessException 系），无受检异常路径，与原 {@code rollbackFor = Exception.class}
+-     * 意图等价。
+      */
++    @Transactional(rollbackFor = Exception.class)
+     int deliverIfAbsent(Exam exam, ExamReservation reservation) {
+-        Integer delivered = transactionTemplate.execute(status -> {
+-            int claimed = reservationMapper.markRemindedIfNull(reservation.getId(), LocalDateTime.now());
+-            if (claimed != 1) {
+-                // 已被其他实例/扫描投递：行级幂等跳过，不重发
+-                return 0;
+-            }
+-            UserMessage message = new UserMessage();
+-            message.setUserId(reservation.getStudentId());
+-            message.setExamId(exam.getId());
+-            message.setTitle("开考提醒");
+-            message.setContent("您预约的考试《" + exam.getTitle() + "》即将开考，请准时参加。");
+-            message.setReadFlag(UserMessage.READ_FLAG_UNREAD);
+-            messageMapper.insert(message);
+-            return 1;
+-        });
+-        return delivered == null ? 0 : delivered;
++        int claimed = reservationMapper.markRemindedIfNull(reservation.getId(), LocalDateTime.now());
++        if (claimed != 1) {
++            // 已被其他实例/扫描投递：行级幂等跳过，不重发
++            return 0;
++        }
++        UserMessage message = new UserMessage();
++        message.setUserId(reservation.getStudentId());
++        message.setExamId(exam.getId());
++        message.setTitle("开考提醒");
++        message.setContent("您预约的考试《" + exam.getTitle() + "》即将开考，请准时参加。");
++        message.setReadFlag(UserMessage.READ_FLAG_UNREAD);
++        messageMapper.insert(message);
++        return 1;
+     }
+ 
+     /** 定时扫表：默认每 10 秒一轮（沿用 exam.taking.sweep.* 间隔）。 */
