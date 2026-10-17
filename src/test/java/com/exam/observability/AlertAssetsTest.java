@@ -67,11 +67,12 @@ class AlertAssetsTest {
             "by", "le", "and", "or", "unless", "on", "ignoring", "offset", "bool",
             "label_values", "job", "status", "type", "endpoint", "area");
 
-    /** 期望的 10 条告警规则名（P3 七条 + DLQ 两条 + 鉴权降级一条，防止规则被误删/误改） */
+    /** 期望的告警规则名（P3 七条 + DLQ 两条 + 鉴权降级 + 交卷锁降级，防止规则被误删/误改；
+     * 降级计数器与告警规则的映射盘点见 docs/redis-dependency-runbook.md） */
     private static final Set<String> EXPECTED_ALERTS = Set.of(
             "ExamOnlineDown", "SubmitFailureRatioHigh", "SubmitLatencyP99High",
             "MqSubmitQueueBacklog", "RateLimitDegraded", "Http5xxRatioHigh", "AntiCheatEventSpike",
-            "MqDlqBacklog", "MqSubmitRetryExhausted", "AuthDegraded");
+            "MqDlqBacklog", "MqSubmitRetryExhausted", "AuthDegraded", "SubmitLockDegraded");
 
     // ---------- 断言 1：资产文件存在且语法可解析 ----------
 
@@ -91,7 +92,7 @@ class AlertAssetsTest {
     // ---------- 断言 2：每条告警规则结构完整 ----------
 
     @Test
-    @DisplayName("9 条告警规则结构完整（alert/expr/for/severity/summary/description）")
+    @DisplayName("告警规则结构完整（alert/expr/for/severity/summary/description）")
     void alertRulesAreComplete() throws IOException {
         List<Map<String, Object>> rules = alertRules();
         Set<String> names = new HashSet<>();
