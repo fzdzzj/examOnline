@@ -1,0 +1,43 @@
+{
+  "changeId": "add-redis-dependency-runbook",
+  "branch": "feature/add-redis-dependency-runbook",
+  "level": "文档卡（含一条告警规则补齐）",
+  "source": "docs/功能待办清单.md B.2 横切首扫 H2 残留面 · Redis 依赖裁决 B2+C2 卡（2026-10-17 用户裁决口径统一后第三案）：口径落 canonical runbook + 告警盘点补齐 SubmitLockDegraded；案串行 A1（已闭环）→ D1（已闭环）→ B2+C2（本卡）",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/add-redis-dependency-runbook（D1 合入 main 后开）→ 写 proposal/spec-delta（reliability 域）/tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "D1 案 --no-ff 合入 main（merge 92a3b9a）后开分支；立案笔见 git log（docs(spec): 立案 add-redis-dependency-runbook）；git diff --cached --stat 预检恰 4 文件（三件套 3 文件 + spec/README.md 在途表 +1 行）。spec-delta 为 reliability 域 ADDED Requirement「Redis 依赖口径与故障 runbook」四 Scenario。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：Redis 使用面全景盘点 + runbook 交付 + 告警缺口补齐",
+      "status": "completed",
+      "description": "全仓 Redis 调用点直读盘点（11 个持有 RedisTemplate/StringRedisTemplate 的类 + @Cacheable/@CacheEvict 三处 + CacheConfig 无 CacheErrorHandler 核实）→ 写 docs/redis-dependency-runbook.md（口径声明/键族矩阵/告警盘点/恢复流程与学生端指引）→ 补 SubmitLockDegraded 告警规则（照抄 AuthDegraded）+ AlertAssetsTest EXPECTED_ALERTS 同笔更新 + AGENTS.md 指针（工作流第 7 条）。",
+      "evidence": "盘点结论（源码直读）：降级面=拦截器（exam.auth.degraded tag=blacklist/session_version）、登录守卫六触点（A1）、接口限流（exam.ratelimit.degraded，既有）、交卷锁（exam.submit.lock.degraded，D1）、行为计数（log.error+返回1）、在线状态（心跳旁路+按全员离线降级）、错题判定缓存（退化现算）；硬依赖面=草稿 exam:draft:（裁决声明）、令牌签发与续期 auth:refresh:/auth:sv:（TokenStoreService 全类零容错——故障期新登录 500，残留观察面）、Spring Cache exam:cache:*（无 CacheErrorHandler 异常裸穿，拉卷/详情/写路径失效 500，=H2 在案 RedisCacheManager 直连残留）、找回码 auth:reset:。告警缺口：exam_submit_lock_degraded_total 无规则 → SubmitLockDegraded 补齐；三计数器↔三规则映射完整。实施笔见 git log（docs(runbook)/ops(alerts)）。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：守护验证（AlertAssetsTest 集合断言）+ 变异击红留证",
+      "status": "completed",
+      "description": "AlertAssetsTest 全绿（EXPECTED_ALERTS 集合相等 + 规则结构断言）；变异——删除 SubmitLockDegraded 规则 → 集合断言确定性失败 → 复原回绿，证据入库（文档卡守护红形态，无业务用例数增量）。",
+      "evidence": "evidence/03–04：定向绿 7/7 → 变异红（删规则，assertEquals(EXPECTED_ALERTS, names) 失败）→ 复原回绿 7/7；gate-baseline 651 零增量核对不动（集合内容变化不产生用例数变化）。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "completed",
+      "description": "收口 diff 核对——src/main 全域 + schema.sql + docker/mysql + openapi.yaml + pom + frontend 零改动（硬依赖面 CacheConfig/TokenStoreService/ExamDraftService 不冒领为已消除）。",
+      "evidence": "evidence/README.md §05：git diff main --stat 针对范围外清单输出为空（OUT_OF_SCOPE_DIFF_LINES=0）；分支总 diff 文件清单全在 proposal 白名单内。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线核对与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数（backendTests 651 零增量持平，gate-baseline 核对不动）→ evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + reliability 域行追加 → docs/功能待办清单.md B.2 ④ 行标注 runbook 闭环（三案串行至此收口）→ --no-ff 合入 main → 三案合并后统一 push。",
+      "evidence": "全量门禁 evidence/06（Tests run 651 / Failures 0 / Errors 0 / Skipped 1 + BUILD SUCCESS + GATE_EXIT=0，绑定 revision）；gate-baseline.json 651 核对不动（本卡零新增用例，README 工作流第 9 条「按实情持平」）；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/add-redis-dependency-runbook/；reliability 基线合入 ADDED Requirement；spec/README.md 三处登记；docs/功能待办清单.md B.2 标注；--no-ff 合并入 main。"
+    }
+  ]
+}
