@@ -58,8 +58,9 @@ public class BusinessMetrics {
     /** 指标名：限流器降级计数（Counter，按接口打 tag endpoint；Redis 故障被 fail-open 放行时递增） */
     private static final String RATE_LIMIT_DEGRADED = "exam.ratelimit.degraded";
     /** 指标名：鉴权链路降级计数（Counter，按检查点打 tag check；Redis 故障被降级放行时递增，
-     * 口径同源 exam.ratelimit.degraded——harden-auth-interceptor-redis-degradation 与
-     * harden-login-guard-redis-degradation 共用，tag=拦截器两检查点 + 登录守卫六触点） */
+     * 口径同源 exam.ratelimit.degraded——harden-auth-interceptor-redis-degradation、
+     * harden-login-guard-redis-degradation 与 harden-token-store-redis-degradation 共用，
+     * tag=拦截器两检查点 + 登录守卫六触点 + 签发续期六触点） */
     private static final String AUTH_DEGRADED = "exam.auth.degraded";
     /** 指标名：重复扫描检测到下游已处理（Counter，按 task tag 区分 sweep / state-advance） */
     private static final String SWEEP_DUPLICATE_DETECTED = "exam.sweep.duplicate_detected";
@@ -102,7 +103,8 @@ public class BusinessMetrics {
     private final Map<String, Counter> rateLimitDegradedCounters = new ConcurrentHashMap<>();
     /** 鉴权链路降级计数按检查点缓存：拦截器 blacklist / session_version + 登录守卫
      * login_rate_limit / login_lock_check / login_fail_record / login_lock_write / login_fail_clear /
-     * code_rate_limit 各自一个 Counter（tag=check，代码常量有界） */
+     * code_rate_limit + 签发续期 issue_session_version / issue_refresh_store / refresh_rotate /
+     * logout_blacklist / logout_refresh_remove / invalidate_sessions 各自一个 Counter（tag=check，代码常量有界） */
     private final Map<String, Counter> authDegradedCounters = new ConcurrentHashMap<>();
     /** 重复扫描计数按 task 缓存：sweep / state-advance 各自一个 Counter */
     private final Map<String, Counter> sweepDuplicateCounters = new ConcurrentHashMap<>();
@@ -224,13 +226,14 @@ public class BusinessMetrics {
 
     /**
      * 鉴权链路降级计数：按检查点各自的 Counter 加一（harden-auth-interceptor-redis-degradation +
-     * harden-login-guard-redis-degradation，打点口径与 {@link #countRateLimitDegraded} 同源——
-     * fail-open/降级放行 + ERROR 日志 + 计数，不新增第二套降级哲学）。
+     * harden-login-guard-redis-degradation + harden-token-store-redis-degradation，打点口径与
+     * {@link #countRateLimitDegraded} 同源——fail-open/降级放行 + ERROR 日志 + 计数，不新增第二套降级哲学）。
      *
      * <p>tag 基数有界：check 取值只有各调用方内代码常量——拦截器两检查点
-     * （blacklist=黑名单吊销检查 / session_version=会话版本检查）与登录守卫六触点
+     * （blacklist=黑名单吊销检查 / session_version=会话版本检查）、登录守卫六触点
      * （login_rate_limit / login_lock_check / login_fail_record / login_lock_write /
-     * login_fail_clear / code_rate_limit），无客户端可控输入。
+     * login_fail_clear / code_rate_limit）与签发续期六触点（issue_session_version / issue_refresh_store /
+     * refresh_rotate / logout_blacklist / logout_refresh_remove / invalidate_sessions），无客户端可控输入。
      */
     public void countAuthDegraded(String check) {
         authDegradedCounters.computeIfAbsent(check, c -> Counter.builder(AUTH_DEGRADED)
