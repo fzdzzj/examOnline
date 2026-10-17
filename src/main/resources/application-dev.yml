@@ -55,6 +55,10 @@ spring:
     properties:
       mail.smtp.auth: true
       mail.smtp.ssl.enable: true
+      # SMTP 三向超时毫秒（fix-mail-smtp-timeout-and-catch）：默认无限等 → SMTP 故障挂线程
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   sql:
     init:
       # 开发环境用 classpath:schema.sql 幂等建表（CREATE TABLE IF NOT EXISTS）
