@@ -9,42 +9,42 @@
       "title": "阶段 1：立案三件套 + 在途表登记",
       "status": "completed",
       "description": "建分支 feature/harden-client-ip-spoofing-and-redis-drill → proposal / spec-delta（anti-cheat, reliability 域）/ tasks 三件套 → spec/README.md 在途表登记。",
-      "evidence": "分支从 main 拉出；立案三件套完成并在在途表中完成登记。"
+      "evidence": "分支从 main 拉出；立案三件套完成并在在途表中完成登记（commit 9c45216）。"
     },
     {
       "id": 2,
       "title": "阶段 2：实施笔——ClientIpResolver 防伪造加固与单测",
-      "status": "pending",
+      "status": "completed",
       "description": "ClientIpResolver 增加 X-Real-IP 优先读取与合法性校验逻辑；IpMatcherTest 增加多级 XFF 与 X-Real-IP 并存时的防伪造单测覆盖。",
-      "evidence": ""
+      "evidence": "实施笔 e56d5c7：ClientIpResolver 增加 X-Real-IP 优先提取与 IpMatcher.isValidIp 校验，非法/缺失时平滑回退 XFF 首项与 remoteAddr；IpMatcherTest 新增 3 个单测，覆盖防伪造、仅 X-Real-IP、非法/缺失回退，单测 20/20 全绿（02-targeted-green-impl.log）。"
     },
     {
       "id": 3,
       "title": "阶段 3：演练笔——Redis 停机全口径实测与证据沉淀",
-      "status": "pending",
+      "status": "completed",
       "description": "本地/容器演练环境执行 Redis 停机与恢复测试，验证登录/详情/交卷降级放行、草稿/找回码硬依赖阻断及自愈过程，撰写 docs/redis-drill-evidence.md 沉淀证据。",
-      "evidence": ""
+      "evidence": "实施笔 e56d5c7：依据 runbook 并在演练容器环境执行 5 场景实测，沉淀 docs/redis-drill-evidence.md；确证登录返回 200 + 签发 access + 省略 refresh 并打点 exam.auth.degraded；Spring Cache 回源与交卷锁降级放行；草稿暂存与找回密码硬依赖诚实报错 500；恢复后重连自愈。"
     },
     {
       "id": 4,
       "title": "阶段 4：变异击红留证 + 等价变异登记",
-      "status": "pending",
+      "status": "completed",
       "description": "变异验证——将 ClientIpResolver 改回旧形态（忽略 X-Real-IP 直接读 XFF 首项）验证单测击红并回绿；等价变异如实登记不强杀。",
-      "evidence": ""
+      "evidence": "变异 m1（ClientIpResolver 移除 X-Real-IP 采信改回裸读 XFF 首项）实测断言级击红 clientIpPrefersRealIpOverSpoofedForwarded: expected <198.51.100.1> but was <203.0.113.88>（03-m1-red.log），复原后 20/20 回绿（04-m1-green.log）；trim 与大小写等价变异如实登记入 evidence/README.md。"
     },
     {
       "id": 5,
       "title": "阶段 5：范围外自查",
-      "status": "pending",
+      "status": "completed",
       "description": "收口 diff 核对——未越过白名单目录；schema.sql、migrations、openapi.yaml、pom.xml 零改动。",
-      "evidence": ""
+      "evidence": "05-out-of-scope-diff.txt 为 0 字节，schema.sql、migrations、openapi.yaml、pom.xml、frontend/ 零改动；改动严格限定在派工白名单内。"
     },
     {
       "id": 6,
       "title": "阶段 6：门禁实测、基线上调与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 同步上调 → 证据入库回填 tasks.json → 归档目录 → spec/README.md 归档登记与在途移除 → docs/功能待办清单.md 发现 1 与亲验②闭环标注 → --no-ff 合入 main。",
-      "evidence": ""
+      "evidence": "仓库根 mvnw.cmd clean test 实测通过：Tests run: 692, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS（06-full-gate-summary.log）；gate-baseline.json backendTests 同笔上调 689→692；docs/功能待办清单.md 安全发现 1 与亲验②标注已闭环；docs/redis-dependency-runbook.md 追加审计行。"
     }
   ]
 }
