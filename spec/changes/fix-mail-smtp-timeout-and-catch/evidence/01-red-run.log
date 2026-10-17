@@ -1,0 +1,20 @@
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 3.942 s <<< FAILURE! -- in com.exam.auth.service.MailServiceTest
+[ERROR] com.exam.auth.service.MailServiceTest.mailSendExceptionIsConvertedToBusinessException -- Time elapsed: 0.043 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Unexpected exception type thrown, expected: <com.exam.common.BusinessException> but was: <org.springframework.mail.MailSendException>
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 20.59 s <<< FAILURE! -- in com.exam.auth.service.MailSmtpTimeoutConfigTest
+[ERROR] com.exam.auth.service.MailSmtpTimeoutConfigTest.smtpTimeoutsBoundIntoMailProperties -- Time elapsed: 0.581 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: spring.mail.properties.mail.smtp.connectiontimeout 未被装配进 MailProperties ==> expected: not <null>
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.005 s <<< FAILURE! -- in com.exam.auth.service.MailSmtpTimeoutGuardTest
+[ERROR] com.exam.auth.service.MailSmtpTimeoutGuardTest.allThreeProfilesDeclareSmtpTimeouts -- Time elapsed: 0.004 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: src/main/resources/application.yml 缺少 mail.smtp.connectiontimeout 的正整数值声明：JavaMail 该方向将回落无限等待，SMTP 故障时找回密码请求线程挂起累积（fix-mail-smtp-timeout-and-catch） ==> expected: <true> but was: <false>
+[ERROR] Failures: 
+[ERROR]   MailServiceTest.mailSendExceptionIsConvertedToBusinessException:75 Unexpected exception type thrown, expected: <com.exam.common.BusinessException> but was: <org.springframework.mail.MailSendException>
+[ERROR]   MailSmtpTimeoutConfigTest.smtpTimeoutsBoundIntoMailProperties:33 spring.mail.properties.mail.smtp.connectiontimeout 未被装配进 MailProperties ==> expected: not <null>
+[ERROR]   MailSmtpTimeoutGuardTest.allThreeProfilesDeclareSmtpTimeouts:62 src/main/resources/application.yml 缺少 mail.smtp.connectiontimeout 的正整数值声明：JavaMail 该方向将回落无限等待，SMTP 故障时找回密码请求线程挂起累积（fix-mail-smtp-timeout-and-catch） ==> expected: <true> but was: <false>
+[ERROR] Tests run: 5, Failures: 3, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] 
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
