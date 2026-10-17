@@ -1,0 +1,29 @@
+{
+  "changeId": "fix-reservation-remind-transaction",
+  "title": "开考提醒投递事务修复（deliverIfAbsent 自调用 @Transactional 死注解）",
+  "level": "S",
+  "capabilityDomains": ["exam-taking"],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项、幂等口径确认与在途总账登记",
+      "status": "false",
+      "description": "确立 proposal.md、exam-taking 的 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md B.2 勘正行。定性：单类修复 + 测试，零 DDL、零契约变更、零前端，仅 backendTests 预期增长；S 级。",
+      "evidence": ""
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施编程式事务修复 + 单测先红后绿 + 变异击红验证",
+      "status": "false",
+      "description": "①ReservationRemindService 构造注入 PlatformTransactionManager（new TransactionTemplate 同款先例），deliverIfAbsent 方法体包入编程式事务（认领回填 + 消息插入两写一个事务），移除 @Transactional 死注解并在 javadoc 注明自调用绕代理原因；②行级幂等闸（markRemindedIfNull 影响行数=1 才写消息）与调用点/返回值/日志零改动；③单测先红：注入消息插入故障，修复前认领残留（reminded_time 已置位）即缺陷存在性证明；修复后回滚 + 下轮重试自愈 + 幂等不重发；④变异验证（还原死注解形态）击红-复原-回绿留证 evidence/。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "false",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests；将 spec-delta 合入 specs/exam-taking 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
