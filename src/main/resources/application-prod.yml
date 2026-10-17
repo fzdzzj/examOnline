@@ -60,3 +60,17 @@ springdoc:
     enabled: false
   api-docs:
     enabled: true
+
+# ===== Actuator 暴露面收敛（harden-actuator-exposure，安全专项发现 2）=====
+# prod 只暴露观测必需端点：health（compose healthcheck 打 /actuator/health/db，只看 HTTP 状态码）
+# 与 prometheus（内网抓取依赖，Grafana 面板与告警全部走该出口）。info 默认空载零价值、
+# metrics 的聚合出口是 prometheus（JSON 明细不再暴露）。健康细节收敛为 never：
+# DB/Redis/SMTP 等组件名与连接状态不再未认证可读。base/dev 档保持全暴露（开发便利与测试观测）。
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never

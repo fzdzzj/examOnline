@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-actuator-exposure",
+  "branch": "feature/harden-actuator-exposure",
+  "level": "S",
+  "source": "docs/功能待办清单.md 安全专项首扫发现 2 卡（2026-10-17 用户派工六案串行第五案）：/actuator/** 整体豁免 + show-details always + 四端点全暴露，未认证可读健康细节与全量 metrics",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-actuator-exposure → 写 proposal/spec-delta（deployment 域）/tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "分支自 main（00bc968）拉出；立案笔见 git log（docs(spec): 立案 harden-actuator-exposure）；git diff --cached --stat 预检恰 4 文件（三件套 3 + spec/README.md 在途表 1）。观测链路保全论证（prometheus 抓取/prod healthcheck/既有集成测试三链路）与 info 端点审视结论落 proposal §二。派工为一次性实施，tasks.json 未走「全 false 待审批」中间态（先例如实登记）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——prod 档暴露收敛 + 豁免白名单收窄 + 护栏测试",
+      "status": "completed",
+      "description": "application-prod.yml 新增 management 块（exposure=health,prometheus + show-details=never）；WebMvcConfig /actuator/** 整体豁免收窄为三模式白名单；ActuatorExposureGuardTest 护栏三断言。",
+      "evidence": "实施笔 16e9001（diff --stat 恰 3 文件：application-prod.yml + WebMvcConfig + ActuatorExposureGuardTest，全在 proposal 白名单）。先红=行为红（01：旧形态护栏两断言确定性失败，revision 25ecda8 工作树）。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证 + 等价变异登记",
+      "status": "completed",
+      "description": "变异验证——WebMvcConfig 恢复 /actuator/** 整体豁免击红、复原回绿（scripts/mutation-check.sh 驱动）；等价变异如实登记不强杀。",
+      "evidence": "evidence/03–04：mutation-check.sh m5-broad-actuator-allow（--inject-sed prometheus 模式替换回 /actuator/** 整体豁免）五步全 PASS——注入后 interceptorExclusionIsWhitelistNotBroadActuator 确定性失败（exit=1）、cmp 字节复原+注入标志归零后回绿（exit=0）；留证 D:\\code\\examOnline-measure\\harden-actuator-exposure\\mutation-check\\m5-broad-actuator-allow\\。等价变异：Ant 风格等价写法与 YAML 列表形态均被词法断言保守击红（非免杀形态），登记存在。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "completed",
+      "description": "收口 diff 核对——base/dev/test yml、docker/observability（prometheus 抓取与告警零改动）、docker-compose*.yml、SubmitObservabilityIntegrationTest + schema.sql + docker/mysql + openapi.yaml + pom + frontend 零改动。",
+      "evidence": "evidence/README.md §05：git diff main --stat 针对范围外清单输出为空（OUT_OF_SCOPE_DIFF_LINES=0）；分支总 diff 文件清单全在 proposal 白名单内。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 在 674 基数上同笔上调 → evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + deployment 域行追加 → docs/功能待办清单.md 安全发现 2 行闭环标注 → --no-ff 合入 main。",
+      "evidence": "全量门禁：首跑红（06a：676/0/1F/1，ExamStateMachineTransactionTest 前置断言落空）——亲验归因为既有跨上下文调度竞态（共享 mem:exam，他上下文 10s tick 抢先推进用例考试；单类复跑 3/0/0/0 绿；非本卡回归，竞态机制已定位留观察项）；同 revision 16e9001 复跑全绿（06：Tests run: 676, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS，GATE_EXIT=0）；gate-baseline.json backendTests 674→676 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/harden-actuator-exposure/；--no-ff 合并入 main。"
+    }
+  ]
+}
