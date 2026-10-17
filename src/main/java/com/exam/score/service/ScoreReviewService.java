@@ -190,7 +190,14 @@ public class ScoreReviewService {
         review.setResult(request.getReason());
         review.setHandlerId(SecurityUtil.getUserId());
         review.setHandleTime(LocalDateTime.now());
-        reviewMapper.updateById(review);
+        // L-05 复核处理 CAS 原子更新（harden-cross-cutting-edge-cases）：
+        // 状态限定为 PENDING 或 PROCESSING，防止并发重复处理导致状态覆盖或重复通知
+        int updated = reviewMapper.update(review, Wrappers.<ScoreReview>lambdaUpdate()
+                .eq(ScoreReview::getId, reviewId)
+                .in(ScoreReview::getStatus, ScoreReview.STATUS_PENDING, ScoreReview.STATUS_PROCESSING));
+        if (updated == 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "该复核申请已被其他操作处理");
+        }
         log.info("成绩复核处理: review={} status={} exam={} student={}",
                 reviewId, review.getStatus(), review.getExamId(), review.getStudentId());
         // 旁路通知（add-exam-lifecycle-notifications）：处理完成后向申诉学生投递复核结果通知；

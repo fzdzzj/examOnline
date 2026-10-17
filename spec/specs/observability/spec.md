@@ -75,7 +75,7 @@ AND 定位具体慢 SQL 或慢操作
 
 WHEN 一条 SQL 执行耗时超过配置阈值,
 
-系统 SHALL 输出 WARN 日志，日志 SHALL 含 SQL、耗时、参数与关联 requestId。
+系统 SHALL 输出 WARN 日志并递增慢 SQL 计数器 `exam.database.slow.sql`，日志 SHALL 含 SQL、耗时、参数与关联 requestId，并通过 Prometheus 告警规则 `DatabaseSlowSqlDetected` 实时告警，`AlertAssetsTest` 静态守护规则与指标不漂移。
 
 #### Scenario: 慢 SQL 告警
 
@@ -86,6 +86,14 @@ WHEN 系统检测到超时
 THEN 输出 WARN 日志
 
 AND 日志含执行耗时、SQL 文本、参数与 requestId
+
+#### Scenario: 慢 SQL 计数递增与告警 (harden-cross-cutting-edge-cases)
+
+GIVEN 系统检测到一条 SQL 执行耗时超过阈值
+WHEN 拦截器触发告警逻辑
+THEN 输出 WARN 日志
+AND 递增 `exam.database.slow.sql` 计数器
+AND `DatabaseSlowSqlDetected` 规则在检测到增量时触发告警
 
 #### Scenario: 正常 SQL 不告警
 

@@ -1,6 +1,7 @@
 package com.exam.common.slow_sql;
 
 import com.exam.common.RequestIdFilter;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.plugin.Interceptor;
@@ -52,9 +53,16 @@ public class SlowSqlInterceptor implements Interceptor {
 
     /** 慢 SQL 阈值（毫秒）：超过即输出 WARN，可在 application.yml exam.monitor.slow-sql-threshold-ms 调整 */
     private final long thresholdMs;
+    private final BusinessMetrics businessMetrics;
 
-    public SlowSqlInterceptor(@Value("${exam.monitor.slow-sql-threshold-ms:1000}") long thresholdMs) {
+    public SlowSqlInterceptor(@Value("${exam.monitor.slow-sql-threshold-ms:1000}") long thresholdMs,
+                               BusinessMetrics businessMetrics) {
         this.thresholdMs = thresholdMs;
+        this.businessMetrics = businessMetrics;
+    }
+
+    public SlowSqlInterceptor(long thresholdMs) {
+        this(thresholdMs, null);
     }
 
     @Override
@@ -64,11 +72,14 @@ public class SlowSqlInterceptor implements Interceptor {
             return invocation.proceed();
         } finally {
             long cost = System.currentTimeMillis() - start;
-            // 超阈值才打 WARN：避免每句 SQL 都记日志造成海量噪音
+            // 超阈值才打 WARN 并打点：避免每句 SQL 都记日志造成海量噪音
             if (cost >= thresholdMs) {
                 String sql = extractSql(invocation);
                 String requestId = MDC.get(RequestIdFilter.MDC_KEY);
                 log.warn("慢 SQL 超过阈值 {}ms，实际 {}ms，requestId={}，SQL: {}", thresholdMs, cost, requestId, sql);
+                if (businessMetrics != null) {
+                    businessMetrics.countSlowSql();
+                }
             }
         }
     }

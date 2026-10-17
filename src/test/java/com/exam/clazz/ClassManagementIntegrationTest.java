@@ -1,10 +1,14 @@
 package com.exam.clazz;
 
 import com.exam.clazz.service.ClassService;
+import com.exam.exam.entity.Exam;
+import com.exam.exam.mapper.ExamMapper;
 import com.exam.support.IntegrationTestBase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,6 +33,9 @@ class ClassManagementIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private ClassService classService;
+
+    @Autowired
+    private ExamMapper examMapper;
 
     @Test
     void classCrudPageAndOwnerCheck() throws Exception {
@@ -149,6 +156,32 @@ class ClassManagementIntegrationTest extends IntegrationTestBase {
         // 防呆：源班级与目标班级相同 → 400
         perform(jsonPut("/api/classes/" + classA + "/students/" + studentId + "/transfer", teacherA,
                 "{\"targetClassId\":" + classA + "}"), 400);
+    }
+
+    /**
+     * L-01（harden-cross-cutting-edge-cases）：班级被考试引用时阻断删除（400）。
+     */
+    @Test
+    void deleteClassBlockedWhenExamReferencesExist() throws Exception {
+        String teacher = registerTeacher();
+        long classId = createClass(teacher, "引用测试班", null);
+
+        Exam exam = new Exam();
+        exam.setTitle("班级关联期末考");
+        exam.setClassId(classId);
+        exam.setPaperId(1L);
+        exam.setStartTime(LocalDateTime.now().plusDays(1));
+        exam.setEndTime(LocalDateTime.now().plusDays(1).plusHours(2));
+        exam.setDurationMinutes(120);
+        exam.setStatus(Exam.STATUS_NOT_STARTED);
+        exam.setCreatedBy(userIdOf(teacher));
+        examMapper.insert(exam);
+
+        JsonNode err = perform(jsonDelete("/api/classes/" + classId, teacher), 400);
+        assertTrue(err.get("message").asText().contains("该班级已被考试引用，不允许删除"));
+
+        JsonNode detail = perform(jsonGet("/api/classes/" + classId, teacher), 200).get("data");
+        assertEquals("引用测试班", detail.get("name").asText());
     }
 
     // ==================== 工具 ====================

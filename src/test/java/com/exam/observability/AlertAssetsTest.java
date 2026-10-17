@@ -73,7 +73,7 @@ class AlertAssetsTest {
             "ExamOnlineDown", "SubmitFailureRatioHigh", "SubmitLatencyP99High",
             "MqSubmitQueueBacklog", "RateLimitDegraded", "Http5xxRatioHigh", "AntiCheatEventSpike",
             "MqDlqBacklog", "MqSubmitRetryExhausted", "AuthDegraded", "SubmitLockDegraded", "CacheDegraded",
-            "DatasourceDegraded");
+            "DatasourceDegraded", "DatabaseSlowSqlDetected");
 
     // ---------- 断言 1：资产文件存在且语法可解析 ----------
 
@@ -157,6 +157,7 @@ class AlertAssetsTest {
         assertTrue(known.contains("exam_mq_dlq_depth"));
         assertTrue(known.contains("exam_mq_retry_total"));
         assertTrue(known.contains("exam_mq_dlq_entered_total"));
+        assertTrue(known.contains("exam_database_slow_sql_total"));
 
         List<String> exprs = allExpressions();
         assertFalse(exprs.isEmpty(), "未提取到任何表达式，说明资产文件可能为空");

@@ -34,8 +34,8 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      database: ${REDIS_DATABASE:0}
+      # 默认分库调整为 1（dev 保持 0），消除共用单实例时测试与生产数据互相污染的隐患
+      database: ${REDIS_DATABASE:1}
       timeout: 3s
   mail:
     host: ${SMTP_HOST}

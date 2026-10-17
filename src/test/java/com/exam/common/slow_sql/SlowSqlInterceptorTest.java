@@ -18,9 +18,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.exam.monitoring.metrics.BusinessMetrics;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -73,12 +77,13 @@ class SlowSqlInterceptorTest {
     }
 
     @Test
-    @DisplayName("超过阈值：输出 WARN，日志含耗时、SQL 与 requestId")
+    @DisplayName("超过阈值：输出 WARN 并打点，日志含耗时、SQL 与 requestId")
     void warnsWhenOverThreshold() throws Throwable {
         attachAppender();
         MDC.put("requestId", "req-test-abc123");
-        // 阈值 0ms：任何执行必然超阈值，确保触发 WARN 分支
-        SlowSqlInterceptor interceptor = new SlowSqlInterceptor(0);
+        BusinessMetrics metrics = mock(BusinessMetrics.class);
+        // 阈值 0ms：任何执行必然超阈值，确保触发 WARN 分支与打点
+        SlowSqlInterceptor interceptor = new SlowSqlInterceptor(0, metrics);
         String sql = "select * from exam where name = ? and id = ?";
 
         fireQuery(interceptor, sql);
@@ -88,19 +93,23 @@ class SlowSqlInterceptorTest {
         assertTrue(warns.stream().anyMatch(m -> m.contains(sql)), "WARN 日志应含真实 SQL 文本");
         assertTrue(warns.stream().anyMatch(m -> m.contains("req-test-abc123")), "WARN 日志应关联 requestId");
         assertTrue(warns.stream().anyMatch(m -> m.contains("ms")), "WARN 日志应含执行耗时");
+        // fireQuery 分别触发 query 与 update 两次执行，均超阈值 → 打点 2 次
+        verify(metrics, times(2)).countSlowSql();
     }
 
     @Test
-    @DisplayName("未超阈值：不输出 WARN，避免每句 SQL 都写日志造成噪音")
+    @DisplayName("未超阈值：不输出 WARN 且不打点，避免每句 SQL 都写日志与打点")
     void silentWhenWithinThreshold() throws Throwable {
         attachAppender();
         MDC.put("requestId", "req-test-quick");
-        // 阈值设到极大（约 292 年毫秒），实际执行绝不会超过 → 不触发 WARN
-        SlowSqlInterceptor interceptor = new SlowSqlInterceptor(Long.MAX_VALUE);
+        BusinessMetrics metrics = mock(BusinessMetrics.class);
+        // 阈值设到极大（约 292 年毫秒），实际执行绝不会超过 → 不触发 WARN 与打点
+        SlowSqlInterceptor interceptor = new SlowSqlInterceptor(Long.MAX_VALUE, metrics);
 
         fireQuery(interceptor, "select 1");
 
         assertTrue(warnMessages().isEmpty(), "未超阈值不应输出慢 SQL 日志");
+        verify(metrics, never()).countSlowSql();
     }
 
     @Test

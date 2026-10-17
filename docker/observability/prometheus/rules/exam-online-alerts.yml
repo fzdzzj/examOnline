@@ -142,3 +142,15 @@ groups:
           summary: "交卷消息重试耗尽进入死信"
           description: "近 10 分钟存在交卷消息因重试耗尽进入死信（exam_mq_dlq_entered_total 增量 {{ $value }}），需排查消费失败根因。"
 
+      - alert: DatabaseSlowSqlDetected
+        # 慢 SQL 告警闭环（harden-cross-cutting-edge-cases）：
+        # SlowSqlInterceptor 执行超阈值（默认 1000ms）递增 exam_database_slow_sql_total
+        expr: sum(increase(exam_database_slow_sql_total[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "检测到数据库慢 SQL"
+          description: "近 5 分钟存在执行耗时超过阈值的慢 SQL（当前增量 {{ $value }}），需结合应用 WARN 日志与 MDC requestId 排查慢语句。"
+
+
