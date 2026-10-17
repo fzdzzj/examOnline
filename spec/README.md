@@ -20,6 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
+| `fix-mail-smtp-timeout-and-catch` | 实施中 | SMTP 三向超时配置（connectiontimeout/timeout/writetimeout 各 10000ms，三处 yml）与 MailService 捕面拓宽至 MailException 系（超时以 MailSendException 冒出现有 catch 罩不住落 500 裸奔）——B.2 横切首扫中危 M4，S 级 | authentication | 无 |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。

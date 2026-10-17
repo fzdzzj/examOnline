@@ -1,0 +1,29 @@
+{
+  "changeId": "fix-mail-smtp-timeout-and-catch",
+  "title": "SMTP 三向超时配置与邮件发送失败捕面拓宽（M4 卡）",
+  "level": "S",
+  "capabilityDomains": ["authentication"],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与在途总账登记",
+      "status": "false",
+      "description": "确立 proposal.md、authentication 的 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md B.2 M4 行。定性：单类 + 配置 + 测试，零 DDL、零契约变更、零前端，仅 backendTests 预期增长；S 级。",
+      "evidence": ""
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：测试先红 + 三处 yml 超时与捕面修复 + 变异击红验证",
+      "status": "false",
+      "description": "①三处 yml（application / -dev / -prod）spring.mail.properties 补 mail.smtp.connectiontimeout / timeout / writetimeout 各 10000ms；②MailService catch 面拓宽至 MessagingException | MailException，处置语义逐字不动（同一 ERROR 日志 + 同一 BusinessException 文案），javadoc 注明超时以 MailSendException 冒出；③测试先红：MailServiceTest 增 MailSendException→BusinessException 与 MessagingException 路径回归用例（修复前前者红）、MailSmtpTimeoutGuardTest 三文件词法护栏（修复前红）、MailSmtpTimeoutConfigTest base yml 绑定断言（修复前红）；④变异（还原只捕 MessagingException 形态）击红-复原-回绿留证 evidence/。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "false",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests；将 spec-delta 合入 specs/authentication 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
+      "evidence": ""
+    }
+  ]
+}
