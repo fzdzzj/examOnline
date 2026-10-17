@@ -1,7 +1,7 @@
 # frontend 规范
 
 > 能力域：前端（阶段 19 起的前端系列，19–23 五阶段全量）。
-> 来源：`spec/changes/archive/add-frontend-skeleton-auth` 合入（前端工程底座/API 契约驱动集成/会话与令牌生命周期/角色路由守卫，阶段 19，2026-09-23）+ `spec/changes/archive/add-frontend-teacher-authoring` 合入（题库管理界面/组卷界面/前端不复现判分口径，阶段 20，2026-09-23）+ `spec/changes/archive/add-frontend-must-change-guard` 合入（强制改密前端守卫，提案④，2026-09-21；接回阶段 19 因契约缺字段而移出的「强制改密前置」需求）+ `spec/changes/archive/add-frontend-student-taking` 合入（学生端在线考试：作答界面/服务端时间倒计时/草稿保存与断线恢复/交卷防重配合/切屏检测与上报/交卷结果如实呈现，阶段 22，2026-09-23）+ `spec/changes/archive/add-frontend-exam-admin` 合入（教师端考务：班级管理界面/考试创建与发布界面/监考与行为日志界面，阶段 21，2026-09-23）+ `spec/changes/archive/add-frontend-post-exam` 合入（考后闭环：主观题批改工作台/成绩发布撤回导出/缺考与补考/成绩查询与复核，阶段 23，2026-09-23）+ `spec/changes/archive/add-exam-list-filtering` 合入（教师端考试列表服务端筛选联动，2026-10-08）。
+> 来源：`spec/changes/archive/add-frontend-skeleton-auth` 合入（前端工程底座/API 契约驱动集成/会话与令牌生命周期/角色路由守卫，阶段 19，2026-09-23）+ `spec/changes/archive/add-frontend-teacher-authoring` 合入（题库管理界面/组卷界面/前端不复现判分口径，阶段 20，2026-09-23）+ `spec/changes/archive/add-frontend-must-change-guard` 合入（强制改密前端守卫，提案④，2026-09-21；接回阶段 19 因契约缺字段而移出的「强制改密前置」需求）+ `spec/changes/archive/add-frontend-student-taking` 合入（学生端在线考试：作答界面/服务端时间倒计时/草稿保存与断线恢复/交卷防重配合/切屏检测与上报/交卷结果如实呈现，阶段 22，2026-09-23）+ `spec/changes/archive/add-frontend-exam-admin` 合入（教师端考务：班级管理界面/考试创建与发布界面/监考与行为日志界面，阶段 21，2026-09-23）+ `spec/changes/archive/add-frontend-post-exam` 合入（考后闭环：主观题批改工作台/成绩发布撤回导出/缺考与补考/成绩查询与复核，阶段 23，2026-09-23）+ `spec/changes/archive/add-exam-list-filtering` 合入（教师端考试列表服务端筛选联动，2026-10-08）+ `spec/changes/archive/add-exam-scratchpad-canvas` 合入（考试草稿板组件与会话留存，2026-10-18）。
 > 实施注记：
 > - 本文件由**首个收尾的前端变更**创建（spec/README.md 约定：谁先收尾谁建目录）；阶段 19–23 五份 spec-delta 待各自验收收尾后按 Requirement 标题逐个追加，不预建空壳。
 > - 判定收敛在 `frontend/src/router/access.ts` 的 `decideNavigation` 单一函数，`guard.ts` 只做接线；前端守卫不是安全边界，后端 `@RequireRole` 才是权限的唯一裁决者。
@@ -2900,4 +2900,40 @@ THEN 以该模板为源创建新草稿卷并跳转/提示，模板本身不动
 - **WHEN**: 学生查看考后答卷回顾页面初始化
 - **THEN**: 系统 SHALL 通过批量接口检测并回显各题的收藏星标（已收藏高亮展示，未收藏镂空展示）
 - **AND**: 点击星标图标可即时切换收藏状态，并在操作成功后更新本地视图状态
+
+---
+
+### Requirement: 学生在线考试草稿板组件 (add-exam-scratchpad-canvas)
+
+> 合入注记（2026-10-18，变更 `add-exam-scratchpad-canvas` 收口）：
+> 作答页 `[id].page.vue` 提供快捷悬浮开关；内置 `ScratchpadCanvas.vue` 画板支持自由手绘、粗细颜色切换、橡皮擦、撤销与清空；笔画账本纯逻辑与会话级持久化在 `utils/scratchpad.ts`，交卷后自毁。
+
+#### Scenario: 浮动面板折叠与展开
+- **GIVEN**: 学生处于未封闭的答题界面
+- **WHEN**: 学生点击草稿板入口按钮
+- **THEN**: 草稿画板悬浮展开，显示控制工具栏与 Canvas 画布
+- **WHEN**: 学生点击收起或最小化
+- **THEN**: 草稿面板收起，不遮挡题目作答区域
+
+#### Scenario: 画笔与橡皮擦模式及参数切换
+- **GIVEN**: 草稿板处于展开状态
+- **WHEN**: 学生选择不同粗细（细 2px / 中 4px / 粗 8px）或不同颜色（黑、红、蓝、绿）
+- **THEN**: 后续绘制线条采用对应参数渲染
+- **WHEN**: 学生切换至橡皮擦模式
+- **THEN**: 鼠标划过区域擦除现有笔迹
+
+#### Scenario: 撤销与一键清空
+- **GIVEN**: 草稿板上有绘制笔迹记录
+- **WHEN**: 学生点击「撤销」
+- **THEN**: 系统按笔画历史回退上一步绘制
+- **WHEN**: 学生点击「清空」
+- **THEN**: Canvas 画布内容被完整清空，并同步更新本地存储缓存
+
+#### Scenario: 本地草稿恢复与自毁
+- **GIVEN**: 浏览器存储存在键名为 `exam_scratchpad_${examId}` 的笔迹快照文档
+- **WHEN**: 草稿板组件挂载或展开
+- **THEN**: 自动将存储的笔迹快照文档数据校验并回绘到 Canvas 画布中
+- **WHEN**: 考试交卷成功或页面检测到答卷封闭
+- **THEN**: 对应的 `exam_scratchpad_${examId}` 存储项被自动移除
+
 

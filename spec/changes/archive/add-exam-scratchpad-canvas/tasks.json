@@ -31,9 +31,9 @@
     {
       "id": 4,
       "title": "阶段 4：规范基线合入、总账更新与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "spec-delta 合入 specs/exam-taking/spec.md 与 specs/frontend/spec.md；变更归档至 spec/changes/archive/；更新 spec/README.md（清空在途并登记归档）与 docs/功能待办清单.md（标记已闭环）；--no-ff 合入 main。",
-      "evidence": ""
+      "evidence": "①双端门禁实测：后端唯一门禁 ./mvnw clean test 714/0/0/1 全绿（10:07 min），前端 vitest 122 文件/934 例全绿，openapi 100 paths 持平。②复核独立裁决 PASS：实测与红线机检全过，m1/m2 变异击红判别力真实，favorites 存量 lint/typecheck 缺陷归因三重机检闭环证实非本案引入。③spec-delta 合入：specs/exam-taking/spec.md 追加「考试中在线草稿纸」Requirement 与 3 个 Scenario，specs/frontend/spec.md 追加「学生在线考试草稿板组件」Requirement 与 4 个 Scenario（采纳 P3 笔迹快照表述）。④总账与归档：变更提案归档至 spec/changes/archive/add-exam-scratchpad-canvas/；spec/README.md 在途表清空并登记来源与归档速览；docs/功能待办清单.md 行 40 标记已闭环。⑤feature/add-exam-scratchpad-canvas 分支 --no-ff 合入 main。"
     }
   ]
 }
