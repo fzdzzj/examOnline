@@ -74,7 +74,7 @@ class MessageServiceTest {
         ArgumentCaptor<LambdaQueryWrapper<UserMessage>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(messageMapper).selectList(captor.capture());
         LambdaQueryWrapper<UserMessage> wrapper = captor.getValue();
-        assertTrue(wrapper.getCustomSqlSegment().contains("LIMIT 20"),
+        assertTrue(wrapper.getCustomSqlSegment().trim().endsWith("LIMIT 20"),
                 "正常范围内的 limit 应该原样生效");
     }
 
@@ -89,7 +89,7 @@ class MessageServiceTest {
         ArgumentCaptor<LambdaQueryWrapper<UserMessage>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(messageMapper).selectList(captor.capture());
         LambdaQueryWrapper<UserMessage> wrapper = captor.getValue();
-        assertTrue(wrapper.getCustomSqlSegment().contains("LIMIT 100"),
+        assertTrue(wrapper.getCustomSqlSegment().trim().endsWith("LIMIT 100"),
                 "超大 limit 必须被钳制在 100，防止慢查询与 OOM");
     }
 
@@ -103,13 +103,13 @@ class MessageServiceTest {
 
         ArgumentCaptor<LambdaQueryWrapper<UserMessage>> captor0 = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(messageMapper).selectList(captor0.capture());
-        assertTrue(captor0.getValue().getCustomSqlSegment().contains("LIMIT 1"),
+        assertTrue(captor0.getValue().getCustomSqlSegment().trim().endsWith("LIMIT 1"),
                 "0 必须回退为 LIMIT 1，杜绝无界查询");
 
         messageService.listMine(-5);
         ArgumentCaptor<LambdaQueryWrapper<UserMessage>> captorNeg = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(messageMapper, times(2)).selectList(captorNeg.capture());
-        assertTrue(captorNeg.getValue().getCustomSqlSegment().contains("LIMIT 1"),
+        assertTrue(captorNeg.getValue().getCustomSqlSegment().trim().endsWith("LIMIT 1"),
                 "负数必须回退为 LIMIT 1");
     }
 
