@@ -96,3 +96,4 @@
 - harden-spring-cache-resilience（Spring Cache 快照/详情缓存切面 + 互斥回源器同族六触点降级：
   读失败静默回源 DB / 失效延迟生效 TTL 自愈 / 互斥锁不可用跳过单飞，新指标 exam.cache.degraded +
   CacheDegraded 告警同笔落位，2026-10-17，1②）
+- harden-client-ip-spoofing-and-redis-drill（现场演练台账：docs/redis-drill-evidence.md 沉淀五场景实测记录，X-Real-IP 优先采信加固，2026-10-17，S 级）

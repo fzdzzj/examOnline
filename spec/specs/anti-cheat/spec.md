@@ -315,6 +315,14 @@ GIVEN 考试未配置 IP 白名单或配置为空列表
 WHEN 学生发起进入考试请求
 THEN 保持既有普通准入校验（班级/补考名单），IP 不作限制
 
+#### Scenario: 优先采信反代覆写头 X-Real-IP 防范 XFF 伪造 (harden-client-ip-spoofing-and-redis-drill)
+
+GIVEN 客户端发起进入考试、登录或验证码发送请求
+WHEN 请求经过受信任反向代理（Nginx TLS 终结）转发，携带不可伪造的 `X-Real-IP` 请求头
+THEN `ClientIpResolver` SHALL 优先采信 `X-Real-IP` 对应地址作为客户端真实 IP
+AND 忽略客户端在 `X-Forwarded-For` 自行注入的伪造 IP 前缀
+AND 当且仅当 `X-Real-IP` 缺失或非法时，系统 SHALL 安全回退至既有 `X-Forwarded-For` 解析逻辑与直连地址
+
 ---
 
 ### Requirement: 作答安全模式与事件扩展
@@ -341,3 +349,4 @@ AND 旁路上报 FULLSCREEN_EXIT 行为事件
 > 2. 事件扩展：BehaviorEventTypes 新增 COPY_PASTE 与 FULLSCREEN_EXIT 收集器，默认 MEDIUM 严重度且显式带 warn，自动注册入 BehaviorEventRegistry；
 > 3. 前端守卫：作答端 useBehaviorReport 承接复制粘贴拦截与全屏退出监听，进入全屏引导弹层（手势触发），建考表单扩展防作弊卡片；
 > 4. 零 DDL、零迁移脚本，严格遵守只警告不交卷决策；门禁数字链后端 471→493、前端 667→752、契约 paths 89 不变。
+> 5. 反代 IP 防伪造（harden-client-ip-spoofing-and-redis-drill，2026-10-17）：ClientIpResolver 优先采信不可伪造的 X-Real-IP 阻断 XFF 伪造前缀，非法或缺失时平滑回退 XFF 首项与 remoteAddr；IpMatcherTest 补充防伪造覆盖，全量门禁 692/0/0/1。

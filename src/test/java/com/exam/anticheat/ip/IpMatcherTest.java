@@ -154,6 +154,48 @@ class IpMatcherTest {
     // ==================== 客户端真实 IP 提取 ====================
 
     @Test
+    @DisplayName("客户端 IP 防伪造：同时提供伪造 XFF 与合法 X-Real-IP 时优先采信 X-Real-IP")
+    void clientIpPrefersRealIpOverSpoofedForwarded() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("127.0.0.1");
+        // 恶意客户端自行注入 XFF 伪造前缀，反代在其后追加真实 IP
+        request.addHeader("X-Forwarded-For", "203.0.113.88, 198.51.100.1");
+        // 受信任反向代理（如 Nginx）通过 TCP 连接 remote_addr 覆写的不可伪造头
+        request.addHeader("X-Real-IP", "198.51.100.1");
+
+        assertEquals("198.51.100.1", ClientIpResolver.resolve(request));
+    }
+
+    @Test
+    @DisplayName("客户端 IP：仅携带 X-Real-IP 时正确采信并去除前后空白，支持 IPv4 与 IPv6")
+    void clientIpRealIpOnly() {
+        MockHttpServletRequest requestIpv4 = new MockHttpServletRequest();
+        requestIpv4.setRemoteAddr("127.0.0.1");
+        requestIpv4.addHeader("X-Real-IP", " 198.51.100.2 ");
+        assertEquals("198.51.100.2", ClientIpResolver.resolve(requestIpv4));
+
+        MockHttpServletRequest requestIpv6 = new MockHttpServletRequest();
+        requestIpv6.setRemoteAddr("127.0.0.1");
+        requestIpv6.addHeader("X-Real-IP", "2001:db8::9");
+        assertEquals("2001:db8::9", ClientIpResolver.resolve(requestIpv6));
+    }
+
+    @Test
+    @DisplayName("客户端 IP：X-Real-IP 缺失或非法时平滑回退至 XFF 或 remoteAddr")
+    void clientIpFallsBackWhenRealIpInvalidOrAbsent() {
+        MockHttpServletRequest requestInvalidRealIp = new MockHttpServletRequest();
+        requestInvalidRealIp.setRemoteAddr("127.0.0.1");
+        requestInvalidRealIp.addHeader("X-Real-IP", "not-an-ip");
+        requestInvalidRealIp.addHeader("X-Forwarded-For", "203.0.113.9, 10.0.0.1");
+        assertEquals("203.0.113.9", ClientIpResolver.resolve(requestInvalidRealIp));
+
+        MockHttpServletRequest requestBlankRealIp = new MockHttpServletRequest();
+        requestBlankRealIp.setRemoteAddr("192.168.10.20");
+        requestBlankRealIp.addHeader("X-Real-IP", "   ");
+        assertEquals("192.168.10.20", ClientIpResolver.resolve(requestBlankRealIp));
+    }
+
+    @Test
     @DisplayName("客户端 IP：X-Forwarded-For 首项优先（多级代理取最左）")
     void clientIpPrefersForwardedFirstEntry() {
         MockHttpServletRequest request = new MockHttpServletRequest();
