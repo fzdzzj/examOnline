@@ -43,8 +43,8 @@
 - 权限与安全：端点限制 `STUDENT` 角色或通过 `@PreAuthorize` 鉴权，严格按 `SecurityUtil.getUserId()` 隔离。
 
 ### 2.3 API 契约与基线
-- 更新 `openapi.yaml`，新增 4 个端点（paths 由 97 增至 101）；
-- 同步上调 `.github/ci/gate-baseline.json` 中的 `openapiPaths`（97 $\to$ 101）及 `backendTests`。
+- 更新 `openapi.yaml`，新增 4 个端点（收藏与取消共用 `/{questionId}` 路径，实际新增 3 个 path，paths 由 97 增至 100——立案时误写 101，实施笔按实修正）；
+- 同步上调 `.github/ci/gate-baseline.json` 中的 `openapiPaths`（97 $\to$ 100）、`backendTests`（+12）及 `frontendTests`（908 $\to$ 917）。
 
 ### 2.4 前端实现 (`frontend`)
 - 学生端新增「我的收藏」路由与页面组件（支持题型筛选、关键字搜索、展开解析、一键取消收藏）；

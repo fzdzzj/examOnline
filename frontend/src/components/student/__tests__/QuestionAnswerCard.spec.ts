@@ -209,3 +209,27 @@ describe('QuestionAnswerCard 归零锁定', () => {
     expect(wrapper.emitted('update:answer')?.[0]).toEqual(['C']);
   });
 });
+
+describe('QuestionAnswerCard 题目收藏（add-student-question-favorites）', () => {
+  it('allowFavorite=false 时不渲染收藏按钮', () => {
+    const wrapper = mountCard(SINGLE, { allowFavorite: false });
+    expect(wrapper.find('[data-test="card-favorite-toggle"]').exists()).toBe(false);
+  });
+
+  it('allowFavorite=true 时渲染收藏按钮并支持点击回抛', async () => {
+    const wrapper = mountCard(SINGLE, { allowFavorite: true, favorited: false });
+    const btn = wrapper.find('[data-test="card-favorite-toggle"]');
+    expect(btn.exists()).toBe(true);
+    expect(btn.text()).toContain('收藏');
+
+    await btn.trigger('click');
+    expect(wrapper.emitted('toggle-favorite')?.[0]).toEqual([11]);
+  });
+
+  it('favorited=true 时文案为已收藏', () => {
+    const wrapper = mountCard(SINGLE, { allowFavorite: true, favorited: true });
+    const btn = wrapper.find('[data-test="card-favorite-toggle"]');
+    expect(btn.text()).toContain('已收藏');
+  });
+});
+

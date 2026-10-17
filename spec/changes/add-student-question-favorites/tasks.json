@@ -14,16 +14,16 @@
     {
       "id": 2,
       "title": "阶段 2：DDL 增量、后端实体/Mapper/Service/Controller 实现与单测/集成测试/变异验证",
-      "status": "pending",
+      "status": "completed",
       "description": "schema.sql 增建 student_question_favorites 表，补充 docker/mysql/migrations/ 迁移脚本与 APPLIED.md 登记行；实现 StudentQuestionFavorite 实体、Mapper、Service（收藏/取消/分页列表/批量状态检查）与 Controller 端点；编写集成测试与单元测试，落实 m1/m2 变异击红留存日志。",
-      "evidence": ""
+      "evidence": "schema.sql + 迁移脚本 + APPLIED.md 登记行落位（主从库表/索引形状独立核实一致）；后端四件套实现，权限点 exam:take 与 ExamTakingController 口径一致；单元 8 例 + 集成 4 例（幂等/404/软删/双学生隔离/题型关键字筛选）；m1 击红 12 例 3F+2E、m2 击红 12 例 1F，复原均回绿 12/0/0/0，证据见 evidence/mutation-evidence.md 与四份原始日志。"
     },
     {
       "id": 3,
       "title": "阶段 3：OpenAPI 契约更新、前端 SDK 同步、我的收藏页面与回顾页星标交互",
-      "status": "pending",
-      "description": "openapi.yaml 新增 4 个端点（paths 97→101）；前端同步 SDK；新增 student/favorites 页面组件与回顾页收藏星标交互；编写前端测试。",
-      "evidence": ""
+      "status": "completed",
+      "description": "openapi.yaml 新增 4 个端点（收藏/取消共用 /{questionId} 路径，实际新增 3 个 path，paths 97→100；立案时误写 101，此处按实修正）；前端同步 SDK；新增 student/favorites 页面组件与回顾页收藏星标交互；编写前端测试。",
+      "evidence": "openapi.yaml +3 path（favorite/unfavorite/listFavorites/checkFavorites 四 operation）；gen:api 同步 sdk.gen.ts/types.gen.ts；favorites 页面（题型筛选/关键字/解析/取消收藏）+ scores 回顾页星标交互 + dashboard 菜单与 NAVIGABLE_PATHS 登记；前端测试 favorites.spec 5 例 + QuestionAnswerCard/examReviewEntry 扩展，全量 120 文件/917 例绿（基线 908）。"
     },
     {
       "id": 4,

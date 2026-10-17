@@ -753,6 +753,41 @@ export type ApiResponseListTagResponse = {
     data?: Array<TagResponse>;
 };
 
+export type ApiResponseStudentQuestionFavoritePageResponse = {
+    code?: number;
+    message?: string;
+    data?: StudentQuestionFavoritePageResponse;
+};
+
+export type StudentQuestionFavoritePageResponse = {
+    list?: Array<StudentQuestionFavoriteResponse>;
+    total?: number;
+    page?: number;
+    size?: number;
+};
+
+export type StudentQuestionFavoriteResponse = {
+    id?: number;
+    studentId?: number;
+    questionId?: number;
+    createdTime?: string;
+    type?: number;
+    typeName?: string;
+    content?: string;
+    imageUrl?: string;
+    choices?: Array<string>;
+    correctAnswer?: string;
+    score?: number;
+    difficulty?: number;
+    analysis?: string;
+};
+
+export type ApiResponseListLong = {
+    code?: number;
+    message?: string;
+    data?: Array<number>;
+};
+
 export type ApiResponseMyScoreResponse = {
     code?: number;
     message?: string;
@@ -1741,6 +1776,42 @@ export type CreateResponses = {
 
 export type CreateResponse = CreateResponses[keyof CreateResponses];
 
+export type UnfavoriteData = {
+    body?: never;
+    path: {
+        questionId: number;
+    };
+    query?: never;
+    url: '/api/student/favorites/{questionId}';
+};
+
+export type UnfavoriteResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseVoid;
+};
+
+export type UnfavoriteResponse = UnfavoriteResponses[keyof UnfavoriteResponses];
+
+export type FavoriteData = {
+    body?: never;
+    path: {
+        questionId: number;
+    };
+    query?: never;
+    url: '/api/student/favorites/{questionId}';
+};
+
+export type FavoriteResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseVoid;
+};
+
+export type FavoriteResponse = FavoriteResponses[keyof FavoriteResponses];
+
 export type RevokeData = {
     body: BatchScoreRequest;
     path?: never;
@@ -2705,6 +2776,45 @@ export type InvalidateInviteCodeResponses = {
 };
 
 export type InvalidateInviteCodeResponse = InvalidateInviteCodeResponses[keyof InvalidateInviteCodeResponses];
+
+export type ListFavoritesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        type?: number;
+        keyword?: string;
+    };
+    url: '/api/student/favorites';
+};
+
+export type ListFavoritesResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseStudentQuestionFavoritePageResponse;
+};
+
+export type ListFavoritesResponse = ListFavoritesResponses[keyof ListFavoritesResponses];
+
+export type CheckFavoritesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        questionIds?: Array<number>;
+    };
+    url: '/api/student/favorites/check';
+};
+
+export type CheckFavoritesResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseListLong;
+};
+
+export type CheckFavoritesResponse = CheckFavoritesResponses[keyof CheckFavoritesResponses];
 
 export type MyScoreData = {
     body?: never;
