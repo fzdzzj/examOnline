@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-cross-cutting-edge-cases",
+  "branch": "feature/harden-cross-cutting-edge-cases",
+  "level": "S",
+  "source": "docs/功能待办清单.md 横切两轮巡查低 8 项合并卡（2026-10-17 用户裁决选项 B）：删班级引用检查 + RabbitMQ 死配置清理 + 慢 SQL 告警闭环 + Prometheus 拓扑对齐 + 复核 CAS + Redis 隔离 + @Value 旋钮落位 + 图片卷备份指引",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-cross-cutting-edge-cases → proposal / spec-delta（class-management, score-review, observability, dev-config 域）/ tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "分支从 main 拉出；立案三件套完成并登记在途表。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——业务加固与配置清理",
+      "status": "pending",
+      "description": "ClassService 注入 ExamMapper 增加删除班级关联检查；ScoreReviewService.handle CAS 条件更新；BusinessMetrics 与 SlowSqlInterceptor 慢 SQL 打点闭环及告警规则 DatabaseSlowSqlDetected；application.yml 清理 rabbitmq.listener 并补充 9 组 @Value 旋钮；application-prod.yml 默认 REDIS_DATABASE:1；Prometheus 拓扑说明与图片卷备份指引补齐；相关单测覆盖。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证 + 等价变异登记",
+      "status": "pending",
+      "description": "变异验证——删班级检查注释、复核 CAS 条件移除、慢 SQL 打点注释分别断言级击红并回绿；等价变异如实登记不强杀。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "pending",
+      "description": "收口 diff 核对——未越过白名单目录；schema.sql、migrations、openapi.yaml、pom.xml 零改动。",
+      "evidence": ""
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "pending",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 同步上调 → 证据入库回填 tasks.json → 归档目录 → spec/README.md 归档登记与在途移除 → docs/功能待办清单.md 低 8 闭环标注 → --no-ff 合入 main。",
+      "evidence": ""
+    }
+  ]
+}
