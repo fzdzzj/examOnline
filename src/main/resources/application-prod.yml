@@ -54,12 +54,13 @@ spring:
       # 生产用独立 DDL 迁移脚本管理（此处关闭应用内自动建表）
       mode: never
 
-# OpenAPI 契约暴露（add-backend-openapi）：生产环境默认关闭 swagger-ui（可通过配置覆盖）
+# OpenAPI 契约暴露（add-backend-openapi / harden-low-risk-security-residues）：
+# 生产环境默认关闭 swagger-ui 与 api-docs 契约暴露（可通过环境变量覆盖）
 springdoc:
   swagger-ui:
     enabled: false
   api-docs:
-    enabled: true
+    enabled: ${API_DOCS_ENABLED:false}
 
 # ===== Actuator 暴露面收敛（harden-actuator-exposure，安全专项发现 2）=====
 # prod 只暴露观测必需端点：health（compose healthcheck 打 /actuator/health/db，只看 HTTP 状态码）

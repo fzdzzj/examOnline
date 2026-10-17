@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-low-risk-security-residues",
+  "branch": "feature/harden-low-risk-security-residues",
+  "level": "S",
+  "source": "docs/功能待办清单.md 安全专项首扫台账低危 2 项（2026-10-17 用户裁决选项 B）：MessageController listMine limit 上界防护 + prod 默认关闭 /v3/api-docs",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-low-risk-security-residues → proposal / spec-delta（deployment, exam-taking 域）/ tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "分支从 main 拉出；立案三件套完成并在在途表中完成登记（commit d1ca95f）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——limit 安全钳制与 prod api-docs 默认关闭",
+      "status": "completed",
+      "description": "MessageController/MessageService 对 limit 进行 [1, 100] 钳制，编写 MessageServiceTest 单测；application-prod.yml 中 springdoc.api-docs.enabled 调整为 ${API_DOCS_ENABLED:false}，编写 ProdApiDocsGuardTest 词法护栏。",
+      "evidence": "实施笔 a201d76：MessageService.listMine 对 limit 进行 [1, 100] 边界钳制，新增 MessageServiceTest 单测；application-prod.yml 中 springdoc.api-docs.enabled 调整为 ${API_DOCS_ENABLED:false}，新增 ProdApiDocsGuardTest 词法护栏。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证 + 等价变异登记",
+      "status": "completed",
+      "description": "变异验证——m1（消息 limit 钳制移除）与 m2（prod api-docs 默认改回 true）分别断言级击红并回绿；等价变异如实登记不强杀。",
+      "evidence": "变异验证：m1（移除 MessageService limit 钳制）断言击红 listMineClampsOverLimitTo100 / listMineClampsNonPositiveLimitTo1（01-m1-red.log），复原后 8/8 回绿（02-m1-green.log）；m2（prod api-docs 改回 true）断言击红 apiDocsIsDisabledByDefaultInProd（03-m2-red.log），复原后 2/2 回绿（04-m2-green.log）；等价变异如实登记入 evidence/README.md。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "completed",
+      "description": "收口 diff 核对——未越过白名单目录；schema.sql、migrations、openapi.yaml、pom.xml 零改动。",
+      "evidence": "05-out-of-scope-diff.txt 为 0 字节，schema.sql、migrations、openapi.yaml、pom.xml、frontend/ 零改动；改动严格限定在派工白名单内。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 同步上调 → 证据入库回填 tasks.json → 归档目录 → spec/README.md 归档登记与在途移除 → docs/功能待办清单.md 低危 2 项闭环标注 → --no-ff 合入 main。",
+      "evidence": "仓库根 mvnw.cmd clean test 实测通过：Tests run: 702, Failures: 0, Errors: 0, Skipped: 1，BUILD SUCCESS（06-full-gate-summary.log）；gate-baseline.json backendTests 同笔上调 692→702；docs/功能待办清单.md 安全专项首扫低危 2 项标注已闭环；--no-ff 合入 main。"
+    }
+  ]
+}
