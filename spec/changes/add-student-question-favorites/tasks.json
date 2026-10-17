@@ -1,0 +1,36 @@
+{
+  "changeId": "add-student-question-favorites",
+  "branch": "feature/add-student-question-favorites",
+  "level": "M",
+  "source": "docs/功能待办清单.md 候选特性：学生题目个人收藏夹（add-student-question-favorites，愿景 §3 学习闭环）",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立项、规范增量制定与在途表登记",
+      "status": "completed",
+      "description": "建立 proposal.md、question-bank 与 frontend 域的 spec-delta.md 与 tasks.json，并在 spec/README.md 在途表中登记。",
+      "evidence": "立项三件套落位完成，spec/README.md 在途表登记完毕。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：DDL 增量、后端实体/Mapper/Service/Controller 实现与单测/集成测试/变异验证",
+      "status": "pending",
+      "description": "schema.sql 增建 student_question_favorites 表，补充 docker/mysql/migrations/ 迁移脚本与 APPLIED.md 登记行；实现 StudentQuestionFavorite 实体、Mapper、Service（收藏/取消/分页列表/批量状态检查）与 Controller 端点；编写集成测试与单元测试，落实 m1/m2 变异击红留存日志。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：OpenAPI 契约更新、前端 SDK 同步、我的收藏页面与回顾页星标交互",
+      "status": "pending",
+      "description": "openapi.yaml 新增 4 个端点（paths 97→101）；前端同步 SDK；新增 student/favorites 页面组件与回顾页收藏星标交互；编写前端测试。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：双端门禁实测、gate-baseline 上调、变异存证与收口归档",
+      "status": "pending",
+      "description": "仓库根执行 mvnw.cmd clean test 与前端测试全绿；同步上调 .github/ci/gate-baseline.json（backendTests 与 openapiPaths）；将 spec-delta 合入基线规范，归档至 spec/changes/archive/，更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并回 main。",
+      "evidence": ""
+    }
+  ]
+}
