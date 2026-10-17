@@ -149,6 +149,7 @@ class AlertAssetsTest {
         assertTrue(known.contains("exam_anticheat_events_total"));
         assertTrue(known.contains("exam_ratelimit_degraded_total"));
         assertTrue(known.contains("exam_auth_degraded_total"));
+        assertTrue(known.contains("exam_submit_lock_degraded_total"));
         assertTrue(known.contains("exam_mq_dlq_depth"));
         assertTrue(known.contains("exam_mq_retry_total"));
         assertTrue(known.contains("exam_mq_dlq_entered_total"));

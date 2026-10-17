@@ -8,6 +8,7 @@
 > 实施注记（阶段 14）：重投是加速手段，正确性仍靠消费端幂等 + 补发对账；`RabbitTemplate#receive` autoAck 取出与落档之间的毫秒级崩溃窗口可接受；**禁止常驻 DLQ 消费者**（会死循环或丢消息）。指标 `exam.mq.dlq.depth`（不可用返回 -1 哨兵）/ `exam.mq.retry`（tag outcome）/ `exam.mq.dlq.entered`；管理端点 `POST /api/admin/mq/dlq/replay`（ADMIN）。
 > 实施注记（harden-auth-interceptor-redis-degradation，2026-10-17）：鉴权拦截器（AuthenticationInterceptor 黑名单/会话版本检查）对 Redis 异常的降级与限流 fail-open **同源同哲学**——降级放行 + ERROR 日志 + 递增 `exam.auth.degraded`（tag `check`=`blacklist`/`session_version`，告警 `AuthDegraded`）；降级半径由黑名单 TTL（=Access Token 剩余寿命 ≤30min）自限。本域既有 Requirement 文字不动，行为 Requirement 落 authentication 域。
 > 实施注记（harden-login-guard-redis-degradation，2026-10-17）：登录守卫（LoginGuardService 登录限流/锁定检查/失败计数/锁定写入/计数清理 + 验证码限流六触点）对 Redis 异常的降级与拦截器/限流先例**同源同哲学**——降级放行/跳过该步 + ERROR 日志 + 复用 `exam.auth.degraded`（tag `check` 追加六个登录守卫侧代码常量，告警 `AuthDegraded` 全 tag 增量自动覆盖）；凭据校验（DB）是登录正确性底座不降级，锁定/计数保护 Redis 恢复后自愈。本域既有 Requirement 文字不动，行为 Requirement 落 authentication 域。
+> 实施注记（harden-submit-lock-redis-degradation，2026-10-17）：交卷 SETNX 锁对 Redis 异常降级放行（ERROR 日志 + `exam.submit.lock.degraded` 计数）——「幂等是正确性的唯一保证」在本域交卷链路的同源推广：防重表唯一索引 + 状态机 CAS + 消费端 casFillAnswers 三层 DB 幂等是唯一正确性后盾，锁仅是把三路竞态收敛为单飞的防抖器，降级只影响防抖半径；**降级口只认不可用不认竞争**（锁被真占 false 走既有等待/冲突路径，不递增降级计数）。本域既有 Requirement 文字不动，行为 Requirement 落 exam-taking 域。
 
 ## Requirements
 

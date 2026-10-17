@@ -77,6 +77,9 @@ public class BusinessMetrics {
     private static final String SUBMIT_LOCK_ACQUISITIONS = "exam.submit.lock.acquisitions";
     /** 指标名：考试提交锁竞争失败次数（Counter） */
     private static final String SUBMIT_LOCK_CONTENTIONS = "exam.submit.lock.contentions";
+    /** 指标名：交卷锁降级计数（Counter；SETNX 因 Redis 连接异常失败、交卷降级放行时递增——
+     * harden-submit-lock-redis-degradation，口径同源 exam.ratelimit.degraded / exam.auth.degraded） */
+    private static final String SUBMIT_LOCK_DEGRADED = "exam.submit.lock.degraded";
     /** 交卷队列名：与 RabbitMqConfig.SUBMIT_QUEUE 保持一致（避免依赖具体实现类） */
     private static final String SUBMIT_QUEUE = "exam.submit.queue";
     /** 交卷死信队列名：与 RabbitMqConfig.SUBMIT_DLQ 保持一致 */
@@ -110,6 +113,8 @@ public class BusinessMetrics {
     private final Timer submitLockWaitTimer;
     private final Counter submitLockAcquisitionsCounter;
     private final Counter submitLockContentionsCounter;
+    /** 交卷锁降级计数（无 tag 单 Counter：锁维度单一，无客户端可控输入） */
+    private final Counter submitLockDegradedCounter;
     /** 保留策略行数计数：key = table|action */
     private final Map<String, Counter> retentionRowCounters = new ConcurrentHashMap<>();
 
@@ -165,6 +170,9 @@ public class BusinessMetrics {
                 .register(registry);
         this.submitLockContentionsCounter = Counter.builder(SUBMIT_LOCK_CONTENTIONS)
                 .description("考试提交锁竞争失败次数（被其他实例抢占）")
+                .register(registry);
+        this.submitLockDegradedCounter = Counter.builder(SUBMIT_LOCK_DEGRADED)
+                .description("交卷锁因 Redis 故障降级放行（走防重表+CAS 链路）的计数")
                 .register(registry);
     }
 
@@ -230,6 +238,16 @@ public class BusinessMetrics {
                 .description("鉴权链路（拦截器/登录守卫）因 Redis 故障降级（放行）的计数，按检查点维度")
                 .register(registry))
                 .increment();
+    }
+
+    /**
+     * 交卷锁降级计数（harden-submit-lock-redis-degradation，与 {@link #countRateLimitDegraded} /
+     * {@link #countAuthDegraded} 同源同哲学——降级放行 + ERROR 日志 + 计数，不新增第二套降级哲学）：
+     * SETNX 加锁因 Redis 连接异常失败、交卷降级放行走防重表+CAS 链路时递增。
+     * 锁被真占（返回 false）是正常竞争，不走本计数。
+     */
+    public void countSubmitLockDegraded() {
+        submitLockDegradedCounter.increment();
     }
 
     /**

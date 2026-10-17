@@ -1,5 +1,8 @@
 package com.exam.taking.service;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.exam.auth.security.LoginUser;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.common.BusinessException;
@@ -17,11 +20,13 @@ import com.exam.taking.dto.SubmitResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -35,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -78,12 +84,20 @@ class ExamSubmitServiceTest {
     private ExamSubmission inProgress;
     private ExamSubmission submitted;
 
+    private Logger submitLogger;
+    private ListAppender<ILoggingEvent> appender;
+
     @BeforeEach
     void setUp() {
         submitService = new ExamSubmitService(submissionService, dedupMapper, draftService,
                 sender, redisTemplate, objectMapper, eventCollectService, new ReadYourWriteMark(5000),
                 businessMetrics, lockHelper);
         ReflectionTestUtils.setField(submitService, "lockTtlSeconds", 30);
+
+        submitLogger = (Logger) LoggerFactory.getLogger(ExamSubmitService.class);
+        appender = new ListAppender<>();
+        appender.start();
+        submitLogger.addAppender(appender);
 
         // submit 走 SecurityUtil 取当前学生（ThreadLocal），单测中手工注入
         LoginUser student = new LoginUser();
@@ -109,6 +123,14 @@ class ExamSubmitServiceTest {
     @AfterEach
     void tearDown() {
         SecurityUtil.clear();
+        submitLogger.detachAppender(appender);
+    }
+
+    private java.util.List<String> errorMessages() {
+        return appender.list.stream()
+                .filter(e -> e.getLevel().toString().equals("ERROR"))
+                .map(ILoggingEvent::getFormattedMessage)
+                .toList();
     }
 
     /** 首次交卷成功：锁 → 防重 → CAS → MQ 消息携带答案，返回已交卷。 */
@@ -236,5 +258,50 @@ class ExamSubmitServiceTest {
         ArgumentCaptor<SubmitMessage> captor = ArgumentCaptor.forClass(SubmitMessage.class);
         verify(sender).send(captor.capture());
         assertEquals(ExamSubmission.SUBMIT_TYPE_COUNTDOWN_ZERO, captor.getValue().getSubmitType());
+    }
+
+    // ==================== Redis 异常降级（harden-submit-lock-redis-degradation） ====================
+
+    @Test
+    @DisplayName("SETNX Redis 异常：降级放行走防重表+CAS+MQ 完成交卷 + ERROR 日志 + 降级计数，不记锁指标不解锁")
+    void redisErrorDuringLockAcquisition_degradesPassThroughDedupAndCas() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(anyString(), anyString(), any(Duration.class)))
+                .thenThrow(new RuntimeException("redis connection refused"));
+        when(submissionService.getByExamStudent(EXAM_ID, STUDENT_ID)).thenReturn(inProgress);
+        when(submissionService.casSubmitToSubmitted(eq(SUBMISSION_ID), any(LocalDateTime.class), anyInt()))
+                .thenReturn(true);
+
+        SubmitRequest request = new SubmitRequest();
+        request.setAnswers(objectMapper.createObjectNode().put("11", "A"));
+
+        SubmitResponse response = submitService.submit(EXAM_ID, request);
+
+        assertEquals(ExamSubmission.STATUS_SUBMITTED, response.getStatus(),
+                "锁基础设施异常应降级放行完成交卷（正确性由防重表+CAS 保证），而不是异常裸穿使交卷停摆");
+        verify(dedupMapper).insert(any(ExamSubmitDedup.class));
+        verify(sender).send(any());
+        verify(businessMetrics).countSubmitLockDegraded();
+        assertTrue(errorMessages().stream().anyMatch(m -> m.contains("交卷锁降级")),
+                "降级必须落 ERROR 日志供告警观测，实际 ERROR 列表: " + errorMessages());
+        // 降级路径从未持锁：不记锁等待/锁竞争，也不执行按 token 解锁
+        verify(lockHelper, never()).unlock(anyString(), anyString());
+        verify(businessMetrics, never()).recordLockContention();
+        verify(businessMetrics, never()).recordLockWait(anyLong());
+    }
+
+    @Test
+    @DisplayName("锁被真占（false）走既有竞争路径，零降级计数——降级口只认不可用不认竞争")
+    void lockContentionFalse_doesNotCountDegraded() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(anyString(), anyString(), any(Duration.class))).thenReturn(false);
+        // 第一次：幂等快速路径读到进行中；第二次：等锁轮询读到已交卷
+        when(submissionService.getByExamStudent(EXAM_ID, STUDENT_ID)).thenReturn(inProgress, submitted);
+
+        SubmitResponse response = submitService.submit(EXAM_ID, new SubmitRequest());
+
+        assertEquals(submitted.getSubmitTime(), response.getSubmitTime());
+        verify(businessMetrics).recordLockContention();
+        verify(businessMetrics, never()).countSubmitLockDegraded();
     }
 }
