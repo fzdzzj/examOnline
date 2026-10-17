@@ -1,0 +1,572 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.exam:exam-online >------------------------
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (jacoco-prepare-agent) @ exam-online ---
+[INFO] argLine set to -javaagent:D:\\code\\examOnline\\.m2-repo\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\code\\examOnline\\target\\jacoco.exec,excludes=com/exam/ExamOnlineApplication.class:com/exam/**/dto/**:com/exam/**/entity/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ exam-online ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ exam-online ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ exam-online ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.exam.question.service.StudentQuestionFavoriteServiceTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\code\examOnline\.m2-repo\net\bytebuddy\byte-buddy-agent\1.17.7\byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+[ERROR] Tests run: 8, Failures: 2, Errors: 2, Skipped: 0, Time elapsed: 3.868 s <<< FAILURE! -- in com.exam.question.service.StudentQuestionFavoriteServiceTest
+[ERROR] com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_validQuestion_insertsSuccessfully -- Time elapsed: 0.017 s <<< ERROR!
+org.mockito.exceptions.misusing.UnnecessaryStubbingException: 
+
+Unnecessary stubbings detected.
+Clean & maintainable test code requires zero unnecessary code.
+Following stubbings are unnecessary (click to navigate to relevant line of code):
+  1. -> at com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_validQuestion_insertsSuccessfully(StudentQuestionFavoriteServiceTest.java:77)
+Please remove unnecessary stubbings or use 'lenient' strictness. More info: javadoc for UnnecessaryStubbingException class.
+	at org.mockito.junit.jupiter.MockitoExtension.lambda$afterEach$2(MockitoExtension.java:200)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at org.mockito.junit.jupiter.MockitoExtension.afterEach(MockitoExtension.java:198)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_questionSoftDeleted_throws404 -- Time elapsed: 0.008 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Expected com.exam.common.BusinessException to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:152)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:73)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3128)
+	at com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_questionSoftDeleted_throws404(StudentQuestionFavoriteServiceTest.java:119)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_questionNotFound_throws404 -- Time elapsed: 0.004 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Expected com.exam.common.BusinessException to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:152)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:73)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3128)
+	at com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_questionNotFound_throws404(StudentQuestionFavoriteServiceTest.java:106)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_duplicate_idempotentNoInsert -- Time elapsed: 0.004 s <<< ERROR!
+org.mockito.exceptions.misusing.UnnecessaryStubbingException: 
+
+Unnecessary stubbings detected.
+Clean & maintainable test code requires zero unnecessary code.
+Following stubbings are unnecessary (click to navigate to relevant line of code):
+  1. -> at com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_duplicate_idempotentNoInsert(StudentQuestionFavoriteServiceTest.java:93)
+Please remove unnecessary stubbings or use 'lenient' strictness. More info: javadoc for UnnecessaryStubbingException class.
+	at org.mockito.junit.jupiter.MockitoExtension.lambda$afterEach$2(MockitoExtension.java:200)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at org.mockito.junit.jupiter.MockitoExtension.afterEach(MockitoExtension.java:198)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] Running com.exam.question.StudentQuestionFavoriteIntegrationTest
+23:14:58.961 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.exam.question.StudentQuestionFavoriteIntegrationTest]: StudentQuestionFavoriteIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+23:14:59.198 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.exam.ExamOnlineApplication for test class com.exam.question.StudentQuestionFavoriteIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-10-17 23:14:59.986 [main] [] [] INFO  c.e.q.StudentQuestionFavoriteIntegrationTest - Starting StudentQuestionFavoriteIntegrationTest using Java 21.0.9 with PID 44608 (started by fzdzzj in D:\code\examOnline)
+2026-10-17 23:14:59.988 [main] [] [] INFO  c.e.q.StudentQuestionFavoriteIntegrationTest - The following 1 profile is active: "test"
+2026-10-17 23:15:02.445 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-17 23:15:02.449 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-17 23:15:02.555 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 82 ms. Found 0 Redis repository interfaces.
+2026-10-17 23:15:03.425 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig' of type [io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-17 23:15:03.437 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'mapConverter' of type [io.opentelemetry.instrumentation.spring.autoconfigure.internal.MapConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-17 23:15:04.212 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: COPY_PASTE -> CopyPasteEventCollector
+2026-10-17 23:15:04.215 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: DRAFT_CONFLICT -> DraftConflictEventCollector
+2026-10-17 23:15:04.216 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: FULLSCREEN_EXIT -> FullScreenExitEventCollector
+2026-10-17 23:15:04.216 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: PAGE_REFRESH -> PageRefreshEventCollector
+2026-10-17 23:15:04.216 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SUBMIT_ANOMALY -> SubmitAnomalyEventCollector
+2026-10-17 23:15:04.216 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SWITCH_SCREEN -> SwitchScreenEventCollector
+2026-10-17 23:15:04.216 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: WINDOW_BLUR -> WindowBlurEventCollector
+2026-10-17 23:15:04.313 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2026-10-17 23:15:04.761 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection conn0: url=jdbc:h2:mem:exam user=SA
+2026-10-17 23:15:04.765 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2026-10-17 23:15:04.769 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Starting...
+2026-10-17 23:15:04.770 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - slave - Added connection conn1: url=jdbc:h2:mem:exam user=SA
+2026-10-17 23:15:04.770 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Start completed.
+2026-10-17 23:15:04.770 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [slave] success
+2026-10-17 23:15:04.770 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2026-10-17 23:15:04.770 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [2] datasource,primary datasource named [master]
+2026-10-17 23:15:07.079 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: FILL_BLANK -> FillBlankGradingStrategy
+2026-10-17 23:15:07.079 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: JUDGE -> JudgeGradingStrategy
+2026-10-17 23:15:07.079 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: MULTIPLE -> MultipleChoiceGradingStrategy
+2026-10-17 23:15:07.079 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SHORT_ANSWER -> ShortAnswerGradingStrategy
+2026-10-17 23:15:07.080 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SINGLE -> SingleChoiceGradingStrategy
+2026-10-17 23:15:09.552 [main] [] [] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-17 23:15:09.552 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-10-17 23:15:09.558 [main] [] [] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 3 endpoints beneath base path '/actuator'
+2026-10-17 23:15:09.574 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Completed initialization in 22 ms
+2026-10-17 23:15:09.667 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-17 23:15:09.742 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Created new connection: rabbitConnectionFactory#797618c3:0/SimpleConnection@17338ff8 [delegate=amqp://exam@127.0.0.1:5672/, localPort=54830]
+2026-10-17 23:15:09.827 [main] [] [] INFO  c.e.q.StudentQuestionFavoriteIntegrationTest - Started StudentQuestionFavoriteIntegrationTest in 10.403 seconds (process running for 16.083)
+2026-10-17 23:15:10.066 [main] [] [] INFO  c.exam.config.RolePermissionInitializer - RBAC 角色/权限预置完成
+2026-10-17 23:15:10.123 [main] [] [] INFO  com.exam.config.AdminInitializer - 首次启动：已创建默认管理员 username=admin（请尽快通过环境变量 ADMIN_PASSWORD 修改）
+2026-10-17 23:15:10.123 [main] [] [] INFO  com.exam.config.ApplicationConfig - JWT_SECRET validated successfully (length: 58)
+2026-10-17 23:15:10.123 [main] [] [] INFO  com.exam.config.ApplicationConfig - Application configuration validated successfully
+2026-10-17 23:15:10.967 [main] [f194a0c5bc514e46bc69710a5f9e536f] [0cd41972d141e6eae2022c3b3d7748fc] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-17 23:15:11.004 [main] [f194a0c5bc514e46bc69710a5f9e536f] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (399ms)
+2026-10-17 23:15:11.096 [main] [0f1711c8e9374d8f8dac14319f5d43d1] [6eb06bcab837371a714ed7a6ef2ac476] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 EGFP8Q5X
+2026-10-17 23:15:11.103 [main] [0f1711c8e9374d8f8dac14319f5d43d1] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (75ms)
+2026-10-17 23:15:11.382 [main] [786b9c6fbd314d1a974aa676b864dffa] [1b32ff378b4811d5aea952d5e76a1cc4] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_1, inviteCode=EGFP8Q5X
+2026-10-17 23:15:11.384 [main] [786b9c6fbd314d1a974aa676b864dffa] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (279ms)
+2026-10-17 23:15:11.593 [main] [3a2c31ee60a3430a814878165f88c8fc] [9d0cb20bc7700d5b18560a2ba02d7d90] INFO  com.exam.auth.service.AuthService - 用户 tea_1 登录成功，签发双 Token
+2026-10-17 23:15:11.594 [main] [3a2c31ee60a3430a814878165f88c8fc] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (209ms)
+2026-10-17 23:15:11.772 [main] [ffeeec63ed334b31ba37fd40c5b72e0a] [082f3b58fc4739873d11ceee17cf3c0f] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_2
+2026-10-17 23:15:11.774 [main] [ffeeec63ed334b31ba37fd40c5b72e0a] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (177ms)
+2026-10-17 23:15:11.960 [main] [e61bf8672a824a23be5f5984b86419db] [c57fd34d450b992cda3753fe12db1197] INFO  com.exam.auth.service.AuthService - 用户 stu_2 登录成功，签发双 Token
+2026-10-17 23:15:11.961 [main] [e61bf8672a824a23be5f5984b86419db] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (187ms)
+2026-10-17 23:15:11.997 [main] [365cd233e28446d493f9322c121495f2] [2366bfabfc1df3e36b3a86f68a48cc50] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=1 type=SINGLE
+2026-10-17 23:15:12.005 [main] [365cd233e28446d493f9322c121495f2] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (42ms)
+2026-10-17 23:15:12.013 [main] [66fd09b2798c462da8797d2d87272062] [a1d22c034b09040127e78cf2dc55fa10] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=2 type=JUDGE
+2026-10-17 23:15:12.017 [main] [66fd09b2798c462da8797d2d87272062] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (10ms)
+2026-10-17 23:15:12.028 [main] [0311bcd32bac431d9fa1468894295681] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/1 -> 200 (10ms)
+2026-10-17 23:15:12.036 [main] [269240309bf74618922d8919d714420e] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/1 -> 200 (8ms)
+2026-10-17 23:15:12.047 [main] [96ddfc6e9d46452e9ad4e529da3cd7ea] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites/check -> 200 (9ms)
+2026-10-17 23:15:12.062 [main] [8952197f831643a384759229598a28ec] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (14ms)
+2026-10-17 23:15:12.071 [main] [9b79a99c6f1541179f31a99626a4af22] [] INFO  com.exam.common.RequestIdFilter - DELETE /api/student/favorites/1 -> 200 (7ms)
+2026-10-17 23:15:12.080 [main] [3c319b9bd79c4744899b4966ed88cc3b] [] INFO  com.exam.common.RequestIdFilter - DELETE /api/student/favorites/1 -> 200 (9ms)
+2026-10-17 23:15:12.087 [main] [e45b4b41e23145e4bc24a1a4372f1a36] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites/check -> 200 (6ms)
+2026-10-17 23:15:12.096 [main] [55c9c5eff9344230bd5cc3b3409cfc7c] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (9ms)
+2026-10-17 23:15:12.163 [main] [2e4f865db05a4bbc870e721d3b330edc] [5fd5cfea0cc9d655dfca7fe9f444aae5] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-17 23:15:12.164 [main] [2e4f865db05a4bbc870e721d3b330edc] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (57ms)
+2026-10-17 23:15:12.171 [main] [4292892511064eeba3473938a3322516] [fd4977fea02ba140a5eaa2158f6b4f94] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 XVESS27V
+2026-10-17 23:15:12.172 [main] [4292892511064eeba3473938a3322516] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (7ms)
+2026-10-17 23:15:12.354 [main] [310c35869ad549d5ad59970e1d9cad48] [071ceb421607be211d0af1b87157d182] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_3, inviteCode=XVESS27V
+2026-10-17 23:15:12.355 [main] [310c35869ad549d5ad59970e1d9cad48] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (182ms)
+2026-10-17 23:15:12.546 [main] [8012ee8d0e4f4f768fab2c3c60dc0cfe] [207a96b040d642a3be24633e6345d60c] INFO  com.exam.auth.service.AuthService - 用户 tea_3 登录成功，签发双 Token
+2026-10-17 23:15:12.547 [main] [8012ee8d0e4f4f768fab2c3c60dc0cfe] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (191ms)
+2026-10-17 23:15:12.724 [main] [797e5d3d5b3b40848ea1e42350b5cbed] [f61f34dd1dd709388f17ea1b604ea956] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_4
+2026-10-17 23:15:12.725 [main] [797e5d3d5b3b40848ea1e42350b5cbed] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (178ms)
+2026-10-17 23:15:12.911 [main] [4c3548980c7c4f3fab88c50bf354f25d] [2ee80e79e26f1e9c88be33fe229943b2] INFO  com.exam.auth.service.AuthService - 用户 stu_4 登录成功，签发双 Token
+2026-10-17 23:15:12.912 [main] [4c3548980c7c4f3fab88c50bf354f25d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (186ms)
+2026-10-17 23:15:13.091 [main] [651baf47c2a94a4b82243e8c32989a2f] [c313c89c92158dcb9c673c3bfb99701a] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_5
+2026-10-17 23:15:13.093 [main] [651baf47c2a94a4b82243e8c32989a2f] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (180ms)
+2026-10-17 23:15:13.276 [main] [fc08635fef4b40a8a58f47c4729f7d55] [9cc7316820bd256d67fc5643345a0e93] INFO  com.exam.auth.service.AuthService - 用户 stu_5 登录成功，签发双 Token
+2026-10-17 23:15:13.277 [main] [fc08635fef4b40a8a58f47c4729f7d55] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (184ms)
+2026-10-17 23:15:13.285 [main] [4b1d8304b1b54dfe8cded6a507ee475d] [7960e3732cfcef1d9858a3c38b46fc42] INFO  c.exam.question.service.QuestionService - 教师 4 创建题目 id=3 type=SINGLE
+2026-10-17 23:15:13.285 [main] [4b1d8304b1b54dfe8cded6a507ee475d] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (7ms)
+2026-10-17 23:15:13.293 [main] [a5d4a26bc72a450c884aa0985223fdab] [a867690aecc6252576a699577e1b6c35] INFO  c.exam.question.service.QuestionService - 教师 4 创建题目 id=4 type=MULTIPLE
+2026-10-17 23:15:13.295 [main] [a5d4a26bc72a450c884aa0985223fdab] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (9ms)
+2026-10-17 23:15:13.302 [main] [ea9a8565f6de405783a4fbafbaf307d0] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/3 -> 200 (6ms)
+2026-10-17 23:15:13.309 [main] [af414197484144b48958b79fc80288ea] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/4 -> 200 (7ms)
+2026-10-17 23:15:13.317 [main] [4848361243f846a0ac37260c59d3a1a2] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (8ms)
+2026-10-17 23:15:13.324 [main] [75b3f1e52e4e4e55b2ac1b793abd1967] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (6ms)
+2026-10-17 23:15:13.332 [main] [4a67ff8f9e254191aceb90df0146156b] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites/check -> 200 (6ms)
+2026-10-17 23:15:13.338 [main] [083e02f1772042df9450b263a2990b46] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites/check -> 200 (5ms)
+2026-10-17 23:15:13.407 [main] [c5c80088b2bf49a6be4366790997e736] [a68f52f8ff10745c37b831ac4a33e71c] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-17 23:15:13.409 [main] [c5c80088b2bf49a6be4366790997e736] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (63ms)
+2026-10-17 23:15:13.415 [main] [a81a237b94c144dbad213e93f9a83fd5] [180a9a176b07f599cf1727346e8b4342] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 M4JQ5TNT
+2026-10-17 23:15:13.417 [main] [a81a237b94c144dbad213e93f9a83fd5] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (8ms)
+2026-10-17 23:15:13.599 [main] [2aaadd357eb3457eb312316cd2a73d69] [925ee6f22894a17dba14290fa9dd3e42] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_6, inviteCode=M4JQ5TNT
+2026-10-17 23:15:13.600 [main] [2aaadd357eb3457eb312316cd2a73d69] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (183ms)
+2026-10-17 23:15:13.790 [main] [bb2f01073b0e459686bb9f0805852125] [fcb6dd52ad504f3e24d261ee456f8b8a] INFO  com.exam.auth.service.AuthService - 用户 tea_6 登录成功，签发双 Token
+2026-10-17 23:15:13.791 [main] [bb2f01073b0e459686bb9f0805852125] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (190ms)
+2026-10-17 23:15:13.969 [main] [056db8b8a8414db698bab1d0323059cf] [1f56346997e9c31956a303501d291630] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_7
+2026-10-17 23:15:13.970 [main] [056db8b8a8414db698bab1d0323059cf] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (178ms)
+2026-10-17 23:15:14.155 [main] [5090bba0fc31473dba7c05e1bae45f47] [96a9a308848712458a4938b7e7a730c8] INFO  com.exam.auth.service.AuthService - 用户 stu_7 登录成功，签发双 Token
+2026-10-17 23:15:14.156 [main] [5090bba0fc31473dba7c05e1bae45f47] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (185ms)
+2026-10-17 23:15:14.164 [main] [45df51e7d04a4da4a1d45f8247111da0] [4adf88aa3ab6eb74c81986446393727c] INFO  c.exam.question.service.QuestionService - 教师 7 创建题目 id=5 type=SINGLE
+2026-10-17 23:15:14.165 [main] [45df51e7d04a4da4a1d45f8247111da0] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (8ms)
+2026-10-17 23:15:14.172 [main] [0efd1037e20d40a6a9bd7127b2d42d85] [8012d61d16d8204beae9a3c942bb67ea] INFO  c.exam.question.service.QuestionService - 教师 7 创建题目 id=6 type=JUDGE
+2026-10-17 23:15:14.173 [main] [0efd1037e20d40a6a9bd7127b2d42d85] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (7ms)
+2026-10-17 23:15:14.180 [main] [17a66cb479174eba9877597bf63bee67] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/5 -> 200 (7ms)
+2026-10-17 23:15:14.188 [main] [96c2d242b4e34ec69a29b226b198625a] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/6 -> 200 (7ms)
+2026-10-17 23:15:14.198 [main] [7721218b32274f0192fd028a9f6bde57] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (9ms)
+2026-10-17 23:15:14.213 [main] [b590339e757445a6a22087886bcfcaae] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (14ms)
+2026-10-17 23:15:14.279 [main] [7bca3574d8bb4393a507f95e1f631b31] [e51d645ebcd4310b065a274c7a250d24] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-17 23:15:14.280 [main] [7bca3574d8bb4393a507f95e1f631b31] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (61ms)
+2026-10-17 23:15:14.287 [main] [8f0d8dea33e4454bbd789972bafdb2e1] [f46a96ad6cca7fe0e19d576cfac9c7ae] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 9PXDZKPA
+2026-10-17 23:15:14.288 [main] [8f0d8dea33e4454bbd789972bafdb2e1] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (7ms)
+2026-10-17 23:15:14.481 [main] [481b20e298c24257ad33553ff50505db] [31971c988c85e4b28a33eabc9244c395] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_8, inviteCode=9PXDZKPA
+2026-10-17 23:15:14.482 [main] [481b20e298c24257ad33553ff50505db] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (193ms)
+2026-10-17 23:15:14.671 [main] [081beca1fa694d35a83fb8896a6b1917] [dfca6c0fc62d27ee7e413667f7cf37bd] INFO  com.exam.auth.service.AuthService - 用户 tea_8 登录成功，签发双 Token
+2026-10-17 23:15:14.672 [main] [081beca1fa694d35a83fb8896a6b1917] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (190ms)
+2026-10-17 23:15:14.851 [main] [d4335d107adf429faed5daa0b0636820] [7016399de609bdcf8ffb9832ad683f62] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_9
+2026-10-17 23:15:14.852 [main] [d4335d107adf429faed5daa0b0636820] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (179ms)
+2026-10-17 23:15:15.037 [main] [4b737cc865524cac8918727a5c32a783] [40b4771a1cc924d53fda481d2581d6ac] INFO  com.exam.auth.service.AuthService - 用户 stu_9 登录成功，签发双 Token
+2026-10-17 23:15:15.039 [main] [4b737cc865524cac8918727a5c32a783] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (186ms)
+2026-10-17 23:15:15.047 [main] [ace641cf677e45cc892c50be7d2fd93a] [86f1c045ca62285851273ee6b262cb4b] INFO  c.exam.question.service.QuestionService - 教师 9 创建题目 id=7 type=SINGLE
+2026-10-17 23:15:15.048 [main] [ace641cf677e45cc892c50be7d2fd93a] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (9ms)
+2026-10-17 23:15:15.057 [main] [b3e3d747ab784fdbabd727898a8cef94] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/99999999 -> 200 (8ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"7bca3574d8bb4393a507f95e1f631b31", X-Trace-Id:"e51d645ebcd4310b065a274c7a250d24", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoidXNlcjptYW5hZ2UsdXNlcjp2aWV3LHBhcGVyOm1hbmFnZSxleGFtOnRha2UsZXhhbTptYW5hZ2Usc2NvcmU6dmlldyxxdWVzdGlvbjptYW5hZ2UsaW52aXRlOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6Ijg5M2QxN2I1YWExZjQ2NTQ4ZTMzMjU5NTI2NzcyOTQ0IiwiaWF0IjoxNzkyMjUwMTE0LCJleHAiOjE3OTIyNTE5MTR9.YCmXeHoj7EA7DfXvArl4BwwQ5GbJYrv3lPeTQcJQaOI","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJmNTgyY2RiNjIwYmQ0Njk3OWFlZTdhNDMxZDY4OGNhYiIsImlhdCI6MTc5MjI1MDExNCwiZXhwIjoxNzkyODU0OTE0fQ.PdY58SwB90-HP0xKzexid4Reh_Md_Kp4ChQMjH8iVxA","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoidXNlcjptYW5hZ2UsdXNlcjp2aWV3LHBhcGVyOm1hbmFnZSxleGFtOnRha2UsZXhhbTptYW5hZ2Usc2NvcmU6dmlldyxxdWVzdGlvbjptYW5hZ2UsaW52aXRlOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6Ijg5M2QxN2I1YWExZjQ2NTQ4ZTMzMjU5NTI2NzcyOTQ0IiwiaWF0IjoxNzkyMjUwMTE0LCJleHAiOjE3OTIyNTE5MTR9.YCmXeHoj7EA7DfXvArl4BwwQ5GbJYrv3lPeTQcJQaOI", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"8f0d8dea33e4454bbd789972bafdb2e1", X-Trace-Id:"f46a96ad6cca7fe0e19d576cfac9c7ae", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":4,"code":"9PXDZKPA","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-17T23:15:14.2866395"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_8","password":"Pass1234","name":"教师-tea_8","email":"tea_8@test.com","roleType":"TEACHER","inviteCode":"9PXDZKPA"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"481b20e298c24257ad33553ff50505db", X-Trace-Id:"31971c988c85e4b28a33eabc9244c395", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_8","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"081beca1fa694d35a83fb8896a6b1917", X-Trace-Id:"dfca6c0fc62d27ee7e413667f7cf37bd", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzgiLCJuYW1lIjoi5pWZ5biILXRlYV84IiwiZW1haWwiOiJ0ZWFfOEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiZTBkYjgwZjg1YjUxNDQ2ZThjZTI5NGRiYmQ5ZGJhOGYiLCJpYXQiOjE3OTIyNTAxMTQsImV4cCI6MTc5MjI1MTkxNH0.UJkLntO7a9RBvNrWs6oW6hVt4jM6R9gAkvzFX0KnE74","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiI5MDhlY2VkN2Y4Mzg0YWJmOTEzMDI0ZGFjZGFmZGU3YyIsImlhdCI6MTc5MjI1MDExNCwiZXhwIjoxNzkyODU0OTE0fQ.0z4oyu5rbBgJ6r2Dd9xVdBmG36fYE78JIvAFCv7CG8g","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"110"]
+             Body = {"username":"stu_9","password":"Pass1234","name":"学生-stu_9","email":"stu_9@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"d4335d107adf429faed5daa0b0636820", X-Trace-Id:"7016399de609bdcf8ffb9832ad683f62", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"stu_9","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"4b737cc865524cac8918727a5c32a783", X-Trace-Id:"40b4771a1cc924d53fda481d2581d6ac", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMCIsInR5cGUiOiJhY2Nlc3MiLCJ1c2VybmFtZSI6InN0dV85IiwibmFtZSI6IuWtpueUny1zdHVfOSIsImVtYWlsIjoic3R1XzlAdGVzdC5jb20iLCJyb2xlcyI6IlNUVURFTlQiLCJwZXJtaXNzaW9ucyI6ImV4YW06dGFrZSxzY29yZTp2aWV3Iiwicm9sZUxldmVsIjoxLCJzdiI6MCwianRpIjoiZGQ3ZjZlYWY2ODVhNDJkNWFhNDIwNjgyNDU1OTkwMjMiLCJpYXQiOjE3OTIyNTAxMTUsImV4cCI6MTc5MjI1MTkxNX0.8WssN6kswU4Cksz1cchEW2UsKcQGAERk4bjY_pleCcM","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMCIsInR5cGUiOiJyZWZyZXNoIiwianRpIjoiZmZlZmZlNTNkMDMxNDcxYjkyYzYxZjVjZWI0ZDhiYWIiLCJpYXQiOjE3OTIyNTAxMTUsImV4cCI6MTc5Mjg1NDkxNX0.vaBFPBprAmzMHRwpTz_VrmeBSGodW6kGdCYqnrr50Ww","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzgiLCJuYW1lIjoi5pWZ5biILXRlYV84IiwiZW1haWwiOiJ0ZWFfOEB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiZTBkYjgwZjg1YjUxNDQ2ZThjZTI5NGRiYmQ5ZGJhOGYiLCJpYXQiOjE3OTIyNTAxMTQsImV4cCI6MTc5MjI1MTkxNH0.UJkLntO7a9RBvNrWs6oW6hVt4jM6R9gAkvzFX0KnE74", Content-Length:"126"]
+             Body = {"type":1,"content":"即将软删除的题目","correctAnswer":"A","score":5.0,"difficulty":1,"choices":["选项A","选项B"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"ace641cf677e45cc892c50be7d2fd93a", X-Trace-Id:"86f1c045ca62285851273ee6b262cb4b", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":7,"type":1,"typeName":"单选","content":"即将软删除的题目","choices":["选项A","选项B"],"correctAnswer":"A","score":5.0,"difficulty":1,"tags":[],"createdBy":9,"createdTime":"2026-10-17T23:15:15.0468931","updatedTime":"2026-10-17T23:15:15.0468931"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/student/favorites/99999999
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMCIsInR5cGUiOiJhY2Nlc3MiLCJ1c2VybmFtZSI6InN0dV85IiwibmFtZSI6IuWtpueUny1zdHVfOSIsImVtYWlsIjoic3R1XzlAdGVzdC5jb20iLCJyb2xlcyI6IlNUVURFTlQiLCJwZXJtaXNzaW9ucyI6ImV4YW06dGFrZSxzY29yZTp2aWV3Iiwicm9sZUxldmVsIjoxLCJzdiI6MCwianRpIjoiZGQ3ZjZlYWY2ODVhNDJkNWFhNDIwNjgyNDU1OTkwMjMiLCJpYXQiOjE3OTIyNTAxMTUsImV4cCI6MTc5MjI1MTkxNX0.8WssN6kswU4Cksz1cchEW2UsKcQGAERk4bjY_pleCcM"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.StudentQuestionFavoriteController
+           Method = com.exam.question.controller.StudentQuestionFavoriteController#favorite(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"b3e3d747ab784fdbabd727898a8cef94", X-Trace-Id:"2ebb90eb2a68455133b3418b45873931", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+[ERROR] Tests run: 4, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 16.24 s <<< FAILURE! -- in com.exam.question.StudentQuestionFavoriteIntegrationTest
+[ERROR] com.exam.question.StudentQuestionFavoriteIntegrationTest.favoriteNotFoundAndSoftDeleted_returns404 -- Time elapsed: 0.849 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<404> but was:<200>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.exam.support.IntegrationTestBase.perform(IntegrationTestBase.java:287)
+	at com.exam.question.StudentQuestionFavoriteIntegrationTest.favoriteNotFoundAndSoftDeleted_returns404(StudentQuestionFavoriteIntegrationTest.java:75)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   StudentQuestionFavoriteIntegrationTest.favoriteNotFoundAndSoftDeleted_returns404:75->IntegrationTestBase.perform:287 Response status expected:<404> but was:<200>
+[ERROR]   StudentQuestionFavoriteServiceTest.favorite_questionNotFound_throws404:106 Expected com.exam.common.BusinessException to be thrown, but nothing was thrown.
+[ERROR]   StudentQuestionFavoriteServiceTest.favorite_questionSoftDeleted_throws404:119 Expected com.exam.common.BusinessException to be thrown, but nothing was thrown.
+[ERROR] Errors: 
+[ERROR]   StudentQuestionFavoriteServiceTest.favorite_duplicate_idempotentNoInsert » UnnecessaryStubbing 
+Unnecessary stubbings detected.
+Clean & maintainable test code requires zero unnecessary code.
+Following stubbings are unnecessary (click to navigate to relevant line of code):
+  1. -> at com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_duplicate_idempotentNoInsert(StudentQuestionFavoriteServiceTest.java:93)
+Please remove unnecessary stubbings or use 'lenient' strictness. More info: javadoc for UnnecessaryStubbingException class.
+[ERROR]   StudentQuestionFavoriteServiceTest.favorite_validQuestion_insertsSuccessfully » UnnecessaryStubbing 
+Unnecessary stubbings detected.
+Clean & maintainable test code requires zero unnecessary code.
+Following stubbings are unnecessary (click to navigate to relevant line of code):
+  1. -> at com.exam.question.service.StudentQuestionFavoriteServiceTest.favorite_validQuestion_insertsSuccessfully(StudentQuestionFavoriteServiceTest.java:77)
+Please remove unnecessary stubbings or use 'lenient' strictness. More info: javadoc for UnnecessaryStubbingException class.
+[INFO] 
+[ERROR] Tests run: 12, Failures: 3, Errors: 2, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  25.485 s
+[INFO] Finished at: 2026-10-17T23:15:15+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] See D:\code\examOnline\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

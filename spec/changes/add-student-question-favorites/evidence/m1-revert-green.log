@@ -1,0 +1,214 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.exam:exam-online >------------------------
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (jacoco-prepare-agent) @ exam-online ---
+[INFO] argLine set to -javaagent:D:\\code\\examOnline\\.m2-repo\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\code\\examOnline\\target\\jacoco.exec,excludes=com/exam/ExamOnlineApplication.class:com/exam/**/dto/**:com/exam/**/entity/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ exam-online ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ exam-online ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 327 source files with javac [debug parameters release 17] to target\classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] /D:/code/examOnline/src/main/java/com/exam/user/service/UserService.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /D:/code/examOnline/src/main/java/com/exam/user/service/UserService.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ exam-online ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ exam-online ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 139 source files with javac [debug parameters release 17] to target\test-classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/auth/service/InviteCodeServiceTest.java: 某些输入文件使用了未经检查或不安全的操作。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/auth/service/InviteCodeServiceTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ exam-online ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.exam.question.service.StudentQuestionFavoriteServiceTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\code\examOnline\.m2-repo\net\bytebuddy\byte-buddy-agent\1.17.7\byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.011 s -- in com.exam.question.service.StudentQuestionFavoriteServiceTest
+[INFO] Running com.exam.question.StudentQuestionFavoriteIntegrationTest
+23:16:07.170 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.exam.question.StudentQuestionFavoriteIntegrationTest]: StudentQuestionFavoriteIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+23:16:07.567 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.exam.ExamOnlineApplication for test class com.exam.question.StudentQuestionFavoriteIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-10-17 23:16:08.328 [main] [] [] INFO  c.e.q.StudentQuestionFavoriteIntegrationTest - Starting StudentQuestionFavoriteIntegrationTest using Java 21.0.9 with PID 11104 (started by fzdzzj in D:\code\examOnline)
+2026-10-17 23:16:08.331 [main] [] [] INFO  c.e.q.StudentQuestionFavoriteIntegrationTest - The following 1 profile is active: "test"
+2026-10-17 23:16:13.882 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-17 23:16:13.885 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-17 23:16:13.973 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 69 ms. Found 0 Redis repository interfaces.
+2026-10-17 23:16:14.984 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig' of type [io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-17 23:16:14.994 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'mapConverter' of type [io.opentelemetry.instrumentation.spring.autoconfigure.internal.MapConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-17 23:16:15.792 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: COPY_PASTE -> CopyPasteEventCollector
+2026-10-17 23:16:15.793 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: DRAFT_CONFLICT -> DraftConflictEventCollector
+2026-10-17 23:16:15.794 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: FULLSCREEN_EXIT -> FullScreenExitEventCollector
+2026-10-17 23:16:15.794 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: PAGE_REFRESH -> PageRefreshEventCollector
+2026-10-17 23:16:15.794 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SUBMIT_ANOMALY -> SubmitAnomalyEventCollector
+2026-10-17 23:16:15.794 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SWITCH_SCREEN -> SwitchScreenEventCollector
+2026-10-17 23:16:15.794 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: WINDOW_BLUR -> WindowBlurEventCollector
+2026-10-17 23:16:15.861 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2026-10-17 23:16:16.264 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection conn0: url=jdbc:h2:mem:exam user=SA
+2026-10-17 23:16:16.269 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2026-10-17 23:16:16.271 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Starting...
+2026-10-17 23:16:16.273 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - slave - Added connection conn1: url=jdbc:h2:mem:exam user=SA
+2026-10-17 23:16:16.273 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Start completed.
+2026-10-17 23:16:16.274 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [slave] success
+2026-10-17 23:16:16.274 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2026-10-17 23:16:16.274 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [2] datasource,primary datasource named [master]
+2026-10-17 23:16:18.359 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: FILL_BLANK -> FillBlankGradingStrategy
+2026-10-17 23:16:18.359 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: JUDGE -> JudgeGradingStrategy
+2026-10-17 23:16:18.359 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: MULTIPLE -> MultipleChoiceGradingStrategy
+2026-10-17 23:16:18.359 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SHORT_ANSWER -> ShortAnswerGradingStrategy
+2026-10-17 23:16:18.359 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SINGLE -> SingleChoiceGradingStrategy
+2026-10-17 23:16:20.715 [main] [] [] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-17 23:16:20.716 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-10-17 23:16:20.723 [main] [] [] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 3 endpoints beneath base path '/actuator'
+2026-10-17 23:16:20.739 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Completed initialization in 22 ms
+2026-10-17 23:16:20.831 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-17 23:16:20.900 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Created new connection: rabbitConnectionFactory#340769ed:0/SimpleConnection@33aeee96 [delegate=amqp://exam@127.0.0.1:5672/, localPort=54854]
+2026-10-17 23:16:20.986 [main] [] [] INFO  c.e.q.StudentQuestionFavoriteIntegrationTest - Started StudentQuestionFavoriteIntegrationTest in 13.204 seconds (process running for 19.129)
+2026-10-17 23:16:21.215 [main] [] [] INFO  c.exam.config.RolePermissionInitializer - RBAC 角色/权限预置完成
+2026-10-17 23:16:21.270 [main] [] [] INFO  com.exam.config.AdminInitializer - 首次启动：已创建默认管理员 username=admin（请尽快通过环境变量 ADMIN_PASSWORD 修改）
+2026-10-17 23:16:21.270 [main] [] [] INFO  com.exam.config.ApplicationConfig - JWT_SECRET validated successfully (length: 58)
+2026-10-17 23:16:21.271 [main] [] [] INFO  com.exam.config.ApplicationConfig - Application configuration validated successfully
+2026-10-17 23:16:22.083 [main] [410317fe496b4dcea76b53b6bde51b0d] [46577e150fa6f0c8229a7a84b74690a6] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-17 23:16:22.113 [main] [410317fe496b4dcea76b53b6bde51b0d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (371ms)
+2026-10-17 23:16:22.178 [main] [9060f459d96f469d832cb385b63f02e0] [faec69f5d489d1f4b7f2142528b7cff8] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 5HL78N39
+2026-10-17 23:16:22.182 [main] [9060f459d96f469d832cb385b63f02e0] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (56ms)
+2026-10-17 23:16:22.402 [main] [dea2668e86e345f0873087cd613d9755] [49a39b6adf26c0f7efb58192aed2f562] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_1, inviteCode=5HL78N39
+2026-10-17 23:16:22.403 [main] [dea2668e86e345f0873087cd613d9755] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (218ms)
+2026-10-17 23:16:22.590 [main] [9d9d97fd892b4e7d80bd748aaa58d84d] [ef573337e660b917424350ba7fac9052] INFO  com.exam.auth.service.AuthService - 用户 tea_1 登录成功，签发双 Token
+2026-10-17 23:16:22.592 [main] [9d9d97fd892b4e7d80bd748aaa58d84d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (186ms)
+2026-10-17 23:16:22.773 [main] [4151e7ae667a48d49048d1461486dbcb] [d222921fe32b1be4f131c9da670d9ba8] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_2
+2026-10-17 23:16:22.774 [main] [4151e7ae667a48d49048d1461486dbcb] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (181ms)
+2026-10-17 23:16:22.970 [main] [7439eb4c11864d3ba88a5b92193ed4e2] [30b87e1ffe2062e756ff76dc44c9da85] INFO  com.exam.auth.service.AuthService - 用户 stu_2 登录成功，签发双 Token
+2026-10-17 23:16:22.971 [main] [7439eb4c11864d3ba88a5b92193ed4e2] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (195ms)
+2026-10-17 23:16:23.007 [main] [7ed604087e7245aaa3f9122202b7421f] [947f4031f860543824e39b346fb177ff] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=1 type=SINGLE
+2026-10-17 23:16:23.015 [main] [7ed604087e7245aaa3f9122202b7421f] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (43ms)
+2026-10-17 23:16:23.023 [main] [2aacf3e087c345c1a27c58486c46c228] [9551217fd591cd795b8dfa1bfb32e99c] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=2 type=JUDGE
+2026-10-17 23:16:23.026 [main] [2aacf3e087c345c1a27c58486c46c228] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (9ms)
+2026-10-17 23:16:23.036 [main] [cbe2fc3783784a5eb1e9f40912c393d2] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/1 -> 200 (8ms)
+2026-10-17 23:16:23.044 [main] [a258d5b2294247ae80791ab3b8976c6e] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/1 -> 200 (7ms)
+2026-10-17 23:16:23.054 [main] [b243774380394f8d8d6f2dd935d44af9] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites/check -> 200 (7ms)
+2026-10-17 23:16:23.069 [main] [476cccf456304b848a0d09d1c2e066ec] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (14ms)
+2026-10-17 23:16:23.077 [main] [520b478bba0d4a029ec324e2b1aee4c8] [] INFO  com.exam.common.RequestIdFilter - DELETE /api/student/favorites/1 -> 200 (7ms)
+2026-10-17 23:16:23.086 [main] [cc2306c72f7e4163b88333ad410863a7] [] INFO  com.exam.common.RequestIdFilter - DELETE /api/student/favorites/1 -> 200 (7ms)
+2026-10-17 23:16:23.094 [main] [001889aacc0a48ba9b5af243c44307c3] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites/check -> 200 (7ms)
+2026-10-17 23:16:23.102 [main] [760f8d5d64ac48d5a4d10652448d0b11] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (7ms)
+2026-10-17 23:16:23.167 [main] [a037112d35834ec0939c17fe161a4880] [1cfc48cb5f273d40cdd867a3bf5faffa] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-17 23:16:23.169 [main] [a037112d35834ec0939c17fe161a4880] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (58ms)
+2026-10-17 23:16:23.175 [main] [d79ae3eb51894433bb0a82d10c663dfb] [9a92476409d9130b129275967adec34a] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 9TUAVQ2Y
+2026-10-17 23:16:23.176 [main] [d79ae3eb51894433bb0a82d10c663dfb] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (6ms)
+2026-10-17 23:16:23.358 [main] [8a57958e454f46c3aa7eaf489fdb5ded] [9dadef5a76b4d1b231a19d65283aa967] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_3, inviteCode=9TUAVQ2Y
+2026-10-17 23:16:23.359 [main] [8a57958e454f46c3aa7eaf489fdb5ded] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (183ms)
+2026-10-17 23:16:23.549 [main] [809ff40c475c423fa7f9e6b66940a034] [78584c9d47bbb3a9d65177219599ad4e] INFO  com.exam.auth.service.AuthService - 用户 tea_3 登录成功，签发双 Token
+2026-10-17 23:16:23.549 [main] [809ff40c475c423fa7f9e6b66940a034] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (189ms)
+2026-10-17 23:16:23.730 [main] [e7abeec1face420db528016f71e0cf5d] [2079bf59f00334e3593319011ff2d9b0] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_4
+2026-10-17 23:16:23.732 [main] [e7abeec1face420db528016f71e0cf5d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (180ms)
+2026-10-17 23:16:23.920 [main] [3ae64c1c1c9643e3b8c13ae9db4bf30d] [c07b8ae291d1b16f489644775244db2e] INFO  com.exam.auth.service.AuthService - 用户 stu_4 登录成功，签发双 Token
+2026-10-17 23:16:23.922 [main] [3ae64c1c1c9643e3b8c13ae9db4bf30d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (189ms)
+2026-10-17 23:16:24.102 [main] [cfbe3785d0c34d9595accb51d310f4e1] [2cd62acbbda0a1400854b13abd3f575c] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_5
+2026-10-17 23:16:24.103 [main] [cfbe3785d0c34d9595accb51d310f4e1] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (181ms)
+2026-10-17 23:16:24.294 [main] [fcd2570bb41e4afda22b50fcf73818f4] [0ff273a9b86491f62e4b6cfce7c93266] INFO  com.exam.auth.service.AuthService - 用户 stu_5 登录成功，签发双 Token
+2026-10-17 23:16:24.295 [main] [fcd2570bb41e4afda22b50fcf73818f4] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (191ms)
+2026-10-17 23:16:24.303 [main] [776ff1f0131b421582e33ed3c70a8fa7] [d927c6f3a199846ed1e783f8e73065d0] INFO  c.exam.question.service.QuestionService - 教师 4 创建题目 id=3 type=SINGLE
+2026-10-17 23:16:24.305 [main] [776ff1f0131b421582e33ed3c70a8fa7] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (8ms)
+2026-10-17 23:16:24.312 [main] [24ca8f13111240dead86c510f6e28dbd] [e50a4177410877d4032926ffcd35d73c] INFO  c.exam.question.service.QuestionService - 教师 4 创建题目 id=4 type=MULTIPLE
+2026-10-17 23:16:24.314 [main] [24ca8f13111240dead86c510f6e28dbd] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (9ms)
+2026-10-17 23:16:24.324 [main] [471de668aedd48d087ca9b706e1df8cf] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/3 -> 200 (8ms)
+2026-10-17 23:16:24.334 [main] [490d03b250fe468589fa37726a7da406] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/4 -> 200 (9ms)
+2026-10-17 23:16:24.342 [main] [4593c5862ce949f9b52f67c1addb85b0] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (7ms)
+2026-10-17 23:16:24.351 [main] [bc4106d92c14446493aca0a7a6e049d8] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (8ms)
+2026-10-17 23:16:24.359 [main] [d32487bb3cfe4072b0b4b8400151381f] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites/check -> 200 (7ms)
+2026-10-17 23:16:24.366 [main] [36bdd0e3a31b426cb9ed9d6d41e93ce0] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites/check -> 200 (6ms)
+2026-10-17 23:16:24.426 [main] [4b1457169f9c4d3aa687d06903c82e4b] [739db0ee9bdaeec049f57c73d5b46ae0] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-17 23:16:24.427 [main] [4b1457169f9c4d3aa687d06903c82e4b] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (55ms)
+2026-10-17 23:16:24.434 [main] [f0e327e221894643938307467c994129] [ae9709fc27c3cf234d72c57f4e99c17f] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 U8PRAU93
+2026-10-17 23:16:24.436 [main] [f0e327e221894643938307467c994129] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (8ms)
+2026-10-17 23:16:24.619 [main] [fdc801b96c05434d82ad1a81b70e3cd9] [395cc6790cd0bf76d18dedd7a1202c7b] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_6, inviteCode=U8PRAU93
+2026-10-17 23:16:24.620 [main] [fdc801b96c05434d82ad1a81b70e3cd9] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (184ms)
+2026-10-17 23:16:24.813 [main] [ab551827fb1b46569b02b1f3703193cc] [9860da221adc37f566b8df715e5e4697] INFO  com.exam.auth.service.AuthService - 用户 tea_6 登录成功，签发双 Token
+2026-10-17 23:16:24.814 [main] [ab551827fb1b46569b02b1f3703193cc] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (194ms)
+2026-10-17 23:16:24.996 [main] [5daa6c0c70aa42c98c5f6a3dd5af9d7e] [e0f593676b8e1dde0b78daab89a69300] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_7
+2026-10-17 23:16:24.998 [main] [5daa6c0c70aa42c98c5f6a3dd5af9d7e] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (182ms)
+2026-10-17 23:16:25.189 [main] [e421feae0edd4fe685664256ab403fb6] [9ab96d2cadaf12f90d42abb4c54157d8] INFO  com.exam.auth.service.AuthService - 用户 stu_7 登录成功，签发双 Token
+2026-10-17 23:16:25.190 [main] [e421feae0edd4fe685664256ab403fb6] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (191ms)
+2026-10-17 23:16:25.199 [main] [2539ccf8e6f843f18cf5688ea5e79094] [d787ba76bac2be2e2e5414c69da51372] INFO  c.exam.question.service.QuestionService - 教师 7 创建题目 id=5 type=SINGLE
+2026-10-17 23:16:25.201 [main] [2539ccf8e6f843f18cf5688ea5e79094] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (10ms)
+2026-10-17 23:16:25.211 [main] [b365e3abdf1b428fa6dd2b85e6a273d0] [2c9bce9ed0b3a9e5dc5f2d758c4a7e5f] INFO  c.exam.question.service.QuestionService - 教师 7 创建题目 id=6 type=JUDGE
+2026-10-17 23:16:25.213 [main] [b365e3abdf1b428fa6dd2b85e6a273d0] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (11ms)
+2026-10-17 23:16:25.222 [main] [9daa4fa74ff440b3803f989195a25d00] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/5 -> 200 (9ms)
+2026-10-17 23:16:25.231 [main] [3c01c40ea52b4e7fb3d980eac9e18dfa] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/6 -> 200 (8ms)
+2026-10-17 23:16:25.243 [main] [b7cd51510f52482ab56df53273e4f812] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (10ms)
+2026-10-17 23:16:25.263 [main] [1d584108d45643e2937bdceea7e3a521] [] INFO  com.exam.common.RequestIdFilter - GET /api/student/favorites -> 200 (19ms)
+2026-10-17 23:16:25.343 [main] [cae1c18a833e43a7a870d9e969237fce] [a3a50e5243ef3603367a3d7d5393085d] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-17 23:16:25.345 [main] [cae1c18a833e43a7a870d9e969237fce] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (69ms)
+2026-10-17 23:16:25.352 [main] [8b282acf060e4812b4dac082997cbe4e] [21f63a9e86d82e1348530701413eed20] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 33LH9EX2
+2026-10-17 23:16:25.353 [main] [8b282acf060e4812b4dac082997cbe4e] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (8ms)
+2026-10-17 23:16:25.557 [main] [67736a39e13a4ce281746cf5c08012b3] [867c03b42dd76d7b44318f67e4c7a037] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_8, inviteCode=33LH9EX2
+2026-10-17 23:16:25.559 [main] [67736a39e13a4ce281746cf5c08012b3] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (204ms)
+2026-10-17 23:16:25.849 [main] [b50cd77fea2b4cf19c334289b605d34c] [e167032a19082e26ab74b499f1fbdb1e] INFO  com.exam.auth.service.AuthService - 用户 tea_8 登录成功，签发双 Token
+2026-10-17 23:16:25.850 [main] [b50cd77fea2b4cf19c334289b605d34c] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (291ms)
+2026-10-17 23:16:26.040 [main] [7b64388b32fa47e3b856425c67301d2c] [cdb4a80352083aaf7b26489333b1a1f7] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_9
+2026-10-17 23:16:26.041 [main] [7b64388b32fa47e3b856425c67301d2c] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (190ms)
+2026-10-17 23:16:26.228 [main] [f5f1086ae7534a58aaab770e32ae0940] [666f91b833262484413c800f608e7d14] INFO  com.exam.auth.service.AuthService - 用户 stu_9 登录成功，签发双 Token
+2026-10-17 23:16:26.229 [main] [f5f1086ae7534a58aaab770e32ae0940] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (188ms)
+2026-10-17 23:16:26.236 [main] [8ab0eb48bbe8476c9422fad57448c3d5] [fb5c2b5b4f8df0580afbda06c08ce073] INFO  c.exam.question.service.QuestionService - 教师 9 创建题目 id=7 type=SINGLE
+2026-10-17 23:16:26.239 [main] [8ab0eb48bbe8476c9422fad57448c3d5] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (9ms)
+2026-10-17 23:16:26.251 [main] [27f33cbece734890890430824756771e] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/99999999 -> 404 (12ms)
+2026-10-17 23:16:26.264 [main] [8618802d71a44fd78e3a5f3660e12307] [03dee8554383b29a97d4fd8e1ba1bec5] INFO  c.exam.question.service.QuestionService - 题目软删除: id=7
+2026-10-17 23:16:26.265 [main] [8618802d71a44fd78e3a5f3660e12307] [] INFO  com.exam.common.RequestIdFilter - DELETE /api/questions/7 -> 200 (13ms)
+2026-10-17 23:16:26.272 [main] [cd3c7b90a9bf4bac89e4017e3169d649] [] INFO  com.exam.common.RequestIdFilter - POST /api/student/favorites/7 -> 404 (6ms)
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 19.24 s -- in com.exam.question.StudentQuestionFavoriteIntegrationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (jacoco-report) @ exam-online ---
+[INFO] Loading execution data file D:\code\examOnline\target\jacoco.exec
+[INFO] Analyzed bundle 'exam-online' with 180 classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  47.526 s
+[INFO] Finished at: 2026-10-17T23:16:28+08:00
+[INFO] ------------------------------------------------------------------------
