@@ -32,13 +32,14 @@ public class MessageService {
         this.messageMapper = messageMapper;
     }
 
-    /** 本人消息列表（按 id 倒序 = 最新在前）：仅返回本人（user_id 隔离）。 */
+    /** 本人消息列表（按 id 倒序 = 最新在前）：仅返回本人（user_id 隔离）。limit 钳制在 [1, 100]。 */
     public List<UserMessage> listMine(int limit) {
         Long userId = requireLogin();
+        int safeLimit = Math.min(Math.max(limit, 1), 100);
         return messageMapper.selectList(Wrappers.<UserMessage>lambdaQuery()
                 .eq(UserMessage::getUserId, userId)
                 .orderByDesc(UserMessage::getId)
-                .last(limit > 0 ? "LIMIT " + limit : ""));
+                .last("LIMIT " + safeLimit));
     }
 
     /** 本人未读数（user_id 下 read_flag=0 的行数）。 */
