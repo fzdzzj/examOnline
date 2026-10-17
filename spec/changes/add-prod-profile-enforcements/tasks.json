@@ -16,14 +16,14 @@
       "title": "阶段 2：实施笔——启动闸 + 邮件门禁 + 配置旋钮 + 单测",
       "status": "completed",
       "description": "ProdAdminPasswordGuard（@Profile(prod) @Order(3) CommandLineRunner，BCrypt.checkpw 公开缺省口令，豁免旋钮）；AuthProperties 两新字段；MailService 兜底分支配置门禁（关闭时明确报错且日志无验证码）；base/dev/test 三档 yml 声明；ProdAdminPasswordGuardTest 五用例 + MailServiceTest 构造适配与两新用例。",
-      "evidence": "实施笔见 git log（feat(config): ...）；diff --stat 全在 proposal 白名单。先红=编译红（新测试引用 ProdAdminPasswordGuard/三参 MailService 构造旧形态不存在），行为红由阶段 3 变异以同形补证。"
+      "evidence": "实施笔 9aba7eb（feat(config): prod 安全强制项…）；diff --stat 恰 8 文件：ProdAdminPasswordGuard/AuthProperties/MailService/application.yml/application-dev.yml/application-test.yml/ProdAdminPasswordGuardTest/MailServiceTest，全在 proposal 白名单。先红=编译红（新测试引用 ProdAdminPasswordGuard/三参 MailService 构造旧形态不存在，01 留证），行为红由阶段 3 变异以同形补证。"
     },
     {
       "id": 3,
       "title": "阶段 3：变异击红留证 + 等价变异登记",
       "status": "completed",
       "description": "变异验证——启动闸摘除抛出（改仅 WARN）击红、复原回绿（scripts/mutation-check.sh 驱动）；等价变异如实登记不强杀。",
-      "evidence": "evidence/03–04：mutation-check.sh m6-guard-warn-only 注入 → defaultPasswordFailsStartup 确定性失败 → 复原回绿五步全 PASS；等价变异登记见 evidence/README.md。"
+      "evidence": "evidence/03–04：mutation-check.sh `m6-guard-never-triggers` 注入 `stillDefault = false;`（启动闸永不触发）→ `defaultPasswordFailsStartup` 断言级失败（Tests run 1 / Failures 1，非编译红）→ 复原回绿五步全 PASS；等价变异（豁免分支改同 fail-fast、WARN 日志措辞）登记见 evidence/README.md §03。"
     },
     {
       "id": 4,
@@ -37,7 +37,7 @@
       "title": "阶段 5：门禁实测、基线上调与收口归档",
       "status": "completed",
       "description": "仓库根 mvnw clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 在 676 基数上同笔上调 → evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + deployment 域行追加 → docs/功能待办清单.md 安全发现 3/4 行闭环标注 → --no-ff 合入 main。",
-      "evidence": "全量门禁 evidence/06（四计数 + BUILD SUCCESS + GATE_EXIT=0，绑定 revision）；gate-baseline.json backendTests 676→683 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/add-prod-profile-enforcements/；--no-ff 合并入 main。"
+      "evidence": "全量门禁 evidence/06：Tests run: 683, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（绑定 revision 9aba7eb 的实施分支）；gate-baseline.json backendTests 676→683 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/add-prod-profile-enforcements/；--no-ff 合并入 main。"
     }
   ]
 }
