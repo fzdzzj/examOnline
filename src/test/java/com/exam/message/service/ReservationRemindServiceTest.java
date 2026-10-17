@@ -13,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +42,9 @@ class ReservationRemindServiceTest {
     private ExamReservationMapper reservationMapper;
     @Mock
     private UserMessageMapper messageMapper;
+    /** fix-reservation-remind-transaction：deliverIfAbsent 改编程式事务（构造注入），单测注入 mock 管理器即可（execute 回调不依赖事务状态）。 */
+    @Mock
+    private PlatformTransactionManager transactionManager;
 
     @InjectMocks
     private ReservationRemindService service;
