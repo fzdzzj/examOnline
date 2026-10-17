@@ -1,0 +1,13 @@
+diff --git a/src/main/java/com/exam/auth/service/MailService.java b/src/main/java/com/exam/auth/service/MailService.java
+index c0ad9a7..4b0e962 100644
+--- a/src/main/java/com/exam/auth/service/MailService.java
++++ b/src/main/java/com/exam/auth/service/MailService.java
+@@ -58,7 +58,7 @@ public class MailService {
+             helper.setText("您的密码重置验证码是：" + code + "，" + ttlMinutes + " 分钟内有效，请勿泄露。", false);
+             mailSender.send(message);
+             log.info("找回密码验证码已发送: email={}", email);
+-        } catch (MessagingException | MailException e) {
++        } catch (MessagingException e) {
+             log.error("找回密码验证码发送失败: email={}", email, e);
+             throw new BusinessException(ResponseCode.INTERNAL_ERROR, "验证码发送失败，请稍后重试或联系管理员");
+         }

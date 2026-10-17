@@ -1,0 +1,29 @@
+{
+  "changeId": "fix-mail-smtp-timeout-and-catch",
+  "title": "SMTP 三向超时配置与邮件发送失败捕面拓宽（M4 卡）",
+  "level": "S",
+  "capabilityDomains": ["authentication"],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 0 & 1：立项与在途总账登记",
+      "status": "completed",
+      "description": "确立 proposal.md、authentication 的 spec-delta.md 与 tasks.json，创建 feature 分支并登记 spec/README.md 在途表与 docs/功能待办清单.md B.2 M4 行。定性：单类 + 配置 + 测试，零 DDL、零契约变更、零前端，仅 backendTests 预期增长；S 级。",
+      "evidence": "基于 2026-10-16/17 后端横切首扫中危发现 M4（docs/功能待办清单.md B.2 中 4 列表）：①三处 profile（application/-dev/-prod）spring.mail.properties 均只有 auth/ssl 两键，JavaMail 连接/读/写默认无限等待，reset-code 端点同步发信——SMTP 故障时请求线程无限挂起持续累积占满 Tomcat 工作线程；②MailService 只捕 jakarta MessagingException，Spring 发送链路（连接/读/写超时、认证失败、SMTP 拒绝）以 MailException 系（MailSendException extends MailException，运行时）从 JavaMailSender.send 冒出未被捕获，直穿 GlobalExceptionHandler 的 Exception 兜底裸 500「系统内部错误」。GlobalExceptionHandler 全文核实（兜底口径）+ AuthService.sendResetCode L268-278 核实（不 catch 透传，BusinessException→500+业务文案即既有诚实失败口径）。依赖 main 4dc707e（M1 案合并后），检出 feature/fix-mail-smtp-timeout-and-catch 分支，立案笔 02b1829（三件套 + README 在途表 + B.2 M4 行立案标注）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：测试先红 + 三处 yml 超时与捕面修复 + 变异击红验证",
+      "status": "completed",
+      "description": "①三处 yml（application / -dev / -prod）spring.mail.properties 补 mail.smtp.connectiontimeout / timeout / writetimeout 各 10000ms（base application.yml 新增 spring.mail.properties 块作 test 等未覆盖 profile 的底座，dev/prod 在既有 properties 块追加）；②MailService catch 面拓宽至 MessagingException | MailException，处置语义逐字不动（同一 ERROR 日志 + 同一 BusinessException 文案），javadoc 注明超时以 MailSendException 冒出与勿收窄原因；③测试先红后绿；④变异（还原只捕 MessagingException 形态）击红-复原-回绿留证 evidence/。",
+      "evidence": "测试构成（+3 用例，全绿态 5 用例）：MailServiceTest.mailSendExceptionIsConvertedToBusinessException（mock JavaMailSender.send 抛 MailSendException，断言转 BusinessException(INTERNAL_ERROR) + 既有文案——先红：`expected BusinessException but was MailSendException`）；MailSmtpTimeoutGuardTest（词法护栏，先例 ProdContainerTzGuardTest：三处 yml 剔注释行后断言三键各带正整数值声明，删行/改键名/清零确定性失败）；MailSmtpTimeoutConfigTest（@SpringBootTest 绑定断言：三键经 Boot 装配进 MailProperties（JavaMailSenderImpl 运行期消费的同一配置对象）且 Environment 可见、值 10000——先红 `connectiontimeout 未被装配进 MailProperties expected: not <null>`）。先红汇总：Tests run: 5, Failures: 3（捕面+绑定+护栏；既有 2 TTL 用例按设计绿）；实施笔 41ebad3 转绿：Tests run: 5, Failures: 0 + BUILD SUCCESS。变异 m1（catch 收窄回 MessagingException，恰 13 行单行差异）击红：Tests run: 3, Failures: 1（MailSendException 裸穿，与先红同形）；复原回绿 3/0/0。证据：evidence/01-red-run.log、02-green-run.log、m1.diff、m1-run.log、mutation-verification.md。如实登记两项：①MessagingException 臂不设独立运行期用例（jakarta 宽松解析不天然抛 + Spring 内部委派路径与打桩点不匹配两次空转，裁撤论证=multi-catch 摘受检异常即编译错误编译器守护 + catch 体语义由 MailException 臂覆盖，见测试类 javadoc 与 mutation-verification.md）；②过程事故：实施笔未提交时误用 git checkout HEAD 还原致修复暂失，逐字重落后复验 5/5 绿，按正确顺序重做变异（干净 13 行 diff），无实质影响留痕。技术事实：MailProperties.getProperties() 在 Boot 3 返回 Map<String,String> 而非 java.util.Properties（编译期修正 .getProperty→.get）。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：全量双端门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "在 feature 分支执行后端 mvnw.cmd clean test；前端按离线门禁分级政策凭 frontend/ 零 diff 论证免跑；按实测上调 .github/ci/gate-baseline.json 的 backendTests；将 spec-delta 合入 specs/authentication 基线；归档变更目录并更新 spec/README.md 与 docs/功能待办清单.md，--no-ff 合并入 main。",
+      "evidence": "①门禁实测：mvnw.cmd clean test（仓库根，revision 41ebad3 工作树）→ Tests run: 641, Failures: 0, Errors: 0, Skipped: 1 + BUILD SUCCESS（evidence/full-clean-test-summary.txt；全量原始日志留存仓库外 D:\\code\\examOnline-measure\\fix-mail-smtp-timeout-and-catch\\full-clean-test.log）。②基线上调：gate-baseline.json backendTests 638→641（+3：MailServiceTest 1 + MailSmtpTimeoutGuardTest 1 + MailSmtpTimeoutConfigTest 1；frontendTests 908、openapiPaths 97 核对不变）。③spec-delta 合入：specs/authentication/spec.md「密码找回」Requirement 追加 Scenario「SMTP 三向超时与发送失败显性化」（三向超时缺省 10000ms + 发送失败统一 ERROR 日志转业务异常同既有语义不裸奔），合入注记含缺陷机理。④白名单核对：未触碰 schema.sql、docker/、openapi.yaml、pom.xml、frontend/。⑤归档与总账：变更目录 git mv 至 spec/changes/archive/，spec/README.md 三处登记（在途表行移除、authentication 能力域行加注、归档表新行），docs/功能待办清单.md B.2 M4 行闭环标注。"
+    }
+  ]
+}

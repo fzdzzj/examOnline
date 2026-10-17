@@ -41,6 +41,14 @@ spring:
         prefetch: ${RABBIT_PREFETCH:200}
         concurrency: ${RABBIT_CONCURRENCY:2}
         auto-startup: ${RABBIT_LISTENER_AUTOSTARTUP:true}
+  mail:
+    properties:
+      # SMTP 三向超时毫秒（fix-mail-smtp-timeout-and-catch）：JavaMail 连接/读/写默认无限等待，
+      # SMTP 故障时找回密码请求线程无限挂起累积占满工作线程；三向缺一不可。
+      # base 底座供 test 等未声明 spring.mail 的 profile 生效，dev/prod 各档在同名键下显式声明（可按需覆盖）。
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   # 全局默认事务超时（秒），防止长事务占用连接池
   transaction:
     default-timeout: 30
