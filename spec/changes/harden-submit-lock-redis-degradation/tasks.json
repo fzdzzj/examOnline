@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-submit-lock-redis-degradation",
+  "branch": "feature/harden-submit-lock-redis-degradation",
+  "level": "M",
+  "source": "docs/功能待办清单.md B.2 横切首扫 H2 残留面 · Redis 依赖裁决 D1 卡（2026-10-17 用户裁决：Redis 故障口径统一为「正确性由 DB 幂等保证，Redis 降级保可用性，草稿为已声明的硬依赖面」）：ExamSubmitService 交卷 SETNX 锁对 Redis 异常零容错，异常裸穿即交卷全停摆；案串行 A1（已闭环）→ D1 → B2+C2（runbook）",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-submit-lock-redis-degradation（A1 合入 main 后开）→ 写 proposal/spec-delta（exam-taking 域）/tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "A1 案 --no-ff 合入 main（merge 6e422c3）后开分支；立案笔见 git log（docs(spec): 立案 harden-submit-lock-redis-degradation）；git diff --cached --stat 预检恰 4 文件（三件套 3 文件 + spec/README.md 在途表 +1 行）。spec-delta 为 exam-taking 域 ADDED Requirement「交卷 SETNX 锁对 Redis 异常的降级放行」五 Scenario。正确性论证（防重表唯一索引+状态机 CAS+消费端 casFillAnswers 为唯一正确性后盾，锁仅防抖）落 proposal §二。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——SETNX 容错两类失败区分 + 新降级计数指标 + 守护登记 + 容错单测",
+      "status": "completed",
+      "description": "ExamSubmitService SETNX 包 try-catch（try 只包 Redis 调用本身）：连接异常 → 降级放行走防重表+CAS 路径 + ERROR 日志 + countSubmitLockDegraded（不记锁等待/锁竞争、不执行 unlock）；锁被真占（false）→ 现有拒绝/幂等快速路径语义零变化；BusinessMetrics 新增 exam.submit.lock.degraded（命名对齐既有降级指标风格）；AlertAssetsTest known 集合同笔守护；ExamSubmitServiceTest 容错单测。",
+      "evidence": "实施笔见 git log（fix(taking): ...）；diff --stat 恰 4 文件全在白名单。先红=编译红（countSubmitLockDegraded 方法旧形态不存在，harden-auth-edge-cases 编译红先例），行为红由阶段 3 变异以同形补证。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证 + 等价变异登记",
+      "status": "completed",
+      "description": "变异验证——还原「锁异常即失败」旧形态（摘除 try-catch 异常上抛）击红、复原回绿，证据入库；等价变异如实登记不强杀。",
+      "evidence": "evidence/03–05：变异 m1 → 容错用例确定性失败 → 复原回绿；等价变异登记见 evidence/README.md。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "completed",
+      "description": "收口 diff 核对——草稿存储（ExamDraftService）、RedisCacheManager（CacheConfig）、解锁原语（RedisLockHelper/CacheMutexLoader）、MQ 发布路径（submission/mq）+ schema.sql + docker/mysql + openapi.yaml + pom + frontend 零改动。",
+      "evidence": "evidence/README.md §04：git diff main --stat 针对范围外清单输出为空（OUT_OF_SCOPE_DIFF_LINES=0）；分支总 diff 文件清单全在 proposal 白名单内。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 在 649 基数上同笔上调 → evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + exam-taking/reliability 域行追加 → docs/功能待办清单.md B.2 标注 D1 闭环 → --no-ff 合入 main → 三案合并后统一 push。",
+      "evidence": "全量门禁 evidence/06（Tests run / Failures / Errors / Skipped + BUILD SUCCESS + GATE_EXIT=0，绑定 revision）；gate-baseline.json backendTests 649→651 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/harden-submit-lock-redis-degradation/；exam-taking 基线合入 ADDED Requirement + reliability 基线实施注记一行；spec/README.md 三处登记；docs/功能待办清单.md B.2 标注；--no-ff 合并入 main。"
+    }
+  ]
+}
