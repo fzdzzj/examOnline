@@ -4,6 +4,7 @@ import com.exam.anticheat.collector.BehaviorEventTypes;
 import com.exam.anticheat.service.BehaviorEventCollectService;
 import com.exam.common.cache.RedisLockHelper;
 import com.exam.common.BusinessException;
+import com.exam.common.RequestIdFilter;
 import com.exam.common.ResponseCode;
 import com.exam.auth.security.SecurityUtil;
 import com.exam.config.ReadYourWriteMark;
@@ -20,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -44,6 +46,16 @@ import java.util.UUID;
  *
  * <p>主事务只做状态 CAS 等核心字段（大答案 JSON 不进同步事务，避免长事务拖慢峰值），
  * 答案异步批量落库——5000 人同时交卷的可靠性来自上述层层收敛 + 最终一致。
+ *
+ * <p><b>为什么 SETNX 锁异常要降级放行（harden-submit-lock-redis-degradation）：</b>
+ * 交卷只发生一次由三层 DB 幂等保证（防重表唯一索引 / 状态机 CAS / 消费端 casFillAnswers），
+ * SETNX 锁只是把三路竞态收敛为单飞、省 DB/MQ 压力的<b>防抖器</b>（reliability「幂等是正确性的
+ * 唯一保证」同源推广）。Redis 连接异常时若裸穿，交卷全停摆（学生已作答完成却无法交卷）；
+ * 降级放行则并发交卷各自走完整幂等链，输家被 CAS/唯一索引裁决后幂等返回——降级只影响防抖
+ * 半径，不构成数据错误。降级口径与限流 fail-open / 拦截器 / 登录守卫先例同源：ERROR 日志 +
+ * 降级计数（exam.submit.lock.degraded），不新增第二套降级哲学。<b>降级口只认不可用不认竞争</b>：
+ * 锁被真占（返回 false）是正常竞争，走既有等待/冲突路径。草稿（Redis）仍是已声明的硬依赖面
+ * 不在本容错范围——带答案载荷的交卷不触草稿读，后端兜底交卷依赖草稿读取（runbook 如实登记）。
  */
 @Slf4j
 @Service
@@ -123,21 +135,40 @@ public class ExamSubmitService {
         // 并避免 TTL 过期后多线程同时进锁区打 DB/MQ。
         String lockKey = LOCK_PREFIX + examId + ":" + studentId;
         String token = UUID.randomUUID().toString();
-        
+
         // 并发监控：记录锁等待时间
         long lockAcquireStart = System.nanoTime();
-        Boolean locked = redisTemplate.opsForValue()
-                .setIfAbsent(lockKey, token, Duration.ofSeconds(lockTtlSeconds));
-        
-        if (!Boolean.TRUE.equals(locked)) {
+        // 两类失败严格区分（harden-submit-lock-redis-degradation）——降级口只认不可用，不认竞争：
+        // 连接异常=锁基础设施不可用 → 降级放行，直接走锁后链路（防重表先查后插 + 状态机 CAS + MQ）。
+        // 正确性后盾与锁无关（reliability「幂等是正确性的唯一保证」同源推广）：防重表 uk_submit_dedup
+        // 唯一索引 + casSubmitToSubmitted 状态机 CAS + 消费端 casFillAnswers（仅 answers IS NULL 时写）
+        // 三层 DB 幂等保证交卷只发生一次；锁只是把三路竞态收敛为单飞、省 DB/MQ 压力的防抖器，
+        // 降级只影响防抖半径（故障期并发交卷各自走完整幂等链，输家被 CAS/唯一索引裁决后幂等返回）。
+        // 锁被真占（返回 false）=正常竞争 → 走既有等待/冲突路径，不递增降级计数。
+        boolean redisDegraded = false;
+        Boolean locked;
+        try {
+            locked = redisTemplate.opsForValue()
+                    .setIfAbsent(lockKey, token, Duration.ofSeconds(lockTtlSeconds));
+        } catch (Exception e) {
+            redisDegraded = true;
+            log.error("交卷锁降级：Redis SETNX 加锁失败，降级放行走防重表+CAS 链路，exam={} student={} 异常={} requestId={}",
+                    examId, studentId, e.getMessage(), MDC.get(RequestIdFilter.MDC_KEY), e);
+            metrics.countSubmitLockDegraded();
+            locked = null;
+        }
+
+        if (!Boolean.TRUE.equals(locked) && !redisDegraded) {
             // 锁竞争失败
             metrics.recordLockContention();
             return waitForConcurrentSubmit(examId, studentId);
         }
-        
-        // 锁获取成功，记录等待时长：纳秒直传给指标，不在这里换算成秒（会截成 0）
-        metrics.recordLockWait(System.nanoTime() - lockAcquireStart);
-        
+
+        if (!redisDegraded) {
+            // 锁获取成功，记录等待时长：纳秒直传给指标，不在这里换算成秒（会截成 0）
+            metrics.recordLockWait(System.nanoTime() - lockAcquireStart);
+        }
+
         try {
             // 锁内二次确认：等锁窗口内可能已被并发路径提交
             submission = submissionService.getByExamStudent(examId, studentId);
@@ -184,8 +215,11 @@ public class ExamSubmitService {
             return new SubmitResponse(submission.getId(), examId, studentId,
                     ExamSubmission.STATUS_SUBMITTED, now, submitType);
         } finally {
-            // 按 token 安全解锁（TTL 到期后锁可能已易主；无条件 del 会删掉别人的锁）
-            lockHelper.unlock(lockKey, token);
+            if (!redisDegraded) {
+                // 按 token 安全解锁（TTL 到期后锁可能已易主；无条件 del 会删掉别人的锁）；
+                // 降级路径从未持锁（token 未写入 Redis），无解锁对象
+                lockHelper.unlock(lockKey, token);
+            }
         }
     }
 
