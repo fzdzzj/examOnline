@@ -16,14 +16,14 @@
       "title": "阶段 2：实施笔——执行器组件 + 三读点接线 + 新指标 + 告警守护 + 单测与构造适配",
       "status": "completed",
       "description": "SlaveReadFallbackExecutor（DataAccessException → push master 重试一次 + ERROR + 计数；业务异常不捕；主库也失败上抛）；三读点读逻辑包入；BusinessMetrics 新增 exam.datasource.degraded（tag endpoint 三常量）；alerts.yml DatasourceDegraded + AlertAssetsTest 同笔；SlaveReadFailoverTest 七用例 + grading 三测试类构造适配（透传桩）。",
-      "evidence": "实施笔 84f023f（diff --stat 恰 11 文件：SlaveReadFallbackExecutor/BusinessMetrics/三服务/alerts.yml/AlertAssetsTest/SlaveReadFailoverTest/grading 三测试类构造适配，全在 proposal 白名单）。先红=编译红（01：SlaveReadFailoverTest 找不到符号 SlaveReadFallbackExecutor，revision 2d1dc12 工作树），行为红由阶段 3 变异以同形补证。"
+      "evidence": "实施笔 84f023f（diff --stat 恰 11 文件：SlaveReadFallbackExecutor/BusinessMetrics/三服务/alerts.yml/AlertAssetsTest/SlaveReadFailoverTest/grading 三测试类构造适配，全在 proposal 白名单）。先红=编译红（01：SlaveReadFailoverTest 找不到符号 SlaveReadFallbackExecutor，revision 2d1dc12 工作树），行为红由阶段 3 变异补证（03：注释摘除压栈行后的断言红）。"
     },
     {
       "id": 3,
       "title": "阶段 3：变异击红留证 + 等价变异登记",
       "status": "completed",
-      "description": "变异验证——执行器摘除压栈重试（catch 内直接上抛）击红、复原回绿（scripts/mutation-check.sh 驱动）；等价变异如实登记不强杀。",
-      "evidence": "evidence/03–04：mutation-check.sh m4-no-failover-rethrow（--inject-sed catch 内改上抛，该文件唯一命中）五步全 PASS——注入后 failoverPushesMasterAndReturns 确定性失败（exit=1）、cmp 字节复原+注入标志归零后回绿（exit=0）；留证 D:\\code\\examOnline-measure\\harden-slave-read-failover\\mutation-check\\m4-no-failover-rethrow\\。等价变异：重试次数 1→2 对测试面等价（peek 轨迹第三点无断言，登记不强杀）；tag 常量改名由 mock 同名同步，文档承载约束。"
+      "description": "变异验证——注释掉 SlaveReadFallbackExecutor L62 的 push(ReadYourWriteRouter.MASTER) 单行（代码仍可编译），failoverPushesMasterAndReturnsRetryValue 确定性断言红；git checkout 复原后同命令回绿；等价变异如实登记不强杀。旧记录（catch 内补 throw e 触发编译红、回绿实为 0 用例）按复核 P1 作废并重跑覆盖。",
+      "evidence": "evidence/03–04 重跑于 be715cc：①03 变异后 `mvnw.cmd test -Dtest=SlaveReadFailoverTest#failoverPushesMasterAndReturnsRetryValue` → Tests run: 1, Failures: 1, Errors: 0, Skipped: 0（EXIT=1），失败点 SlaveReadFailoverTest:108 `重试必须压栈 master ==> expected: <master> but was: <null>`，BUILD FAILURE——红来自重试期路由栈顶断言，非编译红、非 0 用例；②`git checkout --` 复原 L62（工作树仅 evidence 两文件变更，源码零残留）后同命令 → Tests run: 1, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS（EXIT=0）。P1 更正：旧 03 为 javac「无法访问的语句」编译红，旧 04 因方法名漏写 RetryValue 而 `Tests run: 0` 仍 BUILD SUCCESS，二者均不构成证据。等价变异：重试次数 1→2 对测试面等价（peek 轨迹第三点无断言，登记不强杀）；tag 常量改名由 mock 同名同步，文档承载约束。"
     },
     {
       "id": 4,
