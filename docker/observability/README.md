@@ -25,9 +25,10 @@
 - Prometheus：http://localhost:9090  
 - Grafana：http://localhost:3000（管理员密码由 `GRAFANA_ADMIN_PASSWORD` 指定，默认 `admin`）
 
-容器内经 `host.docker.internal:8080` 抓取宿主应用（Linux 需 compose 中 `extra_hosts`）。
+容器内经 `host.docker.internal:8080` 抓取宿主应用（Linux 需 compose 中 `extra_hosts`）。  
+**生产容器网络拓扑切换指引**：在 Docker Compose 生产编排（`docker-compose.prod.yml`）中，若应用以容器形态运行（服务名 `exam-online-prod-app`），需将 `prometheus.yml` 中的 scrape targets 修改为 `["exam-online-prod-app:8080"]`，并将观测栈接入生产自定义网络，避免因网络隔离无法抓取导致 `up==0` 假告警常鸣。
 
-## 告警规则（9 条）
+## 告警规则
 
 文件：`prometheus/rules/exam-online-alerts.yml`，组名 `exam-online-alerts`。
 
@@ -42,6 +43,7 @@
 | AntiCheatEventSpike | 5m | 近 5m 防作弊事件 >50 |
 | MqDlqBacklog | 5m | 死信队列深度 >0（排除 -1） |
 | MqSubmitRetryExhausted | 0m | 近 10m 有消息因重试耗尽进入死信 |
+| DatabaseSlowSqlDetected | 1m | 近 5m 存在单条耗时超阈值的慢 SQL |
 
 静态正确性由 `src/test/java/com/exam/observability/AlertAssetsTest.java` 守住（可解析、9 名、指标名与 `BusinessMetrics` 对齐、面板 uid=`prometheus`）。
 

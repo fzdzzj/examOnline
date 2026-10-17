@@ -16,6 +16,8 @@ import com.exam.clazz.mapper.ClassMapper;
 import com.exam.clazz.mapper.UserClassMapper;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
+import com.exam.exam.entity.Exam;
+import com.exam.exam.mapper.ExamMapper;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -49,11 +51,14 @@ public class ClassService {
     private final ClassMapper classMapper;
     private final UserClassMapper userClassMapper;
     private final UserMapper userMapper;
+    private final ExamMapper examMapper;
 
-    public ClassService(ClassMapper classMapper, UserClassMapper userClassMapper, UserMapper userMapper) {
+    public ClassService(ClassMapper classMapper, UserClassMapper userClassMapper, UserMapper userMapper,
+                        ExamMapper examMapper) {
         this.classMapper = classMapper;
         this.userClassMapper = userClassMapper;
         this.userMapper = userMapper;
+        this.examMapper = examMapper;
     }
 
     /** 创建班级：归属教师 = 当前操作者（本阶段教师自己建班），记录创建人。 */
@@ -94,6 +99,13 @@ public class ClassService {
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         ClassEntity clazz = getOwnedClass(id);
+        // L-01 删班级引用检查（harden-cross-cutting-edge-cases）：
+        // 存在考试引用该班级时阻断删除，防止 exams.class_id 悬挂及缺考应考名单推导异常
+        Long examCount = examMapper.selectCount(Wrappers.<Exam>lambdaQuery()
+                .eq(Exam::getClassId, id));
+        if (examCount != null && examCount > 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "该班级已被考试引用，不允许删除");
+        }
         userClassMapper.delete(Wrappers.<UserClass>lambdaQuery()
                 .eq(UserClass::getClassId, id));
         classMapper.deleteById(id);

@@ -101,6 +101,26 @@ docker rm -f backup-drill-isolated; docker volume rm backup-drill-vol
 - 边界：**本脚本不承诺也不演练按时间点恢复（PITR）**——只做全量 dump 与全量恢复；
   binlog 是否补备份/pitr 属后续裁量，不以本脚本成立。
 
+### 5. 题干图片持久卷（question-images-data）—— 备份与恢复指引
+
+- **既有事实**：生产部署（`docker-compose.prod.yml`）将题干图片持久化于 Docker 命名卷 `question-images-data`（挂载于应用 `/data/question-images`）。图片为用户上传的业务数据资产。
+- **冷备命令（宿主一次性容器导出压缩包）**：
+  ```bash
+  # 备份到本目录 out/ 下
+  docker run --rm \
+    -v question-images-data:/data:ro \
+    -v "$(pwd)/docker/mysql/backup/out":/backup \
+    alpine tar czf /backup/question-images-$(date +%Y%m%d-%H%M%S).tar.gz -C /data .
+  ```
+- **恢复命令（在维护模式/停止 app 容器后，恢复到命名卷）**：
+  ```bash
+  # 恢复指定的图片备份文件到数据卷
+  docker run --rm \
+    -v question-images-data:/data \
+    -v "$(pwd)/docker/mysql/backup/out":/backup \
+    alpine sh -c "rm -rf /data/* && tar xzf /backup/<备份文件名>.tar.gz -C /data"
+  ```
+
 ## 显式排除（非目标）
 
 - **异地容灾/异地备份**：本脚本假设自备份产物留在宿主机本机 gitignored 目录；跨机/跨机房

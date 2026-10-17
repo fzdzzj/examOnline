@@ -239,6 +239,7 @@ class ScoreReviewServiceTest {
         review.setStatus(ScoreReview.STATUS_PENDING);
         when(reviewMapper.selectById(1L)).thenReturn(review);
         when(examMapper.selectById(10L)).thenReturn(publishedExam());
+        when(reviewMapper.update(any(), any())).thenReturn(1);
         GradingSubmission submission = new GradingSubmission();
         submission.setId(100L);
         when(gradingMapper.selectOne(any())).thenReturn(submission);
@@ -271,6 +272,7 @@ class ScoreReviewServiceTest {
         review.setStatus(ScoreReview.STATUS_PROCESSING);
         when(reviewMapper.selectById(2L)).thenReturn(review);
         when(examMapper.selectById(10L)).thenReturn(publishedExam());
+        when(reviewMapper.update(any(), any())).thenReturn(1);
 
         ReviewHandleRequest request = new ReviewHandleRequest();
         request.setAction("REJECT");
@@ -297,5 +299,30 @@ class ScoreReviewServiceTest {
         BusinessException e = assertThrows(BusinessException.class, () -> service.handle(3L, request));
         assertEquals(ResponseCode.BAD_REQUEST.getCode(), e.getCode());
         assertTrue(e.getMessage().contains("已处理"));
+    }
+
+    @Test
+    void handleRejectedWhenCasUpdateFailsZeroRows() {
+        setUser(5L, 2);
+        ScoreReview review = new ScoreReview();
+        review.setId(4L);
+        review.setExamId(10L);
+        review.setStudentId(1L);
+        review.setStatus(ScoreReview.STATUS_PENDING);
+        when(reviewMapper.selectById(4L)).thenReturn(review);
+        when(examMapper.selectById(10L)).thenReturn(publishedExam());
+        // 模拟并发更新冲突：CAS update 影响 0 行
+        when(reviewMapper.update(any(), any())).thenReturn(0);
+
+        ReviewHandleRequest request = new ReviewHandleRequest();
+        request.setAction("AGREE");
+        request.setReason("并发冲突测试");
+
+        BusinessException e = assertThrows(BusinessException.class, () -> service.handle(4L, request));
+        assertEquals(ResponseCode.BAD_REQUEST.getCode(), e.getCode());
+        assertTrue(e.getMessage().contains("该复核申请已被其他操作处理"));
+        // 确认未调分，且未触发通知
+        verify(gradingMapper, never()).updateById(any(GradingSubmission.class));
+        verify(lifecycleNotificationService, never()).notifyScoreReviewHandled(any(), any(), any(), any());
     }
 }

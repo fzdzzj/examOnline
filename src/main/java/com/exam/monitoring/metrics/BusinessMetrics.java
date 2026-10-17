@@ -88,6 +88,8 @@ public class BusinessMetrics {
     /** 指标名：从库读降级计数（Counter，按读点打 tag endpoint；@DS("slave") 读点数据访问异常
      * 降级回主库重试时递增——harden-slave-read-failover，口径同源既有降级指标族） */
     private static final String DATASOURCE_DEGRADED = "exam.datasource.degraded";
+    /** 指标名：慢 SQL 计数（Counter，harden-cross-cutting-edge-cases） */
+    private static final String DATABASE_SLOW_SQL = "exam.database.slow.sql";
     /** 交卷队列名：与 RabbitMqConfig.SUBMIT_QUEUE 保持一致（避免依赖具体实现类） */
     private static final String SUBMIT_QUEUE = "exam.submit.queue";
     /** 交卷死信队列名：与 RabbitMqConfig.SUBMIT_DLQ 保持一致 */
@@ -132,6 +134,8 @@ public class BusinessMetrics {
     private final Map<String, Counter> datasourceDegradedCounters = new ConcurrentHashMap<>();
     /** 保留策略行数计数：key = table|action */
     private final Map<String, Counter> retentionRowCounters = new ConcurrentHashMap<>();
+    /** 慢 SQL 计数器（无 tag 单 Counter） */
+    private final Counter slowSqlCounter;
 
     public BusinessMetrics(MeterRegistry registry, ObjectProvider<RabbitAdmin> rabbitAdmin,
                            BehaviorEventRegistry behaviorEventRegistry) {
@@ -189,6 +193,17 @@ public class BusinessMetrics {
         this.submitLockDegradedCounter = Counter.builder(SUBMIT_LOCK_DEGRADED)
                 .description("交卷锁因 Redis 故障降级放行（走防重表+CAS 链路）的计数")
                 .register(registry);
+        this.slowSqlCounter = Counter.builder(DATABASE_SLOW_SQL)
+                .description("数据库执行耗时超过阈值的慢 SQL 计数")
+                .register(registry);
+    }
+
+    /**
+     * 慢 SQL 计数（harden-cross-cutting-edge-cases）：
+     * SlowSqlInterceptor 在单条 SQL 执行耗时超过阈值（默认 1000ms）时递增。
+     */
+    public void countSlowSql() {
+        slowSqlCounter.increment();
     }
 
     /** 记录一次交卷请求开始（配合 success/failure 一起 stop）。 */

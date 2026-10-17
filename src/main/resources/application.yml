@@ -34,13 +34,9 @@ spring:
     publisher-returns: true
     template:
       mandatory: true
-    listener:
-      simple:
-        # 消费者手动 ack：批量落库成功才确认，未确认消息断连后自动重投
-        acknowledge-mode: manual
-        prefetch: ${RABBIT_PREFETCH:200}
-        concurrency: ${RABBIT_CONCURRENCY:2}
-        auto-startup: ${RABBIT_LISTENER_AUTOSTARTUP:true}
+    # 注意：Boot 自动配置的 listener.simple.* 在本项目中不生效（交卷消费者由手工声明的
+    # batchContainerFactory 驱动），交卷消费者的 prefetch/concurrency/batch-size
+    # 完全由下方 exam.taking.mq.* 集中调控，已清理无效的 spring.rabbitmq.listener.simple 块。
   mail:
     properties:
       # SMTP 三向超时毫秒（fix-mail-smtp-timeout-and-catch）：JavaMail 连接/读/写默认无限等待，
@@ -122,7 +118,7 @@ exam:
     fixed-delay-ms: 10000
   reservation:
     # 开考提醒投递提前量（分钟）（add-exam-reservation）：距开考 <= 该提前量的未提醒预约收到提醒
-    remind-ahead-minutes: 30
+    remind-ahead-minutes: ${EXAM_RESERVATION_REMIND_AHEAD_MINUTES:30}
   taking:
     # 交卷链路（add-exam-taking）
     submit:
@@ -149,6 +145,28 @@ exam:
       initial-delay-ms: 10000
       batch-size: 500
       max-rounds: 10
+  # MQ 死信队列人工重放管理（DlqReplayService 消费，harden-cross-cutting-edge-cases）
+  mq:
+    dlq:
+      # 单条消息最大重放次数（超过后不再重投）
+      max-replay: ${EXAM_MQ_DLQ_MAX_REPLAY:3}
+      # 单次重放最大处理条数（防大批量拉取造成内存压力）
+      replay-max: ${EXAM_MQ_DLQ_REPLAY_MAX:100}
+      # 接收死信消息超时毫秒
+      receive-timeout-ms: ${EXAM_MQ_DLQ_RECEIVE_TIMEOUT_MS:2000}
+  # 批量导入行数上限（防超大文件导致内存溢出与长事务，harden-cross-cutting-edge-cases）
+  question-import:
+    max-rows: ${EXAM_QUESTION_IMPORT_MAX_ROWS:1000}
+  user-import:
+    max-rows: ${EXAM_USER_IMPORT_MAX_ROWS:1000}
+  # 题干图片上传与下载存储配置（QuestionImageController 消费，harden-cross-cutting-edge-cases）
+  question-image:
+    dir: ${EXAM_QUESTION_IMAGE_DIR:./data/question-images}
+    max-size-mb: ${EXAM_QUESTION_IMAGE_MAX_SIZE_MB:5}
+  # 判分配置（GradingConfig 消费，harden-cross-cutting-edge-cases）
+  grading:
+    # 多选题少选给分比例（默认 1.0 满分，可按需调为 0.5 等折算比例）
+    multiple-partial-ratio: ${EXAM_GRADING_MULTIPLE_PARTIAL_RATIO:1.0}
   anticheat:
     # 行为事件计数器 TTL（小时）：需大于最长考试时长，保证整场考试计数窗口完整（add-anti-cheat）
     counter-ttl-hours: 12

@@ -20,6 +20,8 @@ scrape_configs:
   - job_name: exam-online
     metrics_path: /actuator/prometheus
     static_configs:
-      # host.docker.internal 在 Docker Desktop 开箱即用；
-      # Linux 上需配合 compose 里的 extra_hosts 才可解析到宿主
+      # host.docker.internal 在 Docker Desktop 开箱即用（适用于本地宿主机开发与调试）；
+      # Linux 宿主机上需配合 compose 里的 extra_hosts 才可解析到宿主。
+      # 在 Docker Compose 生产容器拓扑中，若应用作为容器运行（如服务名 exam-online-prod-app），
+      # 需将 target 切换为容器网络服务名与端口（例如 ["exam-online-prod-app:8080"]），避免因网络不可达导致 up==0 假告警常鸣。
       - targets: ["host.docker.internal:8080"]

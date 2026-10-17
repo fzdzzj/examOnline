@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.exam.common.slow_sql.SlowSqlInterceptor;
+import com.exam.monitoring.metrics.BusinessMetrics;
 import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -52,7 +53,8 @@ public class MybatisPlusConfig {
      */
     @Bean
     public SlowSqlInterceptor slowSqlInterceptor(
-            @Value("${exam.monitor.slow-sql-threshold-ms:1000}") long thresholdMs) {
-        return new SlowSqlInterceptor(thresholdMs);
+            @Value("${exam.monitor.slow-sql-threshold-ms:1000}") long thresholdMs,
+            BusinessMetrics businessMetrics) {
+        return new SlowSqlInterceptor(thresholdMs, businessMetrics);
     }
 }
