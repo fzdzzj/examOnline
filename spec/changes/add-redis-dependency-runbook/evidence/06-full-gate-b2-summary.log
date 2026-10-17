@@ -1,0 +1,10 @@
+# 全量门禁判定行裁剪（先例 fix-exam-state-machine-transaction / harden-auth-interceptor-redis-degradation）
+# 原始全量日志留存仓库外 D:\code\examOnline-measure\add-redis-dependency-runbook\06-full-gate-b2.log
+# revision: 47d148e（工作树=实施笔干净态，变异 m1 已按 git checkout HEAD -- 复原）
+[WARNING] Tests run: 651, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+GATE_EXIT=0
+# 651 = D1 收口后基线 651 持平（本卡零新增用例——EXPECTED_ALERTS 集合内容变化不产生用例数变化；
+# gate-baseline.json 651 核对不动，符合 spec/README.md 工作流第 9 条「按实情持平」）；
+# Skipped 1 为既有 OpenApiContractTest 基线跳过
+# AGENTS.md 四自查全绿（CHECK1..4 grep 均无命中）：本卡按工作流第 7 条为 runbook 加指针后复验
