@@ -1,0 +1,61 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+ [31m❯[39m src/components/student/__tests__/ScratchpadCanvas.spec.ts [2m([22m[2m13 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 469[2mms[22m[39m
+     [32m✓[39m 存储键以 examId 隔离：exam_scratchpad_${examId}[32m 2[2mms[22m[39m
+     [32m✓[39m begin/extend 累积笔画与点数，undo 逐笔弹出、空栈撤销返回 false[32m 1[2mms[22m[39m
+     [32m✓[39m 一键清空：笔画计数归零[32m 0[2mms[22m[39m
+     [32m✓[39m restore 校验：合法文档恢复、垃圾数据 / 错误版本 / 非法笔画拒绝且不变更现场[32m 0[2mms[22m[39m
+     [32m✓[39m parse 拒绝坏 JSON 返回 null；save/load 往返一致；remove 删除键[32m 1[2mms[22m[39m
+     [32m✓[39m 挂载即面板：渲染画布与模式/粗细/颜色/撤销/清空工具（显隐由页面 v-if 裁决）[32m 228[2mms[22m[39m
+     [32m✓[39m 画笔参数切换：选 8px 红色后新笔画按该参数渲染并计入笔画[32m 38[2mms[22m[39m
+     [32m✓[39m 橡皮擦模式：笔迹以 destination-out 复合渲染[32m 28[2mms[22m[39m
+     [32m✓[39m 撤销：按笔画回退一步并同步存储，重绘只剩前一笔的参数[32m 37[2mms[22m[39m
+     [32m✓[39m 一键清空：计数归零、画布 clearRect、存储同步清空（变异 m2 锚点）[32m 39[2mms[22m[39m
+[31m     [31m×[31m 存储恢复（变异 m1 锚点）：挂载时把 sessionStorage 里按 examId 存的笔迹回填[39m[32m 42[2mms[22m[39m
+[31m     [31m×[31m examId 隔离：换考试只恢复新考试的草稿，不串场[39m[32m 21[2mms[22m[39m
+     [32m✓[39m 收起按钮向页面 emit close（悬浮面板显隐由页面裁决）[32m 29[2mms[22m[39m
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+ [32m✓[39m src/pages/(dashboard)/student/exams/__tests__/scratchpadLifecycle.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 642[2mms[22m[39m
+     [33m[2m✓[22m[39m 放行进入作答态：出现「草稿板」开关，点击展开面板与画布，收起后回到开关 [33m 443[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板组件交互[2m > [22m存储恢复（变异 m1 锚点）：挂载时把 sessionStorage 里按 examId 存的笔迹回填
+[31m[1mAssertionError[22m: expected '笔迹 0 笔' to contain '2'[39m
+
+Expected: [32m"2"[39m
+Received: [31m"笔迹 0 笔"[39m
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m325:38[22m[39m
+    [90m323|[39m
+    [90m324|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountPanel[39m([34m7[39m)[33m;[39m
+    [90m325|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'2'[39m)[33m;[39m
+    [90m   |[39m                                      [31m^[39m
+    [90m326|[39m     [90m// 恢复后按原参数重绘[39m
+    [90m327|[39m     [34mexpect[39m([34mpropValues[39m([32m'strokeStyle'[39m))[33m.[39m[34mtoContain[39m([32m'#ff4d4f'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板组件交互[2m > [22mexamId 隔离：换考试只恢复新考试的草稿，不串场
+[31m[1mAssertionError[22m: expected '笔迹 0 笔' to contain '1'[39m
+
+Expected: [32m"1"[39m
+Received: [31m"笔迹 0 笔"[39m
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m337:38[22m[39m
+    [90m335|[39m     })[33m;[39m
+    [90m336|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountPanel[39m([34m7[39m)[33m;[39m
+    [90m337|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'1'[39m)[33m;[39m
+    [90m   |[39m                                      [31m^[39m
+    [90m338|[39m
+    [90m339|[39m     [35mawait[39m wrapper[33m.[39m[34msetProps[39m({ examId[33m:[39m [34m99[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m15 passed[39m[22m[90m (17)[39m
+[2m   Start at [22m 02:14:18
+[2m   Duration [22m 8.12s[2m (transform 1.38s, setup 83ms, import 10.41s, tests 1.11s, environment 2.08s)[22m
+

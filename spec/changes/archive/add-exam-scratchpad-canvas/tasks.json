@@ -1,0 +1,39 @@
+{
+  "changeId": "add-exam-scratchpad-canvas",
+  "title": "考试中在线草稿纸 / Canvas 演算画板（纯前端，零 DDL）",
+  "level": "S",
+  "branch": "feature/add-exam-scratchpad-canvas",
+  "createdAt": "2026-10-18",
+  "capabilityDomains": ["exam-taking", "frontend"],
+  "proposal": "spec/changes/add-exam-scratchpad-canvas/proposal.md",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表与待办清单登记",
+      "status": "completed",
+      "description": "编写 proposal.md、specs/exam-taking/spec-delta.md、specs/frontend/spec-delta.md 与 tasks.json；更新 spec/README.md 在途表与 docs/功能待办清单.md 状态为「进行中」。",
+      "evidence": "三件套落位 spec/changes/add-exam-scratchpad-canvas/；spec/README.md 在途表与 docs/功能待办清单.md 登记同步完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：草稿板组件实现、作答主页挂载与本地留存",
+      "status": "completed",
+      "description": "新增 ScratchpadCanvas.vue（Canvas 绘制、画笔粗细与颜色切换、橡皮擦、Undo 历史栈、一键清空、sessionStorage/localStorage 会话级持久化与恢复）；在 [id].page.vue 中挂载快捷展开/收起开关与交卷自毁清理；编写单元测试覆盖交互与存储逻辑。",
+      "evidence": "TDD 先红后绿 @ d938599（分支 feature/add-exam-scratchpad-canvas 实施笔）：先红 evidence/tdd-red-phase.txt（两个新 spec 文件因 @/utils/scratchpad 不存在 2 failed），后绿 17/17（ScratchpadCanvas.spec.ts 13 例 + scratchpadLifecycle.spec.ts 4 例，vitest 实测 'Tests  17 passed (17)'，回绿证据 evidence/mutation-revert-green.txt）。实现三件：frontend/src/utils/scratchpad.ts（笔画账本/撤销栈/文档校验/sessionStorage 端口纯逻辑）、frontend/src/components/student/ScratchpadCanvas.vue（画笔 2/4/8px × 黑红蓝绿、橡皮 destination-out、撤销、清空、examId 隔离恢复）、[id].page.vue 挂载（+55 行：作答态悬浮开关与面板互斥、[submitResultView, closedByBackend, examIdValid] watch 自毁 removeScratchpad）。后端 src/、pom.xml、schema.sql、migrations/、openapi.yaml 零触碰（git diff HEAD --name-only 仅前端文件）。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证、双端门禁实测与基线上调",
+      "status": "completed",
+      "description": "完成变异验证 m1（本地持久化恢复破坏）与 m2（一键清空/撤销逻辑破坏）击红留证；全量运行双端门禁测试；按实测上调 .github/ci/gate-baseline.json frontendTests；留存 evidence 日志。",
+      "evidence": "变异击红 @ d938599：m1（ScratchpadCanvas.vue 恢复逻辑置 null）击红 2 例——锚点 '存储恢复（变异 m1 锚点）' AssertionError expected '笔迹 0 笔' to contain '2'（evidence/mutation-m1-red.txt）；m2（utils/scratchpad.ts clear() 置空）击红 3 例——锚点 '一键清空' AssertionError expected '笔迹 2 笔' to contain '0' + 引擎级 expected 2 to be +0（evidence/mutation-m2-red.txt）；还原后 17/17 回绿（evidence/mutation-revert-green.txt）。后端门禁：./mvnw clean test exit 0 @ d938599，'[WARNING] Tests run: 714, Failures: 0, Errors: 0, Skipped: 1' + BUILD SUCCESS（evidence/gate-backend.txt），assert_backend.sh 实跑 'BACKEND GATE ASSERT OK: Tests run=714 ... (baseline >= 714)'。前端门禁：pnpm test --maxWorkers=4 全绿 122 文件/934 用例（evidence/gate-frontend-test.txt，净增 17）；openapi.yaml 100 paths 零变化；gate-baseline.json frontendTests 917→934 单调上调（backendTests 714 与 openapiPaths 100 持平）。前端 5 文件 eslint 0 错（evidence/gate-frontend-lint-myfiles.txt）。基线缺陷上报（非本变更引入）：main@1606495（add-student-question-favorites 合入笔）CI run 39052834513 Frontend gate lint:check 红（evidence/ci-run-39052834513-frontend-lint-fail.txt，与本地同文件集：QuestionAnswerCard.vue/favorites/examReviewEntry），本机 type-check:check 同批文件红（evidence/baseline-frontend-typecheck.txt）；本变更 git diff HEAD --name-only 仅 [id].page.vue，错误清单零本变更文件，按他案返修卡处置。负载型超时消解记录：默认并行四轮 1/1/1/10 例 5s 超时零断言失败（SubjectiveGradingPanel/classesLoadingRemove 等，隔离复跑 7/7 绿判型，同 add-student-question-favorites 先例），maxWorkers=4 串行降载后全绿。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "completed",
+      "description": "spec-delta 合入 specs/exam-taking/spec.md 与 specs/frontend/spec.md；变更归档至 spec/changes/archive/；更新 spec/README.md（清空在途并登记归档）与 docs/功能待办清单.md（标记已闭环）；--no-ff 合入 main。",
+      "evidence": "①双端门禁实测：后端唯一门禁 ./mvnw clean test 714/0/0/1 全绿（10:07 min），前端 vitest 122 文件/934 例全绿，openapi 100 paths 持平。②复核独立裁决 PASS：实测与红线机检全过，m1/m2 变异击红判别力真实，favorites 存量 lint/typecheck 缺陷归因三重机检闭环证实非本案引入。③spec-delta 合入：specs/exam-taking/spec.md 追加「考试中在线草稿纸」Requirement 与 3 个 Scenario，specs/frontend/spec.md 追加「学生在线考试草稿板组件」Requirement 与 4 个 Scenario（采纳 P3 笔迹快照表述）。④总账与归档：变更提案归档至 spec/changes/archive/add-exam-scratchpad-canvas/；spec/README.md 在途表清空并登记来源与归档速览；docs/功能待办清单.md 行 40 标记已闭环。⑤feature/add-exam-scratchpad-canvas 分支 --no-ff 合入 main。"
+    }
+  ]
+}

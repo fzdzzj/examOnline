@@ -158,6 +158,24 @@
           />
         </template>
       </Spin>
+
+      <!--
+        草稿板（add-exam-scratchpad-canvas）：只在作答态呈现（快照在手、未封闭、非结果视图）。
+        悬浮开关与面板互斥显隐，状态归页面；画布/账本在 ScratchpadCanvas 内部，
+        交卷成功或后端封闭后的本地自毁清理由下方 watch 裁决。
+      -->
+      <template v-if="snapshot && !closedByBackend && !submitResultView">
+        <ScratchpadCanvas v-if="scratchpadOpen" :exam-id="examId" @close="scratchpadOpen = false" />
+        <Button
+          v-else
+          type="default"
+          class="scratchpad-fab"
+          data-test="scratchpad-toggle"
+          @click="scratchpadOpen = true"
+        >
+          📝 草稿板
+        </Button>
+      </template>
     </template>
   </div>
 
@@ -226,6 +244,7 @@ import DraftSyncBadge from '@/components/student/DraftSyncBadge.vue';
 import SubmitExamPanel from '@/components/student/SubmitExamPanel.vue';
 import SubmitResultCard from '@/components/student/SubmitResultCard.vue';
 import OfflineStatusBanner from '@/components/student/OfflineStatusBanner.vue';
+import ScratchpadCanvas from '@/components/student/ScratchpadCanvas.vue';
 import { useServerCountdown } from '@/hooks/useServerCountdown';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useSubmitExam } from '@/hooks/useSubmitExam';
@@ -250,6 +269,7 @@ import {
 } from '@/utils/studentTaking';
 import { mergeDrafts, resolveSeed, serverDraftOf, type DraftRecord } from '@/utils/draftMerge';
 import { createStudentDraftStorage } from '@/utils/draftStorage';
+import { removeScratchpad, type ScratchpadStorage } from '@/utils/scratchpad';
 import {
   createStudentExamSnapshotStorage,
   type StoredExamSnapshotRow,
@@ -716,6 +736,35 @@ const submitResultView = computed<SubmitResponse | null>(() => {
   return null;
 });
 
+/**
+ * 草稿板显隐（add-exam-scratchpad-canvas）：悬浮开关与面板互斥，状态归页面持有。
+ * 面板内部的账本/恢复/清空都在 ScratchpadCanvas，页面只裁决「何时可以出现」。
+ */
+const scratchpadOpen = ref(false);
+
+function getScratchpadStorage(): ScratchpadStorage | null {
+  try {
+    if (typeof sessionStorage === 'undefined') return null;
+    return sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 草稿自毁（add-exam-scratchpad-canvas）：交卷成功（结果视图激活）或答卷被后端封闭时，
+ * 移除本场考试的本地草稿 `exam_scratchpad_${examId}`。removeItem 幂等，重复触发无害。
+ */
+watch(
+  () => [submitResultView.value, closedByBackend.value, examIdValid.value] as const,
+  ([resultView, closed, valid]) => {
+    if (!valid || (!resultView && !closed)) return;
+    removeScratchpad(getScratchpadStorage(), examId.value);
+    scratchpadOpen.value = false;
+  },
+  { immediate: true }
+);
+
 /** 手动交卷：先把未上报的切屏暂存兜底 flush（时长未知场景），再走唯一提交入口。 */
 function onManualSubmit(): void {
   void behavior.flush();
@@ -755,5 +804,11 @@ const errorText = computed<string | null>(() => {
 }
 .mt-2 {
   margin-top: 0.5rem;
+}
+.scratchpad-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 88px;
+  z-index: 1000;
 }
 </style>

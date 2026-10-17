@@ -1,0 +1,48 @@
+
+> examonline-front@0.0.0 lint:check D:\code\examOnline\frontend
+> eslint src e2e *.config.ts
+
+
+D:\code\examOnline\frontend\src\components\student\QuestionAnswerCard.vue
+   13:62  error  Replace `{{·favorited·?·'已收藏'·:·'收藏'·}}` with `␍⏎··········{{·favorited·?·'已收藏'·:·'收藏'·}}␍⏎········`  prettier/prettier
+   16:62  error  Delete `␍⏎`                                                                                           prettier/prettier
+  144:2   error  Delete `␍⏎`                                                                                           prettier/prettier
+
+D:\code\examOnline\frontend\src\components\student\__tests__\QuestionAnswerCard.spec.ts
+  235:1  error  Delete `␍⏎`  prettier/prettier
+
+D:\code\examOnline\frontend\src\pages\(dashboard).page.vue
+  164:1  error  Delete `␍⏎`  prettier/prettier
+
+D:\code\examOnline\frontend\src\pages\(dashboard)\student\favorites\__tests__\favorites.spec.ts
+  22:25  error  'unfavorite' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\code\examOnline\frontend\src\pages\(dashboard)\student\favorites\index.page.vue
+   46:15  error  Replace `·v-if="favoritesList.length·===·0"·class="my-12·text-center"·data-test="favorites-empty"` with `␍⏎············v-if="favoritesList.length·===·0"␍⏎············class="my-12·text-center"␍⏎············data-test="favorites-empty"␍⏎··········`  prettier/prettier
+   74:26  error  Replace `␍⏎····················type="link"␍⏎····················danger␍⏎····················size="small"␍⏎····················data-test="unfavorite-btn"␍⏎··················` with `·type="link"·danger·size="small"·data-test="unfavorite-btn"`       prettier/prettier
+  119:1   error  Delete `␍⏎`                                                                                                                                                                                                                                            prettier/prettier
+  161:9   error  Replace `␍⏎··listFavorites,␍⏎··unfavorite,␍⏎··type·StudentQuestionFavoriteResponse,␍⏎` with `·listFavorites,·unfavorite,·type·StudentQuestionFavoriteResponse·`                                                                                        prettier/prettier
+  178:27  error  Replace `()·=>` with `␍⏎··()·=>␍⏎···`                                                                                                                                                                                                                  prettier/prettier
+  179:3   error  Insert `····`                                                                                                                                                                                                                                          prettier/prettier
+  180:1   error  Insert `····`                                                                                                                                                                                                                                          prettier/prettier
+  181:1   error  Insert `····`                                                                                                                                                                                                                                          prettier/prettier
+  182:3   error  Insert `····`                                                                                                                                                                                                                                          prettier/prettier
+  183:3   error  Insert `····`                                                                                                                                                                                                                                          prettier/prettier
+  184:1   error  Replace `]·as·const` with `····]·as·const␍⏎`                                                                                                                                                                                                           prettier/prettier
+
+D:\code\examOnline\frontend\src\pages\(dashboard)\student\scores\__tests__\examReviewEntry.spec.ts
+   24:58  error  'favorite' is defined but never used                                                                    @typescript-eslint/no-unused-vars
+   26:1   error  Delete `␍⏎`                                                                                             prettier/prettier
+  249:47  error  Replace `␍⏎······{·examId:·105,·title:·'收藏测试考试'·},␍⏎····` with `{·examId:·105,·title:·'收藏测试考试'·}`       prettier/prettier
+  290:49  error  Replace `'[data-test="favorite-toggle-501"]'` with `␍⏎······'[data-test="favorite-toggle-501"]'␍⏎····`  prettier/prettier
+  302:1   error  Delete `␍⏎␍⏎`                                                                                           prettier/prettier
+
+D:\code\examOnline\frontend\src\pages\(dashboard)\student\scores\index.page.vue
+  169:30  error  Replace `·v-if="favoritedIds.has(q.questionId)"·class="text-amber-400·text-base"` with `␍⏎····················v-if="favoritedIds.has(q.questionId)"␍⏎····················class="text-amber-400·text-base"␍⏎·················`  prettier/prettier
+  177:19  error  Delete `␍⏎`                                                                                                                                                                                                                    prettier/prettier
+  543:2   error  Delete `␍⏎`                                                                                                                                                                                                                    prettier/prettier
+
+✖ 25 problems (25 errors, 0 warnings)
+  23 errors and 0 warnings potentially fixable with the `--fix` option.
+
+ ELIFECYCLE  Command failed with exit code 1.

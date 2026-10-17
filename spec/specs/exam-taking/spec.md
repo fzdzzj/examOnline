@@ -1,7 +1,7 @@
 # exam-taking 规范
 
 > 能力域：在线考试与交卷（阶段 5，W4-W6）。
-> 来源：`spec/changes/archive/add-exam-taking` 合入（进入考试、答题导航与采集、交卷幂等、交卷削峰落库、超时交卷、自动保存与断线恢复）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（交卷落库容量与时延）+ `spec/changes/archive/fix-my-exams-list-scope` 合入（学生考试列表取数范围、分组与排序、上限）+ `spec/changes/archive/enforce-exam-enter-class-affiliation` 合入（进入考试的班级归属准入强校验，2026-10-01 归档）。
+> 来源：`spec/changes/archive/add-exam-taking` 合入（进入考试、答题导航与采集、交卷幂等、交卷削峰落库、超时交卷、自动保存与断线恢复）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（交卷落库容量与时延）+ `spec/changes/archive/fix-my-exams-list-scope` 合入（学生考试列表取数范围、分组与排序、上限）+ `spec/changes/archive/enforce-exam-enter-class-affiliation` 合入（进入考试的班级归属准入强校验，2026-10-01 归档）+ `spec/changes/archive/add-exam-scratchpad-canvas` 合入（考试中在线草稿纸，2026-10-18 归档）。
 > 验收遗留：交卷链路 JMeter 5000 并发压测与硬指标验收（P99 < 2s / 0 丢单 / 批量落库 < 30s）尚未完成，见 `tasks.json` task 8。
 
 ## Requirements
@@ -546,3 +546,27 @@ GIVEN 还原为「锁异常即失败」旧形态（Redis 异常直接上抛）
 WHEN 运行交卷容错单测
 
 THEN 以确定性断言失败（先红后绿留证；等价变异如实登记不强杀）
+
+### Requirement: 考试中在线草稿纸
+
+WHEN 学生在进行中的考试作答界面中进行演算,
+系统 SHALL 提供内置在线草稿画板，允许学生自由手写演算，并 SHALL 在当前考试会话期间自动留存草稿笔迹，且 SHALL 在交卷后清理该草稿。
+
+#### Scenario: 作答过程中快捷开启草稿板
+GIVEN 学生处于正常作答界面
+WHEN 学生点击「草稿板」开关
+THEN 系统展开手写草稿画板
+AND 学生可在画布上自由绘制、演算与擦除
+
+#### Scenario: 草稿笔迹会话级本地留存与跨题持久化
+GIVEN 学生已在草稿板上绘制演算内容
+WHEN 学生在答题卡中切换题目、折叠草稿板或刷新浏览器页面
+THEN 系统自动从本地会话存储恢复先前的草稿笔迹
+AND 学生先前演算的内容完整可见
+
+#### Scenario: 交卷后草稿生命周期清理
+GIVEN 学生在草稿板上存在演算记录
+WHEN 答卷成功提交或已由后端封闭
+THEN 系统自动清理本地对应的考试草稿缓存
+AND 释放本地存储空间
+
