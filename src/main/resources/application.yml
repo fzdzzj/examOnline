@@ -52,6 +52,17 @@ spring:
   # 全局默认事务超时（秒），防止长事务占用连接池
   transaction:
     default-timeout: 30
+  task:
+    scheduling:
+      # 定时任务调度线程池（harden-scheduler-pool-config，B.2 中危 M2）：裸 @EnableScheduling 默认
+      # 单线程，四个 @Scheduled（状态机扫表/开考提醒/交卷兜底 sweep/数据保留）共用一个线程串行——
+      # sweep 单轮最多 10×500 批 × 5s MQ confirm 等待，broker 故障时单轮可拖分钟级，把定时发布/
+      # 自然结束的状态机流转与开考提醒整体阻塞（考试到点不开/不结束、提醒迟到，且应用本身无异常）。
+      # 池 ≥2 使慢任务不再阻塞其余任务；fixed-delay 按任务自互斥，同任务不会因池扩而自我重叠；
+      # 多实例 sweep 幂等安全性不受线程池影响。三 yml 一致以 base 单点声明实现（dev/prod 零覆盖
+      # 即结构上不可能漂移），护栏测试 SchedulingPoolConfigGuardTest 钉住下限与覆盖一致性。
+      pool:
+        size: ${SCHEDULING_POOL_SIZE:2}
 
 mybatis-plus:
   configuration:
