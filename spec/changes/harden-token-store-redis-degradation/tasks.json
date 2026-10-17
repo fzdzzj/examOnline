@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-token-store-redis-degradation",
+  "branch": "feature/harden-token-store-redis-degradation",
+  "level": "M",
+  "source": "docs/redis-dependency-runbook.md 矩阵「auth:refresh:/auth:sv: 签发与续期面」残留观察面 · Redis 依赖裁决 1① 卡（2026-10-17 用户派工六案串行第一案）：AuthService 签发续期面对 Redis 异常零容错，故障期新登录 500/续期 500/登出 500/改密 500",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-token-store-redis-degradation → 写 proposal/spec-delta（authentication 域）/tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "分支自 main（48b4331）拉出；立案笔见 git log（docs(spec): 立案 harden-token-store-redis-degradation）；git diff --cached --stat 预检恰 4 文件（三件套 3 文件 + spec/README.md 在途表 +1 行）。spec-delta 为 authentication 域 ADDED Requirement「令牌签发与续期面对 Redis 异常的降级容错」六 Scenario。逐触点降级口径表（九触点 + tag 命名 + 半径论证）落 proposal §二。派工为一次性实施，tasks.json 未走「全 false 待审批」中间态（先例：harden-login-guard-redis-degradation 同形态如实登记）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——AuthService 逐触点 try-catch 降级 + 计数 tag 扩围 + 降级单测",
+      "status": "completed",
+      "description": "AuthService 签发续期面逐触点包 try-catch（try 只包 Redis 调用本身）：登录（版本读失败 sv=0 仍发 access / storeRefresh 失败不返回 refresh）、续期（轮换失败跳过仅发 access 不返回新 refresh / OK 分支版本读同口径 / 失效清理跳过拒绝不变 / REUSED 后清理跳过拒绝不变）、登出（黑名单写与会话删除失败照常成功）、改密/重置/踢人（invalidateAllSessions 失败主流程照常成功）；countAuthDegraded 复用（tag 追加六常量）+ javadoc 扩围；auth:reset: 硬依赖面零改动；AuthServiceTest 降级单测。",
+      "evidence": "实施笔见 git log（fix(auth): ...）；diff --stat 全在 proposal 白名单。先红=编译红（降级断言引用的 BusinessMetrics mock 依赖与 AuthService 构造变化；harden-auth-edge-cases 编译红先例），行为红由阶段 3 变异以同形补证。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证 + 等价变异登记",
+      "status": "completed",
+      "description": "变异验证——还原「Redis 异常即上抛」旧形态（摘除签发侧 try-catch）击红、复原回绿，证据入库（优先 scripts/mutation-check.sh 驱动）；等价变异如实登记不强杀。",
+      "evidence": "evidence/03–05：mutation-check.sh 注入摘除 issueTokens 两触点 try-catch → 降级用例确定性失败 → 复原回绿；等价变异登记见 evidence/README.md。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "completed",
+      "description": "收口 diff 核对——TokenStoreService 原语层本体、拦截器/登录守卫先例本体、MailService/JwtUtil、ExamDraftService（硬依赖面）、auth:reset: 调用路径 + schema.sql + docker/mysql + openapi.yaml + pom + frontend + docker/observability 零改动。",
+      "evidence": "evidence/README.md §05：git diff main --stat 针对范围外清单输出为空（OUT_OF_SCOPE_DIFF_LINES=0）；分支总 diff 文件清单全在 proposal 白名单内。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调、runbook 矩阵同笔改口径与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 在 651 基数上同笔上调 → evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ runbook 矩阵「令牌签发续期」行改降级口径 + §四 学生端指引更新 + §五 审计链追加 → 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + authentication 域行追加 → docs/功能待办清单.md B.2 标注 → --no-ff 合入 main。",
+      "evidence": "全量门禁 evidence/06（Tests run 四计数 + BUILD SUCCESS + GATE_EXIT=0，绑定 revision）；gate-baseline.json backendTests 651→N 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；runbook 矩阵行终态见 docs/redis-dependency-runbook.md（故障行为=逐触点降级口径全量登记，计数指标=exam.auth.degraded 全 tag 新增六值，告警=AuthDegraded 自动覆盖）；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/harden-token-store-redis-degradation/；--no-ff 合并入 main。"
+    }
+  ]
+}
