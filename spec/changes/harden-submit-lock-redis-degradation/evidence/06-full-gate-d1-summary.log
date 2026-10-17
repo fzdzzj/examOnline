@@ -1,0 +1,8 @@
+# 全量门禁判定行裁剪（先例 fix-exam-state-machine-transaction / harden-auth-interceptor-redis-degradation）
+# 原始全量日志留存仓库外 D:\code\examOnline-measure\harden-submit-lock-redis-degradation\06-full-gate-d1.log
+# revision: da287c7（工作树=实施笔干净态，变异 m1 已按 git checkout HEAD -- 复原）
+[WARNING] Tests run: 651, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+GATE_EXIT=0
+# 651 = A1 收口后基线 649 + 本案新增 2（SETNX 降级放行三断言用例 + 锁竞争零降级计数回归）；
+# Skipped 1 为既有 OpenApiContractTest 基线跳过
