@@ -96,6 +96,11 @@ exam:
       # 首次启动自动创建的管理员账号（AdminInitializer）
       username: ${ADMIN_USERNAME:admin}
       password: ${ADMIN_PASSWORD:admin123}
+      # prod 默认口令启动闸的显式豁免（add-prod-profile-enforcements，ProdAdminPasswordGuard 消费）：
+      # prod 检测到管理员仍为公开默认口令时 fail-fast 拒绝启动；本开关仅限存量库临时过渡
+      # （ADMIN_ALLOW_DEFAULT_PASSWORD=true → 登录改密 → 移除豁免重启复核）。
+      # 新库无需此开关：prod 编排强制要求 ADMIN_PASSWORD 环境变量，初始创建即强口令。
+      allow-default-password: ${ADMIN_ALLOW_DEFAULT_PASSWORD:false}
     lock:
       # 连续失败阈值与锁定分钟数（登录锁定）
       max-failures: 5
@@ -107,6 +112,11 @@ exam:
       # 找回密码验证码：有效分钟数与长度
       ttl-minutes: 5
       length: 6
+      # SMTP 未配置时验证码明文落日志的兜底开关（add-prod-profile-enforcements，MailService 消费）：
+      # base 默认 false（安全缺省——日志读权限者可在验证码 TTL 内接管任意账号）；
+      # dev/test 档显式 true 保留本地便利；prod 未覆盖即继承 false——
+      # SMTP 未配置时找回密码改为明确报错不可用，绝不明文落日志。
+      allow-log-fallback: false
   schedule:
     # 考试状态机扫表间隔（定时发布/自然结束推进），毫秒；不依赖外部调度中间件
     fixed-delay-ms: 10000

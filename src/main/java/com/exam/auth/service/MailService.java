@@ -6,6 +6,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.mail.MailProperties;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -17,6 +18,12 @@ import org.springframework.util.StringUtils;
  * 邮件服务（找回密码验证码）：
  * SMTP 未配置（本地开发）时验证码走日志兜底，保证流程可跑通；
  * 发送失败记录日志并抛出业务异常，管理员可兜底重置。
+ *
+ * <p><b>日志兜底受配置门禁（add-prod-profile-enforcements，安全专项发现 4）</b>：
+ * {@code exam.auth.reset-code.allow-log-fallback}——base 默认 false（安全缺省：验证码明文落日志，
+ * 5 分钟 TTL 内有日志读权限者可接管任意账号）；dev/test 档显式 true 保留本地便利；prod 未覆盖
+ * 即继承 false——SMTP 未配置时<b>不再明文落日志，改为功能明确报错不可用</b>（诚实的 500 级
+ * 业务异常，绝不泄漏验证码）。
  */
 @Slf4j
 @Service
@@ -24,11 +31,14 @@ public class MailService {
 
     private final JavaMailSender mailSender;
     private final MailProperties mailProperties;
+    private final boolean allowLogFallback;
 
     public MailService(@Autowired(required = false) JavaMailSender mailSender,
-                       @Autowired(required = false) MailProperties mailProperties) {
+                       @Autowired(required = false) MailProperties mailProperties,
+                       @Value("${exam.auth.reset-code.allow-log-fallback:false}") boolean allowLogFallback) {
         this.mailSender = mailSender;
         this.mailProperties = mailProperties;
+        this.allowLogFallback = allowLogFallback;
     }
 
     /**
@@ -47,6 +57,14 @@ public class MailService {
         boolean smtpReady = mailSender != null && mailProperties != null
                 && StringUtils.hasText(mailProperties.getHost());
         if (!smtpReady) {
+            if (!allowLogFallback) {
+                // prod（及一切未显式开启兜底的档）：验证码绝不明文落日志——功能明确报错不可用。
+                // 注意此处与下方日志兜底分支的 WARN 不同：不含 code（防 5 分钟 TTL 内日志接管账号）
+                log.warn("SMTP 未配置且日志兜底未启用（exam.auth.reset-code.allow-log-fallback=false），"
+                        + "找回密码功能不可用: email={}", email);
+                throw new BusinessException(ResponseCode.INTERNAL_ERROR,
+                        "邮件服务未配置，找回密码功能暂不可用，请联系管理员");
+            }
             log.warn("SMTP 未配置，找回密码验证码走日志兜底: email={}, code={}", email, code);
             return;
         }
