@@ -1,0 +1,14 @@
+
+> examonline-front@0.0.0 type-check:check D:\code\examOnline\frontend
+> npm run type-check:app:check && npm run type-check:config:check
+
+
+> examonline-front@0.0.0 type-check:app:check
+> vue-tsc --project ./tsconfig.app.json --noEmit
+
+src/pages/(dashboard)/student/favorites/__tests__/favorites.spec.ts(22,25): error TS6133: 'unfavorite' is declared but its value is never read.
+src/pages/(dashboard)/student/scores/__tests__/examReviewEntry.spec.ts(24,58): error TS6133: 'favorite' is declared but its value is never read.
+src/pages/(dashboard)/student/scores/__tests__/examReviewEntry.spec.ts(275,53): error TS2345: Argument of type 'number[]' is not assignable to parameter of type '(AxiosError<unknown, any, any> & { data: undefined; error: unknown; }) | AxiosResponse<ApiResponseListLong, any, {}, any> | (AxiosResponse<ApiResponseListLong, any, {}, any> & { ...; })'.
+src/pages/(dashboard)/student/scores/index.page.vue(540,32): error TS2304: Cannot find name 'ApiError'.
+src/pages/(dashboard)/student/scores/index.page.vue(540,43): error TS18046: 'err' is of type 'unknown'.
+ ELIFECYCLE  Command failed with exit code 2.
