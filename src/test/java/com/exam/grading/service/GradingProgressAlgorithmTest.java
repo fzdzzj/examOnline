@@ -74,7 +74,8 @@ class GradingProgressAlgorithmTest {
         MapperBuilderAssistant assistant = new MapperBuilderAssistant(new MybatisConfiguration(), "");
         TableInfoHelper.initTableInfo(assistant, GradingSubmission.class);
         TableInfoHelper.initTableInfo(assistant, SubjectiveGrade.class);
-        gradingQueryService = new GradingQueryService(examMapper, gradingSubmissionMapper, subjectiveGradeMapper);
+        gradingQueryService = new GradingQueryService(examMapper, gradingSubmissionMapper, subjectiveGradeMapper,
+                passThroughExecutor());
         LoginUser teacher = new LoginUser();
         teacher.setId(TEACHER_ID);
         teacher.setRoleLevel(RoleHierarchy.levelOf(RoleHierarchy.TEACHER));
@@ -311,5 +312,15 @@ class GradingProgressAlgorithmTest {
             list.add(row((long) random.nextInt(idPool), score));
         }
         return list;
+    }
+
+    /** SlaveReadFallbackExecutor 透传桩（harden-slave-read-failover 构造适配：单测不触降级路径） */
+    private com.exam.config.SlaveReadFallbackExecutor passThroughExecutor() {
+        com.exam.config.SlaveReadFallbackExecutor executor =
+                org.mockito.Mockito.mock(com.exam.config.SlaveReadFallbackExecutor.class);
+        org.mockito.Mockito.lenient().when(executor.execute(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(inv -> ((java.util.function.Supplier<?>) inv.getArgument(1)).get());
+        return executor;
     }
 }

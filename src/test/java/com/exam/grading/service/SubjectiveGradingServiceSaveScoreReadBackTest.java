@@ -81,7 +81,8 @@ class SubjectiveGradingServiceSaveScoreReadBackTest {
         TableInfoHelper.initTableInfo(assistant, SubjectiveGrade.class);
         // GradingQueryService 用真实装配（requireOwnedExam 走真实 owner 校验），Mapper 全 mock
         GradingQueryService gradingQueryService =
-                new GradingQueryService(examMapper, gradingSubmissionMapper, subjectiveGradeMapper);
+                new GradingQueryService(examMapper, gradingSubmissionMapper, subjectiveGradeMapper,
+                        passThroughExecutor());
         service = new SubjectiveGradingService(gradingQueryService, paperReader,
                 subjectiveGradeMapper, gradingSubmissionMapper, readYourWriteMark);
         LoginUser teacher = new LoginUser();
@@ -232,5 +233,15 @@ class SubjectiveGradingServiceSaveScoreReadBackTest {
         request.setScore(score);
         request.setExpectedVersion(expectedVersion);
         return request;
+    }
+
+    /** SlaveReadFallbackExecutor 透传桩（harden-slave-read-failover 构造适配：单测不触降级路径） */
+    private com.exam.config.SlaveReadFallbackExecutor passThroughExecutor() {
+        com.exam.config.SlaveReadFallbackExecutor executor =
+                org.mockito.Mockito.mock(com.exam.config.SlaveReadFallbackExecutor.class);
+        org.mockito.Mockito.lenient().when(executor.execute(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(inv -> ((java.util.function.Supplier<?>) inv.getArgument(1)).get());
+        return executor;
     }
 }

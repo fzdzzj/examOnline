@@ -7,6 +7,7 @@ import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.common.cache.CacheMutexLoader;
 import com.exam.config.CacheConfig;
+import com.exam.config.SlaveReadFallbackExecutor;
 import com.exam.exam.service.ExamPaperLockService;
 import com.exam.paper.dto.PaperSnapshotResponse;
 import com.exam.paper.entity.Paper;
@@ -59,13 +60,18 @@ public class PaperSnapshotService {
     private final ExamPaperLockService examPaperLockService;
     private final CacheMutexLoader cacheMutexLoader;
     private final ObjectMapper objectMapper;
+    private final SlaveReadFallbackExecutor slaveReadFallback;
+
+    /** 降级计数 tag：试卷快照从库读（SlaveReadFallbackExecutor，代码常量有界） */
+    static final String DEGRADED_ENDPOINT_PAPER_SNAPSHOT = "paper_snapshot";
 
     public PaperSnapshotService(PaperService paperService, PaperMapper paperMapper,
                                 PaperQuestionMapper paperQuestionMapper,
                                 PaperSnapshotMapper paperSnapshotMapper,
                                 QuestionMapper questionMapper, QuestionService questionService,
                                 ExamPaperLockService examPaperLockService,
-                                CacheMutexLoader cacheMutexLoader, ObjectMapper objectMapper) {
+                                CacheMutexLoader cacheMutexLoader, ObjectMapper objectMapper,
+                                SlaveReadFallbackExecutor slaveReadFallback) {
         this.paperService = paperService;
         this.paperMapper = paperMapper;
         this.paperQuestionMapper = paperQuestionMapper;
@@ -75,6 +81,7 @@ public class PaperSnapshotService {
         this.examPaperLockService = examPaperLockService;
         this.cacheMutexLoader = cacheMutexLoader;
         this.objectMapper = objectMapper;
+        this.slaveReadFallback = slaveReadFallback;
     }
 
     /**
@@ -158,22 +165,27 @@ public class PaperSnapshotService {
      * key = paperId + 请求者 ID（{@link #snapshotCacheKey}）：方法体内的归属校验（getOwnedPaper）
      * 在缓存命中时会被切面跳过，key 必须带上请求者，防止命中他人缓存绕过水平越权校验；
      * 未命中经 CacheMutexLoader 互斥回源（防击穿），查无结果写短 TTL 空标记（防穿透）。
+     *
+     * <p>从库故障降级（harden-slave-read-failover，B.2 中危 M3）：读逻辑包入
+     * SlaveReadFallbackExecutor——从库 DataAccessException 时降级回主库重试一次
+     * （ERROR 日志 + exam.datasource.degraded 计数）；业务异常（归属越权/NOT_FOUND）原样传播。
      */
     @DS("slave")
     @Cacheable(cacheNames = CacheConfig.CACHE_PAPER_SNAPSHOT,
             key = "T(com.exam.paper.service.PaperSnapshotService).snapshotCacheKey(#paperId)")
     public PaperSnapshotResponse getCurrent(Long paperId) {
-        return cacheMutexLoader.load(CacheConfig.CACHE_PAPER_SNAPSHOT, snapshotCacheKey(paperId), () -> {
-            Paper paper = paperService.getOwnedPaper(paperId);
-            if (paper.getSnapshotId() == null) {
-                throw new BusinessException(ResponseCode.NOT_FOUND, "试卷尚未生成快照");
-            }
-            PaperSnapshot snapshot = paperSnapshotMapper.selectById(paper.getSnapshotId());
-            if (snapshot == null) {
-                throw new BusinessException(ResponseCode.NOT_FOUND, "试卷快照不存在");
-            }
-            return toResponse(snapshot);
-        });
+        return cacheMutexLoader.load(CacheConfig.CACHE_PAPER_SNAPSHOT, snapshotCacheKey(paperId), () ->
+                slaveReadFallback.execute(DEGRADED_ENDPOINT_PAPER_SNAPSHOT, () -> {
+                    Paper paper = paperService.getOwnedPaper(paperId);
+                    if (paper.getSnapshotId() == null) {
+                        throw new BusinessException(ResponseCode.NOT_FOUND, "试卷尚未生成快照");
+                    }
+                    PaperSnapshot snapshot = paperSnapshotMapper.selectById(paper.getSnapshotId());
+                    if (snapshot == null) {
+                        throw new BusinessException(ResponseCode.NOT_FOUND, "试卷快照不存在");
+                    }
+                    return toResponse(snapshot);
+                }));
     }
 
     /**
