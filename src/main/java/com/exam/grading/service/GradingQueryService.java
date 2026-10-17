@@ -14,11 +14,13 @@ import com.exam.grading.entity.SubjectiveGrade;
 import com.exam.grading.mapper.GradingSubmissionMapper;
 import com.exam.grading.mapper.SubjectiveGradeMapper;
 import com.exam.submission.entity.ExamSubmission;
+import com.exam.config.SlaveReadFallbackExecutor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 
 /**
  * 判分读侧服务：进度总览与批改工作台查询（教师视角，只读不写）。
@@ -26,16 +28,22 @@ import java.util.stream.Collectors;
 @Service
 public class GradingQueryService {
 
+    /** 降级计数 tag：判分进度从库读（SlaveReadFallbackExecutor，代码常量有界） */
+    static final String DEGRADED_ENDPOINT_GRADING_PROGRESS = "grading_progress";
+
     private final ExamMapper examMapper;
     private final GradingSubmissionMapper gradingSubmissionMapper;
     private final SubjectiveGradeMapper subjectiveGradeMapper;
+    private final SlaveReadFallbackExecutor slaveReadFallback;
 
     public GradingQueryService(ExamMapper examMapper,
                                GradingSubmissionMapper gradingSubmissionMapper,
-                               SubjectiveGradeMapper subjectiveGradeMapper) {
+                               SubjectiveGradeMapper subjectiveGradeMapper,
+                               SlaveReadFallbackExecutor slaveReadFallback) {
         this.examMapper = examMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
         this.subjectiveGradeMapper = subjectiveGradeMapper;
+        this.slaveReadFallback = slaveReadFallback;
     }
 
     /**
@@ -45,9 +53,18 @@ public class GradingQueryService {
      * <p>读写分离（add-performance-deepening task3）：进度总览是<b>非强一致读</b>
      * （统计数字滞后一瞬无碍，前端会刷新）——{@code @DS("slave")} 走从库卸读压力。
      * 注意：判分/批改的<b>写</b>不经此服务（教师批改走 SubjectiveGradingService，明文走主库）。
+     *
+     * <p>从库故障降级（harden-slave-read-failover，B.2 中危 M3）：整体读逻辑（含归属校验读）
+     * 包入 SlaveReadFallbackExecutor——从库 DataAccessException 时降级回主库重试一次
+     * （ERROR 日志 + exam.datasource.degraded 计数）；业务异常（NOT_FOUND/越权）原样传播。
+     * 重跑幂等（纯读统计，无副作用）。
      */
     @DS("slave")
     public GradingProgressResponse progress(Long examId) {
+        return slaveReadFallback.execute(DEGRADED_ENDPOINT_GRADING_PROGRESS, () -> doProgress(examId));
+    }
+
+    private GradingProgressResponse doProgress(Long examId) {
         requireOwnedExam(examId);
         GradingProgressResponse response = new GradingProgressResponse();
 

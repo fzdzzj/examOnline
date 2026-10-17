@@ -6,6 +6,7 @@ import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.common.cache.CacheMutexLoader;
 import com.exam.config.CacheConfig;
+import com.exam.config.SlaveReadFallbackExecutor;
 import com.exam.exam.dto.ExamSnapshotResponse;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.entity.ExamSnapshot;
@@ -53,11 +54,16 @@ public class ExamSnapshotService {
     private final PaperSnapshotService paperSnapshotService;
     private final CacheMutexLoader cacheMutexLoader;
     private final ObjectMapper objectMapper;
+    private final SlaveReadFallbackExecutor slaveReadFallback;
+
+    /** 降级计数 tag：拉卷主链路从库读（SlaveReadFallbackExecutor，代码常量有界） */
+    static final String DEGRADED_ENDPOINT_EXAM_SNAPSHOT = "exam_snapshot";
 
     public ExamSnapshotService(ExamSnapshotMapper examSnapshotMapper, PaperMapper paperMapper,
                                PaperQuestionMapper paperQuestionMapper, QuestionMapper questionMapper,
                                PaperSnapshotService paperSnapshotService,
-                               CacheMutexLoader cacheMutexLoader, ObjectMapper objectMapper) {
+                               CacheMutexLoader cacheMutexLoader, ObjectMapper objectMapper,
+                               SlaveReadFallbackExecutor slaveReadFallback) {
         this.examSnapshotMapper = examSnapshotMapper;
         this.paperMapper = paperMapper;
         this.paperQuestionMapper = paperQuestionMapper;
@@ -65,6 +71,7 @@ public class ExamSnapshotService {
         this.paperSnapshotService = paperSnapshotService;
         this.cacheMutexLoader = cacheMutexLoader;
         this.objectMapper = objectMapper;
+        this.slaveReadFallback = slaveReadFallback;
     }
 
     /**
@@ -135,18 +142,24 @@ public class ExamSnapshotService {
      * <p>读写分离（add-performance-deepening task3）：快照<b>只读不可变</b>，属非强一致读
      * （开考拉卷高并发、可容忍秒级延迟）——{@code @DS("slave")} 走从库卸热读压力；
      * 写后窗口内命中由 ReadYourWriteRouter 临时转主库。
+     *
+     * <p>从库故障降级（harden-slave-read-failover，B.2 中危 M3）：读逻辑包入
+     * SlaveReadFallbackExecutor——从库 DataAccessException 时降级回主库重试一次
+     * （ERROR 日志 + exam.datasource.degraded 计数），拉卷主链路不再因从库故障 500；
+     * 业务异常（NOT_FOUND）原样传播不走降级口。
      */
     @DS("slave")
     @Cacheable(cacheNames = CacheConfig.CACHE_EXAM_SNAPSHOT, key = "#examId")
     public ExamSnapshotResponse getCurrent(Long examId) {
-        return cacheMutexLoader.load(CacheConfig.CACHE_EXAM_SNAPSHOT, examId, () -> {
-            ExamSnapshot snapshot = examSnapshotMapper.selectOne(Wrappers.<ExamSnapshot>lambdaQuery()
-                    .eq(ExamSnapshot::getExamId, examId));
-            if (snapshot == null) {
-                throw new BusinessException(ResponseCode.NOT_FOUND, "考试尚未发布或快照不存在");
-            }
-            return toResponse(snapshot);
-        });
+        return cacheMutexLoader.load(CacheConfig.CACHE_EXAM_SNAPSHOT, examId, () ->
+                slaveReadFallback.execute(DEGRADED_ENDPOINT_EXAM_SNAPSHOT, () -> {
+                    ExamSnapshot snapshot = examSnapshotMapper.selectOne(Wrappers.<ExamSnapshot>lambdaQuery()
+                            .eq(ExamSnapshot::getExamId, examId));
+                    if (snapshot == null) {
+                        throw new BusinessException(ResponseCode.NOT_FOUND, "考试尚未发布或快照不存在");
+                    }
+                    return toResponse(snapshot);
+                }));
     }
 
     /** 考试配置序列化：时间窗/时长/迟到容忍/防作弊配置的完整副本。 */

@@ -90,6 +90,18 @@ groups:
           summary: "Spring Cache 降级（Redis 异常静默走 DB）"
           description: "近 5 分钟存在 Spring Cache 因 Redis 故障降级的读取/回填/失效（当前直接回源 DB，正确性不变、缓存加速暂缺；失效延迟生效半径受缓存 TTL 自愈），需人工关注 Redis 状态。"
 
+      - alert: DatasourceDegraded
+        # 口径同源照抄 AuthDegraded（harden-slave-read-failover）：
+        # @DS("slave") 非强一致读点（含拉卷主链路）从库故障期间降级回主库重试必须被人知道——
+        # 持续增长说明从库持续不可用（读压力全部落在主库，需人工介入恢复从库）
+        expr: sum(increase(exam_datasource_degraded_total[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "从库读降级（回主库重试）"
+          description: "近 5 分钟存在 @DS(slave) 读点（拉卷快照/试卷快照/判分进度）因从库故障降级回主库重试（endpoint 标签区分读点；读可用性已由主库兜底，从库恢复后自动回到原路由），需人工关注从库复制状态。"
+
       - alert: Http5xxRatioHigh
         expr: sum(increase(http_server_requests_seconds_count{status=~"5.."}[5m])) / clamp_min(sum(increase(http_server_requests_seconds_count[5m])), 1) > 0.05
         for: 5m

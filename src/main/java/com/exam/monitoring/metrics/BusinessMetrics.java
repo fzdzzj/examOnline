@@ -85,6 +85,9 @@ public class BusinessMetrics {
      * Redis 故障被 CacheErrorHandler/CacheMutexLoader 降级包吞掉静默走 DB 时递增——
      * harden-spring-cache-resilience，口径同源 exam.ratelimit.degraded / exam.auth.degraded） */
     private static final String CACHE_DEGRADED = "exam.cache.degraded";
+    /** 指标名：从库读降级计数（Counter，按读点打 tag endpoint；@DS("slave") 读点数据访问异常
+     * 降级回主库重试时递增——harden-slave-read-failover，口径同源既有降级指标族） */
+    private static final String DATASOURCE_DEGRADED = "exam.datasource.degraded";
     /** 交卷队列名：与 RabbitMqConfig.SUBMIT_QUEUE 保持一致（避免依赖具体实现类） */
     private static final String SUBMIT_QUEUE = "exam.submit.queue";
     /** 交卷死信队列名：与 RabbitMqConfig.SUBMIT_DLQ 保持一致 */
@@ -124,6 +127,9 @@ public class BusinessMetrics {
     /** Spring Cache 降级计数按动作缓存：get / put / evict / clear / lock / unlock 各自一个 Counter
      * （tag=action，代码常量有界——CacheErrorHandler 四动作 + CacheMutexLoader 互斥锁两动作） */
     private final Map<String, Counter> cacheDegradedCounters = new ConcurrentHashMap<>();
+    /** 从库读降级计数按读点缓存：exam_snapshot / paper_snapshot / grading_progress 各自一个 Counter
+     * （tag=endpoint，代码常量有界） */
+    private final Map<String, Counter> datasourceDegradedCounters = new ConcurrentHashMap<>();
     /** 保留策略行数计数：key = table|action */
     private final Map<String, Counter> retentionRowCounters = new ConcurrentHashMap<>();
 
@@ -274,6 +280,24 @@ public class BusinessMetrics {
         cacheDegradedCounters.computeIfAbsent(action, a -> Counter.builder(CACHE_DEGRADED)
                 .tag("action", a)
                 .description("Spring Cache 因 Redis 故障降级（静默走 DB/跳过失效与互斥）的计数，按动作维度")
+                .register(registry))
+                .increment();
+    }
+
+    /**
+     * 从库读降级计数（harden-slave-read-failover，与 {@link #countRateLimitDegraded} /
+     * {@link #countAuthDegraded} / {@link #countSubmitLockDegraded} / {@link #countCacheDegraded}
+     * 同源同哲学——降级重试 + ERROR 日志 + 计数，不新增第二套降级哲学）：
+     * {@code @DS("slave")} 非强一致读点遇 DataAccessException（从库连接故障/超时）、
+     * 降级回主库重试时递增。主库也失败则异常上抛（诚实失败），同样已计入本指标。
+     *
+     * <p>tag 基数有界：endpoint 取值只有各读点内代码常量——exam_snapshot（拉卷主链路）/
+     * paper_snapshot（试卷快照）/ grading_progress（判分进度），无客户端可控输入。
+     */
+    public void countDatasourceDegraded(String endpoint) {
+        datasourceDegradedCounters.computeIfAbsent(endpoint, ep -> Counter.builder(DATASOURCE_DEGRADED)
+                .tag("endpoint", ep)
+                .description("@DS(slave) 读点因从库故障降级回主库重试的计数，按读点维度")
                 .register(registry))
                 .increment();
     }
