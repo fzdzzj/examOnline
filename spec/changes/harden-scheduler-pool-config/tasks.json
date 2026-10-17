@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-scheduler-pool-config",
+  "branch": "feature/harden-scheduler-pool-config",
+  "level": "S",
+  "source": "docs/功能待办清单.md B.2 中危 M2 卡（2026-10-17 用户派工六案串行第三案）：裸 @EnableScheduling 单线程调度器，四个 @Scheduled 串行，sweep 单轮 10×500 交卷×5s confirm 在 broker 故障时拖分钟级阻塞状态机流转与开考提醒",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-scheduler-pool-config → 写 proposal/spec-delta（reliability 域）/tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "分支自 main（20fdcd1）拉出；立案笔见 git log（docs(spec): 立案 harden-scheduler-pool-config）；git diff --cached --stat 预检恰 4 文件（三件套 3 + spec/README.md 在途表 1）。单线程阻塞风险缓解论证与「三 yml 一致以 base 单点声明实现」的落法裁决落 proposal §一/§二。派工为一次性实施，tasks.json 未走「全 false 待审批」中间态（先例如实登记）。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——base yml 池配置声明 + SchedulingConfig javadoc + 护栏测试",
+      "status": "completed",
+      "description": "application.yml 增加 spring.task.scheduling.pool.size: ${SCHEDULING_POOL_SIZE:2}（dev/prod 零覆盖）；SchedulingConfig javadoc 补记；SchedulingPoolConfigGuardTest 两断言（base 声明且缺省 ≥2 / dev-prod 若有覆盖须 ≥2）。",
+      "evidence": "实施笔见 git log（feat(config): ...）；diff --stat 全在 proposal 白名单。先红=编译红（护栏测试引用的 SnakeYAML 装载与断言目标在旧配置形态下失配），行为红由阶段 3 变异以同形补证。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证 + 等价变异登记",
+      "status": "completed",
+      "description": "变异验证——把 base 声明值改为 1 击红、复原回绿（scripts/mutation-check.sh 驱动）；等价变异如实登记不强杀。",
+      "evidence": "evidence/03–04：mutation-check.sh m3-pool-size-1 注入 pool.size 1 → 护栏确定性失败 → 复原回绿五步全 PASS；等价变异登记见 evidence/README.md。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "completed",
+      "description": "收口 diff 核对——四个 @Scheduled 任务本体、application-dev.yml/application-prod.yml + schema.sql + docker/ + openapi.yaml + pom + frontend 零改动。",
+      "evidence": "evidence/README.md §05：git diff main --stat 针对范围外清单输出为空（OUT_OF_SCOPE_DIFF_LINES=0）；分支总 diff 文件清单全在 proposal 白名单内。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 在 665 基数上同笔上调 → evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + reliability 域行追加 → docs/功能待办清单.md B.2 M2 行闭环标注 → --no-ff 合入 main。",
+      "evidence": "全量门禁 evidence/06（四计数 + BUILD SUCCESS + GATE_EXIT=0，绑定 revision）；gate-baseline.json backendTests 665→667 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/harden-scheduler-pool-config/；--no-ff 合并入 main。"
+    }
+  ]
+}
