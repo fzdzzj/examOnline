@@ -1,0 +1,50 @@
+{
+  "changeId": "harden-client-ip-spoofing-and-redis-drill",
+  "branch": "feature/harden-client-ip-spoofing-and-redis-drill",
+  "level": "S",
+  "source": "docs/功能待办清单.md 安全专项中危发现 1 + 亲验②演练卡（2026-10-17 用户拍板一块做）：反代 X-Real-IP 优先采信防伪造 + Redis 停机全口径降级现场演练台账",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-client-ip-spoofing-and-redis-drill → proposal / spec-delta（anti-cheat, reliability 域）/ tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "分支从 main 拉出；立案三件套完成并在在途表中完成登记。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——ClientIpResolver 防伪造加固与单测",
+      "status": "pending",
+      "description": "ClientIpResolver 增加 X-Real-IP 优先读取与合法性校验逻辑；IpMatcherTest 增加多级 XFF 与 X-Real-IP 并存时的防伪造单测覆盖。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：演练笔——Redis 停机全口径实测与证据沉淀",
+      "status": "pending",
+      "description": "本地/容器演练环境执行 Redis 停机与恢复测试，验证登录/详情/交卷降级放行、草稿/找回码硬依赖阻断及自愈过程，撰写 docs/redis-drill-evidence.md 沉淀证据。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：变异击红留证 + 等价变异登记",
+      "status": "pending",
+      "description": "变异验证——将 ClientIpResolver 改回旧形态（忽略 X-Real-IP 直接读 XFF 首项）验证单测击红并回绿；等价变异如实登记不强杀。",
+      "evidence": ""
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：范围外自查",
+      "status": "pending",
+      "description": "收口 diff 核对——未越过白名单目录；schema.sql、migrations、openapi.yaml、pom.xml 零改动。",
+      "evidence": ""
+    },
+    {
+      "id": 6,
+      "title": "阶段 6：门禁实测、基线上调与收口归档",
+      "status": "pending",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 同步上调 → 证据入库回填 tasks.json → 归档目录 → spec/README.md 归档登记与在途移除 → docs/功能待办清单.md 发现 1 与亲验②闭环标注 → --no-ff 合入 main。",
+      "evidence": ""
+    }
+  ]
+}
