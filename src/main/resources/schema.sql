@@ -521,3 +521,18 @@ CREATE TABLE IF NOT EXISTS practice_attempt (
     KEY idx_practice_attempt_stu_q_id (student_id, question_id, id)
 );
 
+-- =============================================================
+-- 学生题目个人收藏夹（add-student-question-favorites）
+-- 存量库另需手工执行 docker/mysql/migrations/2026-W42-add-student-question-favorites.sql
+-- =============================================================
+CREATE TABLE IF NOT EXISTS student_question_favorites (
+    id           BIGINT   NOT NULL AUTO_INCREMENT,
+    student_id   BIGINT   NOT NULL,
+    question_id  BIGINT   NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_fav_student_question UNIQUE (student_id, question_id),
+    KEY idx_fav_student_id (student_id, id)
+);
+
+

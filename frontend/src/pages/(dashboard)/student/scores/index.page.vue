@@ -157,8 +157,25 @@
                   {{ q.myScore }} / {{ q.fullScore }} 分
                 </Tag>
               </div>
-              <Tag v-if="!q.graded" color="default">未批</Tag>
+              <div class="flex items-center gap-3">
+                <button
+                  v-if="q.questionId"
+                  type="button"
+                  class="cursor-pointer text-base transition-transform hover:scale-110 flex items-center gap-1 text-xs"
+                  :title="favoritedIds.has(q.questionId) ? '取消收藏' : '收藏此题'"
+                  :data-test="`favorite-toggle-${q.questionId}`"
+                  @click="toggleFavorite(q.questionId)"
+                >
+                  <StarFilled v-if="favoritedIds.has(q.questionId)" class="text-amber-400 text-base" />
+                  <StarOutlined v-else class="text-gray-400 hover:text-amber-400 text-base" />
+                  <span class="text-xs text-gray-500 hidden sm:inline">
+                    {{ favoritedIds.has(q.questionId) ? '已收藏' : '收藏' }}
+                  </span>
+                </button>
+                <Tag v-if="!q.graded" color="default">未批</Tag>
+              </div>
             </div>
+
 
             <!-- 题干 -->
             <div class="text-gray-800 font-medium whitespace-pre-wrap">{{ q.questionContent }}</div>
@@ -258,11 +275,15 @@ import {
   Textarea,
   message,
 } from 'ant-design-vue';
-import { computed, ref } from 'vue';
+import { StarFilled, StarOutlined } from '@ant-design/icons-vue';
+import { computed, ref, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 
 import {
   apply,
+  checkFavorites,
+  favorite,
+  unfavorite,
   myExamReview,
   myExams,
   myMakeupFinalScore,
@@ -273,6 +294,7 @@ import {
   type MyScoreResponse,
   type ScoreReview,
 } from '@/api/axios';
+
 import { client, unwrap } from '@/api/apiClient';
 import { getReviewStatusConfig } from '@/constants/postExam';
 import {
@@ -466,6 +488,60 @@ function openReviewModal(): void {
   reviewModalOpen.value = true;
   void refetchReview();
 }
+
+// ===== 逐题收藏状态与交互（add-student-question-favorites） =====
+const favoritedIds = ref<Set<number>>(new Set());
+
+watch(
+  () => reviewData.value,
+  async (newVal) => {
+    if (newVal?.questions && newVal.questions.length > 0) {
+      const qIds = newVal.questions
+        .map((q) => q.questionId)
+        .filter((id): id is number => typeof id === 'number');
+      if (qIds.length > 0) {
+        try {
+          const res = await unwrap(
+            checkFavorites({
+              client,
+              query: { questionIds: qIds },
+            })
+          );
+          favoritedIds.value = new Set(res ?? []);
+        } catch (e) {
+          console.warn('Failed to check favorites', e);
+        }
+      }
+    } else {
+      favoritedIds.value = new Set();
+    }
+  },
+  { immediate: true }
+);
+
+async function toggleFavorite(questionId?: number): Promise<void> {
+  if (typeof questionId !== 'number') return;
+  const isFav = favoritedIds.value.has(questionId);
+  try {
+    if (isFav) {
+      await unwrap(unfavorite({ client, path: { questionId } }));
+      const next = new Set(favoritedIds.value);
+      next.delete(questionId);
+      favoritedIds.value = next;
+      message.success('已取消收藏');
+    } else {
+      await unwrap(favorite({ client, path: { questionId } }));
+      const next = new Set(favoritedIds.value);
+      next.add(questionId);
+      favoritedIds.value = next;
+      message.success('已加入收藏');
+    }
+  } catch (err) {
+    const msg = err instanceof ApiError ? err.message : '操作失败';
+    message.error(msg);
+  }
+}
+
 </script>
 
 <style scoped>

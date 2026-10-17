@@ -42,7 +42,12 @@ public enum ResponseCode {
 
     // ---- 考试管理（add-exam-management, W3-W4）----
     /** 状态机乐观锁 CAS 影响 0 行：考试状态已被并发请求迁移，调用方应重读后重试 */
-    STATE_CONFLICT(1012, "考试状态已变化，请刷新后重试", 409);
+    STATE_CONFLICT(1012, "考试状态已变化，请刷新后重试", 409),
+
+    // ---- 题库与收藏（add-student-question-favorites）----
+    /** 题目不存在或已删除 */
+    QUESTION_NOT_FOUND(404, "题目不存在", 404);
+
 
     private final int code;
     private final String message;

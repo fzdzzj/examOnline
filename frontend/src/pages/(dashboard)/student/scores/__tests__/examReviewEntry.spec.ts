@@ -16,9 +16,13 @@ vi.mock('@/api/axios', () => ({
   myScore: vi.fn(),
   myExamReview: vi.fn(),
   leaderboard: vi.fn(),
+  checkFavorites: vi.fn().mockResolvedValue([]),
+  favorite: vi.fn().mockResolvedValue(undefined),
+  unfavorite: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { myExams, myScore, myExamReview } from '@/api/axios';
+import { myExams, myScore, myExamReview, checkFavorites, favorite, unfavorite } from '@/api/axios';
+
 
 vi.mock('@tanstack/vue-query', async () => {
   const { ref, watch } = await import('vue');
@@ -240,4 +244,60 @@ describe('查分页逐题回顾入口与弹层 (student/scores)', () => {
     // 无图题不渲染图片：全弹层只有含图题那一张
     expect(document.body.querySelectorAll('[data-test="question-image"]').length).toBe(1);
   });
+
+  it('答卷回顾收藏交互：批量回显收藏状态并支持一键收藏/取消收藏', async () => {
+    vi.mocked(myExams).mockResolvedValueOnce([
+      { examId: 105, title: '收藏测试考试' },
+    ] as never);
+    vi.mocked(myScore).mockResolvedValueOnce({
+      examId: 105,
+      examTitle: '收藏测试考试',
+      finalScore: 100,
+      reviewing: false,
+    } as never);
+    vi.mocked(myExamReview).mockResolvedValueOnce({
+      examId: 105,
+      examTitle: '收藏测试考试',
+      studentName: '测试生',
+      totalScore: 100,
+      questions: [
+        {
+          questionId: 501,
+          questionNumber: 1,
+          questionType: '单选',
+          questionContent: '经典题1',
+          correctAnswer: 'A',
+          myScore: 5,
+          fullScore: 5,
+        },
+      ],
+    } as never);
+    vi.mocked(checkFavorites).mockResolvedValueOnce([501]);
+
+    const wrapper = mount(StudentScoresPage);
+    (wrapper.vm as unknown as { selectedExamId?: number }).selectedExamId = 105;
+    await flushPromises();
+    await wrapper.find('[data-test="review-exam-btn"]').trigger('click');
+    await flushPromises();
+
+    expect(checkFavorites).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: { questionIds: [501] },
+      })
+    );
+
+    // 初始状态已收藏，点击触发取消收藏
+    const starBtn = document.body.querySelector('[data-test="favorite-toggle-501"]') as HTMLElement | null;
+    expect(starBtn).not.toBeNull();
+    starBtn?.click();
+    await flushPromises();
+
+    expect(unfavorite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: { questionId: 501 },
+      })
+    );
+  });
 });
+
+

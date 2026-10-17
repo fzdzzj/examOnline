@@ -1,6 +1,20 @@
 <template>
   <Card :title="cardTitle" size="small" class="mb-3">
+    <template v-if="allowFavorite" #extra>
+      <button
+        type="button"
+        class="cursor-pointer text-base transition-transform hover:scale-110 flex items-center gap-1 text-xs"
+        :title="favorited ? '取消收藏' : '收藏此题'"
+        data-test="card-favorite-toggle"
+        @click.stop="onToggleFavorite"
+      >
+        <StarFilled v-if="favorited" class="text-amber-400 text-base" />
+        <StarOutlined v-else class="text-gray-400 hover:text-amber-400 text-base" />
+        <span class="text-xs text-gray-500 hidden sm:inline">{{ favorited ? '已收藏' : '收藏' }}</span>
+      </button>
+    </template>
     <p class="question-content" data-test="question-content">
+
       {{ question.content ?? '（题干为空）' }}
     </p>
 
@@ -89,6 +103,7 @@
  * 只靠 disabled 属于"浏览器帮你挡住"，改判成本太低。
  */
 import { Alert, Card, CheckboxGroup, Input, RadioGroup, Textarea } from 'ant-design-vue';
+import { StarFilled, StarOutlined } from '@ant-design/icons-vue';
 import { computed } from 'vue';
 
 import type { QuestionView } from '@/api/axios';
@@ -109,11 +124,25 @@ const props = withDefaults(
     answer?: string;
     /** 倒计时归零锁定：禁止继续作答 */
     locked?: boolean;
+    /** 是否展示收藏按钮（add-student-question-favorites） */
+    allowFavorite?: boolean;
+    /** 是否已收藏 */
+    favorited?: boolean;
   }>(),
-  { answer: '', locked: false }
+  { answer: '', locked: false, allowFavorite: false, favorited: false }
 );
 
-const emit = defineEmits<{ 'update:answer': [value: string] }>();
+const emit = defineEmits<{
+  'update:answer': [value: string];
+  'toggle-favorite': [questionId: number];
+}>();
+
+function onToggleFavorite(): void {
+  if (typeof props.question.questionId === 'number') {
+    emit('toggle-favorite', props.question.questionId);
+  }
+}
+
 
 const JUDGE_OPTIONS = [
   { value: 'T', label: '正确' },

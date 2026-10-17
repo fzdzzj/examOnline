@@ -118,6 +118,7 @@ const menuItems = computed<MenuProps['items']>(() => {
         { key: '/student/exams', label: '我的考试' },
         { key: '/student/scores', label: '我的成绩与复核' },
         { key: '/student/wrong-questions', label: '我的错题本' },
+        { key: '/student/favorites', label: '我的收藏' },
       ],
     });
   }
@@ -154,10 +155,12 @@ const NAVIGABLE_PATHS: readonly string[] = [
   '/student/exams',
   '/student/scores',
   '/student/wrong-questions',
+  '/student/favorites',
   '/admin/users',
   '/admin/invite-codes',
   '/admin/audit-logs',
 ];
+
 
 const onMenuClick: MenuProps['onClick'] = ({ key }) => {
   const path = String(key);
