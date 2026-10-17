@@ -1,0 +1,43 @@
+{
+  "changeId": "harden-login-guard-redis-degradation",
+  "branch": "feature/harden-login-guard-redis-degradation",
+  "level": "S",
+  "source": "docs/功能待办清单.md B.2 横切首扫 H2 残留面 · Redis 依赖裁决 A1 卡（2026-10-17 用户裁决：Redis 故障口径统一为「正确性由 DB 幂等保证，Redis 降级保可用性，草稿为已声明的硬依赖面」）：LoginGuardService 登录路径五 Redis 触点对异常零容错，裸穿 500 即登录全停摆，与限流 fail-open / 拦截器降级放行已落定口径不一致；案串行 A1 → D1（交卷锁）→ B2+C2（runbook）",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "建分支 feature/harden-login-guard-redis-degradation（前案 merge 294de52 后开）→ 写 proposal/spec-delta（authentication 域）/tasks 三件套 → spec/README.md 在途表登记。",
+      "evidence": "立案笔见 git log（docs(spec): 立案 harden-login-guard-redis-degradation）；git diff --cached --stat 预检恰 4 文件（三件套 3 文件 + spec/README.md 在途表 +1 行）。spec-delta 为 authentication 域 ADDED Requirement「登录守卫对 Redis 异常的降级容错」五 Scenario（放行/半径自限/口径同源/变异击红/范围外不越界）。范围口径偏差（clearFailures 与 checkCodeRateLimit 纳入）已在 proposal §二 如实登记。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：实施笔——五触点容错 + 复用降级计数 + 容错单测",
+      "status": "completed",
+      "description": "LoginGuardService 五个 Redis 触点各自包 try-catch（try 只包 Redis 调用本身，正常拒绝/锁定的 throw 在 try 外）——降级放行/跳过该步 + ERROR 日志（对齐拦截器先例格式）+ 降级计数复用 countAuthDegraded（tag 追加六个登录守卫侧代码常量）；BusinessMetrics.countAuthDegraded javadoc/description 同笔勘正；LoginGuardServiceTest 六降级用例（放行+日志+计数三断言）+ checkLocked 回归两用例 + 构造适配（+1 @Mock）。",
+      "evidence": "实施笔见 git log（fix(auth): ...）；diff --stat 恰 3 文件全在白名单。六降级用例：checkRateLimit/checkCodeRateLimit Redis 异常 fail-open 放行、checkLocked 异常放行、recordFailure 计数臂异常跳过计数、recordFailure 锁定写入臂异常放弃锁定、clearFailures 异常跳过清理（计数键 TTL 自愈）——各三断言（不抛/放行 + ERROR 日志含「登录守卫降级」+ countAuthDegraded 对应 tag）；回归：锁定命中仍 ACCOUNT_LOCKED、无锁仍放行。先红=编译红（4 参构造与六 tag 常量在旧形态不存在，harden-auth-edge-cases 编译红先例），行为红由阶段 3 变异以同形补证。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证 + 等价变异登记",
+      "status": "completed",
+      "description": "变异验证——还原无容错旧形态（Redis 调用直接上抛）击红、复原回绿，证据入库；等价变异如实登记不强杀。",
+      "evidence": "evidence/03–05：变异 m1（五触点 try-catch 摘除回旧形态）→ 六降级用例确定性失败 → 复原回绿全量定向绿；等价变异登记见 evidence/README.md。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：范围外自查",
+      "status": "completed",
+      "description": "收口 diff 核对——交卷锁（ExamSubmitService）、RedisCacheManager（CacheConfig）、草稿存储（ExamDraftService）、RedisLockHelper/CacheMutexLoader、拦截器先例本体（AuthenticationInterceptor）、调用链（AuthService）+ schema.sql + docker/mysql + openapi.yaml + pom + frontend 零改动。",
+      "evidence": "evidence/README.md §04：git diff main --stat 针对范围外清单输出为空（OUT_OF_SCOPE_DIFF_LINES=0）；分支总 diff 文件清单全在 proposal 白名单内。"
+    },
+    {
+      "id": 5,
+      "title": "阶段 5：门禁实测、基线上调与收口归档",
+      "status": "completed",
+      "description": "仓库根 mvnw.cmd clean test 全绿记录 surefire 实数 → gate-baseline.json backendTests 在 641 基数上同笔上调 → evidence 入库 + tasks.json 回填（原路径成笔先于 git mv）→ 归档变更目录 → spec/README.md 在途表移除 + 归档速览 + authentication/reliability 域行追加 → docs/功能待办清单.md B.2 ④裁决口径行标注 A1 落定 → --no-ff 合入 main → 三案合并后统一 push。",
+      "evidence": "全量门禁 evidence/06（Tests run / Failures / Errors / Skipped + BUILD SUCCESS + GATE_EXIT=0，绑定 revision）；gate-baseline.json backendTests 641→649 同笔上调（frontendTests 908 / openapiPaths 97 核对不动）；tasks.json 本笔回填于原路径、先于 git mv 成笔；归档 spec/changes/archive/harden-login-guard-redis-degradation/；authentication 基线合入 ADDED Requirement + reliability 基线实施注记一行；spec/README.md 三处登记；docs/功能待办清单.md B.2 标注；--no-ff 合并入 main。"
+    }
+  ]
+}
