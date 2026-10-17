@@ -4,20 +4,26 @@ import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * 客户端真实 IP 提取（spec add-anti-cheat-restrictions「考试 IP 范围准入校验」需求）：
- * 部署形态是"反向代理 / 网关在前"，{@code request.getRemoteAddr()} 拿到的是代理地址，
- * 因此优先取 {@code X-Forwarded-For} 的<b>首项</b>（最靠近客户端的原始来源）：
+ * 部署形态是"反向代理 / 网关在前"，{@code request.getRemoteAddr()} 拿到的是代理地址。
+ *
+ * <p>安全加固（harden-client-ip-spoofing-and-redis-drill）：
+ * 生产 Nginx 配置了不可伪造的覆写头 {@code X-Real-IP $remote_addr;}（直接取自 TCP 握手远端地址）。
+ * 若反向代理为追加型 {@code proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;}，
+ * 客户端可自行注入伪造的 XFF 前缀。因此优先采信不可伪造的 {@code X-Real-IP}：
  *
  * <ul>
- *   <li>首项是合法 IPv4/IPv6 → 采用（多级代理形如 {@code 203.0.113.9, 10.0.0.1}）；</li>
- *   <li>首项非法或头缺失 → 回退 {@code request.getRemoteAddr()}（本地直连/测试环境）；</li>
- *   <li>只认首项、不向后寻找合法项——XFF 是客户端可伪造的头，向后取用等于把伪造权交给请求方，
- *       宁可回退到不可伪造的 remoteAddr。</li>
+ *   <li>{@code X-Real-IP} 存在且是合法 IPv4/IPv6 → 优先采信（阻断客户端伪造 XFF）；</li>
+ *   <li>{@code X-Real-IP} 缺失或非法 → 回退至既有 {@code X-Forwarded-For} 首项提取逻辑；</li>
+ *   <li>{@code X-Forwarded-For} 亦缺失或非法 → 回退至直连 {@code request.getRemoteAddr()}。</li>
  * </ul>
  *
  * <p>本类只做"取哪个字符串"，是否为白名单成员由 {@link IpMatcher} 判定；
  * 空请求/空地址返回 {@code null}，由准入方按"无法确认来源"处置。
  */
 public final class ClientIpResolver {
+
+    /** 受信任反向代理覆写的客户端直连来源（不可伪造）。 */
+    private static final String X_REAL_IP = "X-Real-IP";
 
     /** 反向代理透传的客户端来源链（首项为最靠近客户端的一跳）。 */
     private static final String X_FORWARDED_FOR = "X-Forwarded-For";
@@ -29,6 +35,10 @@ public final class ClientIpResolver {
         if (request == null) {
             return null;
         }
+        String realIp = validRealIp(request.getHeader(X_REAL_IP));
+        if (realIp != null) {
+            return realIp;
+        }
         String forwarded = firstForwardedEntry(request.getHeader(X_FORWARDED_FOR));
         if (forwarded != null) {
             return forwarded;
@@ -39,6 +49,14 @@ public final class ClientIpResolver {
         }
         String trimmed = remote.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static String validRealIp(String header) {
+        if (header == null || header.isBlank()) {
+            return null;
+        }
+        String trimmed = header.trim();
+        return IpMatcher.isValidIp(trimmed) ? trimmed : null;
     }
 
     private static String firstForwardedEntry(String header) {
