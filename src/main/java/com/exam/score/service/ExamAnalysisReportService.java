@@ -19,10 +19,15 @@ import com.exam.question.entity.Tag;
 import com.exam.question.mapper.QuestionTagMapper;
 import com.exam.question.mapper.TagMapper;
 import com.exam.score.dto.ExamAnalysisReportResponse;
+import com.exam.score.support.ExcelSheetWriter;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -398,6 +403,150 @@ public class ExamAnalysisReportService {
                         users.get(g.getStudentId()) == null ? "未知学生" : users.get(g.getStudentId()).getName(),
                         g.getTotalScore()))
                 .toList();
+    }
+
+    // ==================== 多 Sheet Excel 导出（add-exam-analysis-export） ====================
+
+    /**
+     * 分析报告 Excel 导出（4 工作表：班级概览与分数段/逐题指标/知识点薄弱/学生关注名单）。
+     * 数据面完全取自 {@link #buildReport}（口径同源，导出层零统计公式，红线第 4 条）；
+     * 经 {@link ExcelSheetWriter#withStreamingWorkbook} SXSSF 流式写（窗口 100 行防 OOM）；
+     * 数据派生的文本单元格一律过 {@link ExcelSheetWriter#sanitizeFormula}（CWE-1236 公式/DDE 注入）。
+     */
+    public byte[] exportReport(Long examId) {
+        ExamAnalysisReportResponse report = buildReport(examId);
+        return ExcelSheetWriter.withStreamingWorkbook(workbook -> {
+            writeOverviewSheet(workbook, report);
+            writeQuestionSheet(workbook, report.getQuestionStats());
+            writeTagSheet(workbook, report);
+            writeFocusSheet(workbook, report.getFocusList());
+        });
+    }
+
+    /** Sheet 1「班级概览与分数段」：概览指标键值区（行 0-7）+ 空行 + 五段分布表（行 9 起）。 */
+    private static void writeOverviewSheet(SXSSFWorkbook workbook, ExamAnalysisReportResponse report) {
+        SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "班级概览与分数段");
+        ExamAnalysisReportResponse.ClassOverview overview = report.getClassOverview();
+        ExcelSheetWriter.writeHeader(sheet, "指标", "值");
+        List<Object[]> metrics = List.of(
+                new Object[]{"应考人数", overview.getExpectedCount()},
+                new Object[]{"实考人数", overview.getActualCount()},
+                new Object[]{"缺席人数", overview.getAbsenceCount()},
+                new Object[]{"及格线", report.getPassLine()},
+                new Object[]{"优秀线", report.getExcellentLine()},
+                new Object[]{"平均分", overview.getAverageScore() == null
+                        ? "-" : overview.getAverageScore().doubleValue()},
+                new Object[]{"及格率", percentText(overview.getPassRate())});
+        int rowIndex = 1;
+        for (Object[] metric : metrics) {
+            Row row = sheet.createRow(rowIndex++);
+            row.createCell(0).setCellValue((String) metric[0]);
+            setCell(row.createCell(1), metric[1]);
+        }
+        rowIndex++;   // 空行分隔概览与分数段小节（行 8 不创建，即留空）
+        ExcelSheetWriter.writeHeaderAt(sheet, rowIndex++, "分数段", "人数", "占比");
+        int actual = overview.getActualCount();
+        for (ExamAnalysisReportResponse.ScoreBandItem band : overview.getScoreBands()) {
+            Row row = sheet.createRow(rowIndex++);
+            row.createCell(0).setCellValue(ExcelSheetWriter.sanitizeFormula(band.getBand()));
+            row.createCell(1).setCellValue(band.getCount());
+            row.createCell(2).setCellValue(actual == 0
+                    ? "-" : percentText((double) band.getCount() / actual));
+        }
+        ExcelSheetWriter.autoSize(sheet, 3);
+    }
+
+    /** Sheet 2「逐题指标」：口径同 buildReport.questionStats（null 语义照搬：「样本不足」/「-」）。 */
+    private static void writeQuestionSheet(SXSSFWorkbook workbook,
+                                           List<ExamAnalysisReportResponse.QuestionStatItem> items) {
+        SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "逐题指标");
+        ExcelSheetWriter.writeHeader(sheet, "题号", "题型", "满分", "平均分", "得分率", "答对率",
+                "区分度", "作答人数", "选项分布");
+        int rowIndex = 1;
+        for (ExamAnalysisReportResponse.QuestionStatItem item : items) {
+            Row row = sheet.createRow(rowIndex++);
+            row.createCell(0).setCellValue(item.getOrder());
+            row.createCell(1).setCellValue(ExcelSheetWriter.sanitizeFormula(item.getType()));
+            setCell(row.createCell(2), item.getFullScore() == null ? 0 : item.getFullScore());
+            setCell(row.createCell(3), item.getAverageScore() == null ? 0 : item.getAverageScore());
+            setCell(row.createCell(4), item.getScoreRate() == null ? "-" : item.getScoreRate());
+            setCell(row.createCell(5), item.getCorrectRate() == null ? "-" : item.getCorrectRate());
+            setCell(row.createCell(6), item.getDiscrimination() == null ? "样本不足" : item.getDiscrimination());
+            row.createCell(7).setCellValue(item.getAnsweredCount());
+            row.createCell(8).setCellValue(
+                    ExcelSheetWriter.sanitizeFormula(optionDistributionText(item.getOptionDistribution())));
+        }
+        ExcelSheetWriter.autoSize(sheet, 9);
+    }
+
+    /** Sheet 3「知识点薄弱」：无标签维度时单行提示（与页面同款文案，优雅降级非错误）。 */
+    private static void writeTagSheet(SXSSFWorkbook workbook, ExamAnalysisReportResponse report) {
+        SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "知识点薄弱");
+        ExcelSheetWriter.writeHeader(sheet, "知识点名称", "得分率");
+        int rowIndex = 1;
+        if (!report.isHasTagDimension()) {
+            sheet.createRow(rowIndex).createCell(0).setCellValue("题库未打知识点标签");
+            return;
+        }
+        for (ExamAnalysisReportResponse.TagWeaknessItem item : report.getTagWeakness()) {
+            Row row = sheet.createRow(rowIndex++);
+            row.createCell(0).setCellValue(ExcelSheetWriter.sanitizeFormula(item.getTagName()));
+            row.createCell(1).setCellValue(item.getScoreRate() == null ? "-" : percentText(item.getScoreRate()));
+        }
+        ExcelSheetWriter.autoSize(sheet, 2);
+    }
+
+    /** Sheet 4「学生关注名单」：低于及格线学生（总分升序），空名单时单行提示。 */
+    private static void writeFocusSheet(SXSSFWorkbook workbook,
+                                        List<ExamAnalysisReportResponse.FocusStudentItem> items) {
+        SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "学生关注名单");
+        ExcelSheetWriter.writeHeader(sheet, "学号", "姓名", "总分");
+        int rowIndex = 1;
+        if (items.isEmpty()) {
+            sheet.createRow(rowIndex).createCell(0).setCellValue("暂无低于及格线学生");
+            return;
+        }
+        for (ExamAnalysisReportResponse.FocusStudentItem item : items) {
+            Row row = sheet.createRow(rowIndex++);
+            row.createCell(0).setCellValue(ExcelSheetWriter.sanitizeFormula(item.getUsername()));
+            row.createCell(1).setCellValue(ExcelSheetWriter.sanitizeFormula(item.getStudentName()));
+            setCell(row.createCell(2), item.getTotalScore() == null ? 0 : item.getTotalScore());
+        }
+        ExcelSheetWriter.autoSize(sheet, 3);
+    }
+
+    /** POI 的 setCellValue 无 Object 重载（String/Double 混合三元无法推断）：数值走 numeric，其余走文本。 */
+    private static void setCell(Cell cell, Object value) {
+        if (value instanceof Number number) {
+            cell.setCellValue(number.doubleValue());
+        } else {
+            cell.setCellValue(String.valueOf(value));
+        }
+    }
+
+    /** 0~1 比例 → 一位小数百分比文本；null → 「-」（无数据语义，非 0%）。 */
+    private static String percentText(Double rate) {
+        if (rate == null) {
+            return "-";
+        }
+        return BigDecimal.valueOf(rate * 100).setScale(1, RoundingMode.HALF_UP).toPlainString() + "%";
+    }
+
+    /** 选项分布 → 与题目统计导出同格式文本（A:2(67%) B:1(33%)…），空分布 → 空串。 */
+    private static String optionDistributionText(
+            List<ExamAnalysisReportResponse.OptionDistributionItem> items) {
+        if (items == null || items.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (ExamAnalysisReportResponse.OptionDistributionItem item : items) {
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append(item.getOption()).append(':').append(item.getCount()).append('(')
+                    .append(Math.round(item.getRate() * 100)).append("%)");
+        }
+        return sb.toString();
     }
 
     // ==================== 查询辅助 ====================
