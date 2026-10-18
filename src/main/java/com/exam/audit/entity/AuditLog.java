@@ -30,6 +30,7 @@ public class AuditLog {
     public static final String ACTION_JWT_VALIDATION = "JWT_VALIDATION";
     public static final String ACTION_EXAM_PUBLISH = "EXAM_PUBLISH";
     public static final String ACTION_EXAM_DELETE = "EXAM_DELETE";
+    public static final String ACTION_EXAM_EXTEND_TIME = "EXAM_EXTEND_TIME";
     public static final String ACTION_SCORE_PUBLISH = "SCORE_PUBLISH";
     public static final String ACTION_SCORE_REVOKE = "SCORE_REVOKE";
     public static final String ACTION_USER_KICK = "USER_KICK";

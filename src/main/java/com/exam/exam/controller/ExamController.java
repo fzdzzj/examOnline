@@ -8,6 +8,8 @@ import com.exam.exam.dto.ExamCreateRequest;
 import com.exam.exam.dto.ExamDetailResponse;
 import com.exam.exam.dto.ExamResponse;
 import com.exam.exam.dto.ExamSnapshotResponse;
+import com.exam.exam.dto.ExamTimeExtensionRequest;
+import com.exam.exam.dto.ExamTimeExtensionResponse;
 import com.exam.exam.dto.ExamUpdateRequest;
 import com.exam.exam.dto.MakeupCandidateItem;
 import com.exam.exam.dto.MakeupCreateRequest;
@@ -108,6 +110,13 @@ public class ExamController {
     @PostMapping("/{id}/force-end")
     public ApiResponse<ExamDetailResponse> forceEnd(@PathVariable Long id) {
         return ApiResponse.success(examService.forceEnd(id));
+    }
+
+    /** 考中应急顺延与个性化补时：studentIds 为空=全场顺延主表与在途答卷；指定考生=仅补时其在途答卷。仅进行中考试。 */
+    @PostMapping("/{id}/extend-time")
+    public ApiResponse<ExamTimeExtensionResponse> extendTime(@PathVariable Long id,
+                                                             @Valid @RequestBody ExamTimeExtensionRequest request) {
+        return ApiResponse.success(examService.extendTime(id, request));
     }
 
     /** 发布考试：学生可见、生成考试快照（唯一时机），状态仍为未开始等待定时开考 */

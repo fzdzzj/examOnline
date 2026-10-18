@@ -97,6 +97,26 @@ public interface ExamSubmissionMapper extends BaseMapper<ExamSubmission> {
     @Select("SELECT * FROM exam_submissions WHERE status = 2 AND answers_missing = 1 LIMIT #{limit}")
     List<ExamSubmission> selectSubmittedWithoutAnswers(@Param("limit") int limit);
 
+    /**
+     * 考中应急顺延与个性化补时（add-exam-time-extension）：对该考试下进行中（status=1）的答卷，
+     * {@code deadline_time} 整体原子顺延 N 分钟——已交卷（status=2+）行不命中 WHERE，天然不受影响。
+     * {@code studentIds} 传 null/空 = 全场模式（该考试全部在途答卷）；传名单 = 个人模式（仅指定考生）。
+     * 自定义 SQL 不经过 MyBatis-Plus 拦截器，需显式带上 updated_time。
+     *
+     * <p>时间累加用 SQL 标准函数 {@code TIMESTAMPADD}：MySQL 8 与 H2 2.x（测试库）双端原生支持
+     * 且可参数化，严禁换成 H2 不支持的非标语法（两端共用一份 SQL，见 AGENTS.md 双兼容红线）。
+     */
+    @Update("<script>UPDATE exam_submissions SET deadline_time = TIMESTAMPADD(MINUTE, #{minutes}, deadline_time), "
+            + "updated_time = CURRENT_TIMESTAMP "
+            + "WHERE exam_id = #{examId} AND status = 1"
+            + "<if test='studentIds != null and studentIds.size() > 0'>"
+            + " AND student_id IN"
+            + " <foreach collection='studentIds' item='sid' open='(' separator=',' close=')'>#{sid}</foreach>"
+            + "</if></script>")
+    int extendDeadline(@Param("examId") Long examId,
+                       @Param("minutes") int minutes,
+                       @Param("studentIds") List<Long> studentIds);
+
     /** 按 (考试, 学生) 定位答卷——幂等进入/交卷/自动保存的统一查询入口。 */
     default ExamSubmission selectByExamStudent(Long examId, Long studentId) {
         return selectOne(Wrappers.<ExamSubmission>lambdaQuery()

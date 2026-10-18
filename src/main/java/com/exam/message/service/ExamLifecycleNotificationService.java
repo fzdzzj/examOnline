@@ -19,12 +19,13 @@ import java.util.List;
 /**
  * 考务生命周期旁路通知服务（add-exam-lifecycle-notifications）：
  *
- * <p>在考试发布、成绩发布、成绩复核处理三个关键考务节点向相关学生投递站内消息
+ * <p>在考试发布、成绩发布、成绩复核处理、考中加时四个关键考务节点向相关学生投递站内消息
  * （user_messages 表，消息中心挂件消费）：
  * <ul>
  *   <li>{@link #notifyExamPublished}：向考试关联班级（exam.classId）全体学生投递【考试发布通知】；</li>
  *   <li>{@link #notifyScorePublished}：向该场考试实考考生（由调用方从已批改答卷推导）投递【成绩发布通知】；</li>
  *   <li>{@link #notifyScoreReviewHandled}：向复核申诉学生投递【成绩复核结果通知】。</li>
+ *   <li>{@link #notifyExamTimeExtended}：向受影响考生（调用方解析）投递【考试时间调整通知】。</li>
  * </ul>
  *
  * <p><b>旁路降级（硬约定）</b>：三个方法统一 try-catch 捕获任何异常并记录 warn 日志后静默返回，
@@ -130,6 +131,35 @@ public class ExamLifecycleNotificationService {
             // 旁路降级：通知插入失败绝不阻断复核处理主事务
             log.warn("成绩复核结果通知投递失败（旁路降级，不影响处理）：review={} err={}",
                     review.getId(), e.toString());
+        }
+    }
+
+    /**
+     * 考试加时通知（add-exam-time-extension）：向受影响考生投递延时站内通知。
+     * 全场模式由调用方传入考试关联班级学生名单，个人模式传入被补时的指定考生名单——
+     * 收件人解析归调用方（只有它知道哪些考生真正受影响），本方法只负责投递与旁路降级。
+     */
+    public void notifyExamTimeExtended(Exam exam, List<Long> studentIds,
+                                       int extensionMinutes, boolean global) {
+        try {
+            if (studentIds == null || studentIds.isEmpty()) {
+                return;
+            }
+            String action = global ? "全场顺延" : "单独补时";
+            String content = "您参加的考试《" + paperTitle(exam) + "》已" + action + " " + extensionMinutes
+                    + " 分钟，作答截止时间已相应顺延，请合理安排答题进度。考试ID：" + exam.getId();
+            List<UserMessage> messages = new ArrayList<>(studentIds.size());
+            for (Long studentId : studentIds) {
+                messages.add(buildMessage(studentId, exam.getId(),
+                        "考试时间调整通知", content));
+            }
+            insertInBatches(messages);
+            log.info("考试加时通知投递 {} 条：exam={} mode={}", studentIds.size(), exam.getId(),
+                    global ? "GLOBAL" : "INDIVIDUAL");
+        } catch (Exception e) {
+            // 旁路降级：通知插入失败绝不阻断考试加时主事务
+            log.warn("考试加时通知投递失败（旁路降级，不影响加时）：exam={} err={}",
+                    exam.getId(), e.toString());
         }
     }
 

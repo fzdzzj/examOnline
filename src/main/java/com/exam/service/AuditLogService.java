@@ -77,6 +77,21 @@ public class AuditLogService {
                 "发布成绩: examId=" + examId + ", title=" + examTitle + ", count=" + count);
     }
 
+    /**
+     * 考中应急顺延与个性化补时（add-exam-time-extension）：details 记模式（GLOBAL/INDIVIDUAL）、
+     * 顺延时长、受影响在途答卷数、原因，个人模式附受影响学生名单；操作人/IP 由公共入口提取。
+     */
+    public void logExamExtendTime(Long examId, String examTitle, int extensionMinutes,
+                                  boolean global, int affectedCount, List<Long> studentIds, String reason) {
+        recordOperation(AuditLog.ACTION_EXAM_EXTEND_TIME,
+                "顺延考试时间: examId=" + examId + ", title=" + examTitle
+                        + ", mode=" + (global ? "GLOBAL" : "INDIVIDUAL")
+                        + ", minutes=" + extensionMinutes
+                        + ", affectedSubmissions=" + affectedCount
+                        + (global ? "" : ", studentIds=" + studentIds)
+                        + ", reason=" + (reason == null ? "" : reason));
+    }
+
     /** 撤回成绩。reason 由撤回接口强制必填（审计要求）。 */
     public void logScoreRevoke(Long examId, String examTitle, String reason) {
         recordOperation(AuditLog.ACTION_SCORE_REVOKE,
