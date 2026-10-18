@@ -1,0 +1,28 @@
+mutation m3 report — 抽除批量交卷归属校验（add-student-wrong-question-mastery）
+================================================================
+变异对象：StudentPracticeService.submitQuiz 的逐题门控块
+注入形态：整块删除 isWrongQuestionOf 归属校验（if(!isWrongQuestionOf(...)) throw 400）——
+          越权提交放行并可落库。
+注入脚本：D:\code\examOnline-measure\mastery-evidence\inject-m3.py
+入库 revision：56bb18c（实施笔）
+
+五步原子流程：
+1) 注入：python inject-m3.py → "m3 injected"（精准删除 1 块，断言命中）
+2) 击红：./mvnw test -Dtest=StudentPracticeQuizServiceTest
+   → Tests run: 16, Failures: 1, Errors: 5, Skipped: 0（mutation-m3-red.txt）
+   主击红（断言级，判定行）：
+   - quizSubmitForeignQuestionRejectedAndNothingPersisted:349
+     "Expected com.exam.common.BusinessException to be thrown, but nothing was thrown."
+     （越权单不再被 400 拒绝；同测试内 verify(practiceAttemptMapper, never()).insert
+      同样反向成立——变异放行后判分与落库真实发生）
+   连带红（5 例 UnnecessaryStubbing，非噪声）：门控被抽除后 isWrongQuestionOf
+   不再被调用，其余 submit 用例的 wrongQuestionScores 桩位失配而报闲置——
+   属变异改变调用图的真实信号，回滚后即消失。
+3) 回滚：git checkout HEAD -- src/main/java/com/exam/score/service/StudentPracticeService.java
+4) 回绿：同命令 → Tests run: 16, Failures: 0, Errors: 0, Skipped: 0
+   （mutation-m3-revert-green.txt）
+5) 零残留：git status --short → 0 行
+================================================================
+结论：m3 断言级击红并回绿，批量交卷归属校验变异判别力成立。
+集成侧（submitQuizGradesPersistsAndGuards 的越权 400 零写入断言）在双端门禁中
+持续在位，为该门控的第二道真实链路防线。

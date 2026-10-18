@@ -1,7 +1,7 @@
 # score-management 规范
 
 > 能力域：成绩管理（阶段 6，W7）。
-> 来源：`spec/changes/add-grading-score` 合入（成绩汇总、发布/撤回、排名、导出）+ `spec/changes/archive/add-exam-question-discrimination` 合入（试题区分度与难度评价诊断，2026-10-18）。
+> 来源：`spec/changes/add-grading-score` 合入（成绩汇总、发布/撤回、排名、导出）+ `spec/changes/archive/add-exam-question-discrimination` 合入（试题区分度与难度评价诊断，2026-10-18）+ `spec/changes/archive/add-student-wrong-question-mastery` 合入（错题智能掌握消除与自适应练习卷，2026-10-18）。
 
 ## Requirements
 
@@ -861,46 +861,86 @@ AND 双端用例总数只增不减且 gate-baseline 同笔上调
 - **AND**: 系统 SHALL 聚合该班级所有已发布的考试，计算班级历史平均分趋势与班级各知识点平均掌握度
 - **AND**: 系统 SHALL 识别全班掌握度最低的 Top 5 知识点并列入 weakTags
  
-+---
-+
-+### Requirement: 试题区分度与难度评价诊断
-+
-+系统必须在考试数据分析报告及多 Sheet Excel 导出中，全面引入经典教育测量学（Classical Test Theory）标准模型，将试题难度与基于前 27% 高分组 vs 后 27% 低分组的区分度数值，自动派生为定性等级评价与命题质量诊断建议。
-+
-+#### Scenario: 试题区分度多档定性评级
-+- **GIVEN** 考试已汇总成绩且实考学生数充足（实考人数 ≥ 4 且高低分组各 ≥ 1 人）
-+- **WHEN** 教师查询考试分析报告（`GET /api/exams/{examId}/scores/analysis-report`）
-+- **THEN** 逐题指标输出数值区分度 `discrimination`（保留 2 位小数）并自动派生 `discriminationLevel`：
-+  - $D \ge 0.40$：`优良`
-+  - $0.30 \le D < 0.40$：`良好`
-+  - $0.20 \le D < 0.30$：`尚可`
-+  - $0 \le D < 0.20$：`劣质`
-+- **AND** 派生对应的 `qualityEvaluation` 诊断文本（如优良试题推荐入库、区分度偏低建议优化干扰项等）
-+
-+#### Scenario: 负区分度严重反常预警
-+- **GIVEN** 试题出现高分组平均分低于低分组平均分（$D < 0$）
-+- **WHEN** 系统生成逐题分析指标
-+- **THEN** 区分度评级 `discriminationLevel` 标记为 `反常预警`
-+- **AND** `qualityEvaluation` 明确包含警示文案，提示出题人检查题干严重歧义或参考答案错误
-+
-+#### Scenario: 试题难度系数与分级计算
-+- **GIVEN** 试题存在作答人次（`answeredCount > 0`）且满分大于 0
-+- **WHEN** 计算逐题指标
-+- **THEN** 系统计算难度系数 `difficulty` = 平均分 / 满分（保留 2 位小数）
-+- **AND** 派生 `difficultyLevel`：$P \ge 0.70$ 为 `容易`；$0.40 \le P < 0.70$ 为 `中等`；$P < 0.40$ 为 `较难`
-+
-+#### Scenario: 样本不足时优雅回退
-+- **GIVEN** 实考人数少于 4 人或高低分组大小小于 1
-+- **WHEN** 生成分析报告或导出 Excel
-+- **THEN** `discrimination` 返回 null，`discriminationLevel` 明确标识为 `样本不足`
-+- **AND** `qualityEvaluation` 提示样本不足（需至少 4 人实考），系统不产生 NPE 或 500 异常
-+
-+#### Scenario: 多 Sheet Excel 导出完整包含测量学诊断指标
-+- **GIVEN** 归属教师请求导出多 Sheet 分析报告 Excel
-+- **WHEN** 触发 `GET /api/exams/{examId}/scores/analysis-report/export`
-+- **THEN** 「逐题指标」工作表表头新增难度系数、难度等级、区分度等级与命题建议列
-+- **AND** 诊断建议文本严格通过 `ExcelSheetWriter.sanitizeFormula` 处理，防止公式注入
+---
 
+### Requirement: 试题区分度与难度评价诊断
 
+系统必须在考试数据分析报告及多 Sheet Excel 导出中，全面引入经典教育测量学（Classical Test Theory）标准模型，将试题难度与基于前 27% 高分组 vs 后 27% 低分组的区分度数值，自动派生为定性等级评价与命题质量诊断建议。
 
+#### Scenario: 试题区分度多档定性评级
+- **GIVEN** 考试已汇总成绩且实考学生数充足（实考人数 ≥ 4 且高低分组各 ≥ 1 人）
+- **WHEN** 教师查询考试分析报告（`GET /api/exams/{examId}/scores/analysis-report`）
+- **THEN** 逐题指标输出数值区分度 `discrimination`（保留 2 位小数）并自动派生 `discriminationLevel`：
+  - $D \ge 0.40$：`优良`
+  - $0.30 \le D < 0.40$：`良好`
+  - $0.20 \le D < 0.30$：`尚可`
+  - $0 \le D < 0.20$：`劣质`
+- **AND** 派生对应的 `qualityEvaluation` 诊断文本（如优良试题推荐入库、区分度偏低建议优化干扰项等）
 
+#### Scenario: 负区分度严重反常预警
+- **GIVEN** 试题出现高分组平均分低于低分组平均分（$D < 0$）
+- **WHEN** 系统生成逐题分析指标
+- **THEN** 区分度评级 `discriminationLevel` 标记为 `反常预警`
+- **AND** `qualityEvaluation` 明确包含警示文案，提示出题人检查题干严重歧义或参考答案错误
+
+#### Scenario: 试题难度系数与分级计算
+- **GIVEN** 试题存在作答人次（`answeredCount > 0`）且满分大于 0
+- **WHEN** 计算逐题指标
+- **THEN** 系统计算难度系数 `difficulty` = 平均分 / 满分（保留 2 位小数）
+- **AND** 派生 `difficultyLevel`：$P \ge 0.70$ 为 `容易`；$0.40 \le P < 0.70$ 为 `中等`；$P < 0.40$ 为 `较难`
+
+#### Scenario: 样本不足时优雅回退
+- **GIVEN** 实考人数少于 4 人或高低分组大小小于 1
+- **WHEN** 生成分析报告或导出 Excel
+- **THEN** `discrimination` 返回 null，`discriminationLevel` 明确标识为 `样本不足`
+- **AND** `qualityEvaluation` 提示样本不足（需至少 4 人实考），系统不产生 NPE 或 500 异常
+
+#### Scenario: 多 Sheet Excel 导出完整包含测量学诊断指标
+- **GIVEN** 归属教师请求导出多 Sheet 分析报告 Excel
+- **WHEN** 触发 `GET /api/exams/{examId}/scores/analysis-report/export`
+- **THEN** 「逐题指标」工作表表头新增难度系数、难度等级、区分度等级与命题建议列
+- **AND** 诊断建议文本严格通过 `ExcelSheetWriter.sanitizeFormula` 处理，防止公式注入
+
+---
+
+### Requirement: 错题智能掌握消除与自适应练习卷
+
+系统必须在既有错题重练与消灭计划机制之上，建立统一的掌握度生命周期三态分级模型，并提供纯内存自适应错题强化组卷（Mock Quiz）与批量交卷评测能力，判分与明细记录完全同源复用既有架构与表结构。
+
+#### Scenario: 错题掌握度三态生命周期分级
+- **GIVEN** 学生查询错题本列表（`GET /api/scores/my/wrong-questions`）或重练池（`GET /api/scores/my/wrong-questions/practice/pool`）
+- **WHEN** 系统返回题目条目时
+- **THEN** 响应中必须显式包含掌握度三态标识 `masteryStatus` 与 `masteryStatusName`：
+  - 连对 0 次（`consecutiveCorrect == 0`）：`masteryStatus = 0`，`masteryStatusName = "UNTOUCHED"`（待攻克）
+  - 连对 1~2 次（`consecutiveCorrect` 为 1 或 2）：`masteryStatus = 1`，`masteryStatusName = "PRACTICING"`（攻克中）
+  - 连对 3 次及以上（`consecutiveCorrect >= 3`）：`masteryStatus = 2`，`masteryStatusName = "MASTERED"`（已掌握）
+- **AND** 保持既有 `consecutiveCorrect` 与 `mastered` 字段向下兼容不变
+
+#### Scenario: 自适应强化自测试卷生成
+- **GIVEN** 学生拥有未消灭的客观题错题池
+- **WHEN** 学生请求生成强化练习卷（`POST /api/scores/my/wrong-questions/practice/generate-quiz`），传入题量 `limit`（区间 [1, 20]，缺省 5）与策略 `strategy`
+- **THEN** 系统根据指定策略从本人未消灭错题中抽取题目组卷：
+  - `strategy = "RANDOM"` 时：全局随机打乱抽取至多 `limit` 道题
+  - `strategy = "PRACTICING_FIRST"` 时：优先抽取处于攻克中（`PRACTICING`，`consecutiveCorrect > 0`）的题目以促成消灭，不足时再抽取待攻克（`UNTOUCHED`）题目
+- **AND** 若错题池有效题目数少于 `limit`，则返回实际全部未消灭错题；若错题池为空，则返回总题数为 0 的空试卷
+- **AND** 返回结果中包含无状态 UUID `quizId` 与题目列表，作答前严格不泄露正确答案与题目解析
+
+#### Scenario: 强化自测试卷批量交卷与判分
+- **GIVEN** 学生完成自测试卷的一组作答
+- **WHEN** 学生提交自测答卷（`POST /api/scores/my/wrong-questions/practice/submit-quiz`），传入 `quizId` 与各题作答列表（`questionId` + `answer`）
+- **THEN** 系统逐题验证归属于本人错题池，并 100% 复用既有客观判分策略（`GradingStrategyRegistry`）判定正误
+- **AND** 逐题向既有 `practice_attempt` 表持久化一条练习记录（零 DDL）
+- **AND** 重新计算每道题目的最新连对次数与最新三态掌握度状态
+- **AND** 汇总返回本次自测的总题数、答对数、正确率（`scoreRate`）、本次测试中新达成已掌握状态的题目数（`newlyMasteredCount`）及逐题作答结果、标准答案与解析
+
+#### Scenario: 批量提交归属越权与非法参数防御
+- **GIVEN** 学生提交的自测题目列表中包含不属于该学生本人已发布考试的错题、或者包含已逻辑删除/不存在的题目
+- **WHEN** 调用 `POST /api/scores/my/wrong-questions/practice/submit-quiz`
+- **THEN** 系统 SHALL 抛出 `BAD_REQUEST` 异常并阻断提交，严禁非本人错题记录练习日志或修改状态
+- **AND** 提交的答案列表为空或参数缺失时 SHALL 明确返回参数校验失败
+
+#### Scenario: 练习重置与消灭回退保持单调性与幂等
+- **GIVEN** 某道题目在自测前处于攻克中（`consecutiveCorrect = 2, status = PRACTICING`）
+- **WHEN** 在批量自测中该题作答错误
+- **THEN** 判分结果中该题答对标识为 false，连对次数清零（`consecutiveCorrect = 0`），掌握度退回 `UNTOUCHED`
+- **AND** 若作答正确，连对次数递增为 3，掌握度晋级为 `MASTERED`，`newlyMasteredCount` 计数相应递增

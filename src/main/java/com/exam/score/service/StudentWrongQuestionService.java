@@ -198,6 +198,9 @@ public class StudentWrongQuestionService {
                     // 连对进度与消灭标记
                     item.setConsecutiveCorrect(progress.consecutiveCorrect());
                     item.setMastered(progress.mastered());
+                    // 掌握度三态（与重练池/单题反馈同源推导）
+                    item.setMasteryStatus(StudentPracticeService.masteryStatusOf(progress.consecutiveCorrect()));
+                    item.setMasteryStatusName(StudentPracticeService.masteryStatusNameOf(progress.consecutiveCorrect()));
 
                     wrongItems.add(item);
                 }

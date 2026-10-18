@@ -17,6 +17,10 @@ import com.exam.score.dto.ExamReviewResponse;
 import com.exam.score.dto.MakeupFinalScoreResponse;
 import com.exam.score.dto.MyScoreResponse;
 import com.exam.score.dto.PracticePoolItem;
+import com.exam.score.dto.PracticeQuizGenerateRequest;
+import com.exam.score.dto.PracticeQuizResponse;
+import com.exam.score.dto.PracticeQuizSubmitRequest;
+import com.exam.score.dto.PracticeQuizSubmitResponse;
 import com.exam.score.dto.PracticeSubmitRequest;
 import com.exam.score.dto.PracticeSubmitResponse;
 import com.exam.score.dto.ScoreActionItem;
@@ -191,6 +195,36 @@ public class ScoreController {
             throw new BusinessException(ResponseCode.TOKEN_INVALID);
         }
         return ApiResponse.success(studentPracticeService.submitPractice(studentId, request));
+    }
+
+    /**
+     * 学生生成错题强化自测卷（add-student-wrong-question-mastery）：
+     * 按题量与策略从本人未消灭客观错题池抽题组卷（无状态 UUID quizId，不落库），
+     * 作答前严格不泄露正确答案与解析。
+     */
+    @PostMapping("/api/scores/my/wrong-questions/practice/generate-quiz")
+    public ApiResponse<PracticeQuizResponse> generatePracticeQuiz(
+            @Valid @RequestBody PracticeQuizGenerateRequest request) {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        return ApiResponse.success(studentPracticeService.generateQuiz(studentId, request));
+    }
+
+    /**
+     * 学生批量交卷强化自测（add-student-wrong-question-mastery）：
+     * 逐题归属门控 + 同源复用客观判分策略 + 逐题落 practice_attempt（零 DDL），
+     * 返回总题数、答对数、正确率、新消灭数与逐题结果。
+     */
+    @PostMapping("/api/scores/my/wrong-questions/practice/submit-quiz")
+    public ApiResponse<PracticeQuizSubmitResponse> submitPracticeQuiz(
+            @Valid @RequestBody PracticeQuizSubmitRequest request) {
+        Long studentId = SecurityUtil.getUserId();
+        if (studentId == null) {
+            throw new BusinessException(ResponseCode.TOKEN_INVALID);
+        }
+        return ApiResponse.success(studentPracticeService.submitQuiz(studentId, request));
     }
 
     /**

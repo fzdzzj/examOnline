@@ -1,0 +1,27 @@
+mutation m1 report — 抽除组卷策略选题（add-student-wrong-question-mastery）
+================================================================
+变异对象：StudentPracticeService.selectQuizItems
+注入形态：整体方法体替换为按池自然顺序截断（new ArrayList<>(pool.subList(0, Math.min(limit, pool.size())))），
+          策略参数 practicingFirst 被弃用——RANDOM 与 PRACTICING_FIRST 退化为同一朴素截断。
+注入脚本：D:\code\examOnline-measure\mastery-evidence\inject-m1.py
+入库 revision：56bb18c（实施笔）
+
+五步原子流程：
+1) 注入：python inject-m1.py → "m1 injected"（精准替换 1 处，断言命中）
+2) 击红：./mvnw test -Dtest=StudentPracticeQuizServiceTest
+   → Tests run: 16, Failures: 2, Errors: 0, Skipped: 0
+   判定行（断言级红，见 mutation-m1-red.txt）：
+   - quizPracticingFirstPicksPracticingSubsetWhenPoolExceedsLimit
+     "攻克中优先策略下，池超限时必须恰好选中全部攻克中题目（205/206/207）"
+     ==> expected set 不符（朴素截断返回池头 3 道 UNTOUCHED）
+   - quizPracticingFirstFillsWithUntouchedWhenBelowLimit
+     "唯一攻克中题目（207，连对 2）必须入选"（截断取池头未含 207）
+   两个 PRACTICING_FIRST 断言确定性击红（池造数自然顺序 UNTOUCHED 在前，
+   变异截断结果与期望集恒不一致，非随机碰运）；RANDOM 用例断言为结构性
+   （subset/size/UUID/无泄露），变异下仍满足，故仅 2 例红——符合预期击红面。
+3) 回滚：git checkout HEAD -- src/main/java/com/exam/score/service/StudentPracticeService.java
+4) 回绿：./mvnw test -Dtest=StudentPracticeQuizServiceTest
+   → Tests run: 16, Failures: 0, Errors: 0, Skipped: 0（mutation-m1-revert-green.txt）
+5) 零残留：git status --short → 0 行；git diff --stat → 0 行
+================================================================
+结论：m1 断言级击红并回绿，变异判别力成立。

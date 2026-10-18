@@ -236,6 +236,71 @@ export type PracticeSubmitResponse = {
     analysis?: string;
     consecutiveCorrect?: number;
     mastered?: boolean;
+    masteryStatus?: number;
+    masteryStatusName?: string;
+};
+
+export type PracticeQuizAnswer = {
+    questionId: number;
+    answer?: string;
+};
+
+export type PracticeQuizSubmitRequest = {
+    quizId: string;
+    answers: Array<PracticeQuizAnswer>;
+};
+
+export type ApiResponsePracticeQuizSubmitResponse = {
+    code?: number;
+    message?: string;
+    data?: PracticeQuizSubmitResponse;
+};
+
+export type PracticeQuizResultItem = {
+    questionId?: number;
+    correct?: boolean;
+    correctAnswer?: string;
+    analysis?: string;
+    consecutiveCorrect?: number;
+    mastered?: boolean;
+    masteryStatus?: number;
+    masteryStatusName?: string;
+};
+
+export type PracticeQuizSubmitResponse = {
+    total?: number;
+    correctCount?: number;
+    scoreRate?: number;
+    newlyMasteredCount?: number;
+    results?: Array<PracticeQuizResultItem>;
+};
+
+export type PracticeQuizGenerateRequest = {
+    limit?: number;
+    strategy?: string;
+};
+
+export type ApiResponsePracticeQuizResponse = {
+    code?: number;
+    message?: string;
+    data?: PracticeQuizResponse;
+};
+
+export type PracticePoolItem = {
+    questionId?: number;
+    questionType?: string;
+    questionContent?: string;
+    imageUrl?: string;
+    choices?: Array<string>;
+    consecutiveCorrect?: number;
+    masteryStatus?: number;
+    masteryStatusName?: string;
+};
+
+export type PracticeQuizResponse = {
+    quizId?: string;
+    total?: number;
+    items?: Array<PracticePoolItem>;
 };
 
 export type ReviewHandleRequest = {
@@ -484,6 +549,12 @@ export type ExamTimeExtensionRequest = {
     reason?: string;
 };
 
+export type ApiResponseExamTimeExtensionResponse = {
+    code?: number;
+    message?: string;
+    data?: ExamTimeExtensionResponse;
+};
+
 export type ExamTimeExtensionResponse = {
     examId?: number;
     extensionMinutes?: number;
@@ -491,12 +562,6 @@ export type ExamTimeExtensionResponse = {
     affectedSubmissionsCount?: number;
     newEndTime?: string;
     newDurationMinutes?: number;
-};
-
-export type ApiResponseExamTimeExtensionResponse = {
-    code?: number;
-    message?: string;
-    data?: ExamTimeExtensionResponse;
 };
 
 export type ApiResponseSummarizeStats = {
@@ -857,6 +922,8 @@ export type WrongQuestionItem = {
     scoreDetail?: string;
     consecutiveCorrect?: number;
     mastered?: boolean;
+    masteryStatus?: number;
+    masteryStatusName?: string;
 };
 
 export type WrongQuestionPageResponse = {
@@ -870,15 +937,6 @@ export type ApiResponseListPracticePoolItem = {
     code?: number;
     message?: string;
     data?: Array<PracticePoolItem>;
-};
-
-export type PracticePoolItem = {
-    questionId?: number;
-    questionType?: string;
-    questionContent?: string;
-    imageUrl?: string;
-    choices?: Array<string>;
-    consecutiveCorrect?: number;
 };
 
 export type ApiResponseListRecommendedPracticeItem = {
@@ -1216,21 +1274,9 @@ export type QuestionStatItem = {
     correctRate?: number;
     discrimination?: number;
     answeredCount?: number;
-    /**
-     * 难度系数 P=平均分/满分（2 位小数；无人作答或满分非正为 null）
-     */
     difficulty?: number;
-    /**
-     * 难度等级——容易（P≥0.70）/中等（0.40≤P<0.70）/较难（P<0.40）；难度缺省为 null
-     */
     difficultyLevel?: string;
-    /**
-     * 区分度五档评级——优良（D≥0.40）/良好（0.30≤D<0.40）/尚可（0.20≤D<0.30）/劣质（0≤D<0.20）/反常预警（D<0）/样本不足（D 为 null）
-     */
     discriminationLevel?: string;
-    /**
-     * 命题质量诊断建议（结合区分度评级与难度等级生成，样本不足与负区分度反常有专属警示）
-     */
     qualityEvaluation?: string;
     optionDistribution?: Array<OptionDistributionItem>;
 };
@@ -1896,6 +1942,38 @@ export type SubmitPracticeResponses = {
 };
 
 export type SubmitPracticeResponse = SubmitPracticeResponses[keyof SubmitPracticeResponses];
+
+export type SubmitPracticeQuizData = {
+    body: PracticeQuizSubmitRequest;
+    path?: never;
+    query?: never;
+    url: '/api/scores/my/wrong-questions/practice/submit-quiz';
+};
+
+export type SubmitPracticeQuizResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponsePracticeQuizSubmitResponse;
+};
+
+export type SubmitPracticeQuizResponse = SubmitPracticeQuizResponses[keyof SubmitPracticeQuizResponses];
+
+export type GeneratePracticeQuizData = {
+    body: PracticeQuizGenerateRequest;
+    path?: never;
+    query?: never;
+    url: '/api/scores/my/wrong-questions/practice/generate-quiz';
+};
+
+export type GeneratePracticeQuizResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponsePracticeQuizResponse;
+};
+
+export type GeneratePracticeQuizResponse = GeneratePracticeQuizResponses[keyof GeneratePracticeQuizResponses];
 
 export type HandleData = {
     body: ReviewHandleRequest;

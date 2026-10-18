@@ -28,4 +28,10 @@ public class PracticePoolItem {
 
     /** 当前连对次数（x/3） */
     private Integer consecutiveCorrect;
+
+    /** 掌握度三态：0 UNTOUCHED（连对 0）/ 1 PRACTICING（连对 1~2）/ 2 MASTERED（连对 >= 3；池内不出现） */
+    private Integer masteryStatus;
+
+    /** 掌握度三态名称（UNTOUCHED / PRACTICING / MASTERED） */
+    private String masteryStatusName;
 }

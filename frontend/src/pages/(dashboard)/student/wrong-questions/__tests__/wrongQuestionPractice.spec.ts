@@ -116,8 +116,8 @@ describe('错题重练界面 (spec-delta frontend)', () => {
     const startBtn = wrapper.find('[data-test="start-practice-btn"]');
     expect(startBtn.text()).toContain('重练');
 
-    // 检查列表中题目显示连对进度 x/3
-    const progressTag = wrapper.find('[data-test="consecutive-tag"]');
+    // 检查列表中题目显示连对进度 x/3（三态 Tag：攻克中蓝标 1/3）
+    const progressTag = wrapper.find('[data-test="mastery-tag"]');
     expect(progressTag.text()).toContain('1/3');
   });
 
@@ -235,8 +235,8 @@ describe('错题重练界面 (spec-delta frontend)', () => {
       })
     );
 
-    // 断言列表中出现消灭标识
-    const masteredTag = wrapper.find('[data-test="mastered-tag"]');
+    // 断言列表中出现消灭标识（三态 Tag：已消灭绿标）
+    const masteredTag = wrapper.find('[data-test="mastery-tag"]');
     expect(masteredTag.text()).toContain('已消灭');
   });
 });
