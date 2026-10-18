@@ -1,0 +1,1620 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.exam:exam-online >------------------------
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (jacoco-prepare-agent) @ exam-online ---
+[INFO] argLine set to -javaagent:D:\\code\\examOnline\\.m2-repo\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\code\\examOnline\\target\\jacoco.exec,excludes=com/exam/ExamOnlineApplication.class:com/exam/**/dto/**:com/exam/**/entity/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ exam-online ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ exam-online ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ exam-online ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.exam.audit.ExamOperationAuditIntegrationTest
+13:02:10.480 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.exam.audit.ExamOperationAuditIntegrationTest]: ExamOperationAuditIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+13:02:10.756 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.exam.ExamOnlineApplication for test class com.exam.audit.ExamOperationAuditIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-10-18 13:02:11.590 [main] [] [] INFO  c.e.a.ExamOperationAuditIntegrationTest - Starting ExamOperationAuditIntegrationTest using Java 21.0.9 with PID 19288 (started by fzdzzj in D:\code\examOnline)
+2026-10-18 13:02:11.592 [main] [] [] INFO  c.e.a.ExamOperationAuditIntegrationTest - The following 1 profile is active: "test"
+2026-10-18 13:02:14.316 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-18 13:02:14.319 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-18 13:02:14.474 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 123 ms. Found 0 Redis repository interfaces.
+2026-10-18 13:02:15.658 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig' of type [io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-18 13:02:15.668 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'mapConverter' of type [io.opentelemetry.instrumentation.spring.autoconfigure.internal.MapConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-18 13:02:16.558 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: COPY_PASTE -> CopyPasteEventCollector
+2026-10-18 13:02:16.561 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: DRAFT_CONFLICT -> DraftConflictEventCollector
+2026-10-18 13:02:16.562 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: FULLSCREEN_EXIT -> FullScreenExitEventCollector
+2026-10-18 13:02:16.562 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: PAGE_REFRESH -> PageRefreshEventCollector
+2026-10-18 13:02:16.562 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SUBMIT_ANOMALY -> SubmitAnomalyEventCollector
+2026-10-18 13:02:16.562 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SWITCH_SCREEN -> SwitchScreenEventCollector
+2026-10-18 13:02:16.562 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: WINDOW_BLUR -> WindowBlurEventCollector
+2026-10-18 13:02:16.647 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2026-10-18 13:02:17.130 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection conn0: url=jdbc:h2:mem:exam user=SA
+2026-10-18 13:02:17.134 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2026-10-18 13:02:17.139 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Starting...
+2026-10-18 13:02:17.141 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - slave - Added connection conn1: url=jdbc:h2:mem:exam user=SA
+2026-10-18 13:02:17.142 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Start completed.
+2026-10-18 13:02:17.142 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [slave] success
+2026-10-18 13:02:17.142 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2026-10-18 13:02:17.142 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [2] datasource,primary datasource named [master]
+2026-10-18 13:02:19.782 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: FILL_BLANK -> FillBlankGradingStrategy
+2026-10-18 13:02:19.783 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: JUDGE -> JudgeGradingStrategy
+2026-10-18 13:02:19.783 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: MULTIPLE -> MultipleChoiceGradingStrategy
+2026-10-18 13:02:19.783 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SHORT_ANSWER -> ShortAnswerGradingStrategy
+2026-10-18 13:02:19.783 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SINGLE -> SingleChoiceGradingStrategy
+2026-10-18 13:02:22.680 [main] [] [] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-18 13:02:22.680 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-10-18 13:02:22.694 [main] [] [] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 3 endpoints beneath base path '/actuator'
+2026-10-18 13:02:22.738 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Completed initialization in 57 ms
+2026-10-18 13:02:22.885 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 13:02:22.908 [main] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused: getsockopt
+2026-10-18 13:02:22.924 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 13:02:22.927 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:632)
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726)
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2262)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2235)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2215)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1972)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1936)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1481)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1322)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.net.ConnectException: Connection refused: getsockopt
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:690)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:678)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:647)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:593)
+	... 12 common frames omitted
+2026-10-18 13:02:22.935 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 13:02:22.981 [main] [] [] INFO  c.e.a.ExamOperationAuditIntegrationTest - Started ExamOperationAuditIntegrationTest in 11.976 seconds (process running for 13.804)
+2026-10-18 13:02:23.367 [main] [] [] INFO  c.exam.config.RolePermissionInitializer - RBAC 角色/权限预置完成
+2026-10-18 13:02:23.443 [main] [] [] INFO  com.exam.config.AdminInitializer - 首次启动：已创建默认管理员 username=admin（请尽快通过环境变量 ADMIN_PASSWORD 修改）
+2026-10-18 13:02:23.444 [main] [] [] INFO  com.exam.config.ApplicationConfig - JWT_SECRET validated successfully (length: 58)
+2026-10-18 13:02:23.444 [main] [] [] INFO  com.exam.config.ApplicationConfig - Application configuration validated successfully
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\code\examOnline\.m2-repo\net\bytebuddy\byte-buddy-agent\1.17.7\byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-10-18 13:02:27.896 [main] [acfbba9ea24c410fa5934b361c9b9167] [592c5ef98f6b9c4244213961a5d69b91] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 13:02:27.949 [main] [acfbba9ea24c410fa5934b361c9b9167] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (527ms)
+2026-10-18 13:02:28.051 [main] [2269f7086b57461cbea272c5002f34ad] [1c3180a9229a5462b660364d0b3a194a] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 JWGNFMAG
+2026-10-18 13:02:28.057 [main] [2269f7086b57461cbea272c5002f34ad] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (82ms)
+2026-10-18 13:02:28.116 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-10-18 13:02:28.120 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@18c0608e: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-10-18 13:02:28.123 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 13:02:28.124 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-10-18 13:02:28.124 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 13:02:28.332 [main] [ee28deb2f9a54327a14e0106311711f1] [d71ab457ddf644f075ac51bc20325381] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_1, inviteCode=JWGNFMAG
+2026-10-18 13:02:28.334 [main] [ee28deb2f9a54327a14e0106311711f1] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (275ms)
+2026-10-18 13:02:28.534 [main] [291a280c11044ad1acf8b64e0e973448] [7a92f0946637fc49ac7232b3f5277b7a] INFO  com.exam.auth.service.AuthService - 用户 tea_1 登录成功，签发双 Token
+2026-10-18 13:02:28.536 [main] [291a280c11044ad1acf8b64e0e973448] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (202ms)
+2026-10-18 13:02:28.564 [main] [5262771fd6a14bbab58fda1c1820c635] [b4ff039aa9bb9fc284d3283bcfb82cdb] INFO  com.exam.paper.service.PaperService - 教师 2 创建试卷 id=1 total=10.0
+2026-10-18 13:02:28.570 [main] [5262771fd6a14bbab58fda1c1820c635] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (31ms)
+2026-10-18 13:02:28.597 [main] [d9e1f133ab7e406e838f46185ad979b1] [8a6fb1a5b2649e9fae851933f43d0ccc] INFO  com.exam.exam.service.ExamService - 教师 2 创建考试 id=1 paperId=1 窗口 2026-10-19T13:02:28.573508400 ~ 2026-10-20T13:02:28.573508400 时长 60 分钟
+2026-10-18 13:02:28.601 [main] [d9e1f133ab7e406e838f46185ad979b1] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (28ms)
+2026-10-18 13:02:28.620 [main] [da283eef84c542a7882f1adcf9ff2d29] [0f5acab40f4d9a31b89f8767ba6e442b] INFO  com.exam.exam.service.ExamService - 考试删除: id=1
+2026-10-18 13:02:28.626 [main] [da283eef84c542a7882f1adcf9ff2d29] [] INFO  com.exam.common.RequestIdFilter - DELETE /api/exams/1 -> 200 (23ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"acfbba9ea24c410fa5934b361c9b9167", X-Trace-Id:"592c5ef98f6b9c4244213961a5d69b91", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoiaW52aXRlOm1hbmFnZSx1c2VyOm1hbmFnZSx1c2VyOnZpZXcscGFwZXI6bWFuYWdlLGV4YW06dGFrZSxleGFtOm1hbmFnZSxzY29yZTp2aWV3LHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImViN2MzMWQyNTY1YTQzY2JhYzhlOTRjOTM1NmY3YjM5IiwiaWF0IjoxNzkyMjk5NzQ3LCJleHAiOjE3OTIzMDE1NDd9.MBWsK0xSZS1wuk5GGA8-lZLHDMXsNq8U0A9LM6jgpRo","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiI1MzU0NmI3ZTY1ZDg0ZGYyOGE5NDcwZTFlZTdjOGIwMyIsImlhdCI6MTc5MjI5OTc0NywiZXhwIjoxNzkyOTA0NTQ3fQ.Ruy2DugzC_Gj_L4CeJo-NQNTAJpSxlYVRau0n3pqMa4","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoiaW52aXRlOm1hbmFnZSx1c2VyOm1hbmFnZSx1c2VyOnZpZXcscGFwZXI6bWFuYWdlLGV4YW06dGFrZSxleGFtOm1hbmFnZSxzY29yZTp2aWV3LHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImViN2MzMWQyNTY1YTQzY2JhYzhlOTRjOTM1NmY3YjM5IiwiaWF0IjoxNzkyMjk5NzQ3LCJleHAiOjE3OTIzMDE1NDd9.MBWsK0xSZS1wuk5GGA8-lZLHDMXsNq8U0A9LM6jgpRo", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"2269f7086b57461cbea272c5002f34ad", X-Trace-Id:"1c3180a9229a5462b660364d0b3a194a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"code":"JWGNFMAG","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-18T13:02:28.0497831"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_1","password":"Pass1234","name":"教师-tea_1","email":"tea_1@test.com","roleType":"TEACHER","inviteCode":"JWGNFMAG"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"ee28deb2f9a54327a14e0106311711f1", X-Trace-Id:"d71ab457ddf644f075ac51bc20325381", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_1","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"291a280c11044ad1acf8b64e0e973448", X-Trace-Id:"7a92f0946637fc49ac7232b3f5277b7a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYTZmODA1YjZkYjcyNDUzOTkxNTY4YTJmMDcyMTI5MzEiLCJpYXQiOjE3OTIyOTk3NDgsImV4cCI6MTc5MjMwMTU0OH0.wGJRKmE41MrsoNBfE5HzWY0JPIxzXH-ygUS2IBZjsTg","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiIyODcxMmQyZTQ1OGQ0ZjEyOGQ2YWYwOTRmNTI0ZTg0OSIsImlhdCI6MTc5MjI5OTc0OCwiZXhwIjoxNzkyOTA0NTQ4fQ.rg71161Mi7hHOZ-lrP7TjvUVXMa6CIdlkUrZ95oF2vU","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYTZmODA1YjZkYjcyNDUzOTkxNTY4YTJmMDcyMTI5MzEiLCJpYXQiOjE3OTIyOTk3NDgsImV4cCI6MTc5MjMwMTU0OH0.wGJRKmE41MrsoNBfE5HzWY0JPIxzXH-ygUS2IBZjsTg", Content-Length:"38"]
+             Body = {"title":"试卷-2","totalScore":10.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#create(PaperCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"5262771fd6a14bbab58fda1c1820c635", X-Trace-Id:"b4ff039aa9bb9fc284d3283bcfb82cdb", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"title":"试卷-2","description":"","totalScore":10.0,"questionCount":0,"status":0,"createdBy":2,"createdTime":"2026-10-18T13:02:28.562509"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYTZmODA1YjZkYjcyNDUzOTkxNTY4YTJmMDcyMTI5MzEiLCJpYXQiOjE3OTIyOTk3NDgsImV4cCI6MTc5MjMwMTU0OH0.wGJRKmE41MrsoNBfE5HzWY0JPIxzXH-ygUS2IBZjsTg", Content-Length:"145"]
+             Body = {"title":"审计考试-3","paperId":1,"startTime":"2026-10-19T13:02:28.573508400","endTime":"2026-10-20T13:02:28.573508400","durationMinutes":60}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.exam.controller.ExamController
+           Method = com.exam.exam.controller.ExamController#create(ExamCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"d9e1f133ab7e406e838f46185ad979b1", X-Trace-Id:"8a6fb1a5b2649e9fae851933f43d0ccc", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"title":"审计考试-3","paperId":1,"startTime":"2026-10-19T13:02:28.5735084","endTime":"2026-10-20T13:02:28.5735084","durationMinutes":60,"allowLateMinutes":0,"status":0,"published":0,"forceEnd":0,"reservationRequired":0,"createdBy":2,"createdTime":"2026-10-18T13:02:28.5965129"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = DELETE
+      Request URI = /api/exams/1
+       Parameters = {}
+          Headers = [Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYTZmODA1YjZkYjcyNDUzOTkxNTY4YTJmMDcyMTI5MzEiLCJpYXQiOjE3OTIyOTk3NDgsImV4cCI6MTc5MjMwMTU0OH0.wGJRKmE41MrsoNBfE5HzWY0JPIxzXH-ygUS2IBZjsTg", X-Real-IP:"203.0.113.77"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.exam.controller.ExamController
+           Method = com.exam.exam.controller.ExamController#delete(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"da283eef84c542a7882f1adcf9ff2d29", X-Trace-Id:"0f5acab40f4d9a31b89f8767ba6e442b", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-18 13:02:28.854 [main] [d593c57e13294d53abae49282174d1bc] [2a07fa1c0aa65927d856020e0e596f06] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_4
+2026-10-18 13:02:28.855 [main] [d593c57e13294d53abae49282174d1bc] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (192ms)
+2026-10-18 13:02:29.061 [main] [05c6cac1b9ee4092ad0f5d18cf87a824] [6755b5f7009fbd56384d25793ebc2ec0] INFO  com.exam.auth.service.AuthService - 用户 stu_4 登录成功，签发双 Token
+2026-10-18 13:02:29.063 [main] [05c6cac1b9ee4092ad0f5d18cf87a824] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (207ms)
+2026-10-18 13:02:29.129 [main] [6faaf496503a4a3ba4624acbaff0273e] [a120f1b75fde61e441a446af26cd544f] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 13:02:29.131 [main] [6faaf496503a4a3ba4624acbaff0273e] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (66ms)
+2026-10-18 13:02:29.145 [main] [7f81ae54850b439ba32c197105b7fe3f] [c151e76cc924655895b2a40f58c63920] INFO  com.exam.auth.service.TokenStoreService - 用户 3 会话版本已递增 -> 1
+2026-10-18 13:02:29.146 [main] [7f81ae54850b439ba32c197105b7fe3f] [c151e76cc924655895b2a40f58c63920] INFO  com.exam.auth.service.AuthService - 管理员踢人: userId=3，全部会话已失效
+2026-10-18 13:02:29.148 [main] [7f81ae54850b439ba32c197105b7fe3f] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/users/3/kick -> 200 (15ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"110"]
+             Body = {"username":"stu_4","password":"Pass1234","name":"学生-stu_4","email":"stu_4@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"d593c57e13294d53abae49282174d1bc", X-Trace-Id:"2a07fa1c0aa65927d856020e0e596f06", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"stu_4","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"05c6cac1b9ee4092ad0f5d18cf87a824", X-Trace-Id:"6755b5f7009fbd56384d25793ebc2ec0", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzQiLCJuYW1lIjoi5a2m55SfLXN0dV80IiwiZW1haWwiOiJzdHVfNEB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoiZXhhbTp0YWtlLHNjb3JlOnZpZXciLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiI2NGVlZWVjNTQ5NGU0MGJhOTA0YTc4ODk2ZDQ1NjRjMCIsImlhdCI6MTc5MjI5OTc0OSwiZXhwIjoxNzkyMzAxNTQ5fQ.lUaQAqS_vRVwhhvlXIccVEb2dhUYRfe3nCYrJxeJRM4","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJlMTRjOTg4YTE0YjU0N2Y4OTZhYzgwNjRlNTA3ZWY2YyIsImlhdCI6MTc5MjI5OTc0OSwiZXhwIjoxNzkyOTA0NTQ5fQ.uP7Gh_C4eFNUd-hkmgWUYMWG7uxcRfgp8xY1RX_5O7w","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"6faaf496503a4a3ba4624acbaff0273e", X-Trace-Id:"a120f1b75fde61e441a446af26cd544f", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoiaW52aXRlOm1hbmFnZSx1c2VyOm1hbmFnZSx1c2VyOnZpZXcscGFwZXI6bWFuYWdlLGV4YW06dGFrZSxleGFtOm1hbmFnZSxzY29yZTp2aWV3LHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImE4MjI2YThlNjAwMTRjNjBhNzNlNGMzMzNmNjk1YTU2IiwiaWF0IjoxNzkyMjk5NzQ5LCJleHAiOjE3OTIzMDE1NDl9.Q6_hYQOQtdqBbKOofw1vgGWptXSfxIFgB69akvfUizo","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiIzZTM4NGQ1NDRjYWM0NDBjOGVjMTgyNDc4YzUwMjI0MSIsImlhdCI6MTc5MjI5OTc0OSwiZXhwIjoxNzkyOTA0NTQ5fQ.4pH2Z9ZftQcLvV4bRBtUISM3xX9E9RsCsbuJ5K-AAL4","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/users/3/kick
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoiaW52aXRlOm1hbmFnZSx1c2VyOm1hbmFnZSx1c2VyOnZpZXcscGFwZXI6bWFuYWdlLGV4YW06dGFrZSxleGFtOm1hbmFnZSxzY29yZTp2aWV3LHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6ImE4MjI2YThlNjAwMTRjNjBhNzNlNGMzMzNmNjk1YTU2IiwiaWF0IjoxNzkyMjk5NzQ5LCJleHAiOjE3OTIzMDE1NDl9.Q6_hYQOQtdqBbKOofw1vgGWptXSfxIFgB69akvfUizo", X-Real-IP:"203.0.113.77"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#kickUser(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"7f81ae54850b439ba32c197105b7fe3f", X-Trace-Id:"c151e76cc924655895b2a40f58c63920", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-18 13:02:29.250 [main] [3b31bd268e0746e4a0137dde0eb03866] [6aa2fbff36ade22639d841f7d1477eb4] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 13:02:29.252 [main] [3b31bd268e0746e4a0137dde0eb03866] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (88ms)
+2026-10-18 13:02:29.258 [main] [e7654aa768ca457eac1fcc1c08424988] [6650f10f7ca4ee96863cba0dee12235d] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 T374SAB2
+2026-10-18 13:02:29.259 [main] [e7654aa768ca457eac1fcc1c08424988] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (6ms)
+2026-10-18 13:02:29.469 [main] [970c68e9055a43c087d3787ec43fa145] [9f395a8df8f2a3708e684be3d64a5312] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_5, inviteCode=T374SAB2
+2026-10-18 13:02:29.470 [main] [970c68e9055a43c087d3787ec43fa145] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (210ms)
+2026-10-18 13:02:29.721 [main] [f391ed89274f421ea27f070c71f7b087] [722ee0a5730c919b86020b51a67b7a36] INFO  com.exam.auth.service.AuthService - 用户 tea_5 登录成功，签发双 Token
+2026-10-18 13:02:29.723 [main] [f391ed89274f421ea27f070c71f7b087] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (252ms)
+2026-10-18 13:02:29.777 [main] [e10645134d3a4734a9a214a84ca27d79] [baef07fa0d165ae65df96121e005576d] INFO  c.exam.question.service.QuestionService - 教师 4 创建题目 id=1 type=SINGLE
+2026-10-18 13:02:29.787 [main] [e10645134d3a4734a9a214a84ca27d79] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (58ms)
+2026-10-18 13:02:29.800 [main] [e92b713b1ba64826abb799b166091bb7] [a4db05f42fb1323f1e828ed1a10359e3] INFO  c.exam.question.service.QuestionService - 教师 4 创建题目 id=2 type=SHORT_ANSWER
+2026-10-18 13:02:29.804 [main] [e92b713b1ba64826abb799b166091bb7] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (15ms)
+2026-10-18 13:02:29.817 [main] [cdd7ccea6ba64312865905c5c6584357] [06b84d2eb39931c2c295c0faff2a01e6] INFO  com.exam.paper.service.PaperService - 教师 4 创建试卷 id=2 total=10.0
+2026-10-18 13:02:29.819 [main] [cdd7ccea6ba64312865905c5c6584357] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (13ms)
+2026-10-18 13:02:29.859 [main] [72ce7dc53222484186a5306c3ff62887] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/2/questions -> 200 (38ms)
+2026-10-18 13:02:29.879 [main] [6521d1cdcd4f4059903384dc5109959b] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/2/questions -> 200 (18ms)
+2026-10-18 13:02:29.893 [main] [c55925815fed4dcbba5da1894bdb285f] [9585576a3288c66c8ef505f03104064a] INFO  com.exam.exam.service.ExamService - 教师 4 创建考试 id=2 paperId=2 窗口 2026-10-19T13:02:29.880732300 ~ 2026-10-20T13:02:29.880732300 时长 60 分钟
+2026-10-18 13:02:29.894 [main] [c55925815fed4dcbba5da1894bdb285f] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (13ms)
+2026-10-18 13:02:29.920 [main] [6f3b9563e5734a9fa49823a7265a428a] [63d759a8ab43d9af8a313867f2c33ed0] INFO  c.exam.exam.service.ExamSnapshotService - 考试 2 发布生成快照 id=1（2 题）
+2026-10-18 13:02:29.927 [main] [6f3b9563e5734a9fa49823a7265a428a] [63d759a8ab43d9af8a313867f2c33ed0] INFO  com.exam.exam.service.ExamService - 考试 2 发布（学生可见），等待定时开考
+2026-10-18 13:02:29.937 [main] [6f3b9563e5734a9fa49823a7265a428a] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/2/publish -> 200 (41ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"3b31bd268e0746e4a0137dde0eb03866", X-Trace-Id:"6aa2fbff36ade22639d841f7d1477eb4", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoiaW52aXRlOm1hbmFnZSx1c2VyOm1hbmFnZSx1c2VyOnZpZXcscGFwZXI6bWFuYWdlLGV4YW06dGFrZSxleGFtOm1hbmFnZSxzY29yZTp2aWV3LHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjkxN2FmMjAxYTU2NjRiMGVhZTE5MTM5OGFjZWNmMjM1IiwiaWF0IjoxNzkyMjk5NzQ5LCJleHAiOjE3OTIzMDE1NDl9.1QUK6r3iLF3Bg9CptPiElhaTGKWy-JChtAPwy0PdzU0","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJiNWY1N2E3N2IyY2Q0NjM3YmZiZWNmYTFjZDQxYTJlNiIsImlhdCI6MTc5MjI5OTc0OSwiZXhwIjoxNzkyOTA0NTQ5fQ.wy_1phZ6MZQLAZ0c2VorZbt0RWpYxs8QocqCtLPDWug","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoiaW52aXRlOm1hbmFnZSx1c2VyOm1hbmFnZSx1c2VyOnZpZXcscGFwZXI6bWFuYWdlLGV4YW06dGFrZSxleGFtOm1hbmFnZSxzY29yZTp2aWV3LHF1ZXN0aW9uOm1hbmFnZSIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjkxN2FmMjAxYTU2NjRiMGVhZTE5MTM5OGFjZWNmMjM1IiwiaWF0IjoxNzkyMjk5NzQ5LCJleHAiOjE3OTIzMDE1NDl9.1QUK6r3iLF3Bg9CptPiElhaTGKWy-JChtAPwy0PdzU0", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"e7654aa768ca457eac1fcc1c08424988", X-Trace-Id:"6650f10f7ca4ee96863cba0dee12235d", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"code":"T374SAB2","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-18T13:02:29.257591"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_5","password":"Pass1234","name":"教师-tea_5","email":"tea_5@test.com","roleType":"TEACHER","inviteCode":"T374SAB2"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"970c68e9055a43c087d3787ec43fa145", X-Trace-Id:"9f395a8df8f2a3708e684be3d64a5312", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_5","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"f391ed89274f421ea27f070c71f7b087", X-Trace-Id:"722ee0a5730c919b86020b51a67b7a36", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYjNmNzhiYWVlZmM4NGY5NmFhODBiMzM1NDQzYjNlMjUiLCJpYXQiOjE3OTIyOTk3NDksImV4cCI6MTc5MjMwMTU0OX0.jwOPExtNkqZPSlD1ZzaIsye6gHsWidNWrjRsbBaU6sQ","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiI0ZjQxNjgyMTBlZGM0OWU4OGVmMjQ5MzRkMTU4MTc5OSIsImlhdCI6MTc5MjI5OTc0OSwiZXhwIjoxNzkyOTA0NTQ5fQ.jNOYG11xtfp0sgjXGkEcQop1vOZcIOMwrTnmKRy0U7Q","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYjNmNzhiYWVlZmM4NGY5NmFhODBiMzM1NDQzYjNlMjUiLCJpYXQiOjE3OTIyOTk3NDksImV4cCI6MTc5MjMwMTU0OX0.jwOPExtNkqZPSlD1ZzaIsye6gHsWidNWrjRsbBaU6sQ", Content-Length:"118"]
+             Body = {"type":1,"content":"单选题干：1+1=?","correctAnswer":"A","score":5.0,"difficulty":1,"choices":["A","B","C","D"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"e10645134d3a4734a9a214a84ca27d79", X-Trace-Id:"baef07fa0d165ae65df96121e005576d", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"type":1,"typeName":"单选","content":"单选题干：1+1=?","choices":["A","B","C","D"],"correctAnswer":"A","score":5.0,"difficulty":1,"tags":[],"createdBy":4,"createdTime":"2026-10-18T13:02:29.774787","updatedTime":"2026-10-18T13:02:29.7757898"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYjNmNzhiYWVlZmM4NGY5NmFhODBiMzM1NDQzYjNlMjUiLCJpYXQiOjE3OTIyOTk3NDksImV4cCI6MTc5MjMwMTU0OX0.jwOPExtNkqZPSlD1ZzaIsye6gHsWidNWrjRsbBaU6sQ", Content-Length:"138"]
+             Body = {"type":4,"content":"简答题干：描述进程与线程区别","correctAnswer":"进程有独立地址空间","score":5.0,"difficulty":1}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"e92b713b1ba64826abb799b166091bb7", X-Trace-Id:"a4db05f42fb1323f1e828ed1a10359e3", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"type":4,"typeName":"简答","content":"简答题干：描述进程与线程区别","choices":[],"correctAnswer":"进程有独立地址空间","score":5.0,"difficulty":1,"tags":[],"createdBy":4,"createdTime":"2026-10-18T13:02:29.7984158","updatedTime":"2026-10-18T13:02:29.7984158"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYjNmNzhiYWVlZmM4NGY5NmFhODBiMzM1NDQzYjNlMjUiLCJpYXQiOjE3OTIyOTk3NDksImV4cCI6MTc5MjMwMTU0OX0.jwOPExtNkqZPSlD1ZzaIsye6gHsWidNWrjRsbBaU6sQ", Content-Length:"38"]
+             Body = {"title":"试卷-6","totalScore":10.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#create(PaperCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"cdd7ccea6ba64312865905c5c6584357", X-Trace-Id:"06b84d2eb39931c2c295c0faff2a01e6", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"title":"试卷-6","description":"","totalScore":10.0,"questionCount":0,"status":0,"createdBy":4,"createdTime":"2026-10-18T13:02:29.8160137"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers/2/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYjNmNzhiYWVlZmM4NGY5NmFhODBiMzM1NDQzYjNlMjUiLCJpYXQiOjE3OTIyOTk3NDksImV4cCI6MTc5MjMwMTU0OX0.jwOPExtNkqZPSlD1ZzaIsye6gHsWidNWrjRsbBaU6sQ", Content-Length:"28"]
+             Body = {"questionId":1,"score":6.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#addQuestion(Long, AddPaperQuestionRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"72ce7dc53222484186a5306c3ff62887", X-Trace-Id:"dce8a1d6f763175f2bfed5c1e1192532", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"questionId":1,"number":1,"score":6.0,"questionType":1,"content":"单选题干：1+1=?","choices":["A","B","C","D"],"correctAnswer":"A","defaultScore":5.0,"questionDeleted":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers/2/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYjNmNzhiYWVlZmM4NGY5NmFhODBiMzM1NDQzYjNlMjUiLCJpYXQiOjE3OTIyOTk3NDksImV4cCI6MTc5MjMwMTU0OX0.jwOPExtNkqZPSlD1ZzaIsye6gHsWidNWrjRsbBaU6sQ", Content-Length:"28"]
+             Body = {"questionId":2,"score":4.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#addQuestion(Long, AddPaperQuestionRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"6521d1cdcd4f4059903384dc5109959b", X-Trace-Id:"3f01c63e08a1def982a02bf3d9f63985", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"questionId":2,"number":2,"score":4.0,"questionType":4,"content":"简答题干：描述进程与线程区别","choices":[],"correctAnswer":"进程有独立地址空间","defaultScore":5.0,"questionDeleted":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYjNmNzhiYWVlZmM4NGY5NmFhODBiMzM1NDQzYjNlMjUiLCJpYXQiOjE3OTIyOTk3NDksImV4cCI6MTc5MjMwMTU0OX0.jwOPExtNkqZPSlD1ZzaIsye6gHsWidNWrjRsbBaU6sQ", Content-Length:"145"]
+             Body = {"title":"审计考试-7","paperId":2,"startTime":"2026-10-19T13:02:29.880732300","endTime":"2026-10-20T13:02:29.880732300","durationMinutes":60}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.exam.controller.ExamController
+           Method = com.exam.exam.controller.ExamController#create(ExamCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"c55925815fed4dcbba5da1894bdb285f", X-Trace-Id:"9585576a3288c66c8ef505f03104064a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"title":"审计考试-7","paperId":2,"startTime":"2026-10-19T13:02:29.8807323","endTime":"2026-10-20T13:02:29.8807323","durationMinutes":60,"allowLateMinutes":0,"status":0,"published":0,"forceEnd":0,"reservationRequired":0,"createdBy":4,"createdTime":"2026-10-18T13:02:29.8937376"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams/2/publish
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzUiLCJuYW1lIjoi5pWZ5biILXRlYV81IiwiZW1haWwiOiJ0ZWFfNUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicGFwZXI6bWFuYWdlLGV4YW06bWFuYWdlLHNjb3JlOnZpZXcscXVlc3Rpb246bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiYjNmNzhiYWVlZmM4NGY5NmFhODBiMzM1NDQzYjNlMjUiLCJpYXQiOjE3OTIyOTk3NDksImV4cCI6MTc5MjMwMTU0OX0.jwOPExtNkqZPSlD1ZzaIsye6gHsWidNWrjRsbBaU6sQ", X-Real-IP:"203.0.113.77"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.exam.controller.ExamController
+           Method = com.exam.exam.controller.ExamController#publish(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"6f3b9563e5734a9fa49823a7265a428a", X-Trace-Id:"63d759a8ab43d9af8a313867f2c33ed0", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"title":"审计考试-7","description":"","paperId":2,"paperTitle":"试卷-6","startTime":"2026-10-19T13:02:29.880732","endTime":"2026-10-20T13:02:29.880732","durationMinutes":60,"allowLateMinutes":0,"status":0,"published":1,"forceEnd":0,"reservationRequired":0,"snapshotId":1,"createdBy":4,"createdTime":"2026-10-18T13:02:29.893738","updatedTime":"2026-10-18T13:02:29.893738"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 19.73 s <<< FAILURE! -- in com.exam.audit.ExamOperationAuditIntegrationTest
+[ERROR] com.exam.audit.ExamOperationAuditIntegrationTest.examDeletePersistsOperationAudit -- Time elapsed: 5.122 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 删除考试应恰好落一条 EXAM_DELETE 审计 ==> expected: <1> but was: <0>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:563)
+	at com.exam.audit.ExamOperationAuditIntegrationTest.examDeletePersistsOperationAudit(ExamOperationAuditIntegrationTest.java:126)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.audit.ExamOperationAuditIntegrationTest.userKickPersistsOperationAudit -- Time elapsed: 0.498 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 踢人应恰好落一条 USER_KICK 审计 ==> expected: <1> but was: <0>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:563)
+	at com.exam.audit.ExamOperationAuditIntegrationTest.userKickPersistsOperationAudit(ExamOperationAuditIntegrationTest.java:150)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.audit.ExamOperationAuditIntegrationTest.examPublishPersistsOperationAudit -- Time elapsed: 0.794 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 发布考试应恰好落一条 EXAM_PUBLISH 审计 ==> expected: <1> but was: <0>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:563)
+	at com.exam.audit.ExamOperationAuditIntegrationTest.examPublishPersistsOperationAudit(ExamOperationAuditIntegrationTest.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] Running com.exam.score.service.ScoreServiceTest
+2026-10-18 13:02:30.873 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩撤回：exam=1 操作人=99 原因=成绩录入有误
+2026-10-18 13:02:30.930 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=1 跳过=0 考试已批改=true
+2026-10-18 13:02:30.934 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=1 跳过=0 考试已批改=false
+2026-10-18 13:02:30.941 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩撤回：exam=1 操作人=99 原因=批量纠错
+2026-10-18 13:02:30.953 [main] [] [] ERROR com.exam.score.service.ScoreService - 成绩发布异常：exam=1
+java.lang.IllegalStateException: db down
+	at com.exam.score.service.ScoreService.requireOwnedExam(ScoreService.java:369)
+	at com.exam.score.service.ScoreService.doPublishOne(ScoreService.java:276)
+	at com.exam.score.service.ScoreService.publishOne(ScoreService.java:250)
+	at com.exam.score.service.ScoreService.publish(ScoreService.java:227)
+	at com.exam.score.service.ScoreServiceTest.lambda$publishAbortsWholeBatchWhenFailureIsNotABusinessException$0(ScoreServiceTest.java:299)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:53)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3128)
+	at com.exam.score.service.ScoreServiceTest.publishAbortsWholeBatchWhenFailureIsNotABusinessException(ScoreServiceTest.java:299)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-18 13:02:30.967 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=2 跳过=1 考试已批改=true
+2026-10-18 13:02:30.973 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=0 跳过=0 考试已批改=false
+2026-10-18 13:02:30.978 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=2 跳过=0 考试已批改=true
+2026-10-18 13:02:30.990 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩发布：exam=2 操作人=7
+2026-10-18 13:02:30.999 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩撤回：exam=1 操作人=99 原因=成绩录入有误
+2026-10-18 13:02:31.007 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩发布：exam=1 操作人=7
+2026-10-18 13:02:31.013 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=0 跳过=0 考试已批改=true
+2026-10-18 13:02:31.017 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩发布：exam=1 操作人=7
+2026-10-18 13:02:31.022 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=1 跳过=0 考试已批改=true
+2026-10-18 13:02:31.040 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=1 跳过=0 考试已批改=true
+2026-10-18 13:02:31.047 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=2 跳过=0 考试已批改=true
+2026-10-18 13:02:31.064 [main] [] [] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=10 汇总=1 跳过=0 考试已批改=true
+[ERROR] Tests run: 31, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 1.101 s <<< FAILURE! -- in com.exam.score.service.ScoreServiceTest
+[ERROR] com.exam.score.service.ScoreServiceTest.revokeWritesOperationAuditWithExamTitleAndReason -- Time elapsed: 0.036 s <<< FAILURE!
+Wanted but not invoked:
+auditLogService.logScoreRevoke(
+    1L,
+    "期末考-1",
+    "成绩录入有误"
+);
+-> at com.exam.score.service.ScoreServiceTest.revokeWritesOperationAuditWithExamTitleAndReason(ScoreServiceTest.java:376)
+Actually, there were zero interactions with this mock.
+
+	at com.exam.score.service.ScoreServiceTest.revokeWritesOperationAuditWithExamTitleAndReason(ScoreServiceTest.java:376)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.score.service.ScoreServiceTest.publishWritesAuditWithOperatorAndGradedHeadcount -- Time elapsed: 0.003 s <<< FAILURE!
+Wanted but not invoked:
+auditLogService.logScorePublish(
+    1L,
+    "期末考-1",
+    42
+);
+-> at com.exam.score.service.ScoreServiceTest.publishWritesAuditWithOperatorAndGradedHeadcount(ScoreServiceTest.java:207)
+Actually, there were zero interactions with this mock.
+
+	at com.exam.score.service.ScoreServiceTest.publishWritesAuditWithOperatorAndGradedHeadcount(ScoreServiceTest.java:207)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] Running com.exam.service.AuditLogServiceExamOperationTest
+2026-10-18 13:02:31.203 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=EXAM_PUBLISH status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:156)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:97)
+	at com.exam.service.AuditLogService.logExamPublish(AuditLogService.java:66)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$1(AuditLogServiceExamOperationTest.java:174)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:174)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-18 13:02:31.208 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=EXAM_DELETE status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:156)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:97)
+	at com.exam.service.AuditLogService.logExamDelete(AuditLogService.java:71)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$2(AuditLogServiceExamOperationTest.java:175)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:175)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-18 13:02:31.211 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=SCORE_PUBLISH status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:156)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:97)
+	at com.exam.service.AuditLogService.logScorePublish(AuditLogService.java:76)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$3(AuditLogServiceExamOperationTest.java:176)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:176)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-18 13:02:31.215 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=SCORE_REVOKE status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:156)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:97)
+	at com.exam.service.AuditLogService.logScoreRevoke(AuditLogService.java:82)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$4(AuditLogServiceExamOperationTest.java:177)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:177)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-18 13:02:31.218 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=USER_KICK status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:156)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:97)
+	at com.exam.service.AuditLogService.logUserKick(AuditLogService.java:88)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$5(AuditLogServiceExamOperationTest.java:178)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:178)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.156 s -- in com.exam.service.AuditLogServiceExamOperationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   ExamOperationAuditIntegrationTest.examDeletePersistsOperationAudit:126 删除考试应恰好落一条 EXAM_DELETE 审计 ==> expected: <1> but was: <0>
+[ERROR]   ExamOperationAuditIntegrationTest.examPublishPersistsOperationAudit:103 发布考试应恰好落一条 EXAM_PUBLISH 审计 ==> expected: <1> but was: <0>
+[ERROR]   ExamOperationAuditIntegrationTest.userKickPersistsOperationAudit:150 踢人应恰好落一条 USER_KICK 审计 ==> expected: <1> but was: <0>
+[ERROR]   ScoreServiceTest.publishWritesAuditWithOperatorAndGradedHeadcount:207 
+Wanted but not invoked:
+auditLogService.logScorePublish(
+    1L,
+    "期末考-1",
+    42
+);
+-> at com.exam.score.service.ScoreServiceTest.publishWritesAuditWithOperatorAndGradedHeadcount(ScoreServiceTest.java:207)
+Actually, there were zero interactions with this mock.
+
+[ERROR]   ScoreServiceTest.revokeWritesOperationAuditWithExamTitleAndReason:376 
+Wanted but not invoked:
+auditLogService.logScoreRevoke(
+    1L,
+    "期末考-1",
+    "成绩录入有误"
+);
+-> at com.exam.score.service.ScoreServiceTest.revokeWritesOperationAuditWithExamTitleAndReason(ScoreServiceTest.java:376)
+Actually, there were zero interactions with this mock.
+
+[INFO] 
+[ERROR] Tests run: 41, Failures: 5, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  26.593 s
+[INFO] Finished at: 2026-10-18T13:02:32+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] See D:\code\examOnline\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
