@@ -14,7 +14,16 @@
             显示已消灭错题
           </Checkbox>
           <Button
-            v-if="!isPracticeMode"
+            v-if="!isPracticeMode && !isQuizMode"
+            type="primary"
+            ghost
+            data-test="start-quiz-btn"
+            @click="openQuizConfig"
+          >
+            🎯 错题强化自测
+          </Button>
+          <Button
+            v-if="!isPracticeMode && !isQuizMode"
             type="primary"
             data-test="start-practice-btn"
             @click="startPractice"
@@ -193,6 +202,176 @@
         </Spin>
       </div>
 
+      <!-- 错题强化自测模式界面（add-student-wrong-question-mastery） -->
+      <div v-else-if="isQuizMode" data-test="quiz-container" class="space-y-4">
+        <div class="flex items-center justify-between border-b pb-3">
+          <div>
+            <span class="font-bold text-lg text-gray-800">🎯 错题强化自测</span>
+            <span class="text-xs text-gray-400 ml-2">
+              共 {{ quiz?.items?.length ?? 0 }} 题 · 连续 3 次做对自动消灭
+            </span>
+          </div>
+          <Button data-test="exit-quiz-btn" @click="exitQuiz">退出自测</Button>
+        </div>
+
+        <Alert
+          v-if="quizError"
+          type="error"
+          show-icon
+          class="mb-3"
+          :message="quizError"
+          data-test="quiz-error"
+        />
+
+        <!-- 自测结果总览 -->
+        <div
+          v-if="quizResult"
+          data-test="quiz-result-overview"
+          class="bg-blue-50/60 border border-blue-100 rounded-lg p-4 space-y-2"
+        >
+          <div class="font-bold text-base text-gray-800">自测结果总览</div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div>
+              总题数：
+              <span class="font-bold">{{ quizResult.total }}</span>
+            </div>
+            <div>
+              答对数：
+              <span class="font-bold">{{ quizResult.correctCount }}</span>
+            </div>
+            <div>
+              正确率：
+              <span class="font-bold text-blue-700">{{ quizResult.scoreRate }}%</span>
+            </div>
+            <div>
+              新消灭：
+              <span class="font-bold text-green-700">{{ quizResult.newlyMasteredCount }} 题</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 逐题作答或逐题结果 -->
+        <div
+          v-for="(q, idx) in quiz?.items || []"
+          :key="q.questionId"
+          class="bg-white p-4 rounded border border-gray-200 shadow-sm space-y-3"
+        >
+          <div class="flex items-center gap-2 border-b pb-2">
+            <span class="font-semibold text-gray-700">
+              第 {{ idx + 1 }} / {{ quiz?.items?.length ?? 0 }} 题
+            </span>
+            <Tag color="cyan">{{ q.questionType }}</Tag>
+            <Tag color="purple">连对 {{ q.consecutiveCorrect ?? 0 }}/3</Tag>
+          </div>
+
+          <div class="text-gray-800 font-medium whitespace-pre-wrap">{{ q.questionContent }}</div>
+          <QuestionImage :src="q.imageUrl" class="mb-1" />
+
+          <!-- 未交卷：作答区 -->
+          <div v-if="!quizResult" class="my-2">
+            <RadioGroup
+              v-if="q.questionType === '单选'"
+              v-model:value="quizAnswers[q.questionId ?? 0]"
+              class="flex flex-col gap-2"
+            >
+              <Radio
+                v-for="(choice, cIdx) in q.choices || []"
+                :key="cIdx"
+                :value="String.fromCharCode(65 + cIdx)"
+              >
+                {{ String.fromCharCode(65 + cIdx) }}. {{ choice }}
+              </Radio>
+            </RadioGroup>
+
+            <CheckboxGroup
+              v-else-if="q.questionType === '多选'"
+              v-model:value="quizMultipleAnswers[q.questionId ?? 0]"
+              class="flex flex-col gap-2"
+            >
+              <Checkbox
+                v-for="(choice, cIdx) in q.choices || []"
+                :key="cIdx"
+                :value="String.fromCharCode(65 + cIdx)"
+              >
+                {{ String.fromCharCode(65 + cIdx) }}. {{ choice }}
+              </Checkbox>
+            </CheckboxGroup>
+
+            <RadioGroup
+              v-else-if="q.questionType === '判断'"
+              v-model:value="quizAnswers[q.questionId ?? 0]"
+              class="flex flex-col gap-2"
+            >
+              <Radio value="T">正确 (T)</Radio>
+              <Radio value="F">错误 (F)</Radio>
+            </RadioGroup>
+
+            <div v-else-if="isFillBlankType(q.questionType)">
+              <Input
+                v-model:value="quizAnswers[q.questionId ?? 0]"
+                placeholder="请输入填空答案"
+                class="max-w-md"
+              />
+            </div>
+          </div>
+
+          <!-- 已交卷：逐题正误与解析 -->
+          <div
+            v-else-if="resultItemOf(q.questionId)"
+            class="space-y-2 pt-2 border-t"
+            data-test="quiz-result-item"
+          >
+            <Alert
+              :type="resultItemOf(q.questionId)?.correct ? 'success' : 'error'"
+              :message="resultItemOf(q.questionId)?.correct ? '回答正确！' : '回答错误'"
+              show-icon
+            />
+            <div class="text-sm bg-gray-50 p-3 rounded">
+              <div class="text-green-700 font-medium mb-1">
+                正确答案：{{ resultItemOf(q.questionId)?.correctAnswer }}
+              </div>
+              <div class="text-gray-700">
+                题目解析：{{ resultItemOf(q.questionId)?.analysis || '暂无解析' }}
+              </div>
+              <div class="mt-1 text-gray-600">
+                当前连对：{{ resultItemOf(q.questionId)?.consecutiveCorrect }}/3
+                <Tag v-if="resultItemOf(q.questionId)?.mastered" color="success" class="ml-1">
+                  已掌握
+                </Tag>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 答题卡导航与批量交卷 -->
+        <div v-if="!quizResult" class="flex items-center justify-between pt-2">
+          <div class="flex items-center gap-2 flex-wrap" data-test="quiz-nav">
+            <Button
+              v-for="(q, idx) in quiz?.items || []"
+              :key="q.questionId"
+              size="small"
+              :type="isAnswered(q) ? 'primary' : 'default'"
+              :ghost="isAnswered(q)"
+              data-test="quiz-nav-dot"
+              @click="scrollToQuestion(idx)"
+            >
+              {{ idx + 1 }}
+            </Button>
+          </div>
+          <Button
+            type="primary"
+            data-test="quiz-submit-btn"
+            :loading="isQuizSubmitting"
+            @click="submitQuiz"
+          >
+            批量交卷
+          </Button>
+        </div>
+        <div v-else class="pt-2">
+          <Button type="primary" data-test="quiz-finish-btn" @click="exitQuiz">返回错题本</Button>
+        </div>
+      </div>
+
       <!-- 错题本列表模式界面 -->
       <Spin v-else :spinning="isFetching">
         <div v-if="!queryError" data-test="wrong-questions-content">
@@ -236,13 +415,14 @@
                       <Tag v-else color="warning">
                         部分对 ({{ item.myScore }}/{{ item.fullScore }}分)
                       </Tag>
-                      <!-- 连对进度与消灭状态 -->
-                      <Tag v-if="item.mastered" color="success" data-test="mastered-tag">
-                        已消灭 ({{ item.consecutiveCorrect }}/3)
+                      <!-- 掌握度三态彩标（0 待攻克橙 / 1 攻克中蓝 / 2 已消灭绿） -->
+                      <Tag v-if="masteryOf(item) === 2" color="success" data-test="mastery-tag">
+                        已消灭 ({{ item.consecutiveCorrect ?? 0 }}/3)
                       </Tag>
-                      <Tag v-else color="purple" data-test="consecutive-tag">
-                        连对进度 {{ item.consecutiveCorrect ?? 0 }}/3
+                      <Tag v-else-if="masteryOf(item) === 1" color="blue" data-test="mastery-tag">
+                        攻克中 ({{ item.consecutiveCorrect ?? 0 }}/3)
                       </Tag>
+                      <Tag v-else color="orange" data-test="mastery-tag">待攻克 (0/3)</Tag>
                     </div>
                   </div>
 
@@ -316,6 +496,39 @@
         </div>
       </Spin>
     </Card>
+
+    <!-- 错题强化自测配置弹窗（题量 1~20 缺省 5 + 抽题策略） -->
+    <Modal v-model:open="quizConfigVisible" title="🎯 错题强化自测" :footer="null">
+      <div class="space-y-4 py-2" data-test="quiz-config-modal">
+        <div class="flex items-center gap-3">
+          <span class="w-20 text-right">题量</span>
+          <InputNumber
+            v-model:value="quizLimit"
+            :min="1"
+            :max="20"
+            class="w-32"
+            data-test="quiz-limit-input"
+          />
+          <span class="text-xs text-gray-400">1~20 题，缺省 5</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="w-20 text-right">策略</span>
+          <Select v-model:value="quizStrategy" class="w-48" data-test="quiz-strategy-select">
+            <SelectOption value="RANDOM">随机抽题（RANDOM）</SelectOption>
+            <SelectOption value="PRACTICING_FIRST">攻克中优先（PRACTICING_FIRST）</SelectOption>
+          </Select>
+        </div>
+        <div class="text-xs text-gray-400">
+          从本人未消灭的客观错题池中抽题组卷；作答前不展示正确答案与解析。
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <Button data-test="quiz-cancel-btn" @click="quizConfigVisible = false">取消</Button>
+          <Button type="primary" data-test="quiz-generate-btn" @click="generateQuiz">
+            生成试卷
+          </Button>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -328,9 +541,13 @@ import {
   CheckboxGroup,
   Empty,
   Input,
+  InputNumber,
+  Modal,
   Pagination,
   Radio,
   RadioGroup,
+  Select,
+  SelectOption,
   Spin,
   Tag,
 } from 'ant-design-vue';
@@ -339,11 +556,16 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import dayjs from 'dayjs';
 
 import {
+  generatePracticeQuiz,
   myPracticePool,
   myWrongQuestions,
   submitPractice,
+  submitPracticeQuiz,
   type PracticePoolItem,
+  type PracticeQuizResponse,
+  type PracticeQuizSubmitResponse,
   type PracticeSubmitResponse,
+  type WrongQuestionItem,
   type WrongQuestionPageResponse,
 } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
@@ -510,6 +732,126 @@ function formatDate(dateStr: string): string {
 
 function onPageChange(page: number): void {
   currentPage.value = page;
+}
+
+// ==================== 掌握度三态彩标（add-student-wrong-question-mastery） ====================
+
+/**
+ * 三态推导：优先后端显式 masteryStatus；后端未带时按既有 mastered/consecutiveCorrect 兜底
+ * （0 UNTOUCHED 待攻克 / 1 PRACTICING 攻克中 / 2 MASTERED 已消灭）。
+ */
+function masteryOf(item: WrongQuestionItem | PracticePoolItem): number {
+  if (item.masteryStatus != null) return item.masteryStatus;
+  if ('mastered' in item && item.mastered) return 2;
+  if ((item.consecutiveCorrect ?? 0) > 0) return 1;
+  return 0;
+}
+
+// ==================== 错题强化自测（组卷 + 批量交卷） ====================
+
+const isQuizMode = ref(false);
+const quizConfigVisible = ref(false);
+const quizLimit = ref<number>(5);
+const quizStrategy = ref<string>('RANDOM');
+const quiz = ref<PracticeQuizResponse | null>(null);
+const quizAnswers = ref<Record<number, string>>({});
+const quizMultipleAnswers = ref<Record<number, string[]>>({});
+const isQuizSubmitting = ref(false);
+const quizResult = ref<PracticeQuizSubmitResponse | null>(null);
+const quizError = ref<string | null>(null);
+
+function openQuizConfig(): void {
+  quizConfigVisible.value = true;
+}
+
+function isAnswered(q: PracticePoolItem): boolean {
+  if (q.questionType === '多选') {
+    return (quizMultipleAnswers.value[q.questionId ?? 0] ?? []).length > 0;
+  }
+  return Boolean(quizAnswers.value[q.questionId ?? 0]?.trim());
+}
+
+function scrollToQuestion(_idx: number): void {
+  // 答题卡占位导航：题量 ≤ 20 单列平铺，无需真实滚动定位
+}
+
+function resultItemOf(questionId?: number) {
+  return quizResult.value?.results?.find((item) => item.questionId === questionId) ?? null;
+}
+
+async function generateQuiz(): Promise<void> {
+  isQuizSubmitting.value = true;
+  quizError.value = null;
+  try {
+    const res = await unwrap<PracticeQuizResponse>(
+      generatePracticeQuiz({
+        client,
+        throwOnError: true,
+        body: {
+          limit: quizLimit.value ?? 5,
+          strategy: quizStrategy.value,
+        },
+      })
+    );
+    quiz.value = res ?? null;
+    quizResult.value = null;
+    quizAnswers.value = {};
+    quizMultipleAnswers.value = {};
+    isQuizMode.value = true;
+    quizConfigVisible.value = false;
+  } catch (err) {
+    quizError.value =
+      err instanceof ApiError || err instanceof Error ? err.message : '生成自测试卷失败';
+  } finally {
+    isQuizSubmitting.value = false;
+  }
+}
+
+async function submitQuiz(): Promise<void> {
+  if (!quiz.value?.quizId || !quiz.value.items?.length) return;
+  const answers = quiz.value.items
+    .filter((q): q is PracticePoolItem & { questionId: number } => q.questionId != null)
+    .map((q) => ({
+      questionId: q.questionId,
+      answer:
+        q.questionType === '多选'
+          ? (quizMultipleAnswers.value[q.questionId] ?? []).slice().sort().join(',')
+          : (quizAnswers.value[q.questionId] ?? '').trim(),
+    }));
+
+  isQuizSubmitting.value = true;
+  quizError.value = null;
+  try {
+    const res = await unwrap<PracticeQuizSubmitResponse>(
+      submitPracticeQuiz({
+        client,
+        throwOnError: true,
+        body: {
+          quizId: quiz.value.quizId,
+          answers,
+        },
+      })
+    );
+    quizResult.value = res ?? null;
+  } catch (err) {
+    quizError.value =
+      err instanceof ApiError || err instanceof Error ? err.message : '批量交卷失败';
+  } finally {
+    isQuizSubmitting.value = false;
+  }
+}
+
+function exitQuiz(): void {
+  isQuizMode.value = false;
+  quiz.value = null;
+  quizResult.value = null;
+  quizAnswers.value = {};
+  quizMultipleAnswers.value = {};
+  quizError.value = null;
+  quizConfigVisible.value = false;
+  // 交卷可能改变了掌握度与消灭状态，回到错题本时刷新列表
+  queryClient.invalidateQueries({ queryKey: ['student-wrong-questions'] });
+  refetchList();
 }
 </script>
 

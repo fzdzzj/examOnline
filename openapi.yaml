@@ -523,6 +523,42 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePracticeSubmitResponse"
+  /api/scores/my/wrong-questions/practice/submit-quiz:
+    post:
+      tags:
+      - score-controller
+      operationId: submitPracticeQuiz
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PracticeQuizSubmitRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePracticeQuizSubmitResponse"
+  /api/scores/my/wrong-questions/practice/generate-quiz:
+    post:
+      tags:
+      - score-controller
+      operationId: generatePracticeQuiz
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PracticeQuizGenerateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePracticeQuizResponse"
   /api/score-reviews/{reviewId}/handle:
     post:
       tags:
@@ -3161,6 +3197,141 @@ components:
           format: int32
         mastered:
           type: boolean
+        masteryStatus:
+          type: integer
+          format: int32
+        masteryStatusName:
+          type: string
+    PracticeQuizAnswer:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        answer:
+          type: string
+      required:
+      - questionId
+    PracticeQuizSubmitRequest:
+      type: object
+      properties:
+        quizId:
+          type: string
+          minLength: 1
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/PracticeQuizAnswer"
+          minItems: 1
+      required:
+      - answers
+      - quizId
+    ApiResponsePracticeQuizSubmitResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PracticeQuizSubmitResponse"
+    PracticeQuizResultItem:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        correct:
+          type: boolean
+        correctAnswer:
+          type: string
+        analysis:
+          type: string
+        consecutiveCorrect:
+          type: integer
+          format: int32
+        mastered:
+          type: boolean
+        masteryStatus:
+          type: integer
+          format: int32
+        masteryStatusName:
+          type: string
+    PracticeQuizSubmitResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int32
+        correctCount:
+          type: integer
+          format: int32
+        scoreRate:
+          type: number
+        newlyMasteredCount:
+          type: integer
+          format: int32
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/PracticeQuizResultItem"
+    PracticeQuizGenerateRequest:
+      type: object
+      properties:
+        limit:
+          type: integer
+          format: int32
+          maximum: 20
+          minimum: 1
+        strategy:
+          type: string
+    ApiResponsePracticeQuizResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PracticeQuizResponse"
+    PracticePoolItem:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        questionType:
+          type: string
+        questionContent:
+          type: string
+        imageUrl:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+        consecutiveCorrect:
+          type: integer
+          format: int32
+        masteryStatus:
+          type: integer
+          format: int32
+        masteryStatusName:
+          type: string
+    PracticeQuizResponse:
+      type: object
+      properties:
+        quizId:
+          type: string
+        total:
+          type: integer
+          format: int32
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PracticePoolItem"
     ReviewHandleRequest:
       type: object
       properties:
@@ -3707,6 +3878,8 @@ components:
         extensionMinutes:
           type: integer
           format: int32
+          maximum: 240
+          minimum: 1
         studentIds:
           type: array
           items:
@@ -3714,8 +3887,20 @@ components:
             format: int64
         reason:
           type: string
+          maxLength: 255
+          minLength: 0
       required:
       - extensionMinutes
+    ApiResponseExamTimeExtensionResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ExamTimeExtensionResponse"
     ExamTimeExtensionResponse:
       type: object
       properties:
@@ -3736,16 +3921,6 @@ components:
         newDurationMinutes:
           type: integer
           format: int32
-    ApiResponseExamTimeExtensionResponse:
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
-        data:
-          $ref: "#/components/schemas/ExamTimeExtensionResponse"
     ApiResponseSummarizeStats:
       type: object
       properties:
@@ -3856,6 +4031,8 @@ components:
           minimum: 0
         comment:
           type: string
+          maxLength: 1024
+          minLength: 0
         expectedVersion:
           type: integer
           format: int32
@@ -4506,6 +4683,11 @@ components:
           format: int32
         mastered:
           type: boolean
+        masteryStatus:
+          type: integer
+          format: int32
+        masteryStatusName:
+          type: string
     WrongQuestionPageResponse:
       type: object
       properties:
@@ -4534,25 +4716,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PracticePoolItem"
-    PracticePoolItem:
-      type: object
-      properties:
-        questionId:
-          type: integer
-          format: int64
-        questionType:
-          type: string
-        questionContent:
-          type: string
-        imageUrl:
-          type: string
-        choices:
-          type: array
-          items:
-            type: string
-        consecutiveCorrect:
-          type: integer
-          format: int32
     ApiResponseListRecommendedPracticeItem:
       type: object
       properties:
@@ -5230,16 +5393,12 @@ components:
         difficulty:
           type: number
           format: double
-          description: 难度系数 P=平均分/满分（2 位小数；无人作答或满分非正为 null）
         difficultyLevel:
           type: string
-          description: 难度等级——容易（P≥0.70）/中等（0.40≤P<0.70）/较难（P<0.40）；难度缺省为 null
         discriminationLevel:
           type: string
-          description: 区分度五档评级——优良（D≥0.40）/良好（0.30≤D<0.40）/尚可（0.20≤D<0.30）/劣质（0≤D<0.20）/反常预警（D<0）/样本不足（D 为 null）
         qualityEvaluation:
           type: string
-          description: 命题质量诊断建议（结合区分度评级与难度等级生成，样本不足与负区分度反常有专属警示）
         optionDistribution:
           type: array
           items:

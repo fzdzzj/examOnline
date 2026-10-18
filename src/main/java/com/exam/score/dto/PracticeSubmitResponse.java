@@ -22,4 +22,10 @@ public class PracticeSubmitResponse {
 
     /** 是否已消灭（连对达到 3 次自动消灭） */
     private Boolean mastered;
+
+    /** 掌握度三态：0 UNTOUCHED（连对 0）/ 1 PRACTICING（连对 1~2）/ 2 MASTERED（连对 >= 3） */
+    private Integer masteryStatus;
+
+    /** 掌握度三态名称（UNTOUCHED / PRACTICING / MASTERED） */
+    private String masteryStatusName;
 }
