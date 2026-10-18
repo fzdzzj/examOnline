@@ -1,0 +1,34 @@
+{
+  "change": "add-student-wrong-question-mastery",
+  "category": "feature-hardening",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：提案立项与基线登记",
+      "status": "completed",
+      "description": "proposal.md、spec-delta.md、tasks.json 落位；spec/README.md 登记进行中变更表；创建 feature/add-student-wrong-question-mastery 分支并提交立案笔。",
+      "evidence": "分支 feature/add-student-wrong-question-mastery 创建；立案三件套落盘；spec/README.md 登记完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：掌握度三态建模、自适应强化组卷与批量判分（零 DDL）及前端界面实现",
+      "status": "pending",
+      "description": "WrongQuestionItem/PracticePoolItem/PracticeSubmitResponse 扩充 masteryStatus(0/1/2) 与 masteryStatusName(UNTOUCHED/PRACTICING/MASTERED)；新增 PracticeQuizGenerateRequest/PracticeQuizResponse 与 PracticeQuizSubmitRequest/PracticeQuizSubmitResponse DTO；StudentPracticeService 实现掌握度三态计算、自适应选题组卷 generateQuiz（支持 RANDOM 与 PRACTICING_FIRST 策略，题量上限 20）、批量判分 submitQuiz（复用既有判分核心、写入 practice_attempt、更新掌握度并统计新消灭数）；ScoreController 暴露两个 POST 端点；openapi.yaml 补齐 2 路径（102→104）及相关 DTO schemas；前端 wrong-questions/index.page.vue 支持三态 Tag 展示、一键生成自测试卷弹窗及答题交卷全流程。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：TDD 先红后绿、变异击红与门禁留证",
+      "status": "pending",
+      "description": "新增后端单测与集成测试覆盖三态推导、自适应组卷策略（随机/攻克优先/不足处理/空池）、批量提交判分（对错、清零、晋级已掌握、归属校验拦截）；新增前端组件交互测试；TDD 先红后绿留证；三变异（m1 抽除组卷策略选题逻辑 / m2 抽除掌握度三态晋级判定 / m3 抽除批量交卷归属校验）断言级击红并回绿留证；双端门禁实测全绿，gate-baseline.json 同笔上调。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "pending",
+      "description": "spec-delta 合入 specs/score-management/spec.md；提案归档至 spec/changes/archive/；spec/README.md 在途表清空并登记来源与归档速览；feature/add-student-wrong-question-mastery 分支 --no-ff 合入 main。",
+      "evidence": ""
+    }
+  ]
+}
