@@ -108,10 +108,14 @@ public class AuthService {
     // ==================== 注册 ====================
 
     /**
-     * 注册：学生以学号自助注册（默认 STUDENT）；教师以工号 + 有效邀请码注册（授予 TEACHER）。
+     * 注册：入口首行做 客户端 IP 维度频控（harden-register-rate-limit，先于 BCrypt 与任何 DB 操作，
+     * 防范高并发注册触发密集 BCrypt 计算造成 CPU 耗尽 DoS）；
+     * 学生以学号自助注册（默认 STUDENT）；教师以工号 + 有效邀请码注册（授予 TEACHER）。
      */
     @Transactional(rollbackFor = Exception.class)
-    public void register(RegisterRequest req) {
+    public void register(RegisterRequest req, String ip) {
+        loginGuard.checkRegisterRateLimit(ip);
+
         RoleType roleType;
         try {
             roleType = RoleType.from(req.getRoleType());

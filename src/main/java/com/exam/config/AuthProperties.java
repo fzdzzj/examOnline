@@ -58,6 +58,9 @@ public class AuthProperties {
     public static class RateLimit {
         /** 每分钟允许的登录尝试次数（按 账号+IP 维度） */
         private int perMinute = 10;
+        /** 每分钟允许的注册尝试次数（按 客户端 IP 维度，harden-register-rate-limit：
+         * 防 BCrypt 密集计算 CPU 耗尽 DoS） */
+        private int registerPerMinute = 10;
     }
 
     /** 找回密码验证码 */

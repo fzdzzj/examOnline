@@ -27,6 +27,7 @@
 | `auth:rl:`（登录限流） | LoginGuardService.checkRateLimit | 账号+IP 固定窗口限流 | **fail-open 放行** | `exam.auth.degraded`(check=login_rate_limit) / AuthDegraded | 自愈（计数键 TTL 1min） |
 | `auth:lock:` / `auth:fail:`（登录锁定） | LoginGuardService.checkLocked / recordFailure | 连续失败锁定 | **降级放行/跳过**：锁定检查暂缺、失败计数跳过、锁定写入放弃（下次失败重试）、成功后清理跳过 | `exam.auth.degraded`(check=login_lock_check/login_fail_record/login_lock_write/login_fail_clear) / AuthDegraded | 自愈（计数键 TTL=lockMinutes） |
 | `auth:coderl:`（验证码限流） | LoginGuardService.checkCodeRateLimit | 邮箱+IP 固定窗口限流 | **fail-open 放行** | `exam.auth.degraded`(check=code_rate_limit) / AuthDegraded | 自愈 |
+| `auth:register_rl:`（注册限流） | LoginGuardService.checkRegisterRateLimit | 客户端 IP 固定窗口限流（防高并发注册触发密集 BCrypt 计算的 CPU 耗尽 DoS，harden-register-rate-limit） | **fail-open 放行** | `exam.auth.degraded`(check=register_rate_limit) / AuthDegraded | 自愈（计数键 TTL 1min） |
 | `exam:ratelimit:`（接口限流） | RedisTokenBucket / RateLimitInterceptor | @RateLimit 接口令牌桶 | **fail-open 放行** | `exam.ratelimit.degraded`(endpoint) / RateLimitDegraded | 自愈（桶 key TTL） |
 | `exam:submit:lock:`（交卷锁） | ExamSubmitService + RedisLockHelper | 三路竞态收敛单飞（防抖器） | **降级放行**：SETNX 连接异常 → 走防重表+CAS+MQ 链路完成交卷；锁被真占（false）仍走既有竞争路径。降级只影响防抖半径，正确性由三层 DB 幂等保证 | `exam.submit.lock.degraded` / SubmitLockDegraded | 自愈（锁 TTL 30s） |
 | `exam:behavior:count:`（行为计数） | BehaviorCounterService | 切屏等事件计数（防抖动策略升级判定） | **既有降级**：log.error + 返回 1，事件照常落库，防抖策略退化 | 无独立计数 / 无 | 自愈（计数键 TTL 12h） |
@@ -46,7 +47,7 @@
 | 告警规则 | 盯的指标 | 覆盖面 | 状态 |
 |---|---|---|---|
 | RateLimitDegraded | `exam_ratelimit_degraded_total` | 接口限流 fail-open | 既有 |
-| AuthDegraded | `exam_auth_degraded_total`（全 tag 增量） | 鉴权拦截器（blacklist/session_version）+ 登录守卫（login_rate_limit/login_lock_check/login_fail_record/login_lock_write/login_fail_clear/code_rate_limit）+ 签发续期面（issue_session_version/issue_refresh_store/refresh_rotate/logout_blacklist/logout_refresh_remove/invalidate_sessions，harden-token-store-redis-degradation） | 既有（tag 面随 A1/1① 扩大，规则零改动自动覆盖） |
+| AuthDegraded | `exam_auth_degraded_total`（全 tag 增量） | 鉴权拦截器（blacklist/session_version）+ 登录守卫（login_rate_limit/login_lock_check/login_fail_record/login_lock_write/login_fail_clear/code_rate_limit/register_rate_limit）+ 签发续期面（issue_session_version/issue_refresh_store/refresh_rotate/logout_blacklist/logout_refresh_remove/invalidate_sessions，harden-token-store-redis-degradation） | 既有（tag 面随 A1/1① 扩大，规则零改动自动覆盖） |
 | SubmitLockDegraded | `exam_submit_lock_degraded_total` | 交卷锁降级放行 | **本卡补齐**（此前 D1 新增计数器无告警——降级等于没人知道，照抄 AuthDegraded 形态） |
 | CacheDegraded | `exam_cache_degraded_total`（全 tag 增量） | Spring Cache 切面（get/put/evict/clear）+ 互斥回源器（lock/unlock） | **本卡补齐**（harden-spring-cache-resilience 新计数器与规则同笔落位） |
 
@@ -97,3 +98,4 @@
   读失败静默回源 DB / 失效延迟生效 TTL 自愈 / 互斥锁不可用跳过单飞，新指标 exam.cache.degraded +
   CacheDegraded 告警同笔落位，2026-10-17，1②）
 - harden-client-ip-spoofing-and-redis-drill（现场演练台账：docs/redis-drill-evidence.md 沉淀五场景实测记录，X-Real-IP 优先采信加固，2026-10-17，S 级）
+- harden-register-rate-limit（注册端点 IP 频控防 BCrypt CPU 耗尽 DoS：auth:register_rl: 键族 fail-open 降级，复用 exam.auth.degraded 零新指标，2026-10-18，S 级）

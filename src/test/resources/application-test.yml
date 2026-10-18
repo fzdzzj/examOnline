@@ -56,6 +56,10 @@ exam:
       lock-minutes: 15
     rate-limit:
       per-minute: 10
+      # 注册限流（harden-register-rate-limit）：测试造数经基类 registerStudent/registerTeacher
+      # 走公开注册端点，单用例可同 IP 注册 10+ 次（如排行榜造 11 学生）；执行路径与阈值语义
+      # 由 RegisterRateLimitIntegrationTest 显式钉在 10 验证，生产默认仍为 10。
+      register-per-minute: 50
     reset-code:
       ttl-minutes: 5
       length: 6
