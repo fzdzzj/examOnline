@@ -1,0 +1,34 @@
+{
+  "change": "harden-register-rate-limit",
+  "category": "security-hardening",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：提案立项与基线登记",
+      "status": "completed",
+      "description": "proposal.md、spec-delta.md、tasks.json 落位；spec/README.md 登记进行中变更表；创建 feature/harden-register-rate-limit 分支并提交立案笔。",
+      "evidence": "分支 feature/harden-register-rate-limit 创建；立案三件套落盘；spec/README.md 登记完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：服务层与接口接入实施（零 DDL）",
+      "status": "pending",
+      "description": "AuthProperties / application.yml 显式登记 register-per-minute；LoginGuardService 接入 checkRegisterRateLimit（auth:register_rl:{ip}，60s TTL，超限 429，异常降级 countAuthDegraded(register_rate_limit)）；AuthController.register 经 ClientIpResolver 提取 IP 传入 AuthService.register 前置守卫；docs/redis-dependency-runbook.md 同笔更新键族矩阵。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：TDD 先红后绿、变异击红与门禁留证",
+      "status": "pending",
+      "description": "新增单元与集成测试（正常放行、超限 429、跨 IP 隔离、Redis 异常降级放行）；先红日志留存；实施后转绿；变异验证（m1 注释超限判断 / m2 改回 fail-close 等）断言级击红并回绿留存；gate-baseline.json 按实测单调上调；双端门禁实测全绿。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "pending",
+      "description": "spec-delta 合入 specs/authentication/spec.md；提案归档至 spec/changes/archive/；spec/README.md 在途表清空并登记来源与归档速览；feature/harden-register-rate-limit 分支 --no-ff 合入 main。",
+      "evidence": ""
+    }
+  ]
+}
