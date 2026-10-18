@@ -1,0 +1,39 @@
+{
+  "changeId": "add-exam-operation-audit-logs",
+  "title": "考务核心操作安全审计覆盖增强（纯后端，零 DDL）",
+  "level": "S",
+  "branch": "feature/add-exam-operation-audit-logs",
+  "createdAt": "2026-10-18",
+  "capabilityDomains": ["authentication"],
+  "proposal": "spec/changes/add-exam-operation-audit-logs/proposal.md",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "编写 proposal.md、specs/authentication/spec-delta.md 与 tasks.json；更新 spec/README.md 在途表登记。",
+      "evidence": "三件套落位 spec/changes/add-exam-operation-audit-logs/；spec/README.md 在途表登记同步完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：审计动作扩展与考务关键写路径接线",
+      "status": "completed",
+      "description": "在 AuditLog 扩展考务操作常量，AuditLogService 扩充专用记录方法；ExamService、ScoreService、AdminController 核心写操作打点；编写测试先红后绿覆盖全链路。",
+      "evidence": "AuditLog 扩 EXAM_PUBLISH/EXAM_DELETE/SCORE_PUBLISH/SCORE_REVOKE/USER_KICK 五常量（零 DDL）；AuditLogService 增五个专用方法（SecurityUtil 取操作人、RequestContextHolder+ClientIpResolver 取 IP、走既有 record() 旁路 try-catch）；接线 ExamService.publish/delete、ScoreService.doPublishOne/revokeOne、AdminController.kickUser。TDD 先红：-Dtest 三类目标测试 41 例 5 断言级红（集成 3 + 单测 verify 2，接线缺失期，工作树=实施笔减接线），evidence/tdd-red-phase.txt；后绿 41/41，evidence/tdd-green-phase.txt。实施笔 341d51f。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证、双端门禁实测与基线上调",
+      "status": "completed",
+      "description": "完成 m1/m2/m3 三项变异击红与回绿留证；全量运行双端门禁；单调上调 gate-baseline.json backendTests；生成 evidence/ 留档与哈希清单。",
+      "evidence": "m1（删 ExamService.publish 发布审计）击红 examPublishPersistsOperationAudit 断言级红→还原回绿 3/3；m2（删 ScoreService.revokeOne 撤回审计）击红 revokeWritesOperationAuditWithExamTitleAndReason（logScoreRevoke 未被调用）→回绿 31/31；m3（删 AdminController.kickUser 踢人审计）击红 userKickPersistsOperationAudit 断言级红→回绿 3/3；六份日志 evidence/mutation-m{1,2,3}-{red,revert-green}.txt，还原后 git status 零残留。后端门禁：仓库根 mvnw clean test 733/0/0/1 全绿（722→733，evidence/gate-backend.txt）；前端门禁零改动持平：lint:check 零错、type-check:check 零错、vitest 939/939（--maxWorkers=4）。gate-baseline.json backendTests 722→733（同笔上调）；哈希清单 evidence/evidence-sha256.txt。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "completed",
+      "description": "spec-delta 合入 specs/authentication/spec.md；归档变更目录并更新 spec/README.md；--no-ff 合入 main。",
+      "evidence": "①双端门禁实测：后端 ./mvnw clean test 733/0/0/1 全绿、前端 lint/type 0 错，vitest 122 文件/939 例全绿；②终审复核独立裁决 PASS：实测与红线机检全过，m1/m2/m3 变异击红判别力真实；③spec-delta 合入：specs/authentication/spec.md 追加「考务生命周期关键操作安全审计」Scenario；④总账与归档：变更提案归档至 spec/changes/archive/add-exam-operation-audit-logs/，spec/README.md 在途表清空并登记来源与归档速览；⑤feature/add-exam-operation-audit-logs 分支 --no-ff 合入 main。"
+    }
+  ]
+}

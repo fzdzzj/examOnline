@@ -18,6 +18,7 @@ import com.exam.message.service.ExamLifecycleNotificationService;
 import com.exam.paper.entity.Paper;
 import com.exam.paper.mapper.PaperMapper;
 import com.exam.paper.service.PaperService;
+import com.exam.service.AuditLogService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,13 +56,14 @@ public class ExamService {
     private final ExamSnapshotService snapshotService;
     private final AbsenceService absenceService;
     private final ExamLifecycleNotificationService lifecycleNotificationService;
+    private final AuditLogService auditLogService;
     private final ObjectMapper objectMapper;
 
     public ExamService(ExamMapper examMapper, PaperService paperService,
                        PaperMapper paperMapper, ExamStateMachineService stateMachineService,
                        ExamSnapshotService snapshotService, AbsenceService absenceService,
                        ExamLifecycleNotificationService lifecycleNotificationService,
-                       ObjectMapper objectMapper) {
+                       AuditLogService auditLogService, ObjectMapper objectMapper) {
         this.examMapper = examMapper;
         this.paperService = paperService;
         this.paperMapper = paperMapper;
@@ -69,6 +71,7 @@ public class ExamService {
         this.snapshotService = snapshotService;
         this.absenceService = absenceService;
         this.lifecycleNotificationService = lifecycleNotificationService;
+        this.auditLogService = auditLogService;
         this.objectMapper = objectMapper;
     }
 
@@ -233,6 +236,9 @@ public class ExamService {
         assertEditable(exam);
         examMapper.deleteById(id);
         log.info("考试删除: id={}", id);
+        // 旁路审计（add-exam-operation-audit-logs）：删除成功落 EXAM_DELETE；
+        // 服务内部吞异常，审计库抖动不回滚本次删除事务。
+        auditLogService.logExamDelete(exam.getId(), exam.getTitle());
     }
 
     /**
@@ -257,6 +263,9 @@ public class ExamService {
         exam.setSnapshotId(snapshotId);
         examMapper.updateById(exam);
         log.info("考试 {} 发布（学生可见），等待定时开考", id);
+        // 旁路审计（add-exam-operation-audit-logs）：发布成功落 EXAM_PUBLISH；
+        // 服务内部吞异常，审计库抖动不回滚本次发布事务。
+        auditLogService.logExamPublish(exam.getId(), exam.getTitle());
         // 旁路通知（add-exam-lifecycle-notifications）：发布成功后向班级学生投递考试发布通知；
         // 服务内部统一 try-catch 降级，任何异常绝不回滚/阻断本次发布事务。
         lifecycleNotificationService.notifyExamPublished(exam);

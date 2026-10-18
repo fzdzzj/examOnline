@@ -101,6 +101,9 @@ public class AdminController {
     @RequirePermission("user:manage")
     public ApiResponse<Void> kickUser(@PathVariable Long userId) {
         authService.kickUser(userId);
+        // 旁路审计（add-exam-operation-audit-logs）：下线成功落 USER_KICK；
+        // 服务内部吞异常，审计库抖动不影响本次下线结果。
+        auditLogService.logUserKick(userId);
         return ApiResponse.success();
     }
 

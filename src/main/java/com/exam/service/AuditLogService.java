@@ -5,17 +5,24 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.exam.audit.dto.AuditLogResponse;
 import com.exam.audit.entity.AuditLog;
 import com.exam.audit.mapper.AuditLogMapper;
+import com.exam.anticheat.ip.ClientIpResolver;
+import com.exam.auth.security.LoginUser;
+import com.exam.auth.security.SecurityUtil;
 import com.exam.common.RequestIdFilter;
 import com.exam.config.TraceIdInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 
 /**
- * 安全审计日志服务：把登录、账户锁定等安全事件落到 audit_log 表。
+ * 安全审计日志服务：把登录、账户锁定等安全事件与考务核心写操作（考试发布/删除、
+ * 成绩发布/撤回、管理员强制下线）落到 audit_log 表。
  *
  * <p><b>同步写，不用 @Async。</b>异步边界上 MDC 与 SecurityContext 都不传递，旧实现因此在
  * 两处静默失效：它用反射取当前登录用户（工作线程里 SecurityContext 是空的，取到也从未被使用），
@@ -50,6 +57,58 @@ public class AuditLogService {
     /** 记录账户锁定（连续登录失败触发）。 */
     public void logAccountLock(String username, String ip, String lockReason) {
         record(null, username, AuditLog.ACTION_ACCOUNT_LOCKED, ip, AuditLog.STATUS_WARNING, lockReason);
+    }
+
+    // ==================== 考务核心操作审计（add-exam-operation-audit-logs） ====================
+
+    /** 发布考试。操作人/IP 从当前请求现场提取，details 带关联考试 ID 与标题。 */
+    public void logExamPublish(Long examId, String examTitle) {
+        recordOperation(AuditLog.ACTION_EXAM_PUBLISH, "发布考试: examId=" + examId + ", title=" + examTitle);
+    }
+
+    /** 删除考试（软删）。 */
+    public void logExamDelete(Long examId, String examTitle) {
+        recordOperation(AuditLog.ACTION_EXAM_DELETE, "删除考试: examId=" + examId + ", title=" + examTitle);
+    }
+
+    /** 发布成绩。count 为本次发布的已批改答卷数。 */
+    public void logScorePublish(Long examId, String examTitle, int count) {
+        recordOperation(AuditLog.ACTION_SCORE_PUBLISH,
+                "发布成绩: examId=" + examId + ", title=" + examTitle + ", count=" + count);
+    }
+
+    /** 撤回成绩。reason 由撤回接口强制必填（审计要求）。 */
+    public void logScoreRevoke(Long examId, String examTitle, String reason) {
+        recordOperation(AuditLog.ACTION_SCORE_REVOKE,
+                "撤回成绩: examId=" + examId + ", title=" + examTitle + ", reason=" + reason);
+    }
+
+    /** 管理员强制下线。targetUserId 为被踢用户。 */
+    public void logUserKick(Long targetUserId) {
+        recordOperation(AuditLog.ACTION_USER_KICK, "强制下线: targetUserId=" + targetUserId);
+    }
+
+    /**
+     * 考务操作审计公共入口：业务调用点都在操作成功之后，状态恒为 SUCCESS；
+     * 操作人取 {@link SecurityUtil}，IP 经 {@link #currentClientIp()} 从请求现场解析。
+     */
+    private void recordOperation(String action, String details) {
+        LoginUser operator = SecurityUtil.getCurrentUser();
+        record(operator == null ? null : operator.getId(),
+                operator == null ? null : operator.getUsername(),
+                action, currentClientIp(), AuditLog.STATUS_SUCCESS, details);
+    }
+
+    /**
+     * 客户端真实 IP：复用防作弊域的 {@link ClientIpResolver}（X-Real-IP 优先、XFF 首项次之、
+     * 直连兜底），不另起一套会漂移的解析逻辑。无请求上下文（定时任务/MQ 线程直调）时返回 null。
+     */
+    private String currentClientIp() {
+        RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
+        if (attrs instanceof ServletRequestAttributes servletAttributes) {
+            return ClientIpResolver.resolve(servletAttributes.getRequest());
+        }
+        return null;
     }
 
     /**

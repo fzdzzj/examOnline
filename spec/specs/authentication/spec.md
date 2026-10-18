@@ -4,6 +4,7 @@
 > 来源：`spec/changes/add-project-skeleton` 合入（工程骨架阶段）；
 > `spec/changes/archive/add-auth-must-change-password` 合入（初始密码强制修改标记，0fb56b9）；
 > `spec/changes/archive/harden-security-config` 合入（安全事件审计落库、建表来源唯一）；
+> `spec/changes/archive/add-exam-operation-audit-logs` 合入（考务核心操作安全审计全景覆盖，2026-10-18 归档）；
 > d2cbde9 直补（审计事件查询——非变更提案，见文末注记）。
 
 ## Requirements
@@ -504,6 +505,14 @@ WHEN 写入抛出异常
 THEN 异常被吞并记 ERROR
 
 AND 不因旁路故障把正常登录变成 500
+
+#### Scenario: 考务生命周期关键操作安全审计 (add-exam-operation-audit-logs)
+
+- **GIVEN**: 教师或管理员执行考务关键写操作（发布考试、删除考试、发布成绩、撤回成绩、管理员踢人下线）
+- **WHEN**: 业务操作成功完成
+- **THEN**: 系统 SHALL 旁路向 `audit_log` 写入对应的操作审计记录（动作类型分别为 `EXAM_PUBLISH`、`EXAM_DELETE`、`SCORE_PUBLISH`、`SCORE_REVOKE`、`USER_KICK`）
+- **AND**: 审计记录 SHALL 包含当次操作人的用户 ID、用户名、客户端真实 IP、链路 traceId 与操作详情（关联的业务 ID、考试标题或撤回原因）
+- **AND**: 审计写入失败 SHALL NOT 阻断或回滚主业务事务
 
 ---
 
