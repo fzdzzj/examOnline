@@ -31,9 +31,9 @@
     {
       "id": 4,
       "title": "阶段 4：规范基线合入、总账更新与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "spec-delta 合入 specs/exam-taking/spec.md 与 specs/grading/spec.md；归档变更目录并更新 spec/README.md；--no-ff 合入 main。",
-      "evidence": ""
+      "evidence": "①双端门禁实测：后端 ./mvnw clean test 722/0/0/1 全绿、前端 lint/type 0 错，vitest 122 文件/939 例全绿；②终审复核独立裁决 PASS：实测与红线机检全过，m1/m2/m3 变异击红判别力真实；③spec-delta 合入：specs/exam-taking/spec.md 追加「草稿体积上限钳制」Scenario，specs/grading/spec.md 追加「批改评语长度限制」与「初次批改并发唯一键冲突防护」两 Scenario；④总账与归档：变更提案归档至 spec/changes/archive/harden-draft-and-grading-boundaries/，spec/README.md 在途表清空并登记来源与归档速览；⑤feature/harden-draft-and-grading-boundaries 分支 --no-ff 合入 main。"
     }
   ]
 }

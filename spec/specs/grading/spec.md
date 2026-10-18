@@ -1,7 +1,7 @@
 # grading 规范
 
 > 能力域：判分（阶段 6，W7）。
-> 来源：`spec/changes/add-grading-score` 合入（判分策略、客观题判分、简答批改、判分失败处理）。
+> 来源：`spec/changes/add-grading-score` 合入（判分策略、客观题判分、简答批改、判分失败处理）+ `spec/changes/archive/harden-draft-and-grading-boundaries` 合入（批改评语长度限制与初次批改并发唯一键冲突防护，2026-10-18 归档）。
 
 ## Requirements
 
@@ -100,6 +100,20 @@ THEN 这些答卷的已有主观批改行在进入逐份写入之前一次取出
 AND 刷新初判提示分时不覆盖已有终分、评语与 version
 
 AND 一份答卷判分失败仍只标记该份，不影响其他答卷
+
+#### Scenario: 批改评语长度限制 (harden-draft-and-grading-boundaries)
+
+- **GIVEN**: 教师批改主观题
+- **WHEN**: 提交的批改评语（comment）字符长度超过 1024
+- **THEN**: 系统 SHALL 在参数校验阶段阻断请求并返回 400 校验错误
+- **AND**: 系统 SHALL NOT 向数据库写入超长评语，防止产生 500 数据溢出异常
+
+#### Scenario: 初次批改并发唯一键冲突防护 (harden-draft-and-grading-boundaries)
+
+- **GIVEN**: 两名教师同时对同一答卷的同一道尚未批改的主观题提交初次批改打分（双方本地状态均无历史记录）
+- **WHEN**: 双方同时发起新增插入操作导致其中一方触发数据库唯一键约束（uk_subjective_grades）
+- **THEN**: 触发唯一键冲突的一方由系统捕获 `DuplicateKeyException` 并转抛 409 状态冲突异常（STATE_CONFLICT，"批改已被他人更新，请刷新后重试"）
+- **AND**: 系统避免向客户端暴露 500 内部服务错误
 
 ---
 
