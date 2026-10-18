@@ -144,6 +144,7 @@
           v-if="activeTab === 'analysis'"
           :exam-id="examId"
           :enabled="activeTab === 'analysis'"
+          :exam-title="detail?.title"
         />
       </TabPane>
 

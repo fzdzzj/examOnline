@@ -309,6 +309,19 @@ public class ScoreController {
         return ApiResponse.success(examAnalysisReportService.buildReport(examId));
     }
 
+    /**
+     * 考试数据分析报告 Excel 导出（add-exam-analysis-export）：基于 {@link #analysisReport} 同一聚合
+     * 生成 4 工作表（班级概览与分数段/逐题指标/知识点薄弱/学生关注名单）的 SXSSF 流式工作簿；
+     * 权限与越权校验口径同报告端点（exam:manage + requireOwnedExam）。
+     */
+    @GetMapping("/api/exams/{examId}/scores/analysis-report/export")
+    @RequirePermission("exam:manage")
+    public ResponseEntity<byte[]> exportAnalysisReport(@PathVariable Long examId) {
+        requireOwnedExam(examId);
+        return attachment(examId, "考试分析报告", ".xlsx", XLSX_MEDIA_TYPE,
+                examAnalysisReportService.exportReport(examId));
+    }
+
     // ==================== 学情分析与靶向练习（add-student-learning-analytics） ====================
 
     /**

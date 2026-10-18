@@ -5,6 +5,19 @@
 
     <template v-else>
       <template v-if="analysis && hasData && overview">
+        <!-- 导出分析报告（add-exam-analysis-export）：后端流式生成 4 Sheet Excel，前端只触发下载 -->
+        <div class="mb-3 flex justify-end">
+          <Button
+            type="primary"
+            :loading="exporting"
+            :disabled="!hasData || loading"
+            data-testid="export-analysis-report"
+            @click="onExport"
+          >
+            导出分析报告
+          </Button>
+        </div>
+
         <!-- ==================== 班级概览统计卡 ==================== -->
         <Row :gutter="[16, 16]" class="mb-4">
           <Col :span="12" :md="8" :lg="4">
@@ -148,15 +161,17 @@
 <script setup lang="ts">
 import {
   Alert,
+  Button,
   Card,
   Col,
+  message,
   Progress,
   Row,
   Statistic,
   Table,
   type TableColumnsType,
 } from 'ant-design-vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 
 import {
@@ -166,7 +181,8 @@ import {
   type QuestionStatItem,
   type TagWeaknessItem,
 } from '@/api/axios';
-import { client, unwrap } from '@/api/apiClient';
+import { apiClient, client, unwrap } from '@/api/apiClient';
+import { browserSaveFile, downloadExport } from '@/utils/exportDownload';
 
 /**
  * 考试数据分析报告（add-exam-analysis-report，创新点4）：
@@ -177,6 +193,8 @@ import { client, unwrap } from '@/api/apiClient';
 const props = defineProps<{
   examId: number;
   enabled: boolean;
+  /** 下载文件语义化命名用（父页面透传考试标题，可选） */
+  examTitle?: string;
 }>();
 
 const {
@@ -198,6 +216,28 @@ const {
 });
 
 const errorText = computed(() => (error.value instanceof Error ? error.value.message : null));
+
+// ==================== 导出分析报告（add-exam-analysis-export） ====================
+
+const exporting = ref(false);
+
+/** 导出走 downloadExport 管道（硬约定 4：后端 SXSSF 流式生成，前端只触发下载，不拼装）。 */
+async function onExport(): Promise<void> {
+  if (!hasData.value || exporting.value) return;
+  exporting.value = true;
+  try {
+    const fileName = await downloadExport(
+      { http: apiClient, saveFile: browserSaveFile },
+      `/api/exams/${props.examId}/scores/analysis-report/export`,
+      `${props.examTitle ? `${props.examTitle}-` : ''}考试分析报告.xlsx`
+    );
+    message.success(`已导出：${fileName}`);
+  } catch (e) {
+    message.error(e instanceof Error ? e.message : '导出失败，请稍后重试');
+  } finally {
+    exporting.value = false;
+  }
+}
 
 const overview = computed<ClassOverview | undefined>(() => analysis.value?.classOverview);
 const hasData = computed(() => (overview.value?.actualCount ?? 0) > 0);

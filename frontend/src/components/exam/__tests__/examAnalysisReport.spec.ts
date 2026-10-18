@@ -10,10 +10,12 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { message } from 'ant-design-vue';
 
 import * as api from '@/api/axios';
 import { ApiError } from '@/api/types';
 import ExamAnalysisReport from '@/components/exam/ExamAnalysisReport.vue';
+import { downloadExport } from '@/utils/exportDownload';
 
 vi.mock('@/api/axios', () => ({
   analysisReport: vi.fn(),
@@ -21,7 +23,13 @@ vi.mock('@/api/axios', () => ({
 
 vi.mock('@/api/apiClient', () => ({
   client: { __test: 'mock-client' },
+  apiClient: { __test: 'mock-axios-instance' },
   unwrap: async (value: unknown) => value,
+}));
+
+vi.mock('@/utils/exportDownload', () => ({
+  downloadExport: vi.fn(),
+  browserSaveFile: vi.fn(),
 }));
 
 /** useQuery mock：queryKey 变化时重新触发（rejection 落进 error ref） */
@@ -91,14 +99,15 @@ const REPORT = {
   excellentLine: 90,
 };
 
-function mountReport(enabled = true) {
+function mountReport(enabled = true, examTitle?: string) {
   return mount(ExamAnalysisReport, {
-    props: { examId: 4, enabled },
+    props: { examId: 4, enabled, examTitle },
   });
 }
 
 beforeEach(() => {
   vi.mocked(api.analysisReport).mockResolvedValue(REPORT as never);
+  vi.mocked(downloadExport).mockResolvedValue('考试分析报告.xlsx');
 });
 
 afterEach(() => {
@@ -303,5 +312,74 @@ describe('考试数据分析报告组件', () => {
     // 判断题展示层不应暴露原始 T/F 标识
     expect(wrapper.text()).not.toContain('T: 24人');
     expect(wrapper.text()).not.toContain('F: 4人');
+  });
+});
+
+// ==================== 导出分析报告（add-exam-analysis-export） ====================
+
+describe('导出分析报告', () => {
+  it('点击导出按钮：走 downloadExport 管道请求导出端点，成功提示已导出', async () => {
+    const successSpy = vi.spyOn(message, 'success').mockImplementation(() => ({}) as never);
+    const wrapper = mountReport();
+    await flushPromises();
+    await flushPromises();
+
+    const button = wrapper.find('[data-testid="export-analysis-report"]');
+    expect(button.exists()).toBe(true);
+    await button.trigger('click');
+    await flushPromises();
+
+    expect(vi.mocked(downloadExport)).toHaveBeenCalledTimes(1);
+    const [deps, url, fallbackName] = vi.mocked(downloadExport).mock.calls[0];
+    expect(deps.http).toEqual({ __test: 'mock-axios-instance' });
+    expect(typeof deps.saveFile).toBe('function');
+    expect(url).toBe('/api/exams/4/scores/analysis-report/export');
+    expect(fallbackName).toBe('考试分析报告.xlsx');
+    expect(successSpy).toHaveBeenCalledWith('已导出：考试分析报告.xlsx');
+  });
+
+  it('examTitle 传入时：兜底文件名带考试标题前缀（语义化命名）', async () => {
+    vi.spyOn(message, 'success').mockImplementation(() => ({}) as never);
+    const wrapper = mountReport(true, '期中考试');
+    await flushPromises();
+    await flushPromises();
+
+    await wrapper.find('[data-testid="export-analysis-report"]').trigger('click');
+    await flushPromises();
+
+    expect(vi.mocked(downloadExport)).toHaveBeenCalledWith(
+      expect.objectContaining({ http: { __test: 'mock-axios-instance' } }),
+      '/api/exams/4/scores/analysis-report/export',
+      '期中考试-考试分析报告.xlsx'
+    );
+  });
+
+  it('导出失败：message.error 呈现错误原因，不伪装成功', async () => {
+    const errorSpy = vi.spyOn(message, 'error').mockImplementation(() => ({}) as never);
+    vi.mocked(downloadExport).mockRejectedValue(new Error('网络错误'));
+    const successSpy = vi.spyOn(message, 'success').mockImplementation(() => ({}) as never);
+    const wrapper = mountReport();
+    await flushPromises();
+    await flushPromises();
+
+    await wrapper.find('[data-testid="export-analysis-report"]').trigger('click');
+    await flushPromises();
+
+    expect(errorSpy).toHaveBeenCalledWith('网络错误');
+    expect(successSpy).not.toHaveBeenCalled();
+  });
+
+  it('无成绩数据（actualCount=0）：导出按钮不渲染（无数据可导）', async () => {
+    vi.mocked(api.analysisReport).mockResolvedValue({
+      ...REPORT,
+      classOverview: { ...REPORT.classOverview, actualCount: 0 },
+      questionStats: [],
+      focusList: [],
+    } as never);
+    const wrapper = mountReport();
+    await flushPromises();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="export-analysis-report"]').exists()).toBe(false);
   });
 });
