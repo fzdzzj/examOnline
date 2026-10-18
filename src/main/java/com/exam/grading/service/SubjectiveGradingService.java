@@ -16,6 +16,7 @@ import com.exam.grading.model.GradingPaper;
 import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.support.GradingPaperReader;
 import com.exam.submission.entity.ExamSubmission;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -184,7 +185,14 @@ public class SubjectiveGradingService {
             row.setGraderId(graderId);
             row.setGradedTime(now);
             row.setVersion(0);
-            subjectiveGradeMapper.insert(row);
+            // 初次批改并发：两教师同建行，后到者撞 uk_subjective_grades——
+            // 转 409 与乐观锁冲突同语义，不把 DAO 异常透出成 500
+            try {
+                subjectiveGradeMapper.insert(row);
+            } catch (DuplicateKeyException e) {
+                throw new BusinessException(ResponseCode.STATE_CONFLICT,
+                        "批改已被他人更新，请刷新后重试");
+            }
         } else {
             // 乐观锁 CAS：仅版本一致才写入（两教师同批一份卷仅一个成功）
             int updated = subjectiveGradeMapper.casSaveScore(row.getId(), request.getScore(),

@@ -3,6 +3,7 @@ package com.exam.grading.dto;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
@@ -24,7 +25,8 @@ public class SubjectiveScoreRequest {
     @Digits(integer = 3, fraction = 1, message = "分数最多 1 位小数")
     private BigDecimal score;
 
-    /** 评语（可空） */
+    /** 评语（可空）：长度对齐库列 VARCHAR(1024)，超长在校验层拦截而非落库时 500 */
+    @Size(max = 1024, message = "批改评语不能超过 1024 个字符")
     private String comment;
 
     /** 乐观锁版本号：与读取时一致才允许写入 */
