@@ -1,0 +1,34 @@
+{
+  "change": "add-exam-time-extension",
+  "category": "feature-hardening",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：提案立项与基线登记",
+      "status": "completed",
+      "description": "proposal.md、spec-delta.md、tasks.json 落位；spec/README.md 登记进行中变更表；创建 feature/add-exam-time-extension 分支并提交立案笔。",
+      "evidence": "分支 feature/add-exam-time-extension 创建；立案三件套落盘；spec/README.md 登记完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：服务层与接口接入实施（零 DDL）",
+      "status": "completed",
+      "description": "新增 ExamTimeExtensionRequest/Response；ExamSubmissionMapper 新增 TIMESTAMPADD 原子顺延方法；ExamService 实施全场/个人双模式、状态门控与详情缓存清理；AuditLog 增 EXAM_EXTEND_TIME 并接入 AuditLogService；ExamLifecycleNotificationService 增加延时旁路通知；ExamController 暴露 POST /api/exams/{id}/extend-time；openapi.yaml 补齐契约（paths 101→102）。",
+      "evidence": "实施笔 4c89c81（13 文件，零 DDL：audit_log.action 为 VARCHAR(32) 原生容纳 EXAM_EXTEND_TIME）；openapi.yaml paths 实测 102；exam_submissions.deadline_time 经 TIMESTAMPADD(MINUTE,...) 原子顺延（MySQL 8 / H2 双兼容）；审计与通知均旁路降级不阻断主事务。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：TDD 先红后绿、变异击红与门禁留证",
+      "status": "completed",
+      "description": "新增单元与集成测试（全场顺延、个人个性化补时、非进行中状态拒绝、越权拦截、参数越界拦截、审计与通知断言）；TDD 先红后绿留证；三变异（m1 注释进行中状态门控 / m2 注释答卷批量顺延 / m3 注释审计记录）断言级击红并回绿留证；双端门禁实测全绿，gate-baseline.json 同笔上调。",
+      "evidence": "先红 5/5（端点未实施 expected-but-was-500，tdd-red.log）→回绿 5/5；新增 14 例（集成 5 + 服务 3 + 通知 4 + 审计 2）；变异 m1 400→200 / m2 2→0 / m3 1→0 断言级击红，checkout 复原零残留后逐例回绿（mutation-m{1,2,3}-red/green.log）；门禁 @4c89c81 复跑：后端 ./mvnw clean test 761/0/0/1 绿（基线 747→761）、前端 vitest 943/943 持平；gate-baseline.json 上调 backendTests 761、openapiPaths 102；evidence/ 13 件带 sha256（evidence-summary.md 总览）。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "completed",
+      "description": "spec-delta 合入 specs/exam-management/spec.md；提案归档至 spec/changes/archive/；spec/README.md 在途表清空并登记来源与归档速览；feature/add-exam-time-extension 分支 --no-ff 合入 main。",
+      "evidence": "①双端门禁实测全绿：后端 ./mvnw clean test 761/0/0/1 全绿、前端 vitest 122 文件/943 例全绿；②终审复核独立裁决 PASS：实测与红线机检全过，m1/m2/m3 变异击红判别力真实，零 DDL；③spec-delta 合入：specs/exam-management/spec.md 追加「考中应急顺延与个性化补时」Requirement 及五 Scenario；④总账与归档：变更提案归档至 spec/changes/archive/add-exam-time-extension/，spec/README.md 在途表清空并登记来源与归档速览；⑤feature/add-exam-time-extension 分支 --no-ff 合入 main。"
+    }
+  ]
+}

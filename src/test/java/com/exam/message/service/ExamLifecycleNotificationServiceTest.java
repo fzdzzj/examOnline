@@ -21,6 +21,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doThrow;
@@ -143,5 +144,52 @@ class ExamLifecycleNotificationServiceTest {
         assertEquals(1001L, captor.getValue().getUserId());
         assertEquals("成绩复核结果通知", captor.getValue().getTitle());
         verify(messageMapper, never()).insertBatch(anyList());
+    }
+
+    // ==================== 考试加时通知（add-exam-time-extension） ====================
+
+    @Test
+    void timeExtendedNotifiesAllPassedRecipientsWithAdjustmentContent() {
+        stubPaperTitle();
+
+        service.notifyExamTimeExtended(exam(9L, 1L), students(2), 30, true);
+
+        List<List<UserMessage>> batches = captureBatches(1);
+        assertEquals(2, batches.get(0).size());
+        UserMessage first = batches.get(0).get(0);
+        assertEquals(1001L, first.getUserId());
+        assertEquals(9L, first.getExamId());
+        assertEquals("考试时间调整通知", first.getTitle());
+        assertTrue(first.getContent().contains("全场顺延 30 分钟"),
+                "全场模式内容应含'全场顺延'与时长，实际=" + first.getContent());
+        assertEquals(UserMessage.READ_FLAG_UNREAD, first.getReadFlag());
+    }
+
+    @Test
+    void timeExtendedIndividualModeMarksPersonalWording() {
+        stubPaperTitle();
+
+        service.notifyExamTimeExtended(exam(9L, 1L), List.of(1005L), 20, false);
+
+        List<List<UserMessage>> batches = captureBatches(1);
+        assertEquals(1, batches.get(0).size());
+        assertTrue(batches.get(0).get(0).getContent().contains("单独补时 20 分钟"),
+                "个人模式内容应含'单独补时'与时长，实际=" + batches.get(0).get(0).getContent());
+    }
+
+    @Test
+    void timeExtendedFailureDegradesSilently() {
+        stubPaperTitle();
+        doThrow(new IllegalStateException("db down")).when(messageMapper).insertBatch(anyList());
+
+        // 旁路降级：加时通知写入失败绝不抛出以阻断加时主事务
+        assertDoesNotThrow(() -> service.notifyExamTimeExtended(exam(9L, 1L), students(3), 15, true));
+    }
+
+    @Test
+    void timeExtendedEmptyRecipientsTouchNothing() {
+        service.notifyExamTimeExtended(exam(9L, 1L), List.of(), 15, true);
+
+        verifyNoInteractions(messageMapper);
     }
 }

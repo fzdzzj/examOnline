@@ -15,6 +15,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -151,6 +153,41 @@ class AuditLogServiceExamOperationTest {
         assertEquals(AuditLog.ACTION_USER_KICK, row.getAction());
         assertEquals(OPERATOR_ID, row.getUserId(), "操作人是踢人的管理员，不是被踢用户");
         assertTrue(row.getDetails().contains("targetUserId=88"), "details 须带被踢用户 ID");
+    }
+
+    // ==================== 考中顺延/补时（add-exam-time-extension） ====================
+
+    @Test
+    void examExtendTimeGlobalRecordsModeMinutesAndReason() {
+        loginAsOperator();
+        bindRequestWithRealIp();
+
+        auditLogService.logExamExtendTime(16L, "期末考-G", 30, true, 25, List.of(101L, 102L), "机房突发断电应急顺延");
+
+        AuditLog row = captured();
+        assertEquals(AuditLog.ACTION_EXAM_EXTEND_TIME, row.getAction());
+        assertEquals(AuditLog.STATUS_SUCCESS, row.getStatus());
+        assertEquals(OPERATOR_ID, row.getUserId());
+        assertEquals(CLIENT_IP, row.getIpAddress());
+        assertTrue(row.getDetails().contains("examId=16"));
+        assertTrue(row.getDetails().contains("mode=GLOBAL"), "details 须标明全场模式");
+        assertTrue(row.getDetails().contains("minutes=30"), "details 须带顺延时长");
+        assertTrue(row.getDetails().contains("affectedSubmissions=25"), "details 须带受影响在途答卷数");
+        assertTrue(row.getDetails().contains("机房突发断电应急顺延"), "details 须带顺延原因（审计要求）");
+    }
+
+    @Test
+    void examExtendTimeIndividualMarksModeAndStudentIds() {
+        loginAsOperator();
+        bindRequestWithRealIp();
+
+        auditLogService.logExamExtendTime(17L, "期末考-H", 20, false, 2, List.of(201L, 202L), "考生设备死机重启补时");
+
+        AuditLog row = captured();
+        assertEquals(AuditLog.ACTION_EXAM_EXTEND_TIME, row.getAction());
+        assertTrue(row.getDetails().contains("mode=INDIVIDUAL"), "details 须标明个人模式");
+        assertTrue(row.getDetails().contains("studentIds=[201, 202]"), "个人模式 details 须带受影响学生名单");
+        assertTrue(row.getDetails().contains("考生设备死机重启补时"));
     }
 
     // ==================== 现场缺失与旁路容错 ====================

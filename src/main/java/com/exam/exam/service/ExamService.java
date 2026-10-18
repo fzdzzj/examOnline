@@ -11,6 +11,8 @@ import com.exam.common.ResponseCode;
 import com.exam.config.CacheConfig;
 import com.exam.exam.dto.ExamCreateRequest;
 import com.exam.exam.dto.ExamDetailResponse;
+import com.exam.exam.dto.ExamTimeExtensionRequest;
+import com.exam.exam.dto.ExamTimeExtensionResponse;
 import com.exam.exam.dto.ExamUpdateRequest;
 import com.exam.exam.entity.Exam;
 import com.exam.exam.mapper.ExamMapper;
@@ -19,9 +21,12 @@ import com.exam.paper.entity.Paper;
 import com.exam.paper.mapper.PaperMapper;
 import com.exam.paper.service.PaperService;
 import com.exam.service.AuditLogService;
+import com.exam.submission.entity.ExamSubmission;
+import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -55,6 +60,7 @@ public class ExamService {
     private final ExamStateMachineService stateMachineService;
     private final ExamSnapshotService snapshotService;
     private final AbsenceService absenceService;
+    private final ExamSubmissionMapper submissionMapper;
     private final ExamLifecycleNotificationService lifecycleNotificationService;
     private final AuditLogService auditLogService;
     private final ObjectMapper objectMapper;
@@ -62,6 +68,7 @@ public class ExamService {
     public ExamService(ExamMapper examMapper, PaperService paperService,
                        PaperMapper paperMapper, ExamStateMachineService stateMachineService,
                        ExamSnapshotService snapshotService, AbsenceService absenceService,
+                       ExamSubmissionMapper submissionMapper,
                        ExamLifecycleNotificationService lifecycleNotificationService,
                        AuditLogService auditLogService, ObjectMapper objectMapper) {
         this.examMapper = examMapper;
@@ -70,6 +77,7 @@ public class ExamService {
         this.stateMachineService = stateMachineService;
         this.snapshotService = snapshotService;
         this.absenceService = absenceService;
+        this.submissionMapper = submissionMapper;
         this.lifecycleNotificationService = lifecycleNotificationService;
         this.auditLogService = auditLogService;
         this.objectMapper = objectMapper;
@@ -299,6 +307,61 @@ public class ExamService {
                 .set(Exam::getForceEnd, 1));
         log.info("考试 {} 教师提前结束（force_end=1），强制交卷由阶段 5 交卷链路处理", id);
         return detail(id);
+    }
+
+    /**
+     * 考中应急顺延与个性化补时（add-exam-time-extension）：仅进行中（status=1）的考试允许，
+     * 其余状态（未开始/已结束/已批改）一律 400 拦截且零改动。
+     *
+     * <p>全场模式（studentIds 为 null/空）：主表 end_time/duration_minutes 一并顺延——后续
+     * 未入场考生进入时自然按新窗口与时长算出延后的个人截止；个人模式：主表不动，仅指定考生的
+     * 在途答卷补时——已交卷（status=2+）行不命中 status=1 谓词，天然不受影响。
+     * 在途答卷 deadline 经 TIMESTAMPADD 原子顺延（MySQL 8 / H2 双端兼容）。
+     *
+     * <p>通知收件人 = 真正被顺延的考生（在途 ∩ 目标名单）：全场为全部在途考生，个人模式里
+     * 已交卷的指定考生不收"截止已顺延"的误导性通知。审计与通知均旁路降级，绝不阻断加时主事务。
+     */
+    @CacheEvict(cacheNames = CacheConfig.CACHE_EXAM_DETAIL, allEntries = true)
+    @Transactional(rollbackFor = Exception.class)
+    public ExamTimeExtensionResponse extendTime(Long id, ExamTimeExtensionRequest request) {
+        Exam exam = getOwnedExam(id);
+        if (exam.getStatus() == null || exam.getStatus() != Exam.STATUS_IN_PROGRESS) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "仅进行中的考试允许顺延或补时");
+        }
+        boolean global = request.getStudentIds() == null || request.getStudentIds().isEmpty();
+        int minutes = request.getExtensionMinutes();
+
+        // 受影响考生 = 进行中答卷 ∩ 目标名单（全场即全部在途），作为通知收件人
+        List<Long> inflightStudents = submissionMapper.selectList(Wrappers.<ExamSubmission>lambdaQuery()
+                        .eq(ExamSubmission::getExamId, exam.getId())
+                        .eq(ExamSubmission::getStatus, ExamSubmission.STATUS_IN_PROGRESS)
+                        .select(ExamSubmission::getStudentId))
+                .stream().map(ExamSubmission::getStudentId).distinct().toList();
+        List<Long> recipients = global ? inflightStudents
+                : inflightStudents.stream().filter(request.getStudentIds()::contains).toList();
+
+        int affected = submissionMapper.extendDeadline(exam.getId(), minutes,
+                global ? null : request.getStudentIds());
+
+        LocalDateTime newEndTime = exam.getEndTime();
+        Integer newDurationMinutes = exam.getDurationMinutes();
+        if (global) {
+            newEndTime = exam.getEndTime().plusMinutes(minutes);
+            newDurationMinutes = exam.getDurationMinutes() + minutes;
+            examMapper.update(null, Wrappers.<Exam>lambdaUpdate()
+                    .eq(Exam::getId, exam.getId())
+                    .set(Exam::getEndTime, newEndTime)
+                    .set(Exam::getDurationMinutes, newDurationMinutes));
+        }
+        log.info("考试 {} 考中{} {} 分钟，影响在途答卷 {} 份",
+                id, global ? "全场顺延" : "个人补时", minutes, affected);
+        // 旁路审计（add-exam-operation-audit-logs 同款约定）：审计库抖动不回滚加时事务
+        auditLogService.logExamExtendTime(exam.getId(), exam.getTitle(), minutes, global,
+                affected, recipients, request.getReason());
+        // 旁路通知：仅向真正被顺延的考生投递，投递失败不影响加时
+        lifecycleNotificationService.notifyExamTimeExtended(exam, recipients, minutes, global);
+        return new ExamTimeExtensionResponse(exam.getId(), minutes, global, affected,
+                newEndTime, newDurationMinutes);
     }
 
     /**
