@@ -8,8 +8,10 @@ import com.exam.score.mapper.ScoreAuditLogMapper;
 import com.exam.audit.entity.AuditLog;
 import com.exam.audit.mapper.AuditLogMapper;
 import com.exam.submission.entity.ExamBehaviorLog;
+import com.exam.submission.entity.ExamDlqMessage;
 import com.exam.submission.entity.ExamSubmitDedup;
 import com.exam.submission.mapper.ExamBehaviorLogMapper;
+import com.exam.submission.mapper.ExamDlqMessageMapper;
 import com.exam.submission.mapper.ExamSubmitDedupMapper;
 import com.exam.support.IntegrationTestBase;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,9 +28,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 数据保留策略真表集成测试（add-data-retention）：
+ * 数据保留策略真表集成测试（add-data-retention + harden-data-retention-scope）：
  * H2 + schema.sql 唯一来源，禁止 @Sql 自建表。
- * 证明：dry-run 不删、只清终态旧考试、进行中不动、批上限生效。
+ * 证明：dry-run 不删、只清终态旧考试、进行中不动、批上限生效；
+ * 死信留档只清超窗 REPLAYED、PARKED 绝不动、按状态+年龄走索引有界分批。
  * 不声称磁盘释放；真删仅在 dry-run=false 的用例中发生。
  */
 class DataRetentionIntegrationTest extends IntegrationTestBase {
@@ -48,6 +51,8 @@ class DataRetentionIntegrationTest extends IntegrationTestBase {
     private ScoreAuditLogMapper scoreAuditLogMapper;
     @Autowired
     private AuditLogMapper auditLogMapper;
+    @Autowired
+    private ExamDlqMessageMapper dlqMessageMapper;
 
     @BeforeEach
     void resetRetentionDefaults() {
@@ -56,14 +61,16 @@ class DataRetentionIntegrationTest extends IntegrationTestBase {
         ReflectionTestUtils.setField(retentionService, "dryRun", true);
         ReflectionTestUtils.setField(retentionService, "retentionDays", 180);
         ReflectionTestUtils.setField(retentionService, "auditLogRetentionDays", 365);
+        ReflectionTestUtils.setField(retentionService, "dlqRetentionDays", 30);
         ReflectionTestUtils.setField(retentionService, "batchSize", 1000);
         ReflectionTestUtils.setField(retentionService, "maxBatchesPerRun", 20);
         ReflectionTestUtils.setField(retentionService, "maxExamsPerRun", 100);
-        // H2 跨用例保留：清空三张辅助表与安全审计表，避免历史行污染候选量/删除量断言
+        // H2 跨用例保留：清空各辅助表，避免历史行污染候选量/删除量断言
         behaviorLogMapper.delete(Wrappers.emptyWrapper());
         submitDedupMapper.delete(Wrappers.emptyWrapper());
         scoreAuditLogMapper.delete(Wrappers.emptyWrapper());
         auditLogMapper.delete(Wrappers.emptyWrapper());
+        dlqMessageMapper.delete(Wrappers.emptyWrapper());
     }
 
     @Test
@@ -220,6 +227,77 @@ class DataRetentionIntegrationTest extends IntegrationTestBase {
         assertEquals(25, report.securityAuditCandidates());
         assertEquals(10, report.securityAuditDeleted(), "单次运行封顶 5*2=10 行");
         assertEquals(15, countAuditLogRows("ret_sec_bound"), "其余留给后续运行，不能一次删穿");
+    }
+
+    @Test
+    @DisplayName("dlq dry-run: only over-window REPLAYED counted, nothing deleted, PARKED untouched")
+    void dlqDryRunCountsOnly() {
+        insertDlqRows(ExamDlqMessage.STATUS_REPLAYED, 2, LocalDateTime.now().minusDays(40));
+        insertDlqRows(ExamDlqMessage.STATUS_REPLAYED, 1, LocalDateTime.now().minusDays(10));
+        insertDlqRows(ExamDlqMessage.STATUS_PARKED, 3, LocalDateTime.now().minusDays(40));
+
+        ReflectionTestUtils.setField(retentionService, "dryRun", true);
+
+        RetentionReport report = retentionService.purgeOnce();
+
+        assertEquals(2, report.dlqCandidates(), "只有超窗 REPLAYED 计入候选");
+        assertEquals(0, report.dlqDeleted());
+        assertEquals(3, countDlqRows(ExamDlqMessage.STATUS_REPLAYED), "dry-run 下一行都不许少");
+        assertEquals(3, countDlqRows(ExamDlqMessage.STATUS_PARKED), "PARKED 不得被删");
+    }
+
+    @Test
+    @DisplayName("dlq live purge: over-window REPLAYED deleted; recent REPLAYED and all PARKED kept")
+    void dlqLivePurgeOnlyReplayedOverWindow() {
+        insertDlqRows(ExamDlqMessage.STATUS_REPLAYED, 2, LocalDateTime.now().minusDays(40));
+        insertDlqRows(ExamDlqMessage.STATUS_REPLAYED, 1, LocalDateTime.now().minusDays(10));
+        insertDlqRows(ExamDlqMessage.STATUS_PARKED, 3, LocalDateTime.now().minusDays(40));
+
+        ReflectionTestUtils.setField(retentionService, "dryRun", false);
+
+        RetentionReport report = retentionService.purgeOnce();
+
+        assertEquals(2, report.dlqCandidates());
+        assertEquals(2, report.dlqDeleted());
+        assertEquals(1, countDlqRows(ExamDlqMessage.STATUS_REPLAYED), "窗口内 REPLAYED 保留");
+        assertEquals(3, countDlqRows(ExamDlqMessage.STATUS_PARKED), "PARKED 绝不清理");
+    }
+
+    @Test
+    @DisplayName("dlq purge is bounded: one run deletes at most batch-size * max-batches")
+    void dlqBatchBound() {
+        insertDlqRows(ExamDlqMessage.STATUS_REPLAYED, 25, LocalDateTime.now().minusDays(40));
+        insertDlqRows(ExamDlqMessage.STATUS_PARKED, 4, LocalDateTime.now().minusDays(40));
+
+        ReflectionTestUtils.setField(retentionService, "dryRun", false);
+        ReflectionTestUtils.setField(retentionService, "batchSize", 5);
+        ReflectionTestUtils.setField(retentionService, "maxBatchesPerRun", 2);
+
+        RetentionReport report = retentionService.purgeOnce();
+
+        assertEquals(25, report.dlqCandidates());
+        assertEquals(10, report.dlqDeleted(), "单次运行封顶 5*2=10 行");
+        assertEquals(15, countDlqRows(ExamDlqMessage.STATUS_REPLAYED), "其余留给后续运行，不能一次删穿");
+        assertEquals(4, countDlqRows(ExamDlqMessage.STATUS_PARKED), "PARKED 绝不清理");
+    }
+
+    private void insertDlqRows(String status, int n, LocalDateTime createdTime) {
+        for (int i = 0; i < n; i++) {
+            ExamDlqMessage row = new ExamDlqMessage();
+            row.setQueue("exam.submit.dead.queue");
+            row.setPayload("{\"retention-test\":" + i + "}");
+            row.setHeadersJson("{}");
+            row.setRetryCount(3);
+            row.setReplayCount(1);
+            row.setStatus(status);
+            row.setCreatedTime(createdTime);
+            dlqMessageMapper.insert(row);
+        }
+    }
+
+    private long countDlqRows(String status) {
+        return dlqMessageMapper.selectCount(Wrappers.<ExamDlqMessage>lambdaQuery()
+                .eq(ExamDlqMessage::getStatus, status));
     }
 
     private void insertAuditLogRows(String username, int n, LocalDateTime createdTime) {

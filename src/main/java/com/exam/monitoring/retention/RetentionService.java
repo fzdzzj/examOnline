@@ -4,7 +4,9 @@ import com.exam.audit.mapper.AuditLogMapper;
 import com.exam.exam.mapper.ExamMapper;
 import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.score.mapper.ScoreAuditLogMapper;
+import com.exam.submission.entity.ExamDlqMessage;
 import com.exam.submission.mapper.ExamBehaviorLogMapper;
+import com.exam.submission.mapper.ExamDlqMessageMapper;
 import com.exam.submission.mapper.ExamSubmitDedupMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +23,8 @@ import java.util.function.ToLongFunction;
 
 /**
  * 数据保留策略：按<strong>考试生命周期</strong>清理三张只增不减的诊断/幂等辅助表，
- * 外加按<strong>自身年龄</strong>清理的第四张 {@code audit_log}。
+ * 外加按<strong>自身年龄</strong>清理的第五张（{@code audit_log} 安全审计、
+ * {@code exam_dlq_messages} 已重放死信留档——两者均无 exam_id，不参与考试生命周期）。
  *
  * <p><b>硬口径：宁可不删，不可错删。</b>
  * <ul>
@@ -43,13 +46,15 @@ import java.util.function.ToLongFunction;
  * <p><b>绝对不清理的业务事实</b>（写进注释作为边界护栏）：
  * users / roles / permissions / questions / papers / paper_snapshots / exams / exam_snapshots /
  * exam_submissions / subjective_grades / exam_absence / exam_candidates / score_review /
- * classes / user_class。
+ * classes / user_class / practice_attempt。
  * 理由：答卷与成绩有可追溯义务（复核窗口、补考取分规则要回看）；快照是只读历史；
- * 关系表是当前归属（清掉会改变应考名单口径，属业务破坏）。
+ * 关系表是当前归属（清掉会改变应考名单口径，属业务破坏）；practice_attempt 是学生错题消灭事实。
  *
- * <p><b>不纳入 {@code exam_dlq_messages}</b>：该表已存在，但没有 exam_id 列，索引是
- * {@code idx_dlq_status_time (status, created_time)}。按 exam_id 删会全表扫描或要加列——
- * 都违反「零 DDL + 按考试生命周期」。本轮明确不写对该表的 DELETE。
+ * <p><b>{@code exam_dlq_messages} 走第三条路（harden-data-retention-scope）</b>：该表没有 exam_id，
+ * 不参与考试生命周期；只对 {@code status = 'REPLAYED'}（已重放成功）的留档按自身年龄清理，
+ * 条件 {@code (status, created_time)} 完全命中既有复合索引 {@code idx_dlq_status_time} 最左前缀——
+ * 零 DDL、不发生全表扫描。待人工排查的 {@code PARKED} 是唯一的事故现场证据，<b>绝不在删除面内</b>。
+ * （此前"明确不写对该表的 DELETE"的裁决由本变更推翻：清理资格以"已处理完毕"为准，而非"无 exam_id"。）
  *
  * <p><b>候选口径</b>：{@code status >= 2 AND end_time < cutoff}。
  * 用 end_time 不用 updated_time；force-end 会晚删，误差方向安全。进行中（status=1）一律不碰。
@@ -67,12 +72,14 @@ public class RetentionService {
     static final String TABLE_DEDUP = "exam_submit_dedups";
     static final String TABLE_AUDIT = "score_audit_logs";
     static final String TABLE_SECURITY_AUDIT = "audit_log";
+    static final String TABLE_DLQ = "exam_dlq_messages";
 
     private final ExamMapper examMapper;
     private final ExamBehaviorLogMapper behaviorLogMapper;
     private final ExamSubmitDedupMapper submitDedupMapper;
     private final ScoreAuditLogMapper scoreAuditLogMapper;
     private final AuditLogMapper auditLogMapper;
+    private final ExamDlqMessageMapper dlqMessageMapper;
     private final BusinessMetrics metrics;
     private final TransactionTemplate transactionTemplate;
 
@@ -94,6 +101,13 @@ public class RetentionService {
     @Value("${exam.retention.audit-log.retention-days:365}")
     private int auditLogRetentionDays;
 
+    /**
+     * 死信留档（{@code exam_dlq_messages}）保留窗口：只作用于 {@code REPLAYED}（已重放成功）留档，
+     * {@code PARKED}（待人工排查）不在清理面内。默认 30 天为出档口径，真实数值属合规决策。
+     */
+    @Value("${exam.retention.dlq.retention-days:30}")
+    private int dlqRetentionDays;
+
     @Value("${exam.retention.batch-size:1000}")
     private int batchSize;
 
@@ -109,6 +123,7 @@ public class RetentionService {
                             ExamSubmitDedupMapper submitDedupMapper,
                             ScoreAuditLogMapper scoreAuditLogMapper,
                             AuditLogMapper auditLogMapper,
+                            ExamDlqMessageMapper dlqMessageMapper,
                             BusinessMetrics metrics,
                             PlatformTransactionManager transactionManager) {
         this.examMapper = examMapper;
@@ -116,6 +131,7 @@ public class RetentionService {
         this.submitDedupMapper = submitDedupMapper;
         this.scoreAuditLogMapper = scoreAuditLogMapper;
         this.auditLogMapper = auditLogMapper;
+        this.dlqMessageMapper = dlqMessageMapper;
         this.metrics = metrics;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
@@ -127,9 +143,12 @@ public class RetentionService {
     void warnIfLiveDeleteEnabled() {
         if (enabled && !dryRun) {
             log.warn("数据保留清理已启用真删除：enabled=true dry-run=false retentionDays={} "
+                            + "auditLogRetentionDays={} dlqRetentionDays={} "
                             + "batchSize={} maxBatchesPerRun={} maxExamsPerRun={} "
-                            + "——将按考试生命周期物理删除三张辅助表行，不可逆",
-                    retentionDays, batchSize, maxBatchesPerRun, maxExamsPerRun);
+                            + "——将按考试生命周期物理删除三张辅助表行、按年龄删除 audit_log 与 "
+                            + "exam_dlq_messages 的 REPLAYED 死信留档，不可逆",
+                    retentionDays, auditLogRetentionDays, dlqRetentionDays,
+                    batchSize, maxBatchesPerRun, maxExamsPerRun);
         }
     }
 
@@ -224,6 +243,37 @@ public class RetentionService {
             log.error("保留清理失败 table={}", TABLE_SECURITY_AUDIT, e);
         }
 
+        long dlqCandidates = 0;
+        long dlqDeleted = 0;
+        try {
+            LocalDateTime dlqCutoff = LocalDateTime.now().minusDays(Math.max(dlqRetentionDays, 0));
+            // 清理面只认 REPLAYED（已重放成功）：PARKED 是待人工排查的事故现场证据，绝不进入删除面。
+            // (status, created_time) 双条件完全命中 idx_dlq_status_time 最左前缀，零 DDL、不发生全表扫描。
+            dlqCandidates = dlqMessageMapper.countByStatusOlderThan(
+                    ExamDlqMessage.STATUS_REPLAYED, dlqCutoff);
+            metrics.countRetentionRows(TABLE_DLQ, "candidate", dlqCandidates);
+            if (!dryRun && dlqCandidates > 0) {
+                for (int i = 0; i < maxBatches; i++) {
+                    Integer n = transactionTemplate.execute(status ->
+                            dlqMessageMapper.deleteByStatusOlderThanBatch(
+                                    ExamDlqMessage.STATUS_REPLAYED, dlqCutoff, batch));
+                    int rows = n == null ? 0 : n;
+                    if (rows <= 0) {
+                        break;
+                    }
+                    dlqDeleted += rows;
+                    if (rows < batch) {
+                        break;
+                    }
+                }
+                if (dlqDeleted > 0) {
+                    metrics.countRetentionRows(TABLE_DLQ, "deleted", dlqDeleted);
+                }
+            }
+        } catch (Exception e) {
+            log.error("保留清理失败 table={}", TABLE_DLQ, e);
+        }
+
         RetentionReport report = new RetentionReport(
                 dryRun,
                 examIds.size(),
@@ -234,17 +284,20 @@ public class RetentionService {
                 auditCandidates,
                 auditDeleted,
                 securityAuditCandidates,
-                securityAuditDeleted);
+                securityAuditDeleted,
+                dlqCandidates,
+                dlqDeleted);
 
         log.info("保留清理完成 dryRun={} examsProcessed={} "
                         + "behavior(c/d)={}/{} dedup(c/d)={}/{} audit(c/d)={}/{} "
-                        + "securityAudit(c/d)={}/{} total(c/d)={}/{}",
+                        + "securityAudit(c/d)={}/{} dlq(c/d)={}/{} total(c/d)={}/{}",
                 report.dryRun(),
                 report.examsProcessed(),
                 report.behaviorCandidates(), report.behaviorDeleted(),
                 report.dedupCandidates(), report.dedupDeleted(),
                 report.auditCandidates(), report.auditDeleted(),
                 report.securityAuditCandidates(), report.securityAuditDeleted(),
+                report.dlqCandidates(), report.dlqDeleted(),
                 report.totalCandidates(), report.totalDeleted());
         return report;
     }
