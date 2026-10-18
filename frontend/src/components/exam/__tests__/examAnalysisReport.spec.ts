@@ -383,3 +383,140 @@ describe('导出分析报告', () => {
     expect(wrapper.find('[data-testid="export-analysis-report"]').exists()).toBe(false);
   });
 });
+
+// ==================== 区分度彩标 Tag 与命题建议（add-exam-question-discrimination） ====================
+
+const METRIC_BASE = {
+  order: 1,
+  type: '单选',
+  fullScore: 4,
+  averageScore: 3,
+  scoreRate: 0.75,
+  correctRate: 0.75,
+  answeredCount: 28,
+};
+
+function statWith(overrides: Record<string, unknown>) {
+  return { ...METRIC_BASE, ...overrides };
+}
+
+describe('区分度彩标 Tag 与命题建议', () => {
+  it('优良/良好/尚可：区分度列渲染绿/蓝/橙彩标 Tag', async () => {
+    vi.mocked(api.analysisReport).mockResolvedValue({
+      ...REPORT,
+      questionStats: [
+        statWith({
+          order: 1,
+          discrimination: 1.0,
+          discriminationLevel: '优良',
+          qualityEvaluation: '区分度优良，试题区分力强，建议入选精品题库',
+        }),
+        statWith({
+          order: 2,
+          type: '多选',
+          fullScore: 6,
+          averageScore: 3.8,
+          discrimination: 0.35,
+          discriminationLevel: '良好',
+          qualityEvaluation: '区分度良好，命题质量较好，可直接使用',
+        }),
+        statWith({
+          order: 3,
+          type: '判断',
+          fullScore: 4,
+          averageScore: 2,
+          discrimination: 0.25,
+          discriminationLevel: '尚可',
+          qualityEvaluation: '区分度尚可，建议微调题干表述或优化选项',
+        }),
+      ],
+    } as never);
+    const wrapper = mountReport();
+    await flushPromises();
+    await flushPromises();
+
+    expect(wrapper.find('.ant-tag-green').exists()).toBe(true);
+    expect(wrapper.find('.ant-tag-green').text()).toContain('优良');
+    expect(wrapper.find('.ant-tag-blue').exists()).toBe(true);
+    expect(wrapper.find('.ant-tag-blue').text()).toContain('良好');
+    expect(wrapper.find('.ant-tag-orange').exists()).toBe(true);
+    expect(wrapper.find('.ant-tag-orange').text()).toContain('尚可');
+  });
+
+  it('反常预警/劣质：红色 Tag 渲染，负区分度与警示建议在场', async () => {
+    vi.mocked(api.analysisReport).mockResolvedValue({
+      ...REPORT,
+      questionStats: [
+        statWith({
+          order: 1,
+          discrimination: -1.0,
+          discriminationLevel: '反常预警',
+          qualityEvaluation: '反常预警：负区分度，请紧急核查题干是否存在严重歧义或参考答案配置错误',
+        }),
+        statWith({
+          order: 2,
+          type: '多选',
+          fullScore: 6,
+          averageScore: 3.8,
+          discrimination: 0.1,
+          discriminationLevel: '劣质',
+          qualityEvaluation: '区分度偏低，建议优化干扰项诱答力',
+        }),
+      ],
+    } as never);
+    const wrapper = mountReport();
+    await flushPromises();
+    await flushPromises();
+
+    const redTags = wrapper.findAll('.ant-tag-red');
+    expect(redTags.length).toBe(2);
+    expect(wrapper.text()).toContain('反常预警');
+    expect(wrapper.text()).toContain('核查');
+  });
+
+  it('样本不足：默认灰色 Tag（非红非绿），建议提示需至少 4 人实考', async () => {
+    vi.mocked(api.analysisReport).mockResolvedValue({
+      ...REPORT,
+      questionStats: [
+        statWith({
+          order: 1,
+          discrimination: undefined,
+          discriminationLevel: '样本不足',
+          qualityEvaluation: '实考样本不足（需至少 4 人作答），暂无法评估命题质量',
+        }),
+      ],
+    } as never);
+    const wrapper = mountReport();
+    await flushPromises();
+    await flushPromises();
+
+    const tag = wrapper.find('.ant-tag');
+    expect(tag.exists()).toBe(true);
+    expect(tag.text()).toContain('样本不足');
+    expect(wrapper.find('.ant-tag-red').exists()).toBe(false);
+    expect(wrapper.find('.ant-tag-green').exists()).toBe(false);
+    expect(wrapper.text()).toContain('至少 4 人');
+  });
+
+  it('命题建议列：表头与完整诊断文本渲染（Tooltip 触发元携全文）', async () => {
+    const suggestion =
+      '区分度优良，试题区分力强，建议入选精品题库；试题偏易，请结合考核定位评估命题意图';
+    vi.mocked(api.analysisReport).mockResolvedValue({
+      ...REPORT,
+      questionStats: [
+        statWith({
+          order: 1,
+          discrimination: 1.0,
+          discriminationLevel: '优良',
+          qualityEvaluation: suggestion,
+        }),
+      ],
+    } as never);
+    const wrapper = mountReport();
+    await flushPromises();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('命题建议');
+    expect(wrapper.text()).toContain(suggestion);
+  });
+});

@@ -183,6 +183,15 @@ public class ExamAnalysisReportResponse {
         private Double discrimination;
         private int answeredCount;
 
+        /** 难度系数 P=平均分/满分（2 位小数；无人作答/满分非正为 null，add-exam-question-discrimination）。 */
+        private Double difficulty;
+        /** 难度等级：容易（P≥0.70）/中等（0.40≤P&lt;0.70）/较难（P&lt;0.40）；难度缺省为 null。 */
+        private String difficultyLevel;
+        /** 区分度五档评级：优良/良好/尚可/劣质/反常预警（D&lt;0）/样本不足（D 为 null）。 */
+        private String discriminationLevel;
+        /** 命题质量诊断建议（结合区分度评级与难度等级生成，样本不足/负区分度有专属警示）。 */
+        private String qualityEvaluation;
+
         private List<OptionDistributionItem> optionDistribution = new ArrayList<>();
 
         public QuestionStatItem() {
@@ -271,6 +280,38 @@ public class ExamAnalysisReportResponse {
 
         public void setAnsweredCount(int answeredCount) {
             this.answeredCount = answeredCount;
+        }
+
+        public Double getDifficulty() {
+            return difficulty;
+        }
+
+        public void setDifficulty(Double difficulty) {
+            this.difficulty = difficulty;
+        }
+
+        public String getDifficultyLevel() {
+            return difficultyLevel;
+        }
+
+        public void setDifficultyLevel(String difficultyLevel) {
+            this.difficultyLevel = difficultyLevel;
+        }
+
+        public String getDiscriminationLevel() {
+            return discriminationLevel;
+        }
+
+        public void setDiscriminationLevel(String discriminationLevel) {
+            this.discriminationLevel = discriminationLevel;
+        }
+
+        public String getQualityEvaluation() {
+            return qualityEvaluation;
+        }
+
+        public void setQualityEvaluation(String qualityEvaluation) {
+            this.qualityEvaluation = qualityEvaluation;
         }
 
         public List<OptionDistributionItem> getOptionDistribution() {

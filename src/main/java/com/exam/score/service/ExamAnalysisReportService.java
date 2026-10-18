@@ -20,6 +20,7 @@ import com.exam.question.mapper.QuestionTagMapper;
 import com.exam.question.mapper.TagMapper;
 import com.exam.score.dto.ExamAnalysisReportResponse;
 import com.exam.score.support.ExcelSheetWriter;
+import com.exam.score.support.QuestionMetricsEvaluator;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
 import com.exam.user.entity.User;
@@ -293,16 +294,27 @@ public class ExamAnalysisReportService {
                                     .map(d -> new ExamAnalysisReportResponse.OptionDistributionItem(
                                             d.option(), d.count(), d.rate()))
                                     .toList();
-            items.add(new ExamAnalysisReportResponse.QuestionStatItem(
-                    question.number(),
-                    labelOfType(question.type()),
-                    question.score(),
-                    average,
-                    scoreRate,
-                    correctRate,
-                    metric.discrimination(),
-                    metric.answeredCount(),
-                    optionDistribution));
+            // 测量学诊断（add-exam-question-discrimination）：难度取报告口径平均分（1 位小数）
+            // 与满分同源相除；五档评级/诊断建议由评估器统一派生，Excel 与 JSON 共用同源口径
+            Double difficulty = QuestionMetricsEvaluator.difficultyOf(average, max, metric.answeredCount());
+            ExamAnalysisReportResponse.QuestionStatItem item =
+                    new ExamAnalysisReportResponse.QuestionStatItem(
+                            question.number(),
+                            labelOfType(question.type()),
+                            question.score(),
+                            average,
+                            scoreRate,
+                            correctRate,
+                            metric.discrimination(),
+                            metric.answeredCount(),
+                            optionDistribution);
+            item.setDifficulty(difficulty);
+            item.setDifficultyLevel(QuestionMetricsEvaluator.difficultyLevelOf(difficulty));
+            item.setDiscriminationLevel(
+                    QuestionMetricsEvaluator.discriminationLevelOf(metric.discrimination()));
+            item.setQualityEvaluation(
+                    QuestionMetricsEvaluator.qualityEvaluationOf(metric.discrimination(), difficulty));
+            items.add(item);
         }
         return items;
     }
@@ -456,12 +468,14 @@ public class ExamAnalysisReportService {
         ExcelSheetWriter.autoSize(sheet, 3);
     }
 
-    /** Sheet 2「逐题指标」：口径同 buildReport.questionStats（null 语义照搬：「样本不足」/「-」）。 */
+    /** Sheet 2「逐题指标」：口径同 buildReport.questionStats（null 语义照搬：「样本不足」/「-」）；
+     *  测量学诊断 4 列（难度系数/难度等级/区分度等级/命题建议）由评估器同源派生
+     *  （add-exam-question-discrimination），文本列一律过 sanitizeFormula。 */
     private static void writeQuestionSheet(SXSSFWorkbook workbook,
                                            List<ExamAnalysisReportResponse.QuestionStatItem> items) {
         SXSSFSheet sheet = ExcelSheetWriter.createSheet(workbook, "逐题指标");
         ExcelSheetWriter.writeHeader(sheet, "题号", "题型", "满分", "平均分", "得分率", "答对率",
-                "区分度", "作答人数", "选项分布");
+                "区分度", "作答人数", "选项分布", "难度系数", "难度等级", "区分度等级", "命题建议");
         int rowIndex = 1;
         for (ExamAnalysisReportResponse.QuestionStatItem item : items) {
             Row row = sheet.createRow(rowIndex++);
@@ -475,8 +489,14 @@ public class ExamAnalysisReportService {
             row.createCell(7).setCellValue(item.getAnsweredCount());
             row.createCell(8).setCellValue(
                     ExcelSheetWriter.sanitizeFormula(optionDistributionText(item.getOptionDistribution())));
+            setCell(row.createCell(9), item.getDifficulty() == null ? "-" : item.getDifficulty());
+            row.createCell(10).setCellValue(ExcelSheetWriter.sanitizeFormula(
+                    item.getDifficultyLevel() == null ? "-" : item.getDifficultyLevel()));
+            row.createCell(11).setCellValue(ExcelSheetWriter.sanitizeFormula(
+                    item.getDiscriminationLevel() == null ? "-" : item.getDiscriminationLevel()));
+            row.createCell(12).setCellValue(ExcelSheetWriter.sanitizeFormula(item.getQualityEvaluation() == null ? "-" : item.getQualityEvaluation()));
         }
-        ExcelSheetWriter.autoSize(sheet, 9);
+        ExcelSheetWriter.autoSize(sheet, 13);
     }
 
     /** Sheet 3「知识点薄弱」：无标签维度时单行提示（与页面同款文案，优雅降级非错误）。 */

@@ -478,6 +478,27 @@ export type MakeupCreateResponse = {
     candidateCount?: number;
 };
 
+export type ExamTimeExtensionRequest = {
+    extensionMinutes: number;
+    studentIds?: Array<number>;
+    reason?: string;
+};
+
+export type ExamTimeExtensionResponse = {
+    examId?: number;
+    extensionMinutes?: number;
+    isGlobal?: boolean;
+    affectedSubmissionsCount?: number;
+    newEndTime?: string;
+    newDurationMinutes?: number;
+};
+
+export type ApiResponseExamTimeExtensionResponse = {
+    code?: number;
+    message?: string;
+    data?: ExamTimeExtensionResponse;
+};
+
 export type ApiResponseSummarizeStats = {
     code?: number;
     message?: string;
@@ -1195,6 +1216,22 @@ export type QuestionStatItem = {
     correctRate?: number;
     discrimination?: number;
     answeredCount?: number;
+    /**
+     * 难度系数 P=平均分/满分（2 位小数；无人作答或满分非正为 null）
+     */
+    difficulty?: number;
+    /**
+     * 难度等级——容易（P≥0.70）/中等（0.40≤P<0.70）/较难（P<0.40）；难度缺省为 null
+     */
+    difficultyLevel?: string;
+    /**
+     * 区分度五档评级——优良（D≥0.40）/良好（0.30≤D<0.40）/尚可（0.20≤D<0.30）/劣质（0≤D<0.20）/反常预警（D<0）/样本不足（D 为 null）
+     */
+    discriminationLevel?: string;
+    /**
+     * 命题质量诊断建议（结合区分度评级与难度等级生成，样本不足与负区分度反常有专属警示）
+     */
+    qualityEvaluation?: string;
     optionDistribution?: Array<OptionDistributionItem>;
 };
 
@@ -2272,6 +2309,24 @@ export type ForceEndResponses = {
 
 export type ForceEndResponse = ForceEndResponses[keyof ForceEndResponses];
 
+export type ExtendTimeData = {
+    body: ExamTimeExtensionRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/api/exams/{id}/extend-time';
+};
+
+export type ExtendTimeResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseExamTimeExtensionResponse;
+};
+
+export type ExtendTimeResponse = ExtendTimeResponses[keyof ExtendTimeResponses];
+
 export type SummarizeData = {
     body?: never;
     path: {
@@ -3269,6 +3324,24 @@ export type AnalysisReportResponses = {
 };
 
 export type AnalysisReportResponse = AnalysisReportResponses[keyof AnalysisReportResponses];
+
+export type ExportAnalysisReportData = {
+    body?: never;
+    path: {
+        examId: number;
+    };
+    query?: never;
+    url: '/api/exams/{examId}/scores/analysis-report/export';
+};
+
+export type ExportAnalysisReportResponses = {
+    /**
+     * OK
+     */
+    200: string;
+};
+
+export type ExportAnalysisReportResponse = ExportAnalysisReportResponses[keyof ExportAnalysisReportResponses];
 
 export type OverviewData = {
     body?: never;
