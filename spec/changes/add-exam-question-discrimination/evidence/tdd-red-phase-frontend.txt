@@ -1,0 +1,126 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [31m❯[39m src/components/exam/__tests__/examAnalysisReport.spec.ts [2m([22m[2m16 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 2446[2mms[22m[39m
+     [33m[2m✓[22m[39m 成功返回数据：概览统计卡/分数段/逐题指标/知识点/关注名单渲染，无错误、无等分提示 [33m 655[2mms[22m[39m
+     [32m✓[39m 知识点维度缺失：hasTagDimension=false 且 tagWeakness 空 → 提示「题库未打知识点标签」，非错误态[32m 173[2mms[22m[39m
+     [32m✓[39m 查询失败：错误 Alert 显性呈现后端 message，数据区隐藏（不伪装成业务空态）[32m 8[2mms[22m[39m
+     [32m✓[39m 加载态：尚未返回时呈现加载中[32m 119[2mms[22m[39m
+     [32m✓[39m 成功但无实考答卷：actualCount=0 → 业务空态「暂无成绩数据」而非错误[32m 2[2mms[22m[39m
+     [32m✓[39m disabled 时不发起请求[32m 1[2mms[22m[39m
+     [32m✓[39m 关注名单文案渲染下发 passLine（非硬编码 60）[32m 112[2mms[22m[39m
+     [32m✓[39m 逐题选项分布呈现：单选/多选展示选项+人数+占比，判断题映射「正确/错误」，无选项题型不渲染分布[32m 163[2mms[22m[39m
+     [32m✓[39m 点击导出按钮：走 downloadExport 管道请求导出端点，成功提示已导出[32m 193[2mms[22m[39m
+     [32m✓[39m examTitle 传入时：兜底文件名带考试标题前缀（语义化命名）[32m 144[2mms[22m[39m
+     [32m✓[39m 导出失败：message.error 呈现错误原因，不伪装成功[32m 138[2mms[22m[39m
+     [32m✓[39m 无成绩数据（actualCount=0）：导出按钮不渲染（无数据可导）[32m 3[2mms[22m[39m
+[31m     [31m×[31m 优良/良好/尚可：区分度列渲染绿/蓝/橙彩标 Tag[39m[32m 201[2mms[22m[39m
+[31m     [31m×[31m 反常预警/劣质：红色 Tag 渲染，负区分度与警示建议在场[39m[32m 229[2mms[22m[39m
+[31m     [31m×[31m 样本不足：默认灰色 Tag（非红非绿），建议提示需至少 4 人实考[39m[32m 160[2mms[22m[39m
+[31m     [31m×[31m 命题建议列：表头与完整诊断文本渲染（Tooltip 触发元携全文）[39m[32m 140[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 4 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/components/exam/__tests__/examAnalysisReport.spec.ts[2m > [22m区分度彩标 Tag 与命题建议[2m > [22m优良/良好/尚可：区分度列渲染绿/蓝/橙彩标 Tag
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m src/components/exam/__tests__/examAnalysisReport.spec.ts:[2m438:53[22m[39m
+    [90m436|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m437|[39m
+    [90m438|[39m     [34mexpect[39m(wrapper[33m.[39m[34mfind[39m([32m'.ant-tag-green'[39m)[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                                                     [31m^[39m
+    [90m439|[39m     [34mexpect[39m(wrapper[33m.[39m[34mfind[39m([32m'.ant-tag-green'[39m)[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'优良'[39m)[33m;[39m
+    [90m440|[39m     [34mexpect[39m(wrapper[33m.[39m[34mfind[39m([32m'.ant-tag-blue'[39m)[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/exam/__tests__/examAnalysisReport.spec.ts[2m > [22m区分度彩标 Tag 与命题建议[2m > [22m反常预警/劣质：红色 Tag 渲染，负区分度与警示建议在场
+[31m[1mAssertionError[22m: expected +0 to be 2 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m src/components/exam/__tests__/examAnalysisReport.spec.ts:[2m472:28[22m[39m
+    [90m470|[39m
+    [90m471|[39m     [35mconst[39m redTags [33m=[39m wrapper[33m.[39m[34mfindAll[39m([32m'.ant-tag-red'[39m)[33m;[39m
+    [90m472|[39m     [34mexpect[39m(redTags[33m.[39mlength)[33m.[39m[34mtoBe[39m([34m2[39m)[33m;[39m
+    [90m   |[39m                            [31m^[39m
+    [90m473|[39m     [34mexpect[39m(wrapper[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'反常预警'[39m)[33m;[39m
+    [90m474|[39m     [34mexpect[39m(wrapper[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'核查'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/exam/__tests__/examAnalysisReport.spec.ts[2m > [22m区分度彩标 Tag 与命题建议[2m > [22m样本不足：默认灰色 Tag（非红非绿），建议提示需至少 4 人实考
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m src/components/exam/__tests__/examAnalysisReport.spec.ts:[2m494:26[22m[39m
+    [90m492|[39m
+    [90m493|[39m     [35mconst[39m tag [33m=[39m wrapper[33m.[39m[34mfind[39m([32m'.ant-tag'[39m)[33m;[39m
+    [90m494|[39m     [34mexpect[39m(tag[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m495|[39m     [34mexpect[39m(tag[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'样本不足'[39m)[33m;[39m
+    [90m496|[39m     [34mexpect[39m(wrapper[33m.[39m[34mfind[39m([32m'.ant-tag-red'[39m)[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/exam/__tests__/examAnalysisReport.spec.ts[2m > [22m区分度彩标 Tag 与命题建议[2m > [22m命题建议列：表头与完整诊断文本渲染（Tooltip 触发元携全文）
+[31m[1mAssertionError[22m: expected '导出分析报告应考30人实考28人缺席2人平均分72.5及格率78.6%分数…' to contain '命题建议'[39m
+
+Expected: [32m"命题建议"[39m
+Received: [31m"导出分析报告应考30人实考28人缺席2人平均分72.5及格率78.6%分数段分布0-59分4人60-69分6人70-79分8人80-89分6人90-100分4人逐题指标题号题型满分平均分得分率答对率区分度作答人数选项分布1单选430.751.0028-知识点薄弱力学58%学生关注名单（低于及格线 60 分）学号姓名总分stu1张一48"[39m
+
+[36m [2m❯[22m src/components/exam/__tests__/examAnalysisReport.spec.ts:[2m518:28[22m[39m
+    [90m516|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+    [90m517|[39m
+    [90m518|[39m     [34mexpect[39m(wrapper[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'命题建议'[39m)[33m;[39m
+    [90m   |[39m                            [31m^[39m
+    [90m519|[39m     [34mexpect[39m(wrapper[33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m(suggestion)[33m;[39m
+    [90m520|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m4 failed[39m[22m[2m | [22m[1m[32m12 passed[39m[22m[90m (16)[39m
+[2m   Start at [22m 20:23:43
+[2m   Duration [22m 21.14s[2m (transform 289ms, setup 120ms, import 6.99s, tests 2.45s, environment 10.58s)[22m
+

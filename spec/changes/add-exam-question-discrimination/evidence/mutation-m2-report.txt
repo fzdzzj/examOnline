@@ -1,0 +1,9 @@
+mutation-check 五步汇总 —— label: m2
+target: src/main/java/com/exam/score/support/QuestionMetricsEvaluator.java
+verify: ./mvnw test -Dtest=QuestionMetricsEvaluatorTest,ExamQuestionDiscriminationIntegrationTest
+PASS  ① 备份：src/main/java/com/exam/score/support/QuestionMetricsEvaluator.java -> /d/code/examOnline/target/mutation-check/m2/backup/original
+PASS  ② 注入+命中：注入标志在场（if (discrimination < 0) return "MUTATED_M2";）
+PASS  ③ 击红：--verify 非零退出（exit=1），留证 /d/code/examOnline/target/mutation-check/m2/step3-verify-red.log
+PASS  ④ 复原+归零：cmp 字节一致，注入标志不在场
+PASS  ⑤ 回绿：--verify 零退出（exit=0），留证 /d/code/examOnline/target/mutation-check/m2/step5-verify-green.log
+PASS  留证目录：/d/code/examOnline/target/mutation-check/m2

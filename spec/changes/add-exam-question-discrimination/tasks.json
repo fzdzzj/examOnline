@@ -12,16 +12,16 @@
     {
       "id": 2,
       "title": "阶段 2：后端模型计算、Excel 导出与前端可视化增强（零 DDL）",
-      "status": "pending",
+      "status": "completed",
       "description": "ExamAnalysisReportResponse.QuestionStatItem 扩充 difficulty、difficultyLevel、discriminationLevel、qualityEvaluation；ExamAnalysisReportService 组装难度系数、区分度 5 档评级（含反常负值与样本不足）及质量建议；Excel 逐题指标工作表同步扩展 4 列并过 sanitizeFormula；ExamAnalysisReport.vue 表格增加彩标 Tag 与命题建议展示；openapi.yaml 契约模型属性同步。",
-      "evidence": ""
+      "evidence": "实施笔 3b4dabf（基于立案笔 21524ba）：新增 QuestionMetricsEvaluator 纯函数评估器（区分度五档评级 D≥0.40 优良/0.30~0.40 良好/0.20~0.30 尚可/0~0.20 劣质/D<0 反常预警/null 样本不足；难度 P=平均分/满分 2 位 HALF_UP 与容易/中等/较难；命题建议文案，样本不足与负区分度专属警示）+ QuestionStatItem 扩 difficulty/difficultyLevel/discriminationLevel/qualityEvaluation + buildQuestionStats 接线（难度取报告口径 1 位小数平均分同源相除）+ writeQuestionSheet 追加难度系数/难度等级/区分度等级/命题建议 4 列（文本列一律 sanitizeFormula，autoSize 13）+ openapi.yaml QuestionStatItem 补 4 属性（paths 恒 102）+ gen:api 再生契约（顺带补齐此前两案未再生的 extendTime/exportAnalysisReport SDK 函数，纯生成物）+ ExamAnalysisReport.vue 区分度列彩标 Tag（优良绿/良好蓝/尚可橙/劣质与反常预警红/样本不足灰，Tag 内保留数值）+ 命题建议 Tooltip 列。TDD 先红后绿：评估器桩态后端 16/17 断言级红（tdd-red-phase.txt）、前端 4/4 红（tdd-red-phase-frontend.txt）→ 实施后后端 17/17（tdd-green-phase.txt）、前端 16/16（tdd-green-phase-frontend.txt）全绿。"
     },
     {
       "id": 3,
       "title": "阶段 3：TDD 先红后绿、变异击红与门禁留证",
-      "status": "pending",
+      "status": "completed",
       "description": "新增单测与集成测试覆盖测量学 5 档评级、反常负值预警、样本不足降级、难度系数以及 Excel 导出；前端补齐组件渲染测试；TDD 先红后绿留证；三变异（m1 抽除区分度分级判定 / m2 抽除负值反常预警 / m3 抽除 Excel 诊断建议输出）断言级击红并回绿留证；双端门禁实测全绿，gate-baseline.json 同笔上调。",
-      "evidence": ""
+      "evidence": "全部证据绑定入库 revision 3b4dabf（实施笔含 lint 格式修正的 amend 终态）。①门禁：后端 ./mvnw clean test 778/0/0/1 全绿（gate-backend.txt，761+17）；前端 lint:check 0 error / type-check:check 0 error / vitest --maxWorkers=4 947 全绿（gate-frontend-*.txt，943+4）；CI 机检三脚本（assert_backend/assert_frontend/check_openapi_paths）对留证日志复核全过（778/947/102 三下限对齐）。②变异三连（scripts/mutation-check.sh 五步原子流程，m1/m2 各 verify 17 例、m3 verify 1 例）：m1 评级阶梯整体抽除（入参置空注入）→ 7 断言级红（五档全塌样本不足，JSON+Excel 双面）回绿零残留；m2 负值反常预警抽除 → 3 断言级红（expected 反常预警 but was MUTATED_M2）回绿零残留；m3 Excel 命题建议列抽除 → 1 断言级红（命题建议列必须输出诊断文本）回绿零残留（mutation-m*-red.txt / mutation-m*-revert-green.txt / mutation-m*-report.txt）。③基线同笔单调上调：gate-baseline.json backendTests 761→778、frontendTests 943→947、openapiPaths 102 持平。④AGENTS.md 四自查（端口口令/连接事实/@Sql/裸行号）全绿。坑记录：mvnw clean 会连带清除 target/mutation-check——变异留证必须在 clean test 之后转录或走 --out-dir 逃生口；无条件 return 注入形态会触发 Java 不可达语句编译错，击红注入须保持编译合法。"
     },
     {
       "id": 4,
