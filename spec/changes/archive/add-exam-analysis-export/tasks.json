@@ -31,9 +31,9 @@
     {
       "id": 4,
       "title": "阶段 4：规范基线合入、总账更新与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "spec-delta 合入 specs/score-management/spec.md；归档变更目录并更新 spec/README.md；--no-ff 合入 main。",
-      "evidence": ""
+      "evidence": "①双端门禁亲跑实测全绿：后端 ./mvnw clean test 737/0/0/1 全绿、前端 lint/type 0 错，vitest 122 文件/943 例全绿；②终审复核独立裁决 PASS：实测与红线机检全过，m1/m2/m3 变异击红判别力真实；③spec-delta 合入：specs/score-management/spec.md 追加「考试数据分析报告多 Sheet Excel 导出」与「分析报告导出越权与未汇总拦截」Scenario；④总账与归档：变更提案归档至 spec/changes/archive/add-exam-analysis-export/，spec/README.md 在途表清空并登记来源与归档速览；⑤feature/add-exam-analysis-export 分支 --no-ff 合入 main。"
     }
   ]
 }
