@@ -1,0 +1,95 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+ [31m❯[39m src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 754[2mms[22m[39m
+[31m     [31m×[31m 三态 Tag：待攻克（橙）/攻克中（蓝，标注 n/3）/已消灭（绿）[39m[33m 550[2mms[22m[39m
+[31m     [31m×[31m 旧字段兼容：后端未带 masteryStatus 时按 consecutiveCorrect/mastered 推导三态[39m[32m 67[2mms[22m[39m
+[31m     [31m×[31m 配置弹窗与组卷：缺省题量 5 + RANDOM 发起组卷，自测模式呈现题目与答题卡导航[39m[32m 94[2mms[22m[39m
+[31m     [31m×[31m 批量交卷：逐题作答后提交 quizId+answers，总览展示正确率/新消灭数与逐题正误[39m[32m 40[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 4 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts[2m > [22m错题掌握度三态彩标[2m > [22m三态 Tag：待攻克（橙）/攻克中（蓝，标注 n/3）/已消灭（绿）
+[31m[1mAssertionError[22m: expected +0 to be 3 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 3[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts:[2m143:25[22m[39m
+    [90m141|[39m
+    [90m142|[39m     [35mconst[39m tags [33m=[39m wrapper[33m.[39m[34mfindAll[39m([32m'[data-test="mastery-tag"]'[39m)[33m;[39m
+    [90m143|[39m     [34mexpect[39m(tags[33m.[39mlength)[33m.[39m[34mtoBe[39m([34m3[39m[33m,[39m [32m'三条错题各渲染一枚三态 Tag'[39m)[33m;[39m
+    [90m   |[39m                         [31m^[39m
+    [90m144|[39m     [34mexpect[39m(tags[[34m0[39m][33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'待攻克'[39m)[33m;[39m
+    [90m145|[39m     [34mexpect[39m(tags[[34m0[39m][33m.[39m[34mclasses[39m()[33m.[39m[34mjoin[39m([32m' '[39m))[33m.[39m[34mtoContain[39m([32m'orange'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts[2m > [22m错题掌握度三态彩标[2m > [22m旧字段兼容：后端未带 masteryStatus 时按 consecutiveCorrect/mastered 推导三态
+[31m[1mAssertionError[22m: expected +0 to be 1 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts:[2m160:25[22m[39m
+    [90m158|[39m
+    [90m159|[39m     [35mconst[39m tags [33m=[39m wrapper[33m.[39m[34mfindAll[39m([32m'[data-test="mastery-tag"]'[39m)[33m;[39m
+    [90m160|[39m     [34mexpect[39m(tags[33m.[39mlength)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                         [31m^[39m
+    [90m161|[39m     [34mexpect[39m(tags[[34m0[39m][33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'攻克中'[39m)[33m;[39m
+    [90m162|[39m     [34mexpect[39m(tags[[34m0[39m][33m.[39m[34mtext[39m())[33m.[39m[34mtoContain[39m([32m'2/3'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts[2m > [22m错题强化自测（组卷 + 批量交卷）[2m > [22m配置弹窗与组卷：缺省题量 5 + RANDOM 发起组卷，自测模式呈现题目与答题卡导航
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m openQuizMode src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts:[2m230:31[22m[39m
+    [90m228|[39m
+    [90m229|[39m     [35mconst[39m startBtn [33m=[39m wrapper[33m.[39m[34mfind[39m([32m'[data-test="start-quiz-btn"]'[39m)[33m;[39m
+    [90m230|[39m     [34mexpect[39m(startBtn[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                               [31m^[39m
+    [90m231|[39m     [35mawait[39m startBtn[33m.[39m[34mtrigger[39m([32m'click'[39m)[33m;[39m
+    [90m232|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+[90m [2m❯[22m src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts:[2m248:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts[2m > [22m错题强化自测（组卷 + 批量交卷）[2m > [22m批量交卷：逐题作答后提交 quizId+answers，总览展示正确率/新消灭数与逐题正误
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m openQuizMode src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts:[2m230:31[22m[39m
+    [90m228|[39m
+    [90m229|[39m     [35mconst[39m startBtn [33m=[39m wrapper[33m.[39m[34mfind[39m([32m'[data-test="start-quiz-btn"]'[39m)[33m;[39m
+    [90m230|[39m     [34mexpect[39m(startBtn[33m.[39m[34mexists[39m())[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                               [31m^[39m
+    [90m231|[39m     [35mawait[39m startBtn[33m.[39m[34mtrigger[39m([32m'click'[39m)[33m;[39m
+    [90m232|[39m     [35mawait[39m [34mflushPromises[39m()[33m;[39m
+[90m [2m❯[22m src/pages/(dashboard)/student/wrong-questions/__tests__/wrongQuestionMastery.spec.ts:[2m260:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m4 failed[39m[22m[90m (4)[39m
+[2m   Start at [22m 22:46:53
+[2m   Duration [22m 38.97s[2m (transform 489ms, setup 130ms, import 21.28s, tests 754ms, environment 15.60s)[22m
+

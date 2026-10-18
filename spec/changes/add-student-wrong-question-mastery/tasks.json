@@ -12,16 +12,16 @@
     {
       "id": 2,
       "title": "阶段 2：掌握度三态建模、自适应强化组卷与批量判分（零 DDL）及前端界面实现",
-      "status": "pending",
+      "status": "completed",
       "description": "WrongQuestionItem/PracticePoolItem/PracticeSubmitResponse 扩充 masteryStatus(0/1/2) 与 masteryStatusName(UNTOUCHED/PRACTICING/MASTERED)；新增 PracticeQuizGenerateRequest/PracticeQuizResponse 与 PracticeQuizSubmitRequest/PracticeQuizSubmitResponse DTO；StudentPracticeService 实现掌握度三态计算、自适应选题组卷 generateQuiz（支持 RANDOM 与 PRACTICING_FIRST 策略，题量上限 20）、批量判分 submitQuiz（复用既有判分核心、写入 practice_attempt、更新掌握度并统计新消灭数）；ScoreController 暴露两个 POST 端点；openapi.yaml 补齐 2 路径（102→104）及相关 DTO schemas；前端 wrong-questions/index.page.vue 支持三态 Tag 展示、一键生成自测试卷弹窗及答题交卷全流程。",
-      "evidence": ""
+      "evidence": "实施笔 56bb18c（分支 feature/add-student-wrong-question-mastery）。三态唯一推导源 StudentPracticeService.masteryStatusOf/masteryStatusNameOf（连对 0/1~2/>=3 → UNTOUCHED/PRACTICING/MASTERED），三个既有 DTO 扩充 masteryStatus/masteryStatusName 且 consecutiveCorrect/mastered 向下兼容；generateQuiz 纯内存无状态（UUID quizId、题量 1~20 缺省 5、RANDOM/PRACTICING_FIRST、不泄露答案解析、空池 0 题池不足全量返回）；submitQuiz 整单归属门控先行 + 同源复用 GradingStrategyRegistry + 逐题落既有 practice_attempt（零 DDL，schema.sql 未改动）+ 正确率 scoreRate 与新消灭 newlyMasteredCount（同题重复只计一次），原题软删走考试快照回退（与单题重练共用 resolveGradingQuestion 双路）；openapi.yaml 102→104 paths（OpenApiContractTest 重导出）+ pnpm gen:api 再生 SDK；前端三态彩标 Tag、🎯 错题强化自测配置弹窗（题量+策略）、答题卡导航与批量交卷、结果总览与逐题正误解析。零 DDL 自查：git diff 37cfa4f..56bb18c -- src/main/resources/schema.sql 为空。"
     },
     {
       "id": 3,
       "title": "阶段 3：TDD 先红后绿、变异击红与门禁留证",
-      "status": "pending",
+      "status": "completed",
       "description": "新增后端单测与集成测试覆盖三态推导、自适应组卷策略（随机/攻克优先/不足处理/空池）、批量提交判分（对错、清零、晋级已掌握、归属校验拦截）；新增前端组件交互测试；TDD 先红后绿留证；三变异（m1 抽除组卷策略选题逻辑 / m2 抽除掌握度三态晋级判定 / m3 抽除批量交卷归属校验）断言级击红并回绿留证；双端门禁实测全绿，gate-baseline.json 同笔上调。",
-      "evidence": ""
+      "evidence": "证据 18 件落 spec/changes/add-student-wrong-question-mastery/evidence/（sha256 见 evidence-sha256.txt，17/17 核对一致）。TDD 先红：后端 22/22 断言级红（tdd-red-phase.txt，Failures 22 / Errors 0；单测 16 + 错题本三态 3 + 集成 3）+ 前端 4/4 红（tdd-red-phase-frontend.txt）；回绿：后端 22/22（tdd-green-phase.txt）+ 前端错题本三 spec 14/14（tdd-green-phase-frontend.txt）。三变异五步原子流程（注入→击红→回滚→回绿→零残留，报告 mutation-m{1,2,3}-report.txt）：m1 抽除组卷策略选题 2 例断言级红（PRACTICING_FIRST 退化自然顺序截断被选中集断言确定性击红）；m2 抽除三态推导 7 例断言级红（Failures 7/Errors 0，覆盖池/列表/单题反馈/自测结果四链路）；m3 抽除批量交卷归属校验断言级红（Expected BusinessException but nothing thrown + never-insert 反向成立，另 5 例 UnnecessaryStubbing 为门控删除后桩位失配连带红），三者均回绿且 git status 零残留。双端门禁 @56bb18c：后端 ./mvnw clean test 800/0/0/1（gate-backend.txt，778+22）；前端 lint/type-check:check 零错、vitest --maxWorkers=4 951 全绿（gate-frontend-*.txt，947+4）。gate-baseline.json 同笔上调：backendTests 778→800、frontendTests 947→951、openapiPaths 102→104。"
     },
     {
       "id": 4,

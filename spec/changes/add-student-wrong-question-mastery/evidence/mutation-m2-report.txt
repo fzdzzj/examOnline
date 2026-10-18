@@ -1,0 +1,22 @@
+mutation m2 report — 抽除掌握度三态推导（add-student-wrong-question-mastery）
+================================================================
+变异对象：StudentPracticeService.masteryStatusOf（三态唯一推导源）
+注入形态：方法体替换为恒返回 0（UNTOUCHED）——攻克中/已掌握状态推导被抽除。
+注入脚本：D:\code\examOnline-measure\mastery-evidence\inject-m2.py
+入库 revision：56bb18c（实施笔）
+
+五步原子流程：
+1) 注入：python inject-m2.py → "m2 injected"（精准替换 1 处，断言命中）
+2) 击红：./mvnw test -Dtest=StudentPracticeQuizServiceTest,StudentWrongQuestionMasteryTest
+   → Tests run: 19, Failures: 7, Errors: 0, Skipped: 0（mutation-m2-red.txt）
+   7 例全部为断言级红（Failures 7 / Errors 0），覆盖三条填充链路：
+   - 重练池条目（practicePoolItemsCarryMasteryThreeStates）：攻克中三态缺失
+   - 错题本条目（StudentWrongQuestionMasteryTest 三态 ×3 中 2 例红 + includeMastered 1 例）
+   - 单题反馈（singlePracticeSubmitCarriesMasteryThreeStates）
+   - 自测逐题结果（quizSubmitAllCorrect/Mixed 等 MASTERED 三态缺失）
+3) 回滚：git checkout HEAD -- src/main/java/com/exam/score/service/StudentPracticeService.java
+4) 回绿：同命令 → Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+   （mutation-m2-revert-green.txt）
+5) 零残留：git status --short → 0 行
+================================================================
+结论：m2 断言级击红并回绿，三态推导变异判别力成立。
