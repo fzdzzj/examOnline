@@ -1,0 +1,61 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+ [31m❯[39m src/components/student/__tests__/ScratchpadCanvas.spec.ts [2m([22m[2m18 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 430[2mms[22m[39m
+     [32m✓[39m 存储键以 examId 隔离：exam_scratchpad_${examId}[32m 1[2mms[22m[39m
+     [32m✓[39m begin/extend 累积笔画与点数，undo 逐笔弹出、空栈撤销返回 false[32m 1[2mms[22m[39m
+     [32m✓[39m 一键清空：笔画计数归零[32m 0[2mms[22m[39m
+     [32m✓[39m restore 校验：合法文档恢复、垃圾数据 / 错误版本 / 非法笔画拒绝且不变更现场[32m 0[2mms[22m[39m
+     [32m✓[39m parse 拒绝坏 JSON 返回 null；save/load 往返一致；remove 删除键[32m 1[2mms[22m[39m
+     [32m✓[39m 挂载即面板：渲染画布与模式/粗细/颜色/撤销/清空工具（显隐由页面 v-if 裁决）[32m 165[2mms[22m[39m
+     [32m✓[39m 画笔参数切换：选 8px 红色后新笔画按该参数渲染并计入笔画[32m 29[2mms[22m[39m
+     [32m✓[39m 橡皮擦模式：笔迹以 destination-out 复合渲染[32m 25[2mms[22m[39m
+     [32m✓[39m 撤销：按笔画回退一步并同步存储，重绘只剩前一笔的参数[32m 39[2mms[22m[39m
+     [32m✓[39m 一键清空：计数归零、画布 clearRect、存储同步清空（变异 m2 锚点）[32m 22[2mms[22m[39m
+     [32m✓[39m 存储恢复（变异 m1 锚点）：挂载时把 sessionStorage 里按 examId 存的笔迹回填[32m 20[2mms[22m[39m
+     [32m✓[39m examId 隔离：换考试只恢复新考试的草稿，不串场[32m 19[2mms[22m[39m
+     [32m✓[39m 收起按钮向页面 emit close（悬浮面板显隐由页面裁决）[32m 16[2mms[22m[39m
+     [32m✓[39m 触屏手写一笔：真 PointerEvent（pointerType=touch）驱动落笔/续点/收笔并持久化（变异 m1 锚点）[32m 16[2mms[22m[39m
+[31m     [31m×[31m 画布 touch-action: none：触屏手写时浏览器不得接管手势触发页面滚动（变异 m2 锚点）[39m[32m 4[2mms[22m[39m
+     [32m✓[39m pointercancel 收笔：手势被系统中断也落账持久化，同指后续滑动不再延长笔画[32m 19[2mms[22m[39m
+     [32m✓[39m 多指触控按 pointerId 区分：第二根手指按下/滑动不串笔，其抬起不收第一指的笔[32m 30[2mms[22m[39m
+     [32m✓[39m pointerleave 收笔：手指/鼠标滑出画布即停笔并持久化[32m 19[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板 Pointer/Touch 触控（polish-scratchpad-touch-support）[2m > [22m画布 touch-action: none：触屏手写时浏览器不得接管手势触发页面滚动（变异 m2 锚点）
+[31m[1mAssertionError[22m: expected '<canvas\r\n      ref="canvasRef"\r\n …' to match /touch-action\s*:\s*none/[39m
+
+[32m- Expected:[39m
+/touch-action\s*:\s*none/
+
+[31m+ Received:[39m
+"<canvas
+      ref=\"canvasRef\"
+      class=\"scratchpad-canvas\"
+      width=\"480\"
+      height=\"320\"
+      data-test=\"scratchpad-canvas\"
+      @pointerdown=\"onPointerDown\"
+      @pointermove=\"onPointerMove\"
+      @pointerup=\"onPointerUp\"
+      @pointercancel=\"onPointerUp\"
+      @pointerleave=\"onPointerUp\"
+    ></canvas>"
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m433:23[22m[39m
+    [90m431|[39m     [90m// touch-action: none——移除即红（m2 变异锚点）；真实浏览器里生效的正是这份声明。[39m
+    [90m432|[39m     const canvasTag = scratchpadCanvasSource.match(/<canvas[\s\S]*?<\/…
+    [90m433|[39m     [34mexpect[39m(canvasTag)[33m.[39m[34mtoMatch[39m([36m/touch-action\s*:\s*none/[39m)[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m434|[39m   })[33m;[39m
+    [90m435|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m17 passed[39m[22m[90m (18)[39m
+[2m   Start at [22m 09:44:39
+[2m   Duration [22m 4.94s[2m (transform 146ms, setup 42ms, import 2.98s, tests 430ms, environment 1.25s)[22m
+
