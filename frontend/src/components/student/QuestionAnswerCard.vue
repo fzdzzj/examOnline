@@ -10,11 +10,12 @@
       >
         <StarFilled v-if="favorited" class="text-amber-400 text-base" />
         <StarOutlined v-else class="text-gray-400 hover:text-amber-400 text-base" />
-        <span class="text-xs text-gray-500 hidden sm:inline">{{ favorited ? '已收藏' : '收藏' }}</span>
+        <span class="text-xs text-gray-500 hidden sm:inline">
+          {{ favorited ? '已收藏' : '收藏' }}
+        </span>
       </button>
     </template>
     <p class="question-content" data-test="question-content">
-
       {{ question.content ?? '（题干为空）' }}
     </p>
 
@@ -142,7 +143,6 @@ function onToggleFavorite(): void {
     emit('toggle-favorite', props.question.questionId);
   }
 }
-
 
 const JUDGE_OPTIONS = [
   { value: 'T', label: '正确' },

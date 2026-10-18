@@ -21,8 +21,7 @@ vi.mock('@/api/axios', () => ({
   unfavorite: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { myExams, myScore, myExamReview, checkFavorites, favorite, unfavorite } from '@/api/axios';
-
+import { myExams, myScore, myExamReview, checkFavorites, unfavorite } from '@/api/axios';
 
 vi.mock('@tanstack/vue-query', async () => {
   const { ref, watch } = await import('vue');
@@ -246,9 +245,7 @@ describe('查分页逐题回顾入口与弹层 (student/scores)', () => {
   });
 
   it('答卷回顾收藏交互：批量回显收藏状态并支持一键收藏/取消收藏', async () => {
-    vi.mocked(myExams).mockResolvedValueOnce([
-      { examId: 105, title: '收藏测试考试' },
-    ] as never);
+    vi.mocked(myExams).mockResolvedValueOnce([{ examId: 105, title: '收藏测试考试' }] as never);
     vi.mocked(myScore).mockResolvedValueOnce({
       examId: 105,
       examTitle: '收藏测试考试',
@@ -272,7 +269,7 @@ describe('查分页逐题回顾入口与弹层 (student/scores)', () => {
         },
       ],
     } as never);
-    vi.mocked(checkFavorites).mockResolvedValueOnce([501]);
+    vi.mocked(checkFavorites).mockResolvedValueOnce([501] as never);
 
     const wrapper = mount(StudentScoresPage);
     (wrapper.vm as unknown as { selectedExamId?: number }).selectedExamId = 105;
@@ -287,7 +284,9 @@ describe('查分页逐题回顾入口与弹层 (student/scores)', () => {
     );
 
     // 初始状态已收藏，点击触发取消收藏
-    const starBtn = document.body.querySelector('[data-test="favorite-toggle-501"]') as HTMLElement | null;
+    const starBtn = document.body.querySelector(
+      '[data-test="favorite-toggle-501"]'
+    ) as HTMLElement | null;
     expect(starBtn).not.toBeNull();
     starBtn?.click();
     await flushPromises();
@@ -299,5 +298,3 @@ describe('查分页逐题回顾入口与弹层 (student/scores)', () => {
     );
   });
 });
-
-

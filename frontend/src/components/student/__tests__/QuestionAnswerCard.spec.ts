@@ -232,4 +232,3 @@ describe('QuestionAnswerCard 题目收藏（add-student-question-favorites）', 
     expect(btn.text()).toContain('已收藏');
   });
 });
-

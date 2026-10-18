@@ -43,7 +43,11 @@
       <!-- 题目列表 -->
       <Spin :spinning="isFetching">
         <div v-if="!queryError">
-          <div v-if="favoritesList.length === 0" class="my-12 text-center" data-test="favorites-empty">
+          <div
+            v-if="favoritesList.length === 0"
+            class="my-12 text-center"
+            data-test="favorites-empty"
+          >
             <Empty description="暂无收藏题目" />
           </div>
 
@@ -71,12 +75,7 @@
                   cancel-text="取消"
                   @confirm="handleUnfavorite(item.questionId!)"
                 >
-                  <Button
-                    type="link"
-                    danger
-                    size="small"
-                    data-test="unfavorite-btn"
-                  >
+                  <Button type="link" danger size="small" data-test="unfavorite-btn">
                     取消收藏
                   </Button>
                 </Popconfirm>
@@ -116,7 +115,6 @@
                   </div>
                 </CollapsePanel>
               </Collapse>
-
             </div>
 
             <!-- 分页控件 -->
@@ -158,11 +156,7 @@ import { computed, ref } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import dayjs from 'dayjs';
 
-import {
-  listFavorites,
-  unfavorite,
-  type StudentQuestionFavoriteResponse,
-} from '@/api/axios';
+import { listFavorites, unfavorite, type StudentQuestionFavoriteResponse } from '@/api/axios';
 import { client, unwrap } from '@/api/apiClient';
 import { ApiError } from '@/api/types';
 import QuestionImage from '@/components/question/QuestionImage.vue';
@@ -175,13 +169,16 @@ const selectedType = ref<number | undefined>(undefined);
 const keywordInput = ref('');
 const activeKeyword = ref('');
 
-const queryKey = computed(() => [
-  'student-favorites',
-  currentPage.value,
-  pageSize.value,
-  selectedType.value,
-  activeKeyword.value,
-] as const);
+const queryKey = computed(
+  () =>
+    [
+      'student-favorites',
+      currentPage.value,
+      pageSize.value,
+      selectedType.value,
+      activeKeyword.value,
+    ] as const
+);
 
 const { data, error, isFetching } = useQuery({
   queryKey,

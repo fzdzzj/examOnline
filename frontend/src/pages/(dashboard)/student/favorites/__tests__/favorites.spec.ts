@@ -19,7 +19,7 @@ vi.mock('@/api/axios', () => ({
   markRead: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { listFavorites, unfavorite } from '@/api/axios';
+import { listFavorites } from '@/api/axios';
 
 const mockInvalidateQueries = vi.fn();
 

@@ -161,7 +161,6 @@ const NAVIGABLE_PATHS: readonly string[] = [
   '/admin/audit-logs',
 ];
 
-
 const onMenuClick: MenuProps['onClick'] = ({ key }) => {
   const path = String(key);
   if (NAVIGABLE_PATHS.includes(path)) {

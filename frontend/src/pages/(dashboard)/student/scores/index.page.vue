@@ -166,7 +166,10 @@
                   :data-test="`favorite-toggle-${q.questionId}`"
                   @click="toggleFavorite(q.questionId)"
                 >
-                  <StarFilled v-if="favoritedIds.has(q.questionId)" class="text-amber-400 text-base" />
+                  <StarFilled
+                    v-if="favoritedIds.has(q.questionId)"
+                    class="text-amber-400 text-base"
+                  />
                   <StarOutlined v-else class="text-gray-400 hover:text-amber-400 text-base" />
                   <span class="text-xs text-gray-500 hidden sm:inline">
                     {{ favoritedIds.has(q.questionId) ? '已收藏' : '收藏' }}
@@ -175,7 +178,6 @@
                 <Tag v-if="!q.graded" color="default">未批</Tag>
               </div>
             </div>
-
 
             <!-- 题干 -->
             <div class="text-gray-800 font-medium whitespace-pre-wrap">{{ q.questionContent }}</div>
@@ -296,6 +298,7 @@ import {
 } from '@/api/axios';
 
 import { client, unwrap } from '@/api/apiClient';
+import { ApiError } from '@/api/types';
 import { getReviewStatusConfig } from '@/constants/postExam';
 import {
   mapMakeupFinalScoreToView,
@@ -541,7 +544,6 @@ async function toggleFavorite(questionId?: number): Promise<void> {
     message.error(msg);
   }
 }
-
 </script>
 
 <style scoped>
