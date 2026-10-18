@@ -1,0 +1,1030 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.exam:exam-online >------------------------
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (jacoco-prepare-agent) @ exam-online ---
+[INFO] argLine set to -javaagent:D:\\code\\examOnline\\.m2-repo\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\code\\examOnline\\target\\jacoco.exec,excludes=com/exam/ExamOnlineApplication.class:com/exam/**/dto/**:com/exam/**/entity/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ exam-online ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ exam-online ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ exam-online ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.exam.auth.RegisterRateLimitIntegrationTest
+17:23:15.308 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.exam.auth.RegisterRateLimitIntegrationTest]: RegisterRateLimitIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:23:15.616 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.exam.ExamOnlineApplication for test class com.exam.auth.RegisterRateLimitIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-10-18 17:23:16.549 [main] [] [] INFO  c.e.a.RegisterRateLimitIntegrationTest - Starting RegisterRateLimitIntegrationTest using Java 21.0.9 with PID 50264 (started by fzdzzj in D:\code\examOnline)
+2026-10-18 17:23:16.551 [main] [] [] INFO  c.e.a.RegisterRateLimitIntegrationTest - The following 1 profile is active: "test"
+2026-10-18 17:23:19.283 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-18 17:23:19.290 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-18 17:23:19.401 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 86 ms. Found 0 Redis repository interfaces.
+2026-10-18 17:23:20.797 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig' of type [io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-18 17:23:20.814 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'mapConverter' of type [io.opentelemetry.instrumentation.spring.autoconfigure.internal.MapConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-18 17:23:21.901 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: COPY_PASTE -> CopyPasteEventCollector
+2026-10-18 17:23:21.905 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: DRAFT_CONFLICT -> DraftConflictEventCollector
+2026-10-18 17:23:21.906 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: FULLSCREEN_EXIT -> FullScreenExitEventCollector
+2026-10-18 17:23:21.906 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: PAGE_REFRESH -> PageRefreshEventCollector
+2026-10-18 17:23:21.906 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SUBMIT_ANOMALY -> SubmitAnomalyEventCollector
+2026-10-18 17:23:21.906 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SWITCH_SCREEN -> SwitchScreenEventCollector
+2026-10-18 17:23:21.906 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: WINDOW_BLUR -> WindowBlurEventCollector
+2026-10-18 17:23:22.022 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2026-10-18 17:23:22.577 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection conn0: url=jdbc:h2:mem:exam user=SA
+2026-10-18 17:23:22.579 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2026-10-18 17:23:22.582 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Starting...
+2026-10-18 17:23:22.583 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - slave - Added connection conn1: url=jdbc:h2:mem:exam user=SA
+2026-10-18 17:23:22.583 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Start completed.
+2026-10-18 17:23:22.583 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [slave] success
+2026-10-18 17:23:22.583 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2026-10-18 17:23:22.583 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [2] datasource,primary datasource named [master]
+2026-10-18 17:23:25.269 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: FILL_BLANK -> FillBlankGradingStrategy
+2026-10-18 17:23:25.269 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: JUDGE -> JudgeGradingStrategy
+2026-10-18 17:23:25.269 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: MULTIPLE -> MultipleChoiceGradingStrategy
+2026-10-18 17:23:25.270 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SHORT_ANSWER -> ShortAnswerGradingStrategy
+2026-10-18 17:23:25.270 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SINGLE -> SingleChoiceGradingStrategy
+2026-10-18 17:23:28.962 [main] [] [] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-18 17:23:28.963 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-10-18 17:23:28.974 [main] [] [] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 3 endpoints beneath base path '/actuator'
+2026-10-18 17:23:29.001 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Completed initialization in 36 ms
+2026-10-18 17:23:29.148 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 17:23:29.159 [main] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused: getsockopt
+2026-10-18 17:23:29.167 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 17:23:29.185 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:632)
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726)
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2262)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2235)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2215)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1972)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1936)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1481)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1322)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.net.ConnectException: Connection refused: getsockopt
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:690)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:678)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:647)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:593)
+	... 12 common frames omitted
+2026-10-18 17:23:29.191 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 17:23:29.241 [main] [] [] INFO  c.e.a.RegisterRateLimitIntegrationTest - Started RegisterRateLimitIntegrationTest in 13.382 seconds (process running for 15.347)
+2026-10-18 17:23:29.588 [main] [] [] INFO  c.exam.config.RolePermissionInitializer - RBAC 角色/权限预置完成
+2026-10-18 17:23:29.683 [main] [] [] INFO  com.exam.config.AdminInitializer - 首次启动：已创建默认管理员 username=admin（请尽快通过环境变量 ADMIN_PASSWORD 修改）
+2026-10-18 17:23:29.683 [main] [] [] INFO  com.exam.config.ApplicationConfig - JWT_SECRET validated successfully (length: 58)
+2026-10-18 17:23:29.684 [main] [] [] INFO  com.exam.config.ApplicationConfig - Application configuration validated successfully
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\code\examOnline\.m2-repo\net\bytebuddy\byte-buddy-agent\1.17.7\byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-10-18 17:23:33.853 [main] [65d41494894f4f2da04965fd7d774902] [534448dbd662d5c2797947ce840bf76a] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb0
+2026-10-18 17:23:33.898 [main] [65d41494894f4f2da04965fd7d774902] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (579ms)
+2026-10-18 17:23:34.282 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-10-18 17:23:34.289 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@7267a4a0: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-10-18 17:23:34.291 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 17:23:34.293 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-10-18 17:23:34.294 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 17:23:34.326 [main] [53da1ce557a144b2b6e73739166428ee] [36d229a7eac30f95a24643997a0d60db] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb1
+2026-10-18 17:23:34.328 [main] [53da1ce557a144b2b6e73739166428ee] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (414ms)
+2026-10-18 17:23:34.572 [main] [58eaa1e4d3894489af0033dc599b4008] [ae5d343319e12b05077eb8967a93c196] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb2
+2026-10-18 17:23:34.574 [main] [58eaa1e4d3894489af0033dc599b4008] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (244ms)
+2026-10-18 17:23:34.797 [main] [681feeb26923429db17a8ac143d2b543] [cf9ecc4529a2c19942f06bbe0235bba9] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb3
+2026-10-18 17:23:34.798 [main] [681feeb26923429db17a8ac143d2b543] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (222ms)
+2026-10-18 17:23:35.000 [main] [36ab4406972240b7b3fd0605f56c3e5b] [75f98994d03a8be98c8871efacbf3b21] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb4
+2026-10-18 17:23:35.003 [main] [36ab4406972240b7b3fd0605f56c3e5b] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (204ms)
+2026-10-18 17:23:35.211 [main] [45a6f0546c654def952a764c586811f1] [a9debf5e2176bdac2174950454e790f5] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb5
+2026-10-18 17:23:35.213 [main] [45a6f0546c654def952a764c586811f1] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (210ms)
+2026-10-18 17:23:35.594 [main] [e15e4e28271240ae952aaaee1675e86b] [389bec5d138b8075c4abc44188d107fa] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb6
+2026-10-18 17:23:35.596 [main] [e15e4e28271240ae952aaaee1675e86b] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (382ms)
+2026-10-18 17:23:36.012 [main] [87fbcd8391084896ad6201f7c693d10a] [3d0f8f1c20e2f81bd34d7498246bdd80] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb7
+2026-10-18 17:23:36.016 [main] [87fbcd8391084896ad6201f7c693d10a] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (419ms)
+2026-10-18 17:23:36.438 [main] [b11a9102eee949af9463bf477e6bd6ea] [7f69319071b919b7e9eed197b8d4c925] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb8
+2026-10-18 17:23:36.441 [main] [b11a9102eee949af9463bf477e6bd6ea] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (423ms)
+2026-10-18 17:23:36.722 [main] [1d0c7079267f45eca3de2df215108601] [f6043cdec35a41961a16c8076a025a5a] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb9
+2026-10-18 17:23:36.725 [main] [1d0c7079267f45eca3de2df215108601] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (283ms)
+2026-10-18 17:23:36.924 [main] [b742763950a5418ba691bb7c56ed549f] [1af416207dc9aff3472b10f5ee21e898] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrlb_over
+2026-10-18 17:23:36.927 [main] [b742763950a5418ba691bb7c56ed549f] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (198ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb0","password":"Pass1234","name":"注册限流","email":"stu_rrlb0@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"65d41494894f4f2da04965fd7d774902", X-Trace-Id:"534448dbd662d5c2797947ce840bf76a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb1","password":"Pass1234","name":"注册限流","email":"stu_rrlb1@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"53da1ce557a144b2b6e73739166428ee", X-Trace-Id:"36d229a7eac30f95a24643997a0d60db", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb2","password":"Pass1234","name":"注册限流","email":"stu_rrlb2@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"58eaa1e4d3894489af0033dc599b4008", X-Trace-Id:"ae5d343319e12b05077eb8967a93c196", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb3","password":"Pass1234","name":"注册限流","email":"stu_rrlb3@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"681feeb26923429db17a8ac143d2b543", X-Trace-Id:"cf9ecc4529a2c19942f06bbe0235bba9", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb4","password":"Pass1234","name":"注册限流","email":"stu_rrlb4@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"36ab4406972240b7b3fd0605f56c3e5b", X-Trace-Id:"75f98994d03a8be98c8871efacbf3b21", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb5","password":"Pass1234","name":"注册限流","email":"stu_rrlb5@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"45a6f0546c654def952a764c586811f1", X-Trace-Id:"a9debf5e2176bdac2174950454e790f5", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb6","password":"Pass1234","name":"注册限流","email":"stu_rrlb6@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"e15e4e28271240ae952aaaee1675e86b", X-Trace-Id:"389bec5d138b8075c4abc44188d107fa", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb7","password":"Pass1234","name":"注册限流","email":"stu_rrlb7@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"87fbcd8391084896ad6201f7c693d10a", X-Trace-Id:"3d0f8f1c20e2f81bd34d7498246bdd80", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb8","password":"Pass1234","name":"注册限流","email":"stu_rrlb8@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"b11a9102eee949af9463bf477e6bd6ea", X-Trace-Id:"7f69319071b919b7e9eed197b8d4c925", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"118"]
+             Body = {"username":"stu_rrlb9","password":"Pass1234","name":"注册限流","email":"stu_rrlb9@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"1d0c7079267f45eca3de2df215108601", X-Trace-Id:"f6043cdec35a41961a16c8076a025a5a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.32", Content-Length:"126"]
+             Body = {"username":"stu_rrlb_over","password":"Pass1234","name":"注册限流","email":"stu_rrlb_over@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"b742763950a5418ba691bb7c56ed549f", X-Trace-Id:"1af416207dc9aff3472b10f5ee21e898", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-18 17:23:37.162 [main] [03b1e43c61434a06bdbd92a57bbad917] [f6d36fc21304e9e9d1b7e1e1fbdb9fde] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla0
+2026-10-18 17:23:37.164 [main] [03b1e43c61434a06bdbd92a57bbad917] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (200ms)
+2026-10-18 17:23:37.361 [main] [01a1f3f8241d4ba0a345fa61d8847eef] [749d6f2b896494d4919b71273322a492] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla1
+2026-10-18 17:23:37.363 [main] [01a1f3f8241d4ba0a345fa61d8847eef] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (198ms)
+2026-10-18 17:23:37.554 [main] [f7e23e36e7b945cdb4e1d5ab43f3ccb0] [d277f56df875399265c9b04660d8c1e1] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla2
+2026-10-18 17:23:37.555 [main] [f7e23e36e7b945cdb4e1d5ab43f3ccb0] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (192ms)
+2026-10-18 17:23:37.743 [main] [84323d569adc4b8f8fd3667a6b41ee7f] [28d511f79c04a06c665af1832545621d] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla3
+2026-10-18 17:23:37.744 [main] [84323d569adc4b8f8fd3667a6b41ee7f] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (188ms)
+2026-10-18 17:23:37.934 [main] [a6f4ddf16f96482e9df19965cb5a410d] [42ff65bfd03badee74b83b7c24e6c578] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla4
+2026-10-18 17:23:37.936 [main] [a6f4ddf16f96482e9df19965cb5a410d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (191ms)
+2026-10-18 17:23:38.123 [main] [ea82c3e3ecd34d0cbfa4a084d4e8e5a6] [d91703054a50df8295519cbc547018db] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla5
+2026-10-18 17:23:38.125 [main] [ea82c3e3ecd34d0cbfa4a084d4e8e5a6] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (189ms)
+2026-10-18 17:23:38.313 [main] [94a28f40fd0f47eda782cd2098971847] [b7c210e648f3c56304cd65717157467c] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla6
+2026-10-18 17:23:38.314 [main] [94a28f40fd0f47eda782cd2098971847] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (189ms)
+2026-10-18 17:23:38.507 [main] [43583f1a15384d3a8f66eb96d283390b] [e0430be5533272215273c8969614490d] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla7
+2026-10-18 17:23:38.508 [main] [43583f1a15384d3a8f66eb96d283390b] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (192ms)
+2026-10-18 17:23:38.700 [main] [c335c3b861e047858c7a1b5cb7cc04ed] [6f141b7d986894c9e0b7bf429e6c07e6] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla8
+2026-10-18 17:23:38.702 [main] [c335c3b861e047858c7a1b5cb7cc04ed] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (193ms)
+2026-10-18 17:23:38.892 [main] [270a4b89e9a241d59f99b96a2b6e4b61] [58429bf7ceb0f8b394f654c66e65c5d2] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla9
+2026-10-18 17:23:38.893 [main] [270a4b89e9a241d59f99b96a2b6e4b61] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (190ms)
+2026-10-18 17:23:39.088 [main] [397fcbb682e247128859274af8f4d117] [cf36080e4774d16040764cdd03d5889c] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_rrla_over
+2026-10-18 17:23:39.089 [main] [397fcbb682e247128859274af8f4d117] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (195ms)
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla0","password":"Pass1234","name":"注册限流","email":"stu_rrla0@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"03b1e43c61434a06bdbd92a57bbad917", X-Trace-Id:"f6d36fc21304e9e9d1b7e1e1fbdb9fde", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla1","password":"Pass1234","name":"注册限流","email":"stu_rrla1@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"01a1f3f8241d4ba0a345fa61d8847eef", X-Trace-Id:"749d6f2b896494d4919b71273322a492", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla2","password":"Pass1234","name":"注册限流","email":"stu_rrla2@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"f7e23e36e7b945cdb4e1d5ab43f3ccb0", X-Trace-Id:"d277f56df875399265c9b04660d8c1e1", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla3","password":"Pass1234","name":"注册限流","email":"stu_rrla3@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"84323d569adc4b8f8fd3667a6b41ee7f", X-Trace-Id:"28d511f79c04a06c665af1832545621d", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla4","password":"Pass1234","name":"注册限流","email":"stu_rrla4@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"a6f4ddf16f96482e9df19965cb5a410d", X-Trace-Id:"42ff65bfd03badee74b83b7c24e6c578", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla5","password":"Pass1234","name":"注册限流","email":"stu_rrla5@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"ea82c3e3ecd34d0cbfa4a084d4e8e5a6", X-Trace-Id:"d91703054a50df8295519cbc547018db", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla6","password":"Pass1234","name":"注册限流","email":"stu_rrla6@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"94a28f40fd0f47eda782cd2098971847", X-Trace-Id:"b7c210e648f3c56304cd65717157467c", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla7","password":"Pass1234","name":"注册限流","email":"stu_rrla7@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"43583f1a15384d3a8f66eb96d283390b", X-Trace-Id:"e0430be5533272215273c8969614490d", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla8","password":"Pass1234","name":"注册限流","email":"stu_rrla8@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"c335c3b861e047858c7a1b5cb7cc04ed", X-Trace-Id:"6f141b7d986894c9e0b7bf429e6c07e6", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"118"]
+             Body = {"username":"stu_rrla9","password":"Pass1234","name":"注册限流","email":"stu_rrla9@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"270a4b89e9a241d59f99b96a2b6e4b61", X-Trace-Id:"58429bf7ceb0f8b394f654c66e65c5d2", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", X-Real-IP:"203.0.113.31", Content-Length:"126"]
+             Body = {"username":"stu_rrla_over","password":"Pass1234","name":"注册限流","email":"stu_rrla_over@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"397fcbb682e247128859274af8f4d117", X-Trace-Id:"cf36080e4774d16040764cdd03d5889c", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 24.10 s <<< FAILURE! -- in com.exam.auth.RegisterRateLimitIntegrationTest
+[ERROR] com.exam.auth.RegisterRateLimitIntegrationTest.registerRateLimitIsIsolatedPerIp -- Time elapsed: 7.201 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<429> but was:<200>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.exam.auth.RegisterRateLimitIntegrationTest.registerRateLimitIsIsolatedPerIp(RegisterRateLimitIntegrationTest.java:97)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.exam.auth.RegisterRateLimitIntegrationTest.registerAllowsUpToThresholdPerIpThenReturns429 -- Time elapsed: 2.135 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<429> but was:<200>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.exam.auth.RegisterRateLimitIntegrationTest.registerAllowsUpToThresholdPerIpThenReturns429(RegisterRateLimitIntegrationTest.java:86)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   RegisterRateLimitIntegrationTest.registerAllowsUpToThresholdPerIpThenReturns429:86 Response status expected:<429> but was:<200>
+[ERROR]   RegisterRateLimitIntegrationTest.registerRateLimitIsIsolatedPerIp:97 Response status expected:<429> but was:<200>
+[INFO] 
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  29.944 s
+[INFO] Finished at: 2026-10-18T17:23:39+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] See D:\code\examOnline\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

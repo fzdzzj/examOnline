@@ -190,6 +190,57 @@ class LoginGuardServiceTest {
         assertEquals(ResponseCode.TOO_MANY_REQUESTS.getCode(), ex.getCode());
     }
 
+    // ==================== 注册限流（IP 维度，harden-register-rate-limit） ====================
+
+    @Test
+    void checkRegisterRateLimitKeysByIpWithOneMinuteWindow() {
+        guard.checkRegisterRateLimit("198.51.100.10");
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        ArgumentCaptor<List> keysCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Object[]> argsCaptor = ArgumentCaptor.forClass(Object[].class);
+        verify(redis).execute(any(DefaultRedisScript.class), keysCaptor.capture(), argsCaptor.capture());
+        assertEquals(List.of("auth:register_rl:198.51.100.10"), keysCaptor.getValue());
+        assertEquals("60", argsCaptor.getValue()[0], "固定窗口必须 1 分钟（60s）");
+    }
+
+    @Test
+    void checkRegisterRateLimitThrowsBeyondConfiguredRegisterPerMinute() {
+        // 独立阈值 registerPerMinute（非复用登录 perMinute）：配置 3 → 第 4 次抛 429
+        props.getRateLimit().setRegisterPerMinute(3);
+        for (int i = 0; i < 3; i++) {
+            guard.checkRegisterRateLimit("198.51.100.11");
+        }
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> guard.checkRegisterRateLimit("198.51.100.11"));
+        assertEquals(ResponseCode.TOO_MANY_REQUESTS.getCode(), ex.getCode());
+    }
+
+    @Test
+    void checkRegisterRateLimitKeysAreIsolatedByIp() {
+        for (int i = 0; i < 10; i++) {
+            guard.checkRegisterRateLimit("10.1.0.1");
+        }
+        // 另一 IP 独立计数：不受 IP A 已耗尽的窗口影响
+        assertDoesNotThrow(() -> guard.checkRegisterRateLimit("10.1.0.2"));
+        // 原 IP 继续累计：第 11 次抛 429
+        assertThrows(BusinessException.class, () -> guard.checkRegisterRateLimit("10.1.0.1"));
+    }
+
+    @Test
+    @DisplayName("注册限流 Redis 异常：fail-open 放行 + ERROR 日志 + 降级计数（check=register_rate_limit）")
+    void checkRegisterRateLimitRedisError_degradesPass_logsError_counts() {
+        when(redis.execute(any(DefaultRedisScript.class), anyList(), any(Object[].class)))
+                .thenThrow(new RuntimeException("redis down"));
+
+        assertDoesNotThrow(() -> guard.checkRegisterRateLimit("198.51.100.12"),
+                "注册限流 Redis 异常应 fail-open 放行，而不是异常裸穿 500");
+
+        verify(businessMetrics).countAuthDegraded(eq(LoginGuardService.DEGRADED_REGISTER_RATE_LIMIT));
+        assertTrue(errorMessages().stream().anyMatch(m -> m.contains("登录守卫降级") && m.contains("注册限流")),
+                "降级必须落 ERROR 日志供告警观测，实际 ERROR 列表: " + errorMessages());
+    }
+
     // ==================== Redis 异常降级容错（harden-login-guard-redis-degradation） ====================
 
     @Test

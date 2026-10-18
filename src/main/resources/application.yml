@@ -104,6 +104,9 @@ exam:
     rate-limit:
       # 登录接口限流：次/分钟/账号+IP
       per-minute: 10
+      # 注册接口限流（harden-register-rate-limit）：次/分钟/客户端 IP，
+      # 防范高并发注册触发密集 BCrypt 计算造成 CPU 耗尽 DoS
+      register-per-minute: ${AUTH_REGISTER_RATE_LIMIT_PER_MINUTE:10}
     reset-code:
       # 找回密码验证码：有效分钟数与长度
       ttl-minutes: 5

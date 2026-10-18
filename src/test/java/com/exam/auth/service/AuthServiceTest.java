@@ -6,11 +6,13 @@ import com.exam.auth.dto.ChangePasswordRequest;
 import com.exam.auth.dto.RegisterRequest;
 import com.exam.auth.dto.TokenResponse;
 import com.exam.auth.security.LoginUser;
+import com.exam.auth.security.RoleHierarchy;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.config.AuthProperties;
 import com.exam.monitoring.metrics.BusinessMetrics;
 import com.exam.service.AuditLogService;
+import com.exam.user.entity.Role;
 import com.exam.user.entity.User;
 import com.exam.user.mapper.UserMapper;
 import com.exam.user.service.UserService;
@@ -52,6 +54,7 @@ import static org.mockito.Mockito.when;
  * AuthService 单元测试（harden-auth-edge-cases）：
  * <ul>
  *   <li>注册并发同号撞唯一约束转友好「账号已存在」（不再呈现 500）；</li>
+ *   <li>注册入口首行做 客户端 IP 维度频控（harden-register-rate-limit，先于身份分支与存在性查询）；</li>
  *   <li>changePassword 必须声明 @Transactional(rollbackFor=Exception.class)（两 DB 写原子）；</li>
  *   <li>sendResetCode 入口先做 email+IP 维度限流（先于邮箱存在性查询，防枚举语义不变），
  *       并把配置的 ttlMinutes 透传给邮件服务。</li>
@@ -98,7 +101,28 @@ class AuthServiceTest {
                 new MapperBuilderAssistant(new MybatisConfiguration(), ""), User.class);
     }
 
-    // ==================== 注册：并发同号竞态友好提示 ====================
+    // ==================== 注册：IP 频控前置 + 并发同号竞态友好提示 ====================
+
+    @Test
+    void registerRunsIpRateLimitBeforeAnyOtherLogic() {
+        when(userService.existsByUsername("stu_rl_pre")).thenReturn(false);
+        Role role = new Role();
+        role.setId(1L);
+        when(userService.getRoleByCode(RoleHierarchy.STUDENT)).thenReturn(role);
+
+        RegisterRequest req = new RegisterRequest();
+        req.setUsername("stu_rl_pre");
+        req.setPassword("Pass1234");
+        req.setName("前置限流");
+        req.setRoleType("STUDENT");
+
+        authService.register(req, "203.0.113.8");
+
+        // 频控必须首行前置（先于身份分支与用户名存在性查询），BCrypt 与入库之前拦截
+        InOrder inOrder = inOrder(loginGuard, userService);
+        inOrder.verify(loginGuard).checkRegisterRateLimit("203.0.113.8");
+        inOrder.verify(userService).existsByUsername("stu_rl_pre");
+    }
 
     @Test
     void registerConvertsDuplicateKeyExceptionToFriendlyAccountExists() {
@@ -112,7 +136,8 @@ class AuthServiceTest {
         req.setName("并发注册");
         req.setRoleType("STUDENT");
 
-        BusinessException ex = assertThrows(BusinessException.class, () -> authService.register(req));
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> authService.register(req, "203.0.113.5"));
         assertEquals(ResponseCode.ACCOUNT_ALREADY_EXISTS.getCode(), ex.getCode());
     }
 

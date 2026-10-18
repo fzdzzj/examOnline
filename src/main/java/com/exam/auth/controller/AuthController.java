@@ -40,10 +40,11 @@ public class AuthController {
         this.authService = authService;
     }
 
-    /** 注册（学生自助 / 教师 + 邀请码） */
+    /** 注册（学生自助 / 教师 + 邀请码）；入口按客户端 IP 维度频控（harden-register-rate-limit） */
     @PostMapping("/register")
-    public ApiResponse<Void> register(@Valid @RequestBody RegisterRequest request) {
-        authService.register(request);
+    public ApiResponse<Void> register(@Valid @RequestBody RegisterRequest request,
+                                      HttpServletRequest http) {
+        authService.register(request, ClientIpResolver.resolve(http));
         return ApiResponse.success();
     }
 

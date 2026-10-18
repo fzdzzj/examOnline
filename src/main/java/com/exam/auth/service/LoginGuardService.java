@@ -22,7 +22,9 @@ import java.util.concurrent.TimeUnit;
  *   <li>登录锁定：连续失败 {@code maxFailures} 次锁 {@code lockMinutes} 分钟（Redis 计数），
  *       锁定期间拒绝登录；</li>
  *   <li>登录限流：按 账号+IP 维度固定窗口计数，超过 {@code perMinute} 次/分钟返回 429；</li>
- *   <li>找回密码验证码限流：按 邮箱+IP 维度固定窗口计数（复用同一阈值量级），超限返回 429。</li>
+ *   <li>找回密码验证码限流：按 邮箱+IP 维度固定窗口计数（复用同一阈值量级），超限返回 429；</li>
+ *   <li>注册限流：按 客户端 IP 维度固定窗口计数（独立阈值 registerPerMinute），超限返回 429，
+ *       防范高并发注册触发密集 BCrypt 计算造成 CPU 耗尽 DoS（harden-register-rate-limit）。</li>
  * </ul>
  *
  * <p><b>计数原子化（harden-auth-edge-cases）</b>：三处计数（登录限流 / 失败计数 / 验证码限流）的
@@ -51,6 +53,7 @@ public class LoginGuardService {
     private static final String PREFIX_LOCK = "auth:lock:";
     private static final String PREFIX_RATE = "auth:rl:";
     private static final String PREFIX_CODE_RL = "auth:coderl:";
+    private static final String PREFIX_REGISTER_RL = "auth:register_rl:";
     private static final Duration RATE_WINDOW = Duration.ofMinutes(1);
 
     /** 降级计数 tag：登录限流计数点（BusinessMetrics.countAuthDegraded，代码常量有界，无客户端可控输入） */
@@ -65,6 +68,8 @@ public class LoginGuardService {
     static final String DEGRADED_LOGIN_FAIL_CLEAR = "login_fail_clear";
     /** 降级计数 tag：找回密码验证码限流计数点 */
     static final String DEGRADED_CODE_RATE_LIMIT = "code_rate_limit";
+    /** 降级计数 tag：注册限流计数点（harden-register-rate-limit） */
+    static final String DEGRADED_REGISTER_RATE_LIMIT = "register_rate_limit";
 
     /** INCR 并首次置 EXPIRE 的原子脚本：防止「已递增但永不过期」的计数键。 */
     private static final String INCR_WITH_TTL_LUA =
@@ -125,6 +130,28 @@ public class LoginGuardService {
         }
         if (count > props.getRateLimit().getPerMinute()) {
             log.warn("找回密码验证码限流触发, email={}, ip={}, count={}", email, ip, count);
+            throw new BusinessException(ResponseCode.TOO_MANY_REQUESTS);
+        }
+    }
+
+    /**
+     * 注册限流：按 客户端 IP 维度固定窗口计数（harden-register-rate-limit），超限抛 429。
+     * 注册对每个请求执行 BCrypt(12)（单次约数百毫秒 CPU），高并发虚假注册可耗尽 CPU——
+     * 频控在进入 BCrypt 与入库之前拦截（AuthService.register 首行前置）。
+     */
+    public void checkRegisterRateLimit(String ip) {
+        long count;
+        try {
+            count = incrementWithTtl(PREFIX_REGISTER_RL + ip, RATE_WINDOW);
+        } catch (Exception e) {
+            // 降级口径同登录限流：同一脚本同一降级族，Redis 故障期间 fail-open
+            log.error("登录守卫降级：Redis 注册限流计数失败，ip={}，异常={}，requestId={}",
+                    ip, e.getMessage(), MDC.get(RequestIdFilter.MDC_KEY), e);
+            businessMetrics.countAuthDegraded(DEGRADED_REGISTER_RATE_LIMIT);
+            return;
+        }
+        if (count > props.getRateLimit().getRegisterPerMinute()) {
+            log.warn("注册限流触发, ip={}, count={}", ip, count);
             throw new BusinessException(ResponseCode.TOO_MANY_REQUESTS);
         }
     }
