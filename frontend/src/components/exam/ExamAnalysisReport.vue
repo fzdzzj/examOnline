@@ -89,7 +89,14 @@
               />
             </template>
             <template v-else-if="column.key === 'discrimination'">
-              <span>{{ discrimLabel((record as QuestionStatItem).discrimination) }}</span>
+              <!-- 区分度彩标（add-exam-question-discrimination）：后端派生 discriminationLevel 单源渲染 -->
+              <Tag
+                v-if="discriminationTagColor((record as QuestionStatItem).discriminationLevel)"
+                :color="discriminationTagColor((record as QuestionStatItem).discriminationLevel)"
+              >
+                {{ discriminationTagText(record as QuestionStatItem) }}
+              </Tag>
+              <span v-else>{{ discrimLabel((record as QuestionStatItem).discrimination) }}</span>
             </template>
             <template v-else-if="column.key === 'optionDistribution'">
               <div
@@ -105,6 +112,18 @@
                   {{ opt.count ?? 0 }}人 ({{ toPercent(opt.rate) }}%)
                 </span>
               </div>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+            <template v-else-if="column.key === 'qualityEvaluation'">
+              <!-- 命题建议：悬浮展示完整诊断文本，单元格超宽截断 -->
+              <Tooltip
+                v-if="(record as QuestionStatItem).qualityEvaluation"
+                :title="(record as QuestionStatItem).qualityEvaluation"
+              >
+                <span class="inline-block max-w-[16rem] truncate align-bottom">
+                  {{ (record as QuestionStatItem).qualityEvaluation }}
+                </span>
+              </Tooltip>
               <span v-else class="text-gray-400">-</span>
             </template>
           </template>
@@ -169,6 +188,8 @@ import {
   Row,
   Statistic,
   Table,
+  Tag,
+  Tooltip,
   type TableColumnsType,
 } from 'ant-design-vue';
 import { computed, ref } from 'vue';
@@ -275,10 +296,37 @@ const questionColumns: TableColumnsType = [
   { title: '平均分', key: 'averageScore', dataIndex: 'averageScore', width: 90 },
   { title: '得分率', key: 'scoreRate', dataIndex: 'scoreRate' },
   { title: '答对率', key: 'correctRate', dataIndex: 'correctRate', width: 90 },
-  { title: '区分度', key: 'discrimination', dataIndex: 'discrimination', width: 90 },
+  { title: '区分度', key: 'discrimination', dataIndex: 'discrimination', width: 110 },
   { title: '作答人数', key: 'answeredCount', dataIndex: 'answeredCount', width: 90 },
   { title: '选项分布', key: 'optionDistribution', dataIndex: 'optionDistribution', minWidth: 200 },
+  { title: '命题建议', key: 'qualityEvaluation', dataIndex: 'qualityEvaluation', minWidth: 220 },
 ];
+
+/**
+ * 区分度评级 → 彩标颜色映射（add-exam-question-discrimination）：
+ * 优良绿 / 良好蓝 / 尚可橙 / 劣质与反常预警红 / 样本不足灰。
+ */
+const DISCRIMINATION_TAG_COLORS: Record<string, string> = {
+  优良: 'green',
+  良好: 'blue',
+  尚可: 'orange',
+  劣质: 'red',
+  反常预警: 'red',
+  样本不足: 'default',
+};
+
+/** 后端已派生 discriminationLevel 时返回彩标颜色（未知评级回退灰）；缺省返回 undefined 走旧版纯文本。 */
+function discriminationTagColor(level: string | undefined | null): string | undefined {
+  if (!level) return undefined;
+  return DISCRIMINATION_TAG_COLORS[level] ?? 'default';
+}
+
+/** Tag 文案：评级 + 数值区分度（无数值时仅评级，如「样本不足」）。 */
+function discriminationTagText(item: QuestionStatItem): string {
+  const level = item.discriminationLevel ?? discrimLabel(item.discrimination);
+  if (item.discrimination === undefined || item.discrimination === null) return level;
+  return `${level} ${item.discrimination.toFixed(2)}`;
+}
 
 /** 选项标签展示：判断题展示层映射为「正确/错误」，单选/多选保持原始字母。 */
 function formatOptionLabel(option: string | undefined, type: string | undefined): string {
