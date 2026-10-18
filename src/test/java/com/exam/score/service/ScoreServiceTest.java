@@ -21,6 +21,7 @@ import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.dto.ScorePreviewResponse;
 import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.mapper.ScoreAuditLogMapper;
+import com.exam.service.AuditLogService;
 import com.exam.submission.entity.ExamSubmission;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -81,6 +82,8 @@ class ScoreServiceTest {
     private ReadYourWriteMark readYourWriteMark;
     @Mock
     private ExamLifecycleNotificationService lifecycleNotificationService;
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private ScoreService scoreService;
@@ -199,6 +202,9 @@ class ScoreServiceTest {
         assertEquals(TEACHER_ID, audit.getOperatorId());
         assertEquals("发布成绩 42 人", audit.getDetail());
         assertNull(audit.getReason(), "发布无需原因，仅撤回强制填写");
+        // 考务操作审计（add-exam-operation-audit-logs）：audit_log 侧同步落 SCORE_PUBLISH，
+        // 带考试标题与发布人数，与 score_audit_logs 双轨互补
+        verify(auditLogService).logScorePublish(1L, "期末考-1", 42);
         verify(readYourWriteMark).mark();
         var published = registry.get("exam_publish_total")
                 .tag("status", "success").counter();
@@ -355,6 +361,19 @@ class ScoreServiceTest {
         assertEquals("撤回成绩，学生端隐藏", captor.getValue().getDetail());
         assertEquals(ADMIN_ID, captor.getValue().getOperatorId());
         verify(readYourWriteMark).mark();
+    }
+
+    /** 考务操作审计（add-exam-operation-audit-logs）：撤回成功须同步落 SCORE_REVOKE，带原因。 */
+    @Test
+    void revokeWritesOperationAuditWithExamTitleAndReason() {
+        loginAsAdmin();
+        when(examMapper.selectById(1L)).thenReturn(exam(1L, Exam.STATUS_PUBLISHED));
+        when(examMapper.casUpdateStatus(1L, Exam.STATUS_PUBLISHED, Exam.STATUS_GRADED, 0)).thenReturn(1);
+
+        List<ScoreActionItem> results = scoreService.revoke(List.of(1L), "成绩录入有误");
+
+        assertEquals(new ScoreActionItem(1L, true, "撤回成功"), results.get(0));
+        verify(auditLogService).logScoreRevoke(1L, "期末考-1", "成绩录入有误");
     }
 
     @Test

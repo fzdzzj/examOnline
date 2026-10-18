@@ -21,6 +21,7 @@ import com.exam.message.service.ExamLifecycleNotificationService;
 import com.exam.score.dto.ScoreActionItem;
 import com.exam.score.entity.ScoreAuditLog;
 import com.exam.score.mapper.ScoreAuditLogMapper;
+import com.exam.service.AuditLogService;
 import com.exam.submission.entity.ExamSubmission;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
@@ -61,7 +62,8 @@ public class ScoreService {
     private final ScoreAuditLogMapper auditLogMapper;
     private final ReadYourWriteMark readYourWriteMark;
     private final ExamLifecycleNotificationService lifecycleNotificationService;
-    
+    private final AuditLogService auditLogService;
+
     // 指标收集
     private io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
@@ -71,7 +73,8 @@ public class ScoreService {
                         GradingPaperReader paperReader,
                         ScoreAuditLogMapper auditLogMapper,
                         ReadYourWriteMark readYourWriteMark,
-                        ExamLifecycleNotificationService lifecycleNotificationService) {
+                        ExamLifecycleNotificationService lifecycleNotificationService,
+                        AuditLogService auditLogService) {
         this.examMapper = examMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
         this.subjectiveGradeMapper = subjectiveGradeMapper;
@@ -79,6 +82,7 @@ public class ScoreService {
         this.auditLogMapper = auditLogMapper;
         this.readYourWriteMark = readYourWriteMark;
         this.lifecycleNotificationService = lifecycleNotificationService;
+        this.auditLogService = auditLogService;
     }
 
     /** 初始化指标收集器（@PostConstruct 确保在发布前完成初始化）。 */
@@ -291,6 +295,9 @@ public class ScoreService {
                         .eq(GradingSubmission::getStatus, ExamSubmission.STATUS_GRADED));
         writeAudit(examId, ScoreAuditLog.ACTION_PUBLISH, null, "发布成绩 " + summarized + " 人");
         log.info("成绩发布：exam={} 操作人={}", examId, SecurityUtil.getUserId());
+        // 旁路审计（add-exam-operation-audit-logs）：audit_log 侧同步落 SCORE_PUBLISH（与
+        // score_audit_logs 双轨），服务内部吞异常，审计库抖动不回滚本次发布。
+        auditLogService.logScorePublish(examId, exam.getTitle(), summarized.intValue());
         // 旁路通知（add-exam-lifecycle-notifications）：发布成功后向实考考生投递成绩发布通知；
         // 服务内部统一 try-catch 降级，任何异常绝不回滚/阻断本次发布事务。
         List<GradingSubmission> gradedRows = gradingSubmissionMapper.selectList(
@@ -348,6 +355,9 @@ public class ScoreService {
         }
         writeAudit(examId, ScoreAuditLog.ACTION_REVOKE, reason, "撤回成绩，学生端隐藏");
         log.info("成绩撤回：exam={} 操作人={} 原因={}", examId, SecurityUtil.getUserId(), reason);
+        // 旁路审计（add-exam-operation-audit-logs）：audit_log 侧同步落 SCORE_REVOKE，
+        // 带撤回原因（撤回接口强制必填正是为了这条审计）；吞异常不阻断撤回。
+        auditLogService.logScoreRevoke(examId, exam.getTitle(), reason);
         // 读己之写（add-performance-deepening task4）：撤回是状态写，成功打点
         readYourWriteMark.mark();
         return new ScoreActionItem(examId, true, "撤回成功");
