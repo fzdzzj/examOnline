@@ -12,16 +12,16 @@
     {
       "id": 2,
       "title": "阶段 2：服务层与接口接入实施（零 DDL）",
-      "status": "pending",
+      "status": "completed",
       "description": "AuthProperties / application.yml 显式登记 register-per-minute；LoginGuardService 接入 checkRegisterRateLimit（auth:register_rl:{ip}，60s TTL，超限 429，异常降级 countAuthDegraded(register_rate_limit)）；AuthController.register 经 ClientIpResolver 提取 IP 传入 AuthService.register 前置守卫；docs/redis-dependency-runbook.md 同笔更新键族矩阵。",
-      "evidence": ""
+      "evidence": "实施笔 73628fb：AuthProperties.RateLimit 增 registerPerMinute（默认 10，application.yml 走 AUTH_REGISTER_RATE_LIMIT_PER_MINUTE 环境变量注入）；LoginGuardService.checkRegisterRateLimit 复用同源 INCR+首置 TTL Lua 脚本（键 auth:register_rl:{ip}，60s 固定窗口），超限抛 TOO_MANY_REQUESTS(1008)，Redis 异常降级 fail-open（ERROR 日志含 requestId + countAuthDegraded(\"register_rate_limit\")，复用 exam.auth.degraded 零新指标，AuthDegraded 告警自动覆盖）；AuthController.register 经 ClientIpResolver（X-Real-IP 优先、XFF 回退）解析 IP 传入 AuthService.register 首行前置拦截（先于 BCrypt 与任何 DB 操作）；docs/redis-dependency-runbook.md 同笔登记键族矩阵行、AuthDegraded tag 覆盖面与变更链条目。零 DDL（schema.sql 零改动），OpenAPI 契约零漂移（101 paths 不变）。"
     },
     {
       "id": 3,
       "title": "阶段 3：TDD 先红后绿、变异击红与门禁留证",
-      "status": "pending",
+      "status": "completed",
       "description": "新增单元与集成测试（正常放行、超限 429、跨 IP 隔离、Redis 异常降级放行）；先红日志留存；实施后转绿；变异验证（m1 注释超限判断 / m2 改回 fail-close 等）断言级击红并回绿留存；gate-baseline.json 按实测单调上调；双端门禁实测全绿。",
-      "evidence": ""
+      "evidence": "TDD 先红后绿：RegisterRateLimitIntegrationTest 新增 2 场景（阈值内放行+第 11 次 429/code=1008；X-Real-IP 模拟下跨 IP 计数隔离），实施前红档 2 跑 2 红（expected 429 but was 200），实施后 2/2 绿（@SpringBootTest(properties) 显式钉生产默认阈值 10 验证执行路径；application-test.yml 造数放宽到 50——基类 registerStudent/registerTeacher 经公开端点造数单用例可同 IP 注册 12 次，排行榜用例首跑误伤后按 test 档放宽先例收口）；LoginGuardServiceTest 新增 4 例（键形 auth:register_rl:{ip}+60s TTL 断言、registerPerMinute 配置消费 3→第 4 次 429、IP 隔离、Redis 降级 fail-open 三断言），AuthServiceTest 增 1 例 InOrder 钉 checkRegisterRateLimit 首行前置并适配新签名，连同既有用例 12/12、20/20 绿（evidence/tdd-red-phase.txt 与 tdd-green-phase.txt）。变异两连（实施笔 73628fb 之后、逐个注入→击红→checkout 复原→复绿，零残留）：m1 抽除超限判断 → 4 例断言级红（集成 2 例 expected 429 but was 200 + 单测阈值/IP 隔离 2 例）→复原 22/22；m2 降级臂改异常裸穿（fail-close）→ checkRegisterRateLimitRedisError_degradesPass 1 例红 →复原 22/22（evidence/mutation-m{1,2}-red.txt 与 mutation-m{1,2}-revert-green.txt，sha256 清单 evidence-sha256.txt 10/10 OK）。双端门禁：后端 ./mvnw clean test 全量 747/0/0/1 绿（gate-backend.txt，740+7 单调上调 gate-baseline.json）；前端零改动持平三件套绿——eslint 0 错（gate-frontend-lint.txt）、vue-tsc+tsc 0 错（gate-frontend-typecheck.txt）、vitest run --maxWorkers=4 122 文件/943 例全绿（gate-frontend-test.txt）。"
     },
     {
       "id": 4,
