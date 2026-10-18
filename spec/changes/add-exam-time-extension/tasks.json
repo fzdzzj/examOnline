@@ -12,16 +12,16 @@
     {
       "id": 2,
       "title": "阶段 2：服务层与接口接入实施（零 DDL）",
-      "status": "pending",
+      "status": "completed",
       "description": "新增 ExamTimeExtensionRequest/Response；ExamSubmissionMapper 新增 TIMESTAMPADD 原子顺延方法；ExamService 实施全场/个人双模式、状态门控与详情缓存清理；AuditLog 增 EXAM_EXTEND_TIME 并接入 AuditLogService；ExamLifecycleNotificationService 增加延时旁路通知；ExamController 暴露 POST /api/exams/{id}/extend-time；openapi.yaml 补齐契约（paths 101→102）。",
-      "evidence": ""
+      "evidence": "实施笔 4c89c81（13 文件，零 DDL：audit_log.action 为 VARCHAR(32) 原生容纳 EXAM_EXTEND_TIME）；openapi.yaml paths 实测 102；exam_submissions.deadline_time 经 TIMESTAMPADD(MINUTE,...) 原子顺延（MySQL 8 / H2 双兼容）；审计与通知均旁路降级不阻断主事务。"
     },
     {
       "id": 3,
       "title": "阶段 3：TDD 先红后绿、变异击红与门禁留证",
-      "status": "pending",
+      "status": "completed",
       "description": "新增单元与集成测试（全场顺延、个人个性化补时、非进行中状态拒绝、越权拦截、参数越界拦截、审计与通知断言）；TDD 先红后绿留证；三变异（m1 注释进行中状态门控 / m2 注释答卷批量顺延 / m3 注释审计记录）断言级击红并回绿留证；双端门禁实测全绿，gate-baseline.json 同笔上调。",
-      "evidence": ""
+      "evidence": "先红 5/5（端点未实施 expected-but-was-500，tdd-red.log）→回绿 5/5；新增 14 例（集成 5 + 服务 3 + 通知 4 + 审计 2）；变异 m1 400→200 / m2 2→0 / m3 1→0 断言级击红，checkout 复原零残留后逐例回绿（mutation-m{1,2,3}-red/green.log）；门禁 @4c89c81 复跑：后端 ./mvnw clean test 761/0/0/1 绿（基线 747→761）、前端 vitest 943/943 持平；gate-baseline.json 上调 backendTests 761、openapiPaths 102；evidence/ 13 件带 sha256（evidence-summary.md 总览）。"
     },
     {
       "id": 4,

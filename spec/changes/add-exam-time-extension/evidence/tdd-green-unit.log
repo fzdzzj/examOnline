@@ -1,0 +1,789 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.exam:exam-online >------------------------
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (jacoco-prepare-agent) @ exam-online ---
+[INFO] argLine set to -javaagent:D:\\code\\examOnline\\.m2-repo\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\code\\examOnline\\target\\jacoco.exec,excludes=com/exam/ExamOnlineApplication.class:com/exam/**/dto/**:com/exam/**/entity/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ exam-online ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ exam-online ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ exam-online ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ exam-online ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 148 source files with javac [debug parameters release 17] to target\test-classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/auth/service/InviteCodeServiceTest.java: 某些输入文件使用了未经检查或不安全的操作。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/auth/service/InviteCodeServiceTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ exam-online ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.exam.exam.ExamTimeExtensionIntegrationTest
+18:54:13.197 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.exam.exam.ExamTimeExtensionIntegrationTest]: ExamTimeExtensionIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+18:54:13.553 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.exam.ExamOnlineApplication for test class com.exam.exam.ExamTimeExtensionIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-10-18 18:54:14.306 [main] [] [] INFO  c.e.e.ExamTimeExtensionIntegrationTest - Starting ExamTimeExtensionIntegrationTest using Java 21.0.9 with PID 24156 (started by fzdzzj in D:\code\examOnline)
+2026-10-18 18:54:14.308 [main] [] [] INFO  c.e.e.ExamTimeExtensionIntegrationTest - The following 1 profile is active: "test"
+2026-10-18 18:54:18.341 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-18 18:54:18.344 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-18 18:54:18.424 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 64 ms. Found 0 Redis repository interfaces.
+2026-10-18 18:54:19.196 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig' of type [io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-18 18:54:19.207 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'mapConverter' of type [io.opentelemetry.instrumentation.spring.autoconfigure.internal.MapConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-18 18:54:19.891 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: COPY_PASTE -> CopyPasteEventCollector
+2026-10-18 18:54:19.895 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: DRAFT_CONFLICT -> DraftConflictEventCollector
+2026-10-18 18:54:19.895 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: FULLSCREEN_EXIT -> FullScreenExitEventCollector
+2026-10-18 18:54:19.895 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: PAGE_REFRESH -> PageRefreshEventCollector
+2026-10-18 18:54:19.896 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SUBMIT_ANOMALY -> SubmitAnomalyEventCollector
+2026-10-18 18:54:19.896 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SWITCH_SCREEN -> SwitchScreenEventCollector
+2026-10-18 18:54:19.896 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: WINDOW_BLUR -> WindowBlurEventCollector
+2026-10-18 18:54:19.963 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2026-10-18 18:54:20.323 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection conn0: url=jdbc:h2:mem:exam user=SA
+2026-10-18 18:54:20.327 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2026-10-18 18:54:20.330 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Starting...
+2026-10-18 18:54:20.331 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - slave - Added connection conn1: url=jdbc:h2:mem:exam user=SA
+2026-10-18 18:54:20.331 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Start completed.
+2026-10-18 18:54:20.331 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [slave] success
+2026-10-18 18:54:20.331 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2026-10-18 18:54:20.331 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [2] datasource,primary datasource named [master]
+2026-10-18 18:54:22.057 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: FILL_BLANK -> FillBlankGradingStrategy
+2026-10-18 18:54:22.057 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: JUDGE -> JudgeGradingStrategy
+2026-10-18 18:54:22.057 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: MULTIPLE -> MultipleChoiceGradingStrategy
+2026-10-18 18:54:22.057 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SHORT_ANSWER -> ShortAnswerGradingStrategy
+2026-10-18 18:54:22.057 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SINGLE -> SingleChoiceGradingStrategy
+2026-10-18 18:54:24.041 [main] [] [] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-18 18:54:24.042 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-10-18 18:54:24.049 [main] [] [] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 3 endpoints beneath base path '/actuator'
+2026-10-18 18:54:24.064 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Completed initialization in 21 ms
+2026-10-18 18:54:24.142 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 18:54:24.151 [main] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused: getsockopt
+2026-10-18 18:54:24.158 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 18:54:24.170 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:632)
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726)
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2262)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2235)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2215)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1972)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1936)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1481)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1322)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.net.ConnectException: Connection refused: getsockopt
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:690)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:678)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:647)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:593)
+	... 12 common frames omitted
+2026-10-18 18:54:24.174 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 18:54:24.216 [main] [] [] INFO  c.e.e.ExamTimeExtensionIntegrationTest - Started ExamTimeExtensionIntegrationTest in 10.422 seconds (process running for 12.438)
+2026-10-18 18:54:24.431 [main] [] [] INFO  c.exam.config.RolePermissionInitializer - RBAC 角色/权限预置完成
+2026-10-18 18:54:24.487 [main] [] [] INFO  com.exam.config.AdminInitializer - 首次启动：已创建默认管理员 username=admin（请尽快通过环境变量 ADMIN_PASSWORD 修改）
+2026-10-18 18:54:24.487 [main] [] [] INFO  com.exam.config.ApplicationConfig - JWT_SECRET validated successfully (length: 58)
+2026-10-18 18:54:24.488 [main] [] [] INFO  com.exam.config.ApplicationConfig - Application configuration validated successfully
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\code\examOnline\.m2-repo\net\bytebuddy\byte-buddy-agent\1.17.7\byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-10-18 18:54:26.801 [main] [ab9d52aac8f14e199637e3bf0bf5b9b2] [5543867c8d20c7ffc60cc05e467e85de] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 18:54:26.825 [main] [ab9d52aac8f14e199637e3bf0bf5b9b2] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (317ms)
+2026-10-18 18:54:26.875 [main] [a5550cced6414d20b27422703354ebe3] [ac1f9c1473840f08cc1fa9c7ba26c987] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 WL9JN4YS
+2026-10-18 18:54:26.879 [main] [a5550cced6414d20b27422703354ebe3] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (44ms)
+2026-10-18 18:54:27.087 [main] [e4f6b421e77549b18a4be8d4f1bec714] [7fc1087e66dbbc6fa5f252c787cb0685] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_1, inviteCode=WL9JN4YS
+2026-10-18 18:54:27.088 [main] [e4f6b421e77549b18a4be8d4f1bec714] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (208ms)
+2026-10-18 18:54:27.275 [main] [bf9a1b775ef14be1bbb94f59d33b6c11] [72968d84285bff271f33859263a670da] INFO  com.exam.auth.service.AuthService - 用户 tea_1 登录成功，签发双 Token
+2026-10-18 18:54:27.276 [main] [bf9a1b775ef14be1bbb94f59d33b6c11] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (187ms)
+2026-10-18 18:54:27.305 [main] [ded758e68e5e4909a04f9d22e8e562d3] [f21fd473125a586b06fba01dee48876a] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=1 type=SINGLE
+2026-10-18 18:54:27.312 [main] [ded758e68e5e4909a04f9d22e8e562d3] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (34ms)
+2026-10-18 18:54:27.319 [main] [59d62af32163450a8b44639098d8f13f] [1fe5c99179c0209c3c4546a8defa943a] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=2 type=SHORT_ANSWER
+2026-10-18 18:54:27.321 [main] [59d62af32163450a8b44639098d8f13f] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (7ms)
+2026-10-18 18:54:27.331 [main] [13e11fe9a2c64da7bd6886ec34f142d1] [f0719004d0ebcf1c3839aefc575b6a1a] INFO  com.exam.paper.service.PaperService - 教师 2 创建试卷 id=1 total=10.0
+2026-10-18 18:54:27.333 [main] [13e11fe9a2c64da7bd6886ec34f142d1] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (11ms)
+2026-10-18 18:54:27.351 [main] [d67673f872334195bdb7e260781abe65] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/1/questions -> 200 (17ms)
+2026-10-18 18:54:27.362 [main] [39082a99c4f6484ab501c2fa7e31b3dd] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/1/questions -> 200 (9ms)
+2026-10-18 18:54:27.379 [main] [46d3805736104eb1a1bd397201ca6714] [6bb173857a87b8d3fe36d0d2208e0799] INFO  com.exam.exam.service.ExamService - 教师 2 创建考试 id=1 paperId=1 窗口 2026-10-18T19:54:27.363630300 ~ 2026-10-18T21:54:27.363630300 时长 30 分钟
+2026-10-18 18:54:27.382 [main] [46d3805736104eb1a1bd397201ca6714] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (19ms)
+2026-10-18 18:54:27.396 [main] [fb83f2ddea154ba7aa3e10cf56fa89b7] [f6a92b53cbae2f8d0feb8d50d5f79bee] INFO  c.exam.exam.service.ExamSnapshotService - 考试 1 发布生成快照 id=1（2 题）
+2026-10-18 18:54:27.399 [main] [fb83f2ddea154ba7aa3e10cf56fa89b7] [f6a92b53cbae2f8d0feb8d50d5f79bee] INFO  com.exam.exam.service.ExamService - 考试 1 发布（学生可见），等待定时开考
+2026-10-18 18:54:27.408 [main] [fb83f2ddea154ba7aa3e10cf56fa89b7] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/publish -> 200 (25ms)
+2026-10-18 18:54:27.423 [main] [9d7f1501865c42bbbaf70e4af5e0aaad] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/extend-time -> 400 (12ms)
+2026-10-18 18:54:27.437 [main] [6742a694d1a04798a4712dd8093d5385] [dac4aa9372d9e456d03a2f2eda754064] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=3 type=SINGLE
+2026-10-18 18:54:27.438 [main] [6742a694d1a04798a4712dd8093d5385] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (6ms)
+2026-10-18 18:54:27.443 [main] [e3e31334444d4b98b429f04b1439eff1] [0c2fbd1bbbf5487bb1a40228615117f1] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=4 type=SHORT_ANSWER
+2026-10-18 18:54:27.444 [main] [e3e31334444d4b98b429f04b1439eff1] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (6ms)
+2026-10-18 18:54:27.455 [main] [40cd6518bf4e4c29a27f128846b0bb5e] [de1cd1e66acdbcc5eab603425bd63e62] INFO  com.exam.paper.service.PaperService - 教师 2 创建试卷 id=2 total=10.0
+2026-10-18 18:54:27.456 [main] [40cd6518bf4e4c29a27f128846b0bb5e] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (11ms)
+2026-10-18 18:54:27.466 [main] [1a2af4e1d0c244ffb9bbdfeaaef9cdee] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/2/questions -> 200 (9ms)
+2026-10-18 18:54:27.475 [main] [f49f1ba7626042be811dbebf06fc49cb] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/2/questions -> 200 (8ms)
+2026-10-18 18:54:27.485 [main] [06e3e2a2401d44bbbea185a19b5ce368] [e7356497635e4a587a87d480639e464d] INFO  com.exam.clazz.service.ClassService - 教师 2 创建班级 id=1 name=班级-5
+2026-10-18 18:54:27.487 [main] [06e3e2a2401d44bbbea185a19b5ce368] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes -> 200 (11ms)
+2026-10-18 18:54:27.496 [main] [bcd1b66f5d7c4f188b21f3b92464d4c2] [94cc117908d29fd8572d760fc3d7ae83] INFO  com.exam.exam.service.ExamService - 教师 2 创建考试 id=2 paperId=2 窗口 2026-10-18T18:53:27.487715500 ~ 2026-10-18T20:54:27.487715500 时长 30 分钟
+2026-10-18 18:54:27.497 [main] [bcd1b66f5d7c4f188b21f3b92464d4c2] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (9ms)
+2026-10-18 18:54:27.505 [main] [24c273ee206b4864bf22ca21a7a1802e] [31249a1517f7332b2f1cf6fa0270d888] INFO  c.exam.exam.service.ExamSnapshotService - 考试 2 发布生成快照 id=2（2 题）
+2026-10-18 18:54:27.505 [main] [24c273ee206b4864bf22ca21a7a1802e] [31249a1517f7332b2f1cf6fa0270d888] INFO  com.exam.exam.service.ExamService - 考试 2 发布（学生可见），等待定时开考
+2026-10-18 18:54:27.512 [main] [24c273ee206b4864bf22ca21a7a1802e] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/2/publish -> 200 (15ms)
+2026-10-18 18:54:27.515 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试 2 定时迁移 0 -> 1
+2026-10-18 18:54:27.517 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试状态机流转后已清除 examDetail 缓存
+2026-10-18 18:54:27.520 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试 2 定时迁移 1 -> 2
+2026-10-18 18:54:27.522 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试状态机流转后已清除 examDetail 缓存
+2026-10-18 18:54:27.532 [main] [3260064c1432493982589e4a2204635f] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/2/extend-time -> 400 (9ms)
+2026-10-18 18:54:27.604 [main] [b5ebeaf81810466d9bb989e4f1de468e] [317ea0c29d925077558d31bf8b63b5e1] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 18:54:27.605 [main] [b5ebeaf81810466d9bb989e4f1de468e] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (55ms)
+2026-10-18 18:54:27.609 [main] [85c78ea7ef1a449896e20c321ef4f4ff] [49c181eb61935bccde1797c93c610797] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 9KFAHATU
+2026-10-18 18:54:27.610 [main] [85c78ea7ef1a449896e20c321ef4f4ff] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (5ms)
+2026-10-18 18:54:27.788 [main] [e8cf910bb1174dc395c8b79fa9b475ff] [f4f44c51877b7f7c239fb32c3300d8f5] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_7, inviteCode=9KFAHATU
+2026-10-18 18:54:27.789 [main] [e8cf910bb1174dc395c8b79fa9b475ff] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (178ms)
+2026-10-18 18:54:27.972 [main] [01f99663e4274e9e840d6e8315f7f92c] [8e193672c75ae2fb2e61c1b71ce40af5] INFO  com.exam.auth.service.AuthService - 用户 tea_7 登录成功，签发双 Token
+2026-10-18 18:54:27.972 [main] [01f99663e4274e9e840d6e8315f7f92c] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (182ms)
+2026-10-18 18:54:28.027 [main] [4a99e4aed7a740a78c3c1cb7c2d81dc7] [e49a520b18b61f4cbe479cfe12d22508] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 18:54:28.028 [main] [4a99e4aed7a740a78c3c1cb7c2d81dc7] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (55ms)
+2026-10-18 18:54:28.033 [main] [b5e6f2997c6546f8a081ac06a9c04712] [8d83fa51360acc810571d7e131d5c8ed] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 PKSD478X
+2026-10-18 18:54:28.034 [main] [b5e6f2997c6546f8a081ac06a9c04712] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (6ms)
+2026-10-18 18:54:28.213 [main] [d895151c0c06413d96e5ab073e887778] [4f1859b55d1993942c6b217bcc2df710] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_8, inviteCode=PKSD478X
+2026-10-18 18:54:28.214 [main] [d895151c0c06413d96e5ab073e887778] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (180ms)
+2026-10-18 18:54:28.396 [main] [d150c44d04e44563af721d47324ec8a2] [7510e392331f9552b7f964046f123b67] INFO  com.exam.auth.service.AuthService - 用户 tea_8 登录成功，签发双 Token
+2026-10-18 18:54:28.397 [main] [d150c44d04e44563af721d47324ec8a2] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (182ms)
+2026-10-18 18:54:28.403 [main] [2fa288b3ffe14f7983fb8f1ddcb9810a] [149e1aa44a6a74dffdc4990774ce7ebe] INFO  c.exam.question.service.QuestionService - 教师 3 创建题目 id=5 type=SINGLE
+2026-10-18 18:54:28.404 [main] [2fa288b3ffe14f7983fb8f1ddcb9810a] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (7ms)
+2026-10-18 18:54:28.409 [main] [9fd556214d7c49fa86f5905ac9233b1e] [a6d1f80d985d6e3f2bb73eaea3dc5add] INFO  c.exam.question.service.QuestionService - 教师 3 创建题目 id=6 type=SHORT_ANSWER
+2026-10-18 18:54:28.410 [main] [9fd556214d7c49fa86f5905ac9233b1e] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (5ms)
+2026-10-18 18:54:28.415 [main] [ba38fa484c694b5ea9d91115795bfa4d] [16e785723517e13ee82decb94ef2377d] INFO  com.exam.paper.service.PaperService - 教师 3 创建试卷 id=3 total=10.0
+2026-10-18 18:54:28.416 [main] [ba38fa484c694b5ea9d91115795bfa4d] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (5ms)
+2026-10-18 18:54:28.423 [main] [488cce92671d4e6e81a1a5780a414a0d] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/3/questions -> 200 (7ms)
+2026-10-18 18:54:28.432 [main] [11a075f757ab404791fda3a46ff52a5e] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/3/questions -> 200 (9ms)
+2026-10-18 18:54:28.436 [main] [f3e17d885ed74427a30da01c23b346bd] [c56192804c01602d1f23dd5ef70aa2df] INFO  com.exam.clazz.service.ClassService - 教师 3 创建班级 id=2 name=班级-10
+2026-10-18 18:54:28.437 [main] [f3e17d885ed74427a30da01c23b346bd] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes -> 200 (5ms)
+2026-10-18 18:54:28.442 [main] [4224c54381e94b0594d247597240c727] [432b11bed87fd29997300f73ff2e7311] INFO  com.exam.exam.service.ExamService - 教师 3 创建考试 id=3 paperId=3 窗口 2026-10-18T18:53:28.437692600 ~ 2026-10-18T20:54:28.437692600 时长 30 分钟
+2026-10-18 18:54:28.444 [main] [4224c54381e94b0594d247597240c727] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (6ms)
+2026-10-18 18:54:28.452 [main] [dfa7bd469efa4dffb974db82c24b679b] [47b264881b99fd5b77ed41ec91526ebd] INFO  c.exam.exam.service.ExamSnapshotService - 考试 3 发布生成快照 id=3（2 题）
+2026-10-18 18:54:28.453 [main] [dfa7bd469efa4dffb974db82c24b679b] [47b264881b99fd5b77ed41ec91526ebd] INFO  com.exam.exam.service.ExamService - 考试 3 发布（学生可见），等待定时开考
+2026-10-18 18:54:28.456 [main] [dfa7bd469efa4dffb974db82c24b679b] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/3/publish -> 200 (12ms)
+2026-10-18 18:54:28.458 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试 3 定时迁移 0 -> 1
+2026-10-18 18:54:28.460 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试状态机流转后已清除 examDetail 缓存
+2026-10-18 18:54:28.637 [main] [68d5222c376d41f79286e350e0180129] [aeef238c40431cef1ab8f12ecd1c1a82] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_12
+2026-10-18 18:54:28.638 [main] [68d5222c376d41f79286e350e0180129] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (177ms)
+2026-10-18 18:54:28.820 [main] [3e92278b1e894007a5d8cbd04f352fc5] [9cb41e8719eb6019e0207fbd641cb0a3] INFO  com.exam.auth.service.AuthService - 用户 stu_12 登录成功，签发双 Token
+2026-10-18 18:54:28.821 [main] [3e92278b1e894007a5d8cbd04f352fc5] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (182ms)
+2026-10-18 18:54:28.854 [main] [c69382e018a2435aa0dc0d540d141bfd] [ecbf05b6afa9bdf0845bbd576227f728] INFO  c.exam.taking.service.ExamTakingService - 学生 5 进入考试 3 创建答卷 id=1，个人截止 2026-10-18T19:24:28.852959700（快照题序/选项已锁定）
+2026-10-18 18:54:28.860 [main] [c69382e018a2435aa0dc0d540d141bfd] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/3/enter -> 200 (34ms)
+2026-10-18 18:54:28.870 [main] [98b12978747d44c3a84b5c91dd53c953] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/3/extend-time -> 403 (6ms)
+2026-10-18 18:54:28.932 [main] [b3dc72c28a0e4ed88870e9faba7f5617] [9f329a771abf40a25fb477513f914a32] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 18:54:28.933 [main] [b3dc72c28a0e4ed88870e9faba7f5617] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (55ms)
+2026-10-18 18:54:28.937 [main] [726d8863021743bb9e9e70d799aa90c0] [e8326e828a64a2a43a521c19f2fdc9a2] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 YB3QSYS9
+2026-10-18 18:54:28.938 [main] [726d8863021743bb9e9e70d799aa90c0] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (4ms)
+2026-10-18 18:54:29.115 [main] [a6a6d88bed5644968d6af64eba5928bf] [1b1b84949a3e990bdd673b0101b401a5] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_13, inviteCode=YB3QSYS9
+2026-10-18 18:54:29.116 [main] [a6a6d88bed5644968d6af64eba5928bf] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (177ms)
+2026-10-18 18:54:29.290 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+2026-10-18 18:54:29.294 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@484b94f2: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+2026-10-18 18:54:29.295 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 18:54:29.300 [main] [b55040cbb74c46278213ddc6883421af] [4f6c6505df873c176fd6c3a1cea54e44] INFO  com.exam.auth.service.AuthService - 用户 tea_13 登录成功，签发双 Token
+2026-10-18 18:54:29.300 [main] [b55040cbb74c46278213ddc6883421af] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (184ms)
+2026-10-18 18:54:29.321 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-10-18 18:54:29.321 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 18:54:29.478 [main] [8d06ec748e9e4e0ab4a1386bedf7dc87] [226f007bf609ea7aeec65dc513f226d4] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_14
+2026-10-18 18:54:29.479 [main] [8d06ec748e9e4e0ab4a1386bedf7dc87] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (178ms)
+2026-10-18 18:54:29.663 [main] [5cdf4a0d4e7c409983120c79461a1700] [996aa797ae23085c739575065462293e] INFO  com.exam.auth.service.AuthService - 用户 stu_14 登录成功，签发双 Token
+2026-10-18 18:54:29.664 [main] [5cdf4a0d4e7c409983120c79461a1700] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (185ms)
+2026-10-18 18:54:29.841 [main] [47e359d816154f5593312d1650e4e776] [6031be3bcfd874a62c2d0ee4668c0799] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_15
+2026-10-18 18:54:29.843 [main] [47e359d816154f5593312d1650e4e776] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (179ms)
+2026-10-18 18:54:30.025 [main] [4932afdd88824481a0ca98e5394e5e5a] [c23b9f2ff5c6296330bd25df8a215bb6] INFO  com.exam.auth.service.AuthService - 用户 stu_15 登录成功，签发双 Token
+2026-10-18 18:54:30.026 [main] [4932afdd88824481a0ca98e5394e5e5a] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (183ms)
+2026-10-18 18:54:30.032 [main] [3dacef9ffba941ee82a73f35f6fe9565] [54364b34ff09e110fb606de8e4372e2f] INFO  c.exam.question.service.QuestionService - 教师 6 创建题目 id=7 type=SINGLE
+2026-10-18 18:54:30.033 [main] [3dacef9ffba941ee82a73f35f6fe9565] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (7ms)
+2026-10-18 18:54:30.038 [main] [30a32b474f66492a9482395009af2568] [b29d3b937432fe90226d9021b2aac05a] INFO  c.exam.question.service.QuestionService - 教师 6 创建题目 id=8 type=SHORT_ANSWER
+2026-10-18 18:54:30.039 [main] [30a32b474f66492a9482395009af2568] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (6ms)
+2026-10-18 18:54:30.044 [main] [890ac5e974964df3a8b739aa04d0611b] [0e76de7658df42dfe82930cdbbd5e7f3] INFO  com.exam.paper.service.PaperService - 教师 6 创建试卷 id=4 total=10.0
+2026-10-18 18:54:30.045 [main] [890ac5e974964df3a8b739aa04d0611b] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (6ms)
+2026-10-18 18:54:30.054 [main] [8c83971d7280448898d9875c712f0fc6] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/4/questions -> 200 (8ms)
+2026-10-18 18:54:30.063 [main] [eeb4d1d488614ea69fa397b8a3d2c201] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/4/questions -> 200 (8ms)
+2026-10-18 18:54:30.068 [main] [b4b9d516a612482a847149f7fc971620] [83503d9a34cb07018bf2709b4165c52b] INFO  com.exam.clazz.service.ClassService - 教师 6 创建班级 id=3 name=班级-17
+2026-10-18 18:54:30.069 [main] [b4b9d516a612482a847149f7fc971620] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes -> 200 (5ms)
+2026-10-18 18:54:30.073 [main] [0417b240d05f4e41b2e6b1e3b884cd23] [10fb13d794934dd5fe0ff1fccd957460] INFO  com.exam.exam.service.ExamService - 教师 6 创建考试 id=4 paperId=4 窗口 2026-10-18T18:53:30.069839200 ~ 2026-10-18T20:54:30.069839200 时长 30 分钟
+2026-10-18 18:54:30.074 [main] [0417b240d05f4e41b2e6b1e3b884cd23] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (5ms)
+2026-10-18 18:54:30.082 [main] [6e684683e0c846c88c15df83c335bd0c] [c5f78cd7a0488904f8438f6a2184da51] INFO  c.exam.exam.service.ExamSnapshotService - 考试 4 发布生成快照 id=4（2 题）
+2026-10-18 18:54:30.083 [main] [6e684683e0c846c88c15df83c335bd0c] [c5f78cd7a0488904f8438f6a2184da51] INFO  com.exam.exam.service.ExamService - 考试 4 发布（学生可见），等待定时开考
+2026-10-18 18:54:30.086 [main] [6e684683e0c846c88c15df83c335bd0c] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/4/publish -> 200 (11ms)
+2026-10-18 18:54:30.087 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试 4 定时迁移 0 -> 1
+2026-10-18 18:54:30.088 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试状态机流转后已清除 examDetail 缓存
+2026-10-18 18:54:30.101 [main] [2accd84678df4c67bb2c8cb8a4724625] [fa9fe7f293dca2b2535191d58c193be3] INFO  c.exam.taking.service.ExamTakingService - 学生 7 进入考试 4 创建答卷 id=2，个人截止 2026-10-18T19:24:30.101414500（快照题序/选项已锁定）
+2026-10-18 18:54:30.103 [main] [2accd84678df4c67bb2c8cb8a4724625] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/4/enter -> 200 (12ms)
+2026-10-18 18:54:30.119 [main] [03a7f5d3939440f0a0570ed5f3e7d7c1] [8fa05a8570d926ef2328555442bf1003] INFO  c.exam.taking.service.ExamTakingService - 学生 8 进入考试 4 创建答卷 id=3，个人截止 2026-10-18T19:24:30.118414200（快照题序/选项已锁定）
+2026-10-18 18:54:30.121 [main] [03a7f5d3939440f0a0570ed5f3e7d7c1] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/4/enter -> 200 (13ms)
+2026-10-18 18:54:30.139 [main] [c5976a1f65ee46e0ad4fa8c856f2ff07] [7c2e7644333c479c6f12895550f4deb2] INFO  com.exam.exam.service.ExamService - 考试 4 考中个人补时 20 分钟，影响在途答卷 1 份
+2026-10-18 18:54:30.145 [main] [c5976a1f65ee46e0ad4fa8c856f2ff07] [7c2e7644333c479c6f12895550f4deb2] INFO  c.e.m.s.ExamLifecycleNotificationService - 考试加时通知投递 1 条：exam=4 mode=INDIVIDUAL
+2026-10-18 18:54:30.152 [main] [c5976a1f65ee46e0ad4fa8c856f2ff07] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/4/extend-time -> 200 (24ms)
+2026-10-18 18:54:30.218 [main] [b33553ee983642de9036e917089f48ba] [b656edba5b92684d7519f1d8dcc40f54] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 18:54:30.219 [main] [b33553ee983642de9036e917089f48ba] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (51ms)
+2026-10-18 18:54:30.223 [main] [1cdf8cfb296f453c9a535e3487cbbdef] [c62a82b52eab7c638b7d834a996e0029] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 975DHRWA
+2026-10-18 18:54:30.224 [main] [1cdf8cfb296f453c9a535e3487cbbdef] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (4ms)
+2026-10-18 18:54:30.400 [main] [af2a42a206944db997176616372fb58d] [0f6a037e7fd3133d1cd56b3c1b756e92] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_19, inviteCode=975DHRWA
+2026-10-18 18:54:30.400 [main] [af2a42a206944db997176616372fb58d] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (176ms)
+2026-10-18 18:54:30.585 [main] [b7e2a45b5614452484e46f1edd82391c] [f8c166d44f04092613a2b03b71c7d2e5] INFO  com.exam.auth.service.AuthService - 用户 tea_19 登录成功，签发双 Token
+2026-10-18 18:54:30.586 [main] [b7e2a45b5614452484e46f1edd82391c] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (184ms)
+2026-10-18 18:54:30.777 [main] [e5eb1a038563473aab71867f47e05cc9] [2f84135b9c808d7c32a00a0eb85559c8] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_20
+2026-10-18 18:54:30.778 [main] [e5eb1a038563473aab71867f47e05cc9] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (191ms)
+2026-10-18 18:54:30.960 [main] [744d732c825a499a8300733b14938442] [b2c2f6928302d25085817c8d18b52b29] INFO  com.exam.auth.service.AuthService - 用户 stu_20 登录成功，签发双 Token
+2026-10-18 18:54:30.961 [main] [744d732c825a499a8300733b14938442] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (183ms)
+2026-10-18 18:54:31.138 [main] [171bbf81dca9449e9075520982dc7857] [ecf37301e3a9f6f4011599b5a66c925a] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_21
+2026-10-18 18:54:31.139 [main] [171bbf81dca9449e9075520982dc7857] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (178ms)
+2026-10-18 18:54:31.321 [main] [9faf04b2d5e244a69d5ee845c56c3b57] [6631157a371fa890d267bfd1ebefe2f5] INFO  com.exam.auth.service.AuthService - 用户 stu_21 登录成功，签发双 Token
+2026-10-18 18:54:31.322 [main] [9faf04b2d5e244a69d5ee845c56c3b57] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (183ms)
+2026-10-18 18:54:31.327 [main] [4a881ded3fcb4a2c87dabaf36a4885bb] [6cbace9fafdd57b5c805bc1844cdb0ca] INFO  c.exam.question.service.QuestionService - 教师 9 创建题目 id=9 type=SINGLE
+2026-10-18 18:54:31.328 [main] [4a881ded3fcb4a2c87dabaf36a4885bb] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (6ms)
+2026-10-18 18:54:31.333 [main] [b197e5020e3c43cc93db6bd34454a096] [1880c9e66d58239c98eaa9a5e09a1677] INFO  c.exam.question.service.QuestionService - 教师 9 创建题目 id=10 type=SHORT_ANSWER
+2026-10-18 18:54:31.334 [main] [b197e5020e3c43cc93db6bd34454a096] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (6ms)
+2026-10-18 18:54:31.338 [main] [e691029845444751ab2a03eee6a43006] [6efd35da53770d5cba1b7614393c7676] INFO  com.exam.paper.service.PaperService - 教师 9 创建试卷 id=5 total=10.0
+2026-10-18 18:54:31.339 [main] [e691029845444751ab2a03eee6a43006] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (5ms)
+2026-10-18 18:54:31.347 [main] [50bb0f75e2fa4ebd9b56a347b5f957c7] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/5/questions -> 200 (8ms)
+2026-10-18 18:54:31.355 [main] [d143b9e0baf34bf8b41140596ad1cc9f] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/5/questions -> 200 (8ms)
+2026-10-18 18:54:31.361 [main] [c8263ca26ec34031964619f7aab4ad32] [112d8e2fe6921751ebe1becec224c283] INFO  com.exam.clazz.service.ClassService - 教师 9 创建班级 id=4 name=班级-23
+2026-10-18 18:54:31.362 [main] [c8263ca26ec34031964619f7aab4ad32] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes -> 200 (6ms)
+2026-10-18 18:54:31.368 [main] [a9eb2be024574f0e97f116ea333adf32] [3c3ba58b1a66d14bbd5ff64094a5e546] INFO  com.exam.exam.service.ExamService - 教师 9 创建考试 id=5 paperId=5 窗口 2026-10-18T18:53:31.363257500 ~ 2026-10-18T20:54:31.363257500 时长 30 分钟
+2026-10-18 18:54:31.369 [main] [a9eb2be024574f0e97f116ea333adf32] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (6ms)
+2026-10-18 18:54:31.375 [main] [bd660110965c488ba3e3a861d1c0011a] [f5d08206c59d612fa62a8cd7a4fb2072] INFO  c.exam.exam.service.ExamSnapshotService - 考试 5 发布生成快照 id=5（2 题）
+2026-10-18 18:54:31.375 [main] [bd660110965c488ba3e3a861d1c0011a] [f5d08206c59d612fa62a8cd7a4fb2072] INFO  com.exam.exam.service.ExamService - 考试 5 发布（学生可见），等待定时开考
+2026-10-18 18:54:31.379 [main] [bd660110965c488ba3e3a861d1c0011a] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/5/publish -> 200 (10ms)
+2026-10-18 18:54:31.381 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试 5 定时迁移 0 -> 1
+2026-10-18 18:54:31.382 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试状态机流转后已清除 examDetail 缓存
+2026-10-18 18:54:31.395 [main] [1c663f6ced0646568252464de023f531] [f805fadf96c0a0fdf01b1166f63c923e] INFO  c.exam.taking.service.ExamTakingService - 学生 10 进入考试 5 创建答卷 id=4，个人截止 2026-10-18T19:24:31.394940100（快照题序/选项已锁定）
+2026-10-18 18:54:31.397 [main] [1c663f6ced0646568252464de023f531] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/5/enter -> 200 (12ms)
+2026-10-18 18:54:31.410 [main] [59d2ee0bf6a440c3a9d5a1378a7acab3] [9e285e015e0b63aa49d3c2c96f1dcbb4] INFO  c.exam.taking.service.ExamTakingService - 学生 11 进入考试 5 创建答卷 id=5，个人截止 2026-10-18T19:24:31.409608700（快照题序/选项已锁定）
+2026-10-18 18:54:31.413 [main] [59d2ee0bf6a440c3a9d5a1378a7acab3] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/5/enter -> 200 (10ms)
+2026-10-18 18:54:31.426 [main] [4c574585bd604dae808a86a3ac395dfa] [cd13e5d5afe1886f9f1e21a464880472] INFO  com.exam.exam.service.ExamService - 考试 5 考中全场顺延 30 分钟，影响在途答卷 2 份
+2026-10-18 18:54:31.427 [main] [4c574585bd604dae808a86a3ac395dfa] [cd13e5d5afe1886f9f1e21a464880472] INFO  c.e.m.s.ExamLifecycleNotificationService - 考试加时通知投递 2 条：exam=5 mode=GLOBAL
+2026-10-18 18:54:31.430 [main] [4c574585bd604dae808a86a3ac395dfa] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/5/extend-time -> 200 (12ms)
+2026-10-18 18:54:31.496 [main] [2baa1af4812d4b40b3b5d9522170ec19] [16369488073959902f1bed250eefa6f4] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 18:54:31.497 [main] [2baa1af4812d4b40b3b5d9522170ec19] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (55ms)
+2026-10-18 18:54:31.501 [main] [bc86c288294b47949a1936fc86c3e349] [1667dd73083a324087d7371fdcee9a89] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 76G3GFL9
+2026-10-18 18:54:31.501 [main] [bc86c288294b47949a1936fc86c3e349] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (3ms)
+2026-10-18 18:54:31.676 [main] [38603603f6f94e38a3c5f1cea651c525] [da1d002db87814942231ef4937abb452] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_25, inviteCode=76G3GFL9
+2026-10-18 18:54:31.677 [main] [38603603f6f94e38a3c5f1cea651c525] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (175ms)
+2026-10-18 18:54:31.858 [main] [57ac55ecf88442a9a5b29449541c7aa9] [11b405247b4547723b01c181cbf7f965] INFO  com.exam.auth.service.AuthService - 用户 tea_25 登录成功，签发双 Token
+2026-10-18 18:54:31.859 [main] [57ac55ecf88442a9a5b29449541c7aa9] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (181ms)
+2026-10-18 18:54:31.865 [main] [feebe9c9703f4d97bbfb12d324d53834] [e3b6453e1c2e095c38584111f658d72a] INFO  c.exam.question.service.QuestionService - 教师 12 创建题目 id=11 type=SINGLE
+2026-10-18 18:54:31.866 [main] [feebe9c9703f4d97bbfb12d324d53834] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (6ms)
+2026-10-18 18:54:31.871 [main] [9eacb4bdabf54301984cd457ece98a12] [c7656b5bfc4fad8e15a90857e1d143e3] INFO  c.exam.question.service.QuestionService - 教师 12 创建题目 id=12 type=SHORT_ANSWER
+2026-10-18 18:54:31.871 [main] [9eacb4bdabf54301984cd457ece98a12] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (5ms)
+2026-10-18 18:54:31.876 [main] [c77ad94186504d9f8142f12348dabeb3] [e1761c810ff8348cf0144ff36214168b] INFO  com.exam.paper.service.PaperService - 教师 12 创建试卷 id=6 total=10.0
+2026-10-18 18:54:31.878 [main] [c77ad94186504d9f8142f12348dabeb3] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (6ms)
+2026-10-18 18:54:31.886 [main] [62b6e8dfbf724823b9f790b71117d79a] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/6/questions -> 200 (7ms)
+2026-10-18 18:54:31.894 [main] [1d2ab8d0bede44e589218d9028ac5b40] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/6/questions -> 200 (7ms)
+2026-10-18 18:54:31.899 [main] [d0e2111e27534b21a331b4f18a8e7ed9] [79426a5ee66723f5614037569e7edc64] INFO  com.exam.clazz.service.ClassService - 教师 12 创建班级 id=5 name=班级-27
+2026-10-18 18:54:31.900 [main] [d0e2111e27534b21a331b4f18a8e7ed9] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes -> 200 (5ms)
+2026-10-18 18:54:31.904 [main] [cc62c9da20984863aa7f3062212c448d] [41df00b68e449b7dbe4962c70df99bed] INFO  com.exam.exam.service.ExamService - 教师 12 创建考试 id=6 paperId=6 窗口 2026-10-18T18:53:31.900953700 ~ 2026-10-18T20:54:31.900953700 时长 30 分钟
+2026-10-18 18:54:31.905 [main] [cc62c9da20984863aa7f3062212c448d] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (4ms)
+2026-10-18 18:54:31.914 [main] [deb978295ae444dc86401ae265f2a4aa] [8cd4347f1b693d8851b4fb1b258de49c] INFO  c.exam.exam.service.ExamSnapshotService - 考试 6 发布生成快照 id=6（2 题）
+2026-10-18 18:54:31.914 [main] [deb978295ae444dc86401ae265f2a4aa] [8cd4347f1b693d8851b4fb1b258de49c] INFO  com.exam.exam.service.ExamService - 考试 6 发布（学生可见），等待定时开考
+2026-10-18 18:54:31.917 [main] [deb978295ae444dc86401ae265f2a4aa] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/6/publish -> 200 (12ms)
+2026-10-18 18:54:31.918 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试 6 定时迁移 0 -> 1
+2026-10-18 18:54:31.920 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试状态机流转后已清除 examDetail 缓存
+2026-10-18 18:54:32.095 [main] [f301f5c69a844bdfa597f7fa6d8ad7ec] [5dc31affe9d7f7693f8041c859d08bbd] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_29
+2026-10-18 18:54:32.096 [main] [f301f5c69a844bdfa597f7fa6d8ad7ec] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (176ms)
+2026-10-18 18:54:32.280 [main] [83da8f317b664680b0fc12922aeffe09] [9b33d19386c0e067146763b1b8b4873c] INFO  com.exam.auth.service.AuthService - 用户 stu_29 登录成功，签发双 Token
+2026-10-18 18:54:32.281 [main] [83da8f317b664680b0fc12922aeffe09] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (185ms)
+2026-10-18 18:54:32.293 [main] [69421b84708e4e84877d6099f1f0f4b8] [f279f5742e8dc188ce19c80d135a5733] INFO  c.exam.taking.service.ExamTakingService - 学生 13 进入考试 6 创建答卷 id=6，个人截止 2026-10-18T19:24:32.292739200（快照题序/选项已锁定）
+2026-10-18 18:54:32.295 [main] [69421b84708e4e84877d6099f1f0f4b8] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/6/enter -> 200 (10ms)
+2026-10-18 18:54:32.307 [main] [85728b08c60e43e7a324985b7b65292b] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/6/extend-time -> 400 (9ms)
+2026-10-18 18:54:32.312 [main] [0cd610b971354d5e8177389b7e2a0b93] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/6/extend-time -> 400 (4ms)
+2026-10-18 18:54:32.317 [main] [b32cb8d455324424a1771f7a22d4a37d] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/6/extend-time -> 400 (4ms)
+2026-10-18 18:54:32.320 [main] [ef6e5fe34bee4b73a20211e257b54870] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/6/extend-time -> 400 (3ms)
+2026-10-18 18:54:32.326 [main] [cc0ec7a19f2c410f91412086717c4632] [2d3758be9f069aaee68a9b51cba30b4c] INFO  com.exam.exam.service.ExamService - 考试 6 考中全场顺延 1 分钟，影响在途答卷 1 份
+2026-10-18 18:54:32.327 [main] [cc0ec7a19f2c410f91412086717c4632] [2d3758be9f069aaee68a9b51cba30b4c] INFO  c.e.m.s.ExamLifecycleNotificationService - 考试加时通知投递 1 条：exam=6 mode=GLOBAL
+2026-10-18 18:54:32.329 [main] [cc0ec7a19f2c410f91412086717c4632] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/6/extend-time -> 200 (8ms)
+2026-10-18 18:54:32.334 [main] [52a4a45a39474ea1a4c172cec585759c] [7368f6a2ee01daee3033a201821f8ed5] INFO  com.exam.exam.service.ExamService - 考试 6 考中全场顺延 240 分钟，影响在途答卷 1 份
+2026-10-18 18:54:32.335 [main] [52a4a45a39474ea1a4c172cec585759c] [7368f6a2ee01daee3033a201821f8ed5] INFO  c.e.m.s.ExamLifecycleNotificationService - 考试加时通知投递 1 条：exam=6 mode=GLOBAL
+2026-10-18 18:54:32.336 [main] [52a4a45a39474ea1a4c172cec585759c] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/6/extend-time -> 200 (7ms)
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 19.42 s -- in com.exam.exam.ExamTimeExtensionIntegrationTest
+[INFO] Running com.exam.exam.service.ExamServiceExtendTimeTest
+2026-10-18 18:54:32.776 [main] [] [] INFO  com.exam.exam.service.ExamService - 考试 5 考中全场顺延 30 分钟，影响在途答卷 2 份
+2026-10-18 18:54:32.794 [main] [] [] INFO  com.exam.exam.service.ExamService - 考试 5 考中个人补时 20 分钟，影响在途答卷 1 份
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.450 s -- in com.exam.exam.service.ExamServiceExtendTimeTest
+[INFO] Running com.exam.message.service.ExamLifecycleNotificationServiceTest
+2026-10-18 18:54:32.857 [main] [] [] WARN  c.e.m.s.ExamLifecycleNotificationService - 考试发布通知投递失败（旁路降级，不影响发布）：exam=9 err=java.lang.IllegalStateException: db down
+2026-10-18 18:54:32.861 [main] [] [] INFO  c.e.m.s.ExamLifecycleNotificationService - 考试发布通知投递 1200 条：exam=9
+2026-10-18 18:54:32.865 [main] [] [] INFO  c.e.m.s.ExamLifecycleNotificationService - 考试加时通知投递 2 条：exam=9 mode=GLOBAL
+2026-10-18 18:54:32.869 [main] [] [] INFO  c.e.m.s.ExamLifecycleNotificationService - 成绩复核结果通知投递：review=3 student=1001 exam=9
+2026-10-18 18:54:32.871 [main] [] [] WARN  c.e.m.s.ExamLifecycleNotificationService - 考试加时通知投递失败（旁路降级，不影响加时）：exam=9 err=java.lang.IllegalStateException: db down
+2026-10-18 18:54:32.872 [main] [] [] INFO  c.e.m.s.ExamLifecycleNotificationService - 成绩发布通知投递 501 条：exam=9
+2026-10-18 18:54:32.876 [main] [] [] INFO  c.e.m.s.ExamLifecycleNotificationService - 考试加时通知投递 1 条：exam=9 mode=INDIVIDUAL
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.077 s -- in com.exam.message.service.ExamLifecycleNotificationServiceTest
+[INFO] Running com.exam.service.AuditLogServiceExamOperationTest
+2026-10-18 18:54:32.917 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=EXAM_PUBLISH status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:171)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:112)
+	at com.exam.service.AuditLogService.logExamPublish(AuditLogService.java:66)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$1(AuditLogServiceExamOperationTest.java:211)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:211)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-18 18:54:32.918 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=EXAM_DELETE status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:171)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:112)
+	at com.exam.service.AuditLogService.logExamDelete(AuditLogService.java:71)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$2(AuditLogServiceExamOperationTest.java:212)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:212)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-18 18:54:32.918 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=SCORE_PUBLISH status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:171)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:112)
+	at com.exam.service.AuditLogService.logScorePublish(AuditLogService.java:76)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$3(AuditLogServiceExamOperationTest.java:213)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:213)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-18 18:54:32.920 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=SCORE_REVOKE status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:171)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:112)
+	at com.exam.service.AuditLogService.logScoreRevoke(AuditLogService.java:97)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$4(AuditLogServiceExamOperationTest.java:214)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:214)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-10-18 18:54:32.920 [main] [] [] ERROR com.exam.service.AuditLogService - 审计写入失败: username=tea_audit action=USER_KICK status=SUCCESS
+java.lang.RuntimeException: audit db down
+	at com.exam.service.AuditLogService.record(AuditLogService.java:171)
+	at com.exam.service.AuditLogService.recordOperation(AuditLogService.java:112)
+	at com.exam.service.AuditLogService.logUserKick(AuditLogService.java:103)
+	at com.exam.service.AuditLogServiceExamOperationTest.lambda$persistenceFailureNeverPropagatesOutOfAnyOperation$5(AuditLogServiceExamOperationTest.java:215)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3199)
+	at com.exam.service.AuditLogServiceExamOperationTest.persistenceFailureNeverPropagatesOutOfAnyOperation(AuditLogServiceExamOperationTest.java:215)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in com.exam.service.AuditLogServiceExamOperationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (jacoco-report) @ exam-online ---
+[INFO] Loading execution data file D:\code\examOnline\target\jacoco.exec
+[INFO] Analyzed bundle 'exam-online' with 180 classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  32.987 s
+[INFO] Finished at: 2026-10-18T18:54:34+08:00
+[INFO] ------------------------------------------------------------------------
