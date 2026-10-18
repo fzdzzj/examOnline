@@ -1,0 +1,27 @@
+mutation m3 report — 抽除仲裁分回填终分（add-subjective-double-blind-grading）
+================================================================
+变异对象：SubjectiveGradingService.arbitrate 的终审回填
+注入形态：删除 `subjectiveGradeMapper.backfillFinalScore(gradeRow.getId(), request.getScore())`
+          及其护栏注释行——仲裁分不再落 subjective_grades.score（终审口径被击穿）。
+注入脚本：D:\code\examOnline-measure\double-blind-evidence\inject-m3.py
+入库 revision：7a1a1a2（实施笔；主代码与 be32ddc 逐字节一致）
+
+五步原子流程：
+1) 注入：python inject-m3.py -> "m3 injected"（精准替换 1 处，断言命中；
+   blindSubmit 容差内的回填调用与 mapper 方法定义不受影响）
+2) 击红：./mvnw test -Dtest='SubjectiveBlindReviewServiceTest,SubjectiveBlindReviewIntegrationTest'
+   -> Tests run: 16, Failures: 2, Errors: 0, Skipped: 0
+   判定行（断言级红，见 mutation-m3-red.txt）：
+   - SubjectiveBlindReviewIntegrationTest.arbitrationBackfillsFinalScoreAndClosesCase
+     "仲裁分必须回填 subjective_grades.score ==> expected: not <null>"
+     （assertNotNull 直接命中回填缺失；首轮回红时该断言为断言行 NPE，
+     已先增强为 assertNotNull 后重注入取得干净断言级红，0 Errors）
+   - SubjectiveBlindReviewServiceTest.arbitrateBackfillsArbitrationScore
+     （Mockito verify：backfillFinalScore wanted but not invoked）
+3) 还原：git checkout HEAD -- src/main/java/com/exam/grading/service/SubjectiveGradingService.java
+4) 回绿：同命令复跑 -> Tests run: 16, Failures: 0, Errors: 0, Skipped: 0
+   （见 mutation-m3-revert-green.txt）
+5) 零残留：git diff HEAD -- service 文件为空。
+
+备注：回填同时喂 subjective_grades.score 与答卷主观总分刷新两断言；
+单测侧 verify 缺失即红（Failures 列），集成侧 assertNotNull 断言级红。

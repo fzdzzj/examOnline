@@ -1,0 +1,26 @@
+mutation m1 report — 抽除同教师互斥校验（add-subjective-double-blind-grading）
+================================================================
+变异对象：SubjectiveGradingService.blindSubmit 的背靠背互斥护栏
+注入形态：条件 `if (Objects.equals(first.getGraderId(), graderId))` -> `if (false)`，
+          同一教师可连续提交一评与二评（人情分/趋同防线被击穿）。
+注入脚本：D:\code\examOnline-measure\double-blind-evidence\inject-m1.py
+入库 revision：7a1a1a2（实施笔，amend 后终版；主代码与首次入库 be32ddc 逐字节一致，
+          amend 仅增强了集成测试的 assertNotNull 断言）
+
+五步原子流程：
+1) 注入：python inject-m1.py -> "m1 injected"（精准替换 1 处，断言命中）
+2) 击红：./mvnw test -Dtest='SubjectiveBlindReviewServiceTest,SubjectiveBlindReviewIntegrationTest'
+   -> Tests run: 16, Failures: 2, Errors: 0, Skipped: 0
+   判定行（断言级红，见 mutation-m1-red.txt）：
+   - SubjectiveBlindReviewServiceTest.sameTeacherSecondReviewRejected
+     "Expected com.exam.common.BusinessException to be thrown, but nothing was thrown."
+   - SubjectiveBlindReviewIntegrationTest.sameTeacherCannotSubmitSecondReview
+     "Response status expected:<400> but was:<200>"
+   其余 14 例保持绿（精准击中，零误伤）。
+3) 还原：git checkout HEAD -- src/main/java/com/exam/grading/service/SubjectiveGradingService.java
+4) 回绿：同命令复跑 -> Tests run: 16, Failures: 0, Errors: 0, Skipped: 0
+   （见 mutation-m1-revert-green.txt）
+5) 零残留：git diff HEAD -- service 文件为空。
+
+备注：本变异在单测与集成两层同时断言级击红；单测红为 assertThrows 未捕获到异常
+（AssertionFailedError），集成红为 HTTP 状态断言 400 vs 200。
