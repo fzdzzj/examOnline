@@ -1,0 +1,1577 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.exam:exam-online >------------------------
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (jacoco-prepare-agent) @ exam-online ---
+[INFO] argLine set to -javaagent:D:\\code\\examOnline\\.m2-repo\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\code\\examOnline\\target\\jacoco.exec,excludes=com/exam/ExamOnlineApplication.class:com/exam/**/dto/**:com/exam/**/entity/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ exam-online ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ exam-online ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 327 source files with javac [debug parameters release 17] to target\classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] /D:/code/examOnline/src/main/java/com/exam/user/service/UserService.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /D:/code/examOnline/src/main/java/com/exam/user/service/UserService.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ exam-online ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ exam-online ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 145 source files with javac [debug parameters release 17] to target\test-classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/exam/measure/MakeupEligibleAttributionMeasureIT.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/auth/service/InviteCodeServiceTest.java: 某些输入文件使用了未经检查或不安全的操作。
+[INFO] /D:/code/examOnline/src/test/java/com/exam/auth/service/InviteCodeServiceTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ exam-online ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.exam.score.ExamAnalysisReportExportIntegrationTest
+14:28:02.383 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.exam.score.ExamAnalysisReportExportIntegrationTest]: ExamAnalysisReportExportIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+14:28:02.955 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.exam.ExamOnlineApplication for test class com.exam.score.ExamAnalysisReportExportIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-10-18 14:28:03.881 [main] [] [] INFO  c.e.s.ExamAnalysisReportExportIntegrationTest - Starting ExamAnalysisReportExportIntegrationTest using Java 21.0.9 with PID 13464 (started by fzdzzj in D:\code\examOnline)
+2026-10-18 14:28:03.887 [main] [] [] INFO  c.e.s.ExamAnalysisReportExportIntegrationTest - The following 1 profile is active: "test"
+2026-10-18 14:28:09.956 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-18 14:28:09.959 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-18 14:28:10.064 [main] [] [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 84 ms. Found 0 Redis repository interfaces.
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\code\examOnline\.m2-repo\net\bytebuddy\byte-buddy-agent\1.17.7\byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-10-18 14:28:14.663 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig' of type [io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration$OpenTelemetrySdkConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-18 14:28:14.677 [main] [] [] WARN  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'mapConverter' of type [io.opentelemetry.instrumentation.spring.autoconfigure.internal.MapConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [meterRegistryPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2026-10-18 14:28:15.745 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: COPY_PASTE -> CopyPasteEventCollector
+2026-10-18 14:28:15.749 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: DRAFT_CONFLICT -> DraftConflictEventCollector
+2026-10-18 14:28:15.749 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: FULLSCREEN_EXIT -> FullScreenExitEventCollector
+2026-10-18 14:28:15.749 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: PAGE_REFRESH -> PageRefreshEventCollector
+2026-10-18 14:28:15.749 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SUBMIT_ANOMALY -> SubmitAnomalyEventCollector
+2026-10-18 14:28:15.749 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: SWITCH_SCREEN -> SwitchScreenEventCollector
+2026-10-18 14:28:15.749 [main] [] [] INFO  c.e.a.collector.BehaviorEventRegistry - 注册行为事件策略: WINDOW_BLUR -> WindowBlurEventCollector
+2026-10-18 14:28:15.870 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2026-10-18 14:28:16.368 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection conn0: url=jdbc:h2:mem:exam user=SA
+2026-10-18 14:28:16.371 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2026-10-18 14:28:16.374 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Starting...
+2026-10-18 14:28:16.377 [main] [] [] INFO  com.zaxxer.hikari.pool.HikariPool - slave - Added connection conn1: url=jdbc:h2:mem:exam user=SA
+2026-10-18 14:28:16.377 [main] [] [] INFO  com.zaxxer.hikari.HikariDataSource - slave - Start completed.
+2026-10-18 14:28:16.377 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [slave] success
+2026-10-18 14:28:16.377 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2026-10-18 14:28:16.377 [main] [] [] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [2] datasource,primary datasource named [master]
+2026-10-18 14:28:19.034 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: FILL_BLANK -> FillBlankGradingStrategy
+2026-10-18 14:28:19.034 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: JUDGE -> JudgeGradingStrategy
+2026-10-18 14:28:19.034 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: MULTIPLE -> MultipleChoiceGradingStrategy
+2026-10-18 14:28:19.035 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SHORT_ANSWER -> ShortAnswerGradingStrategy
+2026-10-18 14:28:19.035 [main] [] [] INFO  c.e.g.strategy.GradingStrategyRegistry - 注册判分策略: SINGLE -> SingleChoiceGradingStrategy
+2026-10-18 14:28:21.842 [main] [] [] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-18 14:28:21.843 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-10-18 14:28:21.850 [main] [] [] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 3 endpoints beneath base path '/actuator'
+2026-10-18 14:28:21.867 [main] [] [] INFO  o.s.t.web.servlet.TestDispatcherServlet - Completed initialization in 23 ms
+2026-10-18 14:28:21.966 [main] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 14:28:21.995 [main] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused: getsockopt
+2026-10-18 14:28:22.028 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 14:28:22.032 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:632)
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726)
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2262)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2235)
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2215)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467)
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1972)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1936)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1481)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1322)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.net.ConnectException: Connection refused: getsockopt
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:690)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249)
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:678)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:647)
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:593)
+	... 12 common frames omitted
+2026-10-18 14:28:22.038 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+2026-10-18 14:28:22.076 [main] [] [] INFO  c.e.s.ExamAnalysisReportExportIntegrationTest - Started ExamAnalysisReportExportIntegrationTest in 18.854 seconds (process running for 21.381)
+2026-10-18 14:28:22.339 [main] [] [] INFO  c.exam.config.RolePermissionInitializer - RBAC 角色/权限预置完成
+2026-10-18 14:28:22.397 [main] [] [] INFO  com.exam.config.AdminInitializer - 首次启动：已创建默认管理员 username=admin（请尽快通过环境变量 ADMIN_PASSWORD 修改）
+2026-10-18 14:28:22.398 [main] [] [] INFO  com.exam.config.ApplicationConfig - JWT_SECRET validated successfully (length: 58)
+2026-10-18 14:28:22.398 [main] [] [] INFO  com.exam.config.ApplicationConfig - Application configuration validated successfully
+2026-10-18 14:28:23.330 [main] [4b1e0deb9cf7476ba93ac3faa7abbf0e] [348dec46aa42fe2f4ef26e2a57302b3b] INFO  com.exam.auth.service.AuthService - 用户 admin 登录成功，签发双 Token
+2026-10-18 14:28:23.370 [main] [4b1e0deb9cf7476ba93ac3faa7abbf0e] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (463ms)
+2026-10-18 14:28:23.467 [main] [e7076f793bf149cdb59872c384cd4a31] [8fc83c624d7954b8359375e0036169e2] INFO  com.exam.auth.service.InviteCodeService - 管理员 1 生成教师邀请码 7EZCWN66
+2026-10-18 14:28:23.472 [main] [e7076f793bf149cdb59872c384cd4a31] [] INFO  com.exam.common.RequestIdFilter - POST /api/admin/invite-codes -> 200 (86ms)
+2026-10-18 14:28:23.728 [main] [60377fc88dcb40ec9e38f97ba697f019] [527c9d0430b4578991c25cab47f7c49d] INFO  com.exam.auth.service.AuthService - 教师注册成功: username=tea_1, inviteCode=7EZCWN66
+2026-10-18 14:28:23.729 [main] [60377fc88dcb40ec9e38f97ba697f019] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (254ms)
+2026-10-18 14:28:23.940 [main] [b1d0aff0d41c4273b624378fed540e21] [b4350f2246a05262f32329a570f1cb79] INFO  com.exam.auth.service.AuthService - 用户 tea_1 登录成功，签发双 Token
+2026-10-18 14:28:23.942 [main] [b1d0aff0d41c4273b624378fed540e21] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (211ms)
+2026-10-18 14:28:24.132 [main] [574512b711ec4cc38942d6bc44f3ca8b] [d97ed169c12c581bb59a87f21e3d0e59] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_2
+2026-10-18 14:28:24.134 [main] [574512b711ec4cc38942d6bc44f3ca8b] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (190ms)
+2026-10-18 14:28:24.338 [main] [fb13f2500ab646d6b1b30f3eaa791823] [c1d1db92baa8229f3c2345e6eb85ce5a] INFO  com.exam.auth.service.AuthService - 用户 stu_2 登录成功，签发双 Token
+2026-10-18 14:28:24.340 [main] [fb13f2500ab646d6b1b30f3eaa791823] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (205ms)
+2026-10-18 14:28:24.530 [main] [65074fc05c6a4cc5a39f2383827179b9] [8e8857cfcf6a4aec8bc7dc4a56b3ba04] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_3
+2026-10-18 14:28:24.533 [main] [65074fc05c6a4cc5a39f2383827179b9] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (193ms)
+2026-10-18 14:28:24.739 [main] [b16c9548210a496bae0600d7655ebc29] [55fdc799884cf6fae29af7a6c522f358] INFO  com.exam.auth.service.AuthService - 用户 stu_3 登录成功，签发双 Token
+2026-10-18 14:28:24.740 [main] [b16c9548210a496bae0600d7655ebc29] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (206ms)
+2026-10-18 14:28:24.924 [main] [47e963408cc5425ab5b6d280dc5706f2] [e1a9f82116cbdfefd4fbb06bbe276df5] INFO  com.exam.auth.service.AuthService - 学生注册成功: username=stu_4
+2026-10-18 14:28:24.925 [main] [47e963408cc5425ab5b6d280dc5706f2] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/register -> 200 (183ms)
+2026-10-18 14:28:25.127 [main] [f74db7e7a4d540bbabe7bd4ce01e6bf6] [86b7a4693dca752d331be26e7fcc9ab8] INFO  com.exam.auth.service.AuthService - 用户 stu_4 登录成功，签发双 Token
+2026-10-18 14:28:25.128 [main] [f74db7e7a4d540bbabe7bd4ce01e6bf6] [] INFO  com.exam.common.RequestIdFilter - POST /api/auth/login -> 200 (202ms)
+2026-10-18 14:28:25.181 [main] [0a9d65c19d6b46ebbac624b60ddf074d] [60ee068331748103cec2ec992d76916a] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=1 type=SINGLE
+2026-10-18 14:28:25.198 [main] [0a9d65c19d6b46ebbac624b60ddf074d] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (68ms)
+2026-10-18 14:28:25.212 [main] [69924cda528641c1a74f07dedbbb3fff] [7d5b6402b53a929bee250da9a18317b5] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=2 type=MULTIPLE
+2026-10-18 14:28:25.215 [main] [69924cda528641c1a74f07dedbbb3fff] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (14ms)
+2026-10-18 14:28:25.225 [main] [18a0a51ae64b4035b5601bf1a82bf01b] [e8447ccd34080c3a2f3eb0b39e401713] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=3 type=JUDGE
+2026-10-18 14:28:25.228 [main] [18a0a51ae64b4035b5601bf1a82bf01b] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (11ms)
+2026-10-18 14:28:25.242 [main] [b45d1c1751534409960ea51fed1eeccc] [b228a338cfcdccdf019a26688fa25b54] INFO  c.exam.question.service.QuestionService - 教师 2 创建题目 id=4 type=SHORT_ANSWER
+2026-10-18 14:28:25.244 [main] [b45d1c1751534409960ea51fed1eeccc] [] INFO  com.exam.common.RequestIdFilter - POST /api/questions -> 200 (14ms)
+2026-10-18 14:28:25.260 [main] [50ec7ae18da44ef8b24b6aacdf2319ff] [8f13bce76dc6e6526d9f4402d688f8e4] INFO  com.exam.paper.service.PaperService - 教师 2 创建试卷 id=1 total=20.0
+2026-10-18 14:28:25.268 [main] [50ec7ae18da44ef8b24b6aacdf2319ff] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers -> 200 (22ms)
+2026-10-18 14:28:25.306 [main] [63b4f63469ac426eb9d9bdf7698ff6da] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/1/questions -> 200 (35ms)
+2026-10-18 14:28:25.323 [main] [165d08f59d4e47a0ab525194f2a1d626] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/1/questions -> 200 (17ms)
+2026-10-18 14:28:25.338 [main] [44e3f7bcfca743e0b6b5d524b00b957e] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/1/questions -> 200 (14ms)
+2026-10-18 14:28:25.351 [main] [0d7ab02eafd34597bd31ad85479cb692] [] INFO  com.exam.common.RequestIdFilter - POST /api/papers/1/questions -> 200 (12ms)
+2026-10-18 14:28:25.365 [main] [f25b2b2fc60a458f80d2f4935cb3bf27] [b02983201d809d86938307e8f6493391] INFO  com.exam.clazz.service.ClassService - 教师 2 创建班级 id=1 name=班级-6
+2026-10-18 14:28:25.368 [main] [f25b2b2fc60a458f80d2f4935cb3bf27] [] INFO  com.exam.common.RequestIdFilter - POST /api/classes -> 200 (16ms)
+2026-10-18 14:28:25.388 [main] [56919e79c8d343929f260be8a30a281d] [1b8c47d7a1209bce796d18b599b3a147] INFO  com.exam.exam.service.ExamService - 教师 2 创建考试 id=1 paperId=1 窗口 2026-10-18T14:27:25.369219800 ~ 2026-10-18T16:28:25.369219800 时长 30 分钟
+2026-10-18 14:28:25.393 [main] [56919e79c8d343929f260be8a30a281d] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams -> 200 (24ms)
+2026-10-18 14:28:25.414 [main] [64b09dd10ba8429bac88fb07cd09bdbd] [fffa183edb939267bdad44600f834b23] INFO  c.exam.exam.service.ExamSnapshotService - 考试 1 发布生成快照 id=1（4 题）
+2026-10-18 14:28:25.419 [main] [64b09dd10ba8429bac88fb07cd09bdbd] [fffa183edb939267bdad44600f834b23] INFO  com.exam.exam.service.ExamService - 考试 1 发布（学生可见），等待定时开考
+2026-10-18 14:28:25.435 [main] [64b09dd10ba8429bac88fb07cd09bdbd] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/publish -> 200 (42ms)
+2026-10-18 14:28:25.438 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试 1 定时迁移 0 -> 1
+2026-10-18 14:28:25.440 [main] [] [] INFO  c.e.exam.service.ExamStateMachineService - 考试状态机流转后已清除 examDetail 缓存
+2026-10-18 14:28:25.488 [main] [db97b72cf20b4ab5853a0c83db665469] [eeb1a7384d4161846242689f2e789091] INFO  c.exam.taking.service.ExamTakingService - 学生 3 进入考试 1 创建答卷 id=1，个人截止 2026-10-18T14:58:25.486360400（快照题序/选项已锁定）
+2026-10-18 14:28:25.499 [main] [db97b72cf20b4ab5853a0c83db665469] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/1/enter -> 200 (53ms)
+2026-10-18 14:28:25.522 [main] [11165bbd31174320bd59fd0947026a9b] [6dd9ae80edbbddc22ddb0bc429e42113] INFO  com.exam.submission.mq.ExamSubmitSender - 交卷消息已确认: submission=1 exam=1 student=3
+2026-10-18 14:28:25.522 [main] [11165bbd31174320bd59fd0947026a9b] [6dd9ae80edbbddc22ddb0bc429e42113] INFO  c.exam.taking.service.ExamSubmitService - 学生 3 交卷成功: exam=1 submission=1 type=1 答案字节=46
+2026-10-18 14:28:25.526 [main] [11165bbd31174320bd59fd0947026a9b] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/1/submit -> 200 (25ms)
+2026-10-18 14:28:25.612 [main] [] [] INFO  c.exam.submission.mq.ExamSubmitConsumer - 交卷批量落库: 批次=1 落库=1 幂等跳过=0
+2026-10-18 14:28:25.631 [main] [f17adc254a744ccba75bd8e9a1e9f4d8] [a6a727d5a54d80b5f16f32bc5a84be35] INFO  c.exam.taking.service.ExamTakingService - 学生 4 进入考试 1 创建答卷 id=2，个人截止 2026-10-18T14:58:25.630207400（快照题序/选项已锁定）
+2026-10-18 14:28:25.634 [main] [f17adc254a744ccba75bd8e9a1e9f4d8] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/1/enter -> 200 (18ms)
+2026-10-18 14:28:25.646 [main] [03646998e6944d78b7f7c7c079f094c6] [78d84fa2524afa7f4d9c25d6688ad88c] INFO  com.exam.submission.mq.ExamSubmitSender - 交卷消息已确认: submission=2 exam=1 student=4
+2026-10-18 14:28:25.646 [main] [03646998e6944d78b7f7c7c079f094c6] [78d84fa2524afa7f4d9c25d6688ad88c] INFO  c.exam.taking.service.ExamSubmitService - 学生 4 交卷成功: exam=1 submission=2 type=1 答案字节=36
+2026-10-18 14:28:25.648 [main] [03646998e6944d78b7f7c7c079f094c6] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/1/submit -> 200 (12ms)
+2026-10-18 14:28:25.651 [main] [] [] INFO  c.exam.submission.mq.ExamSubmitConsumer - 交卷批量落库: 批次=1 落库=0 幂等跳过=1
+2026-10-18 14:28:25.653 [main] [] [] INFO  c.exam.submission.mq.ExamSubmitConsumer - 交卷批量落库: 批次=1 落库=1 幂等跳过=0
+2026-10-18 14:28:25.670 [main] [657af908d7614f1fb22dd51e99a5855c] [50f4defc0677e1f5878d674733b010ef] INFO  c.exam.taking.service.ExamTakingService - 学生 5 进入考试 1 创建答卷 id=3，个人截止 2026-10-18T14:58:25.668901100（快照题序/选项已锁定）
+2026-10-18 14:28:25.674 [main] [657af908d7614f1fb22dd51e99a5855c] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/1/enter -> 200 (18ms)
+2026-10-18 14:28:25.685 [main] [7aa7b2afcbee4f4b9d29801ce14e2d73] [c4275190d65f2d2013066b9db97cdb1e] INFO  com.exam.submission.mq.ExamSubmitSender - 交卷消息已确认: submission=3 exam=1 student=5
+2026-10-18 14:28:25.686 [main] [7aa7b2afcbee4f4b9d29801ce14e2d73] [c4275190d65f2d2013066b9db97cdb1e] INFO  c.exam.taking.service.ExamSubmitService - 学生 5 交卷成功: exam=1 submission=3 type=1 答案字节=34
+2026-10-18 14:28:25.687 [main] [7aa7b2afcbee4f4b9d29801ce14e2d73] [] INFO  com.exam.common.RequestIdFilter - POST /api/exam-taking/exams/1/submit -> 200 (13ms)
+2026-10-18 14:28:25.688 [main] [] [] INFO  c.exam.submission.mq.ExamSubmitConsumer - 交卷批量落库: 批次=1 落库=0 幂等跳过=1
+2026-10-18 14:28:25.689 [main] [] [] INFO  c.exam.submission.mq.ExamSubmitConsumer - 交卷批量落库: 批次=1 落库=0 幂等跳过=1
+2026-10-18 14:28:25.691 [main] [] [] INFO  c.exam.submission.mq.ExamSubmitConsumer - 交卷批量落库: 批次=1 落库=1 幂等跳过=0
+2026-10-18 14:28:25.700 [main] [6b8036de2a6e4a8a820a5a5ecc5919e3] [a8c37a8e00a074a606c167fecdf4e7a7] INFO  c.e.exam.service.ExamStateMachineService - 考试 1 状态迁移 1 -> 2
+2026-10-18 14:28:25.705 [main] [6b8036de2a6e4a8a820a5a5ecc5919e3] [a8c37a8e00a074a606c167fecdf4e7a7] INFO  com.exam.exam.service.ExamService - 考试 1 教师提前结束（force_end=1），强制交卷由阶段 5 交卷链路处理
+2026-10-18 14:28:25.708 [main] [6b8036de2a6e4a8a820a5a5ecc5919e3] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/force-end -> 200 (16ms)
+2026-10-18 14:28:25.728 [main] [5c241e0f14f2444c91ab5740e94e32e0] [43195eb631499764287fdd8de5a6d927] INFO  c.e.g.service.ObjectiveGradingService - 答卷客观判分完成: submission=1 objective=14.0
+2026-10-18 14:28:25.730 [main] [5c241e0f14f2444c91ab5740e94e32e0] [43195eb631499764287fdd8de5a6d927] INFO  c.e.g.service.ObjectiveGradingService - 答卷客观判分完成: submission=2 objective=3.0
+2026-10-18 14:28:25.733 [main] [5c241e0f14f2444c91ab5740e94e32e0] [43195eb631499764287fdd8de5a6d927] INFO  c.e.g.service.ObjectiveGradingService - 答卷客观判分完成: submission=3 objective=8.0
+2026-10-18 14:28:25.733 [main] [5c241e0f14f2444c91ab5740e94e32e0] [43195eb631499764287fdd8de5a6d927] INFO  c.e.grading.service.ExamGradingService - 整场判分完成: exam=1 总数=3 成功=3 失败=0
+2026-10-18 14:28:25.747 [main] [5c241e0f14f2444c91ab5740e94e32e0] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/grading/run -> 200 (38ms)
+2026-10-18 14:28:25.786 [main] [8b5981ba12c0415cad3f243624a859e7] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/grading/subjective/save -> 200 (33ms)
+2026-10-18 14:28:25.802 [main] [43efb6c669a24ea2800169e8acce7194] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/grading/subjective/save -> 200 (13ms)
+2026-10-18 14:28:25.822 [main] [3339bad7be95496188329586f060bd3f] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/grading/subjective/save -> 200 (15ms)
+2026-10-18 14:28:25.839 [main] [3612939bf9e54511b4958032f659fcb2] [d39d134f491d63ebe2403edb37b7ef80] INFO  com.exam.score.service.ScoreService - 成绩汇总完成：exam=1 汇总=3 跳过=0 考试已批改=true
+2026-10-18 14:28:25.841 [main] [3612939bf9e54511b4958032f659fcb2] [] INFO  com.exam.common.RequestIdFilter - POST /api/exams/1/scores/summarize -> 200 (18ms)
+2026-10-18 14:28:27.010 [main] [9427f1ff74c545cb8cdb4cf4136edb67] [] INFO  com.exam.common.RequestIdFilter - GET /api/exams/1/scores/analysis-report/export -> 200 (1167ms)
+2026-10-18 14:28:27.136 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] WARN  o.s.a.r.l.SimpleMessageListenerContainer - Consumer raised exception, processing can restart if the connection factory supports it. Exception summary: org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"admin","password":"admin123"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"4b1e0deb9cf7476ba93ac3faa7abbf0e", X-Trace-Id:"348dec46aa42fe2f4ef26e2a57302b3b", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoidXNlcjptYW5hZ2UsaW52aXRlOm1hbmFnZSxxdWVzdGlvbjptYW5hZ2Usc2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjJiY2ViNGM3NDNjNjRiZThhYTNlMjdiOWM2NmYyMDc0IiwiaWF0IjoxNzkyMzA0OTAzLCJleHAiOjE3OTIzMDY3MDN9.olBuztbLPKGXErebVCNTpfGwYi7kEDBnsR7FDL0vaBo","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiIzMTViMzU3ODlkNDE0YjZlYjhiNGZmNjI1ZjBkNjI3MSIsImlhdCI6MTc5MjMwNDkwMywiZXhwIjoxNzkyOTA5NzAzfQ.RjNZ3ogt-qYJ-JjxMzGEcWFTFR2iZmCefKliIQHCLzs","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/admin/invite-codes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoi57O757uf566h55CG5ZGYIiwicm9sZXMiOiJBRE1JTiIsInBlcm1pc3Npb25zIjoidXNlcjptYW5hZ2UsaW52aXRlOm1hbmFnZSxxdWVzdGlvbjptYW5hZ2Usc2NvcmU6dmlldyxleGFtOm1hbmFnZSxleGFtOnRha2UscGFwZXI6bWFuYWdlLHVzZXI6dmlldyIsInJvbGVMZXZlbCI6Mywic3YiOjAsImp0aSI6IjJiY2ViNGM3NDNjNjRiZThhYTNlMjdiOWM2NmYyMDc0IiwiaWF0IjoxNzkyMzA0OTAzLCJleHAiOjE3OTIzMDY3MDN9.olBuztbLPKGXErebVCNTpfGwYi7kEDBnsR7FDL0vaBo", Content-Length:"2"]
+             Body = {}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AdminController
+           Method = com.exam.auth.controller.AdminController#createInviteCode(InviteCodeCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"e7076f793bf149cdb59872c384cd4a31", X-Trace-Id:"8fc83c624d7954b8359375e0036169e2", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"code":"7EZCWN66","note":"","status":0,"usedCount":0,"createdBy":1,"createdTime":"2026-10-18T14:28:23.4644517"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"134"]
+             Body = {"username":"tea_1","password":"Pass1234","name":"教师-tea_1","email":"tea_1@test.com","roleType":"TEACHER","inviteCode":"7EZCWN66"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"60377fc88dcb40ec9e38f97ba697f019", X-Trace-Id:"527c9d0430b4578991c25cab47f7c49d", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"tea_1","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"b1d0aff0d41c4273b624378fed540e21", X-Trace-Id:"b4350f2246a05262f32329a570f1cb79", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJkY2JlMGRjMmM0YTE0MDQ5YWVmYzc0Mzk0ODk0ZmE5OSIsImlhdCI6MTc5MjMwNDkwMywiZXhwIjoxNzkyOTA5NzAzfQ.IJGaJEF1hrXBDdFLZlkCbr3r1JvGFo9hBj6bnadmTY4","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"110"]
+             Body = {"username":"stu_2","password":"Pass1234","name":"学生-stu_2","email":"stu_2@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"574512b711ec4cc38942d6bc44f3ca8b", X-Trace-Id:"d97ed169c12c581bb59a87f21e3d0e59", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"stu_2","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"fb13f2500ab646d6b1b30f3eaa791823", X-Trace-Id:"c1d1db92baa8229f3c2345e6eb85ce5a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzIiLCJuYW1lIjoi5a2m55SfLXN0dV8yIiwiZW1haWwiOiJzdHVfMkB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiJiMjA0MDYwMGU0Y2Y0ZjYxYTUxZjFmYTIwNmM0ZjY2NiIsImlhdCI6MTc5MjMwNDkwNCwiZXhwIjoxNzkyMzA2NzA0fQ.w0IK2r9f0NeElzdXQe4yECgCXofBr2oo1nbXkrNKIiw","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiIxNWM1ZjE1ZWU3OGQ0NDFmODQ4YzRlMDBiODFmYmQ2MiIsImlhdCI6MTc5MjMwNDkwNCwiZXhwIjoxNzkyOTA5NzA0fQ.YqscR3IRebWh8-1opFq-6tg41aCE8Xz76ZBwrShg7Kw","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"110"]
+             Body = {"username":"stu_3","password":"Pass1234","name":"学生-stu_3","email":"stu_3@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"65074fc05c6a4cc5a39f2383827179b9", X-Trace-Id:"8e8857cfcf6a4aec8bc7dc4a56b3ba04", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"stu_3","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"b16c9548210a496bae0600d7655ebc29", X-Trace-Id:"55fdc799884cf6fae29af7a6c522f358", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzMiLCJuYW1lIjoi5a2m55SfLXN0dV8zIiwiZW1haWwiOiJzdHVfM0B0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiI1Y2M2MGUwZjNhMDI0NGFmOWRjNmZmNTQ5MWM0NmQzMSIsImlhdCI6MTc5MjMwNDkwNCwiZXhwIjoxNzkyMzA2NzA0fQ.hsO0HEjgpwbugj7XZmEM-8CB_agC9ha7byyHj66nAz8","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJjNmE4ZWRjMTFjZGU0ZjY0ODIwMjI4MDYwYzBmYjQ5ZCIsImlhdCI6MTc5MjMwNDkwNCwiZXhwIjoxNzkyOTA5NzA0fQ.NoWYlkS2rLIiwwGqxU7BZlowcCl0ehIDBfqZK0SwiWc","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/register
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"110"]
+             Body = {"username":"stu_4","password":"Pass1234","name":"学生-stu_4","email":"stu_4@test.com","roleType":"STUDENT"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#register(RegisterRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"47e963408cc5425ab5b6d280dc5706f2", X-Trace-Id:"e1a9f82116cbdfefd4fbb06bbe276df5", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/auth/login
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Content-Length:"42"]
+             Body = {"username":"stu_4","password":"Pass1234"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.auth.controller.AuthController
+           Method = com.exam.auth.controller.AuthController#login(LoginRequest, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"f74db7e7a4d540bbabe7bd4ce01e6bf6", X-Trace-Id:"86b7a4693dca752d331be26e7fcc9ab8", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzQiLCJuYW1lIjoi5a2m55SfLXN0dV80IiwiZW1haWwiOiJzdHVfNEB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiJhYzc1ZDZmMmM5Yzg0YTJmYmNhYzY4MWVkNDUzZTJlMSIsImlhdCI6MTc5MjMwNDkwNSwiZXhwIjoxNzkyMzA2NzA1fQ.ViQAaCLETDV-0q5Nd_rUPhhEZDcHaWdfZZ2XhChQBLE","refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6InJlZnJlc2giLCJqdGkiOiJlMWZlNzIyZjFmZTk0MWMxYTUzNmI5MGZmZDg5MmNhOCIsImlhdCI6MTc5MjMwNDkwNSwiZXhwIjoxNzkyOTA5NzA1fQ.DyM8rkVyKaI3VW6Rap20n8YpX9qUsnKJ3Ouev0GK31k","tokenType":"Bearer","accessExpiresIn":1800,"refreshExpiresIn":604800}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"112"]
+             Body = {"type":1,"content":"单选：1+1=?","correctAnswer":"A","score":5.0,"difficulty":1,"choices":["A","B","C","D"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"0a9d65c19d6b46ebbac624b60ddf074d", X-Trace-Id:"60ee068331748103cec2ec992d76916a", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"type":1,"typeName":"单选","content":"单选：1+1=?","choices":["A","B","C","D"],"correctAnswer":"A","score":5.0,"difficulty":1,"tags":[],"createdBy":2,"createdTime":"2026-10-18T14:28:25.1760679","updatedTime":"2026-10-18T14:28:25.1760679"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"130"]
+             Body = {"type":2,"content":"多选：下列哪些是质数","correctAnswer":"A,C","score":5.0,"difficulty":1,"choices":["2","4","3","9"]}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"69924cda528641c1a74f07dedbbb3fff", X-Trace-Id:"7d5b6402b53a929bee250da9a18317b5", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"type":2,"typeName":"多选","content":"多选：下列哪些是质数","choices":["2","4","3","9"],"correctAnswer":"A,C","score":5.0,"difficulty":1,"tags":[],"createdBy":2,"createdTime":"2026-10-18T14:28:25.211347","updatedTime":"2026-10-18T14:28:25.211347"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"88"]
+             Body = {"type":3,"content":"判断：水沸腾","correctAnswer":"T","score":5.0,"difficulty":1}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"18a0a51ae64b4035b5601bf1a82bf01b", X-Trace-Id:"e8447ccd34080c3a2f3eb0b39e401713", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":3,"type":3,"typeName":"判断","content":"判断：水沸腾","choices":[],"correctAnswer":"T","score":5.0,"difficulty":1,"tags":[],"createdBy":2,"createdTime":"2026-10-18T14:28:25.2244058","updatedTime":"2026-10-18T14:28:25.2244058"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"112"]
+             Body = {"type":4,"content":"简答：什么是HTTP","correctAnswer":"HTTP,协议,无状态","score":5.0,"difficulty":1}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.question.controller.QuestionController
+           Method = com.exam.question.controller.QuestionController#create(QuestionCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"b45d1c1751534409960ea51fed1eeccc", X-Trace-Id:"b228a338cfcdccdf019a26688fa25b54", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":4,"type":4,"typeName":"简答","content":"简答：什么是HTTP","choices":[],"correctAnswer":"HTTP,协议,无状态","score":5.0,"difficulty":1,"tags":[],"createdBy":2,"createdTime":"2026-10-18T14:28:25.2402222","updatedTime":"2026-10-18T14:28:25.2402222"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"38"]
+             Body = {"title":"试卷-5","totalScore":20.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#create(PaperCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"50ec7ae18da44ef8b24b6aacdf2319ff", X-Trace-Id:"8f13bce76dc6e6526d9f4402d688f8e4", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"title":"试卷-5","description":"","totalScore":20.0,"questionCount":0,"status":0,"createdBy":2,"createdTime":"2026-10-18T14:28:25.2582481"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers/1/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"28"]
+             Body = {"questionId":1,"score":4.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#addQuestion(Long, AddPaperQuestionRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"63b4f63469ac426eb9d9bdf7698ff6da", X-Trace-Id:"8c847c815d67e7be651a4d2faf27cfd9", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"questionId":1,"number":1,"score":4.0,"questionType":1,"content":"单选：1+1=?","choices":["A","B","C","D"],"correctAnswer":"A","defaultScore":5.0,"questionDeleted":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers/1/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"28"]
+             Body = {"questionId":2,"score":6.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#addQuestion(Long, AddPaperQuestionRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"165d08f59d4e47a0ab525194f2a1d626", X-Trace-Id:"bfffc68f83bb9d3bfc1845a1d3fb7bd7", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"questionId":2,"number":2,"score":6.0,"questionType":2,"content":"多选：下列哪些是质数","choices":["2","4","3","9"],"correctAnswer":"A,C","defaultScore":5.0,"questionDeleted":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers/1/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"28"]
+             Body = {"questionId":3,"score":4.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#addQuestion(Long, AddPaperQuestionRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"44e3f7bcfca743e0b6b5d524b00b957e", X-Trace-Id:"b5b73578ef681cc92ccc33c0d95b46a4", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"questionId":3,"number":3,"score":4.0,"questionType":3,"content":"判断：水沸腾","choices":[],"correctAnswer":"T","defaultScore":5.0,"questionDeleted":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/papers/1/questions
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"28"]
+             Body = {"questionId":4,"score":6.0}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.paper.controller.PaperController
+           Method = com.exam.paper.controller.PaperController#addQuestion(Long, AddPaperQuestionRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"0d7ab02eafd34597bd31ad85479cb692", X-Trace-Id:"99964fa2c80210dc8244d5dc1174c6b2", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"questionId":4,"number":4,"score":6.0,"questionType":4,"content":"简答：什么是HTTP","choices":[],"correctAnswer":"HTTP,协议,无状态","defaultScore":5.0,"questionDeleted":false}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/classes
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"19"]
+             Body = {"name":"班级-6"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.clazz.controller.ClassController
+           Method = com.exam.clazz.controller.ClassController#create(ClassCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"f25b2b2fc60a458f80d2f4935cb3bf27", X-Trace-Id:"b02983201d809d86938307e8f6493391", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"name":"班级-6","teacherId":2,"createdBy":2,"createdTime":"2026-10-18T14:28:25.3642096"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"151"]
+             Body = {"title":"考试-7","paperId":1,"classId":1,"startTime":"2026-10-18T14:27:25.369219800","endTime":"2026-10-18T16:28:25.369219800","durationMinutes":30}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.exam.controller.ExamController
+           Method = com.exam.exam.controller.ExamController#create(ExamCreateRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"56919e79c8d343929f260be8a30a281d", X-Trace-Id:"1b8c47d7a1209bce796d18b599b3a147", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"title":"考试-7","paperId":1,"classId":1,"startTime":"2026-10-18T14:27:25.3692198","endTime":"2026-10-18T16:28:25.3692198","durationMinutes":30,"allowLateMinutes":0,"status":0,"published":0,"forceEnd":0,"reservationRequired":0,"createdBy":2,"createdTime":"2026-10-18T14:28:25.3878331"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams/1/publish
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.exam.controller.ExamController
+           Method = com.exam.exam.controller.ExamController#publish(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"64b09dd10ba8429bac88fb07cd09bdbd", X-Trace-Id:"fffa183edb939267bdad44600f834b23", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"title":"考试-7","description":"","paperId":1,"paperTitle":"试卷-5","classId":1,"startTime":"2026-10-18T14:27:25.36922","endTime":"2026-10-18T16:28:25.36922","durationMinutes":30,"allowLateMinutes":0,"status":0,"published":1,"forceEnd":0,"reservationRequired":0,"snapshotId":1,"createdBy":2,"createdTime":"2026-10-18T14:28:25.387833","updatedTime":"2026-10-18T14:28:25.387833"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exam-taking/exams/1/enter
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzIiLCJuYW1lIjoi5a2m55SfLXN0dV8yIiwiZW1haWwiOiJzdHVfMkB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiJiMjA0MDYwMGU0Y2Y0ZjYxYTUxZjFmYTIwNmM0ZjY2NiIsImlhdCI6MTc5MjMwNDkwNCwiZXhwIjoxNzkyMzA2NzA0fQ.w0IK2r9f0NeElzdXQe4yECgCXofBr2oo1nbXkrNKIiw"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.taking.controller.ExamTakingController
+           Method = com.exam.taking.controller.ExamTakingController#enter(Long, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"db97b72cf20b4ab5853a0c83db665469", X-Trace-Id:"eeb1a7384d4161846242689f2e789091", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"examId":1,"examTitle":"考试-7","submissionId":1,"status":1,"startTime":"2026-10-18T14:28:25.4863604","deadlineTime":"2026-10-18T14:58:25.4863604","serverTime":"2026-10-18T14:28:25.4904034","remainingSeconds":1799,"questions":[{"number":1,"questionId":1,"type":1,"content":"单选：1+1=?","choices":["C","D","A","B"],"score":4.0},{"number":2,"questionId":4,"type":4,"content":"简答：什么是HTTP","choices":null,"score":6.0},{"number":3,"questionId":2,"type":2,"content":"多选：下列哪些是质数","choices":["9","2","4","3"],"score":6.0},{"number":4,"questionId":3,"type":3,"content":"判断：水沸腾","choices":null,"score":4.0}],"marked":[]}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exam-taking/exams/1/submit
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzIiLCJuYW1lIjoi5a2m55SfLXN0dV8yIiwiZW1haWwiOiJzdHVfMkB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiJiMjA0MDYwMGU0Y2Y0ZjYxYTUxZjFmYTIwNmM0ZjY2NiIsImlhdCI6MTc5MjMwNDkwNCwiZXhwIjoxNzkyMzA2NzA0fQ.w0IK2r9f0NeElzdXQe4yECgCXofBr2oo1nbXkrNKIiw", Content-Length:"72"]
+             Body = {"answers":{"1":"A","2":"A,C","3":"T","4":"HTTP 是无状态的协议"}}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.taking.controller.ExamTakingController
+           Method = com.exam.taking.controller.ExamTakingController#submit(Long, SubmitRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"11165bbd31174320bd59fd0947026a9b", X-Trace-Id:"6dd9ae80edbbddc22ddb0bc429e42113", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"submissionId":1,"examId":1,"studentId":3,"status":2,"submitTime":"2026-10-18T14:28:25.5178519","submitType":1}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exam-taking/exams/1/enter
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzMiLCJuYW1lIjoi5a2m55SfLXN0dV8zIiwiZW1haWwiOiJzdHVfM0B0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiI1Y2M2MGUwZjNhMDI0NGFmOWRjNmZmNTQ5MWM0NmQzMSIsImlhdCI6MTc5MjMwNDkwNCwiZXhwIjoxNzkyMzA2NzA0fQ.hsO0HEjgpwbugj7XZmEM-8CB_agC9ha7byyHj66nAz8"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.taking.controller.ExamTakingController
+           Method = com.exam.taking.controller.ExamTakingController#enter(Long, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"f17adc254a744ccba75bd8e9a1e9f4d8", X-Trace-Id:"a6a727d5a54d80b5f16f32bc5a84be35", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"examId":1,"examTitle":"考试-7","submissionId":2,"status":1,"startTime":"2026-10-18T14:28:25.6302074","deadlineTime":"2026-10-18T14:58:25.6302074","serverTime":"2026-10-18T14:28:25.6322073","remainingSeconds":1799,"questions":[{"number":1,"questionId":3,"type":3,"content":"判断：水沸腾","choices":null,"score":4.0},{"number":2,"questionId":2,"type":2,"content":"多选：下列哪些是质数","choices":["9","2","3","4"],"score":6.0},{"number":3,"questionId":1,"type":1,"content":"单选：1+1=?","choices":["A","D","B","C"],"score":4.0},{"number":4,"questionId":4,"type":4,"content":"简答：什么是HTTP","choices":null,"score":6.0}],"marked":[]}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exam-taking/exams/1/submit
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzMiLCJuYW1lIjoi5a2m55SfLXN0dV8zIiwiZW1haWwiOiJzdHVfM0B0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiI1Y2M2MGUwZjNhMDI0NGFmOWRjNmZmNTQ5MWM0NmQzMSIsImlhdCI6MTc5MjMwNDkwNCwiZXhwIjoxNzkyMzA2NzA0fQ.hsO0HEjgpwbugj7XZmEM-8CB_agC9ha7byyHj66nAz8", Content-Length:"48"]
+             Body = {"answers":{"1":"B","2":"A","3":"F","4":"HTTP"}}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.taking.controller.ExamTakingController
+           Method = com.exam.taking.controller.ExamTakingController#submit(Long, SubmitRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"03646998e6944d78b7f7c7c079f094c6", X-Trace-Id:"78d84fa2524afa7f4d9c25d6688ad88c", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"submissionId":2,"examId":1,"studentId":4,"status":2,"submitTime":"2026-10-18T14:28:25.6452166","submitType":1}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exam-taking/exams/1/enter
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzQiLCJuYW1lIjoi5a2m55SfLXN0dV80IiwiZW1haWwiOiJzdHVfNEB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiJhYzc1ZDZmMmM5Yzg0YTJmYmNhYzY4MWVkNDUzZTJlMSIsImlhdCI6MTc5MjMwNDkwNSwiZXhwIjoxNzkyMzA2NzA1fQ.ViQAaCLETDV-0q5Nd_rUPhhEZDcHaWdfZZ2XhChQBLE"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.taking.controller.ExamTakingController
+           Method = com.exam.taking.controller.ExamTakingController#enter(Long, HttpServletRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"657af908d7614f1fb22dd51e99a5855c", X-Trace-Id:"50f4defc0677e1f5878d674733b010ef", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"examId":1,"examTitle":"考试-7","submissionId":3,"status":1,"startTime":"2026-10-18T14:28:25.6689011","deadlineTime":"2026-10-18T14:58:25.6689011","serverTime":"2026-10-18T14:28:25.6719057","remainingSeconds":1799,"questions":[{"number":1,"questionId":2,"type":2,"content":"多选：下列哪些是质数","choices":["4","9","3","2"],"score":6.0},{"number":2,"questionId":3,"type":3,"content":"判断：水沸腾","choices":null,"score":4.0},{"number":3,"questionId":1,"type":1,"content":"单选：1+1=?","choices":["C","A","B","D"],"score":4.0},{"number":4,"questionId":4,"type":4,"content":"简答：什么是HTTP","choices":null,"score":6.0}],"marked":[]}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exam-taking/exams/1/submit
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1IiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoic3R1XzQiLCJuYW1lIjoi5a2m55SfLXN0dV80IiwiZW1haWwiOiJzdHVfNEB0ZXN0LmNvbSIsInJvbGVzIjoiU1RVREVOVCIsInBlcm1pc3Npb25zIjoic2NvcmU6dmlldyxleGFtOnRha2UiLCJyb2xlTGV2ZWwiOjEsInN2IjowLCJqdGkiOiJhYzc1ZDZmMmM5Yzg0YTJmYmNhYzY4MWVkNDUzZTJlMSIsImlhdCI6MTc5MjMwNDkwNSwiZXhwIjoxNzkyMzA2NzA1fQ.ViQAaCLETDV-0q5Nd_rUPhhEZDcHaWdfZZ2XhChQBLE", Content-Length:"46"]
+2026-10-18 14:28:27.143 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] [] [] INFO  o.s.a.r.l.SimpleMessageListenerContainer - Restarting Consumer@4c296f0a: tags=[[]], channel=null, acknowledgeMode=MANUAL local queue size=0
+             Body = {"answers":{"1":"A","2":"A,D","3":"T","4":""}}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.taking.controller.ExamTakingController
+           Method = com.exam.taking.controller.ExamTakingController#submit(Long, SubmitRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"7aa7b2afcbee4f4b9d29801ce14e2d73", X-Trace-Id:"c4275190d65f2d2013066b9db97cdb1e", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"submissionId":3,"examId":1,"studentId":5,"status":2,"submitTime":"2026-10-18T14:28:25.6841125","submitType":1}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams/1/force-end
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.exam.controller.ExamController
+           Method = com.exam.exam.controller.ExamController#forceEnd(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"6b8036de2a6e4a8a820a5a5ecc5919e3", X-Trace-Id:"a8c37a8e00a074a606c167fecdf4e7a7", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"title":"考试-7","description":"","paperId":1,"paperTitle":"试卷-5","classId":1,"startTime":"2026-10-18T14:27:25.36922","endTime":"2026-10-18T16:28:25.36922","durationMinutes":30,"allowLateMinutes":0,"status":2,"published":1,"forceEnd":1,"reservationRequired":0,"snapshotId":1,"createdBy":2,"createdTime":"2026-10-18T14:28:25.387833","updatedTime":"2026-10-18T14:28:25.700141"}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams/1/grading/run
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.grading.controller.GradingController
+           Method = com.exam.grading.controller.GradingController#run(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"5c241e0f14f2444c91ab5740e94e32e0", X-Trace-Id:"43195eb631499764287fdd8de5a6d927", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"total":3,"success":3,"failed":0,"failures":[]}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams/1/grading/subjective/save
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"88"]
+             Body = {"submissionId":1,"questionId":4,"score":6,"expectedVersion":0,"comment":"表述完整"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.grading.controller.GradingController
+           Method = com.exam.grading.controller.GradingController#saveSubjectiveScore(Long, SubjectiveScoreRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"8b5981ba12c0415cad3f243624a859e7", X-Trace-Id:"63a27812c25ab27629c239fb55406ee4", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":1,"submissionId":1,"examId":1,"studentId":3,"studentName":"学生-stu_2","questionId":4,"questionNumber":4,"studentAnswer":"HTTP 是无状态的协议","suggestedScore":6.0,"suggestedDetail":"命中关键词 3/3","score":6.0,"comment":"表述完整","graderId":2,"gradedTime":"2026-10-18T14:28:25.778741","version":1,"graded":true}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams/1/grading/subjective/save
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"88"]
+             Body = {"submissionId":2,"questionId":4,"score":3,"expectedVersion":0,"comment":"关键词少"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.grading.controller.GradingController
+           Method = com.exam.grading.controller.GradingController#saveSubjectiveScore(Long, SubjectiveScoreRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"43efb6c669a24ea2800169e8acce7194", X-Trace-Id:"462ba3e853cec2e88cc76039f280b5a4", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":2,"submissionId":2,"examId":1,"studentId":4,"studentName":"学生-stu_3","questionId":4,"questionNumber":4,"studentAnswer":"HTTP","suggestedScore":2.0,"suggestedDetail":"命中关键词 1/3，未命中：协议、无状态","score":3.0,"comment":"关键词少","graderId":2,"gradedTime":"2026-10-18T14:28:25.799373","version":1,"graded":true}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams/1/grading/subjective/save
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg", Content-Length:"85"]
+             Body = {"submissionId":3,"questionId":4,"score":2,"expectedVersion":0,"comment":"未作答"}
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.grading.controller.GradingController
+           Method = com.exam.grading.controller.GradingController#saveSubjectiveScore(Long, SubjectiveScoreRequest)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"3339bad7be95496188329586f060bd3f", X-Trace-Id:"daddc9439ea1f187a8f2585b6b0c3583", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"id":3,"submissionId":3,"examId":1,"studentId":5,"studentName":"学生-stu_4","questionId":4,"questionNumber":4,"studentAnswer":"","suggestedScore":0.0,"suggestedDetail":"未作答","score":2.0,"comment":"未作答","graderId":2,"gradedTime":"2026-10-18T14:28:25.818921","version":1,"graded":true}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = POST
+      Request URI = /api/exams/1/scores/summarize
+       Parameters = {}
+          Headers = [Content-Type:"application/json;charset=UTF-8", Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.score.controller.ScoreController
+           Method = com.exam.score.controller.ScoreController#summarize(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"3612939bf9e54511b4958032f659fcb2", X-Trace-Id:"d39d134f491d63ebe2403edb37b7ef80", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":0,"message":"ok","data":{"summarized":3,"skipped":0,"examGraded":true}}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /api/exams/1/scores/analysis-report/export
+       Parameters = {}
+          Headers = [Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwidHlwZSI6ImFjY2VzcyIsInVzZXJuYW1lIjoidGVhXzEiLCJuYW1lIjoi5pWZ5biILXRlYV8xIiwiZW1haWwiOiJ0ZWFfMUB0ZXN0LmNvbSIsInJvbGVzIjoiVEVBQ0hFUiIsInBlcm1pc3Npb25zIjoicXVlc3Rpb246bWFuYWdlLHNjb3JlOnZpZXcsZXhhbTptYW5hZ2UscGFwZXI6bWFuYWdlIiwicm9sZUxldmVsIjoyLCJzdiI6MCwianRpIjoiNTI3YTNkNWJmOTQ0NDc4NDgyYmFlNDk1N2RhNDhkN2YiLCJpYXQiOjE3OTIzMDQ5MDMsImV4cCI6MTc5MjMwNjcwM30.BAbxdt2kbUjco9azCEkQxRyXL0NsLbUfopBq1ZkHwIg"]
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.exam.score.controller.ScoreController
+           Method = com.exam.score.controller.ScoreController#exportAnalysisReport(Long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = null
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 200
+    Error message = null
+          Headers = [X-Request-Id:"9427f1ff74c545cb8cdb4cf4136edb67", X-Trace-Id:"d162eb0f937899c1e300081fffcf4158", Content-Disposition:"attachment; filename*=UTF-8''%E8%80%83%E8%AF%95%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A-1-1792304907003.xlsx", Content-Type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Content-Length:"6105"]
+     Content type = application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+             Body = PK-                      [Content_Types].xmlÍÝj1_eÉmÙÚRJqõ¢?­Pû i2ëóG&Z}ûNV½¨µ àU6;gÎù2Ç+k%DÔÞÕ¬_õXNz¥Ý¬fÓ×òSÂx5[²ñh8]ÀzÖ¬M)<r²+°òU­H´3ðA¯wÏ¥w	\*Sö`£á34baRñ´ù­k&B0ZDX|éÔi¹5¬"N­xCV¼¬Èesª"ãG$ì7æ=õ½Ó`¢Vpo-Ay¹°ÔRAvU ÊI-çDÄô&,rO¨¬«s²wc>ÂQYxVâÞi1D
+[dM­ >R¤Ûôbeø/Á9ÒÚBè* ­ÚJÿöqþåýürù9¡ûþ/¾+"ïþp®ãöJ8îv¼{vG?PKj¹¾ÃI      µ      PK-                      _rels/.rels­ÁJ1_%Ì½miÚ½ÔÙÝ°LHFÝ¾½Á¶lAÁã03ßÿ1Év?I½S.£uÓ¢hÙùØx9>®î@ÁèpâHNT`¿Û>ÓRWÊàSQA$Ýk]ì@KÃbítJ-s¯Ú{Ò¶½Õù'Îêàä[:bîIÌþà<¾2MÅÖÆ)ÑoB¹ë¼¥¶o¢,d_L^vÙ|»8¶Oë&¦ôß24EGnjeñõâWn,gúÒõGÑ
+~Q/ôÙØ}PKn2Kå       J      PK-                      docProps/app.xmlMÁ
+Â0Dïÿro·z4¥ '{ÐéÖMHVéçzæñT·úE¼1e¨»ºÉÑÑ³û¥:ÊNo7jH!bbYåVÎÌñíÞäºÌT)$o¸Äô0MÎâ9ØGbØ7Ípe¤Ç*~R«>ÆÅYÃEB÷Ñ¤nWÿ½þ PK6n!       ¸       PK-                      docProps/core.xmlm]KÃ0ÿJÈ}¤RBÛ!Ê@P8Q¼É±-6$ÑnÿÞ´Î
+Î»$ïsNÞz{Ô#úkÌriÕ`º?vYQÂ(1Z>AÀÛ¶Këaï­(yLàÒ5¸ÑqBìA'Â¤ðÍz-bºú8!ßE¤ ´$¢P"
+23·ñY©äªt~\JA°_6×áß%YÉcVj¦|Ú,\Úû»Çeùl0óß%à¶>«¹ô "(<\ªä'yÞ\ßv¸-hQff¬:Ð/Ê×üßgëÛ«THhÿp;sësM.jn¿ PKv1ñ      ±      PK-                      xl/sharedStrings.xml=A
+Â0 ï{·D¤i/ÐtmÍ&f7âóÍÉã0Ãó7mêc&ÇÁBòy´Zx>îÌÓ~72ò¹XèI£ønxûs["åª5ûÉñR7¯\uÕ\*º¢¤M9ëä"~PKh¯·y              PK-                      xl/styles.xmlíËNÃ0E÷Hüå=u_T%é¢Rë­;íl·jøzì8}!*
+¢;6ñÌÍÜã3VéVI´áÆ
+Ð)ôúqºLñËr~÷§ÙíMb]#ù¢âÜ!ïÐ6Åsõ#!6¯¸¢¶5×þMFQçSS[N&%É°ßEÆY¢×j®E9¬µKq,)@	BØw´¡Ò·zóe9H0HhÆ·¥ø!h*«fT-*!(ÐvÚÕ)¡ÁÄ]âóKÎçV1ufÍÿ'v±$¤ÜÉ1BÔÔ9nôÜ'¨MÍS¬Aw¶îjFÍÛ¡Íåï«ÊÙéìÛ± G¾K¤`?D¶?æïÛî|x'eäóv#Ê*¬êpÖà(0AKÐTv.ðØK¹ôµ8aooÛ3o´}C]11	ücZda'¿Â¢m±çsîÑ7¢u-9FÚùëo;ä9þðÊüÑùã+óïÿOºñÑáÇ} PKcA       m      PK-                      xl/workbook.xmlÍNÂ@÷&¾C3{ò#QBËÆ°sîvJ'´3ÍL(°e!ÆÆDp?!&j|ÛÂ[ØBÐ	+W7'÷|'çÞbéÄuæ0ªtJ
+¦3	­ià°²¿µJúæF±Éx½ÊX]ýThÀö}¯ ¡0lì"b¦ñÆbÜE~,y
+cd
+cßu`FUóÐEeBÿ'Y1ð3]LýeÇòã¶Â& úo³®ÈÇé]5§9¨ÍÁMñgL¤4pU5 &>(WS¡ÈÅ®&Ñç8µfãî÷ûeÐmðé(¼@Lð²Ê(Ç2dÊüü´?¿¿/:á]GbrYg¢áÃì¹µ>f7gÁ×«mKXv&£èzOÃécÐï½Dæ%2·8|u-\ýGÿPKÕÕxO            PK-                      xl/_rels/workbook.xml.rels½ÓÁNÃ0àW|§i»1!´l´+·©Ö&Qìúö°J«ÄaìdEVþÿ»x½ýzqÂD]ð
+ª¢ÞÛùVÁÛþùî±öV÷Á£	¶õöór]$3<)pÌñQJ2MEèó¦	iÐ©QnQÖe¹é<¦bg¤­@ìujÓ	í+§L£"çÕñ/µ¡i:OÁô|¡]NÂA^ÆÔg{¼¾â;u®~ñ[ÿÒ"Éó¨®-ù)Ã,ç1õÍ1÷óÅÍ1«yÌò_1rrOPKlÆw~ê       Û      PK-                      xl/worksheets/sheet1.xmlMkÛ0Çï}#Ø1eÅNV®£lÁX÷rv%1µ­ «MASÆ^.ì²ÑÛNëc°À¾LîcLv²Z¥~^bÉñÿùý½<·qÄÆYÄÓ"¦¼¥ýzþl»ÑFþ5oÄÅ^6`LJf4r¸qXd&²TýÓã"	¤ê>ÎÝBÄØ¶,'A"ßëF	Ks¢!X¯6Éúqö½âãeZÛÈÙ»ïåGÝRe°»ÃbJ¦úRì³\oÈ·;OÑe½`?Oùè!ú©RuT®Jò8+~$ÊG IpX<GQW:È1Jlá~&yòrñö?óJh/¶&lSçm­Ò¥ÞZ®2ð×<ÁGÈ}«v·6U
+YÊ6Jã(e;R¨ÑRúó7ãùÙØÃREËßàÐ_èî×ëfGÓë"¬È%ß.ù6arú÷èÕÅd2ÿð½¿ÐåëäÀ§¦åá*-A®Ñ[%¨	.§Ù¯¯0¨©,ä ÊèýëùÙôrò§âhb·Ä¸ æbúñòËquLÄ´JLÊæ÷Ù§ñìä¸
+Óº]6íÓ®´wQjÒ»uXÚN³-.øcµ0æç?+w[½\T[« oÏæßNk3Ðk´Ý­!¶6?úô,ÍAñ\×lÕ«VA±VÚ²­¶´TÖ»ÒÊêi6SéÖ»®t¥Õ&'â6H«ÒT® +]i@´¶UéêZ»é
+
+oX\Þ0è³ÇèGifìr©NVu0ós¶Ç¹d"ï©Ù¨ËU'f=Y|±¸;mÉKm~ _ÝüPKôº«¾¸      S	      PK-                      xl/worksheets/sheet2.xmlÏoÓ0Çïø¢HHã@&qúCi¦u]·8g­ÛFkâ*ñÖ'!±!\ 4C'HØVÍÚ±ÿçÚ$Ku>ÔvìÏ{}þ>[OÛ4»Ì´Ye6Ç	,­jV»Ì>Z©Ý-°sÚ­µì5§!f`9e¶q¯ÄóN£MÝáPZd¥lSÇdj·y§gC½éAfAáMÝ°XMm&´\[ev>Wª×ToïcöÐq]¯"´æNêÍ2+¸[ù+{këû6Ó-}½ þ24ÚLÂ5P×ñ~Óp£eSßôú¾ÑÄ2+rEH9°LcÝÁÈ|âÇö:ø¨ âô¨ Òô¨ ò® c4'r²òkÀJ +7óÃ2WJ!´F¯o1@SÎsbä
+ó~~xÙTÕ±®Í¨6ê3¶!dÜpGó$YO<WÕ5,øÛ$§BbíòËûáëÇÄûoh>WÉæ>½HàèÜè÷ÁpçYW¥sÃ³ãáÇídt1ýûp¯¶Ð½8z3üq.ex}9 ^¯	è2=ÿ³O£½	t=C­çg®ïÓ§Q'É1Iq"¢gÊ}è64ò¢ªüF8Ä´w÷¯¤ÛãöªáUËGWÃ«§ÄZtsmÍKiq>ö¿îþûu$VØ¦fu¾4«äoßa*¥YI"ýBiV ]ÕëhºH]¤ÈIÅuIÍ¼Ã)ºí)Wthq.J£1!¢«R¬ÅH}2 þÁzU"DN|%_OªßÓ¤'RÈ4ß9MÃÑÛ£$)dê©WDæL³y)-,e¨§SO³º\Z¶`¢ \¤½äß·È¤ ^
+,®n.ÒbBi®HZYB ªiVOjOoÃ{ºÝ6,YET"¤ªåÜz¨¶;#÷¯CÊçñ¤[ØÛÅ2¶_Õzczë0ã*]ûPKþXë/      Ù      PK-                      xl/worksheets/sheet3.xml}RËJÃ@ÝüaöfÒhUJÒ"EøÚOI24	Ñ¸vÑêBºÐ "¢[]ôoÒè_8I%U|ìîásî¹wÆlF!8 "¡Y°®éæp2ß»;ÝùØ²çjfÊE?	@	XbÁ@Ê¸Pâ$ÂÆcÂTÇã"ÂRAá£$»¥(
+¡ëK(ÂAÛtiDX1âY°]ovl³äîQ&_jPîqÞ/ÀºkA½ ¢Ün9zS xx?[<]#Ô¤Z«¡éÿ*Ø®§@¨TµSTí:j¯E²2²-JKÕiç×woOüè%;?ÍïM$U¢{jÐùß _dÇülø]TYcÇøÃçýö2{M®&'£*Ôäf?uF³­Íûd²ô¸<RçÔxK"
+´ A Þ­!ñdÉ@LÏYÖÇÚâ5ªïa PKý²ìÖp      R      PK-                      xl/worksheets/sheet4.xml½nÛ0Ç÷ }{DYôg )H]íP èç0%I¤­.E´{·vêÜ¡Ïãæ5BRí R²Hwâýîþ'ÞÅ§×¼kª4"£ LæL	|÷öüxOÓ'Gq+Õ®(5ÀB'°2¦9AHgåD²¡ÂRqb¬«J¤EIî!^£(§&`çSá*EN¢4ö±ïmõ\éK)¯ó"O`èBÑ½Øs_ú9-Èª6¯eû²²2¶­Ià¡LÖÚ?g®[8¹öïå¦Jà$À³ù"F²6èZÑm¶l´cgÁb>Æ³GI¼%ñÅxGEQ§ÛwùÅJ¶@9åÖÎuf°·bSØ~¨ o²ÿYÒ¤?¿6_ÿÆÈØlîÊÒ{ú÷ûûæÛnù0÷ÿã¿ÍçOw9dEï¥G{éÑ@mV¸Oó`»¼ùñóx[vÀu:Â­ûá½2ü²q²!à@Y·ÄÊFá}ihùqCJú¨	.¥±óbw"pWHi¨rÍWÙåÛ95-@u;ám#-ëÆl·ãé-PKáÞÑ            PK-        j¹¾ÃI  µ                   [Content_Types].xmlPK-        n2Kå   J                 _rels/.relsPK-        6n!   ¸                ¸  docProps/app.xmlPK-        v1ñ  ±                 docProps/core.xmlPK-        h¯·y                   Þ  xl/sharedStrings.xmlPK-        cA   m               ¡  xl/styles.xmlPK-        ÕÕxO                   xl/workbook.xmlPK-        lÆw~ê   Û               	  xl/_rels/workbook.xml.relsPK-        ôº«¾¸  S	               R
+  xl/worksheets/sheet1.xmlPK-        þXë/  Ù               X  xl/worksheets/sheet2.xmlPK-        ý²ìÖp  R               Õ  xl/worksheets/sheet3.xmlPK-        áÞÑ                   xl/worksheets/sheet4.xmlPK        ²    
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-18 14:28:27.147 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 25.11 s <<< FAILURE! -- in com.exam.score.ExamAnalysisReportExportIntegrationTest
+[ERROR] com.exam.score.ExamAnalysisReportExportIntegrationTest.exportFourSheetsWithSameSourceAggregation -- Time elapsed: 4.710 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 选项分布与题目统计导出同格式 ==> expected: <A:2(67%) B:1(33%) C:0(0%) D:0(0%)> but was: <A:(67%) B:(33%) C:(0%) D:(0%)>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)
+	at com.exam.score.ExamAnalysisReportExportIntegrationTest.exportFourSheetsWithSameSourceAggregation(ExamAnalysisReportExportIntegrationTest.java:309)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+2026-10-18 14:28:27.167 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] ERROR o.s.a.r.l.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+2026-10-18 14:28:27.167 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] INFO  o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [127.0.0.1:5672]
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   ExamAnalysisReportExportIntegrationTest.exportFourSheetsWithSameSourceAggregation:309 选项分布与题目统计导出同格式 ==> expected: <A:2(67%) B:1(33%) C:0(0%) D:0(0%)> but was: <A:(67%) B:(33%) C:(0%) D:(0%)>
+[INFO] 
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  51.019 s
+[INFO] Finished at: 2026-10-18T14:28:27+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] See D:\code\examOnline\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

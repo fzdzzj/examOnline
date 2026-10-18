@@ -17,16 +17,16 @@
     {
       "id": 2,
       "title": "阶段 2：后端分析报告多 Sheet 导出实现与单元/集成测试",
-      "status": "pending",
+      "status": "completed",
       "description": "在 ExamAnalysisReportService 编写 exportReport(Long examId) 生成包含 4 个工作表的 SXSSF 工作簿，ScoreController 暴露 GET /api/exams/{examId}/scores/analysis-report/export 接口与 requireOwnedExam 越权校验；编写 TDD 测试验证正常多 Sheet 生成、公式防注入与越权拦截。",
-      "evidence": ""
+      "evidence": "TDD 先红 4/4（端点未实施，expected 200/403 but was 500，evidence/tdd-red-phase.txt）→ 实施后回绿 4/4（evidence/tdd-green-phase.txt，Tests run: 4, Failures: 0, Errors: 0）；实施笔 05a7102（ExamAnalysisReportService.exportReport 四 Sheet 复用 buildReport 同源聚合 + ScoreController exportAnalysisReport，exam:manage + requireOwnedExam + attachment 复用）。"
     },
     {
       "id": 3,
       "title": "阶段 3：前端导出按钮接入、变异击红留证、双端门禁与基线上调",
-      "status": "pending",
+      "status": "completed",
       "description": "在 ExamAnalysisReport.vue 接入导出按钮与 downloadExport 管道；更新 openapi.yaml 与 .github/ci/gate-baseline.json（openapiPaths 100->101，单调上调测试数）；完成 m1/m2/m3 变异击红与回绿留证；双端全量门禁实测全绿并留存 evidence/。",
-      "evidence": ""
+      "evidence": "m1 去归属校验→403 断言击红（expected 403 but was 200）、m2 去姓名 sanitizeFormula→清洗护栏击红（姓名未经清洗即落格）、m3 选项分布丢计数→同格式断言击红（A:2(67%)→A:(67%)），三者均 checkout 复原后回绿 1/1、零残留（evidence/mutation-m{1,2,3}-red.txt / -revert-green.txt）；双端门禁实测（@05a7102）：后端 ./mvnw clean test 737/0/0/1（733+4）、前端 lint/type 零错 + vitest 943/943（939+4，首跑 1 例 SubjectiveGradingPanel 5s 负载型超时系已知 flake，复跑全绿以复跑留档）；baseline 上调 733→737 / 939→943 / 100→101，.github/ci 三件断言脚本本地机检 BACKEND/OPENAPI/FRONTEND 全 OK（evidence/gate-*.txt）。"
     },
     {
       "id": 4,
