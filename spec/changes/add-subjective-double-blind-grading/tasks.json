@@ -1,0 +1,34 @@
+{
+  "change": "add-subjective-double-blind-grading",
+  "category": "feature-hardening",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：提案立项与基线登记",
+      "status": "completed",
+      "description": "proposal.md、spec-delta.md、tasks.json 落位；spec/README.md 登记进行中变更表；创建 feature/add-subjective-double-blind-grading 分支并提交立案笔。",
+      "evidence": "分支 feature/add-subjective-double-blind-grading 创建；立案三件套落盘；spec/README.md 登记完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：数据表、双评盲评后端服务、仲裁流转与前端面板实现",
+      "status": "pending",
+      "description": "schema.sql 与 2026-W42-add-subjective-blind-reviews.sql 新建 subjective_blind_reviews 表，同步更新 APPLIED.md；新增 SubjectiveBlindReview 实体与 Mapper；SubjectiveGradingService 扩充盲评提交 blindSubmit（一评/二评自动分流、同教师互斥校验、脱敏匿名）、分差裁决机制（分差 ≤ 容差取均分回填 subjective_grades、分差 > 容差流转 ARBITRATION_PENDING）、仲裁列表 arbitrationList 与终审定分 arbitrate；GradingController 暴露三端点；openapi.yaml 补齐 3 路径（104→107）及 DTO schemas；前端批改工作台增加双评盲评与待仲裁对比面板。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：TDD 先红后绿、变异击红与门禁留证",
+      "status": "pending",
+      "description": "新增后端单测与集成测试覆盖背靠背双评、同教师评分互斥拦截、分差容差内均分回填、分差超标流转仲裁、仲裁员终限定分与越权拦截；新增前端组件交互测试；TDD 先红后绿留证；三变异（m1 抽除同教师互斥校验 / m2 抽除分差超标流转仲裁 / m3 抽除仲裁分回填 subjective_grades.score）断言级击红并回绿留证；双端门禁实测全绿，gate-baseline.json 同笔上调。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "pending",
+      "description": "spec-delta 合入 specs/grading/spec.md；提案归档至 spec/changes/archive/；spec/README.md 在途表清空并登记来源与归档速览；feature/add-subjective-double-blind-grading 分支 --no-ff 合入 main。",
+      "evidence": ""
+    }
+  ]
+}
