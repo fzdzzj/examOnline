@@ -215,11 +215,11 @@ exam:
     fail-open: ${RATE_LIMIT_FAIL_OPEN:true}
 
   retention:
-    # 数据保留策略（add-data-retention）：按考试生命周期清理三张辅助表。
+    # 数据保留策略（add-data-retention + harden-data-retention-scope）：清理只触达辅助数据。
     # 硬口径「宁可不删，不可错删」——默认关闭 + 默认 dry-run，真删须显式双开并会打启动 WARN。
-    # 目标表：exam_behavior_logs / exam_submit_dedups / score_audit_logs（仅按 exam_id 删，命中既有索引）。
-    # 不清理业务事实；不纳入 exam_dlq_messages（无 exam_id）。不声称磁盘释放。
-    # 另有第四张 audit_log（安全审计）按自身窗口只按年龄清，见下面 audit-log.*。
+    # 目标表：exam_behavior_logs / exam_submit_dedups / score_audit_logs（仅按 exam_id 删，命中既有索引）；
+    # audit_log 与 exam_dlq_messages 无 exam_id，按自身窗口只按年龄清，见下面 audit-log.* 与 dlq.*。
+    # 不清理业务事实（答卷/成绩/快照/归属/错题消灭事实）。不声称磁盘释放。
     enabled: false
     dry-run: true
     retention-days: 180
@@ -228,6 +228,12 @@ exam:
       # 365 只是"给增长一个上界"的占位口径：真实保留期属合规决策，须业务/安全口径确认后才改；
       # 确认前由 enabled=false + dry-run=true 两道闸保证不会静默删掉审计。
       retention-days: 365
+    dlq:
+      # exam_dlq_messages 没有 exam_id，不走考试生命周期；只按 (status, created_time) 清
+      # （完全命中 idx_dlq_status_time 最左前缀，零 DDL、无全表扫描）。
+      # 只清 REPLAYED（已重放成功）的死信留档；PARKED（超重投上限待人工排查）是事故现场
+      # 证据，绝不自动清理。30 天为默认出档口径，真实保留期属合规决策。
+      retention-days: 30
     batch-size: 1000
     max-batches-per-run: 20
     max-exams-per-run: 100

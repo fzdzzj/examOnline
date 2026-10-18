@@ -1,0 +1,39 @@
+{
+  "changeId": "harden-data-retention-scope",
+  "title": "历史未清理表数据保留清理闭环与运维 Runbook",
+  "level": "S",
+  "branch": "feature/harden-data-retention-scope",
+  "createdAt": "2026-10-18",
+  "capabilityDomains": ["data-access"],
+  "proposal": "spec/changes/harden-data-retention-scope/proposal.md",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "编写 proposal.md、specs/data-access/spec-delta.md 与 tasks.json；更新 spec/README.md 在途表登记。",
+      "evidence": "三件套落位 spec/changes/harden-data-retention-scope/；spec/README.md 在途表登记同步完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：已重放死信消息清理实现与数据保留 Runbook",
+      "status": "completed",
+      "description": "在 ExamDlqMessageMapper 编写按状态与超窗时间的分批删除与计数方法（利用 idx_dlq_status_time 索引）；在 RetentionService 接入 REPLAYED 死信清理（保留 PARKED 死信），更新 RetentionReport 与 BusinessMetrics；在 application.yml 显式登记 dlq.retention-days: 30；编写 docs/data-retention-runbook.md 生产运维指南与全表保留矩阵；编写 TDD 测试验证 dry-run 与真删逻辑。",
+      "evidence": "实施笔 6e978be：ExamDlqMessageMapper 增 countByStatusOlderThan/deleteByStatusOlderThanBatch（(status,created_time) 命中 idx_dlq_status_time 最左前缀，零 DDL）；RetentionService 第三条清理路只认 REPLAYED（PARKED 绝不进删除面）、批上限短事务复用、独立 try-catch、RetentionReport 增 dlqCandidates/dlqDeleted、指标 tag table=exam_dlq_messages、启动 WARN 列全窗口；application.yml 登记 dlq.retention-days: 30 并改写过期注释；docs/data-retention-runbook.md 落盘（双闸门启用检查单/试算对账 SQL/真删切换/30 表全矩阵/告警联动裁决）。TDD 先红后绿：DataRetentionIntegrationTest 新增 3 场景（dry-run 只统计/真删仅超窗 REPLAYED/批上限），红档 9 跑 3 红（candidates 2→0、deleted 2→0、批上限 25→0），接线后 9/9 绿，日志 evidence/tdd-red-phase.txt 与 tdd-green-phase.txt。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证、双端门禁实测与基线上调",
+      "status": "completed",
+      "description": "设计并注入 m1/m2/m3 变异击红留证；全量运行双端门禁；单调上调 gate-baseline.json backendTests；在 evidence/ 留档日志与 sha256 清单。",
+      "evidence": "变异三连（实施笔 6e978be 之后、逐个注入→击红→checkout 复原→复绿，零残留）：m1 摘除删除 SQL 的 status 过滤（PARKED 进删除面）→ dlqLivePurgeOnlyReplayedOverWindow/dlqBatchBound 2 例红（deleted 2→5、余量 15→19）→复原 9/9；m2 摘除 DLQ 块 dry-run 闸 → dlqDryRunCountsOnly 1 例红（deleted 0→2）→复原 9/9；m3 DLQ 循环批上限改 Integer.MAX_VALUE → dlqBatchBound 1 例红（deleted 10→25）→复原 9/9。日志 evidence/mutation-m{1,2,3}-red.txt 与 mutation-m{1,2,3}-revert-green.txt。双端门禁：后端 ./mvnw clean test 全量 740/0/0/1 绿（gate-backend.txt，737+3 单调上调）；前端零改动持平三件套绿——eslint 0 错（gate-frontend-lint.txt）、vue-tsc+tsc 0 错（gate-frontend-typecheck.txt）、vitest run --maxWorkers=4 943 例全绿（gate-frontend-test.txt）。.github/ci/gate-baseline.json backendTests 737→740 同笔上调。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "completed",
+      "description": "spec-delta 合入 specs/data-access/spec.md；归档变更目录并更新 spec/README.md；--no-ff 合入 main。",
+      "evidence": "①双端门禁亲跑实测全绿：后端 ./mvnw clean test 740/0/0/1 全绿、前端 lint/type 0 错，vitest 122 文件/943 例全绿；②终审复核独立裁决 PASS：实测与红线机检全过，m1/m2/m3 变异击红判别力真实；③spec-delta 合入：specs/data-access/spec.md 更新「清理只触达辅助数据」并追加「已重放死信消息按状态与年龄索引有界清理」Scenario；④总账与归档：变更提案归档至 spec/changes/archive/harden-data-retention-scope/，spec/README.md 在途表清空并登记来源与归档速览；⑤feature/harden-data-retention-scope 分支 --no-ff 合入 main。"
+    }
+  ]
+}
