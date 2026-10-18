@@ -9,6 +9,7 @@ import com.exam.taking.dto.AutoSaveRequest;
 import com.exam.taking.dto.AutoSaveResponse;
 import com.exam.submission.entity.ExamSubmission;
 import com.exam.submission.mapper.ExamSubmissionMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -41,6 +42,9 @@ import java.util.Map;
 public class ExamDraftService {
 
     static final String KEY_PREFIX = "exam:draft:";
+
+    /** answers 体积上限 64KB（harden-draft-and-grading-boundaries）：防超大 payload 刷写 Redis 与带宽 */
+    private static final int MAX_ANSWERS_BYTES = 64 * 1024;
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
@@ -89,11 +93,25 @@ public class ExamDraftService {
             return new AutoSaveResponse(false, stored.version(), stored.savedTime());
         }
 
+        // 体积钳制：超 64KB 的 answers 在落 Redis 前直接拒绝（写键、心跳都不发生）
+        JsonNode answers = request.getAnswers() == null ? objectMapper.createObjectNode() : request.getAnswers();
+        byte[] answersBytes;
+        try {
+            answersBytes = objectMapper.writeValueAsBytes(answers);
+        } catch (JsonProcessingException e) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "草稿内容无法序列化");
+        }
+        if (answersBytes.length > MAX_ANSWERS_BYTES) {
+            log.warn("草稿体积超限拒绝: exam={} student={} bytes={} limit={}",
+                    examId, studentId, answersBytes.length, MAX_ANSWERS_BYTES);
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "草稿内容超过大小上限 (64KB)");
+        }
+
         int acceptedVersion = incoming;
         LocalDateTime now = LocalDateTime.now();
         ObjectNode root = objectMapper.createObjectNode();
         root.put("version", acceptedVersion);
-        root.set("answers", request.getAnswers() == null ? objectMapper.createObjectNode() : request.getAnswers());
+        root.set("answers", answers);
         ArrayNode marked = root.putArray("marked");
         if (request.getMarked() != null) {
             request.getMarked().forEach(marked::add);

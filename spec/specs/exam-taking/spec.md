@@ -1,7 +1,7 @@
 # exam-taking 规范
 
 > 能力域：在线考试与交卷（阶段 5，W4-W6）。
-> 来源：`spec/changes/archive/add-exam-taking` 合入（进入考试、答题导航与采集、交卷幂等、交卷削峰落库、超时交卷、自动保存与断线恢复）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（交卷落库容量与时延）+ `spec/changes/archive/fix-my-exams-list-scope` 合入（学生考试列表取数范围、分组与排序、上限）+ `spec/changes/archive/enforce-exam-enter-class-affiliation` 合入（进入考试的班级归属准入强校验，2026-10-01 归档）+ `spec/changes/archive/add-exam-scratchpad-canvas` 合入（考试中在线草稿纸，2026-10-18 归档）。
+> 来源：`spec/changes/archive/add-exam-taking` 合入（进入考试、答题导航与采集、交卷幂等、交卷削峰落库、超时交卷、自动保存与断线恢复）+ `spec/changes/archive/add-mq-trace-and-capacity` 合入（交卷落库容量与时延）+ `spec/changes/archive/fix-my-exams-list-scope` 合入（学生考试列表取数范围、分组与排序、上限）+ `spec/changes/archive/enforce-exam-enter-class-affiliation` 合入（进入考试的班级归属准入强校验，2026-10-01 归档）+ `spec/changes/archive/add-exam-scratchpad-canvas` 合入（考试中在线草稿纸，2026-10-18 归档）+ `spec/changes/archive/harden-draft-and-grading-boundaries` 合入（草稿体积上限钳制，2026-10-18 归档）。
 > 验收遗留：交卷链路 JMeter 5000 并发压测与硬指标验收（P99 < 2s / 0 丢单 / 批量落库 < 30s）尚未完成，见 `tasks.json` task 8。
 
 ## Requirements
@@ -276,6 +276,13 @@ WHEN 系统合并
 THEN 以版本号与时间戳最新者为准
 
 AND 记录冲突日志
+
+#### Scenario: 草稿体积上限钳制 (harden-draft-and-grading-boundaries)
+
+- **GIVEN**: 学生处于考试中并触发草稿保存
+- **WHEN**: 提交的答案草稿（answers）序列化 UTF-8 字节体积超过 64KB（65,536 字节）
+- **THEN**: 系统 SHALL 拒绝保存并返回 400 错误（BAD_REQUEST，草稿内容超过大小上限 (64KB)）
+- **AND**: 系统 SHALL NOT 向 Redis 写入该超大草稿数据
 
 ---
 

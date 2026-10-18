@@ -1,0 +1,39 @@
+{
+  "changeId": "harden-draft-and-grading-boundaries",
+  "title": "草稿体积与批改边界安全加固（纯后端，零 DDL）",
+  "level": "S",
+  "branch": "feature/harden-draft-and-grading-boundaries",
+  "createdAt": "2026-10-18",
+  "capabilityDomains": ["exam-taking", "grading"],
+  "proposal": "spec/changes/harden-draft-and-grading-boundaries/proposal.md",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "编写 proposal.md、specs/{exam-taking,grading}/spec-delta.md 与 tasks.json；更新 spec/README.md 在途表登记。",
+      "evidence": "三件套落位 spec/changes/harden-draft-and-grading-boundaries/；spec/README.md 在途表登记同步完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：三项边界防御实施与测试覆盖",
+      "status": "completed",
+      "description": "实施 ExamDraftService 64KB 上限、SubjectiveScoreRequest @Size(max=1024)、SubjectiveGradingService DuplicateKeyException 捕获转 409；编写自动化测试先红后绿覆盖三项边界。",
+      "evidence": "实施笔 fd47549：ExamDraftService answers 序列化 UTF-8 字节 >65536 落 Redis 前抛 BAD_REQUEST「草稿内容超过大小上限 (64KB)」（写键/心跳均不发生）、SubjectiveScoreRequest.comment 补 @Size(max=1024)、SubjectiveGradingService 初次批改 insert 捕获 DuplicateKeyException 转抛 STATE_CONFLICT(409)。新增三测试类 8 例（ExamDraftServiceTest 3 / SubjectiveScoreValidationTest 3 / SubjectiveGradingServiceTest 2），先红后绿——tdd-red-phase.txt 8 例 3 红/5 绿（三红均目标断言级：1025 字符拦截失败、BusinessException 期待 vs DuplicateKeyException 实际、BusinessException 期待 vs nothing was thrown），实施后 tdd-green-phase.txt 8/0/0。5 条绿为边界护栏（恰好 64KB/1024 字符/null 评语/插入成功路径/小体积既有语义），防钳制方向写反与 catch 误伤成功路径。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证、双端门禁实测与基线上调",
+      "status": "completed",
+      "description": "完成 m1/m2/m3 三项变异击红与回绿留证；全量运行双端门禁；单调上调 gate-baseline.json backendTests；生成 evidence/ 留档与哈希清单。",
+      "evidence": "变异均在实施笔入库后进行，注入→击红→git checkout HEAD-- 回退→回绿，三轮回退后工作树均干净：m1（删草稿体积校验）击红 oversizedDraftRejectedWithoutWritingRedis「nothing was thrown」、m2（删 @Size）击红 commentOver1024CharsRejected「expected <false> but was <true>」、m3（删 catch 转 409）击红 insertDuplicateKeyConvertedToStateConflict「was DuplicateKeyException」（mutation-m1/m2/m3-red.txt，各 1 失败断言级；mutation-m*-revert-green.txt 回绿全数复原）。HEAD fd47549 门禁实测（双端串行）：后端 mvnw.cmd clean test 722/0/0/1 BUILD SUCCESS（gate-backend.txt）、前端 lint:check exit 0、type-check:check exit 0、vitest 122 文件 939 例全绿（gate-frontend-*.txt）。gate-baseline.json backendTests 714→722（+8 恰为本案新增），frontendTests 939/openapiPaths 100 未动，openapi.yaml 零改动。红线自查与产物哈希见 evidence/NOTES.md、evidence-sha256.txt。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "completed",
+      "description": "spec-delta 合入 specs/exam-taking/spec.md 与 specs/grading/spec.md；归档变更目录并更新 spec/README.md；--no-ff 合入 main。",
+      "evidence": "①双端门禁实测：后端 ./mvnw clean test 722/0/0/1 全绿、前端 lint/type 0 错，vitest 122 文件/939 例全绿；②终审复核独立裁决 PASS：实测与红线机检全过，m1/m2/m3 变异击红判别力真实；③spec-delta 合入：specs/exam-taking/spec.md 追加「草稿体积上限钳制」Scenario，specs/grading/spec.md 追加「批改评语长度限制」与「初次批改并发唯一键冲突防护」两 Scenario；④总账与归档：变更提案归档至 spec/changes/archive/harden-draft-and-grading-boundaries/，spec/README.md 在途表清空并登记来源与归档速览；⑤feature/harden-draft-and-grading-boundaries 分支 --no-ff 合入 main。"
+    }
+  ]
+}
