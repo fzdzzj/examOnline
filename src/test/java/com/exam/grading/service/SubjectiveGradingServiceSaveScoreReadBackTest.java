@@ -67,6 +67,10 @@ class SubjectiveGradingServiceSaveScoreReadBackTest {
     @Mock
     private SubjectiveGradeMapper subjectiveGradeMapper;
     @Mock
+    private com.exam.grading.mapper.SubjectiveBlindReviewMapper blindReviewMapper;
+    @Mock
+    private com.exam.user.mapper.UserMapper userMapper;
+    @Mock
     private GradingPaperReader paperReader;
     @Mock
     private ReadYourWriteMark readYourWriteMark;
@@ -84,7 +88,8 @@ class SubjectiveGradingServiceSaveScoreReadBackTest {
                 new GradingQueryService(examMapper, gradingSubmissionMapper, subjectiveGradeMapper,
                         passThroughExecutor());
         service = new SubjectiveGradingService(gradingQueryService, paperReader,
-                subjectiveGradeMapper, gradingSubmissionMapper, readYourWriteMark);
+                subjectiveGradeMapper, gradingSubmissionMapper, blindReviewMapper, userMapper,
+                readYourWriteMark);
         LoginUser teacher = new LoginUser();
         teacher.setId(TEACHER_ID);
         teacher.setRoleLevel(RoleHierarchy.levelOf(RoleHierarchy.TEACHER));

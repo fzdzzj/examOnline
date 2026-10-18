@@ -51,6 +51,12 @@ public class SubjectiveGradeRow {
     /** 乐观锁版本号：提交批改时回传，冲突时服务端 409 */
     private Integer version;
 
+    /**
+     * 当前教师是否已盲评过该答卷本题（add-subjective-double-blind-grading）：
+     * 仅盲评脱敏视图（blind=true）回填，普通工作台为 null；前端据此禁用重复盲评。
+     */
+    private Boolean blindDone;
+
     /** 是否已批（score 非 null），前端分组展示待批/已批 */
     public boolean isGraded() {
         return score != null;

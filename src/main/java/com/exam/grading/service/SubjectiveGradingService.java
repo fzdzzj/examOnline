@@ -4,26 +4,41 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.exam.common.BusinessException;
 import com.exam.common.ResponseCode;
 import com.exam.config.ReadYourWriteMark;
+import com.exam.grading.dto.BlindArbitrateRequest;
+import com.exam.grading.dto.BlindArbitrateResponse;
+import com.exam.grading.dto.BlindArbitrationItem;
+import com.exam.grading.dto.BlindReviewSubmitRequest;
+import com.exam.grading.dto.BlindReviewSubmitResponse;
 import com.exam.grading.dto.SubjectiveGradePageResponse;
 import com.exam.grading.dto.SubjectiveGradeRow;
 import com.exam.grading.dto.SubjectiveQuestionItem;
 import com.exam.grading.dto.SubjectiveScoreRequest;
 import com.exam.grading.entity.GradingSubmission;
+import com.exam.grading.entity.SubjectiveBlindReview;
 import com.exam.grading.entity.SubjectiveGrade;
 import com.exam.grading.mapper.GradingSubmissionMapper;
+import com.exam.grading.mapper.SubjectiveBlindReviewMapper;
 import com.exam.grading.mapper.SubjectiveGradeMapper;
 import com.exam.grading.model.GradingPaper;
 import com.exam.grading.model.GradingQuestion;
 import com.exam.grading.support.GradingPaperReader;
 import com.exam.submission.entity.ExamSubmission;
+import com.exam.user.entity.User;
+import com.exam.user.mapper.UserMapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -47,17 +62,23 @@ public class SubjectiveGradingService {
     private final GradingPaperReader paperReader;
     private final SubjectiveGradeMapper subjectiveGradeMapper;
     private final GradingSubmissionMapper gradingSubmissionMapper;
+    private final SubjectiveBlindReviewMapper blindReviewMapper;
+    private final UserMapper userMapper;
     private final ReadYourWriteMark readYourWriteMark;
 
     public SubjectiveGradingService(GradingQueryService gradingQueryService,
                                     GradingPaperReader paperReader,
                                     SubjectiveGradeMapper subjectiveGradeMapper,
                                     GradingSubmissionMapper gradingSubmissionMapper,
+                                    SubjectiveBlindReviewMapper blindReviewMapper,
+                                    UserMapper userMapper,
                                     ReadYourWriteMark readYourWriteMark) {
         this.gradingQueryService = gradingQueryService;
         this.paperReader = paperReader;
         this.subjectiveGradeMapper = subjectiveGradeMapper;
         this.gradingSubmissionMapper = gradingSubmissionMapper;
+        this.blindReviewMapper = blindReviewMapper;
+        this.userMapper = userMapper;
         this.readYourWriteMark = readYourWriteMark;
     }
 
@@ -239,5 +260,288 @@ public class SubjectiveGradingService {
                 .set(GradingSubmission::getSubjectiveScore, subjectiveScore)
                 .set(GradingSubmission::getPartialGraded, partial ? 1 : 0)
                 .set(GradingSubmission::getUpdatedTime, LocalDateTime.now()));
+    }
+
+    // ==================== 双评盲评与分差仲裁（add-subjective-double-blind-grading） ====================
+
+    /** 分差容差（缺省 2.0 分；spec 预留按题目/考试配置，当前取全局缺省常量）。 */
+    public static final BigDecimal BLIND_TOLERANCE = new BigDecimal("2.0");
+
+    /** 盲评脱敏打码名：考生身份对非归属盲评教师不可见 */
+    public static final String BLIND_MASKED_NAME = "考生 ***";
+
+    /** 裁决状态：待二评 */
+    public static final String STATUS_PENDING_SECOND = "PENDING_SECOND";
+    /** 裁决状态：容差内已裁决（均分回填） */
+    public static final String STATUS_RESOLVED = "RESOLVED";
+    /** 裁决状态：分差超标待仲裁 */
+    public static final String STATUS_ARBITRATION_PENDING = "ARBITRATION_PENDING";
+    /** 裁决状态：仲裁终审结案 */
+    public static final String STATUS_ARBITRATED = "ARBITRATED";
+
+    private static final BigDecimal TWO = new BigDecimal("2");
+
+    /**
+     * 双评盲评提交：一评/二评自动分流 + 同教师互斥 + 分差裁决（背靠背盲评入口）。
+     *
+     * <p>分流规则：该答卷本题无 FIRST 记录 → 本次为一评（终分保持 NULL，待二评）；
+     * 已有 FIRST → 本次为二评，且校验与一评教师互斥（同一人 400，spec「背靠背」红线）。
+     *
+     * <p>分差裁决（仅二评触发）：|S1-S2| ≤ 容差 → 终分 round((S1+S2)/2, 1) 回填
+     * subjective_grades.score 并刷新答卷主观总分；超标 → 终分保持 NULL，
+     * 流转 ARBITRATION_PENDING 由仲裁员终审。未裁决前绝不向任何一方透出对方分数。
+     *
+     * <p>不做考试归属校验：二评教师通常非归属人（背靠背防人情分），
+     * 考试存在性由快照读取兜底；归属校验仅仲裁端点保留。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public BlindReviewSubmitResponse blindSubmit(Long examId, BlindReviewSubmitRequest request) {
+        GradingPaper paper = paperReader.readByExamId(examId);
+        requireGradableShortAnswer(paper, request.getQuestionId(), request.getScore());
+        GradingSubmission submission = gradingSubmissionMapper.selectById(request.getSubmissionId());
+        if (submission == null || !submission.getExamId().equals(examId)) {
+            throw new BusinessException(ResponseCode.NOT_FOUND, "答卷不存在或不属于该考试");
+        }
+        SubjectiveGrade gradeRow = subjectiveGradeMapper.selectOne(
+                Wrappers.<SubjectiveGrade>lambdaQuery()
+                        .eq(SubjectiveGrade::getSubmissionId, request.getSubmissionId())
+                        .eq(SubjectiveGrade::getQuestionId, request.getQuestionId()));
+        if (gradeRow == null) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "该答卷本题尚无批改行，请先运行判分");
+        }
+
+        Long graderId = com.exam.auth.security.SecurityUtil.getUserId();
+        List<SubjectiveBlindReview> existing = blindReviewMapper.selectList(
+                Wrappers.<SubjectiveBlindReview>lambdaQuery()
+                        .eq(SubjectiveBlindReview::getSubmissionId, request.getSubmissionId())
+                        .eq(SubjectiveBlindReview::getQuestionId, request.getQuestionId()));
+        SubjectiveBlindReview first = existing.stream()
+                .filter(row -> SubjectiveBlindReview.ROUND_FIRST.equals(row.getRoundType()))
+                .findFirst().orElse(null);
+
+        if (first == null) {
+            // 一评：落库即止，终分保持 NULL（spec：一评后 subjective_grades.score 仍为 NULL）
+            insertBlindReview(examId, request, SubjectiveBlindReview.ROUND_FIRST, graderId);
+            return new BlindReviewSubmitResponse(
+                    SubjectiveBlindReview.ROUND_FIRST, STATUS_PENDING_SECOND, null);
+        }
+
+        boolean secondExists = existing.stream()
+                .anyMatch(row -> SubjectiveBlindReview.ROUND_SECOND.equals(row.getRoundType()));
+        if (secondExists) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "该题一评二评均已完成盲评，无需重复提交");
+        }
+        // 同教师互斥（m1 护栏）：一评与二评必须背靠背，同一人 400 阻断
+        if (Objects.equals(first.getGraderId(), graderId)) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "同一教师不能同时担任一评与二评（背靠背盲评）");
+        }
+        insertBlindReview(examId, request, SubjectiveBlindReview.ROUND_SECOND, graderId);
+
+        BigDecimal diff = first.getScore().subtract(request.getScore()).abs();
+        if (diff.compareTo(BLIND_TOLERANCE) <= 0) {
+            BigDecimal finalScore = first.getScore().add(request.getScore())
+                    .divide(TWO, 1, RoundingMode.HALF_UP);
+            subjectiveGradeMapper.backfillFinalScore(gradeRow.getId(), finalScore);
+            refreshSubmissionSubjectiveScore(request.getSubmissionId());
+            readYourWriteMark.mark();
+            return new BlindReviewSubmitResponse(SubjectiveBlindReview.ROUND_SECOND, STATUS_RESOLVED, finalScore);
+        }
+        // 分差超标（m2 护栏）：不回填（终分保持 NULL），流转待仲裁清单
+        return new BlindReviewSubmitResponse(
+                SubjectiveBlindReview.ROUND_SECOND, STATUS_ARBITRATION_PENDING, null);
+    }
+
+    /**
+     * 盲评脱敏行视图（blind=true）：任何 exam:manage 教师可见（含非归属二评教师），
+     * 但考生身份打码、教师评分/评语/批改人全部置空——盲评工作台只暴露「作答内容 + 我的盲评状态」。
+     * 归属人的普通工作台（不带 blind 参数）走 {@link #listRows}，行为零变化。
+     */
+    public SubjectiveGradePageResponse listBlindRows(Long examId, Long questionId) {
+        // 不做归属校验：考试存在性由快照读取兜底（无快照 404）
+        paperReader.readByExamId(examId);
+        List<SubjectiveGradeRow> rows = subjectiveGradeMapper.selectWorkbenchRowsPaged(
+                examId, questionId, null, null, null, null, null);
+        Long graderId = com.exam.auth.security.SecurityUtil.getUserId();
+        Set<Long> myReviewed = blindReviewMapper.selectList(
+                        Wrappers.<SubjectiveBlindReview>lambdaQuery()
+                                .eq(SubjectiveBlindReview::getExamId, examId)
+                                .eq(SubjectiveBlindReview::getQuestionId, questionId)
+                                .eq(SubjectiveBlindReview::getGraderId, graderId)).stream()
+                .map(SubjectiveBlindReview::getSubmissionId)
+                .collect(Collectors.toSet());
+        for (SubjectiveGradeRow row : rows) {
+            row.setStudentName(BLIND_MASKED_NAME);
+            row.setStudentId(null);
+            row.setScore(null);
+            row.setComment(null);
+            row.setGraderId(null);
+            row.setGradedTime(null);
+            row.setVersion(null);
+            row.setBlindDone(myReviewed.contains(row.getSubmissionId()));
+        }
+        return new SubjectiveGradePageResponse(rows, rows.size(), 0);
+    }
+
+    /**
+     * 待仲裁清单（考试归属人/管理员）：一评二评齐且分差超标且终分未定的题目，
+     * 并排透出一评/二评分数与评语（仲裁员是唯一可见双方信息的角色）。
+     */
+    public List<BlindArbitrationItem> arbitrationList(Long examId) {
+        gradingQueryService.requireOwnedExam(examId);
+        GradingPaper paper = paperReader.readByExamId(examId);
+        Map<Long, BigDecimal> maxScoreByQuestion = paper.questions().stream()
+                .collect(Collectors.toMap(GradingQuestion::questionId, GradingQuestion::score));
+
+        List<SubjectiveBlindReview> all = blindReviewMapper.selectList(
+                Wrappers.<SubjectiveBlindReview>lambdaQuery()
+                        .eq(SubjectiveBlindReview::getExamId, examId));
+        if (all.isEmpty()) {
+            return List.of();
+        }
+        Map<String, Map<String, SubjectiveBlindReview>> roundBySubQ = all.stream()
+                .collect(Collectors.groupingBy(row -> row.getSubmissionId() + ":" + row.getQuestionId(),
+                        Collectors.toMap(SubjectiveBlindReview::getRoundType, Function.identity())));
+        Map<String, SubjectiveGrade> gradeBySubQ = subjectiveGradeMapper.selectList(
+                        Wrappers.<SubjectiveGrade>lambdaQuery()
+                                .eq(SubjectiveGrade::getExamId, examId)).stream()
+                .collect(Collectors.toMap(
+                        row -> row.getSubmissionId() + ":" + row.getQuestionId(), Function.identity()));
+
+        List<PendingPair> pending = new ArrayList<>();
+        Set<Long> studentIds = new HashSet<>();
+        for (Map.Entry<String, Map<String, SubjectiveBlindReview>> entry : roundBySubQ.entrySet()) {
+            SubjectiveBlindReview first = entry.getValue().get(SubjectiveBlindReview.ROUND_FIRST);
+            SubjectiveBlindReview second = entry.getValue().get(SubjectiveBlindReview.ROUND_SECOND);
+            if (first == null || second == null) {
+                continue;
+            }
+            SubjectiveGrade grade = gradeBySubQ.get(entry.getKey());
+            if (grade == null || grade.getScore() != null) {
+                continue;
+            }
+            BigDecimal diff = first.getScore().subtract(second.getScore()).abs();
+            // 分差超标（m2 护栏）：仅 |S1-S2| > 容差且未定分进入待仲裁清单
+            if (diff.compareTo(BLIND_TOLERANCE) > 0) {
+                pending.add(new PendingPair(entry.getKey(), first, second, grade, diff));
+                studentIds.add(grade.getStudentId());
+            }
+        }
+        if (pending.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, String> nameByStudent = studentIds.isEmpty() ? Map.of()
+                : userMapper.selectBatchIds(studentIds).stream()
+                        .collect(Collectors.toMap(User::getId, User::getName));
+        return pending.stream().map(pair -> {
+            String[] keys = pair.key().split(":");
+            long submissionId = Long.parseLong(keys[0]);
+            long questionId = Long.parseLong(keys[1]);
+            SubjectiveGrade grade = pair.grade();
+            return new BlindArbitrationItem(submissionId, questionId, grade.getQuestionNumber(),
+                    nameByStudent.get(grade.getStudentId()),
+                    maxScoreByQuestion.get(questionId),
+                    pair.first().getScore(), pair.first().getComment(),
+                    pair.second().getScore(), pair.second().getComment(),
+                    pair.diff(), STATUS_ARBITRATION_PENDING);
+        }).toList();
+    }
+
+    /**
+     * 仲裁终审定分（考试归属人/管理员）：记录 ARBITRATION 轮次，终分以仲裁分为准
+     * 强制回填 subjective_grades.score 并刷新答卷主观总分（结案）。
+     * 仅对待仲裁状态（双评齐、未定分、无仲裁记录）放行；仲裁分不得超过本题满分。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public BlindArbitrateResponse arbitrate(Long examId, BlindArbitrateRequest request) {
+        gradingQueryService.requireOwnedExam(examId);
+        GradingPaper paper = paperReader.readByExamId(examId);
+        requireGradableShortAnswer(paper, request.getQuestionId(), request.getScore());
+        GradingSubmission submission = gradingSubmissionMapper.selectById(request.getSubmissionId());
+        if (submission == null || !submission.getExamId().equals(examId)) {
+            throw new BusinessException(ResponseCode.NOT_FOUND, "答卷不存在或不属于该考试");
+        }
+        SubjectiveGrade gradeRow = subjectiveGradeMapper.selectOne(
+                Wrappers.<SubjectiveGrade>lambdaQuery()
+                        .eq(SubjectiveGrade::getSubmissionId, request.getSubmissionId())
+                        .eq(SubjectiveGrade::getQuestionId, request.getQuestionId()));
+        if (gradeRow == null) {
+            throw new BusinessException(ResponseCode.NOT_FOUND, "该答卷本题尚无批改行，请先运行判分");
+        }
+        List<SubjectiveBlindReview> existing = blindReviewMapper.selectList(
+                Wrappers.<SubjectiveBlindReview>lambdaQuery()
+                        .eq(SubjectiveBlindReview::getSubmissionId, request.getSubmissionId())
+                        .eq(SubjectiveBlindReview::getQuestionId, request.getQuestionId()));
+        boolean hasFirst = existing.stream()
+                .anyMatch(row -> SubjectiveBlindReview.ROUND_FIRST.equals(row.getRoundType()));
+        boolean hasSecond = existing.stream()
+                .anyMatch(row -> SubjectiveBlindReview.ROUND_SECOND.equals(row.getRoundType()));
+        boolean hasArbitration = existing.stream()
+                .anyMatch(row -> SubjectiveBlindReview.ROUND_ARBITRATION.equals(row.getRoundType()));
+        if (!hasFirst || !hasSecond || hasArbitration || gradeRow.getScore() != null) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "该题不在待仲裁状态");
+        }
+
+        Long arbitratorId = com.exam.auth.security.SecurityUtil.getUserId();
+        SubjectiveBlindReview arbitration = new SubjectiveBlindReview();
+        arbitration.setExamId(examId);
+        arbitration.setSubmissionId(request.getSubmissionId());
+        arbitration.setQuestionId(request.getQuestionId());
+        arbitration.setRoundType(SubjectiveBlindReview.ROUND_ARBITRATION);
+        arbitration.setGraderId(arbitratorId);
+        arbitration.setScore(request.getScore());
+        arbitration.setComment(request.getComment());
+        try {
+            blindReviewMapper.insert(arbitration);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(ResponseCode.STATE_CONFLICT, "仲裁记录已存在，请刷新后重试");
+        }
+        // 仲裁分回填终分（m3 护栏）：终审口径强制落 subjective_grades.score
+        subjectiveGradeMapper.backfillFinalScore(gradeRow.getId(), request.getScore());
+        refreshSubmissionSubjectiveScore(request.getSubmissionId());
+        readYourWriteMark.mark();
+        return new BlindArbitrateResponse(STATUS_ARBITRATED, request.getScore());
+    }
+
+    /** 盲评轮次落库（一轮一条由 uk_blind_review 兜底，并发重复提交转 409）。 */
+    private void insertBlindReview(Long examId, BlindReviewSubmitRequest request,
+                                   String roundType, Long graderId) {
+        SubjectiveBlindReview row = new SubjectiveBlindReview();
+        row.setExamId(examId);
+        row.setSubmissionId(request.getSubmissionId());
+        row.setQuestionId(request.getQuestionId());
+        row.setRoundType(roundType);
+        row.setGraderId(graderId);
+        row.setScore(request.getScore());
+        row.setComment(request.getComment());
+        try {
+            blindReviewMapper.insert(row);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(ResponseCode.STATE_CONFLICT, "该轮盲评已存在，请刷新后重试");
+        }
+    }
+
+    /**
+     * 盲评/仲裁共用的题目校验（对齐 saveScore 既有口径，不改其方法体）：
+     * 题目属于考试快照、为简答题、分值不超满分（快照锁定后分值即终局口径）。
+     */
+    private GradingQuestion requireGradableShortAnswer(GradingPaper paper, Long questionId, BigDecimal score) {
+        GradingQuestion question = paper.questions().stream()
+                .filter(q -> q.questionId().equals(questionId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ResponseCode.NOT_FOUND, "题目不属于该考试"));
+        if (question.type() != com.exam.question.entity.QuestionType.SHORT_ANSWER) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST, "仅简答题支持人工批改");
+        }
+        if (score.compareTo(question.score()) > 0) {
+            throw new BusinessException(ResponseCode.BAD_REQUEST,
+                    "批改分数不得超过本题满分 " + question.score().stripTrailingZeros().toPlainString());
+        }
+        return question;
+    }
+
+    /** 待仲裁装配中间态：subQ 键 + 一评/二评/批改行/分差。 */
+    private record PendingPair(String key, SubjectiveBlindReview first, SubjectiveBlindReview second,
+                               SubjectiveGrade grade, BigDecimal diff) {
     }
 }

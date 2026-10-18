@@ -18,6 +18,17 @@ import java.util.List;
 public interface SubjectiveGradeMapper extends BaseMapper<SubjectiveGrade> {
 
     /**
+     * 双评盲评终分回填（add-subjective-double-blind-grading）：分差容差内均分或仲裁分
+     * 原子写入终分（version 自增——若教师工作台持旧版本并发保存，CAS 失败转 409 重载，
+     * 绝不静默覆盖已裁决终分）。不改 comment/grader_id：终分来自盲评共识或仲裁，
+     * 非单一教师批改，留痕以 subjective_blind_reviews 为准。
+     */
+    @Update("UPDATE subjective_grades SET score = #{score}, "
+            + "graded_time = CURRENT_TIMESTAMP, version = version + 1, updated_time = CURRENT_TIMESTAMP "
+            + "WHERE id = #{id}")
+    int backfillFinalScore(@Param("id") Long id, @Param("score") BigDecimal score);
+
+    /**
      * 教师批改终分 CAS（spec「并发批改防覆盖」场景）：
      * 仅当 version 与读取时一致才写入终分/评语/批改人/时间，返回影响行数——
      * 两教师并发批改同一答卷同题，仅一个影响行数为 1（成功），另一个影响 0 行（报冲突重载）。
