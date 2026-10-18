@@ -1,0 +1,39 @@
+{
+  "changeId": "harden-data-retention-scope",
+  "title": "历史未清理表数据保留清理闭环与运维 Runbook",
+  "level": "S",
+  "branch": "feature/harden-data-retention-scope",
+  "createdAt": "2026-10-18",
+  "capabilityDomains": ["data-access"],
+  "proposal": "spec/changes/harden-data-retention-scope/proposal.md",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "编写 proposal.md、specs/data-access/spec-delta.md 与 tasks.json；更新 spec/README.md 在途表登记。",
+      "evidence": "三件套落位 spec/changes/harden-data-retention-scope/；spec/README.md 在途表登记同步完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：已重放死信消息清理实现与数据保留 Runbook",
+      "status": "pending",
+      "description": "在 ExamDlqMessageMapper 编写按状态与超窗时间的分批删除与计数方法（利用 idx_dlq_status_time 索引）；在 RetentionService 接入 REPLAYED 死信清理（保留 PARKED 死信），更新 RetentionReport 与 BusinessMetrics；在 application.yml 显式登记 dlq.retention-days: 30；编写 docs/data-retention-runbook.md 生产运维指南与全表保留矩阵；编写 TDD 测试验证 dry-run 与真删逻辑。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证、双端门禁实测与基线上调",
+      "status": "pending",
+      "description": "设计并注入 m1/m2/m3 变异击红留证；全量运行双端门禁；单调上调 gate-baseline.json backendTests；在 evidence/ 留档日志与 sha256 清单。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "pending",
+      "description": "spec-delta 合入 specs/data-access/spec.md；归档变更目录并更新 spec/README.md；--no-ff 合入 main。",
+      "evidence": ""
+    }
+  ]
+}
