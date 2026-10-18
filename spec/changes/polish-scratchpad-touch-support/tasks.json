@@ -1,0 +1,39 @@
+{
+  "changeId": "polish-scratchpad-touch-support",
+  "title": "草稿板触屏手写与触控笔支持（纯前端，零 DDL）",
+  "level": "S",
+  "branch": "feature/polish-scratchpad-touch-support",
+  "createdAt": "2026-10-18",
+  "capabilityDomains": ["frontend"],
+  "proposal": "spec/changes/polish-scratchpad-touch-support/proposal.md",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：立案三件套 + 在途表登记",
+      "status": "completed",
+      "description": "编写 proposal.md、specs/frontend/spec-delta.md 与 tasks.json；更新 spec/README.md 在途表登记。",
+      "evidence": "三件套落位 spec/changes/polish-scratchpad-touch-support/；spec/README.md 在途表登记同步完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：Pointer/Touch 事件升级与防滚动样式",
+      "status": "pending",
+      "description": "在 ScratchpadCanvas.vue 中将鼠标事件升级为统一 Pointer Events（pointerdown/pointermove/pointerup/pointercancel），添加 touch-action: none 样式；编写单元测试覆盖 Pointer 触控手写。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：变异击红留证、双端门禁实测与基线上调",
+      "status": "pending",
+      "description": "完成变异验证（触控事件接线破坏击红）；全量运行前端三门禁与后端门禁；上调 gate-baseline.json frontendTests；留存 evidence/ 日志。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "pending",
+      "description": "spec-delta 合入 specs/frontend/spec.md；归档变更目录并更新 spec/README.md；--no-ff 合入 main。",
+      "evidence": ""
+    }
+  ]
+}
