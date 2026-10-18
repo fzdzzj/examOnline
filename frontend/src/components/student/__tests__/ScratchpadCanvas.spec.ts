@@ -6,17 +6,24 @@
  *    sessionStorage 存取——变异 m2（清空/撤销破坏）的击红锚点在这里；
  * 2. **组件交互**（ScratchpadCanvas.vue）：画笔参数（2/4/8px × 4 色）、橡皮擦
  *    （destination-out）、撤销/清空后的重绘与存储同步、按 examId 隔离的
- *    sessionStorage 恢复——变异 m1（存储恢复移除）的击红锚点在恢复用例；
- * 3. jsdom 没有 2D 上下文：用可记录调用的假 ctx 桩替换
+ *    sessionStorage 恢复——add-exam-scratchpad-canvas 案 m1（存储恢复移除）的击红
+ *    锚点在恢复用例；
+ * 3. **Pointer/Touch 触控**（polish-scratchpad-touch-support）：画布统一接线
+ *    pointerdown/pointermove/pointerup/pointercancel（外加 pointerleave 兜底收笔），
+ *    jsdom 27 原生支持 PointerEvent 构造器，测试直接以带 pointerId 的真 Pointer
+ *    事件驱动——该案 m1（Pointer 事件解绑）的击红锚点在触控手写用例，
+ *    m2（移除 touch-action）的击红锚点在防滚动用例；
+ * * 4. jsdom 没有 2D 上下文：用可记录调用的假 ctx 桩替换
  *    `HTMLCanvasElement.prototype.getContext`，断言渲染参数（lineWidth / strokeStyle /
  *    globalCompositeOperation）而非像素。组件缓存同一 ctx，ops 跨重绘累积，
  *    所以「撤销后只画剩下的那笔」断言的是**最后一次**属性赋值。
  */
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises, mount, type DOMWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 
 import ScratchpadCanvas from '@/components/student/ScratchpadCanvas.vue';
+import scratchpadCanvasSource from '@/components/student/ScratchpadCanvas.vue?raw';
 import {
   type ScratchpadDocument,
   ScratchpadBoard,
@@ -94,18 +101,49 @@ async function mountPanel(examId = 7) {
   return wrapper;
 }
 
-/** 在画布上模拟一笔（mousedown → mousemove… → mouseup），点序列全部落进同一笔画。 */
+/**
+ * 用真 PointerEvent 构造器派发指针事件。不走 test-utils 的 trigger：它构造完
+ * PointerEvent 后还会把 options 键逐个回赋到事件对象上，而 clientX/clientY 的
+ * 只读 getter 挂在 MouseEvent.prototype（PointerEvent.prototype 无自有描述符），
+ * jsdom 下 trigger('pointerdown', { clientX }) 必然抛
+ * 「Cannot set property clientX … only a getter」。dispatchEvent 直派既绕开该坑，
+ * 也让驱动事件真正来自 PointerEvent 构造器（pointerId/pointerType 原生初始化）。
+ */
+async function firePointer(
+  canvas: DOMWrapper<Element>,
+  type: string,
+  init: { clientX?: number; clientY?: number; pointerId?: number; pointerType?: string }
+): Promise<void> {
+  canvas.element.dispatchEvent(
+    new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      pointerId: init.pointerId ?? 1,
+      pointerType: init.pointerType ?? 'mouse',
+      clientX: init.clientX ?? 0,
+      clientY: init.clientY ?? 0,
+    })
+  );
+  await nextTick();
+}
+
+/**
+ * 在画布上模拟一笔（pointerdown → pointermove… → pointerup），点序列全部落进同一
+ * 笔画。同一 pointerId 贯穿按下/滑动/抬起——组件按 pointerId 识别握笔的手指，
+ * 收笔事件缺了 id 会被当作「别的手指」拒绝。
+ */
 async function drawStroke(
   wrapper: ReturnType<typeof mount>,
-  points: Array<[number, number]>
+  points: Array<[number, number]>,
+  pointerId = 1
 ): Promise<void> {
   const canvas = wrapper.find('[data-test="scratchpad-canvas"]');
   const [first, ...rest] = points;
-  await canvas.trigger('mousedown', { clientX: first[0], clientY: first[1] });
+  await firePointer(canvas, 'pointerdown', { clientX: first[0], clientY: first[1], pointerId });
   for (const [x, y] of rest) {
-    await canvas.trigger('mousemove', { clientX: x, clientY: y });
+    await firePointer(canvas, 'pointermove', { clientX: x, clientY: y, pointerId });
   }
-  await canvas.trigger('mouseup');
+  await firePointer(canvas, 'pointerup', { pointerId });
 }
 
 function strokeCountText(wrapper: ReturnType<typeof mount>): string {
@@ -349,5 +387,109 @@ describe('草稿板组件交互', () => {
     const wrapper = await mountPanel(7);
     await wrapper.find('[data-test="scratchpad-minimize"]').trigger('click');
     expect(wrapper.emitted('close')).toHaveLength(1);
+  });
+});
+
+describe('草稿板 Pointer/Touch 触控（polish-scratchpad-touch-support）', () => {
+  it('触屏手写一笔：真 PointerEvent（pointerType=touch）驱动落笔/续点/收笔并持久化（变异 m1 锚点）', async () => {
+    const wrapper = await mountPanel(7);
+    const canvas = wrapper.find('[data-test="scratchpad-canvas"]');
+    await firePointer(canvas, 'pointerdown', {
+      clientX: 12,
+      clientY: 30,
+      pointerId: 3,
+      pointerType: 'touch',
+    });
+    await firePointer(canvas, 'pointermove', {
+      clientX: 40,
+      clientY: 60,
+      pointerId: 3,
+      pointerType: 'touch',
+    });
+    await firePointer(canvas, 'pointermove', {
+      clientX: 80,
+      clientY: 90,
+      pointerId: 3,
+      pointerType: 'touch',
+    });
+    await firePointer(canvas, 'pointerup', { pointerId: 3, pointerType: 'touch' });
+
+    expect(strokeCountText(wrapper)).toContain('1');
+    const saved = loadScratchpadDocument(sessionStorage, 7);
+    expect(saved?.strokes).toHaveLength(1);
+    expect(saved?.strokes[0].points).toEqual([
+      { x: 12, y: 30 },
+      { x: 40, y: 60 },
+      { x: 80, y: 90 },
+    ]);
+  });
+
+  it('画布 touch-action: none：触屏手写时浏览器不得接管手势触发页面滚动（变异 m2 锚点）', () => {
+    // jsdom 的 cssstyle 不建模 touch-action：cssText / setProperty / 直接赋值三条
+    // 通道都会在 CSSOM 序列化时把该属性整体丢弃（连内联 style 属性都留不下），DOM
+    // 级断言在本环境不可能成立。退而断言组件源码里画布元素确实声明了
+    // touch-action: none——移除即红（m2 变异锚点）；真实浏览器里生效的正是这份声明。
+    const canvasTag = scratchpadCanvasSource.match(/<canvas[\s\S]*?<\/canvas>/)?.[0] ?? '';
+    expect(canvasTag).toMatch(/touch-action\s*:\s*none/);
+  });
+
+  it('pointercancel 收笔：手势被系统中断也落账持久化，同指后续滑动不再延长笔画', async () => {
+    const wrapper = await mountPanel(7);
+    const canvas = wrapper.find('[data-test="scratchpad-canvas"]');
+    await firePointer(canvas, 'pointerdown', { clientX: 5, clientY: 5, pointerId: 7 });
+    await firePointer(canvas, 'pointermove', { clientX: 6, clientY: 6, pointerId: 7 });
+    await firePointer(canvas, 'pointercancel', { pointerId: 7 });
+
+    expect(strokeCountText(wrapper)).toContain('1');
+    expect(loadScratchpadDocument(sessionStorage, 7)?.strokes[0].points).toEqual([
+      { x: 5, y: 5 },
+      { x: 6, y: 6 },
+    ]);
+
+    // 取消后该指针的手势已结束：继续滑动不得往已收笔的笔画追加
+    await firePointer(canvas, 'pointermove', { clientX: 99, clientY: 99, pointerId: 7 });
+    expect(loadScratchpadDocument(sessionStorage, 7)?.strokes[0].points).toEqual([
+      { x: 5, y: 5 },
+      { x: 6, y: 6 },
+    ]);
+  });
+
+  it('多指触控按 pointerId 区分：第二根手指按下/滑动不串笔，其抬起不收第一指的笔', async () => {
+    const wrapper = await mountPanel(7);
+    const canvas = wrapper.find('[data-test="scratchpad-canvas"]');
+    // 食指落笔并滑动
+    await firePointer(canvas, 'pointerdown', { clientX: 1, clientY: 1, pointerId: 10 });
+    await firePointer(canvas, 'pointermove', { clientX: 2, clientY: 2, pointerId: 10 });
+    // 第二根手指按下：不开启新笔、不接管现有笔画
+    await firePointer(canvas, 'pointerdown', { clientX: 200, clientY: 200, pointerId: 11 });
+    await firePointer(canvas, 'pointermove', { clientX: 210, clientY: 210, pointerId: 11 });
+    // 第二指抬起：不收第一指的笔
+    await firePointer(canvas, 'pointerup', { pointerId: 11 });
+    // 食指继续滑动后收笔
+    await firePointer(canvas, 'pointermove', { clientX: 3, clientY: 3, pointerId: 10 });
+    await firePointer(canvas, 'pointerup', { pointerId: 10 });
+
+    expect(strokeCountText(wrapper)).toContain('1');
+    const saved = loadScratchpadDocument(sessionStorage, 7);
+    expect(saved?.strokes).toHaveLength(1);
+    expect(saved?.strokes[0].points).toEqual([
+      { x: 1, y: 1 },
+      { x: 2, y: 2 },
+      { x: 3, y: 3 },
+    ]);
+  });
+
+  it('pointerleave 收笔：手指/鼠标滑出画布即停笔并持久化', async () => {
+    const wrapper = await mountPanel(7);
+    const canvas = wrapper.find('[data-test="scratchpad-canvas"]');
+    await firePointer(canvas, 'pointerdown', { clientX: 4, clientY: 4, pointerId: 2 });
+    await firePointer(canvas, 'pointermove', { clientX: 8, clientY: 8, pointerId: 2 });
+    await firePointer(canvas, 'pointerleave', { pointerId: 2 });
+
+    expect(strokeCountText(wrapper)).toContain('1');
+    expect(loadScratchpadDocument(sessionStorage, 7)?.strokes[0].points).toEqual([
+      { x: 4, y: 4 },
+      { x: 8, y: 8 },
+    ]);
   });
 });

@@ -74,13 +74,15 @@
     <canvas
       ref="canvasRef"
       class="scratchpad-canvas"
+      style="touch-action: none"
       width="480"
       height="320"
       data-test="scratchpad-canvas"
-      @mousedown="onPointerDown"
-      @mousemove="onPointerMove"
-      @mouseup="onPointerUp"
-      @mouseleave="onPointerUp"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+      @pointerleave="onPointerUp"
     ></canvas>
   </div>
 </template>
@@ -90,6 +92,13 @@
  * 考试草稿板（add-exam-scratchpad-canvas）：Canvas 自由手写 + 橡皮擦 + 逐步撤销 +
  * 一键清空，笔迹按 `exam_scratchpad_${examId}` 存 sessionStorage——切题、折叠、刷新
  * 均可恢复（挂载/换考试时回填），交卷后的自毁清理由作答页 watch 裁决（removeScratchpad）。
+ *
+ * 指针接线（polish-scratchpad-touch-support）：画布统一走 Pointer Events——
+ * pointerdown/pointermove/pointerup 原生覆盖鼠标、手指触摸与触控笔（Apple Pencil /
+ * Surface Pen），pointercancel 兜底系统中断（来电、手势劫持），pointerleave 兜底
+ * 拖出画布后松手。画布内联 `touch-action: none` 禁掉触屏默认滚动/缩放，让浏览器
+ * 把手势完整交给画布。多指触控按 pointerId 识别：只认落笔那根手指，其余手指的
+ * 按下/滑动/抬起不串笔、不提前收笔。
  *
  * 边界说明：
  * - 显隐不在组件内：页面用 v-if 裁决「何时可以出现」，本组件挂载即面板；
@@ -125,8 +134,14 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 /** 笔画账本：渲染与持久化的唯一事实源。 */
 const board = new ScratchpadBoard();
-/** 正在书写中的标记：mousedown 置真，mouseup / mouseleave 收笔。 */
+/** 正在书写中的标记：pointerdown 置真，pointerup / pointercancel / pointerleave 收笔。 */
 const drawing = ref(false);
+/**
+ * 握笔指针的 pointerId：多指触控时只认落笔那根手指——第二根手指的按下不另起笔，
+ * 其滑动不串点，其抬起不收笔；pointerup / pointercancel / pointerleave 携带非本指
+ * id 时一律忽略。null 表示当前没有活跃笔画。
+ */
+let activePointerId: number | null = null;
 
 function getScratchpadStorage(): ScratchpadStorage | null {
   try {
@@ -165,7 +180,7 @@ function persist(): void {
 }
 
 /** 指针坐标 → 画布坐标：按 CSS 尺寸与内部分辨率的比值换算（jsdom 下 rect 为 0 时按 1:1）。 */
-function canvasPoint(event: MouseEvent): ScratchpadPoint {
+function canvasPoint(event: PointerEvent): ScratchpadPoint {
   const el = canvasRef.value;
   if (!el) return { x: 0, y: 0 };
   const rect = el.getBoundingClientRect();
@@ -177,24 +192,27 @@ function canvasPoint(event: MouseEvent): ScratchpadPoint {
   };
 }
 
-function onPointerDown(event: MouseEvent): void {
+function onPointerDown(event: PointerEvent): void {
+  if (drawing.value) return;
   const point = canvasPoint(event);
+  activePointerId = event.pointerId;
   board.beginStroke(mode.value, color.value, brushWidth.value, point.x, point.y);
   drawing.value = true;
   strokeCount.value = board.strokeCount;
   redraw();
 }
 
-function onPointerMove(event: MouseEvent): void {
-  if (!drawing.value) return;
+function onPointerMove(event: PointerEvent): void {
+  if (!drawing.value || event.pointerId !== activePointerId) return;
   const point = canvasPoint(event);
   board.extendStroke(point.x, point.y);
   redraw();
 }
 
-function onPointerUp(): void {
-  if (!drawing.value) return;
+function onPointerUp(event: PointerEvent): void {
+  if (!drawing.value || event.pointerId !== activePointerId) return;
   drawing.value = false;
+  activePointerId = null;
   persist();
 }
 
@@ -289,6 +307,5 @@ watch(
   border: 1px dashed #bfbfbf;
   border-radius: 4px;
   cursor: crosshair;
-  touch-action: none;
 }
 </style>

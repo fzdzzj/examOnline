@@ -1,0 +1,184 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+ [31m❯[39m src/components/student/__tests__/ScratchpadCanvas.spec.ts [2m([22m[2m18 tests[22m[2m | [22m[31m9 failed[39m[2m)[22m[33m 436[2mms[22m[39m
+     [32m✓[39m 存储键以 examId 隔离：exam_scratchpad_${examId}[32m 1[2mms[22m[39m
+     [32m✓[39m begin/extend 累积笔画与点数，undo 逐笔弹出、空栈撤销返回 false[32m 1[2mms[22m[39m
+     [32m✓[39m 一键清空：笔画计数归零[32m 0[2mms[22m[39m
+     [32m✓[39m restore 校验：合法文档恢复、垃圾数据 / 错误版本 / 非法笔画拒绝且不变更现场[32m 0[2mms[22m[39m
+     [32m✓[39m parse 拒绝坏 JSON 返回 null；save/load 往返一致；remove 删除键[32m 1[2mms[22m[39m
+     [32m✓[39m 挂载即面板：渲染画布与模式/粗细/颜色/撤销/清空工具（显隐由页面 v-if 裁决）[32m 210[2mms[22m[39m
+[31m     [31m×[31m 画笔参数切换：选 8px 红色后新笔画按该参数渲染并计入笔画[39m[32m 27[2mms[22m[39m
+[31m     [31m×[31m 橡皮擦模式：笔迹以 destination-out 复合渲染[39m[32m 20[2mms[22m[39m
+[31m     [31m×[31m 撤销：按笔画回退一步并同步存储，重绘只剩前一笔的参数[39m[32m 20[2mms[22m[39m
+[31m     [31m×[31m 一键清空：计数归零、画布 clearRect、存储同步清空（变异 m2 锚点）[39m[32m 16[2mms[22m[39m
+     [32m✓[39m 存储恢复（变异 m1 锚点）：挂载时把 sessionStorage 里按 examId 存的笔迹回填[32m 16[2mms[22m[39m
+     [32m✓[39m examId 隔离：换考试只恢复新考试的草稿，不串场[32m 18[2mms[22m[39m
+     [32m✓[39m 收起按钮向页面 emit close（悬浮面板显隐由页面裁决）[32m 22[2mms[22m[39m
+[31m     [31m×[31m 触屏手写一笔：真 PointerEvent（pointerType=touch）驱动落笔/续点/收笔并持久化（变异 m1 锚点）[39m[32m 20[2mms[22m[39m
+[31m     [31m×[31m 画布 touch-action: none：触屏手写时浏览器不得接管手势触发页面滚动（变异 m2 锚点）[39m[32m 14[2mms[22m[39m
+[31m     [31m×[31m pointercancel 收笔：手势被系统中断也落账持久化，同指后续滑动不再延长笔画[39m[32m 16[2mms[22m[39m
+[31m     [31m×[31m 多指触控按 pointerId 区分：第二根手指按下/滑动不串笔，其抬起不收第一指的笔[39m[32m 15[2mms[22m[39m
+[31m     [31m×[31m pointerleave 收笔：手指/鼠标滑出画布即停笔并持久化[39m[32m 14[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 9 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板组件交互[2m > [22m画笔参数切换：选 8px 红色后新笔画按该参数渲染并计入笔画
+[31m[1mAssertionError[22m: expected undefined to be 8 // Object.is equality[39m
+
+[32m- Expected:[39m
+8
+
+[31m+ Received:[39m
+undefined
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m273:35[22m[39m
+    [90m271|[39m     ])[33m;[39m
+    [90m272|[39m
+    [90m273|[39m     [34mexpect[39m([34mlastProp[39m([32m'lineWidth'[39m))[33m.[39m[34mtoBe[39m([34m8[39m)[33m;[39m
+    [90m   |[39m                                   [31m^[39m
+    [90m274|[39m     [34mexpect[39m([34mlastProp[39m([32m'strokeStyle'[39m))[33m.[39m[34mtoBe[39m([32m'#ff4d4f'[39m)[33m;[39m
+    [90m275|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'1'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板组件交互[2m > [22m橡皮擦模式：笔迹以 destination-out 复合渲染
+[31m[1mAssertionError[22m: expected undefined to be 'destination-out' // Object.is equality[39m
+
+[32m- Expected:[39m
+"destination-out"
+
+[31m+ Received:[39m
+undefined
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m291:50[22m[39m
+    [90m289|[39m     ])[33m;[39m
+    [90m290|[39m
+    [90m291|[39m     expect(lastProp('globalCompositeOperation')).toBe('destination-out…
+    [90m   |[39m                                                  [31m^[39m
+    [90m292|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'2'[39m)[33m;[39m
+    [90m293|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板组件交互[2m > [22m撤销：按笔画回退一步并同步存储，重绘只剩前一笔的参数
+[31m[1mAssertionError[22m: expected '笔迹 0 笔' to contain '2'[39m
+
+Expected: [32m"2"[39m
+Received: [31m"笔迹 0 笔"[39m
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m309:38[22m[39m
+    [90m307|[39m       [[34m20[39m[33m,[39m [34m20[39m][33m,[39m
+    [90m308|[39m     ])[33m;[39m
+    [90m309|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'2'[39m)[33m;[39m
+    [90m   |[39m                                      [31m^[39m
+    [90m310|[39m
+    [90m311|[39m     await wrapper.find('[data-test="scratchpad-undo"]').trigger('click…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板组件交互[2m > [22m一键清空：计数归零、画布 clearRect、存储同步清空（变异 m2 锚点）
+[31m[1mAssertionError[22m: expected '笔迹 0 笔' to contain '2'[39m
+
+Expected: [32m"2"[39m
+Received: [31m"笔迹 0 笔"[39m
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m333:38[22m[39m
+    [90m331|[39m       [[34m20[39m[33m,[39m [34m20[39m][33m,[39m
+    [90m332|[39m     ])[33m;[39m
+    [90m333|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'2'[39m)[33m;[39m
+    [90m   |[39m                                      [31m^[39m
+    [90m334|[39m
+    [90m335|[39m     await wrapper.find('[data-test="scratchpad-clear"]').trigger('clic…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板 Pointer/Touch 触控（polish-scratchpad-touch-support）[2m > [22m触屏手写一笔：真 PointerEvent（pointerType=touch）驱动落笔/续点/收笔并持久化（变异 m1 锚点）
+[31m[1mAssertionError[22m: expected '笔迹 0 笔' to contain '1'[39m
+
+Expected: [32m"1"[39m
+Received: [31m"笔迹 0 笔"[39m
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m416:38[22m[39m
+    [90m414|[39m     await firePointer(canvas, 'pointerup', { pointerId: 3, pointerType…
+    [90m415|[39m
+    [90m416|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'1'[39m)[33m;[39m
+    [90m   |[39m                                      [31m^[39m
+    [90m417|[39m     [35mconst[39m saved [33m=[39m [34mloadScratchpadDocument[39m(sessionStorage[33m,[39m [34m7[39m)[33m;[39m
+    [90m418|[39m     [34mexpect[39m(saved[33m?.[39mstrokes)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板 Pointer/Touch 触控（polish-scratchpad-touch-support）[2m > [22m画布 touch-action: none：触屏手写时浏览器不得接管手势触发页面滚动（变异 m2 锚点）
+[31m[1mAssertionError[22m: expected undefined to be 'none' // Object.is equality[39m
+
+[32m- Expected:[39m
+"none"
+
+[31m+ Received:[39m
+undefined
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m429:69[22m[39m
+    [90m427|[39m     [35mconst[39m wrapper [33m=[39m [35mawait[39m [34mmountPanel[39m([34m7[39m)[33m;[39m
+    [90m428|[39m     [35mconst[39m canvas [33m=[39m wrapper[33m.[39m[34mfind[39m([32m'[data-test="scratchpad-canvas"]'[39m)[33m;[39m
+    [90m429|[39m     expect((canvas.element as HTMLCanvasElement).style.touchAction).to…
+    [90m   |[39m                                                                     [31m^[39m
+    [90m430|[39m   })[33m;[39m
+    [90m431|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板 Pointer/Touch 触控（polish-scratchpad-touch-support）[2m > [22mpointercancel 收笔：手势被系统中断也落账持久化，同指后续滑动不再延长笔画
+[31m[1mAssertionError[22m: expected '笔迹 0 笔' to contain '1'[39m
+
+Expected: [32m"1"[39m
+Received: [31m"笔迹 0 笔"[39m
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m439:38[22m[39m
+    [90m437|[39m     [35mawait[39m [34mfirePointer[39m(canvas[33m,[39m [32m'pointercancel'[39m[33m,[39m { pointerId[33m:[39m [34m7[39m })[33m;[39m
+    [90m438|[39m
+    [90m439|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'1'[39m)[33m;[39m
+    [90m   |[39m                                      [31m^[39m
+    [90m440|[39m     expect(loadScratchpadDocument(sessionStorage, 7)?.strokes[0].point…
+    [90m441|[39m       { x[33m:[39m [34m5[39m[33m,[39m y[33m:[39m [34m5[39m }[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板 Pointer/Touch 触控（polish-scratchpad-touch-support）[2m > [22m多指触控按 pointerId 区分：第二根手指按下/滑动不串笔，其抬起不收第一指的笔
+[31m[1mAssertionError[22m: expected '笔迹 0 笔' to contain '1'[39m
+
+Expected: [32m"1"[39m
+Received: [31m"笔迹 0 笔"[39m
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m468:38[22m[39m
+    [90m466|[39m     [35mawait[39m [34mfirePointer[39m(canvas[33m,[39m [32m'pointerup'[39m[33m,[39m { pointerId[33m:[39m [34m10[39m })[33m;[39m
+    [90m467|[39m
+    [90m468|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'1'[39m)[33m;[39m
+    [90m   |[39m                                      [31m^[39m
+    [90m469|[39m     [35mconst[39m saved [33m=[39m [34mloadScratchpadDocument[39m(sessionStorage[33m,[39m [34m7[39m)[33m;[39m
+    [90m470|[39m     [34mexpect[39m(saved[33m?.[39mstrokes)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/student/__tests__/ScratchpadCanvas.spec.ts[2m > [22m草稿板 Pointer/Touch 触控（polish-scratchpad-touch-support）[2m > [22mpointerleave 收笔：手指/鼠标滑出画布即停笔并持久化
+[31m[1mAssertionError[22m: expected '笔迹 0 笔' to contain '1'[39m
+
+Expected: [32m"1"[39m
+Received: [31m"笔迹 0 笔"[39m
+
+[36m [2m❯[22m src/components/student/__tests__/ScratchpadCanvas.spec.ts:[2m485:38[22m[39m
+    [90m483|[39m     [35mawait[39m [34mfirePointer[39m(canvas[33m,[39m [32m'pointerleave'[39m[33m,[39m { pointerId[33m:[39m [34m2[39m })[33m;[39m
+    [90m484|[39m
+    [90m485|[39m     [34mexpect[39m([34mstrokeCountText[39m(wrapper))[33m.[39m[34mtoContain[39m([32m'1'[39m)[33m;[39m
+    [90m   |[39m                                      [31m^[39m
+    [90m486|[39m     expect(loadScratchpadDocument(sessionStorage, 7)?.strokes[0].point…
+    [90m487|[39m       { x[33m:[39m [34m4[39m[33m,[39m y[33m:[39m [34m4[39m }[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m9 failed[39m[22m[2m | [22m[1m[32m9 passed[39m[22m[90m (18)[39m
+[2m   Start at [22m 09:29:21
+[2m   Duration [22m 4.60s[2m (transform 132ms, setup 38ms, import 2.95s, tests 436ms, environment 906ms)[22m
+
