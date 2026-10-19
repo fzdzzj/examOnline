@@ -40,4 +40,12 @@ public interface ExamMapper extends BaseMapper<Exam> {
     @Select("SELECT id FROM exams WHERE status >= 2 AND end_time < #{cutoff} ORDER BY end_time ASC, id ASC LIMIT #{limit}")
     List<Long> selectRetentionCandidateExamIds(@Param("cutoff") LocalDateTime cutoff,
                                                @Param("limit") int limit);
+
+    /**
+     * 成绩链对账候选考试（add-score-chain-reconciliation）：已批改(3)/已发布(4) 且未软删。
+     * 「已判分」是对账维度一的前提（进行中/已结束的考试还有学生在答，出票无意义）；
+     * 按 id 升序 + limit 有界，定时兜底不一次扫全库。
+     */
+    @Select("SELECT id FROM exams WHERE status IN (3, 4) AND is_deleted = 0 ORDER BY id ASC LIMIT #{limit}")
+    List<Long> selectReconciliationCandidateExamIds(@Param("limit") int limit);
 }

@@ -51,7 +51,7 @@ spring:
   task:
     scheduling:
       # 定时任务调度线程池（harden-scheduler-pool-config，B.2 中危 M2）：裸 @EnableScheduling 默认
-      # 单线程，四个 @Scheduled（状态机扫表/开考提醒/交卷兜底 sweep/数据保留）共用一个线程串行——
+      # 单线程，五个 @Scheduled（状态机扫表/开考提醒/交卷兜底 sweep/数据保留/成绩链对账）共用一个线程串行——
       # sweep 单轮最多 10×500 批 × 5s MQ confirm 等待，broker 故障时单轮可拖分钟级，把定时发布/
       # 自然结束的状态机流转与开考提醒整体阻塞（考试到点不开/不结束、提醒迟到，且应用本身无异常）。
       # 池 ≥2 使慢任务不再阻塞其余任务；fixed-delay 按任务自互斥，同任务不会因池扩而自我重叠；
@@ -241,6 +241,22 @@ exam:
     max-batches-per-run: 20
     max-exams-per-run: 100
     cron: "0 30 3 * * *"
+
+  reconciliation:
+    # 成绩链全链路对账（add-score-chain-reconciliation，reliability 域）：
+    # 定时兜底按时间窗抢占 reconciliation_runs.uk_recon_run_batch（batch_key），同一窗口
+    # 多实例只有一个落运行记录并执行业务——不加分布式调度锁、零新 Redis 键族，
+    # 与本域「正确性由幂等保证、锁仅省资源」口径一致。
+    # 手动触发不受 scheduled.enabled 影响。
+    max-exams-per-run: 50
+    scheduled:
+      enabled: true
+      # 批次时间窗（秒）：同一窗口内的多实例触发视为同一批次（唯一键只放行一格）。
+      # 窗口过小会退化为各实例各跑一遍；缺省与 fixed-delay 同量级（10 分钟）。
+      interval-seconds: 600
+      fixed-delay-ms: 600000
+      # 启动后延迟一轮再跑，避开启动期资源争用
+      initial-delay-ms: 60000
 
 management:
   endpoints:

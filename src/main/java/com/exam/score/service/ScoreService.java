@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -204,6 +205,59 @@ public class ScoreService {
             }
         }
         return new Summaries(subjective, objective.add(subjective), partial);
+    }
+
+    // ==================== 对账复用（add-score-chain-reconciliation） ====================
+
+    /**
+     * 对账复用的单份答卷汇总期望值：字段口径与 {@link SummarizeStats} 背后的
+     * {@link #computeSummary} 完全相同（同源纪律：对账不得另起第二套总分公式）。
+     */
+    public record ExpectedSummary(BigDecimal subjectiveScore, BigDecimal totalScore, boolean partialGraded) {
+    }
+
+    /**
+     * 批量计算期望汇总值（对账维度二「判分明细 vs 总分」与确定性缺失补齐共用）：
+     * 快照只读一次、主观分一次批量取出（复用 {@link #loadSubjectiveGradesBySubmission}），
+     * 逐份仍走 {@link #computeSummary}——汇总与对账看到的是同一个公式。
+     */
+    public Map<Long, ExpectedSummary> expectedSummaries(Long examId, List<GradingSubmission> submissions) {
+        if (submissions == null || submissions.isEmpty()) {
+            return Map.of();
+        }
+        GradingPaper paper = paperReader.readByExamId(examId);
+        List<Long> shortAnswerIds = paper.shortAnswerQuestions().stream()
+                .map(GradingQuestion::questionId).toList();
+        Map<Long, Map<Long, SubjectiveGrade>> gradesBySubmission =
+                loadSubjectiveGradesBySubmission(submissions, shortAnswerIds);
+        Map<Long, ExpectedSummary> expected = new HashMap<>(submissions.size());
+        for (GradingSubmission submission : submissions) {
+            Summaries summary = computeSummary(submission, shortAnswerIds,
+                    gradesBySubmission.getOrDefault(submission.getId(), Map.of()));
+            expected.put(submission.getId(), new ExpectedSummary(
+                    summary.subjectiveScore(), summary.totalScore(), summary.partialGraded()));
+        }
+        return expected;
+    }
+
+    /**
+     * 确定性缺失（判分完成但总分未回填）的幂等补齐：SET 形状与 {@link #summarize} 的
+     * {@code casSummarize} 完全一致，额外加上 {@code WHERE total_score IS NULL}——
+     * 只有「总分尚未回填」才写，重复对账、并发对账、多实例同时对账都是 0 行。
+     *
+     * <p>幂等护栏刻意落在 SQL 而不是内存判空：内存判空会让「重复补齐」的真实保护
+     * 在变异断言里不可见（读到的旧值会把人骗过去），而 DB 条件更新是并发下的唯一事实源。
+     *
+     * @return true=本次真的写入了（调用方据此记审计并出 AUTO_FIXED 票）；false=已有总分，未写
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean backfillTotalScoreIfMissing(Long submissionId, ExpectedSummary expected) {
+        int rows = gradingSubmissionMapper.casBackfillTotalScore(submissionId,
+                expected.subjectiveScore(), expected.totalScore(), expected.partialGraded() ? 1 : 0);
+        if (rows > 0) {
+            readYourWriteMark.mark();
+        }
+        return rows > 0;
     }
 
     // ==================== 发布 / 撤回 ====================

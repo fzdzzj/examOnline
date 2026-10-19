@@ -98,6 +98,42 @@ public class AuditLogService {
                 "撤回成绩: examId=" + examId + ", title=" + examTitle + ", reason=" + reason);
     }
 
+    // ==================== 成绩链对账（add-score-chain-reconciliation） ====================
+
+    /** 无登录上下文（定时对账线程）时的系统操作人：audit_log.username 是 NOT NULL，缺省会写失败。 */
+    static final String SYSTEM_OPERATOR = "SYSTEM";
+
+    /**
+     * 对账确定性缺失的自动补齐：记考试/答卷/回填后的总分与补齐依据。
+     * 定时对账在调度线程执行，{@link SecurityUtil} 取不到操作人时以 {@link #SYSTEM_OPERATOR}
+     * 落审计（username NOT NULL），userId 仍为 NULL——不能因为「没有请求上下文」让补齐动作没有审计。
+     */
+    public void logScoreReconcileAutoFix(Long examId, Long submissionId, String totalScore) {
+        recordOperationOrSystem(AuditLog.ACTION_SCORE_RECONCILE_FIX,
+                "对账补齐总分: examId=" + examId + ", submissionId=" + submissionId
+                        + ", totalScore=" + totalScore
+                        + ", basis=判分完成但总分未回填（同源汇总口径）");
+    }
+
+    /** 差异票人工关闭：记票 ID、差异类型与定位，reason 为人工填写的处置说明（可空）。 */
+    public void logScoreReconcileDiffClose(Long diffId, String diffType, Long examId,
+                                           Long submissionId, String reason) {
+        recordOperationOrSystem(AuditLog.ACTION_SCORE_RECONCILE_CLOSE,
+                "关闭对账差异票: diffId=" + diffId + ", type=" + diffType
+                        + ", examId=" + examId + ", submissionId=" + submissionId
+                        + ", reason=" + (reason == null ? "" : reason));
+    }
+
+    /**
+     * 同上，但无请求上下文时以系统操作人落审计（对账既有手动（有操作人）也有定时（无操作人）两条路径）。
+     */
+    private void recordOperationOrSystem(String action, String details) {
+        LoginUser operator = SecurityUtil.getCurrentUser();
+        record(operator == null ? null : operator.getId(),
+                operator == null ? SYSTEM_OPERATOR : operator.getUsername(),
+                action, currentClientIp(), AuditLog.STATUS_SUCCESS, details);
+    }
+
     /** 管理员强制下线。targetUserId 为被踢用户。 */
     public void logUserKick(Long targetUserId) {
         recordOperation(AuditLog.ACTION_USER_KICK, "强制下线: targetUserId=" + targetUserId);
