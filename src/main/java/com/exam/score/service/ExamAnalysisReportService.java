@@ -157,7 +157,8 @@ public class ExamAnalysisReportService {
     }
 
     /** 及格线 = 总分 ×60%（HALF_UP 取整到整数分）。总分不可得（null/非正）→ fail-fast。 */
-    private static int passLineOf(BigDecimal total) {        return fractionOf(total, PASS_RATE);
+    private static int passLineOf(BigDecimal total) {
+        return fractionOf(total, PASS_RATE);
     }
 
     /** 优秀线 = 总分 ×90%（HALF_UP 取整到整数分）。总分不可得（null/非正）→ fail-fast。 */

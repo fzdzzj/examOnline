@@ -25,7 +25,7 @@
 
 - 新表 `question_irt_params`：题目 IRT 三参数持久化（`a` 区分度、`b` 难度、`c` 猜测系数），含标定时间与样本量；
 - **CTT→IRT 经验转换初始化**：`a` 由既有区分度 D 经验映射、`b` 由难度系数 P 经 logit 变换 `b = ln(P/(1-P))`（中值修正防发散）、`c` 按题型固定（单选 0.25 / 判断 0.50 / 其余 0）；
-- 参数刷新端点（教师/管理触发，`exam:manage`）：基于历史作答（`practice_attempt` + 考试答题数据）重算 CTT 指标后转换；样本不足的题目标记不可用，不进 CAT 题池。
+- 参数标定为**惰性触发**（阶段 4 指导裁决收敛，不设独立管理端点）：CAT 开局按学生已判分考试触发 `calibrateStudentPool → calibrateExam`（按场次 12h TTL 幂等），CTT 数据源与 C3 同源（`ExamAnalysisReportService.questionMetrics`），合并 `practice_attempt` 样本重算后转换；样本不足的题目标记不可用，不进 CAT 题池。
 
 ### 2.2 CAT 测验会话（在线侧）
 
