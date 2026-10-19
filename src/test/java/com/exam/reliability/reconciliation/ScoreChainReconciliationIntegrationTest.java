@@ -45,6 +45,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *   <li>维度一：已判分考试下判分缺失 / 主观题未批完 / 判分完成但总分未回填；</li>
  *   <li>确定性缺失：同源口径幂等补齐 + audit_log + AUTO_FIXED 票，重复对账不二次写；</li>
+ *   <li>主观未批完但客观已判：分部总分补齐走客观汇总（与 computeSummary 同源）、保留 partial 标记、
+ *       同时出 SUBJECTIVE_NOT_FULLY_GRADED 票、零主观分写入（补批属改分，落负范围）；</li>
  *   <li>维度二：判分明细汇总 vs 总分不一致只出票，总分保持不变；</li>
  *   <li>差异票闭环：人工关闭 MANUAL_CLOSED + 审计，非 OPEN 拒绝，列表按状态可查；</li>
  *   <li>权限隔离：STUDENT 调四端点一律 403；</li>
@@ -169,6 +171,86 @@ class ScoreChainReconciliationIntegrationTest extends IntegrationTestBase {
                 200).get("data");
         assertEquals(2, runs.size());
         assertEquals(second.get("id").asLong(), runs.get(0).get("id").asLong(), "运行历史按 id 倒序");
+    }
+
+    // ==================== 主观未批完但客观已判：分部总分补齐 ====================
+
+    @Test
+    @DisplayName("主观未批完但客观已判：补齐客观汇总分部总分、保留 partial 标记、出未批完票、零主观分写入")
+    void partialGradedBackfillsObjectiveOnlyTotal() throws Exception {
+        long examId = createGradedExam(paperWithShortAnswer());
+        long submissionId = seedSubmission(examId, studentId, ExamSubmission.STATUS_SUBMITTED,
+                new BigDecimal("5"), null, null, ObjectiveGradingService.GRADING_OK, 1);
+        seedSubjectiveGradeWithoutScore(examId, submissionId, studentId);
+
+        JsonNode run = perform(jsonPost("/api/admin/reconciliation/run", teacher,
+                "{\"examId\":" + examId + "}"), 200).get("data");
+        assertEquals(1, run.get("scannedCount").asInt());
+        assertEquals(1, run.get("ungradedCount").asInt(), "主观题未批完计入维度一");
+        assertEquals(1, run.get("autoFixedCount").asInt(), "总分未回填属确定性缺失，须补齐");
+        assertEquals(0, run.get("mismatchCount").asInt(), "补齐后总分与同源期望一致，不构成维度二差异");
+
+        // 未批完如实出票：补批属改分，对账不代批
+        JsonNode open = diffsOf(run.get("id").asLong(), ReconciliationDiff.STATUS_OPEN);
+        assertEquals(1, open.size());
+        assertEquals(ReconciliationDiff.TYPE_SUBMISSION_UNGRADED, open.get(0).get("diffType").asText());
+        assertEquals(ReconciliationDiff.DETAIL_SUBJECTIVE_NOT_FULLY_GRADED,
+                open.get(0).get("detail").asText());
+
+        // 补齐本身仍按「判分完成但总分未回填」既有口径记 AUTO_FIXED 票
+        JsonNode autoFixed = diffsOf(run.get("id").asLong(), ReconciliationDiff.STATUS_AUTO_FIXED);
+        assertEquals(1, autoFixed.size());
+        assertEquals(ReconciliationDiff.TYPE_SUBMISSION_UNGRADED, autoFixed.get(0).get("diffType").asText());
+        assertEquals(ReconciliationDiff.DETAIL_TOTAL_SCORE_NOT_FILLED,
+                autoFixed.get(0).get("detail").asText());
+
+        GradingSubmission after = gradingSubmissionMapper.selectById(submissionId);
+        // 分部总分与 computeSummary 同源：客观题 5 分 + 主观未批按 0 分计入（快照简答题 10 分不臆造）
+        assertEquals(0, new BigDecimal("5").compareTo(after.getTotalScore()),
+                "总分为客观判分汇总（与 computeSummary 同源），不含任何主观分");
+        assertEquals(0, BigDecimal.ZERO.compareTo(after.getSubjectiveScore()), "主观未批按 0 计入");
+        assertEquals(1, after.getPartialGraded(), "partial 标记必须保留，不得被补齐洗成 0");
+        assertEquals(ExamSubmission.STATUS_GRADED, after.getStatus());
+        assertEquals(1, after.getVersion(), "补齐是一次写：version 只 +1");
+        assertEquals(1, fixAuditCount(submissionId));
+
+        // 零主观分写入：主观批改行仍是未批状态，对账绝不自作主张补批
+        SubjectiveGrade grade = subjectiveGradeMapper.selectOne(Wrappers.<SubjectiveGrade>lambdaQuery()
+                .eq(SubjectiveGrade::getSubmissionId, submissionId)
+                .eq(SubjectiveGrade::getQuestionId, SHORT_ANSWER_QUESTION_ID));
+        assertNotNull(grade);
+        assertNull(grade.getScore(), "补批属改分（负范围）：对账不得写任何主观分");
+    }
+
+    @Test
+    @DisplayName("主观未批完的分部总分补齐幂等：重复对账不重写总分/不重复审计/不重复出票")
+    void partialGradedBackfillIsIdempotent() throws Exception {
+        long examId = createGradedExam(paperWithShortAnswer());
+        long submissionId = seedSubmission(examId, studentId, ExamSubmission.STATUS_SUBMITTED,
+                new BigDecimal("5"), null, null, ObjectiveGradingService.GRADING_OK, 1);
+        seedSubjectiveGradeWithoutScore(examId, submissionId, studentId);
+
+        JsonNode first = perform(jsonPost("/api/admin/reconciliation/run", teacher,
+                "{\"examId\":" + examId + "}"), 200).get("data");
+        assertEquals(1, first.get("autoFixedCount").asInt());
+        assertEquals(1, fixAuditCount(submissionId));
+
+        // 第二次对账：总分已回填 → CAS 的 total_score IS NULL 护栏挡下，不重写不重审计
+        JsonNode second = perform(jsonPost("/api/admin/reconciliation/run", teacher,
+                "{\"examId\":" + examId + "}"), 200).get("data");
+        assertEquals(1, second.get("ungradedCount").asInt(), "未批完状态仍在，维度一照常如实计数");
+        assertEquals(0, second.get("autoFixedCount").asInt(), "总分已回填，不得二次补齐");
+        assertEquals(0, second.get("mismatchCount").asInt());
+
+        GradingSubmission afterSecond = gradingSubmissionMapper.selectById(submissionId);
+        assertEquals(0, new BigDecimal("5").compareTo(afterSecond.getTotalScore()));
+        assertEquals(1, afterSecond.getPartialGraded(), "重复对账不得洗掉 partial 标记");
+        assertEquals(1, afterSecond.getVersion(), "重复对账不得重写：version 仍为 1");
+        assertEquals(1, fixAuditCount(submissionId));
+        assertEquals(1, runDiffCount(submissionId, ReconciliationDiff.STATUS_AUTO_FIXED),
+                "AUTO_FIXED 票唯一指纹抑制重复出票");
+        assertEquals(1, runDiffCount(submissionId, ReconciliationDiff.STATUS_OPEN),
+                "未批完票唯一指纹抑制重复出票");
     }
 
     // ==================== 维度二：判分明细 vs 总分 ====================
