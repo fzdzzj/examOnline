@@ -21,6 +21,21 @@
 
 ## 登记表
 
+> **prod 环境状态声明（现场核验 2026-10-19 · @ 748d81a）**
+>
+> 1. **prod 编排（`docker-compose.prod.yml`）截至 2026-10-19 从未部署。** 现场核验依据三项：
+>    容器 `exam-online-prod-mysql-master` / `exam-online-prod-mysql-slave` 在 `docker ps -a` 中为 0 个
+>    （`docker ps -a --filter name=prod` 同样为空）；卷 `master-prod-data` / `slave-prod-data` 不存在
+>    ——数据目录从未创建，故属「从未部署」而非「起过后停掉」；仓库根 `.env` 缺失，compose 强制必填的
+>    `MYSQL_ROOT_PASSWORD` 无来源。核验时 commit `@ 748d81a`。
+> 2. 故本登记表**暂不设立 prod 列**：下文全部脚本的 prod 状态一律为「未部署（未应用）」，本表不存在
+>    任何 prod 已应用登记；现有 dev 主库/从库两列只描述 dev 环境，不向 prod 类推。
+> 3. **翻新条件**：待 prod 真部署（`exam-online-prod-mysql-master` 与 `-slave` 在跑且 `.env` 的
+>    `MYSQL_ROOT_PASSWORD` 就位）后，按 [docs/prod-migration-runbook.md](../../../docs/prod-migration-runbook.md)
+>    **从第 1 步判定分叉**执行（先只读判 A3 五表计数：= 5 只做登记核对收尾，< 5 才进备份与应用），
+>    届时同笔扩「prod 主库（exam-online-prod-mysql-master）/ prod 从库（exam-online-prod-mysql-slave）」
+>    两列，并如实回填核验输出摘要、核验时间与当时 commit。新空库不适用该流程（见该 runbook 开头）。
+
 登记真值产生方式：对 dev 主/从库现场执行核验 SQL（口径见下一节）。每行状态含核验输出摘要 +
 核验时间 + 当时 commit。**dev 从库不由人工直接应用**：复制正常时由主库经复制同步，登记前已
 逐对象复核（主从 GTID 对齐 + 对象级一致性）。
