@@ -555,4 +555,54 @@ CREATE TABLE IF NOT EXISTS student_question_favorites (
     KEY idx_fav_student_id (student_id, id)
 );
 
+-- =============================================================
+-- IRT 题目参数与 CAT 自适应测验会话（add-irt-adaptive-testing）
+-- 存量库另需手工执行 docker/mysql/migrations/2026-W43-add-irt-adaptive-testing.sql
+-- （CREATE TABLE IF NOT EXISTS 不会为已存在的库补表）。
+-- =============================================================
+
+-- IRT 三参数标定结果（3PL）：a 区分度 / b 难度 / c 猜测系数，均由既有 CTT 口径
+-- （难度系数 P、区分度 D）经验转换而来，禁止另造第二套测量学公式。
+-- 标定是幂等 upsert（uk_irt_question 唯一键）；样本不足（考试作答 + 练习作答 < 4）时
+-- pool_available=0，不进 CAT 题池。source_exam_id + calibrated_time 支撑按场次的新鲜度判断
+-- （TTL 内不重复标定，避免每次开局都做一遍 CTT 全量聚合）。
+CREATE TABLE IF NOT EXISTS question_irt_params (
+    id              BIGINT       NOT NULL AUTO_INCREMENT,
+    question_id     BIGINT       NOT NULL,
+    discrimination  DECIMAL(8,4) NOT NULL,              -- a：区分度参数（由 D 映射）
+    difficulty      DECIMAL(8,4) NOT NULL,              -- b：难度参数（由 P 经 logit 变换）
+    guessing        DECIMAL(6,4) NOT NULL,              -- c：猜测系数（单选 0.25 / 判断 0.50 / 其余 0）
+    sample_size     INT          NOT NULL DEFAULT 0,    -- 标定样本量（考试作答 + 练习作答）
+    pool_available  BOOLEAN      NOT NULL DEFAULT TRUE, -- 样本不足标记 FALSE，不进题池
+    source_exam_id  BIGINT                DEFAULT NULL, -- 最近一次产出该参数的考试（新鲜度）
+    calibrated_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_time    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_irt_question UNIQUE (question_id)
+);
+
+-- CAT 自适应测验会话：会话正确性落 DB 而非 Redis（runbook 口径：Redis 是加速器不是正确性
+-- 后盾；本案零新 Redis 键族）。θ 轨迹与已答题目集以 JSON 文本列持久化——MySQL 8 与 H2 均按
+-- VARCHAR 读写，双兼容；逐题明细不在此表展开（作答明细同源落 practice_attempt）。
+CREATE TABLE IF NOT EXISTS cat_quiz_sessions (
+    id                    BIGINT        NOT NULL AUTO_INCREMENT,
+    student_id            BIGINT        NOT NULL,
+    status                VARCHAR(16)   NOT NULL DEFAULT 'IN_PROGRESS',
+    theta                 DECIMAL(10,4) NOT NULL DEFAULT 0,
+    se                    DECIMAL(10,4) NOT NULL DEFAULT 1,
+    max_items             INT           NOT NULL DEFAULT 10,
+    se_threshold          DECIMAL(6,4)  NOT NULL DEFAULT 0.3000,
+    answered_count        INT           NOT NULL DEFAULT 0,
+    correct_count         INT           NOT NULL DEFAULT 0,
+    current_question_id   BIGINT                 DEFAULT NULL,
+    answered_question_ids VARCHAR(1024)          DEFAULT '',
+    item_trail            VARCHAR(4096)          DEFAULT '',
+    termination_reason    VARCHAR(32)            DEFAULT NULL,
+    created_time          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_cat_session_student (student_id, id)
+);
+
 
