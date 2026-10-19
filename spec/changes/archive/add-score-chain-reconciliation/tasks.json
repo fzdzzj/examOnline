@@ -26,9 +26,9 @@
     {
       "id": 4,
       "title": "阶段 4：独立复核、基线合入与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "独立复核（git status/diff 范围、sha256sum -c、双端门禁复跑、CI 三机检、关键逻辑抽查、AGENTS 四红线自查）；spec-delta 合入 specs/reliability/spec.md；提案归档 spec/changes/archive/；spec/README.md 在途表清空、能力域来源行与归档速览登记；feature/add-score-chain-reconciliation 分支 --no-ff 合入 main 并推送；docs/系统架构审查与后续演进路线.md 同步。",
-      "evidence": ""
+      "evidence": "独立复核 8/8 PASS（55 文件范围与负范围三条零越界；evidence 清单 sha256sum -c 21/21 OK 且 manifest 零 CR——C6 的 CRLF 教训已规避；后端 853/0F/0E/1S BUILD SUCCESS、surefire XML 交叉核对 149 suites；前端 980 例限并发复现全绿，stock 四次 975~977 为宿主 CPU 争用 5s 超时抖动、受害文件每次不同且单跑 53/53 全过，非回归；CI 三机检真 Git Bash 执行 853/980/114 全 OK；六类定向口径逐条实测——computeSummary 同源、CAS 含 total_score IS NULL 护栏、涉分只出票、主观未批完只出票不补批、batch_key 唯一索引定时单飞、指纹含 status 重开票、question_id=0、SYSTEM 审计；三变异五步独立复跑击红 1/4/3 例并回绿零残留（复原 SHA256 前后一致）；四红线+卫生全绿；任务 2/3 实绑逐项对上）。两观察项登记挂后续：①补齐调用对「主观未批完但客观已判」分支写入带 partial_graded=1 的分部总分（同源且保留 partial 标记、不写主观分，非阻断），该分支暂无用例覆盖；②门禁证据基座 revision 曾绑立案笔 ff72bd6，复核已在 5196dff 干净树重跑复现数值可信，后续笔门禁证据须直接绑实施提交号。收口动作：spec-delta 合入 specs/reliability/spec.md（Requirement「成绩链全链路对账」四 Scenario + 合入注记，来源行追加）；spec/README.md 在途表清空、reliability 来源行与归档速览登记；git mv 归档；--no-ff 合入 main 并推送；演进路线文档同步。遗留人工动作：2026-W44-add-score-chain-reconciliation.sql 须人工应用到存量库并回填 APPLIED.md 台账。"
     }
   ]
 }
