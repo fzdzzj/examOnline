@@ -1,0 +1,28 @@
+变异 m2 击红留证（assertion-level）
+target : src/main/java/com/exam/reliability/reconciliation/service/ReconciliationService.java
+inject : s|if (summary.partialGraded()) {|if (summary.partialGraded()) { totals.ungraded++; } if (false) {|
+意图   : 抽除 SUBJECTIVE_NOT_FULLY_GRADED 出票（出票分支恒假，维度一计数保留）
+结果   : --verify 非零退出（断言级失败，非编译红）
+
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[ERROR] Tests run: 10, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 64.68 s <<< FAILURE! -- in com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.partialGradedBackfillsObjectiveOnlyTotal -- Time elapsed: 2.187 s <<< FAILURE!
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.detailTotalMismatchOnlyTickets -- Time elapsed: 2.076 s <<< FAILURE!
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.partialGradedBackfillIsIdempotent -- Time elapsed: 2.102 s <<< FAILURE!
+[ERROR] Failures: 
+[ERROR]   ScoreChainReconciliationIntegrationTest.detailTotalMismatchOnlyTickets:287 expected: not <null>
+[ERROR]   ScoreChainReconciliationIntegrationTest.partialGradedBackfillIsIdempotent:252 未批完票唯一指纹抑制重复出票 ==> expected: <1> but was: <0>
+[ERROR]   ScoreChainReconciliationIntegrationTest.partialGradedBackfillsObjectiveOnlyTotal:195 expected: <1> but was: <0>
+[ERROR] Tests run: 10, Failures: 3, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] See D:\code\examOnline\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

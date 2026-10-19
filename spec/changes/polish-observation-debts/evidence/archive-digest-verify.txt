@@ -1,0 +1,35 @@
+archive-digest slimming verification (polish-observation-debts task 2-3)
+repo        : D:\code\examOnline
+head        : 0c5b86e (工作树改动未提交，比对基线 = HEAD 速览区)
+date        : 2026-10-19 13:54:00
+
+[1] 速览区条目集合守恒（旧速览 56 条去重 -> 新速览 10 条 + 冷存储新增 41 条）
+old digest rows                = 58 (去重 56)
+new digest rows                = 10
+archive rows before / after    = 111 / 152
+lost entries (热区+冷区都无)    = 0
+
+[2] 搬移行逐字节一致（新增进冷存储的 41 行 vs HEAD 速览原件整行比较）
+newly moved                    = 41
+byte-identical                 = 41
+not byte-identical             = 0 
+moved bytes (source)           = 74627
+moved bytes (archive copy)     = 74627
+
+[3] 已覆盖条目（原行即等价）：速览可实删
+already-in-archive             = 5 : add-question-import-export, update-analysis-option-distribution, add-wrong-question-practice, add-user-import-export, add-paper-template-clone
+paired rows diff = 4 bytes each (仅 `--no-ff` 的 Markdown 双反引号包法，内容等价)
+
+[4] 重复与陈旧残留
+archive duplicate change ids   = 0
+digest duplicate blocks        = 2 historical snapshot blocks removed
+stale domain rows removed      = 4 (duplicated intact in README「已合入规范」table)
+
+[5] 体积
+old digest region bytes        = 103537
+new digest region bytes        = 15917
+shrink                         = 84.63 %
+
+[6] 表头指针 / 笔误修正
+header                         = - 已归档（spec/changes/archive/）：完整历史变更明细台账以 [CHANGES_ARCHIVE.md](CHANGES_ARCHIVE.md) 为准（冷存储，历史追溯与审计专用）。**本处仅保留最近 10 条归档速览**，更早条目已全部回填冷存储台账；条目总数以 `find spec/changes/archive -mindepth 1 -maxdepth 1 -type d | wc -l` 现场计数为准。
+archive header after fix       = > **总数**：以 find spec/changes/archive -mindepth 1 -maxdepth 1 -type d | wc -l 现场计数为准。

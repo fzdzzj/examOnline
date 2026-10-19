@@ -12,16 +12,16 @@
     {
       "id": 2,
       "title": "阶段 2：对账补例 + vitest 超时固化 + 归档速览瘦身",
-      "status": "pending",
+      "status": "completed",
       "description": "ScoreChainReconciliationIntegrationTest 补 1~2 例覆盖「主观未批完但客观已判」补齐分支（total_score=客观汇总同源、partial_graded=1、出票 SUBJECTIVE_NOT_FULLY_GRADED、零主观分写入）；frontend/vitest.config.ts test 块加 testTimeout: 30000（不动 include/setupFiles/restoreMocks/environment，用例数 980 不变）；spec/README.md 归档速览瘦身——逐条覆盖校验 CHANGES_ARCHIVE.md 有等价或更详条目后仅保留最近 10 条，校验结论留证，校验不过的条目保留并如实上报。",
-      "evidence": ""
+      "evidence": "① 补例（提交 3cfcd42）：ScoreChainReconciliationIntegrationTest 8→10 例——partialGradedBackfillsObjectiveOnlyTotal 断言 autoFixedCount=1/mismatchCount=0/OPEN 票 SUBJECTIVE_NOT_FULLY_GRADED/AUTO_FIXED 票 TOTAL_SCORE_NOT_FILLED/total_score=5（与 computeSummary 同源：客观 5 + 未批按 0）/subjective_score=0/partial_graded=1 保留/version=1/审计 1 条/主观批改行 score 仍 null（零主观分写入）；partialGradedBackfillIsIdempotent 断言重复对账 autoFixedCount=0、version 仍 1、审计仍 1、OPEN 与 AUTO_FIXED 票各 1（唯一指纹抑制重复出票）。② vitest（提交 8a3a7ed）：test 块仅加 testTimeout: 30000，include/setupFiles/restoreMocks/environment 逐字未动（diff 见 evidence/redline-selfcheck.txt [11]）；实测 Test Files 128 / Tests 980 passed（980 持平，evidence/gate-frontend-test.txt）。③ 归档速览（提交 0e515d7）：56 条去重条目逐条校验 CHANGES_ARCHIVE.md——5 条有等价条目、41 条零命中（精确行命中 0 且全文子串命中 0；根因：冷存储最后一次更新停在 f1c42d8@2026-10-14，10-15 起归档的变更从未回填）。处置按当轮用户裁决：41 条逐字节原样回填冷存储归档表（按归档日期升序）后仅保留最近 10 条；复核 lost entries=0、41 行 byte-identical（74627 字节）、冷存储无重复 change id、速览区 103537→15917 字节（-84.63%）。逐条结论与原/新行号见 evidence/archive-digest-coverage.md，复核脚本输出见 evidence/archive-digest-verify.txt。"
     },
     {
       "id": 3,
       "title": "阶段 3：TDD 留证、三变异击红回绿、双端门禁与基线上调",
-      "status": "pending",
+      "status": "completed",
       "description": "新增用例 TDD 先红后绿留证；三变异（m1 抽 partial 分部总分写入 / m2 抽 SUBJECTIVE_NOT_FULLY_GRADED 出票 / m3 抽补齐 CAS 的 total_score IS NULL 护栏）断言级击红并回绿零残留留证；仓库根 ./mvnw clean test 与前端三件套实测全绿（后端 853→854+，前端 980 与 openapiPaths 114 不变）；gate-baseline.json 同笔仅上调 backendTests；evidence/ 落 10+ 项留证与 LF 行尾 evidence-sha256.txt 清单。",
-      "evidence": ""
+      "evidence": "① TDD 先红后绿：该分支实现由 C7 已交付，故 red 的诚实形态是「先抽掉目标行为再跑新例」——m1 注入（等价未接线）下两例新例断言级红（partialGradedBackfillsObjectiveOnlyTotal:190、partialGradedBackfillIsIdempotent:235 expected 1 but was 0）、其余 8 例不受影响（evidence/tdd-red-phase.txt）；字节级复原后整类 10/10 绿（evidence/tdd-green-phase.txt）。② 三变异均由 scripts/mutation-check.sh 真实 Git Bash 驱动、五步全 PASS（①备份②注入命中③击红非零④cp+cmp 复原且注入标志不在场⑤回绿）：m1 抽 partial 分部总分写入（三元短路）击红 2 例；m2 抽 SUBJECTIVE_NOT_FULLY_GRADED 出票（出票分支恒假、维度一计数保留）击红 3 例；m3 抽 CAS 的 total_score IS NULL 护栏击红 4 例 + 1 ERROR（含新例「总分已回填，不得二次补齐 expected 0 but was 1」）。复原均用原始字节副本（非 git checkout），回绿均 10/10，git status --porcelain -- src/main 为 0（零残留）。过程偏差如实登记：m1/m2 首轮注入含 && 被 sed 转义后「注入标志」带反斜杠，工具判「注入未生效」并自动复原；改用无 && 的等价注入重跑通过，判据未放宽（evidence/README.md §3）。③ 双端门禁实测（rev 0c5b86e 工作树）：仓库根 ./mvnw.cmd clean test → Tests run: 855, Failures: 0, Errors: 0, Skipped: 1, BUILD SUCCESS（853→855，+2；原始日志 6642332 字节 sha256 记于 evidence/gate-backend.txt）；前端 pnpm lint:check / type-check:check / test 全绿，Test Files 128 / Tests 980 passed（980 不变）；openapi paths=114（114 不变，零契约）。④ gate-baseline.json 同笔只调 backendTests 853→855，frontendTests/openapiPaths 逐字未动；.github/ci 三脚本等价复跑均 OK（evidence/ci-gate-assert.txt）。⑤ evidence/ 共 20 项留证 + README 索引 + LF 行尾 sha256 清单（22 个文件，Git Bash sha256sum -c 通过）；AGENTS 四硬约定与三红线自查见 evidence/redline-selfcheck.txt。"
     },
     {
       "id": 4,

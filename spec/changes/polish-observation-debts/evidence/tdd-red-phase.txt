@@ -1,0 +1,20 @@
+TDD 先红：新增 2 例（主观未批完但客观已判）在目标行为缺席时断言级失败
+
+背景：该分支实现由 add-score-chain-reconciliation（C7）交付并已在库；本次是「补例」而非「补实现」，
+      因此 red 的唯一诚实形态是「先抽掉目标行为再跑新例」——注入等价于未接线（m1），
+      而不是伪造一次编译红。
+
+新例清单：
+partialGradedBackfillsObjectiveOnlyTotal
+partialGradedBackfillIsIdempotent
+
+m1 注入（分部总分写入被 partial 短路）后：
+[ERROR] Tests run: 10, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 72.65 s <<< FAILURE! -- in com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.partialGradedBackfillsObjectiveOnlyTotal -- Time elapsed: 2.169 s <<< FAILURE!
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.partialGradedBackfillIsIdempotent -- Time elapsed: 2.048 s <<< FAILURE!
+[ERROR] Failures: 
+[ERROR]   ScoreChainReconciliationIntegrationTest.partialGradedBackfillIsIdempotent:235 expected: <1> but was: <0>
+[ERROR]   ScoreChainReconciliationIntegrationTest.partialGradedBackfillsObjectiveOnlyTotal:190 总分未回填属确定性缺失，须补齐 ==> expected: <1> but was: <0>
+[ERROR] Tests run: 10, Failures: 2, Errors: 0, Skipped: 0
+
+两例均断言级失败（expected 1 but was 0），其余 8 例不受影响 → 新例确实绑定被测分支。

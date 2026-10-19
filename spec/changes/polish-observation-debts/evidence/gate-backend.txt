@@ -1,0 +1,18 @@
+后端唯一门禁实测（AGENTS「唯一门禁命令」：仓库根 ./mvnw.cmd clean test，Git Bash 驱动）
+
+revision  : 0c5b86e（实测时工作树尚未提交，见 evidence README 的提交链）
+执行时间  : 2026-10-19 14:37:37
+命令      : cd /d/code/examOnline && ./mvnw.cmd clean test
+退出码    : 0
+原始日志  : C:\Users\fzdzzj\AppData\Local\Temp\polish-gate-backend.log（6642332 bytes, sha256=4bd939c3b3bd51a9b41117a316d0b09beafc309efd213c1a8c8a8df181fd9493；仅临时留证，不入库）
+
+关键输出（原始日志尾部汇总行）：
+[WARNING] Tests run: 855, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+[INFO] Total time:  17:06 min
+
+判据（AGENTS / agent-harness spec「验收结论必须绑定产生它的执行」）：
+  Tests run=855, Failures=0, Errors=0, Skipped=1（Skipped 1 = OpenApiContractTest 的 exportContract 开关口径，一贯如此）
+  BUILD SUCCESS
+基线对比：backendTests 853 -> 855（+2），新增 2 例全部在本笔新增的 ScoreChainReconciliationIntegrationTest
+          （该类 8 -> 10 例，本笔 TDD 绿留证见 tdd-green-phase.txt）

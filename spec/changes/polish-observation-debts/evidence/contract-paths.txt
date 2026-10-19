@@ -1,0 +1,10 @@
+OpenAPI 契约路径计数（零契约变更核验）
+
+命令：bash .github/ci/check_openapi_paths.sh openapi.yaml .github/ci/gate-baseline.json
+输出：OPENAPI PATHS ASSERT OK: paths=114 (baseline >= 114)
+
+零契约证据：
+  git status --porcelain -- openapi.yaml -> 0 changed
+  git status --porcelain -- src/main -> 0 changed（三处变异均已字节级复原，见 mutation-mN-report.txt）
+  frontend SDK（src/api/*.gen.ts）零改动：本笔前端只改 vitest.config.ts 一处配置
+  结论：openapiPaths 114 -> 114，未上调也未下调（gate-baseline 的该键逐字未动）
