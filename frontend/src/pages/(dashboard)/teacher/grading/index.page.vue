@@ -199,6 +199,20 @@
           @refreshed="onRowRefreshed"
         />
       </Card>
+
+      <!-- 双评盲评（add-subjective-double-blind-grading）：blind=true 脱敏视图 + blindSubmit 自动分流 -->
+      <Card
+        v-if="selectedQuestion"
+        :title="`双评盲评：第 ${selectedQuestion.number} 题（考生已脱敏）`"
+        class="mb-4"
+      >
+        <BlindReviewPanel :exam-id="selectedExamId" :question="selectedQuestion" />
+      </Card>
+
+      <!-- 分差仲裁（add-subjective-double-blind-grading）：超标题目对比 + 终审定分回填 -->
+      <Card v-if="selectedExamId !== undefined" title="分差仲裁（一评/二评超标终审）" class="mb-4">
+        <ArbitrationPanel :exam-id="selectedExamId" />
+      </Card>
     </template>
   </div>
 </template>
@@ -238,6 +252,8 @@ import { createTeacherExamsQueryOptions } from '@/hooks/useTeacherExams';
 import { resolveScoreActions } from '@/utils/scoreActions';
 import QuestionImage from '@/components/question/QuestionImage.vue';
 import SubjectiveGradingPanel from '@/components/postexam/SubjectiveGradingPanel.vue';
+import BlindReviewPanel from '@/components/postexam/BlindReviewPanel.vue';
+import ArbitrationPanel from '@/components/postexam/ArbitrationPanel.vue';
 
 /**
  * 教师批改工作台（阶段 23）：

@@ -2362,6 +2362,11 @@ paths:
         schema:
           type: integer
           format: int64
+      - name: blind
+        in: query
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           description: OK
@@ -2369,6 +2374,75 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseSubjectiveGradePageResponse"
+  /api/exams/{examId}/grading/subjective/blind-submit:
+    post:
+      tags:
+      - grading-controller
+      operationId: blindSubmit
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlindReviewSubmitRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseBlindReviewSubmitResponse"
+  /api/exams/{examId}/grading/subjective/arbitration-list:
+    get:
+      tags:
+      - grading-controller
+      operationId: arbitrationList
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListBlindArbitrationItem"
+  /api/exams/{examId}/grading/subjective/arbitrate:
+    post:
+      tags:
+      - grading-controller
+      operationId: arbitrate
+      parameters:
+      - name: examId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlindArbitrateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseBlindArbitrateResponse"
   /api/exams/{examId}/grading/subjective/questions:
     get:
       tags:
@@ -4093,8 +4167,130 @@ components:
         version:
           type: integer
           format: int32
+        blindDone:
+          type: boolean
+          description: 当前教师是否已盲评该答卷本题（仅盲评脱敏视图回填）
         graded:
           type: boolean
+    ApiResponseBlindReviewSubmitResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/BlindReviewSubmitResponse"
+    BlindReviewSubmitRequest:
+      type: object
+      properties:
+        submissionId:
+          type: integer
+          format: int64
+        questionId:
+          type: integer
+          format: int64
+        score:
+          type: number
+          minimum: 0
+        comment:
+          type: string
+          maxLength: 1024
+          minLength: 0
+      required:
+      - questionId
+      - score
+      - submissionId
+    BlindReviewSubmitResponse:
+      type: object
+      properties:
+        roundType:
+          type: string
+          description: 本次落库轮次 FIRST/SECOND
+        status:
+          type: string
+          description: PENDING_SECOND/RESOLVED/ARBITRATION_PENDING
+        finalScore:
+          type: number
+          description: 裁决终分（仅 RESOLVED 回传均分）
+    ApiResponseListBlindArbitrationItem:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BlindArbitrationItem"
+    BlindArbitrationItem:
+      type: object
+      properties:
+        submissionId:
+          type: integer
+          format: int64
+        questionId:
+          type: integer
+          format: int64
+        questionNumber:
+          type: integer
+          format: int32
+        studentName:
+          type: string
+        maxScore:
+          type: number
+        firstScore:
+          type: number
+        firstComment:
+          type: string
+        secondScore:
+          type: number
+        secondComment:
+          type: string
+        scoreDiff:
+          type: number
+        status:
+          type: string
+    ApiResponseBlindArbitrateResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/BlindArbitrateResponse"
+    BlindArbitrateRequest:
+      type: object
+      properties:
+        submissionId:
+          type: integer
+          format: int64
+        questionId:
+          type: integer
+          format: int64
+        score:
+          type: number
+          minimum: 0
+        comment:
+          type: string
+          maxLength: 1024
+          minLength: 0
+      required:
+      - questionId
+      - score
+      - submissionId
+    BlindArbitrateResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        finalScore:
+          type: number
     ApiResponseGradingRunResponse:
       type: object
       properties:

@@ -2,6 +2,11 @@ package com.exam.grading.controller;
 
 import com.exam.auth.security.RequirePermission;
 import com.exam.common.ApiResponse;
+import com.exam.grading.dto.BlindArbitrateRequest;
+import com.exam.grading.dto.BlindArbitrateResponse;
+import com.exam.grading.dto.BlindArbitrationItem;
+import com.exam.grading.dto.BlindReviewSubmitRequest;
+import com.exam.grading.dto.BlindReviewSubmitResponse;
 import com.exam.grading.dto.GradingProgressResponse;
 import com.exam.grading.dto.GradingRunResponse;
 import com.exam.grading.dto.ManualScoreRequest;
@@ -126,6 +131,10 @@ public class GradingController {
      * {rows, total, graded}（add-subjective-grading-pagination）。
      * page/size/onlyUngraded/name/submissionId 全部可选：page/size 缺省返回全量；
      * onlyUngraded/name 筛选下沉服务端；submissionId 单行取数（至多 1 行）专供冲突回填。
+     *
+     * <p>blind=true（add-subjective-double-blind-grading）：盲评脱敏视图——
+     * 考生身份打码、教师评分评语置空，供背靠背盲评教师（含非归属人）取行；
+     * 归属校验在盲评视图下不适用（二评教师通常非归属人），脱敏由服务端强制。
      */
     @GetMapping("/subjective")
     public ApiResponse<SubjectiveGradePageResponse> subjectiveRows(@PathVariable Long examId,
@@ -134,7 +143,11 @@ public class GradingController {
                                                                    @RequestParam(required = false) Integer size,
                                                                    @RequestParam(required = false) Boolean onlyUngraded,
                                                                    @RequestParam(required = false) String name,
-                                                                   @RequestParam(required = false) Long submissionId) {
+                                                                   @RequestParam(required = false) Long submissionId,
+                                                                   @RequestParam(required = false) Boolean blind) {
+        if (Boolean.TRUE.equals(blind)) {
+            return ApiResponse.success(subjectiveGradingService.listBlindRows(examId, questionId));
+        }
         return ApiResponse.success(subjectiveGradingService.listRows(
                 examId, questionId, page, size, onlyUngraded, name, submissionId));
     }
@@ -147,5 +160,30 @@ public class GradingController {
     public ApiResponse<SubjectiveGradeRow> saveSubjectiveScore(@PathVariable Long examId,
                                                                @Valid @RequestBody SubjectiveScoreRequest request) {
         return ApiResponse.success(subjectiveGradingService.saveScore(examId, request));
+    }
+
+    // ==================== 双评盲评与分差仲裁（add-subjective-double-blind-grading） ====================
+
+    /**
+     * 盲评提交：一评/二评自动分流，同教师互斥（一评二评背靠背），
+     * 分差 ≤ 容差自动取均分回填终分，超标流转待仲裁。任何 exam:manage 教师可盲评（防人情分）。
+     */
+    @PostMapping("/subjective/blind-submit")
+    public ApiResponse<BlindReviewSubmitResponse> blindSubmit(@PathVariable Long examId,
+                                                              @Valid @RequestBody BlindReviewSubmitRequest request) {
+        return ApiResponse.success(subjectiveGradingService.blindSubmit(examId, request));
+    }
+
+    /** 待仲裁清单：分差超标且未定分的题目，一评/二评分数评语并排（仅考试归属人/管理员）。 */
+    @GetMapping("/subjective/arbitration-list")
+    public ApiResponse<List<BlindArbitrationItem>> arbitrationList(@PathVariable Long examId) {
+        return ApiResponse.success(subjectiveGradingService.arbitrationList(examId));
+    }
+
+    /** 仲裁终审定分：仲裁分强制回填终分并结案，不得超过本题满分。 */
+    @PostMapping("/subjective/arbitrate")
+    public ApiResponse<BlindArbitrateResponse> arbitrate(@PathVariable Long examId,
+                                                         @Valid @RequestBody BlindArbitrateRequest request) {
+        return ApiResponse.success(subjectiveGradingService.arbitrate(examId, request));
     }
 }

@@ -293,6 +293,26 @@ CREATE TABLE IF NOT EXISTS subjective_grades (
     KEY idx_subjective_exam_question (exam_id, question_id)   -- 工作台：同题列出全部学生
 );
 
+-- 简答题双评盲评表（add-subjective-double-blind-grading，W42）：一评/二评/仲裁三型盲评记录
+-- uk：一卷一题一轮一条（FIRST/SECOND/ARBITRATION 各至多一条）；分差 ≤ 容差取均分回填
+-- subjective_grades.score，超标流转仲裁，仲裁分终审回填（背靠背盲评脱敏见 SubjectiveGradingService）
+CREATE TABLE IF NOT EXISTS subjective_blind_reviews (
+    id            BIGINT        NOT NULL AUTO_INCREMENT,
+    exam_id       BIGINT        NOT NULL,
+    submission_id BIGINT        NOT NULL,
+    question_id   BIGINT        NOT NULL,
+    round_type    VARCHAR(16)   NOT NULL,     -- FIRST=一评 SECOND=二评 ARBITRATION=仲裁
+    grader_id     BIGINT        NOT NULL,
+    score         DECIMAL(5,1)  NOT NULL,
+    comment       VARCHAR(1024)          DEFAULT NULL,
+    created_time  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_blind_review UNIQUE (submission_id, question_id, round_type),
+    KEY idx_blind_exam_grader (exam_id, grader_id),
+    KEY idx_blind_sub_q (submission_id, question_id)
+);
+
 -- 成绩发布/撤回审计日志（spec「成绩撤回」场景：谁/何时/做了什么/原因）
 CREATE TABLE IF NOT EXISTS score_audit_logs (
     id           BIGINT       NOT NULL AUTO_INCREMENT,

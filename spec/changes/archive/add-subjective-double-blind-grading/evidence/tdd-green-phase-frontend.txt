@@ -1,0 +1,24 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/code/examOnline/frontend[39m
+
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/postexam/__tests__/ArbitrationPanel.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2134[2mms[22m[39m
+     [33m[2m✓[22m[39m 渲染对比卡片：一评/二评分数与评语并排可见，分差与满分呈现 [33m 1314[2mms[22m[39m
+     [33m[2m✓[22m[39m 仲裁提交走 arbitrate：body 携带 submissionId/questionId/score/comment，成功后刷新清单 [33m 406[2mms[22m[39m
+     [33m[2m✓[22m[39m 后端 400（超满分）错误必须呈现：不算成功 [33m 377[2mms[22m[39m
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+Not implemented: Window's getComputedStyle() method: with pseudo-elements
+ [32m✓[39m src/components/postexam/__tests__/BlindReviewPanel.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 5422[2mms[22m[39m
+     [33m[2m✓[22m[39m 行查询必须带 blind=true（脱敏视图由服务端强制，不得漏传） [33m 2138[2mms[22m[39m
+     [33m[2m✓[22m[39m 渲染打码行：考生 *** 与作答内容可见；blindDone 行禁止重复盲评 [33m 960[2mms[22m[39m
+     [33m[2m✓[22m[39m 提交走 blindSubmit：body 携带 submissionId/questionId/score/comment [33m 847[2mms[22m[39m
+     [33m[2m✓[22m[39m 提交成功后行级状态展示后端裁决结果（PENDING_SECOND/RESOLVED/ARBITRATION_PENDING） [33m 822[2mms[22m[39m
+     [33m[2m✓[22m[39m 后端 400（同教师互斥）错误必须呈现：不算成功、不清输入 [33m 651[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m   Start at [22m 00:53:41
+[2m   Duration [22m 16.44s[2m (transform 1.77s, setup 159ms, import 17.93s, tests 7.56s, environment 3.00s)[22m
+

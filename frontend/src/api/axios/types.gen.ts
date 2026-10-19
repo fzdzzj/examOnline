@@ -645,7 +645,77 @@ export type SubjectiveGradeRow = {
     graderId?: number;
     gradedTime?: string;
     version?: number;
+    /**
+     * 当前教师是否已盲评该答卷本题（仅盲评脱敏视图回填）
+     */
+    blindDone?: boolean;
     graded?: boolean;
+};
+
+export type ApiResponseBlindReviewSubmitResponse = {
+    code?: number;
+    message?: string;
+    data?: BlindReviewSubmitResponse;
+};
+
+export type BlindReviewSubmitRequest = {
+    submissionId: number;
+    questionId: number;
+    score: number;
+    comment?: string;
+};
+
+export type BlindReviewSubmitResponse = {
+    /**
+     * 本次落库轮次 FIRST/SECOND
+     */
+    roundType?: string;
+    /**
+     * PENDING_SECOND/RESOLVED/ARBITRATION_PENDING
+     */
+    status?: string;
+    /**
+     * 裁决终分（仅 RESOLVED 回传均分）
+     */
+    finalScore?: number;
+};
+
+export type ApiResponseListBlindArbitrationItem = {
+    code?: number;
+    message?: string;
+    data?: Array<BlindArbitrationItem>;
+};
+
+export type BlindArbitrationItem = {
+    submissionId?: number;
+    questionId?: number;
+    questionNumber?: number;
+    studentName?: string;
+    maxScore?: number;
+    firstScore?: number;
+    firstComment?: string;
+    secondScore?: number;
+    secondComment?: string;
+    scoreDiff?: number;
+    status?: string;
+};
+
+export type ApiResponseBlindArbitrateResponse = {
+    code?: number;
+    message?: string;
+    data?: BlindArbitrateResponse;
+};
+
+export type BlindArbitrateRequest = {
+    submissionId: number;
+    questionId: number;
+    score: number;
+    comment?: string;
+};
+
+export type BlindArbitrateResponse = {
+    status?: string;
+    finalScore?: number;
 };
 
 export type ApiResponseGradingRunResponse = {
@@ -3451,6 +3521,7 @@ export type SubjectiveRowsData = {
         onlyUngraded?: boolean;
         name?: string;
         submissionId?: number;
+        blind?: boolean;
     };
     url: '/api/exams/{examId}/grading/subjective';
 };
@@ -3463,6 +3534,60 @@ export type SubjectiveRowsResponses = {
 };
 
 export type SubjectiveRowsResponse = SubjectiveRowsResponses[keyof SubjectiveRowsResponses];
+
+export type BlindSubmitData = {
+    body: BlindReviewSubmitRequest;
+    path: {
+        examId: number;
+    };
+    query?: never;
+    url: '/api/exams/{examId}/grading/subjective/blind-submit';
+};
+
+export type BlindSubmitResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseBlindReviewSubmitResponse;
+};
+
+export type BlindSubmitResponse = BlindSubmitResponses[keyof BlindSubmitResponses];
+
+export type ArbitrationListData = {
+    body?: never;
+    path: {
+        examId: number;
+    };
+    query?: never;
+    url: '/api/exams/{examId}/grading/subjective/arbitration-list';
+};
+
+export type ArbitrationListResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseListBlindArbitrationItem;
+};
+
+export type ArbitrationListResponse = ArbitrationListResponses[keyof ArbitrationListResponses];
+
+export type ArbitrateData = {
+    body: BlindArbitrateRequest;
+    path: {
+        examId: number;
+    };
+    query?: never;
+    url: '/api/exams/{examId}/grading/subjective/arbitrate';
+};
+
+export type ArbitrateResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseBlindArbitrateResponse;
+};
+
+export type ArbitrateResponse = ArbitrateResponses[keyof ArbitrateResponses];
 
 export type SubjectiveQuestionsData = {
     body?: never;

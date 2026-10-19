@@ -39,6 +39,20 @@ const PANEL_SOURCE = path.join(
   'SubjectiveGradingPanel.vue'
 );
 
+/**
+ * 批改页行的单评 queryFn 调用（add-subjective-double-blind-grading 适配）：
+ * 页面现同时挂载盲评面板，其 blind=true 脱敏视图调用也走 subjectiveRows，
+ * 分页断言按「非 blind 调用」过滤，保持既有索引语义（第 N 次 queryFn 调用）不变。
+ */
+type SubjectiveRowsOptions = Parameters<typeof api.subjectiveRows>[0];
+
+function pageRowCalls(): SubjectiveRowsOptions[] {
+  return vi
+    .mocked(api.subjectiveRows)
+    .mock.calls.filter(([options]) => !(options as { query?: { blind?: boolean } })?.query?.blind)
+    .map(([options]) => options as SubjectiveRowsOptions);
+}
+
 const queryStore = vi.hoisted(() => ({ data: {} as Record<string, unknown> }));
 const capturedQueries = vi.hoisted(() => ({
   options: [] as Array<{ queryKey: unknown; queryFn: () => Promise<unknown> }>,
@@ -345,7 +359,7 @@ describe('批改页服务端分页参数', () => {
     wrapper.findComponent(SubjectiveGradingPanel).vm.$emit('update:page', 2);
     await flushPromises();
     await options?.queryFn();
-    expect(vi.mocked(api.subjectiveRows).mock.calls[1]?.[0]).toMatchObject({
+    expect(pageRowCalls()[1]).toMatchObject({
       query: expect.objectContaining({ page: 2 }),
     });
 
@@ -353,7 +367,7 @@ describe('批改页服务端分页参数', () => {
     wrapper.findComponent(SubjectiveGradingPanel).vm.$emit('update:nameFilter', '张');
     await flushPromises();
     await options?.queryFn();
-    expect(vi.mocked(api.subjectiveRows).mock.calls[2]?.[0]).toMatchObject({
+    expect(pageRowCalls()[2]).toMatchObject({
       query: expect.objectContaining({ name: '张', page: 1 }),
     });
   }, 15000);

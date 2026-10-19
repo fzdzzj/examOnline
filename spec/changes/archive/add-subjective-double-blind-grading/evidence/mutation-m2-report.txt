@@ -1,0 +1,27 @@
+mutation m2 report — 抽除分差超标流转仲裁（add-subjective-double-blind-grading）
+================================================================
+变异对象：SubjectiveGradingService.arbitrationList 的分差超标判定（流转链路队列入口）
+注入形态：`if (diff.compareTo(BLIND_TOLERANCE) > 0)` -> `if (false)`，
+          分差超标题目永不进入待仲裁清单（ARBITRATION_PENDING 流转被切断）。
+注入脚本：D:\code\examOnline-measure\double-blind-evidence\inject-m2.py
+入库 revision：7a1a1a2（实施笔；主代码与 be32ddc 逐字节一致）
+
+五步原子流程：
+1) 注入：python inject-m2.py -> "m2 injected"（精准替换 1 处，断言命中；
+   blindSubmit 的容差判定 `<= 0` 为另一行，不受影响）
+2) 击红：./mvnw test -Dtest='SubjectiveBlindReviewServiceTest,SubjectiveBlindReviewIntegrationTest'
+   -> Tests run: 16, Failures: 2, Errors: 0, Skipped: 0
+   判定行（断言级红，见 mutation-m2-red.txt）：
+   - SubjectiveBlindReviewServiceTest.arbitrationListOnlyContainsExceededPending
+     "小分差与已定分条目绝不能进入待仲裁清单 ==> expected: <1> but was: <0>"
+   - SubjectiveBlindReviewIntegrationTest.secondReviewExceedingToleranceFlowsToArbitration
+     "分差超标题目必须出现在待仲裁清单 ==> expected: <1> but was: <0>"
+   其余 14 例保持绿。
+3) 还原：git checkout HEAD -- src/main/java/com/exam/grading/service/SubjectiveGradingService.java
+4) 回绿：同命令复跑 -> Tests run: 16, Failures: 0, Errors: 0, Skipped: 0
+   （见 mutation-m2-revert-green.txt）
+5) 零残留：git diff HEAD -- service 文件为空。
+
+备注：该判定同时承担「超标才入队」与「容差内不入队」两个语义，变异后清单恒空，
+两级测试的 size 断言同时击红；容差内自动裁决分支（RESOLVED 回填）不在本变异面内
+（其击红面由 m3 与既有 saveScore 回归覆盖）。

@@ -1,0 +1,34 @@
+{
+  "change": "add-subjective-double-blind-grading",
+  "category": "feature-hardening",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：提案立项与基线登记",
+      "status": "completed",
+      "description": "proposal.md、spec-delta.md、tasks.json 落位；spec/README.md 登记进行中变更表；创建 feature/add-subjective-double-blind-grading 分支并提交立案笔。",
+      "evidence": "分支 feature/add-subjective-double-blind-grading 创建；立案三件套落盘；spec/README.md 登记完成。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：数据表、双评盲评后端服务、仲裁流转与前端面板实现",
+      "status": "completed",
+      "description": "schema.sql 与 2026-W42-add-subjective-blind-reviews.sql 新建 subjective_blind_reviews 表，同步更新 APPLIED.md；新增 SubjectiveBlindReview 实体与 Mapper；SubjectiveGradingService 扩充盲评提交 blindSubmit（一评/二评自动分流、同教师互斥校验、脱敏匿名）、分差裁决机制（分差 ≤ 容差取均分回填 subjective_grades、分差 > 容差流转 ARBITRATION_PENDING）、仲裁列表 arbitrationList 与终审定分 arbitrate；GradingController 暴露三端点；openapi.yaml 补齐 3 路径（104→107）及 DTO schemas；前端批改工作台增加双评盲评与待仲裁对比面板。",
+      "evidence": "实施笔 7a1a1a2（分支 feature/add-subjective-double-blind-grading）：schema.sql 建表 subjective_blind_reviews（uk_blind_review 一卷一题一轮唯一）+ 迁移脚本入库 + APPLIED.md 如实登记「未应用待人工」（dev 库容器未运行，脚本入库≠迁移已生效）；SubjectiveBlindReview 实体/Mapper、SubjectiveGradeMapper.backfillFinalScore 终分回填；blindSubmit（一评/二评自动分流、同教师互斥 400、|S1-S2|≤2.0 取均分 round((S1+S2)/2,1) 回填并刷新答卷主观总分、超标 ARBITRATION_PENDING 终分保持 NULL）；listBlindRows 脱敏视图（考生 *** / 教师评分评语置空 / blindDone）挂 GET /subjective?blind=true；arbitrationList（仅归属人，双评齐+超标+未定分）；arbitrate（超满分 400、仲裁分回填结案）。openapi 104→107 + 9 schemas + blindDone，前端 SDK 重生成，BlindReviewPanel/ArbitrationPanel 双面板 + 批改工作台接线。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：TDD 先红后绿、变异击红与门禁留证",
+      "status": "completed",
+      "description": "新增后端单测与集成测试覆盖背靠背双评、同教师评分互斥拦截、分差容差内均分回填、分差超标流转仲裁、仲裁员终限定分与越权拦截；新增前端组件交互测试；TDD 先红后绿留证；三变异（m1 抽除同教师互斥校验 / m2 抽除分差超标流转仲裁 / m3 抽除仲裁分回填 subjective_grades.score）断言级击红并回绿留证；双端门禁实测全绿，gate-baseline.json 同笔上调。",
+      "evidence": "TDD 先红后绿：集成 SubjectiveBlindReviewIntegrationTest 6 例先红（端点未实施 500，tdd-red-phase.txt）回绿 6/6；前端 2 suite 先红（组件未建）回绿 BlindReviewPanel 5 例 + ArbitrationPanel 4 例；新增 SubjectiveBlindReviewServiceTest 10 例（分流/互斥/裁决/清单/仲裁/脱敏）。三变异断言级击红回绿零残留（注入脚本 D:\\code\\examOnline-measure\\double-blind-evidence\\，报告+红绿日志见 evidence/）：m1 互斥→false 击红 2（单测 assertThrows 未抛 + 集成 400→200）、m2 超标判定→false 击红 2（清单 expected 1 but 0 两级）、m3 删回填击红 2（assertNotNull expected not <null> + verify 未调用），各回绿 16/16、git diff 零残留。双端门禁 @7a1a1a2 亲跑：后端 ./mvnw clean test 816/0/0/1 BUILD SUCCESS，前端 vitest 960/125 全绿（--maxWorkers=4）+ lint 0 + type-check:check 0；CI 断言脚本本机三绿（backend 816≥816 / frontend 960≥960 / paths 107≥107）；gate-baseline.json 同笔上调 800→816 / 951→960 / 104→107。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：规范基线合入、总账更新与收口归档",
+      "status": "completed",
+      "description": "spec-delta 合入 specs/grading/spec.md；提案归档至 spec/changes/archive/；spec/README.md 在途表清空并登记来源与归档速览；feature/add-subjective-double-blind-grading 分支 --no-ff 合入 main。",
+      "evidence": "独立复核 8/8 PASS（工作树干净/diff 范围与 proposal 逐目录吻合/evidence-sha256 17/17 OK/后端门禁复跑 816 全绿/前端三件套 960 全绿/CI 三机检 816≥816、960≥960、107≥107/抽查（脱敏、仲裁流转、三变异击红回绿零残留、Redis 零新键族）全过/AGENTS 四红线与卫生自查全绿/tasks.json 任务1-3 回填实绑核对）；spec-delta Requirement「主观题双评盲评与分差仲裁」四 Scenario 合入 grading 基线并附合入注记；归档至 spec/changes/archive/add-subjective-double-blind-grading；spec/README.md 在途表清空、grading 来源行与归档速览登记；收口笔后 feature/add-subjective-double-blind-grading --no-ff 合入 main 并推送。遗留人工动作：2026-W42-add-subjective-blind-reviews.sql 迁移脚本须人工应用到存量库并回填 APPLIED.md 台账。"
+    }
+  ]
+}

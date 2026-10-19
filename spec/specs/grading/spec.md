@@ -1,7 +1,7 @@
 # grading 规范
 
 > 能力域：判分（阶段 6，W7）。
-> 来源：`spec/changes/add-grading-score` 合入（判分策略、客观题判分、简答批改、判分失败处理）+ `spec/changes/archive/harden-draft-and-grading-boundaries` 合入（批改评语长度限制与初次批改并发唯一键冲突防护，2026-10-18 归档）。
+> 来源：`spec/changes/add-grading-score` 合入（判分策略、客观题判分、简答批改、判分失败处理）+ `spec/changes/archive/harden-draft-and-grading-boundaries` 合入（批改评语长度限制与初次批改并发唯一键冲突防护，2026-10-18 归档）+ `spec/changes/archive/add-subjective-double-blind-grading` 合入（简答题双评盲评与分差仲裁——盲评脱敏、同教师互斥、容差内均分裁决、超差仲裁终审回填，2026-10-19 归档）。
 
 ## Requirements
 
@@ -283,3 +283,43 @@ GIVEN 一场含填空题与简答题的考试已交卷
 WHEN 教师进入主观批改工作台
 THEN 填空题不出现在主观批改工作台候选中
 AND 简答仍走主观链不变
+
+---
+
+### Requirement: 主观题双评盲评与分差仲裁
+
+系统必须在既有单评主观题批改机制之上，支持背靠背匿名双评盲评、分差自动计算与超差仲裁工作流，仲裁或裁决终分回填至权威主观分记录。
+
+#### Scenario: 盲评一评与二评背靠背独立评分
+
+- **GIVEN** 考试已结束且客观判分已运行，简答题批改行已就绪
+- **WHEN** 教师 A 调用 `POST /api/exams/{examId}/grading/subjective/blind-submit` 对某答卷的简答题提交打分
+- **THEN** 系统记录该教师的一评（`FIRST`）评分与评语，此时终分 `subjective_grades.score` 仍保持为 NULL
+- **AND** 随后教师 B 调用同一端点提交二评（`SECOND`）评分，系统校验教师 B 与教师 A 不为同一人（若为同一人则抛出 `BAD_REQUEST` 400 阻断）
+- **AND** 在二评提交前，系统查询接口不向教师 B 泄露教师 A 的评分与评语，且考生身份打码脱敏
+
+#### Scenario: 分差容差范围内自动裁决均分
+
+- **GIVEN** 某道简答题已有一评得分 $S_1$ 与二评得分 $S_2$，且考试设定的分差容差阈值为 $T$（缺省 2.0 分）
+- **WHEN** 教师 B 提交二评后，分差 $|S_1 - S_2| \le T$
+- **THEN** 系统自动裁决终分 $S_{final} = \text{round}((S_1 + S_2) / 2, 1)$
+- **AND** 系统自动将 $S_{final}$ 原子回填至 `subjective_grades.score`，刷新答卷主观总分
+- **AND** 批改状态标记为 `RESOLVED`（已裁决）
+
+#### Scenario: 分差超标自动流转仲裁队列
+
+- **GIVEN** 某道简答题一评得分 $S_1$ 与二评得分 $S_2$ 的分差 $|S_1 - S_2| > T$
+- **WHEN** 二评提交入库后
+- **THEN** 系统判定分差超标，状态流转为 `ARBITRATION_PENDING`（待仲裁）
+- **AND** `subjective_grades.score` 继续保持为 NULL，避免未达成共识的主观分计入答卷总分
+- **AND** 该题自动出现在待仲裁清单接口（`GET /api/exams/{examId}/grading/subjective/arbitration-list`）中
+
+#### Scenario: 仲裁终审定分与终分回填
+
+- **GIVEN** 某题处于待仲裁状态（`ARBITRATION_PENDING`）
+- **WHEN** 仲裁员（拥有管理权限或教研组长）调用 `POST /api/exams/{examId}/grading/subjective/arbitrate` 提交仲裁终审打分 $S_3$
+- **THEN** 系统记录仲裁评卷记录（`ARBITRATION`），并将终分强制设定为 $S_3$
+- **AND** 原子回填 `subjective_grades.score`，刷新答卷主观总分，状态更新为 `ARBITRATED`（已仲裁）
+- **AND** 仲裁员提交的分数不得超过该题目满分，否则抛出 `BAD_REQUEST` 异常阻断
+
+> 合入注记（2026-10-19，`add-subjective-double-blind-grading`，M 级，**GO**）：新建 `subjective_blind_reviews` 表（`uk_blind_review` 一卷一题一轮唯一）+ 迁移脚本 `2026-W42-add-subjective-blind-reviews.sql` 入库并登记 APPLIED.md（**未应用待人工**——脚本入库≠迁移已生效，存量库须人工应用后回填台账）；`blindSubmit` 一评/二评自动分流、同教师互斥 400、容差（缺省 2.0）内取均分 `round((S1+S2)/2, 1)` 原子回填并刷新答卷主观总分、超标流转 `ARBITRATION_PENDING` 终分保持 NULL；脱敏在服务端 `listBlindRows` 强制（考生 ***、他人评分/评语/批改人置空）并挂既有 `GET /subjective?blind=true`（`blindDone`，零新增第 4 查询路径）；`arbitrationList` 仅归属人可见（双评齐 + 超标 + 未定分三条件）；`arbitrate` 超满分 400、仲裁分强制回填结案。openapi.yaml 104→107 paths + 9 schemas，前端 SDK 重生成，BlindReviewPanel/ArbitrationPanel 双面板接入批改工作台。测试与门禁：后端集成 6 例 + 单测 10 例 + 前端 9 例，backendTests 800→816、frontendTests 951→960、openapiPaths 104→107（gate-baseline 三项同笔上调）；变异 m1（抽除同教师互斥）/ m2（抽除超标流转仲裁）/ m3（抽除仲裁回填）全部断言级击红并回绿零残留留证；独立复核 8/8 PASS。立案笔 ea82b22、实施笔 7a1a1a2、证据笔 90f5d4f。
