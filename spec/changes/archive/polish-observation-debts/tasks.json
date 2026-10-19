@@ -26,9 +26,9 @@
     {
       "id": 4,
       "title": "阶段 4：独立复核、基线合入与收口归档",
-      "status": "pending",
+      "status": "completed",
       "description": "独立复核（git status/diff 范围、sha256sum -c、双端门禁复跑、CI 三机检、关键逻辑抽查、AGENTS 四红线自查、瘦身覆盖校验抽查）；spec-delta 合入 specs/reliability/spec.md 与 specs/agent-harness/spec.md；提案归档 spec/changes/archive/；spec/README.md 在途表清空、能力域来源行与归档速览登记；feature/polish-observation-debts 分支 --no-ff 合入 main 并推送；docs/系统架构审查与后续演进路线.md 同步。",
-      "evidence": ""
+      "evidence": "独立复核 8/8 PASS 无 FAIL（855/980/114 三机检真实脚本过、evidence 22/22 sha256 OK 全 LF、瘦身 41 行 byte-identical 74627 字节 cmp 一致冷存储 111→152 无重复 id lost=0、vitest 配置键逐字未动、m1/m2/m3 五步击红 2/3/4+1E 回绿零残留、首轮注入失败登记属实；三口径注记不阻断：净增 3 行含 2 行注释、evidence revision 工作树形态经 HEAD 复跑同值、变异原始日志 %TEMP% 现场可读）；reliability 基线追加 Scenario「主观未批完但客观已判的分部总分补齐」+ Requirement 标题与合入注记更新（观察项①清偿、观察项②转后续笔纪律）；agent-harness 基线追加 Requirement「前端单测超时预算固化」一 Scenario + 合入注记（含冷存储断供根因与后续归档须同笔回填纪律）；spec/README.md 在途表清空、#11/#17 来源行追加、归档速览置顶登记并维持 10 条上限；提案 git mv 归档；收口笔与 --no-ff 合并（合并时点 main=0fc7563、分支 HEAD=33fd403）。"
     }
   ]
 }
