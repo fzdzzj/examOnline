@@ -1,0 +1,34 @@
+{
+  "change": "polish-observation-debts",
+  "category": "polish-hygiene",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：提案立项与基线登记",
+      "status": "completed",
+      "description": "proposal.md、spec-delta.md（reliability + agent-harness 双域）、tasks.json 落位；spec/README.md 登记进行中变更表；创建 feature/polish-observation-debts 分支并提交立案笔。",
+      "evidence": "分支 feature/polish-observation-debts 自 main@0fc7563 创建；立案三件套落盘（proposal 含三件挂起物方案与三变异计划；reliability spec-delta 追加 Scenario「主观未批完但客观已判的分部总分补齐」显性化 C7 复核观察项①；agent-harness spec-delta 新增 Requirement「前端单测超时预算固化」）；spec/README.md 在途表登记。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：对账补例 + vitest 超时固化 + 归档速览瘦身",
+      "status": "pending",
+      "description": "ScoreChainReconciliationIntegrationTest 补 1~2 例覆盖「主观未批完但客观已判」补齐分支（total_score=客观汇总同源、partial_graded=1、出票 SUBJECTIVE_NOT_FULLY_GRADED、零主观分写入）；frontend/vitest.config.ts test 块加 testTimeout: 30000（不动 include/setupFiles/restoreMocks/environment，用例数 980 不变）；spec/README.md 归档速览瘦身——逐条覆盖校验 CHANGES_ARCHIVE.md 有等价或更详条目后仅保留最近 10 条，校验结论留证，校验不过的条目保留并如实上报。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：TDD 留证、三变异击红回绿、双端门禁与基线上调",
+      "status": "pending",
+      "description": "新增用例 TDD 先红后绿留证；三变异（m1 抽 partial 分部总分写入 / m2 抽 SUBJECTIVE_NOT_FULLY_GRADED 出票 / m3 抽补齐 CAS 的 total_score IS NULL 护栏）断言级击红并回绿零残留留证；仓库根 ./mvnw clean test 与前端三件套实测全绿（后端 853→854+，前端 980 与 openapiPaths 114 不变）；gate-baseline.json 同笔仅上调 backendTests；evidence/ 落 10+ 项留证与 LF 行尾 evidence-sha256.txt 清单。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：独立复核、基线合入与收口归档",
+      "status": "pending",
+      "description": "独立复核（git status/diff 范围、sha256sum -c、双端门禁复跑、CI 三机检、关键逻辑抽查、AGENTS 四红线自查、瘦身覆盖校验抽查）；spec-delta 合入 specs/reliability/spec.md 与 specs/agent-harness/spec.md；提案归档 spec/changes/archive/；spec/README.md 在途表清空、能力域来源行与归档速览登记；feature/polish-observation-debts 分支 --no-ff 合入 main 并推送；docs/系统架构审查与后续演进路线.md 同步。",
+      "evidence": ""
+    }
+  ]
+}

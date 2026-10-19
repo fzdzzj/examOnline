@@ -20,7 +20,7 @@ spec/
 
 | 变更 ID | 阶段 | 范围 | 目标能力域 | 前置 |
 |---|---|---|---|---|
-| （当前无在途变更——下一变更须从 main 重新立案） | — | — | — | — |
+| `polish-observation-debts` | T 级打磨（观察项清偿与工程卫生打包：C7 复核观察项①对账补例显性化 + vitest testTimeout 30000 固化 + 归档速览瘦身防丢档，零 DDL/零契约/前端用例数不变） | 三件挂起物打包 | reliability、agent-harness | 无（自 main@0fc7563） |
 
 
 **前端系列纪律**：技术栈对齐参考项目 `D:\code\crm\font\crm-front`（已核实其 package.json / vite.config.ts）；代码位于同仓库 `frontend/`；**阶段 19–23 一律不改后端**（`src/main`、`src/test`、`pom.xml` 零改动），发现接口缺口必须停下回报并单独立项，不得在前端拼凑绕过；前端 vitest/playwright 与后端 surefire **计数口径互不并入**，具体数值以当次执行记录为准（命令 + 该次原始输出 + 短 revision 写进该阶段 `tasks.json` 证据字段；验收按判据，不按常量——见 `update-agent-gate-single-source` 与 `AGENTS.md`）。
