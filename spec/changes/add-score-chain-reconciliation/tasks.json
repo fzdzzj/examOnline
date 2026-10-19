@@ -1,0 +1,34 @@
+{
+  "change": "add-score-chain-reconciliation",
+  "category": "feature-reliability",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：提案立项与基线登记",
+      "status": "completed",
+      "description": "proposal.md、spec-delta.md、tasks.json 落位；spec/README.md 登记进行中变更表；创建 feature/add-score-chain-reconciliation 分支并提交立案笔。",
+      "evidence": "分支 feature/add-score-chain-reconciliation 自 main@5733d88 创建；立案三件套落盘（proposal 含两维度对账/差异票闭环/幂等补齐/定时兜底多实例安全/负范围三条防重复；spec-delta 含 Requirement「成绩链全链路对账」四 Scenario）；spec/README.md 在途表登记。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：对账两表、ReconciliationService、四端点与前端管理面板实现",
+      "status": "pending",
+      "description": "schema.sql 新建 reconciliation_runs 与 reconciliation_diffs 两表（AUTO_INCREMENT 块内显式 PRIMARY KEY (id)，H2/MySQL 双兼容）+ docker/mysql/migrations/ 迁移脚本 + APPLIED.md 台账如实登记；实体/Mapper 双向一致（过 comm -23）；ReconciliationService 两维度对账（交卷 vs 判分：已判分考试下判分缺失/主观题未批完检测；判分 vs 总分：明细汇总与最终成绩逐答卷比对）+ 确定性缺失幂等补齐（复用既有回填服务方法，记 audit_log）+ @Scheduled 定时兜底（走 reliability 域既有定时任务并发与多实例安全护栏，SCHEDULED 来源标记，失败不影响下次）；四端点（run/runs/diffs/close，exam:manage 权限隔离）；openapi.yaml 110→114 paths + schemas + SDK 重生；前端管理对账页（运行历史、差异票筛选列表、触发按钮、人工关闭）接入管理导航；零新 Redis 键族。",
+      "evidence": ""
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：TDD 先红后绿、三变异击红与双端门禁留证",
+      "status": "pending",
+      "description": "新增后端单测与集成测试覆盖两维度差异检测（含未判分/明细总分不一致夹具）、确定性缺失自动补齐与幂等（重复对账不重复补齐）、涉分矛盾只出票不改分、定时兜底多实例安全、四端点权限隔离（403）与差异票关闭审计；前端面板交互测试；TDD 先红后绿留证；三变异（m1 抽除未判分检测 / m2 抽除幂等补齐 / m3 抽除差异票分类汇总）断言级击红并回绿零残留留证；仓库根 ./mvnw clean test 与前端三件套实测全绿；gate-baseline.json 同笔上调（backendTests/frontendTests/openapiPaths 三项，只增不减，openapiPaths 110→114）；evidence/ 落 10+ 项留证与 evidence-sha256.txt 清单（LF 行尾，sha256sum -c 双端可复验）。",
+      "evidence": ""
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：独立复核、基线合入与收口归档",
+      "status": "pending",
+      "description": "独立复核（git status/diff 范围、sha256sum -c、双端门禁复跑、CI 三机检、关键逻辑抽查、AGENTS 四红线自查）；spec-delta 合入 specs/reliability/spec.md；提案归档 spec/changes/archive/；spec/README.md 在途表清空、能力域来源行与归档速览登记；feature/add-score-chain-reconciliation 分支 --no-ff 合入 main 并推送；docs/系统架构审查与后续演进路线.md 同步。",
+      "evidence": ""
+    }
+  ]
+}
