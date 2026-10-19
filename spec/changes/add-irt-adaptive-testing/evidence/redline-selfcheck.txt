@@ -1,0 +1,31 @@
+# AGENTS 四条硬约定 + 本案红线自查（add-irt-adaptive-testing）
+
+## 硬约定 1：未接 Flyway，建表唯一入口 schema.sql
+pom.xml flyway 命中数 = 0
+src/main/resources/db 目录存在 = False
+新表自增块显式 PRIMARY KEY 检查：
+
+## 硬约定 2：集成测试不得用 @Sql
+@Sql 注解命中数 = 0
+
+## 硬约定 3：实体字段与建表双向一致（comm -23 等价集合差）
+实体 @TableName 表名集合 - schema.sql 建表集合 = 空
+实体表数 = 33；schema 表数 = 33
+新实体字段列：QuestionIrtParam(11 字段) / CatQuizSession(15 字段) 与 schema 列逐列同名
+
+## 硬约定 4：迁移脚本无自动执行者
+docker-compose.yml 中 migrations 挂载命中 = 0
+APPLIED.md 新行登记状态 = 未应用（待人工应用）（脚本入库 != 迁移已生效）
+
+## 本案红线：零新 Redis 键族
+adaptive 包 Redis 命中数 = 4（全部为注释/文档行，无 API 调用）
+  CatQuizSession.java:16: * <p>会话正确性落 DB 而非 Redis（runbook 口径：Redis 是加速器不是正确性后盾；
+  CatQuizSession.java:17: * 本案零新 Redis 键族）。{@code answeredQuestionIds} 与 {@code itemTrail} 存 JSON 文本，
+  IrtCatService.java:52: *       零新 Redis 键族；归属人隔离在每个入口统一裁决。</li>
+  IrtParamService.java:51: * <p>本服务只写 {@code question_irt_params}，不改判分、掌握度与错题本口径；零新 Redis 键族。
+
+## 本案红线：判分同源
+IrtCatService 判分入口 = GradingStrategyRegistry.dispatch(...).grade(...)，逐题落 practice_attempt
+
+## 前端产物
+SDK 由 pnpm gen:api 生成（src/api/axios/*.gen.ts + index.ts），无手写契约类型

@@ -1,0 +1,17 @@
+﻿diff --git a/src/main/java/com/exam/adaptive/service/IrtCatService.java b/src/main/java/com/exam/adaptive/service/IrtCatService.java
+index a42c75a..f6bd5f1 100644
+--- a/src/main/java/com/exam/adaptive/service/IrtCatService.java
++++ b/src/main/java/com/exam/adaptive/service/IrtCatService.java
+@@ -327,6 +327,12 @@ public class IrtCatService {
+      * 抽除本方法的信息量比较（退化为题池顺序取题）→ 选题断言击红。
+      */
+     private PoolItem selectNextItem(List<PoolItem> pool, Set<Long> answered, double theta) {
++        // m2 变异：抽除最大信息量比较，退化为题池顺序取题
++        for (PoolItem candidate : pool) {
++            if (!answered.contains(candidate.param().getQuestionId())) {
++                return candidate;
++            }
++        }
+         PoolItem best = null;
+         double bestInfo = Double.NEGATIVE_INFINITY;
+         for (PoolItem candidate : pool) {

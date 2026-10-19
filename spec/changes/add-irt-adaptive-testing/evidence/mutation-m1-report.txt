@@ -1,0 +1,14 @@
+﻿diff --git a/src/main/java/com/exam/adaptive/service/IrtCatService.java b/src/main/java/com/exam/adaptive/service/IrtCatService.java
+index a42c75a..2ce10de 100644
+--- a/src/main/java/com/exam/adaptive/service/IrtCatService.java
++++ b/src/main/java/com/exam/adaptive/service/IrtCatService.java
+@@ -316,7 +316,8 @@ public class IrtCatService {
+      * 抽除本调用即"作答后 θ 恒为初值"，选题序列与能力报告断言随之击红。
+      */
+     private IrtEstimator.Estimate updateTheta(List<IrtEstimator.Administered> administered) {
+-        return IrtEstimator.eap(administered);
++        // m1 变异：抽除 θ 更新，作答后 θ 恒为初值
++        return new IrtEstimator.Estimate(IrtEstimator.PRIOR_MEAN, IrtEstimator.PRIOR_SD);
+     }
+ 
+     // ==================== 变异点 m2：最大信息量选题 ====================

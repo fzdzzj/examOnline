@@ -1,0 +1,31 @@
+# 契约与门禁基线核对（add-irt-adaptive-testing 阶段 2/3）
+
+## openapi.yaml paths 计数
+paths=110（阶段 1 基线 107，本案目标 110，实际 110）
+
+## 新增三条路径与 operationId
+562: /api/scores/my/adaptive-quiz/{sessionId}/answer:
+566: operationId: submitAdaptiveQuizAnswer
+587: /api/scores/my/adaptive-quiz/start:
+591: operationId: startAdaptiveQuiz
+604: /api/scores/my/adaptive-quiz/{sessionId}/report:
+608: operationId: getAdaptiveQuizReport
+
+## 新增 schemas
+AdaptiveQuizAnswerRequest:
+AdaptiveQuizAnswerResponse:
+AdaptiveQuizQuestionItem:
+ApiResponseAdaptiveQuizAnswerResponse:
+AdaptiveQuizStartRequest:
+AdaptiveQuizStartResponse:
+ApiResponseAdaptiveQuizStartResponse:
+AdaptiveQuizReportItem:
+AdaptiveQuizReportResponse:
+ApiResponseAdaptiveQuizReportResponse:
+
+## gate-baseline.json（本笔上调前）
+{
+  "backendTests": 816,
+  "frontendTests": 960,
+  "openapiPaths": 107
+}
