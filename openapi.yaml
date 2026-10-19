@@ -559,6 +559,67 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePracticeQuizResponse"
+  /api/scores/my/adaptive-quiz/{sessionId}/answer:
+    post:
+      tags:
+      - adaptive-quiz-controller
+      operationId: submitAdaptiveQuizAnswer
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdaptiveQuizAnswerRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdaptiveQuizAnswerResponse"
+  /api/scores/my/adaptive-quiz/start:
+    post:
+      tags:
+      - adaptive-quiz-controller
+      operationId: startAdaptiveQuiz
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdaptiveQuizStartRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdaptiveQuizStartResponse"
+  /api/scores/my/adaptive-quiz/{sessionId}/report:
+    get:
+      tags:
+      - adaptive-quiz-controller
+      operationId: getAdaptiveQuizReport
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdaptiveQuizReportResponse"
   /api/score-reviews/{reviewId}/handle:
     post:
       tags:
@@ -3406,6 +3467,181 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PracticePoolItem"
+    AdaptiveQuizAnswerRequest:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        answer:
+          type: string
+      required:
+      - questionId
+    AdaptiveQuizAnswerResponse:
+      type: object
+      properties:
+        sessionId:
+          type: integer
+          format: int64
+        questionId:
+          type: integer
+          format: int64
+        correct:
+          type: boolean
+        correctAnswer:
+          type: string
+        analysis:
+          type: string
+        theta:
+          type: number
+        se:
+          type: number
+        answeredCount:
+          type: integer
+          format: int32
+        terminated:
+          type: boolean
+        terminationReason:
+          type: string
+        nextQuestion:
+          $ref: "#/components/schemas/AdaptiveQuizQuestionItem"
+    AdaptiveQuizQuestionItem:
+      type: object
+      properties:
+        order:
+          type: integer
+          format: int32
+        questionId:
+          type: integer
+          format: int64
+        questionType:
+          type: string
+        questionContent:
+          type: string
+        imageUrl:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+    ApiResponseAdaptiveQuizAnswerResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/AdaptiveQuizAnswerResponse"
+    AdaptiveQuizStartRequest:
+      type: object
+      properties:
+        maxItems:
+          type: integer
+          format: int32
+          maximum: 20
+          minimum: 1
+        seThreshold:
+          type: number
+          format: double
+    AdaptiveQuizStartResponse:
+      type: object
+      properties:
+        sessionId:
+          type: integer
+          format: int64
+        status:
+          type: string
+        theta:
+          type: number
+        se:
+          type: number
+        answeredCount:
+          type: integer
+          format: int32
+        maxItems:
+          type: integer
+          format: int32
+        seThreshold:
+          type: number
+        currentQuestion:
+          $ref: "#/components/schemas/AdaptiveQuizQuestionItem"
+    ApiResponseAdaptiveQuizStartResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/AdaptiveQuizStartResponse"
+    AdaptiveQuizReportItem:
+      type: object
+      properties:
+        order:
+          type: integer
+          format: int32
+        questionId:
+          type: integer
+          format: int64
+        questionType:
+          type: string
+        questionContent:
+          type: string
+        answer:
+          type: string
+        correct:
+          type: boolean
+        correctAnswer:
+          type: string
+        thetaAfter:
+          type: number
+        seAfter:
+          type: number
+    AdaptiveQuizReportResponse:
+      type: object
+      properties:
+        sessionId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        status:
+          type: string
+        theta:
+          type: number
+        se:
+          type: number
+        answeredCount:
+          type: integer
+          format: int32
+        maxItems:
+          type: integer
+          format: int32
+        correctCount:
+          type: integer
+          format: int32
+        accuracy:
+          type: number
+        terminationReason:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdaptiveQuizReportItem"
+    ApiResponseAdaptiveQuizReportResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/AdaptiveQuizReportResponse"
     ReviewHandleRequest:
       type: object
       properties:

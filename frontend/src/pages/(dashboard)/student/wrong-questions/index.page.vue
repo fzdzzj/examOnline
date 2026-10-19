@@ -17,6 +17,15 @@
             v-if="!isPracticeMode && !isQuizMode"
             type="primary"
             ghost
+            data-test="start-adaptive-quiz-btn"
+            @click="openAdaptiveQuiz"
+          >
+            🧠 自适应测验
+          </Button>
+          <Button
+            v-if="!isPracticeMode && !isQuizMode"
+            type="primary"
+            ghost
             data-test="start-quiz-btn"
             @click="openQuizConfig"
           >
@@ -529,6 +538,17 @@
         </div>
       </div>
     </Modal>
+
+    <!-- 自适应测验（CAT）面板（spec add-irt-adaptive-testing）：逐题作答流 + 能力反馈 + 终止报告 -->
+    <Modal
+      v-model:open="adaptiveQuizVisible"
+      title="🧠 自适应测验（CAT）"
+      :footer="null"
+      width="760px"
+      destroy-on-close
+    >
+      <AdaptiveQuizPanel />
+    </Modal>
   </div>
 </template>
 
@@ -571,6 +591,7 @@ import {
 import { client, unwrap } from '@/api/apiClient';
 import { ApiError } from '@/api/types';
 import QuestionImage from '@/components/question/QuestionImage.vue';
+import AdaptiveQuizPanel from '@/components/student/AdaptiveQuizPanel.vue';
 import { acceptedAnswersOf, isFillBlankType } from '@/utils/questionTypes';
 
 const queryClient = useQueryClient();
@@ -745,6 +766,14 @@ function masteryOf(item: WrongQuestionItem | PracticePoolItem): number {
   if ('mastered' in item && item.mastered) return 2;
   if ((item.consecutiveCorrect ?? 0) > 0) return 1;
   return 0;
+}
+
+// ==================== 自适应测验（CAT，spec add-irt-adaptive-testing） ====================
+
+const adaptiveQuizVisible = ref(false);
+
+function openAdaptiveQuiz(): void {
+  adaptiveQuizVisible.value = true;
 }
 
 // ==================== 错题强化自测（组卷 + 批量交卷） ====================
