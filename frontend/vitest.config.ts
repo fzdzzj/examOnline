@@ -22,5 +22,8 @@ export default defineConfig({
     // 单测放 src/**/__tests__，e2e 归 playwright，互不混跑
     include: ['src/**/__tests__/**/*.spec.ts'],
     restoreMocks: true,
+    // 宿主 CPU 争用下默认 5s 超时随机击红（受害集合随机、单跑全过，C6/C7 两轮复核实测），
+    // 显式固化 30s 预算；不增删用例、不改 include/setupFiles/restoreMocks/environment。
+    testTimeout: 30000,
   },
 });
