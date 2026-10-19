@@ -1,0 +1,22 @@
+# TDD 先红（后端）：实现类缺席时新增用例为编译级红
+
+- 命令（仓库根）：./mvnw.cmd test -Dtest=ScoreChainReconciliationIntegrationTest
+- 基座 revision：ff72bd6（立案笔；工作区含本笔未提交改动）
+- 红法：把 src/main/java/com/exam/reliability 整包移出源码树（等价「实现未接线」），只保留新增测试类
+- 结果：BUILD FAILURE（测试无法编译，用例未执行）
+
+## 摘要（编译错误节选）
+
+[ERROR] ScoreChainReconciliationIntegrationTest.java:[16,50] 程序包com.exam.reliability.reconciliation.entity不存在
+[ERROR] ScoreChainReconciliationIntegrationTest.java:[17,50] 程序包com.exam.reliability.reconciliation.entity不存在
+[ERROR] ScoreChainReconciliationIntegrationTest.java:[18,50] 程序包com.exam.reliability.reconciliation.mapper不存在
+[ERROR] ScoreChainReconciliationIntegrationTest.java:[19,50] 程序包com.exam.reliability.reconciliation.mapper不存在
+[ERROR] ScoreChainReconciliationIntegrationTest.java:[20,51] 程序包com.exam.reliability.reconciliation.service不存在
+[ERROR] ScoreChainReconciliationIntegrationTest.java:[63,13] 找不到符号
+[ERROR] ScoreChainReconciliationIntegrationTest.java:[65,13] 找不到符号
+[ERROR] ScoreChainReconciliationIntegrationTest.java:[67,13] 找不到符号
+[INFO] BUILD FAILURE
+
+## 复原
+
+整包移回 src/main/java/com/exam/reliability 后恢复绿（见 tdd-green-phase.txt），源码零残留。

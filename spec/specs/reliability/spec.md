@@ -1,7 +1,7 @@
 # reliability 规范
 
 > 能力域：可靠性（阶段 8，W10；限流器降级阶段 10；定时扫描多实例安全阶段 13；死信可见性与有界重投阶段 14；2026-09-20 补分页入参上限；2026-09-26 补偶发失败处置与跨实例取号护栏确定性）。
-> 来源：`spec/changes/archive/add-slow-sql-and-rate-limit` 合入（核心接口限流、分布式一致性、限流粒度）+ `spec/changes/archive/add-rate-limit-resilience` 合入（限流器降级、降级可观测）+ `spec/changes/archive/add-multi-instance-sweep-safety` 合入（定时扫描多实例安全、不引入调度锁的取舍）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信消息的可见性、有界重投、死信队列不设过期与容量上限）+ `spec/changes/archive/add-api-rate-limiting` 合入（分页入参上限；其全局限流器已撤回，见文末注记）+ `spec/changes/archive/fix-broker-confirm-and-dlq-roundtrip` 合入（发布确认作用域与死信真往返，提案⑦，2026-09-22）+ `spec/changes/archive/fix-flaky-integration-baselines` 合入（集成测试偶发失败的可复现处置、跨实例取号确定性护栏，2026-09-26）。
+> 来源：`spec/changes/archive/add-slow-sql-and-rate-limit` 合入（核心接口限流、分布式一致性、限流粒度）+ `spec/changes/archive/add-rate-limit-resilience` 合入（限流器降级、降级可观测）+ `spec/changes/archive/add-multi-instance-sweep-safety` 合入（定时扫描多实例安全、不引入调度锁的取舍）+ `spec/changes/archive/add-dlq-observability-and-replay` 合入（死信消息的可见性、有界重投、死信队列不设过期与容量上限）+ `spec/changes/archive/add-api-rate-limiting` 合入（分页入参上限；其全局限流器已撤回，见文末注记）+ `spec/changes/archive/fix-broker-confirm-and-dlq-roundtrip` 合入（发布确认作用域与死信真往返，提案⑦，2026-09-22）+ `spec/changes/archive/fix-flaky-integration-baselines` 合入（集成测试偶发失败的可复现处置、跨实例取号确定性护栏，2026-09-26）+ `spec/changes/archive/add-score-chain-reconciliation` 合入（成绩链全链路对账，2026-10-19）。
 > 实施注记：超限返回 `ResponseCode.TOO_MANY_REQUESTS`（1008 → HTTP 429），由 `GlobalExceptionHandler` 统一转换。
 > 实施注记：限流依赖（Redis）异常时默认 **fail-open 放行**（`exam.ratelimit.fail-open`，默认 true），并打 ERROR 日志 + 递增 `exam.ratelimit.degraded` 计数器；置 false 则异常上抛（fail-close）。
 > 实施注记（阶段 13）：定时扫描正确性靠下游幂等（CAS + 唯一索引 + INSERT IGNORE + 消费端 casFillAnswers），**刻意不加分布式调度锁**；重复扫描指标 `exam.sweep.duplicate_detected`（tag `task`=`sweep`/`state-advance`，含消费者 `filled==0`）；交卷锁按 token 解锁（`RedisLockHelper` Lua compare-and-delete，`exam.taking.submit.lock-ttl-seconds` 默认 30）。
@@ -671,3 +671,40 @@ THEN 核心流程 SHALL 正常返回成功，降级计数器递增，日志输�
 AND 客户端执行草稿保存、验证码找回等硬依赖请求时，系统 SHALL 诚实返回 500 异常
 AND 当 Redis 恢复后，系统 SHALL 自动恢复重连，降级计数停止增长，演练全流程证据沉淀至 `docs/redis-drill-evidence.md`
 
+
+
+### Requirement: 成绩链全链路对账 (add-score-chain-reconciliation)
+
+系统 SHALL 提供交卷→判分→成绩链路的对账批处理：按考试维度检测「未判分答卷」与「判分明细-总分不一致」两类差异；差异 SHALL 以差异票形式持久化并支持状态流转（OPEN / AUTO_FIXED / MANUAL_CLOSED）；确定性缺失（判分完成但总分未回填）SHALL 幂等自动补齐并记审计，涉分矛盾 SHALL 仅出票不自动改分；对账 SHALL 支持手动触发与定时兜底，且满足本域「定时任务的并发与多实例安全」既有口径。
+
+#### Scenario: 未判分答卷检测与确定性缺失补齐
+
+- **GIVEN** 某已达已判分状态的考试，存在一答卷交卷成功但判分记录缺失（或主观题未批完）
+- **WHEN** 管理员触发对账（或定时兜底扫描执行）
+- **THEN** 生成差异票记录考试/答卷/题目定位与差异类型（`SUBMISSION_UNGRADED`）
+- **AND** 若为「判分完成但总分未回填」的确定性缺失，幂等自动补齐并记 `audit_log`，票状态置 `AUTO_FIXED`
+- **AND** 数据矛盾类差异仅出票，状态保持 `OPEN` 待人工
+
+#### Scenario: 判分明细与总分一致性比对
+
+- **GIVEN** 某答卷的判分明细汇总分与最终成绩记录不一致
+- **WHEN** 对账运行
+- **THEN** 生成差异票（`DETAIL_TOTAL_MISMATCH`）记录期望值、实际值与偏差
+- **AND** 系统不自动改分，差异票保持 `OPEN` 待人工处置
+
+#### Scenario: 定时兜底与多实例安全
+
+- **GIVEN** 多实例部署且定时对账已启用
+- **WHEN** 定时触发到达
+- **THEN** 同一批次不重复执行（`uk_recon_run_batch` 唯一索引 + `SCHEDULED:<时间窗>` batch_key 抢占，不引入调度锁），运行记录标记 `SCHEDULED` 来源
+- **AND** 定时对账失败不影响下一次运行（失败原因入运行记录）
+
+#### Scenario: 差异票闭环与权限隔离
+
+- **GIVEN** 存在 `OPEN` 状态差异票
+- **WHEN** 无 `exam:manage` 权限的账号调用任一对账端点
+- **THEN** 请求被拒绝（403）
+- **WHEN** 管理员经 `POST /api/admin/reconciliation/diffs/{id}/close` 关闭差异票
+- **THEN** 票状态流转 `MANUAL_CLOSED`（条件更新仅 OPEN 可关）且关闭动作记审计（`SCORE_RECONCILE_CLOSE`），列表按状态筛选可查
+
+> 合入注记（2026-10-19，`add-score-chain-reconciliation`，S~M 级，**GO**）：数据层——`reconciliation_runs`（`uk_recon_run_batch` 唯一索引承担定时单飞）与 `reconciliation_diffs`（唯一键指纹含 status：未处置不重复出票、处置后复发可重开票；`question_id NOT NULL DEFAULT 0` 防 NULL 逃逸唯一索引）+ 迁移脚本 `2026-W44-add-score-chain-reconciliation.sql` 入库并登记 APPLIED.md（**未应用待人工**——存量库须人工应用后回填台账）；`ReconciliationService` 两维度对账——期望总分同源走 `ScoreService.computeSummary`（`expectedSummaries` 复用，无第二套公式），维度二涉分矛盾仅 `insertTicket`（expected/actual/deviation）绝不改分；确定性缺失补齐复用同 SET 形状 CAS 仅多 `total_score IS NULL` 幂等护栏，主观题未批完（`SUBJECTIVE_NOT_FULLY_GRADED`）只出票不补批（补批属改分，落负范围）；定时兜底 `@Scheduled` 走本域既有「不引入调度中间件与锁」取舍，失败入运行记录不阻断下轮；定时线程无登录上下文时审计落 `username=SYSTEM`（防 `audit_log` NOT NULL 静默丢审计）；四端点 `run/runs/diffs/close` 类级 `exam:manage`（STUDENT 403），`openapi.yaml` 110→114 paths，SDK 重生，前端管理对账页接入管理导航。**负范围守住**：不做故障注入框架（Redis 演练/备份恢复演练已有资产）、不做 MQ 消息层对账（publisher-confirm 补发对账已固化）、不自动改分。测试与门禁：后端集成 8 例 + 前端 15 例，backendTests 845→853、frontendTests 965→980、openapiPaths 110→114（gate-baseline 三项同笔上调）；变异 m1（抽除未判分检测）/ m2（抽除幂等补齐，另击出「护栏被抽后涉分总分被自动改写」）/ m3（抽除差异票汇总）五步实测击红 1/4/3 例并回绿零残留（字节级复原 SHA256 前后一致）。独立复核 8/8 PASS；两观察项登记：①`ReconciliationService` 补齐调用对「主观未批完但客观已判」分支会写入带 `partial_graded=1` 的分部总分（与 computeSummary 同源、保留 partial 标记、不写任何主观分，判定非阻断），该分支暂无用例覆盖，挂后续对账迭代补例；②门禁证据基座 revision 曾绑立案笔，复核已在实施笔干净树重跑复现 853/980/114 数值可信，后续笔门禁证据须直接绑实施提交号。提交链：ff72bd6 立案 → da8544f 数据层 → ede9a99 引擎/端点 → 86cfebb 契约/前端 → 9b6bfd3 用例 → 5196dff 证据/基线。

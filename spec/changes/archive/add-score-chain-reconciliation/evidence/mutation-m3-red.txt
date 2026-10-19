@@ -1,0 +1,16 @@
+# 变异 m3 击红日志（实现被注入后运行新增用例，verify 非零退出）
+
+```
+[ERROR] Tests run: 8, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 50.85 s <<< FAILURE! -- in com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.deterministicMissingBackfilledIdempotently -- Time elapsed: 1.713 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <1> but was: <0>
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.ungradedSubmissionProducesTicket -- Time elapsed: 1.965 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <1> but was: <0>
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.detailTotalMismatchOnlyTickets -- Time elapsed: 1.821 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 主观题未批完计入维度一 ==> expected: <1> but was: <0>
+[ERROR]   ScoreChainReconciliationIntegrationTest.detailTotalMismatchOnlyTickets:193 主观题未批完计入维度一 ==> expected: <1> but was: <0>
+[ERROR]   ScoreChainReconciliationIntegrationTest.deterministicMissingBackfilledIdempotently:142 expected: <1> but was: <0>
+[ERROR]   ScoreChainReconciliationIntegrationTest.ungradedSubmissionProducesTicket:113 expected: <1> but was: <0>
+[ERROR] Tests run: 8, Failures: 3, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
+```

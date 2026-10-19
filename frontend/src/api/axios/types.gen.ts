@@ -1659,6 +1659,70 @@ export type AuditLogResponse = {
     createdTime?: string;
 };
 
+export type ReconciliationRunRequest = {
+    examId?: number;
+};
+
+export type ReconciliationRunResponse = {
+    id?: number;
+    examId?: number;
+    triggerSource?: string;
+    status?: string;
+    scannedCount?: number;
+    ungradedCount?: number;
+    mismatchCount?: number;
+    autoFixedCount?: number;
+    errorMessage?: string;
+    operatorId?: number;
+    startedTime?: string;
+    finishedTime?: string;
+};
+
+export type ReconciliationDiffCloseRequest = {
+    reason?: string;
+};
+
+export type ReconciliationDiffResponse = {
+    id?: number;
+    runId?: number;
+    examId?: number;
+    submissionId?: number;
+    questionId?: number;
+    diffType?: string;
+    detail?: string;
+    expectedValue?: number;
+    actualValue?: number;
+    deviation?: number;
+    status?: string;
+    closedBy?: number;
+    closedTime?: string;
+    createdTime?: string;
+};
+
+export type ApiResponseReconciliationRunResponse = {
+    code?: number;
+    message?: string;
+    data?: ReconciliationRunResponse;
+};
+
+export type ApiResponseReconciliationDiffResponse = {
+    code?: number;
+    message?: string;
+    data?: ReconciliationDiffResponse;
+};
+
+export type ApiResponseListReconciliationRunResponse = {
+    code?: number;
+    message?: string;
+    data?: Array<ReconciliationRunResponse>;
+};
+
+export type ApiResponseListReconciliationDiffResponse = {
+    code?: number;
+    message?: string;
+    data?: Array<ReconciliationDiffResponse>;
+};
+
 export type DeleteData = {
     body?: never;
     path: {
@@ -3970,3 +4034,79 @@ export type RemoveStudentResponses = {
 };
 
 export type RemoveStudentResponse = RemoveStudentResponses[keyof RemoveStudentResponses];
+
+export type RunReconciliationData = {
+    body?: ReconciliationRunRequest;
+    path?: never;
+    query?: never;
+    url: '/api/admin/reconciliation/run';
+};
+
+export type RunReconciliationResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseReconciliationRunResponse;
+};
+
+export type RunReconciliationResponse = RunReconciliationResponses[keyof RunReconciliationResponses];
+
+export type ReconciliationRunsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        examId?: number;
+    };
+    url: '/api/admin/reconciliation/runs';
+};
+
+export type ReconciliationRunsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseListReconciliationRunResponse;
+};
+
+export type ReconciliationRunsResponse = ReconciliationRunsResponses[keyof ReconciliationRunsResponses];
+
+export type ReconciliationDiffsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        runId?: number;
+        diffType?: string;
+        status?: string;
+    };
+    url: '/api/admin/reconciliation/diffs';
+};
+
+export type ReconciliationDiffsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseListReconciliationDiffResponse;
+};
+
+export type ReconciliationDiffsResponse = ReconciliationDiffsResponses[keyof ReconciliationDiffsResponses];
+
+export type CloseReconciliationDiffData = {
+    body?: ReconciliationDiffCloseRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/api/admin/reconciliation/diffs/{id}/close';
+};
+
+export type CloseReconciliationDiffResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseReconciliationDiffResponse;
+};
+
+export type CloseReconciliationDiffResponse = CloseReconciliationDiffResponses[keyof CloseReconciliationDiffResponses];

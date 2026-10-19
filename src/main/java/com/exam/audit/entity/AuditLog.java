@@ -33,6 +33,10 @@ public class AuditLog {
     public static final String ACTION_EXAM_EXTEND_TIME = "EXAM_EXTEND_TIME";
     public static final String ACTION_SCORE_PUBLISH = "SCORE_PUBLISH";
     public static final String ACTION_SCORE_REVOKE = "SCORE_REVOKE";
+    /** 成绩链对账：确定性缺失（判分完成但总分未回填）的自动补齐 */
+    public static final String ACTION_SCORE_RECONCILE_FIX = "SCORE_RECONCILE_FIX";
+    /** 成绩链对账：差异票人工关闭 */
+    public static final String ACTION_SCORE_RECONCILE_CLOSE = "SCORE_RECONCILE_CLOSE";
     public static final String ACTION_USER_KICK = "USER_KICK";
 
     @TableId(type = IdType.AUTO)

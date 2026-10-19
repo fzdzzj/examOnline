@@ -1,0 +1,20 @@
+# 前端门禁（三）：pnpm type-check:check（vue-tsc + tsc 双 banner）
+
+- 基座 revision：ff72bd6
+- 命令：cd frontend && pnpm type-check:check
+- 结果：两段类型检查均无错误输出，退出码 0
+
+```
+
+> examonline-front@0.0.0 type-check:check D:\code\examOnline\frontend
+> npm run type-check:app:check && npm run type-check:config:check
+
+
+> examonline-front@0.0.0 type-check:app:check
+> vue-tsc --project ./tsconfig.app.json --noEmit
+
+
+> examonline-front@0.0.0 type-check:config:check
+> tsc --project ./tsconfig.config.json --noEmit
+
+```

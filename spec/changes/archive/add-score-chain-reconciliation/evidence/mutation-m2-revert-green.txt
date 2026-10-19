@@ -1,0 +1,10 @@
+# 变异 m2 复原后回绿（原始字节回写，注入标记不在场）
+
+```
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 49.45 s -- in com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+复原方式：mutation-check.sh 用备份副本按字节回写（cp + cmp），不使用 git checkout，避免行尾差异；
+回写后 cmp 与备份一致、注入标记不在场（④ PASS），随后 verify 退出码 0（⑤ PASS）——零残留。

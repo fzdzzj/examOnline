@@ -130,6 +130,7 @@ const menuItems = computed<MenuProps['items']>(() => {
         { key: '/admin/users', label: '用户管理' },
         { key: '/admin/invite-codes', label: '邀请码管理' },
         { key: '/admin/audit-logs', label: '审计日志' },
+        { key: '/admin/reconciliation', label: '成绩链对账' },
       ],
     });
   }
@@ -159,6 +160,7 @@ const NAVIGABLE_PATHS: readonly string[] = [
   '/admin/users',
   '/admin/invite-codes',
   '/admin/audit-logs',
+  '/admin/reconciliation',
 ];
 
 const onMenuClick: MenuProps['onClick'] = ({ key }) => {

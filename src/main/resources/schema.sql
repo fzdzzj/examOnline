@@ -605,4 +605,65 @@ CREATE TABLE IF NOT EXISTS cat_quiz_sessions (
     KEY idx_cat_session_student (student_id, id)
 );
 
+-- =============================================================
+-- 成绩链全链路对账（add-score-chain-reconciliation）
+-- 存量库另需手工执行 docker/mysql/migrations/2026-W44-add-score-chain-reconciliation.sql
+-- （CREATE TABLE IF NOT EXISTS 不会为已存在的库补表/补列）。
+-- =============================================================
+
+-- 对账运行记录：一次手动/定时对账一行。batch_key 是定时兜底的批次键（唯一索引）——
+-- 多实例在同一时间窗内并发触发时，只有抢到插入的那一个实例执行本批次，其余实例
+-- 收到重复键后静默跳过（与 reliability 域「正确性由幂等保证、不带分布式调度锁」同口径，
+-- 不引入 Redis 键族）；手动运行 batch_key 为 NULL（唯一索引允许多行 NULL）。
+-- 三类差异数在运行结束时回填，恒为本次运行实际检出数：ungraded_count=维度一（交卷 vs 判分）
+-- 检出数，mismatch_count=维度二（判分明细 vs 总分）检出数，auto_fixed_count=确定性缺失
+-- 实际补齐成功数（恒 ≤ ungraded_count；回填 SQL 带 total_score IS NULL 护栏，重复对账为 0）。
+CREATE TABLE IF NOT EXISTS reconciliation_runs (
+    id               BIGINT       NOT NULL AUTO_INCREMENT,
+    exam_id          BIGINT                DEFAULT NULL,  -- NULL=按范围扫描（定时兜底）
+    trigger_source   VARCHAR(16)  NOT NULL,               -- MANUAL / SCHEDULED
+    batch_key        VARCHAR(64)           DEFAULT NULL,  -- 定时批次键（唯一索引，多实例单飞护栏）
+    status           VARCHAR(16)  NOT NULL,               -- RUNNING / SUCCESS / FAILED
+    scanned_count    INT          NOT NULL DEFAULT 0,     -- 本次实际比对的已交卷答卷数
+    ungraded_count   INT          NOT NULL DEFAULT 0,     -- 维度一差异检出数
+    mismatch_count   INT          NOT NULL DEFAULT 0,     -- 维度二差异检出数
+    auto_fixed_count INT          NOT NULL DEFAULT 0,     -- 确定性缺失补齐成功数
+    error_message    VARCHAR(512)          DEFAULT NULL,  -- 失败原因（失败不影响下一次运行）
+    operator_id      BIGINT                DEFAULT NULL,  -- 手动触发的操作人；定时为 NULL
+    started_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    finished_time    DATETIME              DEFAULT NULL,
+    created_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_recon_run_batch UNIQUE (batch_key),     -- 同一时间窗只允许一个实例落运行记录
+    KEY idx_recon_run_exam (exam_id, id)                  -- 运行历史按范围倒序
+);
+
+-- 差异票：一次对账检出的每条链路差异一行，支持 OPEN → AUTO_FIXED / MANUAL_CLOSED 状态流转。
+-- question_id 用 0 表示答卷级（非题目级），避免唯一索引里 NULL 逃逸（MySQL/H2 均允许多行 NULL，
+-- 指纹会失效）；uk_recon_diff_fingerprint 带上 status，使「未处置的同一条差异」在重复对账时
+-- 不重复出票，而处置完毕（AUTO_FIXED/MANUAL_CLOSED）后同一差异再次复发仍能重新出 OPEN 票。
+-- expected/actual/deviation 只对 DETAIL_TOTAL_MISMATCH 有值（涉分矛盾只出票，绝不自动改分）。
+CREATE TABLE IF NOT EXISTS reconciliation_diffs (
+    id             BIGINT        NOT NULL AUTO_INCREMENT,
+    run_id         BIGINT        NOT NULL,               -- 关联对账运行
+    exam_id        BIGINT        NOT NULL,
+    submission_id  BIGINT        NOT NULL,
+    question_id    BIGINT        NOT NULL DEFAULT 0,     -- 0=答卷级差异
+    diff_type      VARCHAR(32)   NOT NULL,               -- SUBMISSION_UNGRADED / DETAIL_TOTAL_MISMATCH
+    detail         VARCHAR(64)   NOT NULL DEFAULT '',    -- GRADING_MISSING / SUBJECTIVE_NOT_FULLY_GRADED / TOTAL_SCORE_NOT_FILLED
+    expected_value DECIMAL(10,2)          DEFAULT NULL,  -- 同源口径期望总分（涉分矛盾）
+    actual_value   DECIMAL(10,2)          DEFAULT NULL,  -- 库中实际总分（涉分矛盾）
+    deviation      DECIMAL(10,2)          DEFAULT NULL,  -- expected - actual
+    status         VARCHAR(16)   NOT NULL DEFAULT 'OPEN',-- OPEN / AUTO_FIXED / MANUAL_CLOSED
+    closed_by      BIGINT                 DEFAULT NULL,  -- 人工关闭操作人
+    closed_time    DATETIME               DEFAULT NULL,
+    created_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_recon_diff_fingerprint UNIQUE (diff_type, submission_id, question_id, status),
+    KEY idx_recon_diff_run (run_id, id),                 -- 按运行查看差异票
+    KEY idx_recon_diff_status (status, id)               -- 差异票列表按状态筛选
+);
+
 

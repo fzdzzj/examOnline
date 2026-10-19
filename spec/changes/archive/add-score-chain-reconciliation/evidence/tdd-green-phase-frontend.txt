@@ -1,0 +1,26 @@
+# TDD 回绿（前端）：管理对账页 15 例全绿
+
+- 命令（frontend 目录）：pnpm vitest run "src/pages/(dashboard)/admin/reconciliation/__tests__/reconciliationAdmin.spec.ts"
+- 基座 revision：ff72bd6（立案笔；工作区含本笔未提交改动）
+- 结果：
+
+```
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+```
+
+## 用例覆盖（reconciliationAdmin.spec.ts，15 例）
+
+- 运行历史按后端字段直渲染（触发来源/状态/扫描数/三类差异数/错误信息）；
+- 差异票直渲染（类型/状态/期望值/实际值/偏差/说明）；
+- 查询失败 → error Alert 承载后端原文且不落「暂无数据」；成功且无数据 → 空态照常；
+- 双表下界分页：满页时第 2 页可达且真实带 page 请求，末页不预留；
+- 触发对账：examId 透传 body、空值不携带；成功后 message.success 呈现三类计数并失效两个查询键；
+- 人工关闭：仅 OPEN 行出现入口；弹窗明示「仅处置不改分」；确认后 path:{id} 调用并失效两个查询；
+  失败只 message.error 原文、不失效查询；
+- 差异票筛选：runId/diffType/status 透传，空筛选只携带 page/size，300ms 防抖，筛选变更回第 1 页；
+- 导航接线护栏：(dashboard).page.vue 源码中 /admin/reconciliation 出现 ≥2 处且保留 canAccess(role, '/admin/')。
+
+## 全量前端门禁
+
+pnpm test 全量：128 个测试文件 / 980 例全绿（基线 965 → 980），见 gate-frontend-test.txt。

@@ -1,0 +1,36 @@
+# 契约与 SDK（openapi 110 → 114 paths）
+
+- 导出方式：`./mvnw.cmd test -DexportContract=true -Dtest=OpenApiContractTest#exportOpenApiContract`
+  （springdoc 真实导出到 target/openapi.exported.yaml，再将本案新增块插入入库文件，避免无关 path 顺序漂移）
+- 入库文件 `openapi.yaml`：paths **110 → 114**（+4，零删除），契约冒烟 `OpenApiContractTest` 3 例通过（1 例为导出动作的 @EnabledIfSystemProperty，常态 skip）
+- 基座 revision：ff72bd6（立案笔；工作区含本笔未提交改动）
+
+## 新增 path（4 条，类级 exam:manage）
+
+| path | operationId | 说明 |
+|---|---|---|
+| `POST /api/admin/reconciliation/run` | `runReconciliation` | 手动触发对账（body 可带 examId） |
+| `GET /api/admin/reconciliation/runs` | `reconciliationRuns` | 运行历史分页（page/size/examId） |
+| `GET /api/admin/reconciliation/diffs` | `reconciliationDiffs` | 差异票分页（page/size/runId/diffType/status） |
+| `POST /api/admin/reconciliation/diffs/{id}/close` | `closeReconciliationDiff` | 人工关闭差异票 |
+
+## 新增 schema（8 个）
+
+`ReconciliationRunRequest`、`ReconciliationRunResponse`、`ReconciliationDiffCloseRequest`、
+`ReconciliationDiffResponse`、`ApiResponseReconciliationRunResponse`、
+`ApiResponseReconciliationDiffResponse`、`ApiResponseListReconciliationRunResponse`、
+`ApiResponseListReconciliationDiffResponse`
+
+## SDK 重生
+
+- `cd frontend && pnpm gen:api`（@hey-api/openapi-ts 0.97.3）→
+  `src/api/axios/{sdk.gen.ts,types.gen.ts,index.ts}` 三文件更新；
+- 生成函数名与 operationId 一致：`runReconciliation` / `reconciliationRuns` / `reconciliationDiffs` /
+  `closeReconciliationDiff`（避开 `run` 这类与既有 operation 撞名的泛化名）；
+- 契约类类型零手写：前端页面只 import 生成的函数与 `ReconciliationRunResponse` /
+  `ReconciliationDiffResponse` 类型。
+
+## 机检等价
+
+`.github/ci/check_openapi_paths.sh` 判据语义：paths 数 **>=** gate-baseline 的 `openapiPaths`
+（只增不减）。本笔 gate-baseline 由 110 同笔上调至 114，见 gate-baseline 证据与 ci-gate-assert.txt。
