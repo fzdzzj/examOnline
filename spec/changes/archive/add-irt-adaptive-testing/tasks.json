@@ -1,0 +1,34 @@
+{
+  "change": "add-irt-adaptive-testing",
+  "category": "feature-data-intelligence",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "阶段 1：提案立项与基线登记",
+      "status": "completed",
+      "description": "proposal.md、spec-delta.md、tasks.json 落位；spec/README.md 登记进行中变更表；创建 feature/add-irt-adaptive-testing 分支并提交立案笔。",
+      "evidence": "分支 feature/add-irt-adaptive-testing 自 main@c75fe5e 创建；立案三件套落盘（proposal 含 CTT→IRT 转换、EAP/N-R θ 估计、Fisher 信息量选题、终止规则、零新 Redis 键族口径；spec-delta 含两 Requirement 五 Scenario）；spec/README.md 在途表登记；立案笔 8250b71。"
+    },
+    {
+      "id": 2,
+      "title": "阶段 2：IRT 参数表与 CAT 会话表、标定服务、CAT 引擎、端点与前端面板实现",
+      "status": "completed",
+      "description": "schema.sql 新建 question_irt_params 与 cat_quiz_sessions 两表（AUTO_INCREMENT 块内显式 PRIMARY KEY (id)，H2/MySQL 双兼容）+ docker/mysql/migrations/ 迁移脚本 + APPLIED.md 台账登记（如实登记应用状态）；实体与 Mapper 双向一致（过 comm -23）；IrtParamService（CTT→3PL 经验转换：a 由区分度 D 映射、b 由难度 P logit 变换中值修正、c 按题型固定；样本不足标记不可用）；IrtCatService（EAP/Newtown-Raphson θ 估计、Fisher 信息量 I(θ) 最大选题排除已答、SE<0.30 或最大题数 1~20 缺省 10 或题池耗尽终止、b 最近 0 开局）；三端点（start/answer/report，归属人隔离）；openapi.yaml 107→110 paths + schemas + SDK 重生；前端自适应测验面板（逐题作答流、能力反馈、终止报告）接入练习入口；作答同源 GradingStrategyRegistry 判分落 practice_attempt；零新 Redis 键族。",
+      "evidence": "实施笔 85365ae（数据层）+ 1168808（引擎与三端点）+ 2f6f6b7（契约/SDK/前端），证据笔含本回填与 gate-baseline 上调。① 数据层：schema.sql 追加 question_irt_params（id/question_id/discrimination/difficulty/guessing/sample_size/pool_available/source_exam_id/calibrated_time/created_time/updated_time 11 列 + uk_irt_question(question_id) + AUTO_INCREMENT 块内显式 PRIMARY KEY (id)）与 cat_quiz_sessions（15 列 + idx_cat_session_student(student_id,id) + 显式 PRIMARY KEY (id)），θ 轨迹/已答题集以 VARCHAR JSON 文本列落库（H2/MySQL 双兼容）；迁移脚本 docker/mysql/migrations/2026-W43-add-irt-adaptive-testing.sql 与 schema.sql 同形（剥行内注释后逐行一致，复核实测 diff=0），APPLIED.md 新增行如实登记「未应用（待人工应用）」（入库时 docker ps 无容器在跑，未对 dev 库执行；脚本入库≠迁移已生效）；实体表集合 − schema 建表集合 = 空（comm -23 等价自查，evidence/redline-selfcheck.txt）。② IrtParamService：a=0.5+2D 钳制 [0.5,2.5]（D=0.5→中性 1.5）、b=logit(P) 且 P 中值修正钳制 [0.05,0.95] 防发散、c 单选 0.25/判断 0.50/其余 0；数据源与 C3 既有 CTT 聚合同源（ExamAnalysisReportService.questionMetrics → ScoreExportService.aggregateQuestionStats，禁止第二套公式），并把 practice_attempt 按题合并进样本量与正确率；合并样本 <4 或缺区分度 D 的题 pool_available=false 不入池；按场次 12h TTL 幂等 upsert（uk_irt_question），单场异常 warn 跳过。③ IrtEstimator：3PL 概率、Fisher 信息量 I(θ)=a²(P-c)²(1-P)/(P(1-c)²)、EAP 主估计（N(0,1) 先验 + [-4,4] 步长 0.05 后验均值/标准差）、Newton-Raphson(Fisher scoring) 辅助估计与数值兜底。④ IrtCatService：开局取 b 最接近 0 的中等难度题（σ 初值 0/SE 1）；每次作答后 EAP 即时重估 θ/SE；选题取未作答题中 I(θ) 最大者（并列取 |b-θ| 更小、再以 questionId 兜底）；终止规则为达最大题数（缺省 10，请求可配 1~20，服务端再钳制）→SE<threshold（缺省 0.30，可配 [0.05,2.0]）→题池耗尽；逐题复用 GradingStrategyRegistry.dispatch().grade() 判分并落 practice_attempt（零口径分叉）；会话（θ 轨迹/已答题集/终止原因）落 cat_quiz_sessions，零新 Redis 键族（adaptive 包 Redis 命中仅注释）。⑤ 端点与契约：AdaptiveQuizController 提供 POST /api/scores/my/adaptive-quiz/start、POST .../{sessionId}/answer、GET .../{sessionId}/report，studentId 一律取 SecurityUtil 且服务层归属校验（越权 403、会话不存在 404、已终止再作答 400）；openapi.yaml paths 107→110（只摘取本案 3 path 块 + 10 schema 块插入，避免 springdoc 无关顺序漂移），pnpm gen:api 重生 SDK（startAdaptiveQuiz/submitAdaptiveQuizAnswer/getAdaptiveQuizReport，避开泛化 operationId 撞名）。⑥ 前端：AdaptiveQuizPanel.vue（逐题作答流、θ/SE 实时反馈、终止能力报告含正确率/终止原因/逐题轨迹；只提交原始答案，判定/解析全部来自后端），错题本页头部新增「自适应测验」入口与弹层。⑦ 参数刷新口径收敛（如实记录）：为满足派工卡 107→110（仅三端点）不新增第 4 条路径，参数刷新改为 CAT 开局按学生已判分考试惰性标定（IrtParamService.calibrateStudentPool → calibrateExam，按场次 TTL 幂等），proposal 2.1「教师/管理触发端点」未以独立 HTTP 路径落地；该口径收敛需复核方确认。"
+    },
+    {
+      "id": 3,
+      "title": "阶段 3：TDD 先红后绿、三变异击红与双端门禁留证",
+      "status": "completed",
+      "description": "新增后端单测与集成测试覆盖参数转换与样本不足拦截、开局选题、答对/答错后 θ 更新与选题难度单调性、终止三规则、报告越权拦截、判分同源落库；前端面板交互测试；TDD 先红后绿留证；三变异（m1 抽除 θ 更新 / m2 抽除最大信息量选题 / m3 抽除终止规则）断言级击红并回绿零残留留证；仓库根 ./mvnw clean test 与前端三件套实测全绿；gate-baseline.json 同笔上调（backendTests/frontendTests/openapiPaths 三项，只增不减）；evidence/ 落 10+ 项留证与 evidence-sha256.txt 清单。",
+      "evidence": "证据目录 spec/changes/add-irt-adaptive-testing/evidence/ 共 21 个文件（19 项留证 + README.md 索引 + evidence-sha256.txt 清单）。① 用例：后端 29 例（IrtEstimatorTest 4 / IrtParamServiceTest 8 / IrtCatServiceTest 12 / AdaptiveQuizIntegrationTest 5），覆盖 a/b/c 转换边界、练习样本合并、样本不足不入池、TTL 幂等、单场异常跳过、开局 b 近 0、答对上调/答错下调 θ、最大信息量选题排除已答、MAX_ITEMS/SE_CONVERGED/POOL_EXHAUSTED 三终止、越权 403、报告轨迹、判分同源落 practice_attempt、首题不泄露答案解析、题池空 400；前端 5 例（AdaptiveQuizPanel 4 + 页面入口 1）。② 先红：实现类移出源码树（等价未接线）后执行新增用例 → 编译级红（tdd-red-phase.txt）；回绿：29/29（tdd-green-phase.txt）与 5/5（tdd-green-phase-frontend.txt）。③ 三变异均落在生产代码单一方法并记录 diff：m1 updateTheta 恒返回先验 → 击红 2 例（θ 方向断言）；m2 selectNextItem 退化为题池顺序取题 → 击红 nextItemMaximizesInformationAndExcludesAnswered（expected <102> but was <103>）；m3 terminationReasonOf 恒 null → 击红 terminatesAtMaxItems + terminatesWhenSeConverges；三次复原均用原始字节副本回写，SHA256 与变异前逐字节一致（237BF656…971E9），复原后各 12/12 回绿零残留。④ 双端门禁实测：仓库根 ./mvnw.cmd clean test → Tests run 845, Failures 0, Errors 0, Skipped 1, BUILD SUCCESS（基线 816→845，+29）；前端 pnpm lint:check 退出 0、pnpm type-check:check 双 banner 退出 0、pnpm test → 127 files / 965 tests 全绿（基线 960→965，+5）。⑤ gate-baseline.json 三项同笔上调 816→845、960→965、107→110，CI 三门禁脚本语义为 >=（只增不减），因本机无 bash/WSL，按 .github/ci/*.sh 断言逐条 PowerShell 等价复核全 True（ci-gate-assert.txt）。⑥ 红线自查：@Sql 注解 0 命中（新集成测试用 schema.sql 建表 + Mapper 直插夹具，未建任何表）、flyway 0 命中且 src/main/resources/db 不存在、migrations 无自动执行者、adaptive 包零 Redis API。⑦ 作废记录：首次全量前端测试与 mvnw 并发执行导致 12 个与本案无关的既有用例 CPU 争用超时（5~9s > 5s 默认超时），后端门禁独占结束后独占重跑 965/965 全绿，并发日志未入库，gate-frontend-test.txt 为独占复跑权威产物。"
+    },
+    {
+      "id": 4,
+      "title": "阶段 4：独立复核、基线合入与收口归档",
+      "status": "completed",
+      "description": "独立复核（git status/diff 范围、sha256sum -c、双端门禁复跑、CI 三机检、关键算法抽查、AGENTS 四红线自查）；spec-delta 合入 specs/adaptive-testing/spec.md（新建能力域基线）；提案归档 spec/changes/archive/；spec/README.md 在途表清空、能力域表与归档速览登记；feature/add-irt-adaptive-testing 分支 --no-ff 合入 main 并推送；docs/系统架构审查与后续演进路线.md 同步。",
+      "evidence": "独立复核 7 项 PASS / 1 项 FAIL（evidence-sha256.txt 以 CRLF 入库致 sha256sum -c 在 Git Bash 下 0/20 OK）+ 1 项口径裁决（参数刷新教师端点 → 开局惰性标定，指导裁决接受）。合入前三改已由主 Agent 处置并复验：F1 清单 CRLF→LF 后 Git Bash sha256sum -c 20/20 OK；F2 spec-delta Scenario「教师触发」与 proposal 2.1 改写为惰性标定口径（消除假规范）；F3 ExamAnalysisReportService passLineOf 格式回退还原（纯空白，git diff 仅该两行）。复核另确认：845/965/110 三门禁真 bash 脚本全 OK、m1/m2/m3 零残留（blob a42c75a 与变异前 index 一致）、33/33 表自增块显式主键、APPLIED.md 18 脚本 18 行零缺口、adaptive 包零 Redis API、越权 403/判分同源/首题不泄答案抽查全过；前端默认超时下受宿主争用（外部 Maven 构建）不可复现属环境性，--testTimeout=30000 独占复跑 965/965 全绿。轻微项（redline-selfcheck 空条目、import 挤行、calibrateStudentPool 计数语义、证据「本机无 bash」陈述）不阻塞、保持证据原貌不改。收口动作：新建能力域基线 specs/adaptive-testing/spec.md（两 Requirement 五 Scenario 按惰性口径合入 + 合入注记）；spec/README.md 能力域表登记 #21、在途表清空、归档速览置顶；git mv 归档；--no-ff 合入 main 并推送；演进路线文档同步。遗留人工动作：2026-W43-add-irt-adaptive-testing.sql 须人工应用到存量库并回填 APPLIED.md 台账。"
+    }
+  ]
+}

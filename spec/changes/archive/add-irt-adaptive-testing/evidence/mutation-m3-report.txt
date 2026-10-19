@@ -1,0 +1,15 @@
+﻿diff --git a/src/main/java/com/exam/adaptive/service/IrtCatService.java b/src/main/java/com/exam/adaptive/service/IrtCatService.java
+index a42c75a..174185b 100644
+--- a/src/main/java/com/exam/adaptive/service/IrtCatService.java
++++ b/src/main/java/com/exam/adaptive/service/IrtCatService.java
+@@ -374,6 +374,10 @@ public class IrtCatService {
+      * 抽除本方法的返回（恒不终止）→ 终止与报告断言击红。
+      */
+     private String terminationReasonOf(CatQuizSession session) {
++        // m3 变异：抽除终止规则，永不主动终止
++        if (session != null) {
++            return null;
++        }
+         int answered = session.getAnsweredCount() == null ? 0 : session.getAnsweredCount();
+         if (session.getMaxItems() != null && answered >= session.getMaxItems()) {
+             return CatQuizSession.TERMINATED_MAX_ITEMS;

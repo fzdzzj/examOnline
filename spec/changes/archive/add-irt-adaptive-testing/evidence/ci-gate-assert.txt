@@ -1,0 +1,24 @@
+# CI 三门禁机检等价复核（本机无 bash/WSL，按 .github/ci/*.sh 断言逐条以 PowerShell 等价执行）
+
+## 1) assert_backend.sh 等价
+判定 1 BUILD SUCCESS banner 存在 = True
+判定 2 末条汇总行 = [WARNING] Tests run: 845, Failures: 0, Errors: 0, Skipped: 1
+判定 3 Failures=0 = True；Errors=0 = True
+判定 4 Tests run=845 >= baseline backendTests=845 = True
+
+## 2) assert_frontend.sh 等价
+判定 1 三日志非空 = True
+判定 2 vue-tsc banner = True；tsc banner = True
+判定 3 vitest 汇总行 = Tests  965 passed (965)
+判定 4 vitest passed=965 >= baseline frontendTests=965 = True
+判定 5 lint 退出 0（见 gate-frontend-lint.txt 末行无 ESLint 报错）
+
+## 3) check_openapi_paths.sh 等价
+判定 openapi paths=110 >= baseline openapiPaths=110 = True
+
+## gate-baseline.json（本笔上调后）
+{
+    "backendTests":  845,
+    "frontendTests":  965,
+    "openapiPaths":  110
+}

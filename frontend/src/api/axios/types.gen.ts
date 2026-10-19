@@ -303,6 +303,94 @@ export type PracticeQuizResponse = {
     items?: Array<PracticePoolItem>;
 };
 
+export type AdaptiveQuizAnswerRequest = {
+    questionId: number;
+    answer?: string;
+};
+
+export type AdaptiveQuizAnswerResponse = {
+    sessionId?: number;
+    questionId?: number;
+    correct?: boolean;
+    correctAnswer?: string;
+    analysis?: string;
+    theta?: number;
+    se?: number;
+    answeredCount?: number;
+    terminated?: boolean;
+    terminationReason?: string;
+    nextQuestion?: AdaptiveQuizQuestionItem;
+};
+
+export type AdaptiveQuizQuestionItem = {
+    order?: number;
+    questionId?: number;
+    questionType?: string;
+    questionContent?: string;
+    imageUrl?: string;
+    choices?: Array<string>;
+};
+
+export type ApiResponseAdaptiveQuizAnswerResponse = {
+    code?: number;
+    message?: string;
+    data?: AdaptiveQuizAnswerResponse;
+};
+
+export type AdaptiveQuizStartRequest = {
+    maxItems?: number;
+    seThreshold?: number;
+};
+
+export type AdaptiveQuizStartResponse = {
+    sessionId?: number;
+    status?: string;
+    theta?: number;
+    se?: number;
+    answeredCount?: number;
+    maxItems?: number;
+    seThreshold?: number;
+    currentQuestion?: AdaptiveQuizQuestionItem;
+};
+
+export type ApiResponseAdaptiveQuizStartResponse = {
+    code?: number;
+    message?: string;
+    data?: AdaptiveQuizStartResponse;
+};
+
+export type AdaptiveQuizReportItem = {
+    order?: number;
+    questionId?: number;
+    questionType?: string;
+    questionContent?: string;
+    answer?: string;
+    correct?: boolean;
+    correctAnswer?: string;
+    thetaAfter?: number;
+    seAfter?: number;
+};
+
+export type AdaptiveQuizReportResponse = {
+    sessionId?: number;
+    studentId?: number;
+    status?: string;
+    theta?: number;
+    se?: number;
+    answeredCount?: number;
+    maxItems?: number;
+    correctCount?: number;
+    accuracy?: number;
+    terminationReason?: string;
+    items?: Array<AdaptiveQuizReportItem>;
+};
+
+export type ApiResponseAdaptiveQuizReportResponse = {
+    code?: number;
+    message?: string;
+    data?: AdaptiveQuizReportResponse;
+};
+
 export type ReviewHandleRequest = {
     action?: string;
     adjustedTotalScore?: number;
@@ -2044,6 +2132,58 @@ export type GeneratePracticeQuizResponses = {
 };
 
 export type GeneratePracticeQuizResponse = GeneratePracticeQuizResponses[keyof GeneratePracticeQuizResponses];
+
+export type SubmitAdaptiveQuizAnswerData = {
+    body: AdaptiveQuizAnswerRequest;
+    path: {
+        sessionId: number;
+    };
+    query?: never;
+    url: '/api/scores/my/adaptive-quiz/{sessionId}/answer';
+};
+
+export type SubmitAdaptiveQuizAnswerResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseAdaptiveQuizAnswerResponse;
+};
+
+export type SubmitAdaptiveQuizAnswerResponse = SubmitAdaptiveQuizAnswerResponses[keyof SubmitAdaptiveQuizAnswerResponses];
+
+export type StartAdaptiveQuizData = {
+    body?: AdaptiveQuizStartRequest;
+    path?: never;
+    query?: never;
+    url: '/api/scores/my/adaptive-quiz/start';
+};
+
+export type StartAdaptiveQuizResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseAdaptiveQuizStartResponse;
+};
+
+export type StartAdaptiveQuizResponse = StartAdaptiveQuizResponses[keyof StartAdaptiveQuizResponses];
+
+export type GetAdaptiveQuizReportData = {
+    body?: never;
+    path: {
+        sessionId: number;
+    };
+    query?: never;
+    url: '/api/scores/my/adaptive-quiz/{sessionId}/report';
+};
+
+export type GetAdaptiveQuizReportResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseAdaptiveQuizReportResponse;
+};
+
+export type GetAdaptiveQuizReportResponse = GetAdaptiveQuizReportResponses[keyof GetAdaptiveQuizReportResponses];
 
 export type HandleData = {
     body: ReviewHandleRequest;
