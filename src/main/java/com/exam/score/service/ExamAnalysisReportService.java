@@ -138,9 +138,26 @@ public class ExamAnalysisReportService {
         return response;
     }
 
+    /**
+     * 逐题 CTT 指标快照（IRT 标定的数据源，add-irt-adaptive-testing）：
+     * 与 {@link #buildReport} 完全同源（同一 {@code ScoreExportService.aggregateQuestionStats}），
+     * 只读、不改写任何数据。考试不存在或尚未达已判分状态返回空列表——标定方按"无样本"处理，
+     * 不把"报告不可看"的语义泄漏成标定失败。
+     */
+    public List<ScoreExportService.QuestionStatMetric> questionMetrics(Long examId) {
+        if (examId == null) {
+            return List.of();
+        }
+        Exam exam = examMapper.selectById(examId);
+        if (exam == null || exam.getStatus() == null || exam.getStatus() < Exam.STATUS_GRADED) {
+            return List.of();
+        }
+        GradingPaper paper = paperReader.readByExamId(examId);
+        return scoreExportService.aggregateQuestionStats(examId, paper, paper.questions());
+    }
+
     /** 及格线 = 总分 ×60%（HALF_UP 取整到整数分）。总分不可得（null/非正）→ fail-fast。 */
-    private static int passLineOf(BigDecimal total) {
-        return fractionOf(total, PASS_RATE);
+    private static int passLineOf(BigDecimal total) {        return fractionOf(total, PASS_RATE);
     }
 
     /** 优秀线 = 总分 ×90%（HALF_UP 取整到整数分）。总分不可得（null/非正）→ fail-fast。 */
