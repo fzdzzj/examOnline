@@ -72,6 +72,11 @@ exam:
       # 避免定时 tick 干扰 MQ 发送次数断言
       fixed-delay-ms: 3600000
       initial-delay-ms: 3600000
+  reconciliation:
+    scheduled:
+      # 测试环境禁用成绩链定时对账（与 taking.sweep 同口径）：需要定时语义的用例直接调用
+      # ReconciliationService.runScheduled(固定时刻) 复现批次抢占，避免后台 tick 污染计数断言
+      enabled: false
   cache:
     # 缓存三防测试参数：等待轮数放宽到 2s（击穿用例慢回源 300ms，等待线程须在兜底回源前读到回填值）
     wait-interval-ms: 25
