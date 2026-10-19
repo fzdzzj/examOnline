@@ -1,0 +1,21 @@
+.github/ci/gate-baseline.json 同笔上调（只增不减；本笔只调 backendTests，frontendTests/openapiPaths 逐字未动）
+
+diff（git diff -- .github/ci/gate-baseline.json）：
+diff --git a/.github/ci/gate-baseline.json b/.github/ci/gate-baseline.json
+index 92b5099..91ba72a 100644
+--- a/.github/ci/gate-baseline.json
++++ b/.github/ci/gate-baseline.json
+@@ -1,5 +1,5 @@
+ {
+-  "backendTests": 853,
++  "backendTests": 855,
+   "frontendTests": 980,
+   "openapiPaths": 114
+ }
+
+三项数值与实测的绑定：
+  backendTests 855  <- gate-backend.txt（Tests run=855，rev 0c5b86e）
+  frontendTests 980 <- gate-frontend-test.txt（Tests 980 passed，rev 0c5b86e）
+  openapiPaths 114  <- contract-paths.txt（零契约，持平）
+
+CI 机检等价复跑（真实 .github/ci 脚本）：见 ci-gate-assert.txt，三断言均 OK。

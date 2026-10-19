@@ -1,0 +1,33 @@
+变异 m3 击红留证（assertion-level）
+target : src/main/java/com/exam/grading/mapper/GradingSubmissionMapper.java
+inject : s|AND total_score IS NULL|AND 1 = 1 /*m3-guard-removed*/|
+意图   : 抽除补齐 CAS 的 total_score IS NULL 幂等护栏（重复对账会二次写入）
+结果   : --verify 非零退出（断言级失败，非编译红）
+
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[ERROR] Tests run: 10, Failures: 4, Errors: 1, Skipped: 0, Time elapsed: 73.53 s <<< FAILURE! -- in com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.closeDiffMarksManualClosedAndAudits -- Time elapsed: 10.80 s <<< ERROR!
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.deterministicMissingBackfilledIdempotently -- Time elapsed: 2.321 s <<< FAILURE!
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.scheduledBatchRunsOncePerWindow -- Time elapsed: 2.229 s <<< FAILURE!
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.detailTotalMismatchOnlyTickets -- Time elapsed: 2.108 s <<< FAILURE!
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.partialGradedBackfillIsIdempotent -- Time elapsed: 2.207 s <<< FAILURE!
+[ERROR] Failures: 
+[ERROR]   ScoreChainReconciliationIntegrationTest.detailTotalMismatchOnlyTickets:276 明细汇总 10 vs 实际总分 8 计入维度二 ==> expected: <1> but was: <0>
+[ERROR]   ScoreChainReconciliationIntegrationTest.deterministicMissingBackfilledIdempotently:160 expected: <0> but was: <1>
+[ERROR]   ScoreChainReconciliationIntegrationTest.partialGradedBackfillIsIdempotent:242 总分已回填，不得二次补齐 ==> expected: <0> but was: <1>
+[ERROR]   ScoreChainReconciliationIntegrationTest.scheduledBatchRunsOncePerWindow:373 expected: <1> but was: <2>
+[ERROR] Errors: 
+[ERROR]   ScoreChainReconciliationIntegrationTest.closeDiffMarksManualClosedAndAudits:309 NullPointer Cannot invoke "com.fasterxml.jackson.databind.JsonNode.get(String)" because the return value of "com.fasterxml.jackson.databind.JsonNode.get(int)" is null
+[ERROR] Tests run: 10, Failures: 4, Errors: 1, Skipped: 0
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] See D:\code\examOnline\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

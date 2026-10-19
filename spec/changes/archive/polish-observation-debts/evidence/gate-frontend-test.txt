@@ -1,0 +1,15 @@
+前端单测门禁实测（frontend/ pnpm test；vitest.config.ts 已固化 testTimeout: 30000）
+
+revision  : 0c5b86e
+执行时间  : 2026-10-19 14:37:37
+命令      : cd frontend && pnpm test
+退出码    : 0
+
+ Test Files  128 passed (128)
+      Tests  980 passed (980)
+   Start at  13:57:05
+   Duration  336.90s (transform 139.33s, setup 33.01s, import 4257.01s, tests 617.15s, environment 1236.14s)
+EXIT=0
+
+判据：用例数与变更前基线一致（980），配置改动未增删任何用例；
+      默认命令直接跑（不加 --testTimeout 覆盖参数），即 spec-delta「超时预算配置生效且用例集不变」场景。

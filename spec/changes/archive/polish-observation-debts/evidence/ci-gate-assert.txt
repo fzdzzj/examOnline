@@ -1,0 +1,10 @@
+CI 门禁机检等价复跑（真实 .github/ci 脚本 + 上调后的 gate-baseline.json）
+
+revision : 0c5b86e
+执行      : Git Bash 下依次跑 assert_backend.sh / assert_frontend.sh / check_openapi_paths.sh
+输入日志  : 上面三份 gate-*.txt 对应的原始日志（polish-gate-backend.log、polish-fe/*）
+
+BACKEND GATE ASSERT OK: Tests run=855, Failures=0, Errors=0, Skipped=1 (baseline >= 855)
+FRONTEND GATE ASSERT OK: vitest passed=980 (baseline >= 980), lint/typecheck logs non-empty, both banners present
+OPENAPI PATHS ASSERT OK: paths=114 (baseline >= 114)
+三个脚本退出码均为 0；上调后的 gate-baseline.json = {"backendTests":855,"frontendTests":980,"openapiPaths":114}

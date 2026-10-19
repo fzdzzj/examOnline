@@ -673,7 +673,7 @@ AND 当 Redis 恢复后，系统 SHALL 自动恢复重连，降级计数停止�
 
 
 
-### Requirement: 成绩链全链路对账 (add-score-chain-reconciliation)
+### Requirement: 成绩链全链路对账 (add-score-chain-reconciliation, polish-observation-debts)
 
 系统 SHALL 提供交卷→判分→成绩链路的对账批处理：按考试维度检测「未判分答卷」与「判分明细-总分不一致」两类差异；差异 SHALL 以差异票形式持久化并支持状态流转（OPEN / AUTO_FIXED / MANUAL_CLOSED）；确定性缺失（判分完成但总分未回填）SHALL 幂等自动补齐并记审计，涉分矛盾 SHALL 仅出票不自动改分；对账 SHALL 支持手动触发与定时兜底，且满足本域「定时任务的并发与多实例安全」既有口径。
 
@@ -707,4 +707,13 @@ AND 当 Redis 恢复后，系统 SHALL 自动恢复重连，降级计数停止�
 - **WHEN** 管理员经 `POST /api/admin/reconciliation/diffs/{id}/close` 关闭差异票
 - **THEN** 票状态流转 `MANUAL_CLOSED`（条件更新仅 OPEN 可关）且关闭动作记审计（`SCORE_RECONCILE_CLOSE`），列表按状态筛选可查
 
+#### Scenario: 主观未批完但客观已判的分部总分补齐
+
+- **GIVEN** 某答卷客观题已全部判分、主观题未批完（`partial_graded=1`）且 `total_score` 未回填
+- **WHEN** 对账运行
+- **THEN** 幂等补齐写入口径与 `computeSummary` 同源的分部总分（客观判分汇总），保留 `partial_graded=1` 标记
+- **AND** 同时生成 `SUBJECTIVE_NOT_FULLY_GRADED` 差异票如实暴露未批完状态，不写任何主观分（补批属改分，落既有负范围）
+
 > 合入注记（2026-10-19，`add-score-chain-reconciliation`，S~M 级，**GO**）：数据层——`reconciliation_runs`（`uk_recon_run_batch` 唯一索引承担定时单飞）与 `reconciliation_diffs`（唯一键指纹含 status：未处置不重复出票、处置后复发可重开票；`question_id NOT NULL DEFAULT 0` 防 NULL 逃逸唯一索引）+ 迁移脚本 `2026-W44-add-score-chain-reconciliation.sql` 入库并登记 APPLIED.md（**未应用待人工**——存量库须人工应用后回填台账）；`ReconciliationService` 两维度对账——期望总分同源走 `ScoreService.computeSummary`（`expectedSummaries` 复用，无第二套公式），维度二涉分矛盾仅 `insertTicket`（expected/actual/deviation）绝不改分；确定性缺失补齐复用同 SET 形状 CAS 仅多 `total_score IS NULL` 幂等护栏，主观题未批完（`SUBJECTIVE_NOT_FULLY_GRADED`）只出票不补批（补批属改分，落负范围）；定时兜底 `@Scheduled` 走本域既有「不引入调度中间件与锁」取舍，失败入运行记录不阻断下轮；定时线程无登录上下文时审计落 `username=SYSTEM`（防 `audit_log` NOT NULL 静默丢审计）；四端点 `run/runs/diffs/close` 类级 `exam:manage`（STUDENT 403），`openapi.yaml` 110→114 paths，SDK 重生，前端管理对账页接入管理导航。**负范围守住**：不做故障注入框架（Redis 演练/备份恢复演练已有资产）、不做 MQ 消息层对账（publisher-confirm 补发对账已固化）、不自动改分。测试与门禁：后端集成 8 例 + 前端 15 例，backendTests 845→853、frontendTests 965→980、openapiPaths 110→114（gate-baseline 三项同笔上调）；变异 m1（抽除未判分检测）/ m2（抽除幂等补齐，另击出「护栏被抽后涉分总分被自动改写」）/ m3（抽除差异票汇总）五步实测击红 1/4/3 例并回绿零残留（字节级复原 SHA256 前后一致）。独立复核 8/8 PASS；两观察项登记：①`ReconciliationService` 补齐调用对「主观未批完但客观已判」分支会写入带 `partial_graded=1` 的分部总分（与 computeSummary 同源、保留 partial 标记、不写任何主观分，判定非阻断），该分支暂无用例覆盖，挂后续对账迭代补例；②门禁证据基座 revision 曾绑立案笔，复核已在实施笔干净树重跑复现 853/980/114 数值可信，后续笔门禁证据须直接绑实施提交号。提交链：ff72bd6 立案 → da8544f 数据层 → ede9a99 引擎/端点 → 86cfebb 契约/前端 → 9b6bfd3 用例 → 5196dff 证据/基线。
+
+> 合入注记（2026-10-19，`polish-observation-debts`，T 级打磨，**GO**）：本案清偿上一注记观察项①——「主观未批完但客观已判」补齐分支由 `ScoreChainReconciliationIntegrationTest` 新增 2 例覆盖（total_score 与 `computeSummary` 同源、`partial_graded=1` 保留、`SUBJECTIVE_NOT_FULLY_GRADED` OPEN 票 + `TOTAL_SCORE_NOT_FILLED` AUTO_FIXED 票、零主观分写入、重复对账幂等不二次写不重复出票），行为以本 Scenario 显性入基线；**行为代码零改动**（纯补例，实现是 `add-score-chain-reconciliation` 已交付行为）。观察项②（门禁证据绑实施提交号）自本案起为后续笔纪律。backendTests 853→855（仅上调此项，frontendTests 980 / openapiPaths 114 不变）。

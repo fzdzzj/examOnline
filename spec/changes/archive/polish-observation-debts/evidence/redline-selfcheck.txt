@@ -1,0 +1,67 @@
+本案红线自查（AGENTS 四条硬约定 + 派工卡三红线：零 DDL / 零契约 / 前端用例数不变）
+
+revision : 0c5b86e
+执行时间 : 2026-10-19 14:38:49
+执行     : Git Bash 驱动 redline-check.sh（逐项判据见方括号；[12] 取速览区 56-71 行）
+
+[1] flyway in pom.xml (expect 0)
+0
+[2] src/main/resources/db exists (expect ABSENT)
+ABSENT
+[3] @Sql annotation hits in src/test excluding javadoc lines (expect 0)
+0
+[4] entity @TableName minus schema.sql tables (expect empty)
+[5] migrations mounted in docker-compose (expect only master/init and slave/init)
+40:      - ./docker/mysql/master/init:/docker-entrypoint-initdb.d:ro
+65:      - ./docker/mysql/slave/init:/docker-entrypoint-initdb.d:ro
+[6] openapi paths vs baseline
+OPENAPI PATHS ASSERT OK: paths=114 (baseline >= 114)
+[7] frontend vitest summary (last run)
+ Test Files  128 passed (128)
+      Tests  980 passed (980)
+[8] changed paths (worktree vs HEAD)
+ M .github/ci/gate-baseline.json
+ M frontend/vitest.config.ts
+ M spec/CHANGES_ARCHIVE.md
+ M spec/README.md
+ M src/test/java/com/exam/reliability/reconciliation/ScoreChainReconciliationIntegrationTest.java
+?? spec/changes/polish-observation-debts/evidence/
+[9] zero-DDL / zero-contract guard (expect 0 changed each)
+  src/main/resources/schema.sql -> 0 changed
+  openapi.yaml -> 0 changed
+  pom.xml -> 0 changed
+  docker/mysql/migrations -> 0 changed
+  frontend/src -> 0 changed
+[10] src/main changes after mutation restore (expect 0)
+0
+[11] vitest.config.ts diff (only testTimeout added; include/setupFiles/restoreMocks/environment untouched)
+diff --git a/frontend/vitest.config.ts b/frontend/vitest.config.ts
+index 9f31910..d26cfa6 100644
+--- a/frontend/vitest.config.ts
++++ b/frontend/vitest.config.ts
+@@ -22,5 +22,8 @@ export default defineConfig({
+     // 单测放 src/**/__tests__，e2e 归 playwright，互不混跑
+     include: ['src/**/__tests__/**/*.spec.ts'],
+     restoreMocks: true,
++    // 宿主 CPU 争用下默认 5s 超时随机击红（受害集合随机、单跑全过，C6/C7 两轮复核实测），
++    // 显式固化 30s 预算；不增删用例、不改 include/setupFiles/restoreMocks/environment。
++    testTimeout: 30000,
+   },
+ });
+[12] spec/README.md digest row count (expect 10) and CHANGES_ARCHIVE table rows (expect 152 = 111 + 41)
+10
+152
+[13] evidence files line endings (expect 0 files with CR)
+  files-with-CR=0
+[14] gate-baseline diff (expect only backendTests changed)
+diff --git a/.github/ci/gate-baseline.json b/.github/ci/gate-baseline.json
+index 92b5099..91ba72a 100644
+--- a/.github/ci/gate-baseline.json
++++ b/.github/ci/gate-baseline.json
+@@ -1,5 +1,5 @@
+ {
+-  "backendTests": 853,
++  "backendTests": 855,
+   "frontendTests": 980,
+   "openapiPaths": 114
+ }

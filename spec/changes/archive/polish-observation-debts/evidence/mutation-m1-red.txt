@@ -1,0 +1,26 @@
+变异 m1 击红留证（assertion-level）
+target : src/main/java/com/exam/reliability/reconciliation/service/ReconciliationService.java
+inject : s|boolean written = scoreService|boolean written = summary.partialGraded() ? false : scoreService|
+意图   : 抽除「主观未批完但客观已判」分支的分部总分写入（补齐调用被 partial 短路，等价未接线）
+结果   : --verify 非零退出（断言级失败，非编译红）
+
+[INFO] Building exam-online 0.1.0-SNAPSHOT
+[ERROR] Tests run: 10, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 72.65 s <<< FAILURE! -- in com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.partialGradedBackfillsObjectiveOnlyTotal -- Time elapsed: 2.169 s <<< FAILURE!
+[ERROR] com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest.partialGradedBackfillIsIdempotent -- Time elapsed: 2.048 s <<< FAILURE!
+[ERROR] Failures: 
+[ERROR]   ScoreChainReconciliationIntegrationTest.partialGradedBackfillIsIdempotent:235 expected: <1> but was: <0>
+[ERROR]   ScoreChainReconciliationIntegrationTest.partialGradedBackfillsObjectiveOnlyTotal:190 总分未回填属确定性缺失，须补齐 ==> expected: <1> but was: <0>
+[ERROR] Tests run: 10, Failures: 2, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project exam-online: There are test failures.
+[ERROR] 
+[ERROR] See D:\code\examOnline\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

@@ -1,0 +1,11 @@
+scripts/mutation-check.sh 五步汇总（原样引用工具 report.txt）
+
+mutation-check 五步汇总 —— label: m2-subjective-ticket
+target: src/main/java/com/exam/reliability/reconciliation/service/ReconciliationService.java
+verify: ./mvnw.cmd test -Dtest=ScoreChainReconciliationIntegrationTest -DfailIfNoTests=false
+PASS  ① 备份：src/main/java/com/exam/reliability/reconciliation/service/ReconciliationService.java -> /d/code/examOnline/target/mutation-check/m2-subjective-ticket/backup/original
+PASS  ② 注入+命中：注入标志在场（if (summary.partialGraded()) { totals.ungraded++; } if (false) {）
+PASS  ③ 击红：--verify 非零退出（exit=1），留证 /d/code/examOnline/target/mutation-check/m2-subjective-ticket/step3-verify-red.log
+PASS  ④ 复原+归零：cmp 字节一致，注入标志不在场
+PASS  ⑤ 回绿：--verify 零退出（exit=0），留证 /d/code/examOnline/target/mutation-check/m2-subjective-ticket/step5-verify-green.log
+PASS  留证目录：/d/code/examOnline/target/mutation-check/m2-subjective-ticket
