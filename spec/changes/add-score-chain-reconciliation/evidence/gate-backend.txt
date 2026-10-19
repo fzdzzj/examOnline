@@ -1,0 +1,13 @@
+# 后端门禁：仓库根 ./mvnw.cmd clean test（全量实测）
+
+- 基座 revision：ff72bd6（立案笔；工作区含本笔未提交改动）
+- 命令：./mvnw.cmd clean test（Windows；bash 语义等价 ./mvnw clean test）
+- 判据：Failures=0、Errors=0；用例总数对比 gate-baseline（只增不减）
+
+```
+[WARNING] Tests run: 853, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+```
+
+基线：backendTests 845 → **853**（+8：ScoreChainReconciliationIntegrationTest 8 例）。
+CI 解析断言：`./.github/ci/assert_backend.sh target/gates/gate-backend.log .github/ci/gate-baseline.json` → OK（见 ci-gate-assert.txt）。

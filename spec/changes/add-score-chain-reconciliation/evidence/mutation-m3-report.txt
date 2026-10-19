@@ -1,0 +1,44 @@
+# 变异 m3：抽除差异票分类计数/汇总（runs 表三类差异数恒 0）
+
+- 工具：scripts/mutation-check.sh（五步：备份 → 注入+命中 → 断言击红 → 字节复原归零 → 回绿）
+- 目标：src/main/java/com/exam/reliability/reconciliation/service/ReconciliationService.java
+- 变异输入：target/mutation-inputs/m3-ReconciliationService.java（注入前的原始字节副本在 target/mutation-check/m3/backup/original）
+- verify：./mvnw test -Dtest=ScoreChainReconciliationIntegrationTest
+
+## 注入 diff（原文件 → 变异输入）
+
+```diff
+-        run.setUngradedCount(totals.ungraded);
+-        run.setMismatchCount(totals.mismatch);
+-        run.setAutoFixedCount(totals.autoFixed);
++        run.setUngradedCount(0); // MUTATION m3
++        run.setMismatchCount(0); // MUTATION m3
++        run.setAutoFixedCount(0); // MUTATION m3
+-                .set(ReconciliationRun::getUngradedCount, totals.ungraded)
+-                .set(ReconciliationRun::getMismatchCount, totals.mismatch)
+-                .set(ReconciliationRun::getAutoFixedCount, totals.autoFixed)
++                .set(ReconciliationRun::getUngradedCount, 0)
++                .set(ReconciliationRun::getMismatchCount, 0)
++                .set(ReconciliationRun::getAutoFixedCount, 0)
+```
+
+## 五步结论（工具原文）
+
+```
+PASS  ① 备份：src/main/java/com/exam/reliability/reconciliation/service/ReconciliationService.java -> target/mutation-check/m3/backup/original
+PASS  ② 注入+命中：--inject-file 整份在场
+PASS  ③ 击红：--verify 非零退出（exit=1），留证 target/mutation-check/m3/step3-verify-red.log
+PASS  ④ 复原+归零：cmp 字节一致，注入标志不在场
+PASS  ⑤ 回绿：--verify 零退出（exit=0），留证 target/mutation-check/m3/step5-verify-green.log
+PASS  留证目录：target/mutation-check/m3
+```
+
+## 击红断言
+
+```
+[ERROR] Tests run: 8, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 50.85 s <<< FAILURE! -- in com.exam.reliability.reconciliation.ScoreChainReconciliationIntegrationTest
+[ERROR]   ScoreChainReconciliationIntegrationTest.detailTotalMismatchOnlyTickets:193 主观题未批完计入维度一 ==> expected: <1> but was: <0>
+[ERROR]   ScoreChainReconciliationIntegrationTest.deterministicMissingBackfilledIdempotently:142 expected: <1> but was: <0>
+[ERROR]   ScoreChainReconciliationIntegrationTest.ungradedSubmissionProducesTicket:113 expected: <1> but was: <0>
+[ERROR] Tests run: 8, Failures: 3, Errors: 0, Skipped: 0
+```

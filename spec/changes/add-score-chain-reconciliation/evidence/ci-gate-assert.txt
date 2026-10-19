@@ -1,0 +1,24 @@
+# CI 三机检等价执行（真实 bash 脚本，非 PowerShell 模拟）
+
+- 基座 revision：ff72bd6
+- 环境：本机 Git Bash（D:\git\Git\bin\bash.exe），脚本直接取自 .github/ci/
+- 输入：本笔门禁日志 + 上调后的 gate-baseline.json（backendTests=853 / frontendTests=980 / openapiPaths=114）
+
+```
+BACKEND GATE ASSERT OK: Tests run=853, Failures=0, Errors=0, Skipped=1 (baseline >= 853)
+backend-assert-exit=0
+FRONTEND GATE ASSERT OK: vitest passed=980 (baseline >= 980), lint/typecheck logs non-empty, both banners present
+frontend-assert-exit=0
+OPENAPI PATHS ASSERT OK: paths=114 (baseline >= 114)
+openapi-assert-exit=0
+```
+
+baseline 同笔上调：
+
+```json
+{
+  "backendTests": 853,
+  "frontendTests": 980,
+  "openapiPaths": 114
+}
+```

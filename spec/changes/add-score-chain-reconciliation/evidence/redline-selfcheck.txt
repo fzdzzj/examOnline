@@ -1,0 +1,54 @@
+# 红线自查（AGENTS 四条硬约定 + 本案红线）
+
+- 命令（Git Bash，仓库根）：bash target/redline-selfcheck.sh（只读命令集合，脚本为收尾即删的临时产物）
+- 基座 revision：ff72bd6（立案笔；工作区含本笔未提交改动）
+- 结果：全部符合预期；第 [10] 项两数为 19/19（迁移脚本已 git add 纳入索引后统计，入库笔与之同批）
+
+```
+== [1] pom.xml 无 flyway（期望 0）
+0
+== [2] src/main/resources/db 不存在（期望 OK）
+OK
+== [3] src/test 内 @Sql 注解命中（期望 EMPTY；注释复述不算）
+EMPTY
+== [4] 实体 @TableName 表集合 减 schema.sql 建表集合（期望空）
+(以上为空即双向一致)
+== [5] docker-compose.yml 是否存在 migrations 自动执行者（期望无命中）
+40:      - ./docker/mysql/master/init:/docker-entrypoint-initdb.d:ro
+65:      - ./docker/mysql/slave/init:/docker-entrypoint-initdb.d:ro
+== [6] reconciliation 包内 Redis API 调用（期望 NO-REDIS-API，仅注释提及不算）
+NO-REDIS-API
+== [7] 判分/汇总口径同源入口（期望只出现在 ScoreService 定义处与对账复用调用）
+com/exam/reliability/reconciliation/service/ReconciliationService.java:265:                scoreService.expectedSummaries(examId, submissions);
+com/exam/reliability/reconciliation/service/ReconciliationService.java:294:            boolean written = scoreService.backfillTotalScoreIfMissing(submission.getId(), summary);
+com/exam/score/service/ScoreService.java:191:    private Summaries computeSummary(GradingSubmission submission, List<Long> shortAnswerIds,
+com/exam/score/service/ScoreService.java:224:    public Map<Long, ExpectedSummary> expectedSummaries(Long examId, List<GradingSubmission> submissions) {
+com/exam/score/service/ScoreService.java:254:    public boolean backfillTotalScoreIfMissing(Long submissionId, ExpectedSummary expected) {
+== [8] 新增两表在 schema.sql 与迁移脚本中同时存在（期望各 2 行）
+schema.sql: 2
+migration:  2
+== [9] AUTO_INCREMENT 建表块均含 PRIMARY KEY (id)（由 SchemaSqlMysqlCompatibilityTest 机检）
+35
+== [10] 迁移脚本与 APPLIED.md 台账对齐（期望两数相等）
+scripts: 19
+ledger:  19
+== [11] 两表 AUTO_INCREMENT 块内显式 PRIMARY KEY (id)（期望 2）
+2
+```
+
+## 判读
+
+- [1][2]：未引入 Flyway/Liquibase，`src/main/resources/db` 不存在——建表唯一入口仍是 `schema.sql`。
+- [3]：集成测试零 `@Sql`，新用例用 `schema.sql` 建表 + Mapper 直插夹具，未自建任何表。
+- [4]：实体 `@TableName` 表集合与 `schema.sql` 建表集合差集为空（新实体 `reconciliation_runs` /
+  `reconciliation_diffs` 均在 schema.sql 有建表块，过 `comm -23`）。
+- [5]：`docker/mysql` 只挂载 `master/init` 与 `slave/init` 两个初始化目录，`migrations/` 无自动执行者
+  ——脚本入库 ≠ 迁移已生效，`APPLIED.md` 已如实登记「未应用（待人工应用）」。
+- [6]：reconciliation 包零 Redis API 调用（对账状态全部落 DB），符合「零新 Redis 键族」。
+- [7]：总分期望值只有 `ScoreService.computeSummary` 一个公式，对账经 `expectedSummaries` 复用；
+  补齐写入复用同 SET 形状的 CAS（`casBackfillTotalScore`，仅多 `total_score IS NULL` 幂等护栏）。
+- [9][11]：两新表均在 AUTO_INCREMENT 块内显式 `PRIMARY KEY (id)`，H2/MySQL 双兼容。
+- 第 [10] 项：迁移脚本数与 `APPLIED.md` 台账行数相等等于 19（本笔脚本入库后机检无缺口）。
+
+> 说明：[5] 的两行命中是「初始化目录」而非 `docker/mysql/migrations`，与 AGENTS 第 4 条约定的
+> 自查口径一致（migrations 目录不在 compose 挂载内）。

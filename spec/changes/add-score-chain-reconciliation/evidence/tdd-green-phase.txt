@@ -1,0 +1,28 @@
+# TDD 回绿（后端）：新增 8 例全绿
+
+- 命令（仓库根）：./mvnw.cmd test -Dtest=ScoreChainReconciliationIntegrationTest
+- 基座 revision：ff72bd6（立案笔；工作区含本笔未提交改动）
+- 前置：实现包已从 target/redphase 复原回 src/main/java/com/exam/reliability（与红相位同一份源码）
+- 结果：
+
+```
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 55.27 s
+[INFO] BUILD SUCCESS
+```
+
+## 用例清单（ScoreChainReconciliationIntegrationTest，8 例）
+
+1. ungradedSubmissionProducesTicket —— 判分缺失出 SUBMISSION_UNGRADED/GRADING_MISSING 票，答卷判分字段不动
+2. deterministicMissingBackfilledIdempotently —— 同源口径补齐总分 + audit_log；第二次对账 autoFixed=0、version 与审计计数不变
+3. detailTotalMismatchOnlyTickets —— 明细汇总 10 vs 实际 8 出 DETAIL_TOTAL_MISMATCH（expected/actual/deviation），总分不被改写；主观未批计入维度一
+4. closeDiffMarksManualClosedAndAudits —— 人工关闭转 MANUAL_CLOSED + 审计，按状态可查，重复关闭 400、不存在 404
+5. studentForbiddenOnAllEndpoints —— STUDENT 调四端点一律 403
+6. manualRunRejectsExamNotGraded —— 未达已判分状态的考试手动对账 400
+7. scheduledBatchRunsOncePerWindow —— 同一时间窗只执行一次（uk_recon_run_batch），不同窗口照常、补齐不重复
+8. scheduledFailureRecordedAndNextRunProceeds —— 快照缺失致 FAILED + 错误入运行记录，下一次窗口照常执行
+
+## 说明
+
+- 进程内未见 Redis 键族：对账状态全部落 DB，测试无需新增 Redis 夹具。
+- 定时用例直接调用 ReconciliationService.runScheduled(固定时刻)，测试档 exam.reconciliation.scheduled.enabled=false
+  只关 @Scheduled 驱动，不改变批次语义——批次护栏可确定性复现，不靠墙钟巧合。

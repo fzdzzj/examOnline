@@ -1,0 +1,22 @@
+# gate-baseline.json 同笔上调（只增不减）
+
+- 基座 revision：ff72bd6
+
+| 项 | 本笔前 | 本笔后 | 增量 | 来源 |
+|---|---|---|---|---|
+| backendTests | 845 | 853 | +8 | ScoreChainReconciliationIntegrationTest（8 例） |
+| frontendTests | 965 | 980 | +15 | reconciliationAdmin.spec.ts（15 例） |
+| openapiPaths | 110 | 114 | +4 | run/runs/diffs/close 四端点 |
+
+## diff（工作区）
+
+```diff
+-  "backendTests": 845,
+-  "frontendTests": 965,
+-  "openapiPaths": 110
++  "backendTests": 853,
++  "frontendTests": 980,
++  "openapiPaths": 114
+```
+
+CI 断言语义为 `>=`（只增不减）；三机检脚本均以新基线跑通，见 ci-gate-assert.txt。
